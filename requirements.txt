@@ -1,28 +1,33 @@
+#
+# Requirements untuk menjalankan ASKA dari nol dengan versi yang relatif stabil.
+# Jika ingin meng-upgrade, lakukan bertahap dan uji tiap komponen.
+#
+
 # Core runtime
 python-telegram-bot==20.7
-python-dotenv>=1.0
-openai>=1.0
+python-dotenv==1.0.1
+openai==1.40.0
 numpy<2
 
 # LangChain stack (RAG)
-langchain>=0.2
-langchain-core>=0.2
-langchain-openai>=0.1.7
-langchain-community>=0.2
+langchain==0.2.11
+langchain-core==0.2.24
+langchain-openai==0.1.7
+langchain-community==0.2.10
 
 # Vector store backend
 faiss-cpu>=1.7.4; platform_system != "Windows"
 
 # Database (PostgreSQL)
-psycopg2-binary>=2.9
+psycopg2-binary==2.9.9
 
 # Dashboard (Flask app)
-Flask>=3.0,<4
-Authlib>=1.3.0,<2
-gunicorn>=21.2; platform_system != "Windows"
+Flask==3.0.3
+Authlib==1.3.1
+gunicorn==21.2.0; platform_system != "Windows"
 
 # Social integrations
-tweepy>=4.14
+tweepy==4.14.0
 
 # Opsional (embedding lokal - pasang manual bila server mendukung Torch)
 # langchain-huggingface>=0.0.3

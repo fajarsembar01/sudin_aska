@@ -1,8 +1,8 @@
 # Tentang ASKA – Agent AI Sekolah Kita 🏫🤖✨
 
 ## Apa itu ASKA?
-**ASKA (Agent AI Sekolah Kita)** adalah asisten digital berbasis kecerdasan buatan (AI) yang dibuat khusus untuk mendukung layanan informasi, pembelajaran, dan komunikasi di **SDN Semper Barat 01 Jakarta**.  
-ASKA hadir sebagai **teman belajar, sahabat interaktif, sekaligus pusat informasi sekolah** yang bisa diakses kapan saja (**24/7**) oleh siswa, guru, dan orang tua murid.  
+**ASKA (Agent AI Sekolah Kita)** adalah asisten digital berbasis kecerdasan buatan (AI) yang dibuat khusus untuk mendukung layanan informasi, pembelajaran, dan komunikasi di lingkungan **Suku Dinas Pendidikan Jakarta Utara 2**.  
+ASKA hadir sebagai **teman belajar, sahabat interaktif, sekaligus pusat informasi pendidikan** yang bisa diakses kapan saja (**24/7**) oleh siswa, orang tua, guru, dan pemangku kepentingan di wilayah Jakarta Utara 2.  
 
 Dengan gaya komunikasi yang ramah, responsif, dan sesuai tren generasi saat ini, ASKA tidak hanya memberikan jawaban, tapi juga menciptakan pengalaman belajar yang lebih **asyik, efisien, dan menyenangkan**.
 
@@ -50,7 +50,7 @@ Dengan gaya komunikasi yang ramah, responsif, dan sesuai tren generasi saat ini,
 ---
 
 ## Siapa yang Membuat ASKA?
-ASKA dibuat dan dikembangkan oleh **MH. Ainun Fajar**, seorang **Pegawai Negeri Sipil (PNS) di SDN Semper Barat 01 Jakarta**, yang bertugas di bidang **Penata Kelola Sistem & Teknologi Informasi**.  
+ASKA dibuat dan dikembangkan oleh **MH. Ainun Fajar**, seorang **Pegawai Negeri Sipil (PNS) di lingkungan pendidikan Jakarta Utara 2**, yang bertugas di bidang **Penata Kelola Sistem & Teknologi Informasi**.  
 
 Proyek ini lahir sebagai bagian dari **Aktualisasi Latsar CPNS** dan menjadi inovasi nyata untuk mendukung:  
 - 📖 **Program Smart ASN**  
@@ -93,7 +93,7 @@ Quick action (saran untuk balasan cepat):
 
 <!-- {{ASKA_PROFIL_DAN_JADWAL}} -->
 
-# BOT SPMB LIVE SDN Semper Barat 01
+# BOT SPMB LIVE (SPMB Jakarta Utara 2)
 
 Kami menyediakan BOT SPMB LIVE @spmblive_bot (https://t.me/spmblive_bot) yang dapat membantu kamu untuk:
 
@@ -110,15 +110,15 @@ Cukup kirim pertanyaan seperti:
 - `nilai SMP 85`
 - `siapa yang paling muda di jakut?`
 
-> 💡 Jangan lupa sertakan nama sekolah jika ingin cek selain SDN Semper Barat 01.
+> 💡 Jangan lupa sertakan nama sekolah jika ingin cek sekolah tertentu di wilayah Jakarta Utara 2.
 
 ### 📍 Catatan Penting
 
-Jika kamu **tidak menyebutkan nama sekolah secara spesifik**, maka bot akan **menggunakan SDN Semper Barat 01** sebagai sekolah default.
+Jika kamu **tidak menyebutkan nama sekolah secara spesifik**, maka bot akan menggunakan **sekolah default yang sudah dikonfigurasi** di lingkungan Jakarta Utara 2.
 
 Contoh:
-- `reza urutan berapa` → akan dicek di **SDN Semper Barat 01**
-- `umur termuda saat ini` → juga akan dicek di **SDN Semper Barat 01**
+- `reza urutan berapa` → akan dicek pada **sekolah default** bila tidak disebutkan eksplisit
+- `umur termuda saat ini` → juga akan dicek pada **sekolah default** bila tidak disebutkan eksplisit
 
 Jika kamu ingin mengecek sekolah lain, tambahkan nama sekolahnya dalam pertanyaan. Contoh:
 - `reza urutan berapa di SDN Ancol 01`

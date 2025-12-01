@@ -5,7 +5,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 KECERDASAN_DIR = BASE_DIR / "kecerdasan"
 GENERAL_FILE = KECERDASAN_DIR / "umum.md"
-SPECIFIC_FILE = KECERDASAN_DIR / "profil_sekolah.md"
+SPECIFIC_FILE = KECERDASAN_DIR / "profil_sudindikju2.md"
 OUTPUT_FILE = BASE_DIR / "kecerdasan.md"
 PLACEHOLDER = "<!-- {{ASKA_PROFIL_DAN_JADWAL}} -->"
 

@@ -7,7 +7,7 @@
 # - Usahakan hasil <= 280 karakter; sudah dibatasi di prompt.
 # - Placeholder waktu akan diganti otomatis.
 
-rag: Tulis ringkasan sangat singkat (<=200 karakter) tentang apa itu ASKA dan manfaatnya bagi orang tua murid di SDN Semper Barat 01 berdasarkan kecerdasan.md. Akhiri dengan ajakan: "Mention @tanyaaska".
+rag: Tulis ringkasan sangat singkat (<=200 karakter) tentang apa itu ASKA dan manfaatnya bagi warga/peserta didik di wilayah Suku Dinas Pendidikan Jakarta Utara 2 berdasarkan kecerdasan.md. Akhiri dengan ajakan: "Mention @tanyaaska".
 rag: Daya tampung sekolah(<=200 karakter). pilih salah satu sekolah bagikan informasi daya tampung sesuai kecerdasan.md. Tanpa markdown.
 rag: PPDB SD 2025 DKI—tulis alur paling ringkas (<=220 karakter): tahapan inti + dokumen wajib menurut kecerdasan.md. Tanpa markdown.
 rag: KJP Plus—kriteria singkat (<=200 karakter) dan cara cek status menurut kecerdasan.md. Gunakan nada informatif dan positif.

@@ -3,13 +3,11 @@ from __future__ import annotations
 import os
 import atexit
 from datetime import timedelta
-from pathlib import Path
 
 from flask import Flask
 
 from .auth import auth_bp, current_user, init_oauth
 from .routes import main_bp
-from .attendance import attendance_bp
 from .db_access import shutdown_pool
 from .queries import fetch_pending_bullying_count, fetch_pending_psych_count, fetch_pending_corruption_count
 from .schema import ensure_dashboard_schema
@@ -22,11 +20,6 @@ def create_app() -> Flask:
         template_folder="templates",
         static_folder="static",
     )
-    # Sertakan template folder web_aska agar halaman preview bisa memanggil layout latihan_tka_session.html
-    extra_template_dir = Path(__file__).resolve().parent.parent / "web_aska" / "templates"
-    if extra_template_dir.exists():
-        app.jinja_loader.searchpath.append(str(extra_template_dir))
-
     app.config["SECRET_KEY"] = os.getenv("DASHBOARD_SECRET_KEY", "change-me")
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(
         days=int(os.getenv("DASHBOARD_SESSION_DAYS", "14"))
@@ -34,7 +27,6 @@ def create_app() -> Flask:
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
-    app.register_blueprint(attendance_bp)
     init_oauth(app)
 
     try:

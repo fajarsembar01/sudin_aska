@@ -47,7 +47,7 @@ GREETING_RESPONSES = [
     # 30 sapaan baru - Edisi Gen Z Final Form 💥💅✨
     "Yo, {user_name}! 🤙✨ Kenalin, aku ASKA, bestie virtual kamu di sekolah.\n\nButuh info, mau curhat, atau gabut? 🤪 Langsung spill aja, aku siap dengerin 24/7! 🎧🔥",
     "Wassup, {user_name}! 🤘😎 ASKA in the house!\n\nSiap ngebantu kamu kapan aja, di mana aja. 🚀\n\nInfo KJP, SPMB, atau cuma pengen gibah? Chat ASKA aja, gaskeun! 😉🔥",
-    "Heyo, {user_name}! 🥳 Welcome to the hub SDN Semper Barat 01! 🏫\n\nAku ASKA, AI paling up-to-date di sini. 🤖\n\nJangan malu-malu, tanya apa aja, pasti aku jawab! ✨💯",
+    "Heyo, {user_name}! 🥳 Welcome to the hub Suku Dinas Pendidikan Jakarta Utara 2! 🏫\n\nAku ASKA, AI paling up-to-date di sini. 🤖\n\nJangan malu-malu, tanya apa aja, pasti aku jawab! ✨💯",
     "Bestie {user_name}! ✨ Bingung sendirian itu canon event, mending tanya ASKA. 🍵\n\nInfo sekolah, jadwal, sampe akun sosmed, semua ada di sini! Spill the tea! 💅",
     "Oiii!!, {user_name}! 👋\n\nLagi pusing sama alur SPMB 2025, {user_name}? 🤯💥\n\nTenang, woles... Tanya ASKA aja soal jadwal, jalur, atau syaratnya. Aku bantu biar prosesnya lancar jaya! 💅✨",
     "Haiii!!, {user_name}! 👋\n\nKamu atau kenalan kamu mau daftar SD, {user_name}? 👶 Pas banget! 💯\n\nASKA punya semua info SPMB paling update. Coba ketik 'info SPMB', aku kasih tau A-Z. 🚀",

@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Iterable
 
 from .db_access import get_cursor
-from tka_schema import ensure_tka_schema as ensure_tka_schema_tables
 
 _DASHBOARD_USERS_SQL = """
 CREATE TABLE IF NOT EXISTS dashboard_users (
@@ -68,72 +67,6 @@ CREATE TABLE IF NOT EXISTS students (
 _STUDENTS_CLASS_INDEX_SQL = """
 CREATE INDEX IF NOT EXISTS idx_students_class_id
 ON students (class_id);
-"""
-
-_ATTENDANCE_RECORDS_SQL = """
-CREATE TABLE IF NOT EXISTS attendance_records (
-    id SERIAL PRIMARY KEY,
-    attendance_date DATE NOT NULL,
-    student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
-    class_id INTEGER NOT NULL REFERENCES school_classes(id) ON DELETE CASCADE,
-    teacher_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
-    status TEXT NOT NULL,
-    note TEXT,
-    recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (attendance_date, student_id),
-    CONSTRAINT attendance_records_status_check CHECK (status IN ('masuk', 'alpa', 'izin', 'sakit'))
-);
-"""
-
-_ATTENDANCE_CLASS_DATE_INDEX_SQL = """
-CREATE INDEX IF NOT EXISTS idx_attendance_records_class_date
-ON attendance_records (class_id, attendance_date);
-"""
-
-_TEACHER_ATTENDANCE_SQL = """
-CREATE TABLE IF NOT EXISTS teacher_attendance_records (
-    id SERIAL PRIMARY KEY,
-    attendance_date DATE NOT NULL,
-    teacher_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
-    status TEXT NOT NULL,
-    note TEXT,
-    recorded_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
-    recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (attendance_date, teacher_id),
-    CONSTRAINT teacher_attendance_records_status_check CHECK (status IN ('masuk', 'alpa', 'izin', 'sakit'))
-);
-"""
-
-_TEACHER_ATTENDANCE_DATE_INDEX_SQL = """
-CREATE INDEX IF NOT EXISTS idx_teacher_attendance_records_date
-ON teacher_attendance_records (attendance_date);
-"""
-
-_ATTENDANCE_LATE_STUDENTS_SQL = """
-CREATE TABLE IF NOT EXISTS attendance_late_students (
-    id SERIAL PRIMARY KEY,
-    attendance_date DATE NOT NULL,
-    class_id INTEGER REFERENCES school_classes(id) ON DELETE SET NULL,
-    student_name TEXT NOT NULL,
-    class_label TEXT,
-    arrival_time TEXT,
-    reason TEXT,
-    recorded_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-"""
-
-_ATTENDANCE_LATE_DATE_INDEX_SQL = """
-CREATE INDEX IF NOT EXISTS idx_attendance_late_date
-ON attendance_late_students (attendance_date);
-"""
-
-_ATTENDANCE_LATE_CLASS_INDEX_SQL = """
-CREATE INDEX IF NOT EXISTS idx_attendance_late_class
-ON attendance_late_students (class_id);
 """
 
 _BULLYING_REPORTS_SQL = """
@@ -257,13 +190,6 @@ def ensure_dashboard_schema() -> None:
         _SCHOOL_CLASSES_SQL,
         _STUDENTS_SQL,
         _STUDENTS_CLASS_INDEX_SQL,
-        _ATTENDANCE_RECORDS_SQL,
-        _ATTENDANCE_CLASS_DATE_INDEX_SQL,
-        _TEACHER_ATTENDANCE_SQL,
-        _TEACHER_ATTENDANCE_DATE_INDEX_SQL,
-        _ATTENDANCE_LATE_STUDENTS_SQL,
-        _ATTENDANCE_LATE_DATE_INDEX_SQL,
-        _ATTENDANCE_LATE_CLASS_INDEX_SQL,
         _BULLYING_REPORTS_SQL,
         _BULLYING_STATUS_INDEX_SQL,
         _BULLYING_EVENTS_SQL,
@@ -311,7 +237,6 @@ def ensure_dashboard_schema() -> None:
     with get_cursor(commit=True) as cur:
         for statement in statements:
             cur.execute(statement)
-        ensure_tka_schema_tables(cur)
 
 
 __all__ = ["ensure_dashboard_schema"]
