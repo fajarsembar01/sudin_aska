@@ -162,6 +162,35 @@ CREATE INDEX IF NOT EXISTS idx_twitter_worker_logs_level
 ON twitter_worker_logs (level);
 """
 
+_CHAT_FEEDBACK_SQL = """
+CREATE TABLE IF NOT EXISTS chat_feedback (
+    id SERIAL PRIMARY KEY,
+    chat_log_id INTEGER NOT NULL REFERENCES chat_logs(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL,
+    username TEXT,
+    feedback_type TEXT NOT NULL CHECK (feedback_type IN ('like', 'dislike')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (chat_log_id, user_id)
+);
+"""
+
+_CHAT_FEEDBACK_CHAT_LOG_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_chat_feedback_chat_log ON chat_feedback (chat_log_id);
+"""
+
+_CHAT_FEEDBACK_USER_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_chat_feedback_user ON chat_feedback (user_id);
+"""
+
+_CHAT_FEEDBACK_TYPE_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_chat_feedback_type ON chat_feedback (feedback_type);
+"""
+
+_CHAT_FEEDBACK_CREATED_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_chat_feedback_created ON chat_feedback (created_at DESC);
+"""
+
 _TELEGRAM_USERS_SQL = """
 CREATE TABLE IF NOT EXISTS telegram_users (
     id SERIAL PRIMARY KEY,
@@ -200,6 +229,11 @@ def ensure_dashboard_schema() -> None:
         _TWITTER_LOGS_SQL,
         _TWITTER_LOGS_INDEX_CREATED,
         _TWITTER_LOGS_INDEX_LEVEL,
+        _CHAT_FEEDBACK_SQL,
+        _CHAT_FEEDBACK_CHAT_LOG_INDEX_SQL,
+        _CHAT_FEEDBACK_USER_INDEX_SQL,
+        _CHAT_FEEDBACK_TYPE_INDEX_SQL,
+        _CHAT_FEEDBACK_CREATED_INDEX_SQL,
         _TELEGRAM_USERS_SQL,
         _TELEGRAM_USERS_INDEX_STATUS,
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS no_tester_enabled BOOLEAN NOT NULL DEFAULT FALSE",
