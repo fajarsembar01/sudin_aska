@@ -347,7 +347,7 @@ CREATE TABLE IF NOT EXISTS portal_assessment_photos (
     photo_path TEXT NOT NULL,
     latitude DECIMAL(9,6),
     longitude DECIMAL(9,6),
-    taken_at TIMESTAMPTZ,
+    captured_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (assessment_id, school_room_id)
 );
@@ -449,6 +449,9 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS kk_number TEXT",
         "ALTER TABLE portal_assessments ADD COLUMN IF NOT EXISTS period_id INTEGER REFERENCES portal_assessment_periods(id) ON DELETE SET NULL",
         "ALTER TABLE portal_assessment_scores ADD COLUMN IF NOT EXISTS notes TEXT",
+        # Rename taken_at to captured_at if it exists (handling legacy schema)
+        "DO $$ BEGIN IF EXISTS(SELECT * FROM information_schema.columns WHERE table_name='portal_assessment_photos' AND column_name='taken_at') THEN ALTER TABLE portal_assessment_photos RENAME COLUMN taken_at TO captured_at; END IF; END $$;",
+        "ALTER TABLE portal_assessment_photos ADD COLUMN IF NOT EXISTS captured_at TIMESTAMPTZ",
     )
     
     # Execute statements one by one to ensure partial success and better error reporting
