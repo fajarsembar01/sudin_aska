@@ -448,9 +448,17 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS kk_number TEXT",
         "ALTER TABLE portal_assessments ADD COLUMN IF NOT EXISTS period_id INTEGER REFERENCES portal_assessment_periods(id) ON DELETE SET NULL",
     )
-    with get_cursor(commit=True) as cur:
-        for statement in statements:
-            cur.execute(statement)
+    
+    # Execute statements one by one to ensure partial success and better error reporting
+    for i, statement in enumerate(statements):
+        try:
+            # We use a fresh cursor/transaction for each statement or block
+            with get_cursor(commit=True) as cur:
+                cur.execute(statement)
+        except Exception as e:
+            # Log error but continue with other statements if possible
+            print(f"Error executing schema statement #{i+1}: {e}")
+            print(f"Statement: {statement[:100]}...")
 
 
 __all__ = ["ensure_dashboard_schema"]
