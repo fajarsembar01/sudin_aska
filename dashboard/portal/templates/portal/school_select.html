@@ -1,0 +1,110 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Pilih Sekolah" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url_for('portal.home') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="h4 fw-bold mb-0">Pilih Sekolah</h1>
+                <p class="text-muted mb-0 small">Pilih sekolah untuk dinilai</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-4 col-md-5">
+            <div class="card border-0 shadow-sm sticky-top" style="top: 80px;">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Cari Sekolah</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" id="schoolSearch" class="form-control" placeholder="Nama atau NPSN..."
+                                value="{{ search }}">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="form-label small fw-semibold">Filter Jenjang</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="{{ url_for('portal.schools') }}"
+                                class="btn btn-sm {% if not jenjang %}btn-primary{% else %}btn-outline-secondary{% endif %}">Semua</a>
+                            <a href="{{ url_for('portal.schools', jenjang='SD') }}"
+                                class="btn btn-sm {% if jenjang == 'SD' %}btn-primary{% else %}btn-outline-secondary{% endif %}">SD</a>
+                            <a href="{{ url_for('portal.schools', jenjang='SMP') }}"
+                                class="btn btn-sm {% if jenjang == 'SMP' %}btn-primary{% else %}btn-outline-secondary{% endif %}">SMP</a>
+                            <a href="{{ url_for('portal.schools', jenjang='SMA') }}"
+                                class="btn btn-sm {% if jenjang == 'SMA' %}btn-primary{% else %}btn-outline-secondary{% endif %}">SMA</a>
+                            <a href="{{ url_for('portal.schools', jenjang='SMK') }}"
+                                class="btn btn-sm {% if jenjang == 'SMK' %}btn-primary{% else %}btn-outline-secondary{% endif %}">SMK</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8 col-md-7">
+            <div id="schoolList">
+                {% if schools %}
+                {% for s in schools %}
+                <a href="{{ url_for('portal.assess', school_id=s.id) }}" class="school-card"
+                    data-name="{{ s.name|lower }}" data-npsn="{{ s.npsn }}">
+                    <div class="school-icon">
+                        <i class="bi bi-building"></i>
+                    </div>
+                    <div class="school-info flex-grow-1">
+                        <h6>{{ s.name }}</h6>
+                        <small>{{ s.npsn }} • {{ s.jenjang }}</small>
+                        {% if s.kelurahan or s.kecamatan %}
+                        <br><small class="text-muted">{{ s.kelurahan }}{% if s.kelurahan and s.kecamatan %}, {% endif
+                            %}{{ s.kecamatan }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="school-arrow">
+                        <i class="bi bi-chevron-right"></i>
+                    </div>
+                </a>
+                {% endfor %}
+                {% else %}
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-5 text-muted">
+                        <i class="bi bi-building-x display-4 opacity-50"></i>
+                        <p class="mt-3 mb-1">Tidak ada sekolah</p>
+                        <small>Hubungi admin untuk menambahkan data sekolah</small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var searchInput = document.getElementById('schoolSearch');
+        var schoolList = document.getElementById('schoolList');
+        var schools = schoolList.querySelectorAll('.school-card');
+
+        searchInput.addEventListener('input', function () {
+            var query = this.value.toLowerCase().trim();
+
+            schools.forEach(function (card) {
+                var name = card.dataset.name || '';
+                var npsn = card.dataset.npsn || '';
+
+                if (name.includes(query) || npsn.includes(query)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

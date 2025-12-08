@@ -8,6 +8,7 @@ from flask import Flask
 
 from .auth import auth_bp, current_user, init_oauth
 from .routes import main_bp
+from .portal.routes import portal_bp
 from .db_access import shutdown_pool
 from .queries import fetch_pending_bullying_count, fetch_pending_psych_count, fetch_pending_corruption_count
 from .schema import ensure_dashboard_schema
@@ -27,6 +28,7 @@ def create_app() -> Flask:
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
+    app.register_blueprint(portal_bp)
     init_oauth(app)
 
     try:

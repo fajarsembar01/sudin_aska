@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ page_title|default("Portal PANBERSS") }} - ASKA Portal</title>
+    <link rel="shortcut icon" href="https://www.svgrepo.com/show/331368/bot.svg" type="image/svg+xml">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* Portal-specific additions */
+        .portal-hero {
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.12), rgba(99, 102, 241, 0.08));
+            border: 1px solid var(--border-soft);
+            border-radius: 20px;
+        }
+
+        .portal-hero .card-body {
+            padding: 1.6rem 2rem;
+        }
+
+        /* Score buttons */
+        .score-group {
+            display: flex;
+            gap: 0;
+        }
+
+        .score-btn {
+            min-width: 48px;
+            height: 44px;
+            border-radius: 0;
+            border: 2px solid var(--border-soft);
+            background: var(--bg-surface);
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .score-group .score-btn:first-child {
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+        }
+
+        .score-group .score-btn:last-child {
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+
+        .score-group .score-btn:not(:first-child) {
+            margin-left: -2px; /* collapse borders */
+        }
+
+        .score-btn:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .score-btn.selected {
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .score-btn[data-score="0"].selected {
+            background: #dc3545;
+        }
+
+        .score-btn[data-score="1"].selected {
+            background: #fd7e14;
+        }
+
+        .score-btn[data-score="2"].selected {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .score-btn[data-score="3"].selected {
+            background: #198754;
+        }
+
+        /* Room list */
+        .room-item {
+            margin-bottom: 1rem;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-soft);
+            background: var(--bg-surface);
+        }
+
+        .room-header {
+            background: transparent;
+            color: var(--text-primary);
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .room-header:hover {
+            background-color: var(--bg-subtle);
+        }
+
+        .room-header h5 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .room-header .badge {
+            font-size: 0.75rem;
+            padding: 0.35rem 0.65rem;
+        }
+
+        .room-body {
+            padding: 1.25rem;
+        }
+
+        .aspect-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-soft);
+        }
+
+        .aspect-item:last-child {
+            border-bottom: none;
+        }
+
+        .aspect-name {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        /* School cards */
+        .school-card {
+            background: var(--bg-surface);
+            border-radius: 16px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid var(--border-soft);
+            transition: all 0.15s ease;
+        }
+
+        .school-card:hover {
+            border-color: var(--accent);
+            box-shadow: var(--shadow-soft);
+            transform: translateY(-2px);
+        }
+
+        /* Dark-mode friendly overrides */
+        .card,
+        .modal-content {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            border-color: var(--border-soft);
+        }
+
+        .list-group-item {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            border-color: var(--border-soft);
+        }
+
+        .table {
+            color: var(--text-primary);
+        }
+
+        .table thead {
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+        }
+
+        .table > :not(caption) > * > * {
+            background-color: transparent;
+        }
+
+        .form-control,
+        .form-select,
+        .input-group-text {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            border-color: var(--border-soft);
+        }
+
+        .form-control::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn-light {
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+            border-color: var(--border-soft);
+        }
+
+        .btn-outline-secondary,
+        .btn-outline-primary {
+            border-color: var(--border-soft);
+            color: var(--text-primary);
+        }
+
+        .dropdown-menu {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            border-color: var(--border-soft);
+        }
+
+        .dropdown-menu .dropdown-item {
+            color: var(--text-primary);
+        }
+
+        .dropdown-menu .dropdown-item:hover,
+        .dropdown-menu .dropdown-item:focus {
+            background: var(--bg-subtle);
+        }
+
+        .navbar-toggler {
+            border-color: var(--border-soft);
+        }
+
+        html[data-theme="dark"] .navbar-toggler-icon {
+            filter: invert(1);
+        }
+
+        .badge.bg-light,
+        .text-bg-light {
+            background-color: var(--bg-subtle) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .text-dark,
+        .text-body {
+            color: var(--text-primary) !important;
+        }
+
+        .text-secondary {
+            color: var(--text-secondary) !important;
+        }
+
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+
+        .school-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent), rgba(99, 102, 241, 0.8));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .school-info h6 {
+            margin: 0 0 0.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .school-info small {
+            color: var(--text-muted);
+        }
+
+        .school-arrow {
+            margin-left: auto;
+            color: var(--text-muted);
+        }
+
+        /* Status badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-draft {
+            background: rgba(108, 117, 125, 0.1);
+            color: var(--text-muted);
+        }
+
+        .status-submitted {
+            background: rgba(25, 135, 84, 0.1);
+            color: #198754;
+        }
+
+        .status-verified {
+            background: rgba(13, 110, 253, 0.1);
+            color: var(--accent);
+        }
+
+        /* Photo capture */
+        .photo-capture-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1.25rem;
+            border: 2px dashed var(--border-soft);
+            border-radius: 12px;
+            background: var(--bg-subtle);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .photo-capture-btn:hover {
+            background: var(--bg-muted);
+            border-color: var(--accent);
+        }
+
+        .photo-capture-btn i {
+            font-size: 1.75rem;
+        }
+
+        /* Score summary */
+        .score-summary {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .score-summary .big-score {
+            font-size: 4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .score-summary .score-label {
+            font-size: 1rem;
+            color: var(--text-muted);
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .score-btn {
+                min-width: 44px;
+                height: 42px;
+                font-size: 1rem;
+            }
+
+            .portal-hero .card-body {
+                padding: 1.25rem;
+            }
+
+            .school-card {
+                padding: 0.875rem 1rem;
+            }
+
+            .school-icon {
+                width: 42px;
+                height: 42px;
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+    {% block head_extra %}{% endblock %}
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container-fluid px-lg-4">
+            <a class="navbar-brand" href="{{ url_for('portal.home') }}">
+                <span class="icon-badge brand-icon text-primary">
+                    <i class="bi bi-clipboard2-check"></i>
+                </span>
+                <span class="fw-bold">ASKA Portal</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#portalNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="portalNavbar">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'portal.home' %}active{% endif %}"
+                            href="{{ url_for('portal.home') }}">
+                            <i class="bi bi-house nav-icon"></i>Beranda
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'portal.schools' %}active{% endif %}"
+                            href="{{ url_for('portal.schools') }}">
+                            <i class="bi bi-building nav-icon"></i>Sekolah
+                        </a>
+                    </li>
+                    {% if current_user and current_user.role == 'admin' %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if 'admin' in request.endpoint %}active{% endif %}"
+                            href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-gear nav-icon"></i>Admin
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.admin_stats') }}">
+                                    <i class="bi bi-bar-chart me-2"></i>Statistik
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.admin_setup') }}">
+                                    <i class="bi bi-tools me-2"></i>Setup Data
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('main.dashboard') }}">
+                                    <i class="bi bi-speedometer2 me-2"></i>Dashboard ASKA
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Theme Toggle -->
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="themeToggle" role="switch">
+                        <label class="theme-toggle-label" for="themeToggle">
+                            <i class="bi bi-sun-fill theme-icon theme-icon-sun"></i>
+                            <i class="bi bi-moon-fill theme-icon theme-icon-moon"></i>
+                        </label>
+                    </div>
+
+                    {% if current_user %}
+                    <div class="dropdown">
+                        <button class="user-menu-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <span class="user-avatar">{{ current_user.full_name[0] if current_user.full_name else
+                                current_user.email[0] | upper }}</span>
+                            <span class="user-name d-none d-md-inline">{{ current_user.full_name or current_user.email
+                                }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li class="px-3 py-2">
+                                <div class="fw-semibold">{{ current_user.full_name or 'User' }}</div>
+                                <small class="text-muted">{{ current_user.email }}</small>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container-fluid px-lg-4 py-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'primary' if category == 'message' else category }} alert-dismissible fade show"
+            role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% block portal_content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Theme toggle
+        (function () {
+            var toggle = document.getElementById('themeToggle');
+            var html = document.documentElement;
+            var saved = localStorage.getItem('theme');
+
+            if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                html.setAttribute('data-theme', 'dark');
+                toggle.checked = true;
+            }
+
+            toggle.addEventListener('change', function () {
+                var theme = this.checked ? 'dark' : 'light';
+                html.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+            });
+        })();
+
+        function showToast(message, duration) {
+            duration = duration || 2500;
+            var toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 start-50 translate-middle-x mb-4 px-4 py-2 rounded-pill text-white shadow';
+            toast.style.cssText = 'background: #333; z-index: 1100;';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(function () {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(function () { toast.remove(); }, 300);
+            }, duration);
+        }
+    </script>
+    {% block portal_scripts %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,75 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Konfigurasi Ruangan" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex align-items-start gap-3 flex-wrap">
+                <span class="icon-badge feature-icon text-primary">
+                    <i class="bi bi-door-open"></i>
+                </span>
+                <div>
+                    <h1 class="h3 fw-bold page-title mb-1">Konfigurasi Ruangan Sekolah</h1>
+                    <p class="page-subtitle mb-0">Pilih ruangan yang tersedia di sekolah Anda</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form id="schoolRoomsForm" method="POST" action="{{ url_for('portal.sekolah_rooms') }}">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm sticky-top" style="top: 80px;">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Pilih Sekolah</label>
+                            <select name="school_id" class="form-select" required id="schoolSelect">
+                                <option value="">-- Pilih Sekolah --</option>
+                                {% for s in schools %}
+                                <option value="{{ s.id }}">{{ s.name }} ({{ s.npsn }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <button type="submit"
+                            class="btn btn-primary w-100 d-inline-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-check-lg"></i>
+                            <span>Simpan Konfigurasi</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <span class="icon-badge section-icon text-success">
+                                <i class="bi bi-check2-square"></i>
+                            </span>
+                            <h2 class="h6 fw-bold mb-0">Pilih Ruangan</h2>
+                        </div>
+
+                        <div class="list-group list-group-flush">
+                            {% for room in all_rooms %}
+                            <label class="list-group-item d-flex align-items-start gap-3 py-3">
+                                <input class="form-check-input flex-shrink-0 mt-1" type="checkbox" name="room_ids"
+                                    value="{{ room.id }}">
+                                <div>
+                                    <div class="fw-semibold">{{ room.name }}</div>
+                                    {% if room.description %}
+                                    <small class="text-muted">{{ room.description }}</small><br>
+                                    {% endif %}
+                                    <small class="text-muted">{{ room.aspects|length }} aspek penilaian</small>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</section>
+{% endblock %}
