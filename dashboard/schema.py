@@ -328,6 +328,7 @@ CREATE TABLE IF NOT EXISTS portal_assessment_scores (
     school_room_id INTEGER NOT NULL REFERENCES portal_school_rooms(id) ON DELETE CASCADE,
     aspect_id INTEGER NOT NULL REFERENCES portal_aspects(id) ON DELETE CASCADE,
     score INTEGER NOT NULL CHECK (score >= 0 AND score <= 3),
+    notes TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (assessment_id, school_room_id, aspect_id)
@@ -447,6 +448,7 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS nik TEXT",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS kk_number TEXT",
         "ALTER TABLE portal_assessments ADD COLUMN IF NOT EXISTS period_id INTEGER REFERENCES portal_assessment_periods(id) ON DELETE SET NULL",
+        "ALTER TABLE portal_assessment_scores ADD COLUMN IF NOT EXISTS notes TEXT",
     )
     
     # Execute statements one by one to ensure partial success and better error reporting
