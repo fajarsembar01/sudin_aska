@@ -1,0 +1,76 @@
+{#
+Ranking Card Component - School ranking with tabs
+
+Usage:
+{% from "portal/components/_ranking_card.html" import ranking_card %}
+{{ ranking_card(top_schools=top_schools, bottom_schools=bottom_schools) }}
+#}
+
+{% macro ranking_card(top_schools, bottom_schools) %}
+<div class="card border-0 shadow-sm h-100">
+    <div class="card-body">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="icon-badge section-icon text-warning">
+                <i class="bi bi-trophy"></i>
+            </span>
+            <h6 class="fw-bold mb-0">Perankingan Sekolah</h6>
+        </div>
+        <ul class="nav nav-pills nav-fill mb-3" id="rankTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="best-tab" data-bs-toggle="pill" data-bs-target="#best-pane"
+                    type="button" role="tab">Terbaik</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="worst-tab" data-bs-toggle="pill" data-bs-target="#worst-pane" type="button"
+                    role="tab">Terendah</button>
+            </li>
+        </ul>
+        <div class="tab-content" style="max-height: 220px; overflow-y: auto;">
+            <div class="tab-pane fade show active" id="best-pane" role="tabpanel">
+                {% if top_schools %}
+                <div class="list-group list-group-flush">
+                    {% for s in top_schools %}
+                    <div
+                        class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-bottom-0">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-bold text-muted small" style="width: 20px">{{ loop.index }}</span>
+                            <div>
+                                <div class="fw-semibold small">{{ s['name'] }}</div>
+                                <div class="text-muted" style="font-size: 0.7rem">{{ s['jenjang'] }}</div>
+                            </div>
+                        </div>
+                        {% set pct = ((s['total_score'] or 0) / 3 * 100) %}
+                        <span class="badge bg-primary text-white rounded-pill">{{ "%.1f"|format(pct) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted small text-center my-3">Belum ada data</p>
+                {% endif %}
+            </div>
+            <div class="tab-pane fade" id="worst-pane" role="tabpanel">
+                {% if bottom_schools %}
+                <div class="list-group list-group-flush">
+                    {% for s in bottom_schools %}
+                    <div
+                        class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-bottom-0">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-bold text-muted small" style="width: 20px">{{ loop.index }}</span>
+                            <div>
+                                <div class="fw-semibold small">{{ s['name'] }}</div>
+                                <div class="text-muted" style="font-size: 0.7rem">{{ s['jenjang'] }}</div>
+                            </div>
+                        </div>
+                        {% set pct = ((s['total_score'] or 0) / 3 * 100) %}
+                        <span class="badge bg-danger text-white rounded-pill">{{ "%.1f"|format(pct) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted small text-center my-3">Belum ada data</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}

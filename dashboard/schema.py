@@ -213,6 +213,34 @@ CREATE INDEX IF NOT EXISTS idx_telegram_users_status ON telegram_users (status);
 
 # ===== Portal PANBERSS Schema =====
 
+_PORTAL_KECAMATAN_SQL = """
+CREATE TABLE IF NOT EXISTS portal_kecamatan (
+    id SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    code TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_PORTAL_KECAMATAN_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_portal_kecamatan_name ON portal_kecamatan (name);
+"""
+
+_PORTAL_KELURAHAN_SQL = """
+CREATE TABLE IF NOT EXISTS portal_kelurahan (
+    id SERIAL PRIMARY KEY,
+    kecamatan_id INTEGER NOT NULL REFERENCES portal_kecamatan(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    code TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (kecamatan_id, name)
+);
+"""
+
+_PORTAL_KELURAHAN_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_portal_kelurahan_kecamatan ON portal_kelurahan (kecamatan_id);
+"""
+
 _PORTAL_SCHOOLS_SQL = """
 CREATE TABLE IF NOT EXISTS portal_schools (
     id SERIAL PRIMARY KEY,
@@ -399,6 +427,10 @@ def ensure_dashboard_schema() -> None:
         _TELEGRAM_USERS_SQL,
         _TELEGRAM_USERS_INDEX_STATUS,
         # Portal PANBERSS tables
+        _PORTAL_KECAMATAN_SQL,
+        _PORTAL_KECAMATAN_INDEX_SQL,
+        _PORTAL_KELURAHAN_SQL,
+        _PORTAL_KELURAHAN_INDEX_SQL,
         _PORTAL_SCHOOLS_SQL,
         _PORTAL_SCHOOLS_INDEX_SQL,
         _PORTAL_ROOMS_SQL,
@@ -453,7 +485,25 @@ def ensure_dashboard_schema() -> None:
         "DO $$ BEGIN IF EXISTS(SELECT * FROM information_schema.columns WHERE table_name='portal_assessment_photos' AND column_name='taken_at') THEN ALTER TABLE portal_assessment_photos RENAME COLUMN taken_at TO captured_at; END IF; END $$;",
         "ALTER TABLE portal_assessment_photos ADD COLUMN IF NOT EXISTS captured_at TIMESTAMPTZ",
         "ALTER TABLE portal_assessment_photos ADD COLUMN IF NOT EXISTS notes TEXT",
-        "ALTER TABLE portal_assessment_photos DROP CONSTRAINT IF EXISTS portal_assessment_photos_assessment_id_school_room_id_key",
+        # Clean up duplicates before adding unique constraint (keep latest)
+        """
+        DELETE FROM portal_assessment_photos a USING portal_assessment_photos b
+        WHERE a.assessment_id = b.assessment_id 
+          AND a.school_room_id = b.school_room_id 
+          AND a.created_at < b.created_at
+        """,
+        # Enforce unique constraint for atomic upserts
+        "ALTER TABLE portal_assessment_photos ADD CONSTRAINT portal_assessment_photos_assessment_id_school_room_id_key UNIQUE (assessment_id, school_room_id)", 
+        # Portal schools additional columns
+        "ALTER TABLE portal_schools ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'NEGERI'",
+        "ALTER TABLE portal_schools ADD COLUMN IF NOT EXISTS kelurahan_id INTEGER REFERENCES portal_kelurahan(id) ON DELETE SET NULL",
+        # Drop legacy columns from portal_schools (kecamatan can be derived from kelurahan->kecamatan relation)
+        "ALTER TABLE portal_schools DROP CONSTRAINT IF EXISTS portal_schools_kecamatan_id_fkey",
+        "ALTER TABLE portal_schools DROP COLUMN IF EXISTS kecamatan_id",
+        "ALTER TABLE portal_schools DROP COLUMN IF EXISTS kecamatan",
+        "ALTER TABLE portal_schools DROP COLUMN IF EXISTS kelurahan",
+        # School registration - link dashboard users to schools
+        "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS school_id INTEGER REFERENCES portal_schools(id) ON DELETE SET NULL",
     )
     
     # Execute statements one by one to ensure partial success and better error reporting

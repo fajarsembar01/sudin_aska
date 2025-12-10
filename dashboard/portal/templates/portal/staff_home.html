@@ -65,10 +65,6 @@
                                     <span class="status-badge status-submitted">
                                         <i class="bi bi-check-circle"></i> Submitted
                                     </span>
-                                    {% elif a.status == 'verified' %}
-                                    <span class="status-badge status-verified">
-                                        <i class="bi bi-patch-check"></i> Verified
-                                    </span>
                                     {% endif %}
                                     {% if a.total_score %}
                                     <div class="small text-muted mt-1">Skor: {{ "%.2f"|format(a.total_score) }}</div>

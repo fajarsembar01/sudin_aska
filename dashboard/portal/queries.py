@@ -11,6 +11,8 @@ from ..db_access import get_cursor
 def list_portal_schools(
     search: Optional[str] = None,
     jenjang: Optional[str] = None,
+    kecamatan_id: Optional[int] = None,
+    kelurahan_id: Optional[int] = None,
     active_only: bool = True,
 ) -> List[Dict[str, Any]]:
     """Fetch all schools available for assessment."""
@@ -18,25 +20,37 @@ def list_portal_schools(
     params = []
     
     if active_only:
-        conditions.append("active = TRUE")
+        conditions.append("s.active = TRUE")
     
     if jenjang:
-        conditions.append("jenjang = %s")
+        conditions.append("s.jenjang = %s")
         params.append(jenjang)
     
+    if kecamatan_id:
+        conditions.append("l.kecamatan_id = %s")
+        params.append(kecamatan_id)
+    
+    if kelurahan_id:
+        conditions.append("s.kelurahan_id = %s")
+        params.append(kelurahan_id)
+    
     if search:
-        conditions.append("(name ILIKE %s OR npsn ILIKE %s)")
+        conditions.append("(s.name ILIKE %s OR s.npsn ILIKE %s)")
         params.extend([f"%{search}%", f"%{search}%"])
     
     where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
     
     query = f"""
         SELECT 
-            id, npsn, name, jenjang, alamat, kelurahan, kecamatan,
-            user_id, active, created_at
-        FROM portal_schools
+            s.id, s.npsn, s.name, s.jenjang, s.alamat, s.status,
+            s.kelurahan_id, s.user_id, s.active, s.created_at,
+            l.name as kelurahan_name,
+            k.name as kecamatan_name
+        FROM portal_schools s
+        LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+        LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
         {where_clause}
-        ORDER BY jenjang, name
+        ORDER BY k.name, l.name, s.jenjang, s.name
     """
     
     with get_cursor() as cur:
@@ -49,10 +63,14 @@ def get_school_by_id(school_id: int) -> Optional[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT id, npsn, name, jenjang, alamat, kelurahan, kecamatan,
-                   user_id, active, created_at
-            FROM portal_schools
-            WHERE id = %s
+            SELECT s.id, s.npsn, s.name, s.jenjang, s.alamat, s.status,
+                   s.kelurahan_id, s.user_id, s.active, s.created_at,
+                   l.name as kelurahan_name,
+                   k.name as kecamatan_name
+            FROM portal_schools s
+            LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            WHERE s.id = %s
             """,
             (school_id,),
         )
@@ -311,40 +329,54 @@ def fetch_random_photos(
     period_id: Optional[int] = None,
     order: str = "random",
 ) -> List[Dict[str, Any]]:
-    """Fetch photos for stats gallery, with room score summary."""
-    where = "WHERE a.status IN ('submitted', 'verified')"
+    """Fetch photos for stats gallery, with room score summary.
+    
+    Returns one photo per unique school+room combination.
+    Score is the average of all aspect scores for that room.
+    """
+    where = "WHERE a.status = 'submitted'"
     params = []
     if period_id:
         where += " AND a.period_id = %s"
         params.append(period_id)
-        
+    
+    # Use subquery to get one photo per school+room combo with avg score
     query = f"""
-        SELECT 
-            p.photo_path, 
-            s.name as school_name, 
-            r.name as room_name,
-            p.captured_at,
-            p.latitude,
-            p.longitude,
-            COALESCE(AVG(sc.score), 0)::DECIMAL(5,2) AS room_score
-        FROM portal_assessment_photos p
-        JOIN portal_assessments a ON p.assessment_id = a.id
-        JOIN portal_schools s ON a.school_id = s.id
-        JOIN portal_school_rooms sr ON p.school_room_id = sr.id
-        JOIN portal_rooms r ON sr.room_id = r.id
-        LEFT JOIN portal_assessment_scores sc 
-            ON sc.assessment_id = p.assessment_id 
-           AND sc.school_room_id = p.school_room_id
-        {where}
-        GROUP BY p.photo_path, s.name, r.name, p.captured_at, p.latitude, p.longitude
+        SELECT * FROM (
+            SELECT DISTINCT ON (s.id, r.id)
+                p.photo_path, 
+                s.name as school_name, 
+                s.id as school_id,
+                r.name as room_name,
+                r.id as room_id,
+                p.captured_at,
+                p.latitude,
+                p.longitude,
+                (
+                    SELECT COALESCE(AVG(sc2.score), 0)::DECIMAL(5,2)
+                    FROM portal_assessment_scores sc2
+                    JOIN portal_school_rooms sr2 ON sc2.school_room_id = sr2.id
+                    WHERE sr2.school_id = s.id AND sr2.room_id = r.id
+                ) AS room_score
+            FROM portal_assessment_photos p
+            JOIN portal_assessments a ON p.assessment_id = a.id
+            JOIN portal_schools s ON a.school_id = s.id
+            JOIN portal_school_rooms sr ON p.school_room_id = sr.id
+            JOIN portal_rooms r ON sr.room_id = r.id
+            {where}
+            ORDER BY s.id, r.id, p.captured_at DESC NULLS LAST
+        ) sub
     """
+    
     order_clause = "ORDER BY RANDOM()"
     if order == "newest":
-        order_clause = "ORDER BY p.captured_at DESC NULLS LAST"
+        order_clause = "ORDER BY captured_at DESC NULLS LAST"
     elif order == "lowest":
-        order_clause = "ORDER BY room_score ASC"
+        order_clause = "ORDER BY room_score ASC NULLS LAST"
+    
     query += f" {order_clause} LIMIT %s"
     params.append(limit)
+    
     with get_cursor() as cur:
         cur.execute(query, params)
         return [dict(row) for row in cur.fetchall()]
@@ -360,34 +392,22 @@ def save_assessment_photo(
 ) -> Dict[str, Any]:
     """Save a photo for an assessment room (upsert per room).
     
-    Some databases may not have the UNIQUE constraint; use update-then-insert to avoid ON CONFLICT errors.
+    Uses atomic INSERT ... ON CONFLICT to handle upserts safely.
     """
     with get_cursor(commit=True) as cur:
-        # Try update first
-        cur.execute(
-            """
-            UPDATE portal_assessment_photos
-            SET photo_path = %s,
-                latitude = %s,
-                longitude = %s,
-                captured_at = COALESCE(%s, captured_at, NOW()),
-                created_at = COALESCE(created_at, NOW())
-            WHERE assessment_id = %s AND school_room_id = %s
-            RETURNING id, assessment_id, school_room_id, photo_path, latitude, longitude, COALESCE(captured_at, created_at) AS captured_at
-            """,
-            (photo_path, latitude, longitude, captured_at, assessment_id, school_room_id),
-        )
-        row = cur.fetchone()
-        if row:
-            return dict(row)
-
-        # Insert if not updated
         cur.execute(
             """
             INSERT INTO portal_assessment_photos 
-                (assessment_id, school_room_id, photo_path, latitude, longitude, captured_at)
-            VALUES (%s, %s, %s, %s, %s, COALESCE(%s, NOW()))
-            RETURNING id, assessment_id, school_room_id, photo_path, latitude, longitude, COALESCE(captured_at, created_at) AS captured_at
+                (assessment_id, school_room_id, photo_path, latitude, longitude, captured_at, created_at)
+            VALUES (%s, %s, %s, %s, %s, COALESCE(%s, NOW()), NOW())
+            ON CONFLICT (assessment_id, school_room_id)
+            DO UPDATE SET 
+                photo_path = EXCLUDED.photo_path,
+                latitude = EXCLUDED.latitude,
+                longitude = EXCLUDED.longitude,
+                captured_at = EXCLUDED.captured_at,
+                created_at = NOW()
+            RETURNING id, assessment_id, school_room_id, photo_path, latitude, longitude, captured_at
             """,
             (assessment_id, school_room_id, photo_path, latitude, longitude, captured_at),
         )
@@ -577,8 +597,7 @@ def fetch_portal_stats(period_id: Optional[int] = None) -> Dict[str, Any]:
                 COUNT(*) as total,
                 COUNT(*) FILTER (WHERE status = 'draft' {pid_cond}) as drafts,
                 COUNT(*) FILTER (WHERE status = 'submitted' {pid_cond}) as submitted,
-                COUNT(*) FILTER (WHERE status = 'verified' {pid_cond}) as verified,
-                AVG(total_score) FILTER (WHERE status IN ('submitted', 'verified') {pid_cond}) as avg_score
+                AVG(total_score) FILTER (WHERE status = 'submitted' {pid_cond}) as avg_score
             FROM portal_assessments
             WHERE 1=1 {pid_cond}
         """
@@ -593,9 +612,144 @@ def fetch_portal_stats(period_id: Optional[int] = None) -> Dict[str, Any]:
         }
 
 
+def fetch_score_distribution(period_id: Optional[int] = None) -> List[int]:
+    """Calculate score distribution (9 bins: <60, 60-65, ..., 95-100)."""
+    where_clause = "WHERE status = 'submitted' AND total_score IS NOT NULL"
+    params = []
+    
+    if period_id:
+        where_clause += " AND period_id = %s"
+        params.append(period_id)
+        
+    query = f"SELECT total_score FROM portal_assessments {where_clause}"
+    
+    distribution = [0] * 9  # 9 Buckets
+    
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        rows = cur.fetchall()
+        
+        for row in rows:
+            score = row['total_score']
+            if score is None: continue
+            
+            score_100 = (float(score) / 3.0) * 100
+            
+            if score_100 < 60:
+                idx = 0
+            elif score_100 >= 95:
+                idx = 8
+            else:
+                # Range 60 <= score < 95
+                # 60-65 -> idx 1
+                # 65-70 -> idx 2
+                idx = int((score_100 - 60) // 5) + 1
+            
+            if 0 <= idx < 9:
+                distribution[idx] += 1
+            
+    return distribution
+
+
+
+def fetch_map_data(period_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    """Fetch school locations and status for the map.
+    
+    Returns one marker per school with:
+    - Average school score (from all assessments, not per room)
+    - Location from the most recent photo that has GPS coordinates
+    """
+    params = []
+    period_filter = ""
+    if period_id:
+        period_filter = "AND a.period_id = %s"
+        params.append(period_id)
+    
+    # Subquery to get most recent photo with GPS per school
+    query = f"""
+        SELECT 
+            s.id, 
+            s.name, 
+            s.npsn, 
+            s.jenjang,
+            k.name as kecamatan, 
+            l.name as kelurahan,
+            -- Get school average score from all assessments
+            (
+                SELECT AVG(a2.total_score)::DECIMAL(5,2)
+                FROM portal_assessments a2
+                WHERE a2.school_id = s.id 
+                  AND a2.status = 'submitted'
+                  AND a2.total_score IS NOT NULL
+                  {period_filter}
+            ) AS school_avg_score,
+            -- Get latest status
+            (
+                SELECT a3.status 
+                FROM portal_assessments a3 
+                WHERE a3.school_id = s.id 
+                  AND a3.status = 'submitted'
+                  {period_filter}
+                ORDER BY a3.submitted_at DESC NULLS LAST
+                LIMIT 1
+            ) AS status,
+            -- Get location from most recent photo with GPS
+            (
+                SELECT p.latitude 
+                FROM portal_assessment_photos p
+                JOIN portal_assessments a4 ON p.assessment_id = a4.id
+                WHERE a4.school_id = s.id 
+                  AND p.latitude IS NOT NULL
+                  {period_filter}
+                ORDER BY p.captured_at DESC NULLS LAST
+                LIMIT 1
+            ) AS latitude,
+            (
+                SELECT p.longitude 
+                FROM portal_assessment_photos p
+                JOIN portal_assessments a5 ON p.assessment_id = a5.id
+                WHERE a5.school_id = s.id 
+                  AND p.longitude IS NOT NULL
+                  {period_filter}
+                ORDER BY p.captured_at DESC NULLS LAST
+                LIMIT 1
+            ) AS longitude
+        FROM portal_schools s
+        LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+        LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+        WHERE EXISTS (
+            SELECT 1 FROM portal_assessments a 
+            WHERE a.school_id = s.id 
+              AND a.status = 'submitted'
+              {period_filter}
+        )
+    """
+    
+    # Duplicate params for each subquery that uses period_filter (5 times)
+    if period_id:
+        params = [period_id] * 5
+    
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        data = []
+        for row in cur.fetchall():
+            item = dict(row)
+            # Only include schools with valid GPS
+            if not item.get('latitude') or not item.get('longitude'):
+                continue
+            if item.get('latitude'): item['latitude'] = float(item['latitude'])
+            if item.get('longitude'): item['longitude'] = float(item['longitude'])
+            if item.get('school_avg_score') is not None: 
+                item['total_score'] = float(item['school_avg_score'])
+            else:
+                item['total_score'] = None
+            data.append(item)
+        return data
+
+
 def fetch_top_schools(limit: int = 5, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
     """Fetch top performing schools based on their latest assessment."""
-    where = "WHERE a.status IN ('submitted', 'verified')"
+    where = "WHERE a.status = 'submitted'"
     params = []
     if period_id:
         where += " AND a.period_id = %s"
@@ -626,7 +780,7 @@ def fetch_top_schools(limit: int = 5, period_id: Optional[int] = None) -> List[D
 
 def fetch_bottom_schools(limit: int = 5, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
     """Fetch lowest performing schools based on their latest assessment."""
-    where = "WHERE a.status IN ('submitted', 'verified')"
+    where = "WHERE a.status = 'submitted'"
     params = []
     if period_id:
         where += " AND a.period_id = %s"
@@ -657,8 +811,8 @@ def fetch_bottom_schools(limit: int = 5, period_id: Optional[int] = None) -> Lis
 
 
 def list_recent_assessments(limit: int = 50, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
-    """List recent submitted/verified assessments for admin dashboard."""
-    where = "WHERE a.status IN ('submitted', 'verified')"
+    """List recent submitted assessments for admin dashboard."""
+    where = "WHERE a.status = 'submitted'"
     params = []
     if period_id:
         where += " AND a.period_id = %s"
@@ -689,9 +843,9 @@ def list_recent_assessments(limit: int = 50, period_id: Optional[int] = None) ->
         return [dict(zip(columns, row)) for row in cur.fetchall()]
 
 def fetch_school_avg_scores(period_id: Optional[int] = None) -> Dict[int, float]:
-    """Return map {school_id: avg_score} for submitted/verified assessments."""
+    """Return map {school_id: avg_score} for submitted assessments."""
     params = []
-    where = "WHERE status IN ('submitted', 'verified')"
+    where = "WHERE status = 'submitted'"
     if period_id:
         where += " AND period_id = %s"
         params.append(period_id)
@@ -723,6 +877,43 @@ def delete_photo(photo_id: int, assessment_id: int, school_room_id: int) -> bool
             (photo_id, assessment_id, school_room_id),
         )
         return cur.fetchone() is not None
+
+
+def fetch_related_photos(
+    school_id: int,
+    room_id: int,
+    limit: int = 10,
+) -> List[Dict[str, Any]]:
+    """Fetch other photos from the same school and room type for comparison."""
+    query = """
+        SELECT 
+            p.photo_path, 
+            s.name as school_name, 
+            s.id as school_id,
+            r.name as room_name,
+            r.id as room_id,
+            p.captured_at,
+            p.latitude,
+            p.longitude,
+            COALESCE(AVG(sc.score), 0)::DECIMAL(5,2) AS room_score
+        FROM portal_assessment_photos p
+        JOIN portal_assessments a ON p.assessment_id = a.id
+        JOIN portal_schools s ON a.school_id = s.id
+        JOIN portal_school_rooms sr ON p.school_room_id = sr.id
+        JOIN portal_rooms r ON sr.room_id = r.id
+        LEFT JOIN portal_assessment_scores sc 
+            ON sc.assessment_id = p.assessment_id 
+           AND sc.school_room_id = p.school_room_id
+        WHERE a.status = 'submitted'
+          AND s.id = %s
+          AND r.id = %s
+        GROUP BY p.photo_path, s.name, s.id, r.name, r.id, p.captured_at, p.latitude, p.longitude
+        ORDER BY p.captured_at DESC NULLS LAST
+        LIMIT %s
+    """
+    with get_cursor() as cur:
+        cur.execute(query, (school_id, room_id, limit))
+        return [dict(row) for row in cur.fetchall()]
 
 
 # ===== Admin/Setup Queries =====
@@ -770,25 +961,25 @@ def create_school(
     name: str,
     jenjang: str = "SD",
     alamat: Optional[str] = None,
-    kelurahan: Optional[str] = None,
-    kecamatan: Optional[str] = None,
+    kelurahan_id: Optional[int] = None,
+    status: str = "NEGERI",
 ) -> Dict[str, Any]:
     """Create a new school record."""
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
-            INSERT INTO portal_schools (npsn, name, jenjang, alamat, kelurahan, kecamatan)
+            INSERT INTO portal_schools (npsn, name, jenjang, alamat, kelurahan_id, status)
             VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (npsn) DO UPDATE SET
                 name = EXCLUDED.name,
                 jenjang = EXCLUDED.jenjang,
                 alamat = EXCLUDED.alamat,
-                kelurahan = EXCLUDED.kelurahan,
-                kecamatan = EXCLUDED.kecamatan,
+                kelurahan_id = EXCLUDED.kelurahan_id,
+                status = EXCLUDED.status,
                 updated_at = NOW()
-            RETURNING id, npsn, name, jenjang, alamat, kelurahan, kecamatan
+            RETURNING id, npsn, name, jenjang, alamat, kelurahan_id, status
             """,
-            (npsn, name, jenjang, alamat, kelurahan, kecamatan),
+            (npsn, name, jenjang, alamat, kelurahan_id, status),
         )
         return dict(cur.fetchone())
 
@@ -819,4 +1010,189 @@ def list_all_staff() -> List[Dict[str, Any]]:
     """List all staff users."""
     with get_cursor() as cur:
         cur.execute("SELECT id, full_name, email FROM dashboard_users WHERE role = 'staff' ORDER BY full_name")
+        return [dict(row) for row in cur.fetchall()]
+
+
+def list_kecamatan() -> List[Dict[str, Any]]:
+    """List all kecamatan for dropdown selection."""
+    with get_cursor() as cur:
+        cur.execute("SELECT id, name, code FROM portal_kecamatan ORDER BY name")
+        return [dict(row) for row in cur.fetchall()]
+
+
+def list_kelurahan(kecamatan_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    """List kelurahan, optionally filtered by kecamatan."""
+    with get_cursor() as cur:
+        if kecamatan_id:
+            cur.execute(
+                "SELECT id, kecamatan_id, name FROM portal_kelurahan WHERE kecamatan_id = %s ORDER BY name",
+                (kecamatan_id,)
+            )
+        else:
+            cur.execute(
+                """
+                SELECT l.id, l.kecamatan_id, l.name, k.name as kecamatan_name
+                FROM portal_kelurahan l
+                JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+                ORDER BY k.name, l.name
+                """
+            )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def search_schools_by_npsn(query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """Search schools by NPSN or name for autocomplete."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT s.id, s.npsn, s.name, s.jenjang, s.status,
+                   l.name as kelurahan_name, k.name as kecamatan_name
+            FROM portal_schools s
+            LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            WHERE s.active = TRUE AND (s.npsn LIKE %s OR s.name ILIKE %s)
+            ORDER BY 
+                CASE WHEN s.npsn LIKE %s THEN 0 ELSE 1 END,
+                s.npsn
+            LIMIT %s
+            """,
+            (f"{query}%", f"%{query}%", f"{query}%", limit),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_school_by_npsn(npsn: str) -> Optional[Dict[str, Any]]:
+    """Get a single school by NPSN."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT s.id, s.npsn, s.name, s.jenjang, s.status,
+                   l.name as kelurahan_name, k.name as kecamatan_name
+            FROM portal_schools s
+            LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            WHERE s.npsn = %s AND s.active = TRUE
+            """,
+            (npsn,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+def get_portal_schools_paginated(
+    page: int = 1,
+    per_page: int = 20,
+    search: Optional[str] = None,
+    jenjang: Optional[str] = None,
+    active_only: bool = True,
+) -> Dict[str, Any]:
+    """Fetch paginated schools."""
+    conditions = []
+    params = []
+    
+    if active_only:
+        conditions.append("s.active = TRUE")
+    
+    if jenjang:
+        conditions.append("s.jenjang = %s")
+        params.append(jenjang)
+    
+    if search:
+        conditions.append("(s.name ILIKE %s OR s.npsn ILIKE %s)")
+        params.extend([f"%{search}%", f"%{search}%"])
+    
+    where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
+    
+    # 1. Get total count
+    count_query = f"""
+        SELECT COUNT(*) as total
+        FROM portal_schools s
+        LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+        LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+        {where_clause}
+    """
+    
+    items = []
+    total = 0
+    pages = 0
+    
+    with get_cursor() as cur:
+        cur.execute(count_query, params)
+        total = cur.fetchone()["total"]
+        
+        import math
+        pages = math.ceil(total / per_page) if per_page > 0 else 1
+        
+        if page > pages and pages > 0:
+            page = pages
+        if page < 1:
+            page = 1
+            
+        offset = (page - 1) * per_page
+        
+        # 2. Get items
+        query = f"""
+            SELECT 
+                s.id, s.npsn, s.name, s.jenjang, s.alamat, s.status,
+                s.kelurahan_id, s.user_id, s.active, s.created_at,
+                l.name as kelurahan_name,
+                k.name as kecamatan_name
+            FROM portal_schools s
+            LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            {where_clause}
+            ORDER BY k.name, l.name, s.jenjang, s.name
+            LIMIT %s OFFSET %s
+        """
+        
+        # Add LIMIT/OFFSET params
+        query_params = params + [per_page, offset]
+        
+        cur.execute(query, query_params)
+        items = [dict(row) for row in cur.fetchall()]
+        
+    return {
+        "items": items,
+        "total": total,
+        "pages": pages,
+        "current_page": page, 
+        "per_page": per_page
+    }
+
+def fetch_export_data(period_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    """Fetch all assessment data for Excel export."""
+    where_clause = "WHERE a.status = 'submitted'"
+    params = []
+    
+    if period_id:
+        where_clause += " AND a.period_id = %s"
+        params.append(period_id)
+        
+    query = f"""
+        SELECT 
+            a.submitted_at::DATE as tanggal,
+            s.name as sekolah,
+            s.npsn,
+            s.jenjang,
+            k.name as kecamatan,
+            l.name as kelurahan,
+            r.name as ruangan,
+            asp.name as aspek,
+            sc.score as nilai,
+            sc.notes as catatan,
+            u.full_name as penilai
+        FROM portal_assessment_scores sc
+        JOIN portal_assessments a ON sc.assessment_id = a.id
+        JOIN portal_schools s ON a.school_id = s.id
+        LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+        LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+        JOIN portal_school_rooms sr ON sc.school_room_id = sr.id
+        JOIN portal_rooms r ON sr.room_id = r.id
+        JOIN portal_aspects asp ON sc.aspect_id = asp.id
+        LEFT JOIN dashboard_users u ON a.staff_id = u.id
+        {where_clause}
+        ORDER BY s.name, r.name, asp.sort_order
+    """
+    
+    with get_cursor() as cur:
+        cur.execute(query, params)
         return [dict(row) for row in cur.fetchall()]

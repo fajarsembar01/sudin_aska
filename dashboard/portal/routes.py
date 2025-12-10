@@ -55,6 +55,10 @@ from .queries import (
     fetch_school_avg_scores,
     fetch_bottom_schools,
     delete_photo,
+    list_kecamatan,
+    list_kelurahan,
+    search_schools_by_npsn,
+    get_school_by_npsn,
 )
 
 portal_bp = Blueprint(
@@ -130,11 +134,21 @@ def schools() -> Response:
     
     search = request.args.get("q", "").strip()
     jenjang = request.args.get("jenjang", "").strip() or None
+    page = request.args.get("page", 1, type=int)
+    per_page = 20
     
-    schools_list = list_portal_schools(search=search or None, jenjang=jenjang)
+    from .queries import get_portal_schools_paginated
+    pagination = get_portal_schools_paginated(
+        page=page, 
+        per_page=per_page, 
+        search=search or None, 
+        jenjang=jenjang
+    )
+    
     return render_template(
         "portal/school_select.html",
-        schools=schools_list,
+        schools=pagination["items"],
+        pagination=pagination,
         search=search,
         jenjang=jenjang,
     )
@@ -513,12 +527,39 @@ def delete_assessment_route(assessment_id: int) -> Response:
 def sekolah_rooms() -> Response:
     """School configures which rooms they have."""
     user = current_user()
-    # For now, we'll use assigned school from user metadata
-    # This could be enhanced to look up school by user_id in portal_schools
+    
+    # Get user's school_id from database
+    user_school = None
+    if user.get("role") == "sekolah":
+        from dashboard.db_access import get_cursor
+        with get_cursor() as cur:
+            cur.execute(
+                """
+                SELECT s.id, s.npsn, s.name, s.jenjang, s.status,
+                       l.name as kelurahan_name, k.name as kecamatan_name
+                FROM dashboard_users u
+                JOIN portal_schools s ON u.school_id = s.id
+                LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+                LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+                WHERE u.id = %s
+                """,
+                (user["id"],),
+            )
+            row = cur.fetchone()
+            if row:
+                user_school = dict(row)
+        
+        if not user_school:
+            flash("Akun Anda belum terhubung dengan sekolah. Hubungi admin.", "warning")
+            return redirect(url_for("portal.home"))
     
     if request.method == "POST":
         school_id = request.form.get("school_id")
         room_ids = request.form.getlist("room_ids", type=int)
+        
+        # For sekolah role, only allow updating their own school
+        if user.get("role") == "sekolah" and user_school:
+            school_id = str(user_school["id"])
         
         if school_id:
             try:
@@ -528,12 +569,27 @@ def sekolah_rooms() -> Response:
                 flash(f"Error: {e}", "danger")
     
     all_rooms = list_portal_rooms()
-    schools = list_portal_schools()
+    schools = [user_school] if user_school else list_portal_schools()
+    
+    # Get saved room IDs for current school
+    saved_room_ids = set()
+    current_school_id = None
+    if user_school:
+        current_school_id = user_school["id"]
+    elif request.args.get("school_id"):
+        current_school_id = int(request.args.get("school_id"))
+    
+    if current_school_id:
+        from .queries import list_school_rooms
+        saved_rooms = list_school_rooms(current_school_id)
+        saved_room_ids = {r["room_id"] for r in saved_rooms}
     
     return render_template(
         "portal/sekolah_rooms.html",
         all_rooms=all_rooms,
         schools=schools,
+        user_school=user_school,
+        saved_room_ids=saved_room_ids,
     )
 
 
@@ -544,14 +600,17 @@ def sekolah_rooms() -> Response:
 @role_required("admin")
 def admin_stats() -> Response:
     """Admin view of portal statistics."""
+    # Trigger reload
     period_id = request.args.get("period_id", type=int)
     
     stats = fetch_portal_stats(period_id)
+    from .queries import fetch_score_distribution
+    score_dist = fetch_score_distribution(period_id)
     recent_assessments = list_recent_assessments(period_id=period_id)
     top_schools = fetch_top_schools(period_id=period_id)
     bottom_schools = fetch_bottom_schools(period_id=period_id)
     photo_order = request.args.get("photo_order", "random")
-    random_photos = fetch_random_photos(period_id=period_id, order=photo_order, limit=12)
+    random_photos = fetch_random_photos(period_id=period_id, order=photo_order, limit=24)
     school_avg_map = fetch_school_avg_scores(period_id=period_id)
     periods = list_periods()
     all_schools = list_portal_schools()
@@ -560,6 +619,7 @@ def admin_stats() -> Response:
     return render_template(
         "portal/admin_stats.html",
         stats=stats,
+        score_dist=score_dist,
         recent_assessments=recent_assessments,
         top_schools=top_schools,
         bottom_schools=bottom_schools,
@@ -573,15 +633,103 @@ def admin_stats() -> Response:
     )
 
 
+@portal_bp.route("/admin/export/excel")
+@role_required("admin")
+def export_excel() -> Response:
+    """Export assessment data to Excel."""
+    try:
+        import pandas as pd
+        import io
+        from flask import send_file
+    except ImportError:
+        flash("Library pandas/openpyxl belum terinstall.", "danger")
+        return redirect(url_for("portal.admin_stats"))
+
+    period_id = request.args.get("period_id", type=int)
+    
+    from .queries import fetch_export_data
+    data = fetch_export_data(period_id)
+    
+    if not data:
+        flash("Tidak ada data untuk diexport.", "warning")
+        return redirect(url_for("portal.admin_stats"))
+        
+    df = pd.DataFrame(data)
+    
+    # Rename columns for nicer headers if needed (already renamed in query SQL)
+    
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Data Penilaian')
+        
+    output.seek(0)
+    
+    filename = f"Laporan_Penilaian_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=filename,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+@portal_bp.route("/admin/map-data")
+@role_required("admin")
+def admin_map_data() -> Response:
+    """Return JSON data for school locations map."""
+    period_id = request.args.get("period_id", type=int)
+    from .queries import fetch_map_data
+    data = fetch_map_data(period_id)
+    return jsonify(data)
+
+
 @portal_bp.route("/admin/photos")
 @role_required("admin")
 def admin_photos_partial() -> Response:
     """Return gallery grid partial for photo order changes (AJAX)."""
     period_id = request.args.get("period_id", type=int)
     photo_order = request.args.get("photo_order", "random")
-    photos = fetch_random_photos(period_id=period_id, order=photo_order, limit=12)
+    photos = fetch_random_photos(period_id=period_id, order=photo_order, limit=24)
     return render_template("portal/_gallery_grid.html", random_photos=photos)
 
+
+@portal_bp.route("/admin/related-photos")
+@role_required("admin")
+def admin_related_photos() -> Response:
+    """Return related photos for the same school and room type (AJAX JSON)."""
+    from .queries import fetch_related_photos
+    school_id = request.args.get("school_id", type=int)
+    room_id = request.args.get("room_id", type=int)
+    
+    if not school_id or not room_id:
+        return jsonify([])
+    
+    photos = fetch_related_photos(school_id=school_id, room_id=room_id, limit=10)
+    
+    # Format photo URLs
+    result = []
+    for p in photos:
+        filename = (p.get("photo_path") or "").split("/")[-1]
+        if p.get("photo_path", "").startswith("http"):
+            photo_url = p["photo_path"]
+        else:
+            photo_url = url_for("portal.uploaded_file", filename=filename) if filename else None
+        
+        score_base = float(p.get("room_score") or 0)
+        score_pct = (score_base / 3 * 100) if score_base else 0
+        
+        result.append({
+            "photo_url": photo_url,
+            "school_name": p.get("school_name"),
+            "room_name": p.get("room_name"),
+            "score": round(score_pct, 1),
+            "captured_at": p["captured_at"].isoformat() if p.get("captured_at") else None,
+            "latitude": float(p["latitude"]) if p.get("latitude") else None,
+            "longitude": float(p["longitude"]) if p.get("longitude") else None,
+        })
+    
+    return jsonify(result)
 
 @portal_bp.route("/admin/periods", methods=["POST"])
 @role_required("admin")
@@ -642,10 +790,14 @@ def admin_setup() -> Response:
     """Admin setup for rooms and aspects."""
     rooms = list_portal_rooms(active_only=False)
     schools = list_portal_schools(active_only=False)
+    kecamatan_list = list_kecamatan()
+    kelurahan_list = list_kelurahan()
     return render_template(
         "portal/admin_setup.html",
         rooms=rooms,
         schools=schools,
+        kecamatan_list=kecamatan_list,
+        kelurahan_list=kelurahan_list,
     )
 
 
@@ -692,7 +844,6 @@ def add_aspect() -> Response:
     
     return redirect(url_for("portal.admin_setup"))
 
-
 @portal_bp.route("/admin/setup/school", methods=["POST"])
 @role_required("admin")
 def add_school() -> Response:
@@ -701,17 +852,111 @@ def add_school() -> Response:
     name = request.form.get("name", "").strip()
     jenjang = request.form.get("jenjang", "SD").strip()
     alamat = request.form.get("alamat", "").strip() or None
-    kelurahan = request.form.get("kelurahan", "").strip() or None
-    kecamatan = request.form.get("kecamatan", "").strip() or None
+    kelurahan_id = request.form.get("kelurahan_id", type=int)
+    status = request.form.get("status", "NEGERI").strip()
     
     if not npsn or not name:
         flash("NPSN dan nama sekolah wajib diisi.", "warning")
         return redirect(url_for("portal.admin_setup"))
     
+    if not kelurahan_id:
+        flash("Kelurahan wajib dipilih.", "warning")
+        return redirect(url_for("portal.admin_setup"))
+    
     try:
-        create_school(npsn, name, jenjang, alamat, kelurahan, kecamatan)
+        create_school(npsn, name, jenjang, alamat, kelurahan_id, status)
         flash(f"Sekolah '{name}' berhasil ditambahkan.", "success")
     except Exception as e:
         flash(f"Error: {e}", "danger")
     
     return redirect(url_for("portal.admin_setup"))
+
+
+# ===== School Registration =====
+
+@portal_bp.route("/api/schools/search")
+def search_schools_api() -> Response:
+    """API endpoint for NPSN autocomplete search."""
+    q = request.args.get("q", "").strip()
+    if len(q) < 3:
+        return jsonify([])
+    
+    schools = search_schools_by_npsn(q, limit=10)
+    return jsonify([
+        {
+            "id": s["id"],
+            "npsn": s["npsn"],
+            "name": s["name"],
+            "jenjang": s["jenjang"],
+            "kecamatan": s.get("kecamatan_name") or "",
+        }
+        for s in schools
+    ])
+
+
+@portal_bp.route("/register", methods=["GET", "POST"])
+def register_school() -> Response:
+    """School account registration page."""
+    from werkzeug.security import generate_password_hash
+    from dashboard.queries import get_user_by_email
+    
+    # If user is logged in, redirect to home
+    if current_user():
+        return redirect(url_for("portal.home"))
+    
+    if request.method == "POST":
+        npsn = request.form.get("npsn", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+        
+        # Validate inputs
+        errors = []
+        if not npsn:
+            errors.append("NPSN sekolah wajib dipilih.")
+        if not email:
+            errors.append("Email wajib diisi.")
+        if not password:
+            errors.append("Password wajib diisi.")
+        if password != confirm_password:
+            errors.append("Password dan konfirmasi tidak cocok.")
+        if len(password) < 6:
+            errors.append("Password minimal 6 karakter.")
+        
+        # Check if school exists
+        school = get_school_by_npsn(npsn) if npsn else None
+        if npsn and not school:
+            errors.append(f"Sekolah dengan NPSN {npsn} tidak ditemukan.")
+        
+        # Check if email already registered
+        if email and get_user_by_email(email):
+            errors.append("Email sudah terdaftar. Silakan login.")
+        
+        if errors:
+            for err in errors:
+                flash(err, "warning")
+            return render_template("portal/register_school.html", npsn=npsn, email=email)
+        
+        # Create user account with role "sekolah"
+        try:
+            password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=12)
+            from dashboard.db_access import get_cursor
+            
+            with get_cursor(commit=True) as cur:
+                cur.execute(
+                    """
+                    INSERT INTO dashboard_users (email, full_name, password_hash, role, school_id)
+                    VALUES (%s, %s, %s, %s, %s)
+                    RETURNING id
+                    """,
+                    (email, school["name"], password_hash, "sekolah", school["id"]),
+                )
+            
+            flash(f"Pendaftaran berhasil! Silakan login dengan email {email}.", "success")
+            return redirect(url_for("auth.login"))
+        
+        except Exception as e:
+            flash(f"Gagal membuat akun: {e}", "danger")
+            return render_template("portal/register_school.html", npsn=npsn, email=email)
+    
+    return render_template("portal/register_school.html")

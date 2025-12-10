@@ -23,13 +23,40 @@
                 <div class="card border-0 shadow-sm sticky-top" style="top: 80px;">
                     <div class="card-body">
                         <div class="mb-3">
+                            {% if user_school %}
+                            <!-- Sekolah role: show fixed school info -->
+                            <label class="form-label fw-semibold">Sekolah Anda</label>
+                            <div class="p-3 rounded-3 border" style="background-color: var(--bg-subtle);">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="flex-shrink-0">
+                                        <span class="icon-badge text-primary">
+                                            <i class="bi bi-building"></i>
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0">{{ user_school.name }}</h6>
+                                        <small class="text-muted">
+                                            {{ user_school.npsn }} • {{ user_school.jenjang }}
+                                            {% if user_school.kecamatan_name %} • {{ user_school.kecamatan_name }}{%
+                                            endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="school_id" value="{{ user_school.id }}">
+                            {% else %}
+                            <!-- Admin/Staff: show dropdown -->
                             <label class="form-label fw-semibold">Pilih Sekolah</label>
-                            <select name="school_id" class="form-select" required id="schoolSelect">
+                            <select name="school_id" class="form-select" required id="schoolSelect"
+                                onchange="if(this.value) window.location.href = window.location.pathname + '?school_id=' + this.value">
                                 <option value="">-- Pilih Sekolah --</option>
                                 {% for s in schools %}
-                                <option value="{{ s.id }}">{{ s.name }} ({{ s.npsn }})</option>
+                                <option value="{{ s.id }}" {% if request.args.get('school_id') and
+                                    request.args.get('school_id')|int==s.id %}selected{% endif %}>{{ s.name }} ({{
+                                    s.npsn }})</option>
                                 {% endfor %}
                             </select>
+                            {% endif %}
                         </div>
 
                         <button type="submit"
@@ -44,18 +71,26 @@
             <div class="col-lg-8">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body">
-                        <div class="d-flex align-items-center gap-3 mb-3">
-                            <span class="icon-badge section-icon text-success">
-                                <i class="bi bi-check2-square"></i>
-                            </span>
-                            <h2 class="h6 fw-bold mb-0">Pilih Ruangan</h2>
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="icon-badge section-icon text-success">
+                                    <i class="bi bi-check2-square"></i>
+                                </span>
+                                <h2 class="h6 fw-bold mb-0">Pilih Ruangan</h2>
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary" onclick="toggleAll(true)">Pilih
+                                    Semua</button>
+                                <button type="button" class="btn btn-outline-secondary"
+                                    onclick="toggleAll(false)">Reset</button>
+                            </div>
                         </div>
 
                         <div class="list-group list-group-flush">
                             {% for room in all_rooms %}
                             <label class="list-group-item d-flex align-items-start gap-3 py-3">
                                 <input class="form-check-input flex-shrink-0 mt-1" type="checkbox" name="room_ids"
-                                    value="{{ room.id }}">
+                                    value="{{ room.id }}" {% if room.id in saved_room_ids %}checked{% endif %}>
                                 <div>
                                     <div class="fw-semibold">{{ room.name }}</div>
                                     {% if room.description %}
@@ -72,4 +107,12 @@
         </div>
     </form>
 </section>
+
+<script>
+    function toggleAll(checked) {
+        document.querySelectorAll('input[name="room_ids"]').forEach(input => {
+            input.checked = checked;
+        });
+    }
+</script>
 {% endblock %}

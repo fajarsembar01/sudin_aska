@@ -15,6 +15,8 @@ from .schema import ensure_dashboard_schema
 from utils import to_jakarta
 
 
+from flask_wtf.csrf import CSRFProtect
+
 def create_app() -> Flask:
     app = Flask(
         __name__,
@@ -25,6 +27,8 @@ def create_app() -> Flask:
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(
         days=int(os.getenv("DASHBOARD_SESSION_DAYS", "14"))
     )
+    
+    csrf = CSRFProtect(app)
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)

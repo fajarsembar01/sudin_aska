@@ -37,25 +37,20 @@
                 {% set total_aspects_room = room.aspects|length %}
                 {% set sum_scores = 0 %}
                 {% for aspect in room.aspects %}
-                    {% set current = scores_map.get((room.school_room_id, aspect.id)) %}
-                    {% set sum_scores = sum_scores + (current if current is not none else 3) %}
+                {% set current = scores_map.get((room.school_room_id, aspect.id)) %}
+                {% set sum_scores = sum_scores + (current if current is not none else 3) %}
                 {% endfor %}
                 {% set room_avg = (sum_scores / total_aspects_room) if total_aspects_room > 0 else 0 %}
                 {% set room_pct = (room_avg / 3 * 100) %}
-                {% if room_pct <= 25 %}
-                    {% set room_score_class = "score-badge-red" %}
-                {% elif room_pct <= 50 %}
-                    {% set room_score_class = "score-badge-orange" %}
-                {% elif room_pct <= 75 %}
-                    {% set room_score_class = "score-badge-yellow" %}
-                {% else %}
-                    {% set room_score_class = "score-badge-green" %}
-                {% endif %}
-                <div class="room-item shadow-sm">
+                {% if room_pct <= 25 %} {% set room_score_class="score-badge-red" %} {% elif room_pct <=50 %} {% set
+                    room_score_class="score-badge-orange" %} {% elif room_pct <=75 %} {% set
+                    room_score_class="score-badge-yellow" %} {% else %} {% set room_score_class="score-badge-green" %}
+                    {% endif %} <div class="room-item shadow-sm">
                     <div class="room-header collapsed" data-bs-toggle="collapse"
                         data-bs-target="#room{{ room.school_room_id }}" aria-expanded="false">
                         <div class="d-flex align-items-center gap-2">
-                            <span class="room-score-badge {{ room_score_class }}" id="roomScore{{ room.school_room_id }}">{{ '%.1f'|format(room_pct) }}</span>
+                            <span class="room-score-badge {{ room_score_class }}"
+                                id="roomScore{{ room.school_room_id }}">{{ '%.1f'|format(room_pct) }}</span>
                             <h5 class="mb-0">{{ room.room_name }}</h5>
                         </div>
                         <span class="badge rounded-pill bg-secondary text-white"
@@ -94,13 +89,15 @@
                                     <div class="position-relative mt-2">
                                         <img src="{{ photo.url or url_for('portal.uploaded_file', filename=photo.photo_path.split('/')[-1]) }}"
                                             style="width: 100%; border-radius: 8px;" alt="Foto ruangan">
-                                        <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
+                                        <button type="button"
+                                            class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
                                             onclick="deletePhoto({{ photo.id }}, {{ room.school_room_id }})">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                         <div class="small text-muted mt-1">
                                             <i class="bi bi-calendar-event"></i>
-                                            {{ photo.captured_at.strftime('%d %b %Y %H:%M') if photo.captured_at else '' }}
+                                            {{ photo.captured_at.strftime('%d %b %Y %H:%M') if photo.captured_at else ''
+                                            }}
                                             {% if photo.latitude and photo.longitude %}
                                             &nbsp; <i class="bi bi-geo-alt"></i>
                                             {{ '%.4f'|format(photo.latitude) }}, {{ '%.4f'|format(photo.longitude) }}
@@ -119,43 +116,43 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                {% endfor %}
             </div>
+            {% endfor %}
         </div>
+    </div>
 
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm position-sticky" style="top: 88px;">
-                <div class="card-body">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <span class="icon-badge section-icon text-success">
-                            <i class="bi bi-check2-square"></i>
-                        </span>
-                        <div>
-                            <h2 class="h6 fw-bold mb-0">Submit Penilaian</h2>
-                            <p class="text-muted small mb-0">Cek ulang sebelum kirim</p>
-                        </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm position-sticky" style="top: 88px;">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <span class="icon-badge section-icon text-success">
+                        <i class="bi bi-check2-square"></i>
+                    </span>
+                    <div>
+                        <h2 class="h6 fw-bold mb-0">Submit Penilaian</h2>
+                        <p class="text-muted small mb-0">Cek ulang sebelum kirim</p>
                     </div>
-                    <div class="d-flex justify-content-between small text-muted">
-                        <span>Ruangan</span>
-                        <span class="fw-semibold">{{ rooms|length }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between small text-muted mb-3">
-                        <span>Total Aspek</span>
-                        <span class="fw-semibold">{{ total_aspects }}</span>
-                    </div>
-                    <p class="text-muted small">Pastikan semua aspek sudah dinilai sebelum submit.</p>
-                    <form action="{{ url_for('portal.submit', school_id=school.id) }}" method="POST">
-                        <input type="hidden" name="assessment_id" value="{{ assessment.id }}">
-                        <button type="submit"
-                            class="btn btn-success w-100 d-inline-flex align-items-center justify-content-center gap-2">
-                            <i class="bi bi-check-circle"></i>
-                            <span>Submit Penilaian</span>
-                        </button>
-                    </form>
                 </div>
+                <div class="d-flex justify-content-between small text-muted">
+                    <span>Ruangan</span>
+                    <span class="fw-semibold">{{ rooms|length }}</span>
+                </div>
+                <div class="d-flex justify-content-between small text-muted mb-3">
+                    <span>Total Aspek</span>
+                    <span class="fw-semibold">{{ total_aspects }}</span>
+                </div>
+                <p class="text-muted small">Pastikan semua aspek sudah dinilai sebelum submit.</p>
+                <form action="{{ url_for('portal.submit', school_id=school.id) }}" method="POST">
+                    <input type="hidden" name="assessment_id" value="{{ assessment.id }}">
+                    <button type="submit"
+                        class="btn btn-success w-100 d-inline-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-check-circle"></i>
+                        <span>Submit Penilaian</span>
+                    </button>
+                </form>
             </div>
         </div>
+    </div>
     </div>
     {% else %}
     <div class="card border-0 shadow-sm">
@@ -184,7 +181,8 @@
             <div class="modal-body p-0">
                 <video id="cameraPreview" autoplay playsinline
                     style="width: 100%; max-height: 60vh; object-fit: cover;"></video>
-                <div class="p-3 bg-light small d-flex align-items-center gap-2" id="locationInfo">
+                <div class="p-3 small d-flex align-items-center gap-2" id="locationInfo"
+                    style="background-color: var(--bg-subtle);">
                     <i class="bi bi-geo-alt"></i>
                     <span id="gpsStatus">Mendapatkan lokasi...</span>
                 </div>
@@ -201,25 +199,25 @@
 <canvas id="photoCanvas" style="display: none;"></canvas>
 <input type="file" accept="image/*" capture="environment" id="filePhotoInput" class="d-none">
 <!-- Floating Score Summary -->
-    <div class="floating-score shadow-sm">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-            <div class="small text-muted text-uppercase fw-bold">Skor Saat Ini</div>
-            <button type="button" class="btn btn-sm btn-outline-secondary p-1 px-2" id="hideScoreCardBtn"
-                aria-label="Sembunyikan skor">
-                <i class="bi bi-dash-lg"></i>
-            </button>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <div class="display-6 fw-bold text-primary" id="floatingScoreValue">0,0</div>
-            <div class="small text-muted lh-sm">
-                Rata-rata<br>
-                <span id="floatingScoreCount">0/0</span> Aspek
-            </div>
+<div class="floating-score shadow-sm">
+    <div class="d-flex justify-content-between align-items-center mb-1">
+        <div class="small text-muted text-uppercase fw-bold">Skor Saat Ini</div>
+        <button type="button" class="btn btn-sm btn-outline-secondary p-1 px-2" id="hideScoreCardBtn"
+            aria-label="Sembunyikan skor">
+            <i class="bi bi-dash-lg"></i>
+        </button>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <div class="display-6 fw-bold text-primary" id="floatingScoreValue">0,0</div>
+        <div class="small text-muted lh-sm">
+            Rata-rata<br>
+            <span id="floatingScoreCount">0/0</span> Aspek
         </div>
     </div>
-    <button type="button" class="btn btn-primary btn-sm floating-score-trigger d-none" id="showScoreCardBtn">
-        Lihat Skor
-    </button>
+</div>
+<button type="button" class="btn btn-primary btn-sm floating-score-trigger d-none" id="showScoreCardBtn">
+    Lihat Skor
+</button>
 
 <style>
     .floating-score {

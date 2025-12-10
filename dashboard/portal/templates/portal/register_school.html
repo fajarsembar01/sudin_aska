@@ -1,0 +1,325 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Daftar Akun Sekolah" %}
+
+{% block portal_content %}
+<section class="min-vh-75 d-flex align-items-center py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 col-md-8">
+                <div class="card border-0 shadow-lg">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <i class="bi bi-building-add display-4 text-primary"></i>
+                            <h2 class="h4 fw-bold mt-3">Daftar Akun Sekolah</h2>
+                            <p class="text-muted">Daftarkan sekolah Anda untuk mengakses Portal PANBERSS</p>
+                        </div>
+
+                        <form method="POST" id="registerForm">
+                            <!-- School Search -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-search me-1"></i>Cari Sekolah (NPSN)
+                                </label>
+                                <div class="position-relative">
+                                    <input type="text" id="npsnSearch" class="form-control form-control-lg"
+                                        placeholder="Ketik NPSN atau nama sekolah..." autocomplete="off"
+                                        value="{{ npsn or '' }}">
+                                    <input type="hidden" name="npsn" id="npsnValue" value="{{ npsn or '' }}">
+                                    <div id="schoolSuggestions"
+                                        class="position-absolute w-100 rounded-3 shadow-lg d-none"
+                                        style="top: 100%; left: 0; z-index: 1000; max-height: 300px; overflow-y: auto; background-color: var(--bg-surface); border: 1px solid var(--border-soft);">
+                                    </div>
+                                </div>
+                                <div id="selectedSchool" class="mt-2 p-3 rounded-3 d-none"
+                                    style="background-color: var(--bg-subtle);">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong id="schoolName"></strong>
+                                            <br><small class="text-muted"><span id="schoolNpsn"></span> • <span
+                                                    id="schoolJenjang"></span> • <span
+                                                    id="schoolKecamatan"></span></small>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                            onclick="clearSchool()">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Email -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-envelope me-1"></i>Email
+                                </label>
+                                <input type="email" name="email" id="emailInput" class="form-control form-control-lg"
+                                    placeholder="email@domain.com" required value="{{ email or '' }}">
+                                <div id="emailError" class="invalid-feedback"></div>
+                            </div>
+
+                            <!-- Password -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-lock me-1"></i>Password
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" name="password" id="passwordInput"
+                                        class="form-control form-control-lg" placeholder="Minimal 6 karakter" required
+                                        minlength="6">
+                                    <button class="btn btn-outline-secondary" type="button"
+                                        onclick="togglePassword('passwordInput', this)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <div id="passwordStrength" class="form-text"></div>
+                            </div>
+
+                            <!-- Confirm Password -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-lock-fill me-1"></i>Konfirmasi Password
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" name="confirm_password" id="confirmPasswordInput"
+                                        class="form-control form-control-lg" placeholder="Ulangi password" required
+                                        minlength="6">
+                                    <button class="btn btn-outline-secondary" type="button"
+                                        onclick="togglePassword('confirmPasswordInput', this)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <div id="passwordMatch" class="form-text"></div>
+                            </div>
+
+                            <!-- Submit -->
+                            <button type="submit" class="btn btn-primary btn-lg w-100 mb-3" id="submitBtn" disabled>
+                                <i class="bi bi-person-plus me-2"></i>Daftar Sekarang
+                            </button>
+
+                            <p class="text-center text-muted mb-0">
+                                Sudah punya akun? <a href="{{ url_for('auth.login') }}"
+                                    class="text-decoration-none">Login di sini</a>
+                            </p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('npsnSearch');
+        const suggestions = document.getElementById('schoolSuggestions');
+        const npsnValue = document.getElementById('npsnValue');
+        const selectedSchool = document.getElementById('selectedSchool');
+        const submitBtn = document.getElementById('submitBtn');
+        let debounceTimer;
+
+        // Check if school already selected (from form error)
+        if (npsnValue.value) {
+            submitBtn.disabled = false;
+        }
+
+        searchInput.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            const query = this.value.trim();
+
+            if (query.length < 3) {
+                suggestions.classList.add('d-none');
+                return;
+            }
+
+            debounceTimer = setTimeout(async () => {
+                try {
+                    const response = await fetch(`{{ url_for('portal.search_schools_api') }}?q=${encodeURIComponent(query)}`);
+                    const schools = await response.json();
+
+                    if (schools.length === 0) {
+                        suggestions.innerHTML = '<div class="p-3 text-muted">Tidak ditemukan sekolah dengan NPSN tersebut</div>';
+                    } else {
+                        suggestions.innerHTML = schools.map(s => `
+                        <div class="p-3 border-bottom school-item" 
+                             style="cursor: pointer;"
+                             data-id="${s.id}"
+                             data-npsn="${s.npsn}"
+                             data-name="${s.name}"
+                             data-jenjang="${s.jenjang}"
+                             data-kecamatan="${s.kecamatan}">
+                            <strong>${s.name}</strong>
+                            <br><small class="text-muted">${s.npsn} • ${s.jenjang}${s.kecamatan ? ' • ' + s.kecamatan : ''}</small>
+                        </div>
+                    `).join('');
+
+                        // Add click handlers
+                        suggestions.querySelectorAll('.school-item').forEach(item => {
+                            item.addEventListener('click', function () {
+                                selectSchool(this.dataset);
+                            });
+                            item.addEventListener('mouseenter', function () {
+                                this.classList.add('bg-light');
+                            });
+                            item.addEventListener('mouseleave', function () {
+                                this.classList.remove('bg-light');
+                            });
+                        });
+                    }
+                    suggestions.classList.remove('d-none');
+                } catch (err) {
+                    console.error('Error searching schools:', err);
+                }
+            }, 300);
+        });
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!searchInput.contains(e.target) && !suggestions.contains(e.target)) {
+                suggestions.classList.add('d-none');
+            }
+        });
+
+        window.selectSchool = function (data) {
+            npsnValue.value = data.npsn;
+            searchInput.value = data.npsn;
+            searchInput.disabled = true;
+
+            document.getElementById('schoolName').textContent = data.name;
+            document.getElementById('schoolNpsn').textContent = data.npsn;
+            document.getElementById('schoolJenjang').textContent = data.jenjang;
+            document.getElementById('schoolKecamatan').textContent = data.kecamatan || '-';
+
+            selectedSchool.classList.remove('d-none');
+            suggestions.classList.add('d-none');
+            submitBtn.disabled = false;
+        };
+
+        window.clearSchool = function () {
+            npsnValue.value = '';
+            searchInput.value = '';
+            searchInput.disabled = false;
+            selectedSchool.classList.add('d-none');
+            submitBtn.disabled = true;
+            searchInput.focus();
+        };
+
+        // ===== Form Validation =====
+
+        // Toggle password visibility
+        window.togglePassword = function (inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        };
+
+        // Email validation
+        const emailInput = document.getElementById('emailInput');
+        const emailError = document.getElementById('emailError');
+
+        emailInput.addEventListener('blur', function () {
+            const email = this.value.trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (email && !emailRegex.test(email)) {
+                this.classList.add('is-invalid');
+                emailError.textContent = 'Format email tidak valid';
+            } else {
+                this.classList.remove('is-invalid');
+                emailError.textContent = '';
+            }
+            validateForm();
+        });
+
+        // Password strength indicator
+        const passwordInput = document.getElementById('passwordInput');
+        const passwordStrength = document.getElementById('passwordStrength');
+
+        passwordInput.addEventListener('input', function () {
+            const password = this.value;
+            let strength = 0;
+            let text = '';
+            let color = '';
+
+            if (password.length >= 6) strength++;
+            if (password.length >= 8) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+            if (password.length === 0) {
+                text = '';
+            } else if (password.length < 6) {
+                text = '<i class="bi bi-x-circle text-danger"></i> Minimal 6 karakter';
+                color = 'text-danger';
+            } else if (strength <= 2) {
+                text = '<i class="bi bi-shield-exclamation text-warning"></i> Password lemah';
+                color = 'text-warning';
+            } else if (strength <= 3) {
+                text = '<i class="bi bi-shield-check text-info"></i> Password cukup';
+                color = 'text-info';
+            } else {
+                text = '<i class="bi bi-shield-fill-check text-success"></i> Password kuat';
+                color = 'text-success';
+            }
+
+            passwordStrength.innerHTML = text;
+            passwordStrength.className = 'form-text ' + color;
+            checkPasswordMatch();
+            validateForm();
+        });
+
+        // Confirm password match
+        const confirmPasswordInput = document.getElementById('confirmPasswordInput');
+        const passwordMatch = document.getElementById('passwordMatch');
+
+        function checkPasswordMatch() {
+            const password = passwordInput.value;
+            const confirm = confirmPasswordInput.value;
+
+            if (confirm.length === 0) {
+                passwordMatch.innerHTML = '';
+                confirmPasswordInput.classList.remove('is-invalid', 'is-valid');
+            } else if (password !== confirm) {
+                passwordMatch.innerHTML = '<i class="bi bi-x-circle"></i> Password tidak cocok';
+                passwordMatch.className = 'form-text text-danger';
+                confirmPasswordInput.classList.add('is-invalid');
+                confirmPasswordInput.classList.remove('is-valid');
+            } else {
+                passwordMatch.innerHTML = '<i class="bi bi-check-circle"></i> Password cocok';
+                passwordMatch.className = 'form-text text-success';
+                confirmPasswordInput.classList.remove('is-invalid');
+                confirmPasswordInput.classList.add('is-valid');
+            }
+            validateForm();
+        }
+
+        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+        // Overall form validation
+        function validateForm() {
+            const npsn = npsnValue.value;
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            const confirm = confirmPasswordInput.value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            const isValid = npsn &&
+                email && emailRegex.test(email) &&
+                password.length >= 6 &&
+                password === confirm;
+
+            submitBtn.disabled = !isValid;
+        }
+    });
+</script>
+{% endblock %}

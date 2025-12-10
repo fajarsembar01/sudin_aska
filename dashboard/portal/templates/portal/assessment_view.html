@@ -14,8 +14,7 @@
             </div>
         </div>
         <span class="status-badge status-{{ assessment.status }}">
-            <i
-                class="bi bi-{% if assessment.status == 'submitted' %}check-circle{% elif assessment.status == 'verified' %}patch-check{% else %}pencil{% endif %}"></i>
+            <i class="bi bi-{% if assessment.status == 'submitted' %}check-circle{% else %}pencil{% endif %}"></i>
             {{ assessment.status|capitalize }}
         </span>
     </div>
@@ -25,7 +24,8 @@
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-body">
                     <div class="score-summary">
-                        {% set pct_total = ((assessment.total_score or 0) / 3 * 100) if assessment.total_score is not none else 0 %}
+                        {% set pct_total = ((assessment.total_score or 0) / 3 * 100) if assessment.total_score is not
+                        none else 0 %}
                         <div class="big-score">{{ "%.1f"|format(pct_total) }}</div>
                         <div class="score-label">Skor Rata-rata (0-100)</div>
                     </div>
@@ -92,18 +92,19 @@
                     </div>
 
                     {% if user.role == 'admin' %}
-                                <div class="alert alert-info d-flex flex-wrap align-items-center gap-3">
-                                    <div>
-                                        <div class="fw-semibold mb-0">Rata-rata semua penilaian sekolah ini</div>
-                                        {% set pct_school_avg = ((school_avg or 0) / 3 * 100) if school_avg is not none else 0 %}
-                                        <div class="text-muted small">{{ "%.1f"|format(pct_school_avg) }}</div>
-                                    </div>
+                    <div class="alert alert-info d-flex flex-wrap align-items-center gap-3">
+                        <div>
+                            <div class="fw-semibold mb-0">Rata-rata semua penilaian sekolah ini</div>
+                            {% set pct_school_avg = ((school_avg or 0) / 3 * 100) if school_avg is not none else 0 %}
+                            <div class="text-muted small">{{ "%.1f"|format(pct_school_avg) }}</div>
+                        </div>
                         {% if other_assessments %}
                         <div class="ms-auto">
                             <div class="small text-muted mb-1">Penilaian lain</div>
                             <div class="d-flex flex-wrap gap-2">
                                 {% for other in other_assessments %}
-                                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('portal.view_assessment', assessment_id=other.id) }}">
+                                <a class="btn btn-sm btn-outline-primary"
+                                    href="{{ url_for('portal.view_assessment', assessment_id=other.id) }}">
                                     {{ other.assessor_name or 'Staff' }} - {{ other.total_score or '-' }}
                                 </a>
                                 {% endfor %}

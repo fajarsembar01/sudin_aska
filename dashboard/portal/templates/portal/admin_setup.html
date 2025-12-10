@@ -35,9 +35,13 @@
                             <div class="col-6">
                                 <select name="jenjang" class="form-select form-select-sm">
                                     <option value="SD">SD</option>
+                                    <option value="MI">MI</option>
                                     <option value="SMP">SMP</option>
+                                    <option value="MTS">MTS</option>
                                     <option value="SMA">SMA</option>
+                                    <option value="MA">MA</option>
                                     <option value="SMK">SMK</option>
+                                    <option value="TK">TK</option>
                                 </select>
                             </div>
                             <div class="col-12">
@@ -49,14 +53,20 @@
                                     placeholder="Alamat (opsional)">
                             </div>
                             <div class="col-6">
-                                <input type="text" name="kelurahan" class="form-control form-control-sm"
-                                    placeholder="Kelurahan">
+                                <select name="kelurahan_id" class="form-select form-select-sm" required>
+                                    <option value="">-- Kelurahan --</option>
+                                    {% for l in kelurahan_list %}
+                                    <option value="{{ l.id }}">{{ l.kecamatan_name }} > {{ l.name }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                             <div class="col-6">
-                                <input type="text" name="kecamatan" class="form-control form-control-sm"
-                                    placeholder="Kecamatan">
+                                <select name="status" class="form-select form-select-sm">
+                                    <option value="NEGERI">NEGERI</option>
+                                    <option value="SWASTA">SWASTA</option>
+                                </select>
                             </div>
-                            <div class="col-12">
+                            <div class="col-6">
                                 <button type="submit" class="btn btn-primary btn-sm w-100">
                                     <i class="bi bi-plus-lg me-1"></i>Tambah
                                 </button>
@@ -65,6 +75,7 @@
                     </form>
                 </div>
             </div>
+
 
             <!-- Add Room -->
             <div class="card border-0 shadow-sm mb-3">
@@ -170,16 +181,20 @@
                                     <th>NPSN</th>
                                     <th>Nama</th>
                                     <th>Jenjang</th>
-                                    <th>Lokasi</th>
+                                    <th>Status</th>
+                                    <th>Kecamatan</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for s in schools[:15] %}
+                                {% for s in schools[:20] %}
                                 <tr>
                                     <td><code>{{ s.npsn }}</code></td>
                                     <td>{{ s.name }}</td>
                                     <td><span class="badge bg-light text-dark">{{ s.jenjang }}</span></td>
-                                    <td class="text-muted small">{{ s.kelurahan or '-' }}</td>
+                                    <td><span
+                                            class="badge {% if s.status == 'NEGERI' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{
+                                            s.status or '-' }}</span></td>
+                                    <td class="text-muted small">{{ s.kecamatan_name or '-' }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

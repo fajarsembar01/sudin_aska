@@ -1,0 +1,75 @@
+{#
+Assessment Table Component - Reusable table for assessments list
+
+Usage:
+{% from "portal/components/_assessment_table.html" import assessment_table %}
+{{ assessment_table(assessments=recent_assessments, school_avg_map=school_avg_map) }}
+#}
+
+{% macro assessment_table(assessments, school_avg_map) %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light">
+            <tr>
+                <th class="border-0 ps-3">Sekolah</th>
+                <th class="border-0">Status</th>
+                <th class="border-0">Skor / Average</th>
+                <th class="border-0">Tanggal</th>
+                <th class="border-0 text-end pe-3">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in assessments %}
+            <tr>
+                <td class="ps-3">
+                    <a href="{{ url_for('portal.view_assessment', assessment_id=a['id']) }}"
+                        class="fw-semibold text-decoration-none">
+                        {{ a['school_name'] }}
+                    </a>
+                    <div class="small text-muted">{{ a['npsn'] }} • {{ a['jenjang'] }}</div>
+                </td>
+                <td>
+                    {% if a['status'] == 'submitted' %}
+                    <span class="badge bg-success-subtle text-success rounded-pill px-2">Submitted</span>
+                    {% else %}
+                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2">{{ a['status']|title
+                        }}</span>
+                    {% endif %}
+                </td>
+                {% set score_pct = (a['total_score'] or 0) / 3 * 100 if a['total_score'] is not none else None %}
+                {% set avg_raw = school_avg_map.get(a['school_id'], 0) %}
+                {% set avg_pct = (avg_raw or 0) / 3 * 100 %}
+                <td class="fw-bold text-primary">
+                    {% if score_pct is not none %}
+                    {{ "%.1f"|format(score_pct) }} / {{ "%.1f"|format(avg_pct) }}
+                    {% else %}
+                    - / {{ "%.1f"|format(avg_pct) }}
+                    {% endif %}
+                </td>
+                <td class="small text-muted">{{ a['submitted_at'].strftime('%d %b %Y') if a['submitted_at'] else '-' }}
+                </td>
+                <td class="text-end pe-3">
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('portal.view_assessment', assessment_id=a['id']) }}"
+                            class="btn btn-sm btn-light rounded-circle" title="Lihat Detail">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                        <form method="post"
+                            action="{{ url_for('portal.delete_assessment_route', assessment_id=a['id']) }}"
+                            onsubmit="return confirm('Hapus penilaian ini?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle" title="Hapus">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center py-4 text-muted">Belum ada data penilaian yang disubmit</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endmacro %}

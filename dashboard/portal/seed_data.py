@@ -188,19 +188,23 @@ def seed_portal_data():
                 )
         
         # Insert test school: SDN Semper Barat 01
+        # First check if Semper Barat kelurahan exists
         print("\nInserting test school: SDN Semper Barat 01...")
+        cur.execute("SELECT id FROM portal_kelurahan WHERE name = 'Semper Barat' LIMIT 1")
+        kel_row = cur.fetchone()
+        kelurahan_id = kel_row['id'] if kel_row else None
+        
         cur.execute(
             """
-            INSERT INTO portal_schools (npsn, name, jenjang, alamat, kelurahan, kecamatan)
+            INSERT INTO portal_schools (npsn, name, jenjang, alamat, kelurahan_id, status)
             VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (npsn) DO UPDATE SET
                 name = EXCLUDED.name,
                 alamat = EXCLUDED.alamat,
-                kelurahan = EXCLUDED.kelurahan,
-                kecamatan = EXCLUDED.kecamatan
+                kelurahan_id = EXCLUDED.kelurahan_id
             RETURNING id
             """,
-            ("20104001", "SDN Semper Barat 01", "SD", "Jl. Semper Barat Raya No. 1", "Semper Barat", "Cilincing")
+            ("20104001", "SDN Semper Barat 01", "SD", "Jl. Semper Barat Raya No. 1", kelurahan_id, "NEGERI")
         )
         school_id = cur.fetchone()[0]
         print(f"  School ID: {school_id}")
