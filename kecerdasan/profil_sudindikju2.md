@@ -5,17 +5,14 @@
 **Nama Instansi:** Suku Dinas Pendidikan Jakarta Utara 2  
 **Unit Induk:** Dinas Pendidikan Provinsi DKI Jakarta  
 
-**Alamat Kantor:**  
-_(isi alamat resmi Sudin Pendidikan Jakarta Utara 2 di sini, misalnya sesuai papan nama / situs resmi)_  
+**Alamat Kantor:** Saat ini kantor Suku Dinas Pendidikan Jakarta Utara Wilayah 2 bertepatan di Kantor Walikota Administrasi Jakarta Utara, Jl. Yos Sudarso No.27-29 19, RT.19/RW.5, Kb. Bawang, Kec. Tj. Priok, Jkt Utara, Daerah Khusus Ibukota Jakarta 14320 
 
 **Kontak Resmi (disarankan diisi manual):**
-- **Telepon:** _(isi nomor telepon kantor Sudin)_  
-- **Email:** _(isi email resmi Sudin, mis. sudin.pendidikanju2@…)_  
-- **Website Resmi:** _(isi URL bila ada)_  
-- **Instagram:** _(isi akun IG bila ada)_  
-- **YouTube / Kanal Lain:** _(opsional)_  
+- **Telepon:** (62-21) 4303111  
+- **Email:** umum-jakut@jakarta.go.id  
+- **Website Resmi:** https://www.sudindikju2.com/ 
+- **Instagram:** https://www.instagram.com/sudindikju_dua/   
 
-> Catatan: isi bagian kontak/alamat berdasarkan sumber resmi (website Dinas Pendidikan DKI, papan nama kantor, atau surat kedinasan).
 
 ---
 
@@ -28,9 +25,8 @@ Secara umum, lingkup kerja mencakup:
 - Sekolah menengah pertama (SMP) negeri dan swasta di wilayah kerja Sudin 2.  
 - Satuan pendidikan non-formal tertentu sesuai kewenangan Sudin.  
 
-_(Jika ingin lebih detail, Anda bisa menambahkan daftar kecamatan/kelurahan yang termasuk wilayah Sudin Pendidikan Jakarta Utara 2 berdasarkan SK/petunjuk resmi.)_
+**Wilayah Kecamatan Jakarta Utara 2:** Cilincing, Koja, dan Kelapa Gading 
 
----
 
 ## 3. Tugas dan Fungsi Utama
 
@@ -63,11 +59,11 @@ Suku Dinas Pendidikan Jakarta Utara 2 menjalankan tugas dekonsentrasi dan tugas 
 > Data nama jabatan di bawah ini adalah struktur umum. Silakan lengkapi **nama pejabat** dan kontak bila sudah ada sumber resmi.
 
 **Pimpinan:**
-- **Kepala Suku Dinas Pendidikan Jakarta Utara 2** – _(isi nama Kepala Sudin)_  
+- **Kepala Suku Dinas Pendidikan Jakarta Utara 2:** Heni Nurhayani  
 
 **Jabatan Kunci (contoh yang relevan untuk ASKA):**
-- **Kepala Suku Dinas** – penanggung jawab utama kebijakan dan koordinasi pendidikan di wilayah Jakarta Utara 2.  
-- **Kasubag Tata Usaha** – mengelola administrasi umum, kepegawaian, dan surat-menyurat.  
+- **Kepala Suku Dinas** Heni Nurhayani 
+- **Kasubag Tata Usaha** Mukheri  
 - **Kepala Seksi Peserta Didik dan Pembangunan Karakter** – membina urusan kesiswaan, PPDB, dan layanan peserta didik.  
 - **Kepala Seksi PTK (Pendidik dan Tenaga Kependidikan)** – membina guru dan tenaga kependidikan.  
 - **Kepala Seksi Didik Dasmen (SD/SMP)** – membina proses pembelajaran, kurikulum, dan mutu pendidikan di sekolah binaan.  
@@ -104,3 +100,6 @@ Anda bisa menambahkan detail per layanan (mis. link formulir pengaduan, jadwal l
 - ASKA dikonfigurasi untuk melayani kebutuhan informasi dan layanan pendukung di lingkungan **Suku Dinas Pendidikan Jakarta Utara 2**, bukan lagi hanya satu sekolah tertentu.  
 - Bila pengguna **tidak menyebut nama sekolah secara spesifik**, ASKA boleh menjelaskan kebijakan atau prosedur **tingkat Sudin** (umum) dan menyarankan agar menyebut nama sekolah bila butuh informasi yang sangat spesifik.  
 - Pastikan semua **link resmi, alamat, dan nomor kontak** diisi berdasarkan sumber yang sah agar jawaban ASKA tetap akurat dan tidak menyesatkan.  
+
+# Yum Thurfah Afifa Rosaliah
+Yum adalah salah satu dari team ASKA SUDINDIK JU 2 yang ikut serta Develop ASKA ini
