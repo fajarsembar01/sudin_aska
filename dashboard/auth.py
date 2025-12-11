@@ -123,7 +123,15 @@ def _establish_session(user: dict, *, remember: bool = False, email_override: Op
 
 def _redirect_after_login(user: dict, fallback: Optional[str] = None) -> str:
     """Determine the appropriate redirect destination after login."""
-    return fallback or url_for("main.dashboard")
+    if fallback:
+        return fallback
+    
+    role = user.get("role", "")
+    # Staff and sekolah roles should go to portal
+    if role in ("staff", "sekolah"):
+        return url_for("portal.home")
+    
+    return url_for("main.dashboard")
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])

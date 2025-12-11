@@ -1,0 +1,30 @@
+{#
+Stat Card Component - Reusable statistics card with icon
+
+Usage:
+{% from "portal/components/_stat_card.html" import stat_card %}
+{{ stat_card(
+title="Total Sekolah",
+value=stats.schools.total_schools,
+subtitle="10 aktif",
+icon="building",
+color="primary"
+) }}
+#}
+
+{% macro stat_card(title, value, subtitle=None, icon="box", color="primary") %}
+<div class="card border-0 shadow-sm h-100">
+    <div class="card-body">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="icon-badge stat-icon text-{{ color }}">
+                <i class="bi bi-{{ icon }}"></i>
+            </span>
+            <span class="text-secondary text-uppercase small fw-semibold">{{ title }}</span>
+        </div>
+        <h2 class="display-6 fw-bold mb-1">{{ value if value is not none else '-' }}</h2>
+        {% if subtitle %}
+        <p class="text-muted small mb-0">{{ subtitle }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}

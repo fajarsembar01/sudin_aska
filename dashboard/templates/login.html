@@ -32,7 +32,6 @@
         border-width: 1px;
         border-color: #ced4da;
     }
-
 </style>
 {% endblock %}
 
@@ -51,16 +50,19 @@
                     </div>
                 </div>
                 <form method="post" class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
                         <label class="form-label" for="email">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" value="{{ email or '' }}" required autofocus>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ email or '' }}"
+                            required autofocus>
                         <div class="invalid-feedback">Masukkan email yang valid.</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="password">Password</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="password" name="password" required>
-                            <button type="button" class="btn btn-outline-secondary" id="togglePasswordButton" aria-label="Tampilkan password">
+                            <button type="button" class="btn btn-outline-secondary" id="togglePasswordButton"
+                                aria-label="Tampilkan password">
                                 <i class="bi bi-eye"></i>
                             </button>
                         </div>
@@ -78,20 +80,16 @@
                     <div class="separator">atau</div>
                     <div class="d-grid gap-2">
                         <a class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2"
-                           href="{{ url_for('auth.google_login', provider='belajar', next=request.args.get('next')) }}"
-                           role="button"
-                           data-bs-toggle="tooltip"
-                           data-bs-placement="top"
-                           title="Gunakan kredensial belajar.id yang sudah disinkronkan oleh admin.">
+                            href="{{ url_for('auth.google_login', provider='belajar', next=request.args.get('next')) }}"
+                            role="button" data-bs-toggle="tooltip" data-bs-placement="top"
+                            title="Gunakan kredensial belajar.id yang sudah disinkronkan oleh admin.">
                             <i class="bi bi-mortarboard-fill"></i>
                             <span>Login via belajar.id</span>
                         </a>
                         <a class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2"
-                           href="{{ url_for('auth.google_login', provider='gmail', next=request.args.get('next')) }}"
-                           role="button"
-                           data-bs-toggle="tooltip"
-                           data-bs-placement="top"
-                           title="Gunakan akun Gmail yang sudah diverifikasi admin.">
+                            href="{{ url_for('auth.google_login', provider='gmail', next=request.args.get('next')) }}"
+                            role="button" data-bs-toggle="tooltip" data-bs-placement="top"
+                            title="Gunakan akun Gmail yang sudah diverifikasi admin.">
                             <i class="bi bi-google"></i>
                             <span>Login via Gmail</span>
                         </a>
@@ -112,30 +110,30 @@
 {% block scripts %}
 {{ super() }}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    var toggleButton = document.getElementById('togglePasswordButton');
-    var passwordInput = document.getElementById('password');
-    if (!toggleButton || !passwordInput) {
-        return;
-    }
-
-    var icon = toggleButton.querySelector('i');
-
-    toggleButton.addEventListener('click', function () {
-        var currentlyHidden = passwordInput.type === 'password';
-        passwordInput.type = currentlyHidden ? 'text' : 'password';
-
-        if (currentlyHidden) {
-            icon.classList.remove('bi-eye');
-            icon.classList.add('bi-eye-slash');
-            toggleButton.setAttribute('aria-label', 'Sembunyikan password');
-        } else {
-            icon.classList.remove('bi-eye-slash');
-            icon.classList.add('bi-eye');
-            toggleButton.setAttribute('aria-label', 'Tampilkan password');
+    document.addEventListener('DOMContentLoaded', function () {
+        var toggleButton = document.getElementById('togglePasswordButton');
+        var passwordInput = document.getElementById('password');
+        if (!toggleButton || !passwordInput) {
+            return;
         }
+
+        var icon = toggleButton.querySelector('i');
+
+        toggleButton.addEventListener('click', function () {
+            var currentlyHidden = passwordInput.type === 'password';
+            passwordInput.type = currentlyHidden ? 'text' : 'password';
+
+            if (currentlyHidden) {
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+                toggleButton.setAttribute('aria-label', 'Sembunyikan password');
+            } else {
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+                toggleButton.setAttribute('aria-label', 'Tampilkan password');
+            }
+        });
     });
-});
 </script>
 
 {% endblock %}

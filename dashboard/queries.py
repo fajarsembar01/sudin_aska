@@ -1984,3 +1984,191 @@ def update_telegram_user_status(user_id: int, status: str, reason: Optional[str]
             (normalized, cleaned_reason, changed_by, user_id),
         )
         return cur.rowcount > 0
+
+
+# --- Chat Feedback queries --------------------------------------------------
+
+def fetch_feedback_summary(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Dict[str, Any]:
+    """Aggregate feedback summary statistics for a given date range."""
+    conditions: List[str] = []
+    params: List[Any] = []
+
+    if start_date:
+        conditions.append("cf.created_at >= %s")
+        params.append(start_date)
+    if end_date:
+        conditions.append("cf.created_at <= %s")
+        params.append(end_date)
+
+    tester_clause, tester_params = _tester_condition("cf.user_id")
+    if tester_clause:
+        conditions.append(tester_clause)
+        params.extend(tester_params)
+
+    where_clause = f" WHERE {' AND '.join(conditions)}" if conditions else ""
+
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT 
+                COUNT(*) FILTER (WHERE feedback_type = 'like') as total_likes,
+                COUNT(*) FILTER (WHERE feedback_type = 'dislike') as total_dislikes,
+                COUNT(*) as total_feedback,
+                ROUND(100.0 * COUNT(*) FILTER (WHERE feedback_type = 'like') / NULLIF(COUNT(*), 0), 2) as positive_rate
+            FROM chat_feedback cf
+            {where_clause}
+            """,
+            tuple(params),
+        )
+        row = cur.fetchone()
+
+    return {
+        "total_likes": int(row["total_likes"] or 0),
+        "total_dislikes": int(row["total_dislikes"] or 0),
+        "total_feedback": int(row["total_feedback"] or 0),
+        "positive_rate": float(row["positive_rate"] or 0.0),
+        "period_start": start_date,
+        "period_end": end_date,
+    }
+
+
+def fetch_feedback_list(
+    filter_type: Optional[str] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    limit: int = 25,
+    offset: int = 0,
+) -> Tuple[List[Dict[str, Any]], int]:
+    """Get paginated list of feedback with message context."""
+    conditions: List[str] = []
+    params: List[Any] = []
+
+    if filter_type and filter_type in ("like", "dislike"):
+        conditions.append("cf.feedback_type = %s")
+        params.append(filter_type)
+    if start_date:
+        conditions.append("cf.created_at >= %s")
+        params.append(start_date)
+    if end_date:
+        conditions.append("cf.created_at <= %s")
+        params.append(end_date)
+
+    tester_clause, tester_params = _tester_condition("cf.user_id")
+    if tester_clause:
+        conditions.append(tester_clause)
+        params.extend(tester_params)
+
+    where_clause = f" WHERE {' AND '.join(conditions)}" if conditions else ""
+
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT 
+                cf.id,
+                cf.chat_log_id,
+                cf.user_id,
+                cf.username,
+                cf.feedback_type,
+                cf.created_at,
+                cl.text as message_text,
+                cl.created_at as message_created_at
+            FROM chat_feedback cf
+            JOIN chat_logs cl ON cf.chat_log_id = cl.id
+            {where_clause}
+            ORDER BY cf.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            (*params, limit, offset),
+        )
+        rows = cur.fetchall()
+
+        cur.execute(
+            f"""
+            SELECT COUNT(*)
+            FROM chat_feedback cf
+            {where_clause}
+            """,
+            tuple(params),
+        )
+        total = cur.fetchone()[0]
+
+    return [dict(row) for row in rows], int(total or 0)
+
+
+def fetch_feedback_trend(start_date: datetime, days: int = 30) -> List[Dict[str, Any]]:
+    """Get daily feedback trend for chart visualization."""
+    days = max(1, days)
+    conditions = ["cf.created_at >= %s"]
+    params: List[Any] = [start_date]
+
+    tester_clause, tester_params = _tester_condition("cf.user_id")
+    if tester_clause:
+        conditions.append(tester_clause)
+        params.extend(tester_params)
+
+    where_clause = f" WHERE {' AND '.join(conditions)}"
+
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT 
+                DATE(cf.created_at) as day,
+                COUNT(*) FILTER (WHERE cf.feedback_type = 'like') as likes,
+                COUNT(*) FILTER (WHERE cf.feedback_type = 'dislike') as dislikes
+            FROM chat_feedback cf
+            {where_clause}
+            GROUP BY DATE(cf.created_at)
+            ORDER BY day ASC
+            """,
+            tuple(params),
+        )
+        rows = cur.fetchall()
+
+    return [
+        {
+            "day": row["day"],
+            "likes": int(row["likes"] or 0),
+            "dislikes": int(row["dislikes"] or 0),
+            "total": int(row["likes"] or 0) + int(row["dislikes"] or 0),
+        }
+        for row in rows
+    ]
+
+
+def fetch_feedback_by_message(chat_log_id: int) -> Optional[Dict[str, Any]]:
+    """Get feedback details for a specific message."""
+    conditions = ["cf.chat_log_id = %s"]
+    params: List[Any] = [chat_log_id]
+
+    tester_clause, tester_params = _tester_condition("cf.user_id")
+    if tester_clause:
+        conditions.append(tester_clause)
+        params.extend(tester_params)
+
+    where_clause = f" WHERE {' AND '.join(conditions)}"
+
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT 
+                cf.id,
+                cf.chat_log_id,
+                cf.user_id,
+                cf.username,
+                cf.feedback_type,
+                cf.created_at,
+                cf.updated_at,
+                cl.text as message_text,
+                cl.created_at as message_created_at,
+                cl.user_id as message_user_id,
+                cl.username as message_username
+            FROM chat_feedback cf
+            JOIN chat_logs cl ON cf.chat_log_id = cl.id
+            {where_clause}
+            LIMIT 1
+            """,
+            tuple(params),
+        )
+        row = cur.fetchone()
+
+    return dict(row) if row else None

@@ -1,0 +1,18 @@
+{#
+Chart Card Component - Reusable card for charts
+
+Usage:
+{% from "portal/components/_chart_card.html" import chart_card %}
+{{ chart_card(title="Sebaran Nilai", chart_id="scoreDistChart", height="300px") }}
+#}
+
+{% macro chart_card(title, chart_id, height="300px") %}
+<div class="card border-0 shadow-sm h-100">
+    <div class="card-body">
+        <h6 class="fw-bold mb-3">{{ title }}</h6>
+        <div style="height: {{ height }}; position: relative;">
+            <canvas id="{{ chart_id }}"></canvas>
+        </div>
+    </div>
+</div>
+{% endmacro %}

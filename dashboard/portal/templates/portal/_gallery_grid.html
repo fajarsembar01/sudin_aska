@@ -1,0 +1,71 @@
+{% macro photo_item(p, loop_idx, is_clone=false) %}
+{% set filename = (p.photo_path or '').split('/')[-1] %}
+{% if p.photo_path and p.photo_path.startswith('http') %}
+{% set photo_url = p.photo_path %}
+{% else %}
+{% set photo_url = url_for('portal.uploaded_file', filename=filename) if filename else
+'https://placehold.co/200x200?text=No+Image' %}
+{% endif %}
+{% set score_base = p.room_score or 0 %}
+{% set score_pct = (score_base / 3 * 100) if score_base is not none else 0 %}
+{% if score_pct <= 25 %}{% set score_class="badge-score-red" %} {% elif score_pct <=50 %}{% set
+    score_class="badge-score-orange" %} {% elif score_pct <=75 %}{% set score_class="badge-score-yellow" %} {% else %}{%
+    set score_class="badge-score-green" %}{% endif %} <div class="gallery-item">
+    <div class="ratio ratio-1x1 rounded overflow-hidden shadow-sm position-relative gallery-thumb{% if not is_clone %} gallery-thumb-original{% endif %}"
+        role="button" tabindex="0" data-index="{{ loop_idx }}" data-photo-url="{{ photo_url }}"
+        data-school="{{ p.school_name }}" data-school-id="{{ p.school_id }}" data-room="{{ p.room_name }}"
+        data-room-id="{{ p.room_id }}" data-score="{{ '%.1f'|format(score_pct) }}"
+        data-date="{{ (p.captured_at or '') }}" data-lat="{{ p.latitude }}" data-lon="{{ p.longitude }}">
+        <img src="{{ photo_url }}" class="object-fit-cover w-100 h-100" alt="{{ p.room_name }}" loading="lazy"
+            onerror="this.src='https://placehold.co/200x200?text=No+Image'">
+        <div
+            class="position-absolute top-0 start-0 w-100 d-flex justify-content-between align-items-start p-2 gallery-top">
+            <div class="gallery-title text-white text-truncate me-2 gallery-chip"
+                title="{{ p.school_name }} • {{ p.room_name }}">
+                {{ p.school_name }} • {{ p.room_name }}
+            </div>
+            <div class="px-2 py-1 rounded-pill small gallery-badge-score {{ score_class }}">
+                {{ '%.1f'|format(score_pct) }}
+            </div>
+        </div>
+        <div class="position-absolute bottom-0 start-0 w-100 d-flex justify-content-between px-2 pb-1 gallery-meta text-white small"
+            style="gap: 0.35rem;">
+            <div class="d-inline-flex align-items-center gap-1 text-truncate gallery-chip" style="max-width: 60%;">
+                <i class="bi bi-calendar-event"></i>
+                {% if p.captured_at %}{{ p.captured_at.strftime('%d %b') }}{% else %}-{% endif %}
+            </div>
+            <div class="d-inline-flex align-items-center gap-1 text-truncate gallery-chip" style="max-width: 38%;">
+                <i class="bi bi-geo-alt"></i>
+                {% if p.latitude and p.longitude %}{{ '%.4f'|format(p.latitude) }}, {{ '%.4f'|format(p.longitude) }}{%
+                else %}GPS tidak ada{% endif %}
+            </div>
+        </div>
+    </div>
+    </div>
+    {% endmacro %}
+
+    {% if random_photos %}
+    {% set row1_photos = random_photos[:12] %}
+    {% set row2_photos = random_photos[12:24] %}
+
+    <!-- Row 1: Scroll Right to Left -->
+    <div class="gallery-row mb-2">
+        <div class="gallery-track scroll-left">
+            {% for p in row1_photos %}{{ photo_item(p, loop.index0, false) }}{% endfor %}
+            {% for p in row1_photos %}{{ photo_item(p, loop.index0, true) }}{% endfor %}
+        </div>
+    </div>
+
+    <!-- Row 2: Scroll Left to Right -->
+    {% if row2_photos %}
+    <div class="gallery-row">
+        <div class="gallery-track scroll-right">
+            {% for p in row2_photos %}{{ photo_item(p, loop.index0 + 12, false) }}{% endfor %}
+            {% for p in row2_photos %}{{ photo_item(p, loop.index0 + 12, true) }}{% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="col-12 text-center text-muted small py-3">Belum ada foto</div>
+    {% endif %}

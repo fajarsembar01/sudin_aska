@@ -4,6 +4,7 @@ import json
 import os
 import re
 from datetime import datetime, timedelta, timezone
+from math import ceil
 from typing import Optional, Dict, List
 from pathlib import Path
 
@@ -19,6 +20,7 @@ from flask import (
     session,
     current_app,
 )
+from werkzeug.datastructures import MultiDict
 
 from .auth import current_user, login_required, role_required
 from utils import current_jakarta_time, to_jakarta
@@ -39,6 +41,9 @@ from .queries import (
     fetch_recent_questions,
     fetch_top_keywords,
     fetch_top_users,
+    fetch_feedback_summary,
+    fetch_feedback_list,
+    fetch_feedback_trend,
     update_bullying_report_status,
     bulk_update_bullying_report_status,
     fetch_psych_reports,
@@ -925,6 +930,75 @@ def activity_api() -> Response:
         for row in activity
     ]
     return jsonify(payload)
+
+
+@main_bp.route("/feedback")
+@login_required
+def feedback() -> Response:
+    args: MultiDict = request.args
+    page = max(1, int(args.get("page", 1)))
+
+    feedback_type = args.get("feedback_type") or None
+    if feedback_type and feedback_type not in ("like", "dislike"):
+        feedback_type = None
+
+    start_date = _parse_date(args.get("start_date"))
+    end_date = _parse_date(args.get("end_date"))
+
+    if not start_date and not end_date:
+        end_date = current_jakarta_time()
+        start_date = end_date - timedelta(days=30)
+
+    summary = fetch_feedback_summary(start_date=start_date, end_date=end_date)
+
+    limit = REPORT_PAGE_SIZE
+    offset = (page - 1) * limit
+    records, total = fetch_feedback_list(
+        filter_type=feedback_type,
+        start_date=start_date,
+        end_date=end_date,
+        limit=limit,
+        offset=offset,
+    )
+
+    for record in records:
+        if record.get("created_at"):
+            record["created_at"] = to_jakarta(record["created_at"])
+        if record.get("message_created_at"):
+            record["message_created_at"] = to_jakarta(record["message_created_at"])
+
+    trend_start = (end_date or current_jakarta_time()) - timedelta(days=30)
+    trend_data = fetch_feedback_trend(start_date=trend_start, days=30)
+
+    chart_days: list[str] = []
+    chart_likes: list[int] = []
+    chart_dislikes: list[int] = []
+
+    for row in trend_data:
+        day = row.get("day")
+        day_str = day.isoformat() if hasattr(day, "isoformat") else str(day)
+        chart_days.append(day_str)
+        chart_likes.append(row.get("likes", 0))
+        chart_dislikes.append(row.get("dislikes", 0))
+
+    total_pages = max(1, ceil(total / limit)) if total else 1
+
+    return render_template(
+        "feedback.html",
+        summary=summary,
+        records=records,
+        total=total,
+        page=page,
+        total_pages=total_pages,
+        per_page=limit,
+        filter_type=feedback_type,
+        start_date=start_date,
+        end_date=end_date,
+        chart_days=chart_days,
+        chart_likes=chart_likes,
+        chart_dislikes=chart_dislikes,
+        generated_at=current_jakarta_time(),
+    )
 
 
 @main_bp.route("/chats/export")

@@ -1,0 +1,29 @@
+{#
+Section Card Component - Reusable card with icon header
+
+Usage:
+{% from "portal/components/_section_card.html" import section_card %}
+
+{% call section_card(title="Card Title", icon="building", color="primary", subtitle="Optional subtitle") %}
+<p>Card content here</p>
+{% endcall %}
+#}
+
+{% macro section_card(title, icon="box", color="primary", subtitle=None) %}
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <span class="icon-badge section-icon text-{{ color }}">
+                <i class="bi bi-{{ icon }}"></i>
+            </span>
+            <div>
+                <h2 class="h6 fw-bold mb-0">{{ title }}</h2>
+                {% if subtitle %}
+                <p class="text-muted mb-0 small">{{ subtitle }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {{ caller() }}
+    </div>
+</div>
+{% endmacro %}

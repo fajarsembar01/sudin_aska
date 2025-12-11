@@ -17,3 +17,6 @@ __pycache__/
 
 # Log
 *.log
+
+# Local reference repos / dot dirs
+.contoh_repo/

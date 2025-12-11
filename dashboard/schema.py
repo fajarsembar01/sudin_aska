@@ -162,6 +162,35 @@ CREATE INDEX IF NOT EXISTS idx_twitter_worker_logs_level
 ON twitter_worker_logs (level);
 """
 
+_CHAT_FEEDBACK_SQL = """
+CREATE TABLE IF NOT EXISTS chat_feedback (
+    id SERIAL PRIMARY KEY,
+    chat_log_id INTEGER NOT NULL REFERENCES chat_logs(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL,
+    username TEXT,
+    feedback_type TEXT NOT NULL CHECK (feedback_type IN ('like', 'dislike')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (chat_log_id, user_id)
+);
+"""
+
+_CHAT_FEEDBACK_CHAT_LOG_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_chat_feedback_chat_log ON chat_feedback (chat_log_id);
+"""
+
+_CHAT_FEEDBACK_USER_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_chat_feedback_user ON chat_feedback (user_id);
+"""
+
+_CHAT_FEEDBACK_TYPE_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_chat_feedback_type ON chat_feedback (feedback_type);
+"""
+
+_CHAT_FEEDBACK_CREATED_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_chat_feedback_created ON chat_feedback (created_at DESC);
+"""
+
 _TELEGRAM_USERS_SQL = """
 CREATE TABLE IF NOT EXISTS telegram_users (
     id SERIAL PRIMARY KEY,
@@ -182,6 +211,196 @@ _TELEGRAM_USERS_INDEX_STATUS = """
 CREATE INDEX IF NOT EXISTS idx_telegram_users_status ON telegram_users (status);
 """
 
+# ===== Portal PANBERSS Schema =====
+
+_PORTAL_KECAMATAN_SQL = """
+CREATE TABLE IF NOT EXISTS portal_kecamatan (
+    id SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    code TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_PORTAL_KECAMATAN_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_portal_kecamatan_name ON portal_kecamatan (name);
+"""
+
+_PORTAL_KELURAHAN_SQL = """
+CREATE TABLE IF NOT EXISTS portal_kelurahan (
+    id SERIAL PRIMARY KEY,
+    kecamatan_id INTEGER NOT NULL REFERENCES portal_kecamatan(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    code TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (kecamatan_id, name)
+);
+"""
+
+_PORTAL_KELURAHAN_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_portal_kelurahan_kecamatan ON portal_kelurahan (kecamatan_id);
+"""
+
+_PORTAL_SCHOOLS_SQL = """
+CREATE TABLE IF NOT EXISTS portal_schools (
+    id SERIAL PRIMARY KEY,
+    npsn TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    jenjang TEXT NOT NULL DEFAULT 'SD',
+    alamat TEXT,
+    kelurahan TEXT,
+    kecamatan TEXT,
+    user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    metadata JSONB,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_PORTAL_SCHOOLS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_portal_schools_npsn ON portal_schools (npsn);
+"""
+
+_PORTAL_ROOMS_SQL = """
+CREATE TABLE IF NOT EXISTS portal_rooms (
+    id SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    description TEXT,
+    category TEXT NOT NULL DEFAULT 'umum',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_PORTAL_ASPECTS_SQL = """
+CREATE TABLE IF NOT EXISTS portal_aspects (
+    id SERIAL PRIMARY KEY,
+    room_id INTEGER NOT NULL REFERENCES portal_rooms(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (room_id, name)
+);
+"""
+
+_PORTAL_ASPECTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_portal_aspects_room ON portal_aspects (room_id);
+"""
+
+_PORTAL_SCHOOL_ROOMS_SQL = """
+CREATE TABLE IF NOT EXISTS portal_school_rooms (
+    id SERIAL PRIMARY KEY,
+    school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+    room_id INTEGER NOT NULL REFERENCES portal_rooms(id) ON DELETE CASCADE,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (school_id, room_id)
+);
+"""
+
+_PORTAL_SCHOOL_ROOMS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_portal_school_rooms_school ON portal_school_rooms (school_id);
+"""
+
+_PORTAL_ASSESSMENT_PERIODS_SQL = """
+CREATE TABLE IF NOT EXISTS portal_assessment_periods (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_PORTAL_ASSESSMENT_PERIODS_INDEX_SQL = """
+CREATE UNIQUE INDEX IF NOT EXISTS idx_portal_periods_active ON portal_assessment_periods (is_active) WHERE is_active = TRUE;
+"""
+
+_PORTAL_ASSESSMENTS_SQL = """
+CREATE TABLE IF NOT EXISTS portal_assessments (
+    id SERIAL PRIMARY KEY,
+    school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+    staff_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    period_id INTEGER REFERENCES portal_assessment_periods(id) ON DELETE SET NULL,
+    assessment_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'submitted', 'verified', 'rejected')),
+    total_score DECIMAL(5,2),
+    notes TEXT,
+    submitted_at TIMESTAMPTZ,
+    verified_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    verified_at TIMESTAMPTZ,
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_PORTAL_ASSESSMENTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_portal_assessments_school ON portal_assessments (school_id);
+CREATE INDEX IF NOT EXISTS idx_portal_assessments_staff ON portal_assessments (staff_id);
+CREATE INDEX IF NOT EXISTS idx_portal_assessments_period ON portal_assessments (period_id);
+CREATE INDEX IF NOT EXISTS idx_portal_assessments_date ON portal_assessments (assessment_date DESC);
+CREATE INDEX IF NOT EXISTS idx_portal_assessments_status ON portal_assessments (status);
+"""
+
+_PORTAL_ASSESSMENT_SCORES_SQL = """
+CREATE TABLE IF NOT EXISTS portal_assessment_scores (
+    id SERIAL PRIMARY KEY,
+    assessment_id INTEGER NOT NULL REFERENCES portal_assessments(id) ON DELETE CASCADE,
+    school_room_id INTEGER NOT NULL REFERENCES portal_school_rooms(id) ON DELETE CASCADE,
+    aspect_id INTEGER NOT NULL REFERENCES portal_aspects(id) ON DELETE CASCADE,
+    score INTEGER NOT NULL CHECK (score >= 0 AND score <= 3),
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (assessment_id, school_room_id, aspect_id)
+);
+"""
+
+_PORTAL_ASSESSMENT_SCORES_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_portal_scores_assessment ON portal_assessment_scores (assessment_id);
+"""
+
+_PORTAL_ASSESSMENT_PHOTOS_SQL = """
+CREATE TABLE IF NOT EXISTS portal_assessment_photos (
+    id SERIAL PRIMARY KEY,
+    assessment_id INTEGER NOT NULL REFERENCES portal_assessments(id) ON DELETE CASCADE,
+    school_room_id INTEGER NOT NULL REFERENCES portal_school_rooms(id) ON DELETE CASCADE,
+    photo_path TEXT NOT NULL,
+    latitude DECIMAL(9,6),
+    longitude DECIMAL(9,6),
+    captured_at TIMESTAMPTZ,
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_PORTAL_ASSESSMENT_PHOTOS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_portal_photos_assessment ON portal_assessment_photos (assessment_id);
+"""
+
+_PORTAL_ASSESSMENT_ROOM_DETAILS_SQL = """
+CREATE TABLE IF NOT EXISTS portal_assessment_room_details (
+    id SERIAL PRIMARY KEY,
+    assessment_id INTEGER NOT NULL REFERENCES portal_assessments(id) ON DELETE CASCADE,
+    school_room_id INTEGER NOT NULL REFERENCES portal_school_rooms(id) ON DELETE CASCADE,
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (assessment_id, school_room_id)
+);
+"""
+
+_PORTAL_ASSESSMENT_ROOM_DETAILS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_portal_room_details_assessment ON portal_assessment_room_details (assessment_id);
+"""
+
 
 def ensure_dashboard_schema() -> None:
     """Create core dashboard tables when they do not yet exist."""
@@ -200,8 +419,35 @@ def ensure_dashboard_schema() -> None:
         _TWITTER_LOGS_SQL,
         _TWITTER_LOGS_INDEX_CREATED,
         _TWITTER_LOGS_INDEX_LEVEL,
+        _CHAT_FEEDBACK_SQL,
+        _CHAT_FEEDBACK_CHAT_LOG_INDEX_SQL,
+        _CHAT_FEEDBACK_USER_INDEX_SQL,
+        _CHAT_FEEDBACK_TYPE_INDEX_SQL,
+        _CHAT_FEEDBACK_CREATED_INDEX_SQL,
         _TELEGRAM_USERS_SQL,
         _TELEGRAM_USERS_INDEX_STATUS,
+        # Portal PANBERSS tables
+        _PORTAL_KECAMATAN_SQL,
+        _PORTAL_KECAMATAN_INDEX_SQL,
+        _PORTAL_KELURAHAN_SQL,
+        _PORTAL_KELURAHAN_INDEX_SQL,
+        _PORTAL_SCHOOLS_SQL,
+        _PORTAL_SCHOOLS_INDEX_SQL,
+        _PORTAL_ROOMS_SQL,
+        _PORTAL_ASPECTS_SQL,
+        _PORTAL_ASPECTS_INDEX_SQL,
+        _PORTAL_SCHOOL_ROOMS_SQL,
+        _PORTAL_SCHOOL_ROOMS_INDEX_SQL,
+        _PORTAL_ASSESSMENT_PERIODS_SQL,
+        _PORTAL_ASSESSMENT_PERIODS_INDEX_SQL,
+        _PORTAL_ASSESSMENTS_SQL,
+        _PORTAL_ASSESSMENTS_INDEX_SQL,
+        _PORTAL_ASSESSMENT_SCORES_SQL,
+        _PORTAL_ASSESSMENT_SCORES_INDEX_SQL,
+        _PORTAL_ASSESSMENT_PHOTOS_SQL,
+        _PORTAL_ASSESSMENT_PHOTOS_INDEX_SQL,
+        _PORTAL_ASSESSMENT_ROOM_DETAILS_SQL,
+        _PORTAL_ASSESSMENT_ROOM_DETAILS_INDEX_SQL,
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS no_tester_enabled BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS nrk TEXT",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS nip TEXT",
@@ -233,10 +479,43 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS mother_name TEXT",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS nik TEXT",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS kk_number TEXT",
+        "ALTER TABLE portal_assessments ADD COLUMN IF NOT EXISTS period_id INTEGER REFERENCES portal_assessment_periods(id) ON DELETE SET NULL",
+        "ALTER TABLE portal_assessment_scores ADD COLUMN IF NOT EXISTS notes TEXT",
+        # Rename taken_at to captured_at if it exists (handling legacy schema)
+        "DO $$ BEGIN IF EXISTS(SELECT * FROM information_schema.columns WHERE table_name='portal_assessment_photos' AND column_name='taken_at') THEN ALTER TABLE portal_assessment_photos RENAME COLUMN taken_at TO captured_at; END IF; END $$;",
+        "ALTER TABLE portal_assessment_photos ADD COLUMN IF NOT EXISTS captured_at TIMESTAMPTZ",
+        "ALTER TABLE portal_assessment_photos ADD COLUMN IF NOT EXISTS notes TEXT",
+        # Clean up duplicates before adding unique constraint (keep latest)
+        """
+        DELETE FROM portal_assessment_photos a USING portal_assessment_photos b
+        WHERE a.assessment_id = b.assessment_id 
+          AND a.school_room_id = b.school_room_id 
+          AND a.created_at < b.created_at
+        """,
+        # Enforce unique constraint for atomic upserts
+        "ALTER TABLE portal_assessment_photos ADD CONSTRAINT portal_assessment_photos_assessment_id_school_room_id_key UNIQUE (assessment_id, school_room_id)", 
+        # Portal schools additional columns
+        "ALTER TABLE portal_schools ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'NEGERI'",
+        "ALTER TABLE portal_schools ADD COLUMN IF NOT EXISTS kelurahan_id INTEGER REFERENCES portal_kelurahan(id) ON DELETE SET NULL",
+        # Drop legacy columns from portal_schools (kecamatan can be derived from kelurahan->kecamatan relation)
+        "ALTER TABLE portal_schools DROP CONSTRAINT IF EXISTS portal_schools_kecamatan_id_fkey",
+        "ALTER TABLE portal_schools DROP COLUMN IF EXISTS kecamatan_id",
+        "ALTER TABLE portal_schools DROP COLUMN IF EXISTS kecamatan",
+        "ALTER TABLE portal_schools DROP COLUMN IF EXISTS kelurahan",
+        # School registration - link dashboard users to schools
+        "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS school_id INTEGER REFERENCES portal_schools(id) ON DELETE SET NULL",
     )
-    with get_cursor(commit=True) as cur:
-        for statement in statements:
-            cur.execute(statement)
+    
+    # Execute statements one by one to ensure partial success and better error reporting
+    for i, statement in enumerate(statements):
+        try:
+            # We use a fresh cursor/transaction for each statement or block
+            with get_cursor(commit=True) as cur:
+                cur.execute(statement)
+        except Exception as e:
+            # Log error but continue with other statements if possible
+            print(f"Error executing schema statement #{i+1}: {e}")
+            print(f"Statement: {statement[:100]}...")
 
 
 __all__ = ["ensure_dashboard_schema"]

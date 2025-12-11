@@ -1,0 +1,256 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Setup Data Master" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url_for('portal.admin_stats') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="h4 fw-bold mb-0">Setup Data Master</h1>
+                <p class="text-muted mb-0 small">Kelola sekolah, ruangan, dan aspek penilaian</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <!-- Add School -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="icon-badge section-icon text-primary">
+                            <i class="bi bi-building-add"></i>
+                        </span>
+                        <h2 class="h6 fw-bold mb-0">Tambah Sekolah</h2>
+                    </div>
+                    <form method="POST" action="{{ url_for('portal.add_school') }}">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="text" name="npsn" class="form-control form-control-sm" placeholder="NPSN"
+                                    required>
+                            </div>
+                            <div class="col-6">
+                                <select name="jenjang" class="form-select form-select-sm">
+                                    <option value="SD">SD</option>
+                                    <option value="MI">MI</option>
+                                    <option value="SMP">SMP</option>
+                                    <option value="MTS">MTS</option>
+                                    <option value="SMA">SMA</option>
+                                    <option value="MA">MA</option>
+                                    <option value="SMK">SMK</option>
+                                    <option value="TK">TK</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <input type="text" name="name" class="form-control form-control-sm"
+                                    placeholder="Nama Sekolah" required>
+                            </div>
+                            <div class="col-12">
+                                <input type="text" name="alamat" class="form-control form-control-sm"
+                                    placeholder="Alamat (opsional)">
+                            </div>
+                            <div class="col-6">
+                                <select name="kelurahan_id" class="form-select form-select-sm" required>
+                                    <option value="">-- Kelurahan --</option>
+                                    {% for l in kelurahan_list %}
+                                    <option value="{{ l.id }}">{{ l.kecamatan_name }} > {{ l.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <select name="status" class="form-select form-select-sm">
+                                    <option value="NEGERI">NEGERI</option>
+                                    <option value="SWASTA">SWASTA</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                    <i class="bi bi-plus-lg me-1"></i>Tambah
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+
+            <!-- Add Room -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="icon-badge section-icon text-success">
+                            <i class="bi bi-door-open"></i>
+                        </span>
+                        <h2 class="h6 fw-bold mb-0">Tambah Ruangan</h2>
+                    </div>
+                    <form method="POST" action="{{ url_for('portal.add_room') }}">
+                        <div class="row g-2">
+                            <div class="col-8">
+                                <input type="text" name="name" class="form-control form-control-sm"
+                                    placeholder="Nama Ruangan" required>
+                            </div>
+                            <div class="col-4">
+                                <input type="number" name="sort_order" class="form-control form-control-sm"
+                                    placeholder="Urutan" value="0">
+                            </div>
+                            <div class="col-12">
+                                <input type="text" name="description" class="form-control form-control-sm"
+                                    placeholder="Deskripsi (opsional)">
+                            </div>
+                            <div class="col-12">
+                                <select name="category" class="form-select form-select-sm">
+                                    <option value="umum">Umum</option>
+                                    <option value="akademik">Akademik</option>
+                                    <option value="fasilitas">Fasilitas</option>
+                                    <option value="sanitasi">Sanitasi</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-success btn-sm w-100">
+                                    <i class="bi bi-plus-lg me-1"></i>Tambah
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add Aspect -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="icon-badge section-icon text-warning">
+                            <i class="bi bi-list-check"></i>
+                        </span>
+                        <h2 class="h6 fw-bold mb-0">Tambah Aspek</h2>
+                    </div>
+                    <form method="POST" action="{{ url_for('portal.add_aspect') }}">
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <select name="room_id" class="form-select form-select-sm" required>
+                                    <option value="">-- Pilih Ruangan --</option>
+                                    {% for room in rooms %}
+                                    <option value="{{ room.id }}">{{ room.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-8">
+                                <input type="text" name="name" class="form-control form-control-sm"
+                                    placeholder="Nama Aspek" required>
+                            </div>
+                            <div class="col-4">
+                                <input type="number" name="sort_order" class="form-control form-control-sm"
+                                    placeholder="Urutan" value="0">
+                            </div>
+                            <div class="col-12">
+                                <input type="text" name="description" class="form-control form-control-sm"
+                                    placeholder="Deskripsi (opsional)">
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-warning btn-sm w-100">
+                                    <i class="bi bi-plus-lg me-1"></i>Tambah
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <!-- Schools List -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="icon-badge section-icon text-primary">
+                            <i class="bi bi-building"></i>
+                        </span>
+                        <div>
+                            <h2 class="h6 fw-bold mb-0">Daftar Sekolah</h2>
+                            <p class="text-muted mb-0 small">{{ schools|length }} sekolah terdaftar</p>
+                        </div>
+                    </div>
+                    {% if schools %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>NPSN</th>
+                                    <th>Nama</th>
+                                    <th>Jenjang</th>
+                                    <th>Status</th>
+                                    <th>Kecamatan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in schools[:20] %}
+                                <tr>
+                                    <td><code>{{ s.npsn }}</code></td>
+                                    <td>{{ s.name }}</td>
+                                    <td><span class="badge bg-light text-dark">{{ s.jenjang }}</span></td>
+                                    <td><span
+                                            class="badge {% if s.status == 'NEGERI' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{
+                                            s.status or '-' }}</span></td>
+                                    <td class="text-muted small">{{ s.kecamatan_name or '-' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if schools|length > 15 %}
+                    <p class="text-muted small mt-2 mb-0">...dan {{ schools|length - 15 }} sekolah lainnya</p>
+                    {% endif %}
+                    {% else %}
+                    <p class="text-muted mb-0">Belum ada sekolah</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Rooms List -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="icon-badge section-icon text-success">
+                            <i class="bi bi-door-open"></i>
+                        </span>
+                        <div>
+                            <h2 class="h6 fw-bold mb-0">Daftar Ruangan & Aspek</h2>
+                            <p class="text-muted mb-0 small">{{ rooms|length }} ruangan terdaftar</p>
+                        </div>
+                    </div>
+                    {% if rooms %}
+                    <div class="list-group list-group-flush">
+                        {% for r in rooms %}
+                        <div class="list-group-item px-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fw-semibold">{{ r.name }}</div>
+                                    <small class="text-muted">{{ r.category }} • {{ r.aspects|length }} aspek</small>
+                                </div>
+                                <span class="badge bg-light text-dark">{{ r.sort_order }}</span>
+                            </div>
+                            {% if r.aspects %}
+                            <ul class="list-unstyled mb-0 mt-2 ps-3 small text-muted">
+                                {% for a in r.aspects[:4] %}
+                                <li><i class="bi bi-dot"></i>{{ a.name }}</li>
+                                {% endfor %}
+                                {% if r.aspects|length > 4 %}
+                                <li class="text-muted">...dan {{ r.aspects|length - 4 }} lainnya</li>
+                                {% endif %}
+                            </ul>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">Belum ada ruangan</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

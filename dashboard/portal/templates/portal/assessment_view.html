@@ -1,0 +1,174 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Hasil Penilaian" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url_for('portal.home') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="h4 fw-bold mb-0">Hasil Penilaian</h1>
+                <p class="text-muted mb-0 small">{{ assessment.school_name }}</p>
+            </div>
+        </div>
+        <span class="status-badge status-{{ assessment.status }}">
+            <i class="bi bi-{% if assessment.status == 'submitted' %}check-circle{% else %}pencil{% endif %}"></i>
+            {{ assessment.status|capitalize }}
+        </span>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="score-summary">
+                        {% set pct_total = ((assessment.total_score or 0) / 3 * 100) if assessment.total_score is not
+                        none else 0 %}
+                        <div class="big-score">{{ "%.1f"|format(pct_total) }}</div>
+                        <div class="score-label">Skor Rata-rata (0-100)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="icon-badge section-icon text-primary">
+                            <i class="bi bi-building"></i>
+                        </span>
+                        <h2 class="h6 fw-bold mb-0">Info Sekolah</h2>
+                    </div>
+                    <table class="table table-sm mb-0">
+                        <tr>
+                            <td class="text-muted">NPSN</td>
+                            <td class="text-end fw-medium">{{ assessment.npsn }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Jenjang</td>
+                            <td class="text-end">{{ assessment.jenjang }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Tanggal</td>
+                            <td class="text-end">{{ assessment.assessment_date }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Status</td>
+                            <td class="text-end">{{ assessment.status|capitalize }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            {% if user.role == 'admin' and assessment.status != 'draft' %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-shield-lock text-danger"></i> Admin Zone
+                    </h6>
+                    <form method="post" action="{{ url_for('portal.reopen_route', assessment_id=assessment.id) }}">
+                        <button type="submit" class="btn btn-warning w-100"
+                            onclick="return confirm('Buka kembali penilaian ini (kembali ke draft)?')">
+                            <i class="bi bi-arrow-counterclockwise me-2"></i>Buka Kembali (Reopen)
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="icon-badge section-icon text-success">
+                            <i class="bi bi-list-check"></i>
+                        </span>
+                        <div>
+                            <h2 class="h6 fw-bold mb-0">Detail Penilaian</h2>
+                            <p class="text-muted mb-0 small">Skor per ruangan dan aspek</p>
+                        </div>
+                    </div>
+
+                    {% if user.role == 'admin' %}
+                    <div class="alert alert-info d-flex flex-wrap align-items-center gap-3">
+                        <div>
+                            <div class="fw-semibold mb-0">Rata-rata semua penilaian sekolah ini</div>
+                            {% set pct_school_avg = ((school_avg or 0) / 3 * 100) if school_avg is not none else 0 %}
+                            <div class="text-muted small">{{ "%.1f"|format(pct_school_avg) }}</div>
+                        </div>
+                        {% if other_assessments %}
+                        <div class="ms-auto">
+                            <div class="small text-muted mb-1">Penilaian lain</div>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for other in other_assessments %}
+                                <a class="btn btn-sm btn-outline-primary"
+                                    href="{{ url_for('portal.view_assessment', assessment_id=other.id) }}">
+                                    {{ other.assessor_name or 'Staff' }} - {{ other.total_score or '-' }}
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% if rooms_scores %}
+                    {% for room_name, scores in rooms_scores|dictsort %}
+                    <div class="room-item mb-3">
+                        <div class="room-header">
+                            <h5><i class="bi bi-door-open me-2"></i>{{ room_name }}</h5>
+                            {% set room_avg = (scores|map(attribute='score')|list|sum) / (scores|length or 1) %}
+                            <span class="badge bg-light text-dark">{{ "%.1f"|format(room_avg) }}</span>
+                        </div>
+                        <div class="room-body">
+                            <table class="table table-sm mb-3">
+                                {% for s in scores %}
+                                <tr>
+                                    <td>{{ s.aspect_name }}</td>
+                                    <td class="text-end">
+                                        <span
+                                            class="badge {% if s.score == 3 %}text-bg-success{% elif s.score == 2 %}text-bg-info{% elif s.score == 1 %}text-bg-warning{% else %}text-bg-danger{% endif %}">
+                                            {{ s.score }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                            {% set room_photos = photos_by_room.get(scores[0].school_room_id) if scores else [] %}
+                            {% if room_photos %}
+                            <div class="row g-2 mb-3">
+                                {% for p in room_photos %}
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <div class="ratio ratio-1x1 rounded overflow-hidden shadow-sm position-relative">
+                                        <img src="{{ url_for('portal.uploaded_file', filename=p.photo_path.split('/')[-1]) }}"
+                                            alt="Foto {{ room_name }}" class="object-fit-cover w-100 h-100"
+                                            onerror="this.src='https://placehold.co/200x200?text=No+Image'">
+                                        <div class="position-absolute bottom-0 start-0 w-100 px-2 py-1 text-white small"
+                                            style="background: rgba(0,0,0,0.45); text-shadow: 0 1px 2px rgba(0,0,0,0.6);">
+                                            {{ p.captured_at.strftime('%d %b %Y %H:%M') if p.captured_at else '' }}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% set notes = room_notes.get(scores[0].school_room_id) if scores else '' %}
+                            {% if notes %}
+                            <div class="alert alert-info py-2 px-3 mb-0">
+                                <i class="bi bi-chat-right-text me-2"></i>{{ notes }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted mb-0">Belum ada skor yang tercatat.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -5,7 +5,8 @@
 **Nama Instansi:** Suku Dinas Pendidikan Jakarta Utara 2  
 **Unit Induk:** Dinas Pendidikan Provinsi DKI Jakarta  
 
-**Alamat Kantor:** Saat ini kantor Suku Dinas Pendidikan Jakarta Utara Wilayah 2 bertepatan di Kantor Walikota Administrasi Jakarta Utara, Jl. Yos Sudarso No.27-29 19, RT.19/RW.5, Kb. Bawang, Kec. Tj. Priok, Jkt Utara, Daerah Khusus Ibukota Jakarta 14320 
+**Alamat Kantor:**  
+Lantai 4 Blok R Kantor Walikota Administrasi Jakarta Utara, Jl. Yos Sudarso No.27-29, RT.19/RW.5, Kb. Bawang, Kec. Tj. Priok, Jkt Utara, Daerah Khusus Ibukota Jakarta 14320
 
 **Kontak Resmi (disarankan diisi manual):**
 - **Telepon:** (62-21) 4303111  
@@ -25,7 +26,10 @@ Secara umum, lingkup kerja mencakup:
 - Sekolah menengah pertama (SMP) negeri dan swasta di wilayah kerja Sudin 2.  
 - Satuan pendidikan non-formal tertentu sesuai kewenangan Sudin.  
 
-**Wilayah Kecamatan Jakarta Utara 2:** Cilincing, Koja, dan Kelapa Gading 
+**Wilayah Kecamatan Jakarta Utara 2:**
+1. **Cilincing**
+2. **Koja**
+3. **Kelapa Gading**
 
 
 ## 3. Tugas dan Fungsi Utama
