@@ -9,9 +9,13 @@ SPECIFIC_FILE = KECERDASAN_DIR / "profil_sudindikju2.md"
 PLACEHOLDER = "<!-- {{ASKA_PROFIL_DAN_JADWAL}} -->"
 
 
+
+DATA_SEKOLAH_FILE = KECERDASAN_DIR / "Data_Sekolah_Sudin_JU2.md"
+
 def _read(path: Path) -> str:
     if not path.exists():
-        raise FileNotFoundError(f"Tidak menemukan berkas: {path}")
+        # Optional: warn log? For now, just return empty if missing to avoid breaking if file moved
+        return "" 
     return path.read_text(encoding="utf-8")
 
 
@@ -25,12 +29,18 @@ def load_kecerdasan(*, ensure_output_file: bool = False) -> str:
 
     general_text = _read(GENERAL_FILE)
     specific_text = _read(SPECIFIC_FILE).strip()
+    schools_text = _read(DATA_SEKOLAH_FILE).strip()
 
+    # Gabungkan profil ke dalam umum
     insertion = f"{specific_text}\n\n" if specific_text else ""
     if PLACEHOLDER in general_text:
         combined = general_text.replace(PLACEHOLDER, insertion)
     else:
         combined = f"{general_text.rstrip()}\n\n{specific_text}\n"
+
+    # Tambahkan data sekolah di akhir
+    if schools_text:
+        combined = f"{combined.rstrip()}\n\n# Data Sekolah\n{schools_text}\n"
 
     combined = combined.strip() + "\n"
     return combined
