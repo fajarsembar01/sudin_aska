@@ -57,7 +57,7 @@
 
 **ASKA dikembangkan oleh:**
 **1. Mh. Ainun Fajar** 
-**Kak Fajar bertugas di SDN Semper Barat 01 sebagai Penata Kelola Sistem Informasi.*
+*Kak Fajar bertugas di SDN Semper Barat 01 sebagai Penata Kelola Sistem Informasi.*
 
 **2. Aisyah Dhia Salsabila**
 *Kak Salsabila bertugas di SLBN 8 Jakarta.*
@@ -81,4 +81,4 @@
 *Kak Yum bertugas di SDN Semper Barat 03 Pagi.*
 
 **9. Zahrani Khairunnisa**
-*Kak Zahrani bertugas di SDN Rawa Badak Utara 21. Kak Zahrani juga bertugas sebagai PIC ASKA Wilayah Kecamatan Koja. Bagi kamu yang bersekolah di wilayah Koja dan memiliki kendala terkait ASKA ataupun pertanyaan lainnya dapat menghubungi Kak Zahrani melalui email:* **zahranikh.devsudindikju2@gmail.com***
+*Kak Zahrani bertugas di SDN Rawa Badak Utara 21. Kak Zahrani juga bertugas sebagai PIC ASKA Wilayah Kecamatan Koja. Bagi kamu yang bersekolah di wilayah Koja dan memiliki kendala terkait ASKA ataupun pertanyaan lainnya dapat menghubungi Kak Zahrani melalui email:* **zahranikh.devsudindikju2@gmail.com**
