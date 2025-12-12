@@ -3,8 +3,6 @@
 
 Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, dikelompokkan berdasarkan Kecamatan dan Kelurahan.
 
-Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, dikelompokkan berdasarkan Kecamatan dan Kelurahan.
-
 ## Kecamatan Cilincing
 ### Kelurahan Cilincing
 #### MIS MIFTAHUL JANNAH
@@ -138,6 +136,12 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Jenjang**: SMP
 - **Status**: SWASTA
 - **Alamat**: Jl. Bakti No. 27
+
+#### SMP Syahid II
+- **NPSN**: 20109325
+- **Jenjang**: SMP
+- **Status**: SWASTA
+- **Alamat**: Jl. Baru Gg. II No.1
 
 ### Kelurahan Kali Baru
 #### MI BACHRUL ILMI AL-AMIN
@@ -314,18 +318,18 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Status**: NEGERI
 - **Alamat**: Jl. Tanah Merdeka 33
 
-#### SMP Syahid II
-- **NPSN**: 20109325
-- **Jenjang**: SMP
-- **Status**: SWASTA
-- **Alamat**: Jl. Baru Gg. II No.1
-
-### Kelurahan Kec. Cilincing
 #### SMP TERPADU MENARA CENDEKIA
 - **NPSN**: 20106688
 - **Jenjang**: SMP
 - **Status**: SWASTA
 - **Alamat**: Jl. Kalibaru Barat VI No. 48 Rt. 012/015
+
+### Kelurahan Kec. Cilincing
+#### MTSS Al-Anwariyah
+- **NPSN**: 70048009
+- **Jenjang**: MTS
+- **Status**: SWASTA
+- **Alamat**: Jalan Malaka I No. 6
 
 ### Kelurahan Marunda
 #### MI AL GIVARI
@@ -351,12 +355,6 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Jenjang**: MTS
 - **Status**: NEGERI
 - **Alamat**: Marunda Baru Iii No. 28
-
-#### MTSS Al-Anwariyah
-- **NPSN**: 70048009
-- **Jenjang**: MTS
-- **Status**: SWASTA
-- **Alamat**: Jalan Malaka I No. 6
 
 #### MTsS El-NUR EL-KASYSYAF
 - **NPSN**: 69927699
@@ -423,6 +421,12 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Jenjang**: SMP
 - **Status**: SWASTA
 - **Alamat**: Jl. Marunda Baru III
+
+#### SMPN 290
+- **NPSN**: 69980874
+- **Jenjang**: SMP
+- **Status**: NEGERI
+- **Alamat**: Jl. Rumah Susun Marunda
 
 ### Kelurahan Rorotan
 #### MI AL ANWARIYAH
@@ -563,11 +567,11 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Status**: SWASTA
 - **Alamat**: Jl. Raya Rorotan No.1 Rt. 01/10
 
-#### SMPN 290
-- **NPSN**: 69980874
+#### SMP Negeri 200
+- **NPSN**: 20100769
 - **Jenjang**: SMP
 - **Status**: NEGERI
-- **Alamat**: Jl. Rumah Susun Marunda
+- **Alamat**: Jl. Rorotan IX No. 2
 
 ### Kelurahan Semper Barat
 #### MIS AL MUZAYYANAH
@@ -690,12 +694,6 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Status**: NEGERI
 - **Alamat**: Jl. Gereja Tugu
 
-#### SMP Negeri 200
-- **NPSN**: 20100769
-- **Jenjang**: SMP
-- **Status**: NEGERI
-- **Alamat**: Jl. Rorotan IX No. 2
-
 #### SMP PLUS AL-FUDHOLA
 - **NPSN**: 20122006
 - **Jenjang**: SMP
@@ -713,6 +711,12 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Jenjang**: SMP
 - **Status**: SWASTA
 - **Alamat**: Jl. Raya Tugu No. 21
+
+#### SMP Yaspi
+- **NPSN**: 20106713
+- **Jenjang**: SMP
+- **Status**: SWASTA
+- **Alamat**: Jl. Komp. Kebersihan DKI
 
 ### Kelurahan Semper Timur
 #### MIS AT TAUFIQ
@@ -853,11 +857,11 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Status**: SWASTA
 - **Alamat**: Jl. Dewa Kembar Rt.010/01
 
-#### SMP Yaspi
-- **NPSN**: 20106713
+#### SMP Strada St. Fransiskus Xaverius III
+- **NPSN**: 20106656
 - **Jenjang**: SMP
 - **Status**: SWASTA
-- **Alamat**: Jl. Komp. Kebersihan DKI
+- **Alamat**: Jl. Raya Cakung Cilincing No.11
 
 ### Kelurahan Suka Pura
 #### MIS AL ARAF
@@ -956,11 +960,11 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Status**: SWASTA
 - **Alamat**: Jl. Tipar No. 2
 
-#### SMP Strada St. Fransiskus Xaverius III
-- **NPSN**: 20106656
+#### SMP NEGERI 289 JAKARTA
+- **NPSN**: 69800097
 - **Jenjang**: SMP
-- **Status**: SWASTA
-- **Alamat**: Jl. Raya Cakung Cilincing No.11
+- **Status**: NEGERI
+- **Alamat**: JALAN TIPAR CAKUNG, SUKAPURA
 
 ## Kecamatan Kelapa Gading
 ### Kelurahan Kelapa Gading Barat
@@ -1084,12 +1088,6 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Status**: SWASTA
 - **Alamat**: Jl. Boulevard BGR Komplek Villa Gading Indah Blok Q
 
-#### SMP NEGERI 289 JAKARTA
-- **NPSN**: 69800097
-- **Jenjang**: SMP
-- **Status**: NEGERI
-- **Alamat**: JALAN TIPAR CAKUNG, SUKAPURA
-
 #### SMP NORTH JAKARTA INTERCULTURAL SCHOOL
 - **NPSN**: 69856891
 - **Jenjang**: SMP
@@ -1101,6 +1099,12 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Jenjang**: SMP
 - **Status**: SWASTA
 - **Alamat**: JL. BOULEVAR BARAT RAYA I
+
+#### Sekolah Menengah Pertama Intercultural School - Secondary Kelapa Gading
+- **NPSN**: 69725680
+- **Jenjang**: MA
+- **Status**: SWASTA
+- **Alamat**: Jalan Boulevard Bukit Gading Raya Blok A5-A8
 
 ### Kelurahan Kelapa Gading Timur
 #### MTsS AL-AQSHA
@@ -1151,11 +1155,11 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Status**: SWASTA
 - **Alamat**: Jl. Pelepah Kuning III
 
-#### Sekolah Menengah Pertama Intercultural School - Secondary Kelapa Gading
-- **NPSN**: 69725680
-- **Jenjang**: MA
+#### SMP Tunas Gading
+- **NPSN**: 20106691
+- **Jenjang**: SMP
 - **Status**: SWASTA
-- **Alamat**: Jalan Boulevard Bukit Gading Raya Blok A5-A8
+- **Alamat**: Jl. Gading Putih Raya P2/23
 
 ### Kelurahan Pegangsaan Dua
 #### MIS NUR - ATTAQWA
@@ -1368,11 +1372,11 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Status**: SWASTA
 - **Alamat**: Jl. Pegangsaan Dua KM 3.5
 
-#### SMP Tunas Gading
-- **NPSN**: 20106691
+#### SMP Sekolah HighScope Indonesia Jakarta Kelapa Gading
+- **NPSN**: 20178279
 - **Jenjang**: SMP
 - **Status**: SWASTA
-- **Alamat**: Jl. Gading Putih Raya P2/23
+- **Alamat**: Jl. Pegangsaan Dua No. 22, Kelapa Gading, Jakarta Utara 14250
 
 ## Kecamatan Koja
 ### Kelurahan Koja
@@ -1418,11 +1422,11 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Status**: SWASTA
 - **Alamat**: Jl. Deli Gg. 28 No. 12
 
-#### SMP Sekolah HighScope Indonesia Jakarta Kelapa Gading
-- **NPSN**: 20178279
+#### SMP Strada Santo FX-I
+- **NPSN**: 20106674
 - **Jenjang**: SMP
 - **Status**: SWASTA
-- **Alamat**: Jl. Pegangsaan Dua No. 22, Kelapa Gading, Jakarta Utara 14250
+- **Alamat**: Jl. Deli No. 20
 
 ### Kelurahan Lagoa
 #### MIS AL IKHWAN
@@ -1575,12 +1579,6 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Status**: NEGERI
 - **Alamat**: Jl. Semangka No 1
 
-#### SMP Strada Santo FX-I
-- **NPSN**: 20106674
-- **Jenjang**: SMP
-- **Status**: SWASTA
-- **Alamat**: Jl. Deli No. 20
-
 #### SMP TANJUNG PRIOK
 - **NPSN**: 20106684
 - **Jenjang**: SMP
@@ -1592,6 +1590,12 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Jenjang**: MI
 - **Status**: SWASTA
 - **Alamat**: Jl. Maja No. 40
+
+#### SMP Yapensori
+- **NPSN**: 20106709
+- **Jenjang**: SMP
+- **Status**: SWASTA
+- **Alamat**: Jl. Maja No. 53 A
 
 ### Kelurahan Rawabadak Selatan
 #### MIN 5 JAKARTA
@@ -1684,11 +1688,11 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Status**: SWASTA
 - **Alamat**: JL. BANDAR II NO.42 RT/RW 06/06
 
-#### SMP Yapensori
-- **NPSN**: 20106709
+#### SMP NEGERI 151 JAKARTA
+- **NPSN**: 20100764
 - **Jenjang**: SMP
-- **Status**: SWASTA
-- **Alamat**: Jl. Maja No. 53 A
+- **Status**: NEGERI
+- **Alamat**: Jl. Kepil No. 1
 
 ### Kelurahan Rawabadak Utara
 #### MTSS AL HIDAYAH RBU
@@ -1781,12 +1785,6 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Status**: SWASTA
 - **Alamat**: Jl. Anjungan No. 14-16 Komp. Bpp Walang Kel. Rawabadak Utara
 
-#### SMP NEGERI 151 JAKARTA
-- **NPSN**: 20100764
-- **Jenjang**: SMP
-- **Status**: NEGERI
-- **Alamat**: Jl. Kepil No. 1
-
 #### SMP NEGERI 173 JAKARTA
 - **NPSN**: 20100768
 - **Jenjang**: SMP
@@ -1798,6 +1796,12 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Jenjang**: SMP
 - **Status**: NEGERI
 - **Alamat**: Jl. Sindang Terusan No. 34 A
+
+#### SMP Negeri 30
+- **NPSN**: 20100746
+- **Jenjang**: SMP
+- **Status**: NEGERI
+- **Alamat**: Jl. Anggrek No. 4 Koja
 
 ### Kelurahan Tugu Selatan
 #### MTS AR RASYIDIYYAH
@@ -1848,11 +1852,11 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Status**: NEGERI
 - **Alamat**: Jl.Plumpang Semper No.20
 
-#### SMP Negeri 30
-- **NPSN**: 20100746
+#### SMP NEGERI 136 JAKARTA
+- **NPSN**: 20106716
 - **Jenjang**: SMP
 - **Status**: NEGERI
-- **Alamat**: Jl. Anggrek No. 4 Koja
+- **Alamat**: Jl. Bendungan Melayu No. 80
 
 ### Kelurahan Tugu Utara
 #### MIS AL HIDAYAH
@@ -1999,12 +2003,6 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Status**: SWASTA
 - **Alamat**: Jl. H. Murtadho No. 2A
 
-#### SMP NEGERI 136 JAKARTA
-- **NPSN**: 20106716
-- **Jenjang**: SMP
-- **Status**: NEGERI
-- **Alamat**: Jl. Bendungan Melayu No. 80
-
 #### SMP Negeri 114
 - **NPSN**: 20100719
 - **Jenjang**: SMP
@@ -2040,499 +2038,3 @@ Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, 
 - **Jenjang**: SMP
 - **Status**: SWASTA
 - **Alamat**: Mawar Luar No. 1
-
-## Kecamatan Unknown
-### Kelurahan Kelapa Gading Barat
-#### SMA Jakarta Taipei School
-- **NPSN**: 69975652
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Raya Kelapa Hybrida Blok QH
-
-#### SMA KRISTEN 5 PENABUR
-- **NPSN**: 20100601
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. HIBRIDA RAYA BLOK QA3
-
-#### SMA MAHATMA GADING
-- **NPSN**: 20100604
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Boulevard BGR Komplek Villa Gading Indah Blok D
-
-#### SMA MAHATMA GADING INTERCULTURAL SCHOOL
-- **NPSN**: 69889105
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Boulevard BGR Komplek Villa Gading Indah Blok Q
-
-#### SMA NORTH JAKARTA INTERCULTURAL SCHOOL
-- **NPSN**: 69856892
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. BOULEVARD BUKIT GADING RAYA
-
-#### SMA PENABUR JUNIOR COLLEGE KELAPA GADING
-- **NPSN**: 20177804
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. BOULEVARD BUKIT GADING RAYA KAV. A5-A8
-
-#### SMAK Ekumene
-- **NPSN**: 70040251
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Artha Gading Selatan No. 1 (Mall Artha Gading Lt. 5)
-
-#### SMAN 72 JAKARTA
-- **NPSN**: 20100796
-- **Jenjang**: -
-- **Status**: NEGERI
-- **Alamat**: JL. PRIHATIN KOMP TNI AL
-
-#### SMAS PGRI 12 JAKARTA
-- **NPSN**: 20100608
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. TABAH I NO. 5
-
-#### SMKS HANG TUAH 2
-- **NPSN**: 20107409
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. PERINTIS KEMERDEKAAN, KOMP TNI-AL
-
-#### SMKS HANG TUAH I JAKARTA
-- **NPSN**: 20107421
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. TABAH RAYA KOMP. TNI-AL
-
-#### SMKS PELAYARAN JAKARTA RAYA
-- **NPSN**: 20107443
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. PERINTIS KEMERDEKAAN KOMPLEK TNI-AL
-
-#### SMKS PGRI 38 JAKARTA
-- **NPSN**: 20178282
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL TABAH I NO 5 KOMP TNI AL KODAMAR
-
-#### TK EUREKA
-- **NPSN**: 69962463
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Pelepah Elok I GN 1 No. 28-29
-
-#### TK HANG TUAH 9
-- **NPSN**: 69857080
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: TABAH RAYA KOMP.TNI-AL SUNTER KODAMAR
-
-#### TK HIGHSCOPE INDONESIA
-- **NPSN**: 69857079
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: BULEVAR SENTRA KELAPA GADING
-
-#### TK ISHINE
-- **NPSN**: 69988494
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Ruko Mall Of Indonesia (MOI) Blok J Jl. Italian Walk Blok J No.29 Rt.018 Rw.008
-
-#### TK ISLAM AL BARKAH
-- **NPSN**: 69857081
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. Teguh X Komplex TNI AL RT. 009/01
-
-#### TK JAC KELAPA GADING
-- **NPSN**: 69857076
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Pegangsaan Dua No 75A
-
-#### TK Jakarta Taipei School
-- **NPSN**: 90101092
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Raya Kelapa Hybrida, Blok Qh Kelapa Gading, Jakarta Utara
-
-#### TK MAHATMA GADING
-- **NPSN**: 69857075
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Boulevard BGR Komplek Villa Gading Indah Blok Q
-
-#### TK MAHATMA GADING 1
-- **NPSN**: 69978207
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Kompleks Villa Gading Indah Blok D Jl. Boulevard BGR
-
-#### TK MITRA PENABUR KELAPA GADING
-- **NPSN**: 69857074
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: KELAPA GADING SQUARE BLOK B 53-54
-
-#### TK Montessori Gading Permata School
-- **NPSN**: 70000185
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Boulevard Artha Gading Blok D No.10
-
-#### TK POPAY MONTESSORI
-- **NPSN**: 69961273
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: APARTEMEN GADING MEDITERANIA TOWER B UNIT CB JL. BOULEVARD BUKIT GADING RAYA
-
-#### TK SAINT MONICA
-- **NPSN**: 69891367
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: BOULEVARD UTARA RAYA QJ 7 / 1-2
-
-#### TK SANTA AURELIA
-- **NPSN**: 69857073
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JANUR ASRI I QJ 11 NO.27
-
-#### TK Universal School
-- **NPSN**: 70040361
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Boulevard Barat Raya No.1
-
-#### TK. ISLAM AL-MUSTAQIM
-- **NPSN**: 69857077
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. TANGGUH RAYA KOMPLEK TNI-AL KODAMAR
-
-#### TKK 6 PENABUR
-- **NPSN**: 69857083
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Hibrida Raya Blok QA3
-
-### Kelurahan Kelapa Gading Timur
-#### SMAN 45 JAKARTA
-- **NPSN**: 20100812
-- **Jenjang**: -
-- **Status**: NEGERI
-- **Alamat**: Jl. Perintis Kemerdekaan
-
-#### SMAS TUNAS GADING
-- **NPSN**: 20100632
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. GADING PUTIH RAYA P2/23
-
-#### SMAS TUNAS KARYA JAKARTA
-- **NPSN**: 20100778
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. PALEPAH KUNING NO. 3
-
-#### SMKS JAYA JAKARTA
-- **NPSN**: 20100775
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. PERINTIS KEMERDEKAAN
-
-#### TK AL - AZHAR KELAPA GADING
-- **NPSN**: 69909829
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Kelapa Sawit Blok EE No. 14-15
-
-#### TK AL CHALIDIYAH
-- **NPSN**: NP946482
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Komp.PT HII R T004 RW 005
-
-#### TK APPLE TREE PRE-SCHOOL
-- **NPSN**: 70001275
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Kelapa Gading Permai Blok DE-20 Rt.005 Rw.017
-
-#### TK Akademi Anak Indonesia (KIPINA)
-- **NPSN**: 70025808
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Sentra Kelapa Gading Jl. Boulevard Kelapa Gading Blok M Rt.013 Rw.018
-
-#### TK CAHAYA ABADI
-- **NPSN**: 70007159
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Boulevard Raya KGC Blok C No.20 Rt.007 Rw.001
-
-#### TK Cinnamon Montessori
-- **NPSN**: 70048724
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Bellaterra Lifestyle Center lantai 1, RT. 000, RW. 000
-
-#### TK DON BOSCO I
-- **NPSN**: 69857089
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. RAYA KELAPA CENGKIR FH 2 NO. 7-10
-
-#### TK GROWING MIND
-- **NPSN**: 69980996
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Kelapa Kopyor Barat VI CJ 1 No.1
-
-#### TK HAPPY HOLY KIDS
-- **NPSN**: 69857090
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: APARTMENT WGP RO I/21, JL. BOULEVARD RAYA
-
-#### TK ISLAM AD-DA WAH
-- **NPSN**: 69857092
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. BIRU LAUT BARAT
-
-#### TK PINGU’S ENGLISH INTERCULTURAL KINDERGARTEN
-- **NPSN**: 70033642
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Kelapa Puyuh Raya Blok KG 1, RT. 004, RW. 019
-
-#### TK SUNSMILE KIDS KELAPA GADING
-- **NPSN**: 70016033
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Raya Kelapa Gading Permai Blok EE 11-12 Rt.005 Rw.017
-
-#### TK TUNAS GADING
-- **NPSN**: 69857091
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Kelapa Kopyor Raya Blok 01 No.22
-
-#### TK. TUNAS KARYA 1
-- **NPSN**: 69857087
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: GADING PUTIH IV
-
-#### TK.KELAPA GADING HI
-- **NPSN**: 69857086
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL.KOMP.PT HII Blok B
-
-### Kelurahan Pegangsaan Dua
-#### SLB B & C CAHAYA JAYA
-- **NPSN**: 20110818
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Raya Kelapa Hibrida Utara Rb. 15/1
-
-#### SMA BEACON ACADEMY
-- **NPSN**: 69977407
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Pegangsaan Dua No.66 Rt.004 Rw.19
-
-#### SMA ISLAM AL-AZHAR KELAPA GADING
-- **NPSN**: 20100600
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Bulevar Timur
-
-#### SMA JAC
-- **NPSN**: 69968321
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Pegangsaan Dua No. 75A, Rt. 3 Rw. 3
-
-#### SMA Raffles Christian School Kelapa Gading
-- **NPSN**: 69939320
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jalan Gading Pelangi 1, Kelurahan Pegangsaan Dua, Kecamatan Kelapa Gading, Kota
-
-#### SMA SAINT PETER SCHOOL
-- **NPSN**: 69879021
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL.BOULEVARD TIMUR RAYA NO. 8
-
-#### SMAS DON BOSCO 1 JAKARTA
-- **NPSN**: 20100616
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. BOULEVARD TIMUR KELAPA GADING
-
-#### SMAS MARIE JOSEPH
-- **NPSN**: 20109180
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL PUSPA GADING I BLOK H2 No.10-12 Pegangsaan Dua Kelapa Gading Jakarta Utara
-
-#### SMAS SAINT PETER
-- **NPSN**: 20107390
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. BOULEVARD TIMUR RAYA NO. 8
-
-#### SMAS SANTO YAKOBUS JAKARTA
-- **NPSN**: 20100799
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. PEGANGSAAN DUA KM. 3.5
-
-#### SMKN 33 JAKARTA
-- **NPSN**: 20107434
-- **Jenjang**: -
-- **Status**: NEGERI
-- **Alamat**: Jln. Gading Mas Timur II No. 37 Rt. 12/10 Pegangsaan Dua
-
-#### SMKS 11 MARET
-- **NPSN**: 20112463
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. RAYA BEKASI KM. 20
-
-#### SMKS KASIH ANANDA
-- **NPSN**: 20107425
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Pegangsaan Dua Km. 5
-
-#### TK ALHIDAYAH 2
-- **NPSN**: 69857099
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL.BANGUN CIPTA SARANA NO.51 RT.001/05
-
-#### TK Beacon Academy
-- **NPSN**: 70040249
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Pegangsaan Dua No 66, RT. 004, RW. 019
-
-#### TK EL HAMRA
-- **NPSN**: 69982615
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Pondok Gading Utama Blok A No.99
-
-#### TK ISLAM AL - IHSAN
-- **NPSN**: 69795493
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Al Ihsan No.1
-
-#### TK ISLAM AL-JIHAD
-- **NPSN**: 69795495
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Bangun Cipta Sarana RT.001/005
-
-#### TK ISLAM NUR ATTAQWA
-- **NPSN**: 69857094
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jalan Pegangsaan Dua Kp. Rawa indah
-
-#### TK JAC SHERWOOD
-- **NPSN**: 69903477
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Apt Sherwood Jl. Kelapa Nias Nlok GN, Tower RichMond Lantai GF, Lt I
-
-#### TK KIPINA KIDS KELAPA GADING 2
-- **NPSN**: 70051530
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Pegangsaan Dua No.161, RT. 005, RW. 003
-
-#### TK Kidea
-- **NPSN**: 69988288
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Taman Griya Pratama Blok Ma No. 1 Rt.001 Rw.020
-
-#### TK MARDLOTILLAH
-- **NPSN**: 20110720
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. RAWA INDAH
-
-#### TK MARIE JOSEPH
-- **NPSN**: 69857102
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: HARPA RAYA
-
-#### TK MAWAR SARON
-- **NPSN**: 69857101
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Hybrida Timur
-
-#### TK Negeri Kelapa Gading 01
-- **NPSN**: 69987715
-- **Jenjang**: -
-- **Status**: NEGERI
-- **Alamat**: Gedung PKG Kecamatan Kelapa Gading Jl. Accordion
-
-#### TK RAJAWALI GNR
-- **NPSN**: 69981161
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Gading Nias Residen Tower Dahlia Lt.1 NE-NF
-
-#### TK RUTH
-- **NPSN**: 69857100
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. HARPA III/ BB-20
-
-#### TK SAINT PETER
-- **NPSN**: 69857093
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Boulevard Timur Raya No. 8
-
-#### TK TEACH INDONESIA SCHOOL
-- **NPSN**: 69952406
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: Jl. Kelapa Lilin Timur NI 16/1, NI 15/1
-
-#### TK. ISLAM ARUNDINA
-- **NPSN**: 69857104
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: H. OYAR RT 02/04
-
-#### TK. SANTO YAKOBUS
-- **NPSN**: 69857107
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: JL. PEGANGSAAN DUA KM.3,5
-
-#### TK. TUNAS KARYA II
-- **NPSN**: 69857106
-- **Jenjang**: -
-- **Status**: SWASTA
-- **Alamat**: GADING INDAH III

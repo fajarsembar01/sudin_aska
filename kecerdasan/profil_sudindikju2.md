@@ -66,7 +66,7 @@ Suku Dinas Pendidikan Jakarta Utara 2 menjalankan tugas dekonsentrasi dan tugas 
 - **Kepala Suku Dinas Pendidikan Jakarta Utara 2:** Heni Nurhayani  
 
 **Jabatan Kunci (contoh yang relevan untuk ASKA):**
-- **Kepala Suku Dinas** Heni Nurhayani 
+- **Kepala Suku Dinas:** Heni Nurhayani 
 - **Kasubag Tata Usaha** Mukheri  
 - **Kepala Seksi Peserta Didik dan Pembangunan Karakter** – membina urusan kesiswaan, PPDB, dan layanan peserta didik.  
 - **Kepala Seksi PTK (Pendidik dan Tenaga Kependidikan)** – membina guru dan tenaga kependidikan.  
