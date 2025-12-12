@@ -36,6 +36,26 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-3 mb-3">
                         <span class="icon-badge section-icon text-primary">
+                            <i class="bi bi-person-badge"></i>
+                        </span>
+                        <div>
+                            <h2 class="h6 fw-bold mb-0">Penilai</h2>
+                            <p class="text-muted small mb-0">Data individu</p>
+                        </div>
+                    </div>
+                    <div class="small text-muted">Nama</div>
+                    <div class="fw-semibold mb-2">{{ assessment.assessor_name or 'Tidak diketahui' }}</div>
+                    <div class="small text-muted">Email</div>
+                    <div class="fw-semibold mb-2">{{ assessment.assessor_email or '-' }}</div>
+                    <div class="small text-muted">Tanggal Penilaian</div>
+                    <div class="fw-semibold">{{ assessment.submitted_at or assessment.assessment_date }}</div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="icon-badge section-icon text-primary">
                             <i class="bi bi-building"></i>
                         </span>
                         <h2 class="h6 fw-bold mb-0">Info Sekolah</h2>
@@ -96,35 +116,56 @@
                         <div>
                             <div class="fw-semibold mb-0">Rata-rata semua penilaian sekolah ini</div>
                             {% set pct_school_avg = ((school_avg or 0) / 3 * 100) if school_avg is not none else 0 %}
-                            <div class="text-muted small">{{ "%.1f"|format(pct_school_avg) }}</div>
+                            <div class="text-muted small">{{ "%.2f"|format(school_avg or 0) }} / {{ "%.1f"|format(pct_school_avg) }}</div>
                         </div>
                         {% if other_assessments %}
                         <div class="ms-auto">
-                            <div class="small text-muted mb-1">Penilaian lain</div>
-                            <div class="d-flex flex-wrap gap-2">
-                                {% for other in other_assessments %}
-                                <a class="btn btn-sm btn-outline-primary"
-                                    href="{{ url_for('portal.view_assessment', assessment_id=other.id) }}">
-                                    {{ other.assessor_name or 'Staff' }} - {{ other.total_score or '-' }}
-                                </a>
-                                {% endfor %}
-                            </div>
+                            <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#otherAssessments">
+                                Lihat Penilaian Individu ({{ other_assessments|length }})
+                            </button>
                         </div>
                         {% endif %}
                     </div>
+                    {% if other_assessments %}
+                    <div class="collapse mb-3" id="otherAssessments">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="fw-semibold mb-2">Penilaian Individu</div>
+                                <div class="list-group list-group-flush">
+                                    {% for other in other_assessments %}
+                                    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if other.is_current %}active{% endif %}"
+                                        href="{% if not other.is_current %}{{ url_for('portal.view_assessment', assessment_id=other.id) }}{% else %}#{% endif %}">
+                                        <div>
+                                            <div class="fw-semibold">{{ other.assessor_name or 'Staff' }}</div>
+                                            <div class="text-muted small">{{ other.submitted_at.strftime('%d %b %Y %H:%M') if other.submitted_at else '-' }}</div>
+                                            {% if other.is_current %}
+                                            <span class="badge bg-primary">Sedang Dilihat</span>
+                                            {% endif %}
+                                        </div>
+                                        {% set other_pct = ((other.total_score or 0) / 3 * 100) if other.total_score is not none else 0 %}
+                                        <span class="badge bg-primary rounded-pill">{{ other.total_score or '-' }} / {{ "%.1f"|format(other_pct) }}</span>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                     {% endif %}
 
-                    {% if rooms_scores %}
-                    {% for room_name, scores in rooms_scores|dictsort %}
+                    {% if rooms_data %}
+                    {% for room in rooms_data.values()|sort(attribute='room_name') %}
                     <div class="room-item mb-3">
                         <div class="room-header">
-                            <h5><i class="bi bi-door-open me-2"></i>{{ room_name }}</h5>
-                            {% set room_avg = (scores|map(attribute='score')|list|sum) / (scores|length or 1) %}
-                            <span class="badge bg-light text-dark">{{ "%.1f"|format(room_avg) }}</span>
+                            <h5><i class="bi bi-door-open me-2"></i>{{ room.room_name }}</h5>
+                            {% set room_avg = (room.scores|map(attribute='score')|list|sum) / (room.scores|length or 1) %}
+                            {% set room_pct = (room_avg / 3 * 100) if room_avg is not none else 0 %}
+                            <span class="badge bg-light text-dark">{{ "%.1f"|format(room_avg) }} / {{ "%.0f"|format(room_pct) }}</span>
                         </div>
                         <div class="room-body">
                             <table class="table table-sm mb-3">
-                                {% for s in scores %}
+                                {% for s in room.scores %}
                                 <tr>
                                     <td>{{ s.aspect_name }}</td>
                                     <td class="text-end">
@@ -136,7 +177,7 @@
                                 </tr>
                                 {% endfor %}
                             </table>
-                            {% set room_photos = photos_by_room.get(scores[0].school_room_id) if scores else [] %}
+                            {% set room_photos = photos_by_room.get(room.school_room_id) if room.scores else [] %}
                             {% if room_photos %}
                             <div class="row g-2 mb-3">
                                 {% for p in room_photos %}
@@ -146,18 +187,50 @@
                                             alt="Foto {{ room_name }}" class="object-fit-cover w-100 h-100"
                                             onerror="this.src='https://placehold.co/200x200?text=No+Image'">
                                         <div class="position-absolute bottom-0 start-0 w-100 px-2 py-1 text-white small"
-                                            style="background: rgba(0,0,0,0.45); text-shadow: 0 1px 2px rgba(0,0,0,0.6);">
-                                            {{ p.captured_at.strftime('%d %b %Y %H:%M') if p.captured_at else '' }}
+                                            style="background: linear-gradient(180deg, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.55) 100%); text-shadow: 0 1px 2px rgba(0,0,0,0.6);">
+                                            <div>{{ p.uploader_name or assessment.assessor_name or 'Staff' }}</div>
+                                            <div class="small">{{ p.captured_at.strftime('%d %b %Y %H:%M') if p.captured_at else '' }}</div>
                                         </div>
                                     </div>
                                 </div>
                                 {% endfor %}
                             </div>
                             {% endif %}
-                            {% set notes = room_notes.get(scores[0].school_room_id) if scores else '' %}
+                            {% set notes = room_notes.get(room.school_room_id) if room.scores else '' %}
                             {% if notes %}
                             <div class="alert alert-info py-2 px-3 mb-0">
                                 <i class="bi bi-chat-right-text me-2"></i>{{ notes }}
+                            </div>
+                            {% endif %}
+
+                            {% set rel = related_photos.get(room.room_id) %}
+                            {% if rel %}
+                            <div class="mt-3">
+                                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#related-{{ room.room_id }}">
+                                    Lihat Foto Penilaian Lain ({{ rel|length }})
+                                </button>
+                                <div class="collapse mt-2" id="related-{{ room.room_id }}">
+                                    <div class="row g-2">
+                                        {% for rp in rel %}
+                                        <div class="col-6 col-md-4 col-lg-3">
+                                            <div class="ratio ratio-1x1 rounded overflow-hidden shadow-sm position-relative">
+                                                <img src="{{ url_for('portal.uploaded_file', filename=rp.photo_path.split('/')[-1]) }}"
+                                                    class="object-fit-cover w-100 h-100"
+                                                    onerror="this.src='https://placehold.co/200x200?text=No+Image'">
+                                                <div class="position-absolute bottom-0 start-0 w-100 px-2 py-1 text-white small"
+                                                    style="background: rgba(0,0,0,0.45); text-shadow: 0 1px 2px rgba(0,0,0,0.6);">
+                                                    {{ rp.captured_at.strftime('%d %b %Y %H:%M') if rp.captured_at else '' }}
+                                                </div>
+                                                <div class="position-absolute top-0 start-0 w-100 px-2 py-1 text-white small"
+                                                    style="background: rgba(0,0,0,0.35); text-shadow: 0 1px 2px rgba(0,0,0,0.6);">
+                                                    {{ rp.uploader_name or 'Staff' }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
                             </div>
                             {% endif %}
                         </div>

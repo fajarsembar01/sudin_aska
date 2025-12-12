@@ -13,7 +13,8 @@
     set score_class="badge-score-green" %}{% endif %} <div class="gallery-item">
     <div class="ratio ratio-1x1 rounded overflow-hidden shadow-sm position-relative gallery-thumb{% if not is_clone %} gallery-thumb-original{% endif %}"
         role="button" tabindex="0" data-index="{{ loop_idx }}" data-photo-url="{{ photo_url }}"
-        data-school="{{ p.school_name }}" data-school-id="{{ p.school_id }}" data-room="{{ p.room_name }}"
+        data-school="{{ p.school_name }}" data-school-id="{{ p.school_id }}" data-assessment-id="{{ p.assessment_id }}"
+        data-room="{{ p.room_name }}"
         data-room-id="{{ p.room_id }}" data-score="{{ '%.1f'|format(score_pct) }}"
         data-date="{{ (p.captured_at or '') }}" data-lat="{{ p.latitude }}" data-lon="{{ p.longitude }}">
         <img src="{{ photo_url }}" class="object-fit-cover w-100 h-100" alt="{{ p.room_name }}" loading="lazy"

@@ -262,7 +262,7 @@
         </div>
     </div>
 
-    <div class="col-lg-8">
+    <div class="col-lg-8" id="recent-assessments">
         <div class="card border-0 shadow-sm">
             <div class="card-body">
                 <div class="d-flex align-items-center gap-3 mb-3">
@@ -275,14 +275,57 @@
                     </div>
                 </div>
 
+                <form method="get" class="row g-2 mb-3" id="recentFilterForm">
+                    <input type="hidden" name="period_id" value="{{ current_period_id or '' }}">
+                    <div class="col-md-4">
+                        <select name="jenjang" class="form-select">
+                            <option value="">Semua Jenjang</option>
+                            {% for j in ['SD','MI','SMP','MTS','SMA','MA','SMK','TK'] %}
+                            <option value="{{ j }}" {% if jenjang_filter==j %}selected{% endif %}>{{ j }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-fill">Terapkan</button>
+                        <a class="btn btn-light" href="{{ url_for('portal.admin_stats', _anchor='recent-assessments') }}">Reset</a>
+                    </div>
+                </form>
+
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light">
                             <tr>
-                                <th class="border-0 ps-3">Sekolah</th>
-                                <th class="border-0">Status</th>
-                                <th class="border-0">Skor / Average</th>
-                                <th class="border-0">Tanggal</th>
+                                {% set base_period = current_period_id or '' %}
+                                {% set base_jenjang = jenjang_filter or '' %}
+                                {% set anchor = 'recent-assessments' %}
+                                {% set name_order = 'name_desc' if order == 'name_asc' else 'name_asc' %}
+                                {% set staff_order = 'staff_asc' if order == 'staff_desc' else 'staff_desc' %}
+                                {% set avg_order = 'score_asc' if order == 'score_desc' else 'score_desc' %}
+                                {% set date_order = 'date_asc' if order == 'date_desc' else 'date_desc' %}
+                                <th class="border-0 ps-3">
+                                    <a href="{{ url_for('portal.admin_stats', period_id=base_period, jenjang=base_jenjang, order=name_order, _anchor=anchor) }}" class="text-decoration-none d-flex align-items-center gap-1">
+                                        Sekolah
+                                        <i class="bi bi-arrow-{{ 'down' if 'desc' in name_order else 'up' }}"></i>
+                                    </a>
+                                </th>
+                                <th class="border-0">
+                                    <a href="{{ url_for('portal.admin_stats', period_id=base_period, jenjang=base_jenjang, order=staff_order, _anchor=anchor) }}" class="text-decoration-none d-flex align-items-center gap-1">
+                                        Staff
+                                        <i class="bi bi-arrow-{{ 'down' if 'desc' in staff_order else 'up' }}"></i>
+                                    </a>
+                                </th>
+                                <th class="border-0">
+                                    <a href="{{ url_for('portal.admin_stats', period_id=base_period, jenjang=base_jenjang, order=avg_order, _anchor=anchor) }}" class="text-decoration-none d-flex align-items-center gap-1">
+                                        Average
+                                        <i class="bi bi-arrow-{{ 'down' if 'desc' in avg_order else 'up' }}"></i>
+                                    </a>
+                                </th>
+                                <th class="border-0">
+                                    <a href="{{ url_for('portal.admin_stats', period_id=base_period, jenjang=base_jenjang, order=date_order, _anchor=anchor) }}" class="text-decoration-none d-flex align-items-center gap-1">
+                                        Tanggal
+                                        <i class="bi bi-arrow-{{ 'down' if 'desc' in date_order else 'up' }}"></i>
+                                    </a>
+                                </th>
                                 <th class="border-0 text-end pe-3">Aksi</th>
                             </tr>
                         </thead>
@@ -296,25 +339,13 @@
                                     </a>
                                     <div class="small text-muted">{{ a['npsn'] }} • {{ a['jenjang'] }}</div>
                                 </td>
-                                <td>
-                                    {% if a['status'] == 'submitted' %}
-                                    <span
-                                        class="badge bg-success-subtle text-success rounded-pill px-2">Submitted</span>
-                                    {% else %}
-                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2">{{
-                                        a['status']|title }}</span>
-                                    {% endif %}
-                                </td>
-                                {% set score_pct = (a['total_score'] or 0) / 3 * 100 if a['total_score'] is not none
-                                else None %}
-                                {% set avg_raw = school_avg_map.get(a['school_id'], 0) %}
-                                {% set avg_pct = (avg_raw or 0) / 3 * 100 %}
+                                {% set staff_total = a['total_staff'] or 0 %}
+                                {% set avg_raw = (school_avg_map.get(a['school_id'], 0) or 0) / 3 * 100 %}
                                 <td class="fw-bold text-primary">
-                                    {% if score_pct is not none %}
-                                    {{ "%.1f"|format(score_pct) }} / {{ "%.1f"|format(avg_pct) }}
-                                    {% else %}
-                                    - / {{ "%.1f"|format(avg_pct) }}
-                                    {% endif %}
+                                    {{ staff_total }}
+                                </td>
+                                <td class="fw-bold text-primary">
+                                    {{ "%.1f"|format(avg_raw) }}
                                 </td>
                                 <td class="small text-muted">{{ a['submitted_at'].strftime('%d %b %Y') if
                                     a['submitted_at'] else '-' }}</td>
@@ -747,10 +778,10 @@
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge bg-primary" id="photoModalScore">-</span>
                     <span class="badge bg-secondary" id="photoModalMeta"></span>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="photoPrevBtn">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="photoPrevBtnTop">
                         <i class="bi bi-chevron-left"></i>
                     </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="photoNextBtn">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="photoNextBtnTop">
                         <i class="bi bi-chevron-right"></i>
                     </button>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -791,8 +822,16 @@
         var modalMeta = document.getElementById('photoModalMeta');
         var prevBtn = document.getElementById('photoPrevBtn');
         var nextBtn = document.getElementById('photoNextBtn');
+        var prevBtnTop = document.getElementById('photoPrevBtnTop');
+        var nextBtnTop = document.getElementById('photoNextBtnTop');
         var modal = new bootstrap.Modal(modalEl);
         var currentIndex = 0;
+        var thumbs = [];
+
+        function assessmentIdForThumb(list, url) {
+            var t = list.find(function (el) { return el.dataset.photoUrl === url; });
+            return t ? t.dataset.assessmentId : '';
+        }
 
         function bindThumbs() {
             thumbs = Array.from(document.querySelectorAll('.gallery-thumb-original'));
@@ -816,7 +855,9 @@
 
             modalImg.src = url;
             modalTitle.textContent = room || 'Foto';
-            modalSubtitle.textContent = school;
+                    modalSubtitle.innerHTML = assessmentId
+                        ? `<a href="/portal/assessment/${assessmentId}" class="link-light text-decoration-underline">${school || 'Sekolah'}</a>`
+                        : (school || '');
             modalScore.textContent = score;
             modalScore.className = 'badge ' + (el.querySelector('.gallery-badge-score')?.classList.value.replace('gallery-badge-score', '').trim() || 'bg-primary');
             var metaText = '';
@@ -920,11 +961,14 @@
                     var lat = thumb.dataset.lat;
                     var lon = thumb.dataset.lon;
                     var schoolId = thumb.dataset.schoolId;
+                    var assessmentId = thumb.dataset.assessmentId;
                     var roomId = thumb.dataset.roomId;
 
                     modalImg.src = url;
                     modalTitle.textContent = room || 'Foto';
-                    modalSubtitle.textContent = school;
+                    modalSubtitle.innerHTML = assessmentId
+                        ? `<a href="/portal/assessment/${assessmentId}" class="link-light text-decoration-underline">${school || 'Sekolah'}</a>`
+                        : (school || '');
                     modalScore.textContent = score;
                     modalScore.className = 'badge ' + (thumb.querySelector('.gallery-badge-score')?.classList.value.replace('gallery-badge-score', '').trim() || 'bg-primary');
 
@@ -949,8 +993,12 @@
             }
         }
 
-        prevBtn.addEventListener('click', function (e) { e.stopPropagation(); show(currentIndex - 1); });
-        nextBtn.addEventListener('click', function (e) { e.stopPropagation(); show(currentIndex + 1); });
+        var triggerPrev = function () { show(currentIndex - 1); };
+        var triggerNext = function () { show(currentIndex + 1); };
+        if (prevBtn) prevBtn.addEventListener('click', function (e) { e.stopPropagation(); triggerPrev(); });
+        if (nextBtn) nextBtn.addEventListener('click', function (e) { e.stopPropagation(); triggerNext(); });
+        if (prevBtnTop) prevBtnTop.addEventListener('click', function (e) { e.stopPropagation(); triggerPrev(); });
+        if (nextBtnTop) nextBtnTop.addEventListener('click', function (e) { e.stopPropagation(); triggerNext(); });
 
         document.addEventListener('keydown', function (e) {
             if (!modalEl.classList.contains('show')) return;
@@ -987,6 +1035,17 @@
                     .catch(function (err) {
                         console.error(err);
                     });
+            });
+        }
+
+        // Filter form scroll anchor
+        var filterForm = document.getElementById('recentFilterForm');
+        if (filterForm) {
+            filterForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var params = new URLSearchParams(new FormData(filterForm));
+                var url = window.location.pathname + '?' + params.toString() + '#recent-assessments';
+                window.location = url;
             });
         }
 

@@ -161,8 +161,530 @@
         </div>
 
         <div class="col-lg-8">
-            <!-- Schools List -->
+            <!-- Preview Halaman Konfigurasi Sekolah -->
             <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="icon-badge section-icon text-info">
+                            <i class="bi bi-eye"></i>
+                        </span>
+                        <div>
+                            <h2 class="h6 fw-bold mb-0">Preview: Konfigurasi Ruangan per Jenjang</h2>
+                            <p class="text-muted mb-0 small">Contoh konfigurasi ruangan berdasarkan jenjang pendidikan
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Jenjang Tabs -->
+                    <ul class="nav nav-pills nav-fill mb-3" id="jenjangTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="sd-tab" data-bs-toggle="tab" data-bs-target="#sd-pane"
+                                type="button">
+                                <i class="bi bi-mortarboard-fill me-1"></i>SD
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="smp-tab" data-bs-toggle="tab" data-bs-target="#smp-pane"
+                                type="button">
+                                <i class="bi bi-book me-1"></i>SMP
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="sma-tab" data-bs-toggle="tab" data-bs-target="#sma-pane"
+                                type="button">
+                                <i class="bi bi-building me-1"></i>SMA/SMK
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="jenjangTabContent">
+                        <!-- SD Tab -->
+                        <div class="tab-pane fade show active" id="sd-pane" role="tabpanel">
+                            <div class="border rounded-3 p-3"
+                                style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                                <div class="row g-2">
+                                    <div class="col-12">
+                                        <div class="bg-white rounded-3 p-2 shadow-sm mb-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="icon-badge text-primary"
+                                                    style="width: 28px; height: 28px; font-size: 0.7rem;">
+                                                    <i class="bi bi-building"></i>
+                                                </span>
+                                                <div>
+                                                    <div class="fw-semibold small">SDN Contoh 01</div>
+                                                    <small class="text-muted" style="font-size: 0.65rem;">20100001 • SD
+                                                        • Penjaringan</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                            <div class="small fw-semibold text-primary mb-2"><i
+                                                    class="bi bi-door-open me-1"></i>Ruang Kelas SD</div>
+                                            <div class="list-group list-group-flush" style="font-size: 0.75rem;">
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                        checked disabled>
+                                                    <span>Ruang Kelas 1</span>
+                                                </label>
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                        checked disabled>
+                                                    <span>Ruang Kelas 2</span>
+                                                </label>
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                        checked disabled>
+                                                    <span>Ruang Kelas 3</span>
+                                                </label>
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                        checked disabled>
+                                                    <span>Ruang Kelas 4</span>
+                                                </label>
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                        checked disabled>
+                                                    <span>Ruang Kelas 5</span>
+                                                </label>
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                        checked disabled>
+                                                    <span>Ruang Kelas 6</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                            <div class="small fw-semibold text-success mb-2"><i
+                                                    class="bi bi-layers me-1"></i>Ruang Lainnya</div>
+                                            <div class="list-group list-group-flush" style="font-size: 0.75rem;">
+                                                {% for room in rooms[:6] %}
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox" {% if
+                                                        loop.index <=3 %}checked{% endif %} disabled>
+                                                    <span>{{ room.name }}</span>
+                                                </label>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SMP Tab -->
+                        <div class="tab-pane fade" id="smp-pane" role="tabpanel">
+                            <div class="border rounded-3 p-3"
+                                style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);">
+                                <div class="row g-2">
+                                    <div class="col-12">
+                                        <div class="bg-white rounded-3 p-2 shadow-sm mb-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="icon-badge text-success"
+                                                    style="width: 28px; height: 28px; font-size: 0.7rem;">
+                                                    <i class="bi bi-building"></i>
+                                                </span>
+                                                <div>
+                                                    <div class="fw-semibold small">SMPN Contoh 01</div>
+                                                    <small class="text-muted" style="font-size: 0.65rem;">20200001 • SMP
+                                                        • Kelapa Gading</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                            <div class="small fw-semibold text-success mb-2"><i
+                                                    class="bi bi-door-open me-1"></i>Ruang Kelas SMP</div>
+                                            <div class="list-group list-group-flush" style="font-size: 0.75rem;">
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                        checked disabled>
+                                                    <span>Ruang Kelas 7</span>
+                                                </label>
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                        checked disabled>
+                                                    <span>Ruang Kelas 8</span>
+                                                </label>
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                        checked disabled>
+                                                    <span>Ruang Kelas 9</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                            <div class="small fw-semibold text-info mb-2"><i
+                                                    class="bi bi-layers me-1"></i>Ruang Lainnya</div>
+                                            <div class="list-group list-group-flush" style="font-size: 0.75rem;">
+                                                {% for room in rooms[:6] %}
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox" {% if
+                                                        loop.index <=4 %}checked{% endif %} disabled>
+                                                    <span>{{ room.name }}</span>
+                                                </label>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SMA/SMK Tab -->
+                        <div class="tab-pane fade" id="sma-pane" role="tabpanel">
+                            <div class="border rounded-3 p-3"
+                                style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);">
+                                <div class="row g-2">
+                                    <div class="col-12">
+                                        <div class="bg-white rounded-3 p-2 shadow-sm mb-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="icon-badge text-warning"
+                                                    style="width: 28px; height: 28px; font-size: 0.7rem;">
+                                                    <i class="bi bi-building"></i>
+                                                </span>
+                                                <div>
+                                                    <div class="fw-semibold small">SMAN Contoh 01</div>
+                                                    <small class="text-muted" style="font-size: 0.65rem;">20300001 • SMA
+                                                        • Cilincing</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                            <div class="small fw-semibold text-warning mb-2"><i
+                                                    class="bi bi-door-open me-1"></i>Ruang Kelas SMA</div>
+                                            <div class="list-group list-group-flush" style="font-size: 0.75rem;">
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                        checked disabled>
+                                                    <span>Ruang Kelas 10</span>
+                                                </label>
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                        checked disabled>
+                                                    <span>Ruang Kelas 11</span>
+                                                </label>
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                        checked disabled>
+                                                    <span>Ruang Kelas 12</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                            <div class="small fw-semibold text-danger mb-2"><i
+                                                    class="bi bi-layers me-1"></i>Ruang Khusus</div>
+                                            <div class="list-group list-group-flush" style="font-size: 0.75rem;">
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                        checked disabled>
+                                                    <span>Lab Komputer</span>
+                                                </label>
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                        checked disabled>
+                                                    <span>Lab IPA/Kimia</span>
+                                                </label>
+                                                {% for room in rooms[:4] %}
+                                                <label
+                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                    <input class="form-check-input flex-shrink-0" type="checkbox" {% if
+                                                        loop.index <=2 %}checked{% endif %} disabled>
+                                                    <span>{{ room.name }}</span>
+                                                </label>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Modal Preview -->
+                    <div class="mt-3">
+                        <div class="bg-light rounded-3 p-3">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="bi bi-clipboard2-check text-primary"></i>
+                                <span class="fw-semibold small">Modal: Lengkapi Profil Sekolah</span>
+                                <span class="badge bg-info text-white" style="font-size: 0.65rem;">Muncul
+                                    otomatis</span>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="small text-muted">Data Wajib:</div>
+                                    <ul class="small mb-0 ps-3" style="font-size: 0.75rem;">
+                                        <li>Alamat, Kelurahan, Link GMaps</li>
+                                        <li>Jumlah Siswa, Guru, Rombel</li>
+                                        <li>Telepon & Email Sekolah</li>
+                                    </ul>
+                                </div>
+                                <div class="col-6">
+                                    <div class="small text-muted">Data Opsional:</div>
+                                    <ul class="small mb-0 ps-3" style="font-size: 0.75rem;">
+                                        <li>Instagram, TikTok</li>
+                                        <li>YouTube, WA Channel</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 text-center">
+                        <a href="{{ url_for('portal.sekolah_rooms') }}" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>Buka Halaman Asli
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rooms List -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="icon-badge section-icon text-success">
+                            <i class="bi bi-door-open"></i>
+                        </span>
+                        <div>
+                            <h2 class="h6 fw-bold mb-0">Daftar Ruangan & Aspek</h2>
+                            <p class="text-muted mb-0 small">{{ rooms|length }} ruangan terdaftar</p>
+                        </div>
+                    </div>
+                    {% if rooms %}
+                    <div class="table-responsive">
+                        <style>
+                            /* Theme-aware flat table */
+                            #roomsTable {
+                                background: var(--bg-surface);
+                                border-radius: 12px;
+                                overflow: hidden;
+                                border: 1px solid var(--border-soft);
+                            }
+                            #roomsTable thead th {
+                                background: var(--bg-subtle);
+                                font-weight: 700;
+                                color: var(--text-primary);
+                                border-bottom: 1px solid var(--border-soft);
+                            }
+                            #roomsTable tbody tr,
+                            #roomsTable tbody td {
+                                background: var(--bg-surface);
+                                color: var(--text-primary);
+                                border-color: var(--border-soft);
+                            }
+                            #roomsTable tbody tr:hover td {
+                                background: var(--bg-subtle);
+                            }
+                            #roomsTable .fw-semibold { color: var(--text-primary); }
+                            #roomsTable small { color: var(--text-muted); }
+                            #roomsTable .badge { font-weight: 600; }
+                        </style>
+                        <table class="table table-hover align-middle mb-0" id="roomsTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 36%;">Nama Ruangan</th>
+                                    <th style="width: 16%;">Kategori</th>
+                                    <th style="width: 12%;">Aspek</th>
+                                    <th style="width: 16%;">Status</th>
+                                    <th class="text-end" style="width: 20%;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in rooms %}
+                                <tr class="border-bottom {% if not r.active %}opacity-50{% endif %}">
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="icon-badge text-success"><i
+                                                    class="bi bi-door-open-fill"></i></span>
+                                            <div>
+                                                <div class="fw-semibold">{{ r.name }}</div>
+                                                {% if r.description %}
+                                                <small class="text-muted">{{ r.description }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-secondary text-uppercase">{{ r.category }}</span></td>
+                                    <td><span class="badge bg-primary">{{ r.aspects|length }}</span></td>
+                                    <td>
+                                        {% if r.active %}
+                                        <span class="badge bg-success px-3">Aktif</span>
+                                        {% else %}
+                                        <span class="badge bg-danger px-3">Nonaktif</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary"
+                                                data-bs-toggle="collapse" data-bs-target="#roomDetail{{ r.id }}"
+                                                title="Lihat Detail">
+                                                <i class="bi bi-chevron-down"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
+                                                data-bs-target="#deleteRoomModal{{ r.id }}" title="Hapus">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Expandable Detail Row -->
+                                <tr class="collapse" id="roomDetail{{ r.id }}">
+                                    <td colspan="5" class="p-0">
+                                        <div class="p-3 border-top" style="background: var(--bg-surface);">
+                                            <!-- Edit Room Form -->
+                                            <form method="POST" action="{{ url_for('portal.edit_room', room_id=r.id) }}"
+                                                class="row g-2 mb-3">
+                                                <div class="col-md-4">
+                                                    <label class="form-label small mb-1">Nama Ruangan</label>
+                                                    <input type="text" name="name" class="form-control form-control-sm"
+                                                        value="{{ r.name }}" required>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label small mb-1">Kategori</label>
+                                                    <select name="category" class="form-select form-select-sm">
+                                                        <option value="umum" {% if r.category=='umum' %}selected{% endif
+                                                            %}>Umum</option>
+                                                        <option value="akademik" {% if r.category=='akademik'
+                                                            %}selected{% endif %}>Akademik</option>
+                                                        <option value="fasilitas" {% if r.category=='fasilitas'
+                                                            %}selected{% endif %}>Fasilitas</option>
+                                                        <option value="sanitasi" {% if r.category=='sanitasi'
+                                                            %}selected{% endif %}>Sanitasi</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label small mb-1">Urutan</label>
+                                                    <input type="number" name="sort_order"
+                                                        class="form-control form-control-sm" value="{{ r.sort_order }}">
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label small mb-1">Status</label>
+                                                    <div class="form-check mt-1">
+                                                        <input class="form-check-input" type="checkbox" name="active"
+                                                            id="roomActive{{ r.id }}" {% if r.active %}checked{% endif
+                                                            %}>
+                                                        <label class="form-check-label small"
+                                                            for="roomActive{{ r.id }}">Aktif</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-2 d-flex align-items-end">
+                                                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                                                        <i class="bi bi-check-lg me-1"></i>Simpan
+                                                    </button>
+                                                </div>
+                                                <div class="col-12">
+                                                    <input type="text" name="description"
+                                                        class="form-control form-control-sm"
+                                                        value="{{ r.description or '' }}"
+                                                        placeholder="Deskripsi (opsional)">
+                                                </div>
+                                            </form>
+
+                                            <!-- Aspects Section -->
+                                            <div class="border-top pt-3">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <span class="fw-semibold small"><i
+                                                            class="bi bi-list-check text-primary me-1"></i>Aspek
+                                                        Penilaian ({{ r.aspects|length }})</span>
+                                                </div>
+                                                {% if r.aspects %}
+                                                <div class="row g-2 mb-3">
+                                                    {% for a in r.aspects %}
+                                                    <div class="col-md-6">
+                                                        <div
+                                                            class="d-flex align-items-center justify-content-between p-2 border rounded small {% if not a.active %}opacity-50{% endif %}">
+                                                            <div class="d-flex align-items-center gap-2">
+                                                                <i class="bi bi-check-circle-fill text-success"></i>
+                                                                <span>{{ a.name }}</span>
+                                                                {% if not a.active %}<span
+                                                                    class="badge bg-danger">Off</span>{% endif %}
+                                                            </div>
+                                                            <div class="btn-group btn-group-sm">
+                                                                <button type="button"
+                                                                    class="btn btn-link btn-sm p-0 px-1 text-primary"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#editAspectModal{{ a.id }}"><i
+                                                                        class="bi bi-pencil"></i></button>
+                                                                <button type="button"
+                                                                    class="btn btn-link btn-sm p-0 px-1 text-danger"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#deleteAspectModal{{ a.id }}"><i
+                                                                        class="bi bi-trash"></i></button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                                {% else %}
+                                                <p class="text-muted small mb-3">Belum ada aspek penilaian</p>
+                                                {% endif %}
+
+                                                <!-- Add Aspect -->
+                                                <form method="POST" action="{{ url_for('portal.add_aspect') }}"
+                                                    class="row g-2">
+                                                    <input type="hidden" name="room_id" value="{{ r.id }}">
+                                                    <div class="col-md-5">
+                                                        <input type="text" name="name"
+                                                            class="form-control form-control-sm"
+                                                            placeholder="Nama aspek baru" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <input type="text" name="description"
+                                                            class="form-control form-control-sm"
+                                                            placeholder="Deskripsi (opsional)">
+                                                    </div>
+                                                    <div class="col-md-1">
+                                                        <input type="number" name="sort_order"
+                                                            class="form-control form-control-sm" placeholder="#"
+                                                            value="0">
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <button type="submit" class="btn btn-success btn-sm w-100"><i
+                                                                class="bi bi-plus-lg me-1"></i>Tambah</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">Belum ada ruangan</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Schools List -->
+            <div class="card border-0 shadow-sm">
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-3 mb-3">
                         <span class="icon-badge section-icon text-primary">
@@ -190,7 +712,7 @@
                                 <tr>
                                     <td><code>{{ s.npsn }}</code></td>
                                     <td>{{ s.name }}</td>
-                                    <td><span class="badge bg-light text-dark">{{ s.jenjang }}</span></td>
+                                    <td><span class="badge bg-secondary bg-opacity-75">{{ s.jenjang }}</span></td>
                                     <td><span
                                             class="badge {% if s.status == 'NEGERI' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{
                                             s.status or '-' }}</span></td>
@@ -200,57 +722,106 @@
                             </tbody>
                         </table>
                     </div>
-                    {% if schools|length > 15 %}
-                    <p class="text-muted small mt-2 mb-0">...dan {{ schools|length - 15 }} sekolah lainnya</p>
+                    {% if schools|length > 20 %}
+                    <p class="text-muted small mt-2 mb-0">...dan {{ schools|length - 20 }} sekolah lainnya</p>
                     {% endif %}
                     {% else %}
                     <p class="text-muted mb-0">Belum ada sekolah</p>
                     {% endif %}
                 </div>
             </div>
-
-            <!-- Rooms List -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <span class="icon-badge section-icon text-success">
-                            <i class="bi bi-door-open"></i>
-                        </span>
-                        <div>
-                            <h2 class="h6 fw-bold mb-0">Daftar Ruangan & Aspek</h2>
-                            <p class="text-muted mb-0 small">{{ rooms|length }} ruangan terdaftar</p>
-                        </div>
-                    </div>
-                    {% if rooms %}
-                    <div class="list-group list-group-flush">
-                        {% for r in rooms %}
-                        <div class="list-group-item px-0">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div class="fw-semibold">{{ r.name }}</div>
-                                    <small class="text-muted">{{ r.category }} • {{ r.aspects|length }} aspek</small>
-                                </div>
-                                <span class="badge bg-light text-dark">{{ r.sort_order }}</span>
-                            </div>
-                            {% if r.aspects %}
-                            <ul class="list-unstyled mb-0 mt-2 ps-3 small text-muted">
-                                {% for a in r.aspects[:4] %}
-                                <li><i class="bi bi-dot"></i>{{ a.name }}</li>
-                                {% endfor %}
-                                {% if r.aspects|length > 4 %}
-                                <li class="text-muted">...dan {{ r.aspects|length - 4 }} lainnya</li>
-                                {% endif %}
-                            </ul>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="text-muted mb-0">Belum ada ruangan</p>
-                    {% endif %}
-                </div>
-            </div>
         </div>
     </div>
 </section>
+
+<!-- Delete Room Modals -->
+{% for r in rooms %}
+<div class="modal fade" id="deleteRoomModal{{ r.id }}" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Hapus Ruangan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Yakin ingin menghapus ruangan <strong>{{ r.name }}</strong>?</p>
+                <p class="small text-muted">Jika ada penilaian yang menggunakan ruangan ini, ruangan akan dinonaktifkan
+                    saja.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                <form method="POST" action="{{ url_for('portal.delete_room_route', room_id=r.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Edit Aspect Modals -->
+{% for r in rooms %}
+{% for a in r.aspects %}
+<div class="modal fade" id="editAspectModal{{ a.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('portal.edit_aspect', aspect_id=a.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Aspek</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Nama Aspek</label>
+                        <input type="text" name="name" class="form-control" value="{{ a.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Deskripsi</label>
+                        <input type="text" name="description" class="form-control" value="{{ a.description or '' }}">
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Urutan</label>
+                            <input type="number" name="sort_order" class="form-control" value="{{ a.sort_order }}">
+                        </div>
+                        <div class="col-6 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="active"
+                                    id="aspectActive{{ a.id }}" {% if a.active %}checked{% endif %}>
+                                <label class="form-check-label" for="aspectActive{{ a.id }}">Aktif</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteAspectModal{{ a.id }}" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Hapus Aspek</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Yakin ingin menghapus aspek <strong>{{ a.name }}</strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                <form method="POST" action="{{ url_for('portal.delete_aspect_route', aspect_id=a.id) }}"
+                    class="d-inline">
+                    <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endfor %}
 {% endblock %}

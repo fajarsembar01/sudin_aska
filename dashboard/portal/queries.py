@@ -170,9 +170,11 @@ def get_assessment_by_id(assessment_id: int) -> Optional[Dict[str, Any]]:
             a.id, a.school_id, a.staff_id, a.assessment_date,
             a.status, a.total_score, a.notes, a.submitted_at,
             a.created_at, a.updated_at,
-            s.name as school_name, s.npsn, s.jenjang
+            s.name as school_name, s.npsn, s.jenjang,
+            u.full_name as assessor_name, u.email as assessor_email
         FROM portal_assessments a
         JOIN portal_schools s ON s.id = a.school_id
+        LEFT JOIN dashboard_users u ON u.id = a.staff_id
         WHERE a.id = %s
     """
     with get_cursor() as cur:
@@ -243,7 +245,7 @@ def get_assessment_scores(assessment_id: int) -> List[Dict[str, Any]]:
     query = """
         SELECT 
             s.id, s.school_room_id, s.aspect_id, s.score, s.notes,
-            r.name as room_name, a.name as aspect_name
+            r.id as room_id, r.name as room_name, a.name as aspect_name
         FROM portal_assessment_scores s
         JOIN portal_school_rooms sr ON sr.id = s.school_room_id
         JOIN portal_rooms r ON r.id = sr.room_id
@@ -347,6 +349,7 @@ def fetch_random_photos(
                 p.photo_path, 
                 s.name as school_name, 
                 s.id as school_id,
+                a.id as assessment_id,
                 r.name as room_name,
                 r.id as room_id,
                 p.captured_at,
@@ -418,16 +421,20 @@ def get_assessment_photos(assessment_id: int) -> List[Dict[str, Any]]:
     """Get all photos for an assessment."""
     query = """
         SELECT 
-            id, 
-            assessment_id, 
-            school_room_id, 
-            photo_path, 
-            latitude, 
-            longitude, 
-            COALESCE(captured_at, created_at) AS captured_at
-        FROM portal_assessment_photos
-        WHERE assessment_id = %s
-        ORDER BY captured_at DESC NULLS LAST
+            p.id, 
+            p.assessment_id, 
+            p.school_room_id, 
+            p.photo_path, 
+            p.latitude, 
+            p.longitude, 
+            COALESCE(p.captured_at, p.created_at) AS captured_at,
+            du.full_name AS uploader_name,
+            du.email AS uploader_email
+        FROM portal_assessment_photos p
+        LEFT JOIN portal_assessments a ON a.id = p.assessment_id
+        LEFT JOIN dashboard_users du ON du.id = a.staff_id
+        WHERE p.assessment_id = %s
+        ORDER BY p.captured_at DESC NULLS LAST
     """
     with get_cursor() as cur:
         cur.execute(query, (assessment_id,))
@@ -810,17 +817,44 @@ def fetch_bottom_schools(limit: int = 5, period_id: Optional[int] = None) -> Lis
         return [dict(zip(columns, row)) for row in cur.fetchall()]
 
 
-def list_recent_assessments(limit: int = 50, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
+def list_recent_assessments(
+    limit: int = 50,
+    period_id: Optional[int] = None,
+    jenjang: Optional[str] = None,
+    order: str = "recent",
+) -> List[Dict[str, Any]]:
     """List recent submitted assessments for admin dashboard."""
     where = "WHERE a.status = 'submitted'"
     params = []
     if period_id:
         where += " AND a.period_id = %s"
         params.append(period_id)
+    if jenjang:
+        where += " AND s.jenjang = %s"
+        params.append(jenjang)
     params.append(limit)
-        
+
+    order_clause = "submitted_at DESC"
+    if order == "score_desc":
+        order_clause = "total_score DESC NULLS LAST"
+    elif order == "score_asc":
+        order_clause = "total_score ASC NULLS LAST"
+    elif order == "staff_desc":
+        order_clause = "COALESCE(total_staff,0) DESC, submitted_at DESC"
+    elif order == "staff_asc":
+        order_clause = "COALESCE(total_staff,0) ASC, submitted_at DESC"
+    elif order == "name_asc":
+        order_clause = "school_name ASC"
+    elif order == "name_desc":
+        order_clause = "school_name DESC"
+    elif order == "date_asc":
+        order_clause = "submitted_at ASC NULLS LAST"
+    elif order == "date_desc":
+        order_clause = "submitted_at DESC NULLS LAST"
+
     query = f"""
-            SELECT 
+        WITH latest AS (
+            SELECT DISTINCT ON (a.school_id)
                 a.id,
                 a.school_id,
                 s.name as school_name,
@@ -828,15 +862,25 @@ def list_recent_assessments(limit: int = 50, period_id: Optional[int] = None) ->
                 s.jenjang,
                 a.status,
                 a.total_score,
+                COALESCE(staff_counts.total_staff, 0) AS total_staff,
                 a.submitted_at,
                 u.full_name as assessor_name
             FROM portal_assessments a
             JOIN portal_schools s ON a.school_id = s.id
             LEFT JOIN dashboard_users u ON a.staff_id = u.id
+            LEFT JOIN (
+                SELECT school_id, COUNT(DISTINCT staff_id) AS total_staff
+                FROM portal_assessments
+                WHERE status = 'submitted'
+                GROUP BY school_id
+            ) staff_counts ON staff_counts.school_id = s.id
             {where}
-            ORDER BY a.submitted_at DESC
-            LIMIT %s
-            """
+            ORDER BY a.school_id, a.submitted_at DESC NULLS LAST
+        )
+        SELECT * FROM latest
+        ORDER BY {order_clause}
+        LIMIT %s
+        """
     with get_cursor() as cur:
         cur.execute(query, params)
         columns = [desc[0] for desc in cur.description]
@@ -895,9 +939,12 @@ def fetch_related_photos(
             p.captured_at,
             p.latitude,
             p.longitude,
+            u.full_name AS uploader_name,
+            a.id AS assessment_id,
             COALESCE(AVG(sc.score), 0)::DECIMAL(5,2) AS room_score
         FROM portal_assessment_photos p
         JOIN portal_assessments a ON p.assessment_id = a.id
+        LEFT JOIN dashboard_users u ON a.staff_id = u.id
         JOIN portal_schools s ON a.school_id = s.id
         JOIN portal_school_rooms sr ON p.school_room_id = sr.id
         JOIN portal_rooms r ON sr.room_id = r.id
@@ -954,6 +1001,128 @@ def create_aspect(
             (room_id, name, description, sort_order),
         )
         return dict(cur.fetchone())
+
+
+def get_room_by_id(room_id: int) -> Optional[Dict[str, Any]]:
+    """Get a single room by ID."""
+    with get_cursor() as cur:
+        cur.execute(
+            "SELECT id, name, description, category, sort_order, active FROM portal_rooms WHERE id = %s",
+            (room_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def update_room(
+    room_id: int,
+    name: str,
+    description: Optional[str] = None,
+    category: str = "umum",
+    sort_order: int = 0,
+    active: bool = True,
+) -> Optional[Dict[str, Any]]:
+    """Update an existing room."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE portal_rooms 
+            SET name = %s, description = %s, category = %s, sort_order = %s, active = %s
+            WHERE id = %s
+            RETURNING id, name, description, category, sort_order, active
+            """,
+            (name, description, category, sort_order, active, room_id),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def delete_room(room_id: int) -> bool:
+    """Delete a room. Returns True if deleted."""
+    with get_cursor(commit=True) as cur:
+        # Check if room is used in any assessments
+        cur.execute(
+            """
+            SELECT COUNT(*) as cnt FROM portal_assessment_scores sc
+            JOIN portal_school_rooms sr ON sc.school_room_id = sr.id
+            WHERE sr.room_id = %s
+            """,
+            (room_id,),
+        )
+        if cur.fetchone()["cnt"] > 0:
+            # Soft delete - just deactivate
+            cur.execute(
+                "UPDATE portal_rooms SET active = FALSE WHERE id = %s RETURNING id",
+                (room_id,),
+            )
+        else:
+            # Hard delete - no assessments reference this room
+            cur.execute(
+                "DELETE FROM portal_rooms WHERE id = %s RETURNING id",
+                (room_id,),
+            )
+        return cur.fetchone() is not None
+
+
+def get_aspect_by_id(aspect_id: int) -> Optional[Dict[str, Any]]:
+    """Get a single aspect by ID."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT a.id, a.room_id, a.name, a.description, a.sort_order, a.active, r.name as room_name
+            FROM portal_aspects a
+            JOIN portal_rooms r ON a.room_id = r.id
+            WHERE a.id = %s
+            """,
+            (aspect_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def update_aspect(
+    aspect_id: int,
+    name: str,
+    description: Optional[str] = None,
+    sort_order: int = 0,
+    active: bool = True,
+) -> Optional[Dict[str, Any]]:
+    """Update an existing aspect."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE portal_aspects 
+            SET name = %s, description = %s, sort_order = %s, active = %s
+            WHERE id = %s
+            RETURNING id, room_id, name, description, sort_order, active
+            """,
+            (name, description, sort_order, active, aspect_id),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def delete_aspect(aspect_id: int) -> bool:
+    """Delete an aspect. Returns True if deleted."""
+    with get_cursor(commit=True) as cur:
+        # Check if aspect is used in any assessments
+        cur.execute(
+            "SELECT COUNT(*) as cnt FROM portal_assessment_scores WHERE aspect_id = %s",
+            (aspect_id,),
+        )
+        if cur.fetchone()["cnt"] > 0:
+            # Soft delete - just deactivate
+            cur.execute(
+                "UPDATE portal_aspects SET active = FALSE WHERE id = %s RETURNING id",
+                (aspect_id,),
+            )
+        else:
+            # Hard delete
+            cur.execute(
+                "DELETE FROM portal_aspects WHERE id = %s RETURNING id",
+                (aspect_id,),
+            )
+        return cur.fetchone() is not None
 
 
 def create_school(

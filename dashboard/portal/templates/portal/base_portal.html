@@ -513,7 +513,7 @@
 <body>
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container-fluid px-lg-4">
-            <a class="navbar-brand" href="{{ url_for('portal.home') }}">
+            <a class="navbar-brand" href="{% if current_user and current_user.role == 'admin' %}{{ url_for('portal.admin_stats') }}{% else %}{{ url_for('portal.home') }}{% endif %}">
                 <span class="icon-badge brand-icon text-primary">
                     <i class="bi bi-clipboard2-check"></i>
                 </span>

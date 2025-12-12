@@ -63,7 +63,14 @@ from .queries import (
     list_kelurahan,
     search_schools_by_npsn,
     get_school_by_npsn,
+    get_room_by_id,
+    update_room,
+    delete_room,
+    get_aspect_by_id,
+    update_aspect,
+    delete_aspect,
 )
+
 
 portal_bp = Blueprint(
     "portal",
@@ -638,29 +645,64 @@ def view_assessment(assessment_id: int) -> Response:
     other_assessments = []
     school_avg = None
     if user.get("role") == "admin":
-        # reuse recent list but filtered by school
-        other_assessments = list_recent_assessments(limit=50, period_id=None)
-        other_assessments = [a for a in other_assessments if a["school_id"] == assessment["school_id"] and a["id"] != assessment_id]
+        # fetch all submitted assessments for this school (including current)
+        from dashboard.db_access import get_cursor
+        with get_cursor() as cur:
+            cur.execute(
+                """
+                SELECT 
+                    a.id, 
+                    a.total_score, 
+                    a.submitted_at, 
+                    a.staff_id, 
+                    u.full_name as assessor_name,
+                    u.email as assessor_email,
+                    (a.id = %s) AS is_current
+                FROM portal_assessments a
+                LEFT JOIN dashboard_users u ON u.id = a.staff_id
+                WHERE a.school_id = %s AND a.status = 'submitted'
+                ORDER BY a.submitted_at DESC
+                """,
+                (assessment_id, assessment["school_id"]),
+            )
+            other_assessments = [dict(row) for row in cur.fetchall()]
         avg_map = fetch_school_avg_scores(period_id=None)
         school_avg = avg_map.get(assessment["school_id"])
     
     # Group scores by room
-    rooms_scores = {}
+    rooms_data = {}
     for s in scores:
-        room_name = s["room_name"]
-        if room_name not in rooms_scores:
-            rooms_scores[room_name] = []
-        rooms_scores[room_name].append(s)
+        room_id = s["room_id"]
+        if room_id not in rooms_data:
+            rooms_data[room_id] = {
+                "room_id": room_id,
+                "room_name": s["room_name"],
+                "scores": [],
+                "school_room_id": s["school_room_id"],
+            }
+        rooms_data[room_id]["scores"].append(s)
+
+    related_photos = {}
+    for room_id in rooms_data.keys():
+        try:
+            related_photos[room_id] = fetch_related_photos(
+                school_id=assessment["school_id"],
+                room_id=room_id,
+                limit=10,
+            )
+        except Exception:
+            related_photos[room_id] = []
     
     return render_template(
         "portal/assessment_view.html",
         assessment=assessment,
-        rooms_scores=rooms_scores,
         user=user,
         photos_by_room=photos_by_room,
         room_notes=room_notes,
         other_assessments=other_assessments,
         school_avg=school_avg,
+        rooms_data=rooms_data,
+        related_photos=related_photos,
     )
 
 
@@ -784,11 +826,30 @@ def admin_stats() -> Response:
     """Admin view of portal statistics."""
     # Trigger reload
     period_id = request.args.get("period_id", type=int)
+    jenjang_filter = request.args.get("jenjang") or None
+    order = request.args.get("order") or "recent"
+    allowed_orders = {
+        "recent",
+        "score_desc",
+        "score_asc",
+        "staff_desc",
+        "staff_asc",
+        "name_asc",
+        "name_desc",
+        "date_asc",
+        "date_desc",
+    }
+    if order not in allowed_orders:
+        order = "recent"
     
     stats = fetch_portal_stats(period_id)
     from .queries import fetch_score_distribution
     score_dist = fetch_score_distribution(period_id)
-    recent_assessments = list_recent_assessments(period_id=period_id)
+    recent_assessments = list_recent_assessments(
+        period_id=period_id,
+        jenjang=jenjang_filter,
+        order=order,
+    )
     top_schools = fetch_top_schools(period_id=period_id)
     bottom_schools = fetch_bottom_schools(period_id=period_id)
     photo_order = request.args.get("photo_order", "random")
@@ -809,6 +870,8 @@ def admin_stats() -> Response:
         school_avg_map=school_avg_map,
         periods=periods,
         current_period_id=period_id,
+        jenjang_filter=jenjang_filter,
+        order=order,
         photo_order=photo_order,
         all_schools=all_schools,
         all_staff=all_staff,
@@ -1059,6 +1122,97 @@ def add_aspect() -> Response:
     try:
         create_aspect(int(room_id), name, description, sort_order)
         flash(f"Aspek '{name}' berhasil ditambahkan.", "success")
+    except Exception as e:
+        flash(f"Error: {e}", "danger")
+    
+    return redirect(url_for("portal.admin_setup"))
+
+
+@portal_bp.route("/admin/setup/room/<int:room_id>", methods=["POST"])
+@role_required("admin")
+def edit_room(room_id: int) -> Response:
+    """Update an existing room."""
+    name = request.form.get("name", "").strip()
+    description = request.form.get("description", "").strip() or None
+    category = request.form.get("category", "umum").strip()
+    sort_order = int(request.form.get("sort_order", 0))
+    active = request.form.get("active") == "on"
+    
+    if not name:
+        flash("Nama ruangan wajib diisi.", "warning")
+        return redirect(url_for("portal.admin_setup"))
+    
+    try:
+        result = update_room(room_id, name, description, category, sort_order, active)
+        if result:
+            flash(f"Ruangan '{name}' berhasil diperbarui.", "success")
+        else:
+            flash("Ruangan tidak ditemukan.", "warning")
+    except Exception as e:
+        flash(f"Error: {e}", "danger")
+    
+    return redirect(url_for("portal.admin_setup"))
+
+
+@portal_bp.route("/admin/setup/room/<int:room_id>/delete", methods=["POST"])
+@role_required("admin")
+def delete_room_route(room_id: int) -> Response:
+    """Delete a room."""
+    room = get_room_by_id(room_id)
+    if not room:
+        flash("Ruangan tidak ditemukan.", "warning")
+        return redirect(url_for("portal.admin_setup"))
+    
+    try:
+        if delete_room(room_id):
+            flash(f"Ruangan '{room['name']}' berhasil dihapus.", "success")
+        else:
+            flash("Gagal menghapus ruangan.", "danger")
+    except Exception as e:
+        flash(f"Error: {e}", "danger")
+    
+    return redirect(url_for("portal.admin_setup"))
+
+
+@portal_bp.route("/admin/setup/aspect/<int:aspect_id>", methods=["POST"])
+@role_required("admin")
+def edit_aspect(aspect_id: int) -> Response:
+    """Update an existing aspect."""
+    name = request.form.get("name", "").strip()
+    description = request.form.get("description", "").strip() or None
+    sort_order = int(request.form.get("sort_order", 0))
+    active = request.form.get("active") == "on"
+    
+    if not name:
+        flash("Nama aspek wajib diisi.", "warning")
+        return redirect(url_for("portal.admin_setup"))
+    
+    try:
+        result = update_aspect(aspect_id, name, description, sort_order, active)
+        if result:
+            flash(f"Aspek '{name}' berhasil diperbarui.", "success")
+        else:
+            flash("Aspek tidak ditemukan.", "warning")
+    except Exception as e:
+        flash(f"Error: {e}", "danger")
+    
+    return redirect(url_for("portal.admin_setup"))
+
+
+@portal_bp.route("/admin/setup/aspect/<int:aspect_id>/delete", methods=["POST"])
+@role_required("admin")
+def delete_aspect_route(aspect_id: int) -> Response:
+    """Delete an aspect."""
+    aspect = get_aspect_by_id(aspect_id)
+    if not aspect:
+        flash("Aspek tidak ditemukan.", "warning")
+        return redirect(url_for("portal.admin_setup"))
+    
+    try:
+        if delete_aspect(aspect_id):
+            flash(f"Aspek '{aspect['name']}' berhasil dihapus.", "success")
+        else:
+            flash("Gagal menghapus aspek.", "danger")
     except Exception as e:
         flash(f"Error: {e}", "danger")
     
