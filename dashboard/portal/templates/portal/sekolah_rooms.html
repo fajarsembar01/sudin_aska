@@ -101,6 +101,13 @@
                             </label>
                             {% endfor %}
                         </div>
+                        <div class="d-flex justify-content-end mt-3">
+                            <button type="submit"
+                                class="btn btn-primary d-inline-flex align-items-center justify-content-center gap-2">
+                                <i class="bi bi-check-lg"></i>
+                                <span>Simpan Konfigurasi</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -115,4 +122,410 @@
         });
     }
 </script>
+
+{% if user_school %}
+<!-- Profile completion modal -->
+<div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-clipboard2-check me-2 text-primary"></i>Lengkapi Profil Sekolah</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="stepper mb-3" id="profileStepper">
+                    <div class="step-item" data-step="0">
+                        <div class="step-icon">
+                            <i class="bi bi-check-lg"></i>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="step-meta">
+                            <div class="step-label">Langkah 1</div>
+                            <div class="step-title">Lokasi & GMaps</div>
+                            <div class="step-status text-success">Completed</div>
+                        </div>
+                    </div>
+                    <div class="step-item" data-step="1">
+                        <div class="step-icon"></div>
+                        <div class="step-line"></div>
+                        <div class="step-meta">
+                            <div class="step-label">Langkah 2</div>
+                            <div class="step-title">Kapasitas</div>
+                            <div class="step-status text-primary">In Progress</div>
+                        </div>
+                    </div>
+                    <div class="step-item" data-step="2">
+                        <div class="step-icon"></div>
+                        <div class="step-line"></div>
+                        <div class="step-meta">
+                            <div class="step-label">Langkah 3</div>
+                            <div class="step-title">Kontak Sekolah</div>
+                            <div class="step-status text-muted">Pending</div>
+                        </div>
+                    </div>
+                    <div class="step-item" data-step="3">
+                        <div class="step-icon"></div>
+                        <div class="step-line d-none d-md-block"></div>
+                        <div class="step-meta">
+                            <div class="step-label">Langkah 4</div>
+                            <div class="step-title">Channel Opsional</div>
+                            <div class="step-status text-muted">Pending</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="profileCarousel" class="carousel slide" data-bs-interval="false">
+                    <div class="carousel-inner">
+                        <div class="carousel-item active">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Alamat Sekolah *</label>
+                                    <textarea class="form-control" id="modalAlamat" rows="2" required>{{ (school_profile.alamat if school_profile else '') or '' }}</textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Kecamatan *</label>
+                                    <select class="form-select" id="modalKecamatan">
+                                        <option value="">-- Pilih Kecamatan --</option>
+                                        {% for k in kecamatan_list %}
+                                        <option value="{{ k.id }}" {% if school_profile and school_profile.kecamatan_name==k.name %}selected{% endif %}>{{ k.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Kelurahan *</label>
+                                    <select class="form-select" id="modalKelurahan" required>
+                                        <option value="">-- Pilih Kelurahan --</option>
+                                        {% for l in kelurahan_list %}
+                                        <option value="{{ l.id }}" data-kecamatan="{{ l.kecamatan_id }}"
+                                            {% if school_profile and school_profile.kelurahan_id==l.id %}selected{% endif %}>{{ l.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-semibold">Link Google Maps *</label>
+                                    <input type="url" class="form-control" id="modalGmaps" placeholder="https://maps.app.goo.gl/..." value="{{ (school_profile.metadata.gmaps_url if school_profile else '') or '' }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="carousel-item">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Jumlah Siswa *</label>
+                                    <input type="number" min="0" class="form-control" id="modalStudents" value="{{ (school_profile.metadata.student_count if school_profile else '') or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Jumlah Bangku Kosong *</label>
+                                    <input type="number" min="0" class="form-control" id="modalEmpty" value="{{ (school_profile.metadata.empty_seats if school_profile else '') or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Jumlah Guru *</label>
+                                    <input type="number" min="0" class="form-control" id="modalTeachers" value="{{ (school_profile.metadata.teacher_count if school_profile else '') or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Jumlah Tenaga Kependidikan *</label>
+                                    <input type="number" min="0" class="form-control" id="modalStaff" value="{{ (school_profile.metadata.staff_count if school_profile else '') or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Jumlah Rombel *</label>
+                                    <input type="number" min="0" class="form-control" id="modalRombel" value="{{ (school_profile.metadata.rombel_count if school_profile else '') or '' }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="carousel-item">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Nomor Telepon Sekolah *</label>
+                                    <input type="text" class="form-control" id="modalSchoolPhone" value="{{ (school_profile.metadata.school_phone if school_profile else '') or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Nomor Operator Sekolah *</label>
+                                    <input type="text" class="form-control" id="modalCoordinatorPhone" value="{{ (school_profile.metadata.coordinator_phone if school_profile else '') or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Email Sekolah (CS) *</label>
+                                    <input type="email" class="form-control" id="modalCsEmail" value="{{ (school_profile.metadata.cs_email if school_profile else '') or '' }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="carousel-item">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Instagram (Opsional)</label>
+                                    <input type="text" class="form-control" id="modalInstagram" value="{{ (school_profile.metadata.instagram if school_profile else '') or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">TikTok (Opsional)</label>
+                                    <input type="text" class="form-control" id="modalTiktok" value="{{ (school_profile.metadata.tiktok if school_profile else '') or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">YouTube (Opsional)</label>
+                                    <input type="text" class="form-control" id="modalYoutube" value="{{ (school_profile.metadata.youtube if school_profile else '') or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">WA Channel (Opsional)</label>
+                                    <input type="text" class="form-control" id="modalWaChannel" value="{{ (school_profile.metadata.wa_channel if school_profile else '') or '' }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <button class="btn btn-outline-secondary" type="button" id="modalPrev" data-bs-target="#profileCarousel" data-bs-slide="prev">
+                            <i class="bi bi-chevron-left"></i> Sebelumnya
+                        </button>
+                        <div class="text-muted small">
+                            Pastikan data wajib terisi sebelum menyimpan.
+                        </div>
+                        <button class="btn btn-outline-primary" type="button" id="modalNext">
+                            <span class="next-label">Selanjutnya</span> <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <div class="text-danger small" id="modalError" style="display:none;"></div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-target="#coordinatorModal" data-bs-toggle="modal">
+                        <i class="bi bi-question-circle"></i> Bantuan
+                    </button>
+                    <a href="{{ url_for('portal.sekolah_profile') }}" class="btn btn-link">Buka Halaman Pengaturan</a>
+                    <button type="button" class="btn btn-primary" id="modalSave">
+                        <i class="bi bi-save me-1"></i>Simpan Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include "portal/components/_coordinator_modal.html" %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var shouldShow = {{ 'true' if show_profile_modal else 'false' }};
+        var profileModalEl = document.getElementById('profileModal');
+        if (shouldShow && profileModalEl && window.bootstrap) {
+            new bootstrap.Modal(profileModalEl, { backdrop: 'static', keyboard: false }).show();
+        }
+
+        var errorBox = document.getElementById('modalError');
+        function showError(msg) {
+            errorBox.textContent = msg;
+            errorBox.style.display = msg ? 'block' : 'none';
+        }
+
+        function collectPayload() {
+            return {
+                alamat: document.getElementById('modalAlamat').value.trim(),
+                kelurahan_id: document.getElementById('modalKelurahan').value,
+                gmaps_url: document.getElementById('modalGmaps').value.trim(),
+                student_count: document.getElementById('modalStudents').value,
+                empty_seats: document.getElementById('modalEmpty').value,
+                rombel_count: document.getElementById('modalRombel').value,
+                teacher_count: document.getElementById('modalTeachers').value,
+                staff_count: document.getElementById('modalStaff').value,
+                school_phone: document.getElementById('modalSchoolPhone').value.trim(),
+                coordinator_phone: document.getElementById('modalCoordinatorPhone').value.trim(),
+                cs_email: document.getElementById('modalCsEmail').value.trim(),
+                instagram: document.getElementById('modalInstagram').value.trim(),
+                tiktok: document.getElementById('modalTiktok').value.trim(),
+                youtube: document.getElementById('modalYoutube').value.trim(),
+                wa_channel: document.getElementById('modalWaChannel').value.trim(),
+            };
+        }
+
+        // Stepper & validation logic
+        var carouselEl = document.getElementById('profileCarousel');
+        var steps = Array.from(document.querySelectorAll('#profileStepper .step-item'));
+        var currentStep = 0;
+        var carouselInstance = carouselEl ? bootstrap.Carousel.getOrCreateInstance(carouselEl, { interval: false, ride: false }) : null;
+
+        function stepValidationMessage(stepIndex, data) {
+            if (stepIndex === 0) {
+                if (!data.alamat) return "Alamat sekolah wajib diisi.";
+                if (!data.kelurahan_id) return "Kelurahan wajib dipilih.";
+                if (!data.gmaps_url) return "Link Google Maps wajib diisi.";
+                return "";
+            }
+            if (stepIndex === 1) {
+                if (!data.student_count || isNaN(data.student_count)) return "Jumlah siswa wajib diisi.";
+                if (!data.empty_seats || isNaN(data.empty_seats)) return "Jumlah bangku kosong wajib diisi.";
+                if (!data.teacher_count || isNaN(data.teacher_count)) return "Jumlah guru wajib diisi.";
+                if (!data.staff_count || isNaN(data.staff_count)) return "Jumlah tendik wajib diisi.";
+                if (!data.rombel_count || isNaN(data.rombel_count)) return "Jumlah rombel wajib diisi.";
+                return "";
+            }
+            if (stepIndex === 2) {
+                if (!data.school_phone) return "Nomor telepon sekolah wajib diisi.";
+                if (!/^[0-9]+$/.test(data.school_phone)) return "Nomor telepon sekolah hanya boleh angka.";
+                if (!data.coordinator_phone) return "Nomor operator sekolah wajib diisi.";
+                if (!/^[0-9]+$/.test(data.coordinator_phone)) return "Nomor operator sekolah hanya boleh angka.";
+                if (!data.cs_email) return "Email sekolah (CS) wajib diisi.";
+                var emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+                if (!emailRegex.test(data.cs_email)) return "Format email sekolah (CS) tidak valid.";
+                return "";
+            }
+            return "";
+        }
+
+        function validateRequired(data) {
+            var err0 = stepValidationMessage(0, data);
+            if (err0) return err0;
+            var err1 = stepValidationMessage(1, data);
+            if (err1) return err1;
+            var err2 = stepValidationMessage(2, data);
+            if (err2) return err2;
+            return "";
+        }
+
+        function setActiveDot(index) {
+            var data = collectPayload();
+            currentStep = index;
+            steps.forEach(function (step, i) {
+                var icon = step.querySelector('.step-icon');
+                var status = step.querySelector('.step-status');
+                var line = step.querySelector('.step-line');
+                var valid = !stepValidationMessage(i, data);
+                step.classList.toggle('active', i === index);
+                step.classList.toggle('completed', i < index && valid);
+
+                icon.classList.remove('active', 'completed');
+                if (i < index && valid) {
+                    icon.classList.add('completed');
+                    icon.innerHTML = '<i class="bi bi-check-lg"></i>';
+                    status.textContent = 'Completed';
+                    status.className = 'step-status text-success';
+                    if (line) line.classList.add('completed');
+                } else if (i === index) {
+                    icon.classList.add('active');
+                    icon.textContent = i + 1;
+                    status.textContent = 'In Progress';
+                    status.className = 'step-status text-primary';
+                    if (line) line.classList.remove('completed');
+                } else {
+                    icon.textContent = i + 1;
+                    status.textContent = 'Pending';
+                    status.className = 'step-status text-muted';
+                    if (line) line.classList.remove('completed');
+                }
+            });
+        }
+
+        if (carouselEl) {
+            carouselEl.addEventListener('slid.bs.carousel', function (e) {
+                setActiveDot(e.to);
+                updateNextLabel();
+            });
+            setActiveDot(0);
+            updateNextLabel();
+        }
+
+        var saveBtn = document.getElementById('modalSave');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', async function () {
+                var payload = collectPayload();
+                var error = validateRequired(payload);
+                if (error) {
+                    showError(error);
+                    return;
+                }
+                showError("");
+                try {
+                    var res = await fetch("{{ url_for('portal.sekolah_profile') }}", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: new URLSearchParams(payload),
+                    });
+                    if (res.redirected) {
+                        window.location.href = res.url;
+                        return;
+                    }
+                    showError("Gagal menyimpan, coba lagi.");
+                } catch (err) {
+                    showError("Terjadi kesalahan jaringan.");
+                }
+            });
+        }
+
+        var nextBtn = document.getElementById('modalNext');
+        var nextLabel = nextBtn ? nextBtn.querySelector('.next-label') : null;
+        if (nextBtn && carouselInstance) {
+            nextBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                var payload = collectPayload();
+                var error = stepValidationMessage(currentStep, payload);
+                if (error) {
+                    showError(error);
+                    return;
+                }
+                showError("");
+                if (currentStep >= steps.length - 1) {
+                    // final step acts as save
+                    saveBtn.click();
+                } else {
+                    carouselInstance.next();
+                }
+            });
+        }
+
+        function updateNextLabel() {
+            if (!nextLabel) return;
+            if (currentStep >= steps.length - 1) {
+                nextLabel.textContent = 'Simpan';
+                nextBtn.querySelector('i').className = 'bi bi-save';
+            } else {
+                nextLabel.textContent = 'Selanjutnya';
+                nextBtn.querySelector('i').className = 'bi bi-chevron-right';
+            }
+        }
+
+        // Prevent closing modal if data wajib belum valid
+        if (profileModalEl) {
+            profileModalEl.addEventListener('hide.bs.modal', function (event) {
+                var payload = collectPayload();
+                var error = validateRequired(payload);
+                if (error) {
+                    event.preventDefault();
+                    showError(error);
+                }
+            });
+        }
+
+        // Update stepper on field change to reflect validation status
+        ['modalAlamat', 'modalKelurahan', 'modalKecamatan', 'modalGmaps', 'modalStudents', 'modalEmpty', 'modalTeachers', 'modalStaff', 'modalRombel', 'modalSchoolPhone', 'modalCoordinatorPhone', 'modalCsEmail'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', function () { setActiveDot(currentStep); });
+                el.addEventListener('change', function () { setActiveDot(currentStep); updateNextLabel(); });
+            }
+        });
+
+        // Dependent kelurahan dropdown
+        var kelurahanOptions = {{ kelurahan_list|tojson }};
+        var kecSelect = document.getElementById('modalKecamatan');
+        var kelSelect = document.getElementById('modalKelurahan');
+        function refreshKelurahan() {
+            if (!kelSelect) return;
+            var selected = kelSelect.value;
+            var kec = kecSelect ? kecSelect.value : '';
+            kelSelect.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
+            kelurahanOptions.forEach(function (item) {
+                if (!kec || String(item.kecamatan_id) === String(kec)) {
+                    var opt = document.createElement('option');
+                    opt.value = item.id;
+                    opt.dataset.kecamatan = item.kecamatan_id;
+                    opt.textContent = item.name;
+                    if (String(item.id) === String(selected)) opt.selected = true;
+                    kelSelect.appendChild(opt);
+                }
+            });
+        }
+        if (kecSelect) {
+            kecSelect.addEventListener('change', function () {
+                refreshKelurahan();
+                setActiveDot(currentStep);
+            });
+            refreshKelurahan();
+        }
+    });
+</script>
+{% endif %}
 {% endblock %}

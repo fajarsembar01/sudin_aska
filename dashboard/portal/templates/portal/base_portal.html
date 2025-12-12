@@ -17,6 +17,73 @@
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
+        /* Stepper styles */
+        .stepper {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        .step-item {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .step-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #cfe2ff;
+            border: 3px solid transparent;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #0d6efd;
+            font-weight: 700;
+        }
+
+        .step-icon.active {
+            border-color: #0d6efd;
+            background: #e7f1ff;
+            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+        }
+
+        .step-icon.completed {
+            background: #0f9d58;
+            color: #fff;
+            border-color: #0f9d58;
+            box-shadow: 0 0 0 4px rgba(15, 157, 88, 0.12);
+        }
+
+        .step-line {
+            height: 4px;
+            background: #d8e5f5;
+            border-radius: 999px;
+        }
+
+        .step-line.completed {
+            background: linear-gradient(90deg, #0f9d58, #0d6efd);
+        }
+
+        .step-meta .step-label {
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .step-meta .step-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .step-meta .step-status {
+            font-size: 0.8rem;
+            margin-top: 2px;
+        }
+
         /* Portal-specific additions */
         .portal-hero {
             background: linear-gradient(135deg, rgba(13, 110, 253, 0.12), rgba(99, 102, 241, 0.08));
@@ -525,9 +592,15 @@
                                 <div class="fw-semibold">{{ current_user.full_name or 'User' }}</div>
                                 <small class="text-muted">{{ current_user.email }}</small>
                             </li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% if current_user.role == 'sekolah' %}
                             <li>
-                                <hr class="dropdown-divider">
+                                <a class="dropdown-item" href="{{ url_for('portal.sekolah_profile') }}">
+                                    <i class="bi bi-gear me-2"></i>Pengaturan Sekolah
+                                </a>
                             </li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% endif %}
                             <li>
                                 <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
                                     <i class="bi bi-box-arrow-right me-2"></i>Logout
@@ -616,6 +689,24 @@
         })();
 
         // Theme toggle Logic seems missing/cut? Re-implementing minimal theme toggle if needed or rely on tail.
+    </script>
+    <script>
+        // Inject CSRF token into all POST forms so Flask-WTF validation passes
+        document.addEventListener('DOMContentLoaded', function () {
+            var token = document.querySelector('meta[name="csrf-token"]');
+            if (!token) return;
+
+            document.querySelectorAll('form').forEach(function (form) {
+                var method = (form.getAttribute('method') || '').toUpperCase();
+                if (method === 'POST' && !form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = token.content;
+                    form.prepend(input);
+                }
+            });
+        });
     </script>
     {% block portal_scripts %}{% endblock %}
 </body>

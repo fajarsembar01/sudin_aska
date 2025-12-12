@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-import uuid
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote_plus
+import json
+import uuid
+import re
 
 from flask import (
     Blueprint,
@@ -21,6 +24,7 @@ from flask import (
 from werkzeug.utils import secure_filename
 
 from ..auth import current_user, role_required
+from dashboard.db_access import get_cursor
 from .queries import (
     list_portal_schools,
     list_portal_rooms,
@@ -71,6 +75,11 @@ portal_bp = Blueprint(
 
 UPLOAD_FOLDER = Path(__file__).parent.parent.parent / "uploads" / "portal"
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
+COORDINATOR_CONTACTS = [
+    {"area": "Cilincing", "name": "Neni", "phone": "+62 851-1085-1681"},
+    {"area": "Kelapa Gading", "name": "Slamet", "phone": "+62 859-2123-2424"},
+    {"area": "Koja", "name": "Rani", "phone": "+62 878-8032-8670"},
+]
 
 
 @portal_bp.route("/uploads/<path:filename>")
@@ -101,6 +110,184 @@ def _portal_access_required(view):
         return view(*args, **kwargs)
 
     return wrapper
+
+
+def _sanitize_phone(phone: str) -> str:
+    """Normalize phone string to digits only for wa.me/api.whatsapp links."""
+    digits_only = "".join(ch for ch in phone if ch.isdigit())
+    return digits_only
+
+
+def _fetch_user_school(user_id: int) -> dict | None:
+    """Return the school linked to the given user_id with metadata."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT s.id,
+                   s.npsn,
+                   s.name,
+                   s.jenjang,
+                   s.status,
+                   s.alamat,
+                   s.metadata,
+                   s.kelurahan_id,
+                   l.name AS kelurahan_name,
+                   k.name AS kecamatan_name
+            FROM dashboard_users u
+            JOIN portal_schools s ON u.school_id = s.id
+            LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            WHERE u.id = %s
+            """,
+            (user_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def _compute_missing_profile_fields(school: dict | None) -> list[str]:
+    """Check required fields for sekolah profile completeness."""
+    if not school:
+        return ["school"]
+    meta = school.get("metadata") or {}
+    required_keys = {
+        "gmaps_url": "Link Google Maps",
+        "student_count": "Jumlah siswa",
+        "empty_seats": "Jumlah bangku kosong",
+        "rombel_count": "Jumlah rombel",
+        "school_phone": "Nomor telepon sekolah",
+        "coordinator_phone": "Nomor operator sekolah",
+        "cs_email": "Email sekolah untuk CS",
+    }
+    missing = []
+    # alamat + kelurahan/kecamatan
+    if not (school.get("alamat") and school.get("kelurahan_name") and school.get("kecamatan_name")):
+        missing.append("Alamat dan wilayah")
+    for key, label in required_keys.items():
+        value = meta.get(key)
+        if value in (None, "", 0, "0"):
+            missing.append(label)
+    return missing
+
+
+def _build_profile_payload(form_data: dict) -> dict:
+    """Extract and normalize profile fields from form data or json."""
+    def _clean_int(val):
+        try:
+            return int(val)
+        except (TypeError, ValueError):
+            return None
+
+    def _clean_phone(val):
+        raw = (val or "").strip()
+        digits_only = "".join(ch for ch in raw if ch.isdigit())
+        return digits_only
+
+    return {
+        "alamat": (form_data.get("alamat") or "").strip(),
+        "kelurahan_id": _clean_int(form_data.get("kelurahan_id")),
+        "gmaps_url": (form_data.get("gmaps_url") or "").strip(),
+        "student_count": _clean_int(form_data.get("student_count")),
+        "empty_seats": _clean_int(form_data.get("empty_seats")),
+        "rombel_count": _clean_int(form_data.get("rombel_count")),
+        "teacher_count": _clean_int(form_data.get("teacher_count")),
+        "staff_count": _clean_int(form_data.get("staff_count")),
+        "school_phone": _clean_phone(form_data.get("school_phone")),
+        "coordinator_phone": _clean_phone(form_data.get("coordinator_phone")),
+        "cs_email": (form_data.get("cs_email") or "").strip(),
+        "instagram": (form_data.get("instagram") or "").strip(),
+        "tiktok": (form_data.get("tiktok") or "").strip(),
+        "youtube": (form_data.get("youtube") or "").strip(),
+        "wa_channel": (form_data.get("wa_channel") or "").strip(),
+    }
+
+
+def _validate_profile_data(payload: dict) -> list[str]:
+    errors = []
+    email_re = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+    if not payload.get("alamat"):
+        errors.append("Alamat sekolah wajib diisi.")
+    if not payload.get("kelurahan_id"):
+        errors.append("Kelurahan wajib dipilih.")
+    if not payload.get("gmaps_url"):
+        errors.append("Link Google Maps wajib diisi.")
+    if payload.get("student_count") is None:
+        errors.append("Jumlah siswa wajib diisi.")
+    if payload.get("empty_seats") is None:
+        errors.append("Jumlah bangku kosong wajib diisi.")
+    if payload.get("rombel_count") is None:
+        errors.append("Jumlah rombel wajib diisi.")
+    if payload.get("teacher_count") is None:
+        errors.append("Jumlah guru wajib diisi.")
+    if payload.get("staff_count") is None:
+        errors.append("Jumlah tendik wajib diisi.")
+    for phone_key, label in [
+        ("school_phone", "Nomor telepon sekolah"),
+        ("coordinator_phone", "Nomor operator sekolah"),
+    ]:
+        phone_val = payload.get(phone_key)
+        if not phone_val:
+            errors.append(f"{label} wajib diisi.")
+        elif not phone_val.isdigit():
+            errors.append(f"{label} hanya boleh berisi angka.")
+    cs_email = payload.get("cs_email", "")
+    if not cs_email:
+        errors.append("Email sekolah (CS) wajib diisi.")
+    elif not email_re.match(cs_email):
+        errors.append("Format email sekolah (CS) tidak valid.")
+    return errors
+
+
+def _save_school_profile(school_id: int, data: dict) -> None:
+    """Persist profile data into portal_schools (address + metadata)."""
+    meta_fields = {k: v for k, v in data.items() if k not in {"alamat", "kelurahan_id"}}
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE portal_schools
+            SET alamat = %s,
+                kelurahan_id = %s,
+                metadata = COALESCE(metadata, '{}'::jsonb) || %s::jsonb,
+                updated_at = NOW()
+            WHERE id = %s
+            """,
+            (data.get("alamat"), data.get("kelurahan_id"), json.dumps(meta_fields), school_id),
+        )
+
+
+def _sanitize_phone(phone: str) -> str:
+    """Normalize phone string to digits only for wa.me/api.whatsapp links."""
+    digits_only = "".join(ch for ch in phone if ch.isdigit())
+    return digits_only
+
+
+def _build_coordinator_contacts(school: dict | None = None) -> list[dict]:
+    """Return coordinator list with wa links, optionally personalized with school info."""
+    contacts = []
+    message = "Halo, kami ingin mengganti email akun portal sekolah."
+    if school:
+        message = (
+            f"Halo, kami dari {school.get('name')} (NPSN {school.get('npsn')}) "
+            "ingin mengganti email akun portal sekolah."
+        )
+
+    for c in COORDINATOR_CONTACTS:
+        phone_for_link = _sanitize_phone(c["phone"])
+        is_user_area = False
+        if school:
+            # Simple match: check if school.kecamatan_name contains area name
+            kec_name = (school.get("kecamatan_name") or "").lower()
+            is_user_area = c["area"].lower() in kec_name
+        contacts.append(
+            {
+                **c,
+                "wa_link": f"https://api.whatsapp.com/send?phone={phone_for_link}&text={quote_plus(message)}",
+                "normalized_area": c["area"].lower(),
+                "is_user_area": is_user_area,
+            }
+        )
+    return contacts
 
 
 # ===== Staff Portal Routes =====
@@ -531,23 +718,7 @@ def sekolah_rooms() -> Response:
     # Get user's school_id from database
     user_school = None
     if user.get("role") == "sekolah":
-        from dashboard.db_access import get_cursor
-        with get_cursor() as cur:
-            cur.execute(
-                """
-                SELECT s.id, s.npsn, s.name, s.jenjang, s.status,
-                       l.name as kelurahan_name, k.name as kecamatan_name
-                FROM dashboard_users u
-                JOIN portal_schools s ON u.school_id = s.id
-                LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
-                LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
-                WHERE u.id = %s
-                """,
-                (user["id"],),
-            )
-            row = cur.fetchone()
-            if row:
-                user_school = dict(row)
+        user_school = _fetch_user_school(user["id"])
         
         if not user_school:
             flash("Akun Anda belum terhubung dengan sekolah. Hubungi admin.", "warning")
@@ -584,12 +755,23 @@ def sekolah_rooms() -> Response:
         saved_rooms = list_school_rooms(current_school_id)
         saved_room_ids = {r["room_id"] for r in saved_rooms}
     
+    missing_fields = _compute_missing_profile_fields(user_school) if user_school else []
+    show_profile_modal = bool(missing_fields)
+    kecamatan_list = list_kecamatan()
+    kelurahan_list = list_kelurahan()  # full list to allow sekolah update
+
     return render_template(
         "portal/sekolah_rooms.html",
         all_rooms=all_rooms,
         schools=schools,
         user_school=user_school,
         saved_room_ids=saved_room_ids,
+        school_profile=user_school,
+        missing_fields=missing_fields,
+        show_profile_modal=show_profile_modal,
+        coordinator_contacts=_build_coordinator_contacts(user_school),
+        kecamatan_list=kecamatan_list,
+        kelurahan_list=kelurahan_list,
     )
 
 
@@ -682,6 +864,44 @@ def admin_map_data() -> Response:
     from .queries import fetch_map_data
     data = fetch_map_data(period_id)
     return jsonify(data)
+
+
+@portal_bp.route("/sekolah/profile", methods=["GET", "POST"])
+@_portal_access_required
+def sekolah_profile() -> Response:
+    """View/update school profile data for sekolah role."""
+    user = current_user()
+    if user.get("role") != "sekolah":
+        flash("Hanya akun sekolah yang dapat memperbarui profil sekolah.", "danger")
+        return redirect(url_for("portal.home"))
+
+    school = _fetch_user_school(user["id"])
+    if not school:
+        flash("Akun belum terhubung dengan sekolah. Hubungi admin.", "warning")
+        return redirect(url_for("portal.home"))
+
+    if request.method == "POST":
+        payload = _build_profile_payload(request.form)
+        errors = _validate_profile_data(payload)
+        if errors:
+            for err in errors:
+                flash(err, "warning")
+        else:
+            _save_school_profile(school["id"], payload)
+            flash("Profil sekolah berhasil diperbarui.", "success")
+            return redirect(url_for("portal.sekolah_profile"))
+
+    meta = {**(school.get("metadata") or {}), **(_build_profile_payload(request.form) if request.method == "POST" else {})}
+    kecamatan_list = list_kecamatan()
+    kelurahan_list = list_kelurahan()
+    return render_template(
+        "portal/school_profile.html",
+        school=school,
+        meta=meta,
+        missing_fields=_compute_missing_profile_fields(school),
+        kecamatan_list=kecamatan_list,
+        kelurahan_list=kelurahan_list,
+    )
 
 
 @portal_bp.route("/admin/photos")
@@ -899,6 +1119,7 @@ def register_school() -> Response:
     """School account registration page."""
     from werkzeug.security import generate_password_hash
     from dashboard.queries import get_user_by_email
+    from dashboard.db_access import get_cursor
     
     # If user is logged in, redirect to home
     if current_user():
@@ -927,6 +1148,27 @@ def register_school() -> Response:
         school = get_school_by_npsn(npsn) if npsn else None
         if npsn and not school:
             errors.append(f"Sekolah dengan NPSN {npsn} tidak ditemukan.")
+        
+        existing_school_user = None
+        if school:
+            with get_cursor() as cur:
+                cur.execute(
+                    "SELECT email FROM dashboard_users WHERE school_id = %s LIMIT 1",
+                    (school["id"],),
+                )
+                existing_school_user = cur.fetchone()
+            if existing_school_user:
+                coordinator_contacts = _build_coordinator_contacts(school)
+                flash("Sekolah ini sudah memiliki akun terdaftar.", "warning")
+                return render_template(
+                    "portal/register_school.html",
+                    npsn=npsn,
+                    email=email,
+                    school=school,
+                    existing_school_email=existing_school_user["email"],
+                    coordinator_contacts=coordinator_contacts,
+                    show_registered_modal=True,
+                )
         
         # Check if email already registered
         if email and get_user_by_email(email):
@@ -959,4 +1201,7 @@ def register_school() -> Response:
             flash(f"Gagal membuat akun: {e}", "danger")
             return render_template("portal/register_school.html", npsn=npsn, email=email)
     
-    return render_template("portal/register_school.html")
+    return render_template(
+        "portal/register_school.html",
+        coordinator_contacts=_build_coordinator_contacts(),
+    )
