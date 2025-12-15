@@ -89,7 +89,8 @@ def role_required(*roles: str) -> Callable:
             role = user.get("role")
             if role not in roles:
                 flash("Anda tidak memiliki akses ke fitur ini.", "danger")
-                return redirect(url_for("main.dashboard"))
+                # Redirect non-admin users to Portal
+                return redirect(url_for("portal.home"))
             return view(*args, **kwargs)
 
         return wrapper

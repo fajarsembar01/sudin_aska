@@ -22,7 +22,7 @@ from flask import (
 )
 from werkzeug.datastructures import MultiDict
 
-from .auth import current_user, login_required, role_required
+from .auth import current_user, role_required
 from utils import current_jakarta_time, to_jakarta
 from .queries import (
     BULLYING_STATUSES,
@@ -198,7 +198,7 @@ def _load_twitter_runtime() -> dict:
 
 
 @main_bp.route("/profile/no-tester", methods=["POST"])
-@login_required
+@role_required("admin")
 def toggle_no_tester() -> Response:
     user = current_user()
     if not user:
@@ -227,7 +227,7 @@ def toggle_no_tester() -> Response:
 
 
 @main_bp.route("/")
-@login_required
+@role_required("admin")
 def dashboard() -> Response:
     metrics = fetch_overview_metrics(window_days=7)
     chart_default_days = 30
@@ -311,7 +311,7 @@ def dashboard() -> Response:
 
 
 @main_bp.route("/twitter/logs")
-@login_required
+@role_required("admin")
 def twitter_logs() -> Response:
     args: MultiDict = request.args
     page = max(1, int(args.get("page", 1)))
@@ -444,7 +444,7 @@ def twitter_logs() -> Response:
 
 
 @main_bp.route("/chats")
-@login_required
+@role_required("admin")
 def chats() -> Response:
     args: MultiDict = request.args
     page = max(1, int(args.get("page", 1)))
@@ -487,7 +487,7 @@ def chats() -> Response:
 
 
 @main_bp.route("/chats/thread/")
-@login_required
+@role_required("admin")
 def chat_thread_empty() -> Response:
     users_list = fetch_all_chat_users()
     if users_list:
@@ -497,7 +497,7 @@ def chat_thread_empty() -> Response:
 
 
 @main_bp.route("/chats/thread/<user_id>")
-@login_required
+@role_required("admin")
 def chat_thread(user_id: str) -> Response:
     try:
         user_id_int = int(user_id)
@@ -528,7 +528,7 @@ def chat_thread(user_id: str) -> Response:
 
 
 @main_bp.route("/bullying-reports")
-@login_required
+@role_required("admin")
 def bullying_reports() -> Response:
     args: MultiDict = request.args
     raw_status = (args.get("status") or "").strip().lower() or None
@@ -571,7 +571,7 @@ def bullying_reports() -> Response:
 
 
 @main_bp.route("/bullying-reports/<int:report_id>")
-@login_required
+@role_required("admin")
 def bullying_report_detail(report_id: int) -> Response:
     report = fetch_bullying_report_detail(report_id)
     if not report:
@@ -581,7 +581,7 @@ def bullying_report_detail(report_id: int) -> Response:
 
 
 @main_bp.route("/bullying-reports/bulk-status", methods=["POST"])
-@role_required("admin", "staff")
+@role_required("admin")
 def bulk_update_bullying_status() -> Response:
     data = request.get_json()
     report_ids = data.get("report_ids")
@@ -606,7 +606,7 @@ def bulk_update_bullying_status() -> Response:
 
 
 @main_bp.route("/bullying-reports/<int:report_id>/status", methods=["POST"])
-@role_required("admin", "staff")
+@role_required("admin")
 def update_bullying_status(report_id: int) -> Response:
     action = (request.form.get("action") or "save").strip().lower()
     status_value = request.form.get("status")
@@ -668,7 +668,7 @@ def update_bullying_status(report_id: int) -> Response:
 
 
 @main_bp.route("/corruption-reports")
-@login_required
+@role_required("admin")
 def corruption_reports() -> Response:
     args: MultiDict = request.args
     raw_status = (args.get("status") or "").strip().lower() or None
@@ -702,7 +702,7 @@ def corruption_reports() -> Response:
 
 
 @main_bp.route("/corruption-reports/<int:report_id>")
-@login_required
+@role_required("admin")
 def corruption_report_detail(report_id: int) -> Response:
     report = fetch_corruption_report_detail(report_id)
     if not report:
@@ -712,7 +712,7 @@ def corruption_report_detail(report_id: int) -> Response:
 
 
 @main_bp.route("/corruption-reports/bulk-status", methods=["POST"])
-@role_required("admin", "staff")
+@role_required("admin")
 def bulk_update_corruption_status() -> Response:
     data = request.get_json()
     report_ids = data.get("report_ids")
@@ -737,7 +737,7 @@ def bulk_update_corruption_status() -> Response:
 
 
 @main_bp.route("/corruption-reports/<int:report_id>/status", methods=["POST"])
-@role_required("admin", "staff")
+@role_required("admin")
 def update_corruption_status(report_id: int) -> Response:
     action = (request.form.get("action") or "save").strip().lower()
     status_value = request.form.get("status")
@@ -772,7 +772,7 @@ def update_corruption_status(report_id: int) -> Response:
 
 
 @main_bp.route("/psych-reports")
-@login_required
+@role_required("admin")
 def psych_reports() -> Response:
     args: MultiDict = request.args
     raw_status = (args.get("status") or "").strip().lower() or None
@@ -820,7 +820,7 @@ def psych_reports() -> Response:
 
 
 @main_bp.route("/psych-reports/user/<int:user_id>")
-@login_required
+@role_required("admin")
 def psych_report_user_detail(user_id: int) -> Response:
     records = fetch_psych_group_reports(user_id=user_id)
     if not records:
@@ -838,7 +838,7 @@ def psych_report_user_detail(user_id: int) -> Response:
 
 
 @main_bp.route("/psych-reports/report/<int:report_id>")
-@login_required
+@role_required("admin")
 def psych_report_single_detail(report_id: int) -> Response:
     records = fetch_psych_group_reports(report_id=report_id)
     if not records:
@@ -860,7 +860,7 @@ def psych_report_single_detail(report_id: int) -> Response:
 
 
 @main_bp.route("/psych-reports/bulk-status", methods=["POST"])
-@role_required("admin", "editor")
+@role_required("admin")
 def bulk_update_psych_status() -> Response:
     data = request.get_json()
     report_ids = data.get("report_ids")
@@ -885,7 +885,7 @@ def bulk_update_psych_status() -> Response:
 
 
 @main_bp.route("/psych-reports/<int:report_id>/status", methods=["POST"])
-@role_required("admin", "editor")
+@role_required("admin")
 def update_psych_status(report_id: int) -> Response:
     status_value = (request.form.get("status") or "").strip().lower()
     next_url = request.form.get("next") or url_for("main.psych_reports")
@@ -918,7 +918,7 @@ def update_psych_status(report_id: int) -> Response:
 
 
 @main_bp.route("/api/activity")
-@login_required
+@role_required("admin")
 def activity_api() -> Response:
     days = int(request.args.get("days", 14))
     activity = fetch_daily_activity(days=days)
@@ -933,7 +933,7 @@ def activity_api() -> Response:
 
 
 @main_bp.route("/feedback")
-@login_required
+@role_required("admin")
 def feedback() -> Response:
     args: MultiDict = request.args
     page = max(1, int(args.get("page", 1)))
@@ -1002,7 +1002,7 @@ def feedback() -> Response:
 
 
 @main_bp.route("/chats/export")
-@login_required
+@role_required("admin")
 def export_chats() -> Response:
     args: MultiDict = request.args
     start = _parse_date(args.get("start"))
