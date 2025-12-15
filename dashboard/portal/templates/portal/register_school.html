@@ -1,382 +1,667 @@
-{% extends "portal/base_portal.html" %}
-{% set page_title = "Daftar Akun Sekolah" %}
+<!DOCTYPE html>
+<html lang="id" data-theme="light" data-bs-theme="light">
 
-{% block portal_content %}
-<section class="min-vh-75 d-flex align-items-center py-5">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-6 col-md-8">
-                <div class="card border-0 shadow-lg">
-                    <div class="card-body p-5">
-                        <div class="text-center mb-4">
-                            <i class="bi bi-building-add display-4 text-primary"></i>
-                            <h2 class="h4 fw-bold mt-3">Daftar Akun Sekolah</h2>
-                            <p class="text-muted">Daftarkan sekolah Anda untuk mengakses Portal PANBERSS</p>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Daftar Akun Sekolah - ASKA Portal</title>
+    <meta name="description" content="Daftarkan sekolah Anda untuk mengakses Portal ASKA">
+    <link rel="shortcut icon" href="https://www.svgrepo.com/show/331368/bot.svg" type="image/svg+xml">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <script>
+        (function () {
+            try {
+                var storageKey = 'theme';
+                var storedTheme = localStorage.getItem(storageKey);
+                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var theme = storedTheme || (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+                document.documentElement.setAttribute('data-bs-theme', theme);
+            } catch (error) {
+                document.documentElement.setAttribute('data-theme', 'light');
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+        })();
+    </script>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .register-container {
+            width: 100%;
+            max-width: 480px;
+        }
+
+        .register-card {
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .register-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+            padding: 16px 20px;
+            color: white;
+        }
+
+        html[data-theme="dark"] .register-header {
+            background: linear-gradient(135deg, #4f8bff 0%, #0d6efd 100%);
+        }
+
+        .register-header .header-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .register-header .icon-badge {
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+            box-shadow: none;
+        }
+
+        .register-header .header-text {
+            flex: 1;
+        }
+
+        .register-header .header-text h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0 0 2px 0;
+        }
+
+        .register-header .header-text p {
+            opacity: 0.9;
+            margin: 0;
+            font-size: 0.8rem;
+        }
+
+        .register-header .theme-toggle {
+            flex-shrink: 0;
+        }
+
+        .register-header .theme-toggle-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.3s ease;
+        }
+
+        .register-header .theme-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .register-header .theme-toggle-btn.rotating {
+            transform: rotate(360deg);
+        }
+
+        .register-header .theme-icon {
+            width: 18px;
+            height: 18px;
+            display: none;
+        }
+
+        html[data-theme="light"] .theme-icon-sun {
+            display: block;
+        }
+
+        html[data-theme="dark"] .theme-icon-moon {
+            display: block;
+        }
+
+        .register-body {
+            padding: 28px 24px;
+        }
+
+        .input-group .btn {
+            border-width: 1px;
+            border-color: var(--border-soft);
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .school-item:hover {
+            background-color: var(--bg-subtle) !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="register-container">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1200;">
+            {% for category, message in messages %}
+            <div class="toast align-items-center text-bg-{{ 'primary' if category == 'message' else category }} border-0 show"
+                role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">{{ message }}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                        aria-label="Close"></button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="card register-card shadow-sm border-0">
+            <div class="register-header">
+                <div class="header-content">
+                    <div class="icon-badge">
+                        <i class="bi bi-building-add"></i>
+                    </div>
+                    <div class="header-text">
+                        <h1>Daftar Akun Sekolah</h1>
+                        <p>Daftarkan sekolah untuk akses Portal ASKA</p>
+                    </div>
+                    <div class="theme-toggle">
+                        <button type="button" class="theme-toggle-btn" id="themeToggleBtn" title="Mode Gelap"
+                            aria-label="Toggle dark mode">
+                            <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="4"></circle>
+                                <line x1="12" y1="3" x2="12" y2="6"></line>
+                                <line x1="12" y1="18" x2="12" y2="21"></line>
+                                <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"></line>
+                                <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"></line>
+                                <line x1="3" y1="12" x2="6" y2="12"></line>
+                                <line x1="18" y1="12" x2="21" y2="12"></line>
+                                <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"></line>
+                                <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"></line>
+                            </svg>
+                            <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 12.79A9 9 0 0 1 11.21 3a7 7 0 1 0 9.79 9.79z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="register-body">
+                <form method="POST" id="registerForm">
+                    <!-- School Search -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-search me-1"></i>Cari Sekolah (NPSN)
+                        </label>
+                        <div class="position-relative">
+                            <input type="text" id="npsnSearch" class="form-control"
+                                placeholder="Ketik NPSN atau nama sekolah..." autocomplete="off"
+                                value="{{ npsn or '' }}">
+                            <input type="hidden" name="npsn" id="npsnValue" value="{{ npsn or '' }}">
+                            <div id="schoolSuggestions" class="position-absolute w-100 rounded-3 shadow-lg d-none"
+                                style="top: 100%; left: 0; z-index: 1000; max-height: 300px; overflow-y: auto; background-color: var(--bg-surface); border: 1px solid var(--border-soft);">
+                            </div>
                         </div>
-
-                        <form method="POST" id="registerForm">
-                            <!-- School Search -->
-                            <div class="mb-4">
-                                <label class="form-label fw-semibold">
-                                    <i class="bi bi-search me-1"></i>Cari Sekolah (NPSN)
-                                </label>
-                                <div class="position-relative">
-                                    <input type="text" id="npsnSearch" class="form-control form-control-lg"
-                                        placeholder="Ketik NPSN atau nama sekolah..." autocomplete="off"
-                                        value="{{ npsn or '' }}">
-                                    <input type="hidden" name="npsn" id="npsnValue" value="{{ npsn or '' }}">
-                                    <div id="schoolSuggestions"
-                                        class="position-absolute w-100 rounded-3 shadow-lg d-none"
-                                        style="top: 100%; left: 0; z-index: 1000; max-height: 300px; overflow-y: auto; background-color: var(--bg-surface); border: 1px solid var(--border-soft);">
-                                    </div>
+                        <div id="selectedSchool" class="mt-2 p-3 rounded-3 d-none"
+                            style="background-color: var(--bg-subtle);">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong id="schoolName"></strong>
+                                    <br><small class="text-muted"><span id="schoolNpsn"></span> • <span
+                                            id="schoolJenjang"></span> • <span id="schoolKecamatan"></span></small>
                                 </div>
-                                <div id="selectedSchool" class="mt-2 p-3 rounded-3 d-none"
-                                    style="background-color: var(--bg-subtle);">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <strong id="schoolName"></strong>
-                                            <br><small class="text-muted"><span id="schoolNpsn"></span> • <span
-                                                    id="schoolJenjang"></span> • <span
-                                                    id="schoolKecamatan"></span></small>
-                                        </div>
-                                        <button type="button" class="btn btn-sm btn-outline-danger"
-                                            onclick="clearSchool()">
-                                            <i class="bi bi-x-lg"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearSchool()">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
                             </div>
+                        </div>
+                    </div>
 
-                            <!-- Email -->
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">
-                                    <i class="bi bi-envelope me-1"></i>Email
-                                </label>
-                                <input type="email" name="email" id="emailInput" class="form-control form-control-lg"
-                                    placeholder="email@domain.com" required value="{{ email or '' }}">
-                                <div id="emailError" class="invalid-feedback"></div>
-                            </div>
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-envelope me-1"></i>Email
+                        </label>
+                        <input type="email" name="email" id="emailInput" class="form-control"
+                            placeholder="email@domain.com" required value="{{ email or '' }}">
+                        <div id="emailError" class="invalid-feedback"></div>
+                    </div>
 
-                            <!-- Password -->
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">
-                                    <i class="bi bi-lock me-1"></i>Password
-                                </label>
-                                <div class="input-group">
-                                    <input type="password" name="password" id="passwordInput"
-                                        class="form-control form-control-lg" placeholder="Minimal 6 karakter" required
-                                        minlength="6">
-                                    <button class="btn btn-outline-secondary" type="button"
-                                        onclick="togglePassword('passwordInput', this)">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                </div>
-                                <div id="passwordStrength" class="form-text"></div>
-                            </div>
-
-                            <!-- Confirm Password -->
-                            <div class="mb-4">
-                                <label class="form-label fw-semibold">
-                                    <i class="bi bi-lock-fill me-1"></i>Konfirmasi Password
-                                </label>
-                                <div class="input-group">
-                                    <input type="password" name="confirm_password" id="confirmPasswordInput"
-                                        class="form-control form-control-lg" placeholder="Ulangi password" required
-                                        minlength="6">
-                                    <button class="btn btn-outline-secondary" type="button"
-                                        onclick="togglePassword('confirmPasswordInput', this)">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                </div>
-                                <div id="passwordMatch" class="form-text"></div>
-                            </div>
-
-                            <!-- Submit -->
-                            <button type="submit" class="btn btn-primary btn-lg w-100 mb-3" id="submitBtn" disabled>
-                                <i class="bi bi-person-plus me-2"></i>Daftar Sekarang
+                    <!-- Password -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-lock me-1"></i>Password
+                        </label>
+                        <div class="input-group">
+                            <input type="password" name="password" id="passwordInput" class="form-control"
+                                placeholder="Minimal 6 karakter" required minlength="6">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="togglePassword('passwordInput', this)">
+                                <i class="bi bi-eye"></i>
                             </button>
-
-                            <p class="text-center text-muted mb-0">
-                                Sudah punya akun? <a href="{{ url_for('auth.login') }}"
-                                    class="text-decoration-none">Login di sini</a>
-                            </p>
-                        </form>
+                        </div>
+                        <div id="passwordStrength" class="form-text"></div>
                     </div>
-                </div>
+
+                    <!-- Confirm Password -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-lock-fill me-1"></i>Konfirmasi Password
+                        </label>
+                        <div class="input-group">
+                            <input type="password" name="confirm_password" id="confirmPasswordInput"
+                                class="form-control" placeholder="Ulangi password" required minlength="6">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="togglePassword('confirmPasswordInput', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <div id="passwordMatch" class="form-text"></div>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="btn btn-primary w-100 mb-3" id="submitBtn" disabled>
+                        <i class="bi bi-person-plus me-2"></i>Daftar Sekarang
+                    </button>
+
+                    <p class="text-center text-muted small mb-0">
+                        Sudah punya akun? <a href="{{ url_for('auth.login') }}" class="text-decoration-none">Login di
+                            sini</a>
+                    </p>
+                </form>
             </div>
         </div>
+        <p class="footer-text">
+            <button type="button" class="btn btn-link btn-sm text-muted p-0" data-bs-toggle="modal"
+                data-bs-target="#helpModal">
+                <i class="bi bi-question-circle me-1"></i>Butuh bantuan? Hubungi koordinator
+            </button>
+        </p>
     </div>
-</section>
 
-<!-- Duplicate School Modal -->
-<div class="modal fade" id="schoolRegisteredModal" tabindex="-1" aria-labelledby="schoolRegisteredModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="schoolRegisteredModalLabel">
-                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>Sekolah Sudah Terdaftar
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="mb-2">
-                    {{ school.name if school else 'Sekolah' }} (NPSN {{ school.npsn if school else npsn }}) sudah memiliki akun terdaftar
-                    {% if existing_school_email %}dengan email <strong>{{ existing_school_email }}</strong>{% endif %}.
-                </p>
-                <p class="mb-3">Hubungi koordinator wilayah untuk pergantian email:</p>
-                <div class="list-group mb-3">
-                    {% for c in coordinator_contacts or [] %}
-                    <div class="list-group-item d-flex justify-content-between align-items-start">
-                        <div>
-                            <div class="fw-semibold">{{ c.area }}
-                                {% if school and school.kecamatan_name and school.kecamatan_name.lower() == c.normalized_area %}
-                                <span class="badge bg-primary ms-2">Wilayah Anda</span>
-                                {% endif %}
+    <!-- Help Modal - Coordinator per Wilayah -->
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="helpModalLabel">
+                        <i class="bi bi-telephone-outbound me-2 text-success"></i>Hubungi Koordinator Wilayah
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Butuh bantuan? Silakan hubungi koordinator wilayah berikut:</p>
+                    <div class="list-group">
+                        {% for c in coordinator_contacts or [] %}
+                        <div class="list-group-item d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-semibold">{{ c.area }}
+                                    {% if c.is_user_area %}
+                                    <span class="badge bg-primary ms-2">Wilayah Anda</span>
+                                    {% endif %}
+                                </div>
+                                <div class="text-muted small">{{ c.name }} • {{ c.phone }}</div>
                             </div>
-                            <div class="text-muted small">{{ c.name }} • {{ c.phone }}</div>
+                            <a class="btn btn-success btn-sm d-inline-flex align-items-center gap-2"
+                                href="{{ c.wa_link }}" target="_blank" rel="noopener">
+                                <i class="bi bi-whatsapp"></i><span>WhatsApp</span>
+                            </a>
                         </div>
-                        <a href="{{ c.wa_link }}" target="_blank" rel="noopener"
-                            class="btn btn-success btn-sm d-inline-flex align-items-center gap-2">
-                            <i class="bi bi-whatsapp"></i><span>WhatsApp</span>
-                        </a>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
+                    <div class="alert alert-info mt-3 mb-0 small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Koordinator siap membantu pendaftaran atau verifikasi sekolah Anda.
+                    </div>
                 </div>
-                <div class="alert alert-info mb-0 small">
-                    Setelah email diperbarui oleh koordinator, silakan daftar ulang menggunakan email baru.
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
 
-{% block portal_scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const searchInput = document.getElementById('npsnSearch');
-        const suggestions = document.getElementById('schoolSuggestions');
-        const npsnValue = document.getElementById('npsnValue');
-        const selectedSchool = document.getElementById('selectedSchool');
-        const submitBtn = document.getElementById('submitBtn');
-        let debounceTimer;
-
-        // Check if school already selected (from form error)
-        if (npsnValue.value) {
-            submitBtn.disabled = false;
-        }
-
-        searchInput.addEventListener('input', function () {
-            clearTimeout(debounceTimer);
-            const query = this.value.trim();
-
-            if (query.length < 3) {
-                suggestions.classList.add('d-none');
-                return;
-            }
-
-            debounceTimer = setTimeout(async () => {
-                try {
-                    const response = await fetch(`{{ url_for('portal.search_schools_api') }}?q=${encodeURIComponent(query)}`);
-                    const schools = await response.json();
-
-                    if (schools.length === 0) {
-                        suggestions.innerHTML = '<div class="p-3 text-muted">Tidak ditemukan sekolah dengan NPSN tersebut</div>';
-                    } else {
-                        suggestions.innerHTML = schools.map(s => `
-                        <div class="p-3 border-bottom school-item" 
-                             style="cursor: pointer;"
-                             data-id="${s.id}"
-                             data-npsn="${s.npsn}"
-                             data-name="${s.name}"
-                             data-jenjang="${s.jenjang}"
-                             data-kecamatan="${s.kecamatan}">
-                            <strong>${s.name}</strong>
-                            <br><small class="text-muted">${s.npsn} • ${s.jenjang}${s.kecamatan ? ' • ' + s.kecamatan : ''}</small>
+    <!-- Duplicate School Modal -->
+    <div class="modal fade" id="schoolRegisteredModal" tabindex="-1" aria-labelledby="schoolRegisteredModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="schoolRegisteredModalLabel">
+                        <i class="bi bi-exclamation-triangle text-warning me-2"></i>Sekolah Sudah Terdaftar
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">
+                        {{ school.name if school else 'Sekolah' }} (NPSN {{ school.npsn if school else npsn }}) sudah
+                        memiliki akun terdaftar
+                        {% if existing_school_email %}dengan email <strong>{{ existing_school_email }}</strong>{% endif
+                        %}.
+                    </p>
+                    <p class="mb-3">Hubungi koordinator wilayah untuk pergantian email:</p>
+                    <div class="list-group mb-3">
+                        {% for c in coordinator_contacts or [] %}
+                        <div class="list-group-item d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-semibold">{{ c.area }}
+                                    {% if school and school.kecamatan_name and school.kecamatan_name.lower() ==
+                                    c.normalized_area %}
+                                    <span class="badge bg-primary ms-2">Wilayah Anda</span>
+                                    {% endif %}
+                                </div>
+                                <div class="text-muted small">{{ c.name }} • {{ c.phone }}</div>
+                            </div>
+                            <a href="{{ c.wa_link }}" target="_blank" rel="noopener"
+                                class="btn btn-success btn-sm d-inline-flex align-items-center gap-2">
+                                <i class="bi bi-whatsapp"></i><span>WhatsApp</span>
+                            </a>
                         </div>
-                    `).join('');
+                        {% endfor %}
+                    </div>
+                    <div class="alert alert-info mb-0 small">
+                        Setelah email diperbarui oleh koordinator, silakan daftar ulang menggunakan email baru.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                        // Add click handlers
-                        suggestions.querySelectorAll('.school-item').forEach(item => {
-                            item.addEventListener('click', function () {
-                                selectSchool(this.dataset);
-                            });
-                            item.addEventListener('mouseenter', function () {
-                                this.classList.add('bg-light');
-                            });
-                            item.addEventListener('mouseleave', function () {
-                                this.classList.remove('bg-light');
-                            });
-                        });
-                    }
-                    suggestions.classList.remove('d-none');
-                } catch (err) {
-                    console.error('Error searching schools:', err);
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Theme toggle
+        (function () {
+            var storageKey = 'theme';
+            var root = document.documentElement;
+            var toggleBtn = document.getElementById('themeToggleBtn');
+
+            function getCurrentTheme() {
+                return root.getAttribute('data-theme') || 'light';
+            }
+
+            function applyTheme(theme, persist) {
+                var nextTheme = theme === 'dark' ? 'dark' : 'light';
+
+                if (toggleBtn) {
+                    toggleBtn.classList.add('rotating');
+                    setTimeout(function () {
+                        toggleBtn.classList.remove('rotating');
+                    }, 300);
                 }
-            }, 300);
-        });
 
-        // Hide suggestions when clicking outside
-        document.addEventListener('click', function (e) {
-            if (!searchInput.contains(e.target) && !suggestions.contains(e.target)) {
+                root.setAttribute('data-theme', nextTheme);
+                root.setAttribute('data-bs-theme', nextTheme);
+
+                if (toggleBtn) {
+                    toggleBtn.setAttribute('title', nextTheme === 'dark' ? 'Mode Terang' : 'Mode Gelap');
+                }
+
+                if (persist) {
+                    try {
+                        localStorage.setItem(storageKey, nextTheme);
+                    } catch (error) { /* no-op */ }
+                }
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function () {
+                    var currentTheme = getCurrentTheme();
+                    applyTheme(currentTheme === 'dark' ? 'light' : 'dark', true);
+                });
+            }
+
+            if (window.matchMedia) {
+                var mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+                var hasStoredPreference = false;
+                try {
+                    hasStoredPreference = localStorage.getItem(storageKey) !== null;
+                } catch (error) { }
+
+                var mediaChangeHandler = function (event) {
+                    if (!hasStoredPreference) {
+                        applyTheme(event.matches ? 'dark' : 'light', false);
+                    }
+                };
+                if (mediaQuery.addEventListener) {
+                    mediaQuery.addEventListener('change', mediaChangeHandler);
+                } else if (mediaQuery.addListener) {
+                    mediaQuery.addListener(mediaChangeHandler);
+                }
+            }
+        })();
+
+        // Registration form logic
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('npsnSearch');
+            const suggestions = document.getElementById('schoolSuggestions');
+            const npsnValue = document.getElementById('npsnValue');
+            const selectedSchool = document.getElementById('selectedSchool');
+            const submitBtn = document.getElementById('submitBtn');
+            let debounceTimer;
+
+            // Check if school already selected (from form error)
+            if (npsnValue.value) {
+                submitBtn.disabled = false;
+            }
+
+            searchInput.addEventListener('input', function () {
+                clearTimeout(debounceTimer);
+                const query = this.value.trim();
+
+                if (query.length < 3) {
+                    suggestions.classList.add('d-none');
+                    return;
+                }
+
+                debounceTimer = setTimeout(async () => {
+                    try {
+                        const response = await fetch(`{{ url_for('portal.search_schools_api') }}?q=${encodeURIComponent(query)}`);
+                        const schools = await response.json();
+
+                        if (schools.length === 0) {
+                            suggestions.innerHTML = '<div class="p-3 text-muted">Tidak ditemukan sekolah dengan NPSN tersebut</div>';
+                        } else {
+                            suggestions.innerHTML = schools.map(s => `
+                            <div class="p-3 border-bottom school-item" 
+                                 style="cursor: pointer;"
+                                 data-id="${s.id}"
+                                 data-npsn="${s.npsn}"
+                                 data-name="${s.name}"
+                                 data-jenjang="${s.jenjang}"
+                                 data-kecamatan="${s.kecamatan}">
+                                <strong>${s.name}</strong>
+                                <br><small class="text-muted">${s.npsn} • ${s.jenjang}${s.kecamatan ? ' • ' + s.kecamatan : ''}</small>
+                            </div>
+                        `).join('');
+
+                            suggestions.querySelectorAll('.school-item').forEach(item => {
+                                item.addEventListener('click', function () {
+                                    selectSchool(this.dataset);
+                                });
+                            });
+                        }
+                        suggestions.classList.remove('d-none');
+                    } catch (err) {
+                        console.error('Error searching schools:', err);
+                    }
+                }, 300);
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!searchInput.contains(e.target) && !suggestions.contains(e.target)) {
+                    suggestions.classList.add('d-none');
+                }
+            });
+
+            window.selectSchool = function (data) {
+                npsnValue.value = data.npsn;
+                searchInput.value = data.npsn;
+                searchInput.disabled = true;
+
+                document.getElementById('schoolName').textContent = data.name;
+                document.getElementById('schoolNpsn').textContent = data.npsn;
+                document.getElementById('schoolJenjang').textContent = data.jenjang;
+                document.getElementById('schoolKecamatan').textContent = data.kecamatan || '-';
+
+                selectedSchool.classList.remove('d-none');
                 suggestions.classList.add('d-none');
+                submitBtn.disabled = false;
+            };
+
+            window.clearSchool = function () {
+                npsnValue.value = '';
+                searchInput.value = '';
+                searchInput.disabled = false;
+                selectedSchool.classList.add('d-none');
+                submitBtn.disabled = true;
+                searchInput.focus();
+            };
+
+            // Toggle password visibility
+            window.togglePassword = function (inputId, btn) {
+                const input = document.getElementById(inputId);
+                const icon = btn.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('bi-eye');
+                    icon.classList.add('bi-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('bi-eye-slash');
+                    icon.classList.add('bi-eye');
+                }
+            };
+
+            // Email validation
+            const emailInput = document.getElementById('emailInput');
+            const emailError = document.getElementById('emailError');
+
+            emailInput.addEventListener('blur', function () {
+                const email = this.value.trim();
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                if (email && !emailRegex.test(email)) {
+                    this.classList.add('is-invalid');
+                    emailError.textContent = 'Format email tidak valid';
+                } else {
+                    this.classList.remove('is-invalid');
+                    emailError.textContent = '';
+                }
+                validateForm();
+            });
+
+            // Password strength indicator
+            const passwordInput = document.getElementById('passwordInput');
+            const passwordStrength = document.getElementById('passwordStrength');
+
+            passwordInput.addEventListener('input', function () {
+                const password = this.value;
+                let strength = 0;
+                let text = '';
+                let color = '';
+
+                if (password.length >= 6) strength++;
+                if (password.length >= 8) strength++;
+                if (/[A-Z]/.test(password)) strength++;
+                if (/[0-9]/.test(password)) strength++;
+                if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+                if (password.length === 0) {
+                    text = '';
+                } else if (password.length < 6) {
+                    text = '<i class="bi bi-x-circle text-danger"></i> Minimal 6 karakter';
+                    color = 'text-danger';
+                } else if (strength <= 2) {
+                    text = '<i class="bi bi-shield-exclamation text-warning"></i> Password lemah';
+                    color = 'text-warning';
+                } else if (strength <= 3) {
+                    text = '<i class="bi bi-shield-check text-info"></i> Password cukup';
+                    color = 'text-info';
+                } else {
+                    text = '<i class="bi bi-shield-fill-check text-success"></i> Password kuat';
+                    color = 'text-success';
+                }
+
+                passwordStrength.innerHTML = text;
+                passwordStrength.className = 'form-text ' + color;
+                checkPasswordMatch();
+                validateForm();
+            });
+
+            // Confirm password match
+            const confirmPasswordInput = document.getElementById('confirmPasswordInput');
+            const passwordMatch = document.getElementById('passwordMatch');
+
+            function checkPasswordMatch() {
+                const password = passwordInput.value;
+                const confirm = confirmPasswordInput.value;
+
+                if (confirm.length === 0) {
+                    passwordMatch.innerHTML = '';
+                    confirmPasswordInput.classList.remove('is-invalid', 'is-valid');
+                } else if (password !== confirm) {
+                    passwordMatch.innerHTML = '<i class="bi bi-x-circle"></i> Password tidak cocok';
+                    passwordMatch.className = 'form-text text-danger';
+                    confirmPasswordInput.classList.add('is-invalid');
+                    confirmPasswordInput.classList.remove('is-valid');
+                } else {
+                    passwordMatch.innerHTML = '<i class="bi bi-check-circle"></i> Password cocok';
+                    passwordMatch.className = 'form-text text-success';
+                    confirmPasswordInput.classList.remove('is-invalid');
+                    confirmPasswordInput.classList.add('is-valid');
+                }
+                validateForm();
+            }
+
+            confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+            // Overall form validation
+            function validateForm() {
+                const npsn = npsnValue.value;
+                const email = emailInput.value.trim();
+                const password = passwordInput.value;
+                const confirm = confirmPasswordInput.value;
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                const isValid = npsn &&
+                    email && emailRegex.test(email) &&
+                    password.length >= 6 &&
+                    password === confirm;
+
+                submitBtn.disabled = !isValid;
             }
         });
 
-        window.selectSchool = function (data) {
-            npsnValue.value = data.npsn;
-            searchInput.value = data.npsn;
-            searchInput.disabled = true;
-
-            document.getElementById('schoolName').textContent = data.name;
-            document.getElementById('schoolNpsn').textContent = data.npsn;
-            document.getElementById('schoolJenjang').textContent = data.jenjang;
-            document.getElementById('schoolKecamatan').textContent = data.kecamatan || '-';
-
-            selectedSchool.classList.remove('d-none');
-            suggestions.classList.add('d-none');
-            submitBtn.disabled = false;
-        };
-
-        window.clearSchool = function () {
-            npsnValue.value = '';
-            searchInput.value = '';
-            searchInput.disabled = false;
-            selectedSchool.classList.add('d-none');
-            submitBtn.disabled = true;
-            searchInput.focus();
-        };
-
-        // ===== Form Validation =====
-
-        // Toggle password visibility
-        window.togglePassword = function (inputId, btn) {
-            const input = document.getElementById(inputId);
-            const icon = btn.querySelector('i');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.remove('bi-eye');
-                icon.classList.add('bi-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.remove('bi-eye-slash');
-                icon.classList.add('bi-eye');
+        {% if show_registered_modal %}
+        document.addEventListener('DOMContentLoaded', function () {
+            var modalEl = document.getElementById('schoolRegisteredModal');
+            if (modalEl && window.bootstrap) {
+                var modal = new bootstrap.Modal(modalEl);
+                modal.show();
             }
-        };
-
-        // Email validation
-        const emailInput = document.getElementById('emailInput');
-        const emailError = document.getElementById('emailError');
-
-        emailInput.addEventListener('blur', function () {
-            const email = this.value.trim();
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-            if (email && !emailRegex.test(email)) {
-                this.classList.add('is-invalid');
-                emailError.textContent = 'Format email tidak valid';
-            } else {
-                this.classList.remove('is-invalid');
-                emailError.textContent = '';
-            }
-            validateForm();
         });
+        {% endif %}
+    </script>
+</body>
 
-        // Password strength indicator
-        const passwordInput = document.getElementById('passwordInput');
-        const passwordStrength = document.getElementById('passwordStrength');
-
-        passwordInput.addEventListener('input', function () {
-            const password = this.value;
-            let strength = 0;
-            let text = '';
-            let color = '';
-
-            if (password.length >= 6) strength++;
-            if (password.length >= 8) strength++;
-            if (/[A-Z]/.test(password)) strength++;
-            if (/[0-9]/.test(password)) strength++;
-            if (/[^A-Za-z0-9]/.test(password)) strength++;
-
-            if (password.length === 0) {
-                text = '';
-            } else if (password.length < 6) {
-                text = '<i class="bi bi-x-circle text-danger"></i> Minimal 6 karakter';
-                color = 'text-danger';
-            } else if (strength <= 2) {
-                text = '<i class="bi bi-shield-exclamation text-warning"></i> Password lemah';
-                color = 'text-warning';
-            } else if (strength <= 3) {
-                text = '<i class="bi bi-shield-check text-info"></i> Password cukup';
-                color = 'text-info';
-            } else {
-                text = '<i class="bi bi-shield-fill-check text-success"></i> Password kuat';
-                color = 'text-success';
-            }
-
-            passwordStrength.innerHTML = text;
-            passwordStrength.className = 'form-text ' + color;
-            checkPasswordMatch();
-            validateForm();
-        });
-
-        // Confirm password match
-        const confirmPasswordInput = document.getElementById('confirmPasswordInput');
-        const passwordMatch = document.getElementById('passwordMatch');
-
-        function checkPasswordMatch() {
-            const password = passwordInput.value;
-            const confirm = confirmPasswordInput.value;
-
-            if (confirm.length === 0) {
-                passwordMatch.innerHTML = '';
-                confirmPasswordInput.classList.remove('is-invalid', 'is-valid');
-            } else if (password !== confirm) {
-                passwordMatch.innerHTML = '<i class="bi bi-x-circle"></i> Password tidak cocok';
-                passwordMatch.className = 'form-text text-danger';
-                confirmPasswordInput.classList.add('is-invalid');
-                confirmPasswordInput.classList.remove('is-valid');
-            } else {
-                passwordMatch.innerHTML = '<i class="bi bi-check-circle"></i> Password cocok';
-                passwordMatch.className = 'form-text text-success';
-                confirmPasswordInput.classList.remove('is-invalid');
-                confirmPasswordInput.classList.add('is-valid');
-            }
-            validateForm();
-        }
-
-        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
-
-        // Overall form validation
-        function validateForm() {
-            const npsn = npsnValue.value;
-            const email = emailInput.value.trim();
-            const password = passwordInput.value;
-            const confirm = confirmPasswordInput.value;
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-            const isValid = npsn &&
-                email && emailRegex.test(email) &&
-                password.length >= 6 &&
-                password === confirm;
-
-            submitBtn.disabled = !isValid;
-        }
-    });
-</script>
-{% if show_registered_modal %}
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var modalEl = document.getElementById('schoolRegisteredModal');
-        if (modalEl && window.bootstrap) {
-            var modal = new bootstrap.Modal(modalEl);
-            modal.show();
-        }
-    });
-</script>
-{% endif %}
-{% endblock %}
+</html>

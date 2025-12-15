@@ -81,25 +81,27 @@ def get_school_by_id(school_id: int) -> Optional[Dict[str, Any]]:
 def list_portal_rooms(active_only: bool = True) -> List[Dict[str, Any]]:
     """Fetch all room types with their aspects."""
     condition = "WHERE r.active = TRUE" if active_only else ""
+    aspect_condition = "AND a.active = TRUE" if active_only else ""
     
     query = f"""
         SELECT 
-            r.id, r.name, r.description, r.category, r.sort_order,
+            r.id, r.name, r.description, r.category, r.sort_order, r.active,
             COALESCE(
                 json_agg(
                     json_build_object(
                         'id', a.id,
                         'name', a.name,
                         'description', a.description,
-                        'sort_order', a.sort_order
+                        'sort_order', a.sort_order,
+                        'active', a.active
                     ) ORDER BY a.sort_order, a.id
                 ) FILTER (WHERE a.id IS NOT NULL),
                 '[]'
             ) as aspects
         FROM portal_rooms r
-        LEFT JOIN portal_aspects a ON a.room_id = r.id AND a.active = TRUE
+        LEFT JOIN portal_aspects a ON a.room_id = r.id {aspect_condition}
         {condition}
-        GROUP BY r.id, r.name, r.description, r.category, r.sort_order
+        GROUP BY r.id, r.name, r.description, r.category, r.sort_order, r.active
         ORDER BY r.sort_order, r.id
     """
     

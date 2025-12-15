@@ -32,6 +32,16 @@
                 <span>Tap skor 0-3 untuk setiap aspek. Default skor: 3 (baik). Perubahan tersimpan otomatis.</span>
             </div>
 
+            <!-- Room Search -->
+            <div class="mb-3">
+                <div class="position-relative">
+                    <input type="text" id="roomSearchAssessment" class="form-control" placeholder="Cari nama ruangan..."
+                        autocomplete="off">
+                    <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-3 text-muted"
+                        style="pointer-events: none;"></i>
+                </div>
+            </div>
+
             <div id="roomAccordion" class="d-flex flex-column gap-2">
                 {% for room in rooms %}
                 {% set total_aspects_room = room.aspects|length %}
@@ -45,7 +55,7 @@
                 {% if room_pct <= 25 %} {% set room_score_class="score-badge-red" %} {% elif room_pct <=50 %} {% set
                     room_score_class="score-badge-orange" %} {% elif room_pct <=75 %} {% set
                     room_score_class="score-badge-yellow" %} {% else %} {% set room_score_class="score-badge-green" %}
-                    {% endif %} <div class="room-item shadow-sm">
+                    {% endif %} <div class="room-item shadow-sm" data-room-name="{{ room.room_name|lower }}">
                     <div class="room-header collapsed" data-bs-toggle="collapse"
                         data-bs-target="#room{{ room.school_room_id }}" aria-expanded="false">
                         <div class="d-flex align-items-center gap-2">
@@ -340,6 +350,28 @@
     // Force prompt lokasi saat halaman dibuka
     document.addEventListener('DOMContentLoaded', function () {
         ensureLocation();
+
+        // Room search functionality
+        var searchInput = document.getElementById('roomSearchAssessment');
+        var roomItems = document.querySelectorAll('.room-item');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                var query = this.value.toLowerCase().trim();
+
+                roomItems.forEach(function (room) {
+                    var roomName = room.dataset.roomName || '';
+
+                    // Show all if less than 2 chars, otherwise filter
+                    if (query.length < 2) {
+                        room.style.display = '';
+                    } else {
+                        var matches = roomName.includes(query);
+                        room.style.display = matches ? '' : 'none';
+                    }
+                });
+            });
+        }
     });
 
     function selectScore(btn) {

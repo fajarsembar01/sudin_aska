@@ -141,6 +141,26 @@ def login() -> Response:
     if existing:
         return redirect(url_for("main.dashboard"))
 
+    # Build coordinator contacts for help modal
+    from urllib.parse import quote_plus
+    coordinator_list = [
+        {"area": "Cilincing", "name": "Neni", "phone": "+62 851-1085-1681"},
+        {"area": "Kelapa Gading", "name": "Slamet", "phone": "+62 859-2123-2424"},
+        {"area": "Koja", "name": "Rani", "phone": "+62 878-8032-8670"},
+    ]
+    message = "Halo, saya butuh bantuan untuk akses portal ASKA."
+    coordinator_contacts = []
+    for c in coordinator_list:
+        phone = "".join(ch for ch in c["phone"] if ch.isdigit() or ch == "+")
+        if phone.startswith("0"):
+            phone = "62" + phone[1:]
+        phone = phone.replace("+", "")
+        coordinator_contacts.append({
+            **c,
+            "wa_link": f"https://api.whatsapp.com/send?phone={phone}&text={quote_plus(message)}",
+            "is_user_area": False,
+        })
+
     if request.method == "POST":
         email = (request.form.get("email") or "").strip().lower()
         password = request.form.get("password") or ""
@@ -149,17 +169,17 @@ def login() -> Response:
         user = get_user_by_email(email)
         if not user:
             flash("Email belum terdaftar. Hubungi admin untuk membuat akun.", "danger")
-            return render_template("login.html", email=email)
+            return render_template("login.html", email=email, coordinator_contacts=coordinator_contacts)
 
         if not check_password_hash(user["password_hash"], password):
             flash("Salah password, hubungi admin untuk reset akses.", "danger")
-            return render_template("login.html", email=email)
+            return render_template("login.html", email=email, coordinator_contacts=coordinator_contacts)
 
         _establish_session(user, remember=remember, email_override=email)
         flash("Selamat datang kembali!", "success")
         return redirect(_redirect_after_login(user, request.args.get("next")))
 
-    return render_template("login.html")
+    return render_template("login.html", coordinator_contacts=coordinator_contacts)
 
 
 @auth_bp.route("/logout")

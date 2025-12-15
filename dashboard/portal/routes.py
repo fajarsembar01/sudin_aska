@@ -1128,6 +1128,43 @@ def add_aspect() -> Response:
     return redirect(url_for("portal.admin_setup"))
 
 
+@portal_bp.route("/admin/setup/aspects/batch", methods=["POST"])
+@role_required("admin")
+def add_aspects_batch() -> Response:
+    """Add multiple aspects at once (JSON API)."""
+    data = request.get_json()
+    aspects = data.get("aspects", [])
+    
+    if not aspects:
+        return jsonify({"success": False, "error": "No aspects provided"})
+    
+    created_count = 0
+    errors = []
+    
+    for item in aspects:
+        room_id = item.get("roomId")
+        name = item.get("name", "").strip()
+        
+        if not room_id or not name:
+            errors.append(f"Missing room_id or name for aspect")
+            continue
+        
+        try:
+            create_aspect(int(room_id), name, None, 0)
+            created_count += 1
+        except Exception as e:
+            errors.append(f"Error creating '{name}': {str(e)}")
+    
+    if created_count > 0:
+        flash(f"{created_count} aspek berhasil ditambahkan.", "success")
+    
+    return jsonify({
+        "success": created_count > 0,
+        "created": created_count,
+        "errors": errors
+    })
+
+
 @portal_bp.route("/admin/setup/room/<int:room_id>", methods=["POST"])
 @role_required("admin")
 def edit_room(room_id: int) -> Response:
@@ -1152,6 +1189,62 @@ def edit_room(room_id: int) -> Response:
         flash(f"Error: {e}", "danger")
     
     return redirect(url_for("portal.admin_setup"))
+
+
+@portal_bp.route("/admin/setup/room/<int:room_id>/toggle", methods=["POST"])
+@role_required("admin")
+def toggle_room_status(room_id: int) -> Response:
+    """Toggle room active status."""
+    room = get_room_by_id(room_id)
+    if not room:
+        flash("Ruangan tidak ditemukan.", "warning")
+        return redirect(url_for("portal.admin_setup"))
+    
+    try:
+        new_status = not room.get("active", True)
+        result = update_room(
+            room_id, 
+            room["name"], 
+            room.get("description"), 
+            room.get("category", "umum"), 
+            room.get("sort_order", 0), 
+            new_status
+        )
+        if result:
+            status_text = "diaktifkan" if new_status else "dinonaktifkan"
+            flash(f"Ruangan '{room['name']}' berhasil {status_text}.", "success")
+        else:
+            flash("Gagal mengubah status ruangan.", "danger")
+    except Exception as e:
+        flash(f"Error: {e}", "danger")
+    
+    return redirect(url_for("portal.admin_setup") + f"#room-{room_id}")
+
+
+@portal_bp.route("/admin/setup/room/<int:room_id>/toggle-api", methods=["POST"])
+@role_required("admin")
+def toggle_room_status_api(room_id: int) -> Response:
+    """Toggle room active status via AJAX - returns JSON."""
+    room = get_room_by_id(room_id)
+    if not room:
+        return jsonify({"success": False, "error": "Ruangan tidak ditemukan"})
+    
+    try:
+        new_status = not room.get("active", True)
+        result = update_room(
+            room_id, 
+            room["name"], 
+            room.get("description"), 
+            room.get("category", "umum"), 
+            room.get("sort_order", 0), 
+            new_status
+        )
+        if result:
+            return jsonify({"success": True, "active": new_status, "room_id": room_id})
+        else:
+            return jsonify({"success": False, "error": "Gagal mengubah status"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
 
 
 @portal_bp.route("/admin/setup/room/<int:room_id>/delete", methods=["POST"])

@@ -16,7 +16,7 @@
     </div>
 
     <div class="row g-4">
-        <div class="col-lg-4">
+        <div class="col-lg-4" style="position: sticky; top: 80px; align-self: flex-start;">
             <!-- Add School -->
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-body">
@@ -76,390 +76,414 @@
                 </div>
             </div>
 
-
-            <!-- Add Room -->
-            <div class="card border-0 shadow-sm mb-3">
-                <div class="card-body">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <span class="icon-badge section-icon text-success">
-                            <i class="bi bi-door-open"></i>
-                        </span>
-                        <h2 class="h6 fw-bold mb-0">Tambah Ruangan</h2>
-                    </div>
-                    <form method="POST" action="{{ url_for('portal.add_room') }}">
-                        <div class="row g-2">
-                            <div class="col-8">
-                                <input type="text" name="name" class="form-control form-control-sm"
-                                    placeholder="Nama Ruangan" required>
-                            </div>
-                            <div class="col-4">
-                                <input type="number" name="sort_order" class="form-control form-control-sm"
-                                    placeholder="Urutan" value="0">
-                            </div>
-                            <div class="col-12">
-                                <input type="text" name="description" class="form-control form-control-sm"
-                                    placeholder="Deskripsi (opsional)">
-                            </div>
-                            <div class="col-12">
-                                <select name="category" class="form-select form-select-sm">
-                                    <option value="umum">Umum</option>
-                                    <option value="akademik">Akademik</option>
-                                    <option value="fasilitas">Fasilitas</option>
-                                    <option value="sanitasi">Sanitasi</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-success btn-sm w-100">
-                                    <i class="bi bi-plus-lg me-1"></i>Tambah
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Add Aspect -->
+            <!-- Add Room / Aspect (Tabbed) -->
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <span class="icon-badge section-icon text-warning">
-                            <i class="bi bi-list-check"></i>
-                        </span>
-                        <h2 class="h6 fw-bold mb-0">Tambah Aspek</h2>
-                    </div>
-                    <form method="POST" action="{{ url_for('portal.add_aspect') }}">
-                        <div class="row g-2">
-                            <div class="col-12">
-                                <select name="room_id" class="form-select form-select-sm" required>
-                                    <option value="">-- Pilih Ruangan --</option>
-                                    {% for room in rooms %}
-                                    <option value="{{ room.id }}">{{ room.name }}</option>
-                                    {% endfor %}
-                                </select>
+                    <ul class="nav nav-pills nav-fill mb-3" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="addRoomTab" data-bs-toggle="pill"
+                                data-bs-target="#addRoomPane" type="button" role="tab">
+                                <i class="bi bi-door-open me-1"></i>Ruangan
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="addAspectTab" data-bs-toggle="pill"
+                                data-bs-target="#addAspectPane" type="button" role="tab">
+                                <i class="bi bi-list-check me-1"></i>Aspek
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- Add Room Pane -->
+                        <div class="tab-pane fade show active" id="addRoomPane" role="tabpanel">
+                            <form method="POST" action="{{ url_for('portal.add_room') }}">
+                                <div class="row g-2">
+                                    <div class="col-8">
+                                        <input type="text" name="name" class="form-control form-control-sm"
+                                            placeholder="Nama Ruangan" required>
+                                    </div>
+                                    <div class="col-4">
+                                        <input type="number" name="sort_order" class="form-control form-control-sm"
+                                            placeholder="Urutan" value="0">
+                                    </div>
+                                    <div class="col-12">
+                                        <input type="text" name="description" class="form-control form-control-sm"
+                                            placeholder="Deskripsi (opsional)">
+                                    </div>
+                                    <div class="col-12">
+                                        <select name="category" class="form-select form-select-sm">
+                                            <option value="umum">Umum</option>
+                                            <option value="akademik">Akademik</option>
+                                            <option value="fasilitas">Fasilitas</option>
+                                            <option value="sanitasi">Sanitasi</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-success btn-sm w-100">
+                                            <i class="bi bi-plus-lg me-1"></i>Tambah Ruangan
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Add Aspect Pane (Batch Mode) -->
+                        <div class="tab-pane fade" id="addAspectPane" role="tabpanel">
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <select id="aspectRoomSelect" class="form-select form-select-sm" required>
+                                        <option value="">-- Pilih Ruangan --</option>
+                                        {% for room in rooms %}
+                                        <option value="{{ room.id }}" data-room-name="{{ room.name }}">{{ room.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-8">
+                                    <input type="text" id="aspectNameInput" class="form-control form-control-sm"
+                                        placeholder="Nama Aspek">
+                                </div>
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm w-100"
+                                        id="addToListBtn">
+                                        <i class="bi bi-plus"></i> List
+                                    </button>
+                                </div>
                             </div>
-                            <div class="col-8">
-                                <input type="text" name="name" class="form-control form-control-sm"
-                                    placeholder="Nama Aspek" required>
+
+                            <!-- Preview List -->
+                            <div id="aspectPreviewList" class="mt-3" style="max-height: 200px; overflow-y: auto;">
+                                <!-- Items will be added here by JavaScript -->
                             </div>
-                            <div class="col-4">
-                                <input type="number" name="sort_order" class="form-control form-control-sm"
-                                    placeholder="Urutan" value="0">
-                            </div>
-                            <div class="col-12">
-                                <input type="text" name="description" class="form-control form-control-sm"
-                                    placeholder="Deskripsi (opsional)">
-                            </div>
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-warning btn-sm w-100">
-                                    <i class="bi bi-plus-lg me-1"></i>Tambah
-                                </button>
+
+                            <div id="aspectPreviewActions" class="d-none mt-2">
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-danger btn-sm flex-fill"
+                                        id="clearAspectListBtn">
+                                        <i class="bi bi-trash me-1"></i>Hapus Semua
+                                    </button>
+                                    <button type="button" class="btn btn-warning btn-sm flex-fill"
+                                        id="saveAspectListBtn">
+                                        <i class="bi bi-check-lg me-1"></i>Simpan <span id="aspectCount">0</span> Aspek
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-8">
+        <div class="col-lg-8" style="max-height: calc(100vh - 120px); overflow-y: auto;">
             <!-- Preview Halaman Konfigurasi Sekolah -->
             <div class="card border-0 shadow-sm mb-3">
-                <div class="card-body">
-                    <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3">
+                    <div class="d-flex align-items-center gap-3">
                         <span class="icon-badge section-icon text-info">
                             <i class="bi bi-eye"></i>
                         </span>
                         <div>
                             <h2 class="h6 fw-bold mb-0">Preview: Konfigurasi Ruangan per Jenjang</h2>
-                            <p class="text-muted mb-0 small">Contoh konfigurasi ruangan berdasarkan jenjang pendidikan
-                            </p>
+                            <p class="text-muted mb-0 small">Contoh tampilan halaman konfigurasi sekolah</p>
                         </div>
                     </div>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#previewCollapse" aria-expanded="false">
+                        <i class="bi bi-chevron-down"></i> Tampilkan
+                    </button>
+                </div>
+                <div class="collapse" id="previewCollapse">
+                    <div class="card-body pt-0">
+                        <!-- Jenjang Tabs -->
+                        <ul class="nav nav-pills nav-fill mb-3" id="jenjangTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="sd-tab" data-bs-toggle="tab"
+                                    data-bs-target="#sd-pane" type="button">
+                                    <i class="bi bi-mortarboard-fill me-1"></i>SD
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="smp-tab" data-bs-toggle="tab" data-bs-target="#smp-pane"
+                                    type="button">
+                                    <i class="bi bi-book me-1"></i>SMP
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="sma-tab" data-bs-toggle="tab" data-bs-target="#sma-pane"
+                                    type="button">
+                                    <i class="bi bi-building me-1"></i>SMA/SMK
+                                </button>
+                            </li>
+                        </ul>
 
-                    <!-- Jenjang Tabs -->
-                    <ul class="nav nav-pills nav-fill mb-3" id="jenjangTab" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="sd-tab" data-bs-toggle="tab" data-bs-target="#sd-pane"
-                                type="button">
-                                <i class="bi bi-mortarboard-fill me-1"></i>SD
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="smp-tab" data-bs-toggle="tab" data-bs-target="#smp-pane"
-                                type="button">
-                                <i class="bi bi-book me-1"></i>SMP
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="sma-tab" data-bs-toggle="tab" data-bs-target="#sma-pane"
-                                type="button">
-                                <i class="bi bi-building me-1"></i>SMA/SMK
-                            </button>
-                        </li>
-                    </ul>
-
-                    <div class="tab-content" id="jenjangTabContent">
-                        <!-- SD Tab -->
-                        <div class="tab-pane fade show active" id="sd-pane" role="tabpanel">
-                            <div class="border rounded-3 p-3"
-                                style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
-                                <div class="row g-2">
-                                    <div class="col-12">
-                                        <div class="bg-white rounded-3 p-2 shadow-sm mb-2">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span class="icon-badge text-primary"
-                                                    style="width: 28px; height: 28px; font-size: 0.7rem;">
-                                                    <i class="bi bi-building"></i>
-                                                </span>
-                                                <div>
-                                                    <div class="fw-semibold small">SDN Contoh 01</div>
-                                                    <small class="text-muted" style="font-size: 0.65rem;">20100001 • SD
-                                                        • Penjaringan</small>
+                        <div class="tab-content" id="jenjangTabContent">
+                            <!-- SD Tab -->
+                            <div class="tab-pane fade show active" id="sd-pane" role="tabpanel">
+                                <div class="border rounded-3 p-3"
+                                    style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm mb-2">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="icon-badge text-primary"
+                                                        style="width: 28px; height: 28px; font-size: 0.7rem;">
+                                                        <i class="bi bi-building"></i>
+                                                    </span>
+                                                    <div>
+                                                        <div class="fw-semibold small">SDN Contoh 01</div>
+                                                        <small class="text-muted" style="font-size: 0.65rem;">20100001 •
+                                                            SD
+                                                            • Penjaringan</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                                <div class="small fw-semibold text-primary mb-2"><i
+                                                        class="bi bi-door-open me-1"></i>Ruang Kelas SD</div>
+                                                <div class="list-group list-group-flush" style="font-size: 0.75rem;">
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
+                                                        <span>Ruang Kelas 1</span>
+                                                    </label>
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
+                                                        <span>Ruang Kelas 2</span>
+                                                    </label>
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
+                                                        <span>Ruang Kelas 3</span>
+                                                    </label>
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
+                                                        <span>Ruang Kelas 4</span>
+                                                    </label>
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
+                                                        <span>Ruang Kelas 5</span>
+                                                    </label>
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
+                                                        <span>Ruang Kelas 6</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                                <div class="small fw-semibold text-success mb-2"><i
+                                                        class="bi bi-layers me-1"></i>Ruang Lainnya</div>
+                                                <div class="list-group list-group-flush" style="font-size: 0.75rem;">
+                                                    {% for room in rooms[:6] %}
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox" {%
+                                                            if loop.index <=3 %}checked{% endif %} disabled>
+                                                        <span>{{ room.name }}</span>
+                                                    </label>
+                                                    {% endfor %}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="bg-white rounded-3 p-2 shadow-sm h-100">
-                                            <div class="small fw-semibold text-primary mb-2"><i
-                                                    class="bi bi-door-open me-1"></i>Ruang Kelas SD</div>
-                                            <div class="list-group list-group-flush" style="font-size: 0.75rem;">
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
-                                                        checked disabled>
-                                                    <span>Ruang Kelas 1</span>
-                                                </label>
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
-                                                        checked disabled>
-                                                    <span>Ruang Kelas 2</span>
-                                                </label>
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
-                                                        checked disabled>
-                                                    <span>Ruang Kelas 3</span>
-                                                </label>
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
-                                                        checked disabled>
-                                                    <span>Ruang Kelas 4</span>
-                                                </label>
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
-                                                        checked disabled>
-                                                    <span>Ruang Kelas 5</span>
-                                                </label>
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
-                                                        checked disabled>
-                                                    <span>Ruang Kelas 6</span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="bg-white rounded-3 p-2 shadow-sm h-100">
-                                            <div class="small fw-semibold text-success mb-2"><i
-                                                    class="bi bi-layers me-1"></i>Ruang Lainnya</div>
-                                            <div class="list-group list-group-flush" style="font-size: 0.75rem;">
-                                                {% for room in rooms[:6] %}
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox" {% if
-                                                        loop.index <=3 %}checked{% endif %} disabled>
-                                                    <span>{{ room.name }}</span>
-                                                </label>
-                                                {% endfor %}
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- SMP Tab -->
-                        <div class="tab-pane fade" id="smp-pane" role="tabpanel">
-                            <div class="border rounded-3 p-3"
-                                style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);">
-                                <div class="row g-2">
-                                    <div class="col-12">
-                                        <div class="bg-white rounded-3 p-2 shadow-sm mb-2">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span class="icon-badge text-success"
-                                                    style="width: 28px; height: 28px; font-size: 0.7rem;">
-                                                    <i class="bi bi-building"></i>
-                                                </span>
-                                                <div>
-                                                    <div class="fw-semibold small">SMPN Contoh 01</div>
-                                                    <small class="text-muted" style="font-size: 0.65rem;">20200001 • SMP
-                                                        • Kelapa Gading</small>
+                            <!-- SMP Tab -->
+                            <div class="tab-pane fade" id="smp-pane" role="tabpanel">
+                                <div class="border rounded-3 p-3"
+                                    style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm mb-2">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="icon-badge text-success"
+                                                        style="width: 28px; height: 28px; font-size: 0.7rem;">
+                                                        <i class="bi bi-building"></i>
+                                                    </span>
+                                                    <div>
+                                                        <div class="fw-semibold small">SMPN Contoh 01</div>
+                                                        <small class="text-muted" style="font-size: 0.65rem;">20200001 •
+                                                            SMP
+                                                            • Kelapa Gading</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                                <div class="small fw-semibold text-success mb-2"><i
+                                                        class="bi bi-door-open me-1"></i>Ruang Kelas SMP</div>
+                                                <div class="list-group list-group-flush" style="font-size: 0.75rem;">
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
+                                                        <span>Ruang Kelas 7</span>
+                                                    </label>
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
+                                                        <span>Ruang Kelas 8</span>
+                                                    </label>
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
+                                                        <span>Ruang Kelas 9</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                                <div class="small fw-semibold text-info mb-2"><i
+                                                        class="bi bi-layers me-1"></i>Ruang Lainnya</div>
+                                                <div class="list-group list-group-flush" style="font-size: 0.75rem;">
+                                                    {% for room in rooms[:6] %}
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox" {%
+                                                            if loop.index <=4 %}checked{% endif %} disabled>
+                                                        <span>{{ room.name }}</span>
+                                                    </label>
+                                                    {% endfor %}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="bg-white rounded-3 p-2 shadow-sm h-100">
-                                            <div class="small fw-semibold text-success mb-2"><i
-                                                    class="bi bi-door-open me-1"></i>Ruang Kelas SMP</div>
-                                            <div class="list-group list-group-flush" style="font-size: 0.75rem;">
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
-                                                        checked disabled>
-                                                    <span>Ruang Kelas 7</span>
-                                                </label>
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
-                                                        checked disabled>
-                                                    <span>Ruang Kelas 8</span>
-                                                </label>
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
-                                                        checked disabled>
-                                                    <span>Ruang Kelas 9</span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="bg-white rounded-3 p-2 shadow-sm h-100">
-                                            <div class="small fw-semibold text-info mb-2"><i
-                                                    class="bi bi-layers me-1"></i>Ruang Lainnya</div>
-                                            <div class="list-group list-group-flush" style="font-size: 0.75rem;">
-                                                {% for room in rooms[:6] %}
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox" {% if
-                                                        loop.index <=4 %}checked{% endif %} disabled>
-                                                    <span>{{ room.name }}</span>
-                                                </label>
-                                                {% endfor %}
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- SMA/SMK Tab -->
-                        <div class="tab-pane fade" id="sma-pane" role="tabpanel">
-                            <div class="border rounded-3 p-3"
-                                style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);">
-                                <div class="row g-2">
-                                    <div class="col-12">
-                                        <div class="bg-white rounded-3 p-2 shadow-sm mb-2">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span class="icon-badge text-warning"
-                                                    style="width: 28px; height: 28px; font-size: 0.7rem;">
-                                                    <i class="bi bi-building"></i>
-                                                </span>
-                                                <div>
-                                                    <div class="fw-semibold small">SMAN Contoh 01</div>
-                                                    <small class="text-muted" style="font-size: 0.65rem;">20300001 • SMA
-                                                        • Cilincing</small>
+                            <!-- SMA/SMK Tab -->
+                            <div class="tab-pane fade" id="sma-pane" role="tabpanel">
+                                <div class="border rounded-3 p-3"
+                                    style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm mb-2">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="icon-badge text-warning"
+                                                        style="width: 28px; height: 28px; font-size: 0.7rem;">
+                                                        <i class="bi bi-building"></i>
+                                                    </span>
+                                                    <div>
+                                                        <div class="fw-semibold small">SMAN Contoh 01</div>
+                                                        <small class="text-muted" style="font-size: 0.65rem;">20300001 •
+                                                            SMA
+                                                            • Cilincing</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                                <div class="small fw-semibold text-warning mb-2"><i
+                                                        class="bi bi-door-open me-1"></i>Ruang Kelas SMA</div>
+                                                <div class="list-group list-group-flush" style="font-size: 0.75rem;">
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
+                                                        <span>Ruang Kelas 10</span>
+                                                    </label>
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
+                                                        <span>Ruang Kelas 11</span>
+                                                    </label>
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
+                                                        <span>Ruang Kelas 12</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                                <div class="small fw-semibold text-danger mb-2"><i
+                                                        class="bi bi-layers me-1"></i>Ruang Khusus</div>
+                                                <div class="list-group list-group-flush" style="font-size: 0.75rem;">
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
+                                                        <span>Lab Komputer</span>
+                                                    </label>
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
+                                                        <span>Lab IPA/Kimia</span>
+                                                    </label>
+                                                    {% for room in rooms[:4] %}
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox" {%
+                                                            if loop.index <=2 %}checked{% endif %} disabled>
+                                                        <span>{{ room.name }}</span>
+                                                    </label>
+                                                    {% endfor %}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="bg-white rounded-3 p-2 shadow-sm h-100">
-                                            <div class="small fw-semibold text-warning mb-2"><i
-                                                    class="bi bi-door-open me-1"></i>Ruang Kelas SMA</div>
-                                            <div class="list-group list-group-flush" style="font-size: 0.75rem;">
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
-                                                        checked disabled>
-                                                    <span>Ruang Kelas 10</span>
-                                                </label>
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
-                                                        checked disabled>
-                                                    <span>Ruang Kelas 11</span>
-                                                </label>
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
-                                                        checked disabled>
-                                                    <span>Ruang Kelas 12</span>
-                                                </label>
-                                            </div>
-                                        </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Profile Modal Preview -->
+                        <div class="mt-3">
+                            <div class="bg-light rounded-3 p-3">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <i class="bi bi-clipboard2-check text-primary"></i>
+                                    <span class="fw-semibold small">Modal: Lengkapi Profil Sekolah</span>
+                                    <span class="badge bg-info text-white" style="font-size: 0.65rem;">Muncul
+                                        otomatis</span>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <div class="small text-muted">Data Wajib:</div>
+                                        <ul class="small mb-0 ps-3" style="font-size: 0.75rem;">
+                                            <li>Alamat, Kelurahan, Link GMaps</li>
+                                            <li>Jumlah Siswa, Guru, Rombel</li>
+                                            <li>Telepon & Email Sekolah</li>
+                                        </ul>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="bg-white rounded-3 p-2 shadow-sm h-100">
-                                            <div class="small fw-semibold text-danger mb-2"><i
-                                                    class="bi bi-layers me-1"></i>Ruang Khusus</div>
-                                            <div class="list-group list-group-flush" style="font-size: 0.75rem;">
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
-                                                        checked disabled>
-                                                    <span>Lab Komputer</span>
-                                                </label>
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox"
-                                                        checked disabled>
-                                                    <span>Lab IPA/Kimia</span>
-                                                </label>
-                                                {% for room in rooms[:4] %}
-                                                <label
-                                                    class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                    <input class="form-check-input flex-shrink-0" type="checkbox" {% if
-                                                        loop.index <=2 %}checked{% endif %} disabled>
-                                                    <span>{{ room.name }}</span>
-                                                </label>
-                                                {% endfor %}
-                                            </div>
-                                        </div>
+                                    <div class="col-6">
+                                        <div class="small text-muted">Data Opsional:</div>
+                                        <ul class="small mb-0 ps-3" style="font-size: 0.75rem;">
+                                            <li>Instagram, TikTok</li>
+                                            <li>YouTube, WA Channel</li>
+                                        </ul>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Profile Modal Preview -->
-                    <div class="mt-3">
-                        <div class="bg-light rounded-3 p-3">
-                            <div class="d-flex align-items-center gap-2 mb-2">
-                                <i class="bi bi-clipboard2-check text-primary"></i>
-                                <span class="fw-semibold small">Modal: Lengkapi Profil Sekolah</span>
-                                <span class="badge bg-info text-white" style="font-size: 0.65rem;">Muncul
-                                    otomatis</span>
-                            </div>
-                            <div class="row g-2">
-                                <div class="col-6">
-                                    <div class="small text-muted">Data Wajib:</div>
-                                    <ul class="small mb-0 ps-3" style="font-size: 0.75rem;">
-                                        <li>Alamat, Kelurahan, Link GMaps</li>
-                                        <li>Jumlah Siswa, Guru, Rombel</li>
-                                        <li>Telepon & Email Sekolah</li>
-                                    </ul>
-                                </div>
-                                <div class="col-6">
-                                    <div class="small text-muted">Data Opsional:</div>
-                                    <ul class="small mb-0 ps-3" style="font-size: 0.75rem;">
-                                        <li>Instagram, TikTok</li>
-                                        <li>YouTube, WA Channel</li>
-                                    </ul>
-                                </div>
-                            </div>
+                        <div class="mt-3 text-center">
+                            <a href="{{ url_for('portal.sekolah_rooms') }}" class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>Buka Halaman Asli
+                            </a>
                         </div>
-                    </div>
-
-                    <div class="mt-3 text-center">
-                        <a href="{{ url_for('portal.sekolah_rooms') }}" class="btn btn-outline-info btn-sm">
-                            <i class="bi bi-box-arrow-up-right me-1"></i>Buka Halaman Asli
-                        </a>
                     </div>
                 </div>
             </div>
@@ -467,13 +491,23 @@
             <!-- Rooms List -->
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-body">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <span class="icon-badge section-icon text-success">
-                            <i class="bi bi-door-open"></i>
-                        </span>
-                        <div>
-                            <h2 class="h6 fw-bold mb-0">Daftar Ruangan & Aspek</h2>
-                            <p class="text-muted mb-0 small">{{ rooms|length }} ruangan terdaftar</p>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="icon-badge section-icon text-success">
+                                <i class="bi bi-door-open"></i>
+                            </span>
+                            <div>
+                                <h2 class="h6 fw-bold mb-0">Daftar Ruangan & Aspek</h2>
+                                <p class="text-muted mb-0 small"><span id="roomCount">{{ rooms|length }}</span>
+                                    ruangan
+                                    terdaftar</p>
+                            </div>
+                        </div>
+                        <div class="position-relative" style="min-width: 200px;">
+                            <input type="text" id="roomSearch" class="form-control form-control-sm"
+                                placeholder="Cari ruangan..." autocomplete="off">
+                            <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-2 text-muted"
+                                style="pointer-events: none;"></i>
                         </div>
                     </div>
                     {% if rooms %}
@@ -486,24 +520,63 @@
                                 overflow: hidden;
                                 border: 1px solid var(--border-soft);
                             }
+
                             #roomsTable thead th {
                                 background: var(--bg-subtle);
                                 font-weight: 700;
                                 color: var(--text-primary);
                                 border-bottom: 1px solid var(--border-soft);
                             }
-                            #roomsTable tbody tr,
-                            #roomsTable tbody td {
+
+                            #roomsTable tbody tr {
                                 background: var(--bg-surface);
+                            }
+
+                            #roomsTable tbody td {
+                                background: inherit;
                                 color: var(--text-primary);
                                 border-color: var(--border-soft);
                             }
+
                             #roomsTable tbody tr:hover td {
                                 background: var(--bg-subtle);
                             }
-                            #roomsTable .fw-semibold { color: var(--text-primary); }
-                            #roomsTable small { color: var(--text-muted); }
-                            #roomsTable .badge { font-weight: 600; }
+
+                            #roomsTable tbody tr.room-inactive td {
+                                background: var(--bg-subtle);
+                                color: var(--text-muted);
+                            }
+
+                            /* Highlight for recently edited room */
+                            @keyframes roomHighlight {
+                                0% {
+                                    background-color: rgba(13, 110, 253, 0.25);
+                                }
+
+                                100% {
+                                    background-color: transparent;
+                                }
+                            }
+
+                            #roomsTable tbody tr.just-edited td {
+                                animation: roomHighlight 3s ease-out;
+                            }
+
+                            #roomsTable .fw-semibold {
+                                color: var(--text-primary);
+                            }
+
+                            #roomsTable tbody tr.room-inactive .fw-semibold {
+                                color: var(--text-muted);
+                            }
+
+                            #roomsTable small {
+                                color: var(--text-muted);
+                            }
+
+                            #roomsTable .badge {
+                                font-weight: 600;
+                            }
                         </style>
                         <table class="table table-hover align-middle mb-0" id="roomsTable">
                             <thead>
@@ -515,9 +588,13 @@
                                     <th class="text-end" style="width: 20%;">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="roomsTableBody">
                                 {% for r in rooms %}
-                                <tr class="border-bottom {% if not r.active %}opacity-50{% endif %}">
+                                <tr id="room-{{ r.id }}"
+                                    class="room-row border-bottom {% if not r.active %}room-inactive{% endif %}"
+                                    data-room-id="{{ r.id }}" data-room-name="{{ r.name|lower }}"
+                                    data-room-category="{{ r.category|lower }}"
+                                    data-room-active="{{ 'true' if r.active else 'false' }}">
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
                                             <span class="icon-badge text-success"><i
@@ -533,11 +610,17 @@
                                     <td><span class="badge bg-secondary text-uppercase">{{ r.category }}</span></td>
                                     <td><span class="badge bg-primary">{{ r.aspects|length }}</span></td>
                                     <td>
-                                        {% if r.active %}
-                                        <span class="badge bg-success px-3">Aktif</span>
-                                        {% else %}
-                                        <span class="badge bg-danger px-3">Nonaktif</span>
-                                        {% endif %}
+                                        <form method="POST"
+                                            action="{{ url_for('portal.toggle_room_status', room_id=r.id) }}"
+                                            class="d-inline">
+                                            <button type="submit"
+                                                class="btn btn-sm px-3 {% if r.active %}btn-success{% else %}btn-outline-danger{% endif %}"
+                                                title="Klik untuk {% if r.active %}nonaktifkan{% else %}aktifkan{% endif %}">
+                                                <i
+                                                    class="bi {% if r.active %}bi-toggle-on{% else %}bi-toggle-off{% endif %} me-1"></i>
+                                                {% if r.active %}Aktif{% else %}Nonaktif{% endif %}
+                                            </button>
+                                        </form>
                                     </td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm">
@@ -556,7 +639,7 @@
                                 <!-- Expandable Detail Row -->
                                 <tr class="collapse" id="roomDetail{{ r.id }}">
                                     <td colspan="5" class="p-0">
-                                        <div class="p-3 border-top" style="background: var(--bg-surface);">
+                                        <div class="p-3 border-top" style="background: var(--bg-subtle);">
                                             <!-- Edit Room Form -->
                                             <form method="POST" action="{{ url_for('portal.edit_room', room_id=r.id) }}"
                                                 class="row g-2 mb-3">
@@ -645,30 +728,34 @@
                                                 <p class="text-muted small mb-3">Belum ada aspek penilaian</p>
                                                 {% endif %}
 
-                                                <!-- Add Aspect -->
-                                                <form method="POST" action="{{ url_for('portal.add_aspect') }}"
-                                                    class="row g-2">
-                                                    <input type="hidden" name="room_id" value="{{ r.id }}">
-                                                    <div class="col-md-5">
-                                                        <input type="text" name="name"
-                                                            class="form-control form-control-sm"
-                                                            placeholder="Nama aspek baru" required>
+                                                <!-- Add Aspect (Batch) -->
+                                                <div class="row g-2 align-items-end">
+                                                    <div class="col-md-6">
+                                                        <input type="text"
+                                                            class="form-control form-control-sm inline-aspect-input"
+                                                            data-room-id="{{ r.id }}"
+                                                            placeholder="Nama aspek baru (Enter untuk tambah ke list)">
                                                     </div>
-                                                    <div class="col-md-4">
-                                                        <input type="text" name="description"
-                                                            class="form-control form-control-sm"
-                                                            placeholder="Deskripsi (opsional)">
+                                                    <div class="col-md-3">
+                                                        <button type="button"
+                                                            class="btn btn-outline-secondary btn-sm w-100 inline-add-btn"
+                                                            data-room-id="{{ r.id }}">
+                                                            <i class="bi bi-plus"></i> Ke List
+                                                        </button>
                                                     </div>
-                                                    <div class="col-md-1">
-                                                        <input type="number" name="sort_order"
-                                                            class="form-control form-control-sm" placeholder="#"
-                                                            value="0">
+                                                    <div class="col-md-3">
+                                                        <button type="button"
+                                                            class="btn btn-success btn-sm w-100 inline-save-btn d-none"
+                                                            data-room-id="{{ r.id }}">
+                                                            <i class="bi bi-check-lg me-1"></i>Simpan <span
+                                                                class="inline-aspect-count">0</span>
+                                                        </button>
                                                     </div>
-                                                    <div class="col-md-2">
-                                                        <button type="submit" class="btn btn-success btn-sm w-100"><i
-                                                                class="bi bi-plus-lg me-1"></i>Tambah</button>
-                                                    </div>
-                                                </form>
+                                                </div>
+                                                <!-- Preview List -->
+                                                <div class="inline-aspect-preview mt-2" data-room-id="{{ r.id }}"
+                                                    style="max-height: 150px; overflow-y: auto;">
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -824,4 +911,300 @@
 </div>
 {% endfor %}
 {% endfor %}
+
+{% block portal_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // ===== Room Search Filter =====
+        const searchInput = document.getElementById('roomSearch');
+        const roomRows = document.querySelectorAll('.room-row');
+        const roomCount = document.getElementById('roomCount');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                const query = this.value.toLowerCase().trim();
+                let visibleCount = 0;
+
+                roomRows.forEach(row => {
+                    const roomName = row.dataset.roomName || '';
+                    const roomCategory = row.dataset.roomCategory || '';
+
+                    // Show all if less than 3 chars, otherwise filter
+                    if (query.length < 3) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        const matches = roomName.includes(query) || roomCategory.includes(query);
+                        row.style.display = matches ? '' : 'none';
+                        if (matches) visibleCount++;
+                    }
+                });
+
+                // Update count
+                if (roomCount) {
+                    roomCount.textContent = visibleCount;
+                }
+            });
+        }
+
+        // ===== Scroll to anchored room and highlight =====
+        if (window.location.hash && window.location.hash.startsWith('#room-')) {
+            const targetRow = document.querySelector(window.location.hash);
+            if (targetRow) {
+                // Small delay to ensure DOM is ready
+                setTimeout(() => {
+                    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Add highlight class with animation
+                    targetRow.classList.add('just-edited');
+
+                    // Change door icon to checkmark temporarily
+                    const doorIcon = targetRow.querySelector('.bi-door-open-fill');
+                    if (doorIcon) {
+                        doorIcon.classList.remove('bi-door-open-fill');
+                        doorIcon.classList.add('bi-check-circle-fill');
+                        doorIcon.closest('.icon-badge').classList.remove('text-success');
+                        doorIcon.closest('.icon-badge').classList.add('text-primary');
+
+                        // Revert back after 3 seconds
+                        setTimeout(() => {
+                            doorIcon.classList.remove('bi-check-circle-fill');
+                            doorIcon.classList.add('bi-door-open-fill');
+                            doorIcon.closest('.icon-badge').classList.remove('text-primary');
+                            doorIcon.closest('.icon-badge').classList.add('text-success');
+                        }, 3000);
+                    }
+
+                    // Remove highlight class after animation completes
+                    setTimeout(() => {
+                        targetRow.classList.remove('just-edited');
+                    }, 3000);
+                }, 100);
+            }
+        }
+
+        // ===== Batch Add Aspects =====
+        const aspectList = [];
+        const aspectRoomSelect = document.getElementById('aspectRoomSelect');
+        const aspectNameInput = document.getElementById('aspectNameInput');
+        const addToListBtn = document.getElementById('addToListBtn');
+        const previewList = document.getElementById('aspectPreviewList');
+        const previewActions = document.getElementById('aspectPreviewActions');
+        const aspectCountSpan = document.getElementById('aspectCount');
+        const clearAspectListBtn = document.getElementById('clearAspectListBtn');
+        const saveAspectListBtn = document.getElementById('saveAspectListBtn');
+
+        function updateAspectPreview() {
+            if (aspectList.length === 0) {
+                previewList.innerHTML = '<div class="text-muted small text-center py-2">Belum ada aspek dalam list</div>';
+                previewActions.classList.add('d-none');
+            } else {
+                previewList.innerHTML = aspectList.map((item, index) => `
+                    <div class="d-flex justify-content-between align-items-center p-2 mb-1 rounded" style="background: var(--bg-subtle);">
+                        <div>
+                            <div class="small fw-semibold">${item.name}</div>
+                            <div class="text-muted" style="font-size: 0.7rem;">${item.roomName}</div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-1" onclick="removeAspect(${index})">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                `).join('');
+                previewActions.classList.remove('d-none');
+                aspectCountSpan.textContent = aspectList.length;
+            }
+        }
+
+        window.removeAspect = function (index) {
+            aspectList.splice(index, 1);
+            updateAspectPreview();
+        };
+
+        if (addToListBtn) {
+            addToListBtn.addEventListener('click', function () {
+                const roomId = aspectRoomSelect.value;
+                const roomName = aspectRoomSelect.selectedOptions[0]?.dataset.roomName || '';
+                const name = aspectNameInput.value.trim();
+
+                if (!roomId) {
+                    alert('Pilih ruangan terlebih dahulu');
+                    return;
+                }
+                if (!name) {
+                    alert('Masukkan nama aspek');
+                    return;
+                }
+
+                aspectList.push({ roomId, roomName, name });
+                aspectNameInput.value = '';
+                aspectNameInput.focus();
+                updateAspectPreview();
+            });
+
+            // Enter key to add
+            aspectNameInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addToListBtn.click();
+                }
+            });
+        }
+
+        if (clearAspectListBtn) {
+            clearAspectListBtn.addEventListener('click', function () {
+                aspectList.length = 0;
+                updateAspectPreview();
+            });
+        }
+
+        if (saveAspectListBtn) {
+            saveAspectListBtn.addEventListener('click', async function () {
+                if (aspectList.length === 0) return;
+
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menyimpan...';
+
+                try {
+                    const response = await fetch('/portal/admin/setup/aspects/batch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ aspects: aspectList })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Reload page to show new aspects
+                        window.location.reload();
+                    } else {
+                        alert('Gagal menyimpan: ' + (data.error || 'Unknown error'));
+                        this.disabled = false;
+                        this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan ' + aspectList.length + ' Aspek';
+                    }
+                } catch (err) {
+                    alert('Error: ' + err.message);
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan ' + aspectList.length + ' Aspek';
+                }
+            });
+        }
+
+        updateAspectPreview();
+
+        // ===== Inline Batch Add Aspects (in room detail) =====
+        const inlineAspectLists = {}; // Store aspects per room
+
+        function updateInlinePreview(roomId) {
+            const list = inlineAspectLists[roomId] || [];
+            const previewDiv = document.querySelector(`.inline-aspect-preview[data-room-id="${roomId}"]`);
+            const saveBtn = document.querySelector(`.inline-save-btn[data-room-id="${roomId}"]`);
+            const countSpan = saveBtn?.querySelector('.inline-aspect-count');
+
+            if (!previewDiv) return;
+
+            if (list.length === 0) {
+                previewDiv.innerHTML = '';
+                saveBtn?.classList.add('d-none');
+            } else {
+                previewDiv.innerHTML = list.map((name, idx) => `
+                    <span class="badge bg-primary me-1 mb-1" style="font-weight: normal;">
+                        ${name}
+                        <i class="bi bi-x-lg ms-1" style="cursor: pointer;"></i>
+                    </span>
+                `).join('');
+                saveBtn?.classList.remove('d-none');
+                if (countSpan) countSpan.textContent = list.length;
+            }
+        }
+
+        // Add to list button - using event delegation
+        document.addEventListener('click', function (e) {
+            // Handle "Ke List" button click
+            if (e.target.closest('.inline-add-btn')) {
+                const btn = e.target.closest('.inline-add-btn');
+                const roomId = btn.getAttribute('data-room-id');
+                const input = document.querySelector(`input.inline-aspect-input[data-room-id="${roomId}"]`);
+
+                if (!input) {
+                    console.error('Input not found for room', roomId);
+                    return;
+                }
+
+                const name = input.value.trim();
+
+                if (!name) {
+                    alert('Masukkan nama aspek');
+                    return;
+                }
+
+                if (!inlineAspectLists[roomId]) inlineAspectLists[roomId] = [];
+                inlineAspectLists[roomId].push(name);
+                input.value = '';
+                input.focus();
+                updateInlinePreview(roomId);
+            }
+
+            // Handle X button click on preview badge
+            if (e.target.closest('.inline-aspect-preview .bi-x-lg')) {
+                const icon = e.target.closest('.bi-x-lg');
+                const badge = icon.closest('.badge');
+                const previewDiv = icon.closest('.inline-aspect-preview');
+                const roomId = previewDiv.getAttribute('data-room-id');
+                const badges = Array.from(previewDiv.querySelectorAll('.badge'));
+                const index = badges.indexOf(badge);
+
+                if (index !== -1 && inlineAspectLists[roomId]) {
+                    inlineAspectLists[roomId].splice(index, 1);
+                    updateInlinePreview(roomId);
+                }
+            }
+        });
+
+        // Enter key to add - using event delegation
+        document.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && e.target.classList.contains('inline-aspect-input')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const roomId = e.target.getAttribute('data-room-id');
+                const btn = document.querySelector(`button.inline-add-btn[data-room-id="${roomId}"]`);
+                if (btn) btn.click();
+            }
+        });
+
+        // Save button
+        document.querySelectorAll('.inline-save-btn').forEach(btn => {
+            btn.addEventListener('click', async function () {
+                const roomId = this.dataset.roomId;
+                const list = inlineAspectLists[roomId] || [];
+
+                if (list.length === 0) return;
+
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+                try {
+                    const aspects = list.map(name => ({ roomId, name }));
+                    const response = await fetch('/portal/admin/setup/aspects/batch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ aspects })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        window.location.href = window.location.pathname + '#room-' + roomId;
+                        window.location.reload();
+                    } else {
+                        alert('Gagal: ' + (data.error || 'Unknown error'));
+                        this.disabled = false;
+                        this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan ' + list.length;
+                    }
+                } catch (err) {
+                    alert('Error: ' + err.message);
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan ' + list.length;
+                }
+            });
+        });
+    });
+</script>
+{% endblock portal_scripts %}
 {% endblock %}

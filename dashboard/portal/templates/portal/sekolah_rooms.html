@@ -526,8 +526,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        var shouldShow = {{ 'true' if show_profile_modal else 'false' }
-    }
+        var shouldShow = {{ 'true' if show_profile_modal else 'false' }};
     var profileModalEl = document.getElementById('profileModal');
     if (shouldShow && profileModalEl && window.bootstrap) {
         new bootstrap.Modal(profileModalEl, { backdrop: 'static', keyboard: false }).show();
