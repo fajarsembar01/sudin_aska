@@ -1514,3 +1514,32 @@ def fetch_schools_for_sidak(
             results.append(item)
         return results
 
+
+def fetch_kecamatan_avg_scores(period_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    """Fetch average assessment scores grouped by kecamatan (0-100 scale)."""
+    where = "WHERE a.status = 'submitted'"
+    params = []
+    if period_id:
+        where += " AND a.period_id = %s"
+        params.append(period_id)
+    
+    query = f"""
+        SELECT 
+            k.name,
+            AVG(a.total_score) as avg_score_raw,
+            (AVG(a.total_score) / 3.0 * 100)::DECIMAL(5,1) as avg_score_pct,
+            COUNT(a.id) as assessment_count
+        FROM portal_assessments a
+        JOIN portal_schools s ON a.school_id = s.id
+        JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+        JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+        {where}
+        GROUP BY k.id, k.name
+        ORDER BY avg_score_pct DESC
+    """
+    
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+

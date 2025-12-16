@@ -861,10 +861,14 @@ def admin_stats() -> Response:
     all_schools = list_portal_schools()
     all_staff = list_all_staff()
     
+    from .queries import fetch_kecamatan_avg_scores
+    kecamatan_stats = fetch_kecamatan_avg_scores(period_id)
+    
     return render_template(
         "portal/admin_stats.html",
         stats=stats,
         score_dist=score_dist,
+        kecamatan_stats=kecamatan_stats,
         recent_assessments=recent_assessments,
         top_schools=top_schools,
         bottom_schools=bottom_schools,
