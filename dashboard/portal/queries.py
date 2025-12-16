@@ -1367,3 +1367,150 @@ def fetch_export_data(period_id: Optional[int] = None) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(query, params)
         return [dict(row) for row in cur.fetchall()]
+
+
+def list_kelurahan_by_urgency(period_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    """List kelurahan sorted by urgency (lowest average school score first).
+    
+    Returns kelurahan with:
+    - Average score of all schools in that kelurahan
+    - Count of schools with low scores (<70)
+    - Order by urgency (lowest score first)
+    """
+    # Build period filter as string to avoid parameter count issues with subqueries
+    period_cond = ""
+    if period_id:
+        period_cond = f"AND a2.period_id = {int(period_id)}"
+    
+    query = f"""
+        SELECT 
+            l.id,
+            l.name,
+            k.name as kecamatan_name,
+            k.id as kecamatan_id,
+            -- Only count schools that have submitted assessments
+            COUNT(DISTINCT s.id) FILTER (
+                WHERE EXISTS (
+                    SELECT 1 FROM portal_assessments a4
+                    WHERE a4.school_id = s.id AND a4.status = 'submitted'
+                )
+            ) as school_count,
+            -- Average score of schools in this kelurahan
+            COALESCE(AVG(
+                (SELECT AVG(a2.total_score)
+                 FROM portal_assessments a2
+                 WHERE a2.school_id = s.id 
+                   AND a2.status = 'submitted'
+                   AND a2.total_score IS NOT NULL
+                   {period_cond})
+            ), 0)::DECIMAL(5,2) as avg_score,
+            -- Count schools with low score (<2.1 on 0-3 scale = <70%)
+            COUNT(DISTINCT s.id) FILTER (
+                WHERE (SELECT AVG(a3.total_score)
+                       FROM portal_assessments a3
+                       WHERE a3.school_id = s.id 
+                         AND a3.status = 'submitted'
+                         AND a3.total_score IS NOT NULL
+                         {period_cond}) < 2.1
+            ) as low_score_count
+        FROM portal_kelurahan l
+        JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+        LEFT JOIN portal_schools s ON s.kelurahan_id = l.id AND s.active = TRUE
+        GROUP BY l.id, l.name, k.name, k.id
+        HAVING COUNT(DISTINCT s.id) FILTER (
+            WHERE EXISTS (
+                SELECT 1 FROM portal_assessments a5
+                WHERE a5.school_id = s.id AND a5.status = 'submitted'
+            )
+        ) > 0
+        ORDER BY avg_score ASC NULLS LAST, low_score_count DESC
+    """
+    
+    with get_cursor() as cur:
+        cur.execute(query)
+        results = []
+        for row in cur.fetchall():
+            item = dict(row)
+            # Convert avg_score to percentage
+            if item.get("avg_score"):
+                item["avg_score_pct"] = round(float(item["avg_score"]) / 3 * 100, 1)
+            else:
+                item["avg_score_pct"] = 0
+            results.append(item)
+        return results
+
+
+def fetch_schools_for_sidak(
+    kelurahan_id: int,
+    max_score_pct: float = 70.0,
+    period_id: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    """Fetch schools with low scores and GPS in specific kelurahan for sidak planning."""
+    # Build period filter inline to avoid param count issues
+    period_cond = ""
+    if period_id:
+        period_cond = f"AND a.period_id = {int(period_id)}"
+    
+    query = f"""
+        SELECT 
+            s.id,
+            s.name,
+            s.npsn,
+            s.jenjang,
+            l.name as kelurahan_name,
+            k.name as kecamatan_name,
+            (SELECT AVG(a.total_score)::DECIMAL(5,2)
+             FROM portal_assessments a
+             WHERE a.school_id = s.id 
+               AND a.status = 'submitted'
+               {period_cond}) as avg_score,
+            (SELECT p.latitude
+             FROM portal_assessment_photos p
+             JOIN portal_assessments a ON p.assessment_id = a.id
+             WHERE a.school_id = s.id AND p.latitude IS NOT NULL
+             ORDER BY p.captured_at DESC NULLS LAST
+             LIMIT 1) as latitude,
+            (SELECT p.longitude
+             FROM portal_assessment_photos p
+             JOIN portal_assessments a ON p.assessment_id = a.id
+             WHERE a.school_id = s.id AND p.longitude IS NOT NULL
+             ORDER BY p.captured_at DESC NULLS LAST
+             LIMIT 1) as longitude,
+            (SELECT r.name
+             FROM portal_assessment_scores sc
+             JOIN portal_school_rooms sr ON sc.school_room_id = sr.id
+             JOIN portal_rooms r ON sr.room_id = r.id
+             JOIN portal_assessments a ON sc.assessment_id = a.id
+             WHERE a.school_id = s.id AND a.status = 'submitted'
+             GROUP BY r.id, r.name
+             ORDER BY AVG(sc.score) ASC
+             LIMIT 1) as worst_room
+        FROM portal_schools s
+        LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+        LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+        WHERE s.kelurahan_id = %s
+          AND s.active = TRUE
+          AND EXISTS (
+              SELECT 1 FROM portal_assessments a
+              WHERE a.school_id = s.id AND a.status = 'submitted'
+          )
+        ORDER BY avg_score ASC NULLS LAST
+    """
+    
+    with get_cursor() as cur:
+        cur.execute(query, (kelurahan_id,))
+        results = []
+        for row in cur.fetchall():
+            item = dict(row)
+            if item.get("avg_score"):
+                item["score_pct"] = round(float(item["avg_score"]) / 3 * 100, 1)
+            else:
+                item["score_pct"] = 0
+            if item.get("latitude"):
+                item["latitude"] = float(item["latitude"])
+            if item.get("longitude"):
+                item["longitude"] = float(item["longitude"])
+            item["is_priority"] = item["score_pct"] < max_score_pct
+            results.append(item)
+        return results
+

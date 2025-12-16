@@ -40,6 +40,11 @@
                         <i class="bi bi-file-earmark-excel"></i>
                         <span>Export Excel</span>
                     </a>
+                    <a href="{{ url_for('portal.sidak_planner') }}{% if current_period_id %}?period_id={{ current_period_id }}{% endif %}"
+                        class="btn btn-outline-danger d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-map"></i>
+                        <span>Sidak Planner</span>
+                    </a>
                     <form method="get" class="d-inline-flex">
                         <select name="period_id" class="form-select border-primary text-primary fw-medium"
                             onchange="this.form.submit()" style="min-width: 150px;">
@@ -118,12 +123,19 @@
                 </div>
                 <h2 class="display-6 fw-bold mb-1">
                     {% if stats.assessments.avg_score %}
-                    {{ "%.2f"|format(stats.assessments.avg_score) }}
+                    {{ "%.1f"|format(stats.assessments.avg_score / 3 * 100) }}%
                     {% else %}
                     -
                     {% endif %}
                 </h2>
-                <p class="text-muted small mb-0">dari {{ stats.assessments.submitted or 0 }} penilaian</p>
+                <p class="text-muted small mb-0">
+                    {% if stats.assessments.avg_score %}
+                    {{ "%.2f"|format(stats.assessments.avg_score) }}/3 dari {{ stats.assessments.submitted or 0 }}
+                    penilaian
+                    {% else %}
+                    dari {{ stats.assessments.submitted or 0 }} penilaian
+                    {% endif %}
+                </p>
             </div>
         </div>
     </div>
@@ -287,7 +299,8 @@
                     </div>
                     <div class="col-md-4 d-flex gap-2">
                         <button type="submit" class="btn btn-primary flex-fill">Terapkan</button>
-                        <a class="btn btn-light" href="{{ url_for('portal.admin_stats', _anchor='recent-assessments') }}">Reset</a>
+                        <a class="btn btn-light"
+                            href="{{ url_for('portal.admin_stats', _anchor='recent-assessments') }}">Reset</a>
                     </div>
                 </form>
 
@@ -303,25 +316,29 @@
                                 {% set avg_order = 'score_asc' if order == 'score_desc' else 'score_desc' %}
                                 {% set date_order = 'date_asc' if order == 'date_desc' else 'date_desc' %}
                                 <th class="border-0 ps-3">
-                                    <a href="{{ url_for('portal.admin_stats', period_id=base_period, jenjang=base_jenjang, order=name_order, _anchor=anchor) }}" class="text-decoration-none d-flex align-items-center gap-1">
+                                    <a href="{{ url_for('portal.admin_stats', period_id=base_period, jenjang=base_jenjang, order=name_order, _anchor=anchor) }}"
+                                        class="text-decoration-none d-flex align-items-center gap-1">
                                         Sekolah
                                         <i class="bi bi-arrow-{{ 'down' if 'desc' in name_order else 'up' }}"></i>
                                     </a>
                                 </th>
                                 <th class="border-0">
-                                    <a href="{{ url_for('portal.admin_stats', period_id=base_period, jenjang=base_jenjang, order=staff_order, _anchor=anchor) }}" class="text-decoration-none d-flex align-items-center gap-1">
+                                    <a href="{{ url_for('portal.admin_stats', period_id=base_period, jenjang=base_jenjang, order=staff_order, _anchor=anchor) }}"
+                                        class="text-decoration-none d-flex align-items-center gap-1">
                                         Staff
                                         <i class="bi bi-arrow-{{ 'down' if 'desc' in staff_order else 'up' }}"></i>
                                     </a>
                                 </th>
                                 <th class="border-0">
-                                    <a href="{{ url_for('portal.admin_stats', period_id=base_period, jenjang=base_jenjang, order=avg_order, _anchor=anchor) }}" class="text-decoration-none d-flex align-items-center gap-1">
+                                    <a href="{{ url_for('portal.admin_stats', period_id=base_period, jenjang=base_jenjang, order=avg_order, _anchor=anchor) }}"
+                                        class="text-decoration-none d-flex align-items-center gap-1">
                                         Average
                                         <i class="bi bi-arrow-{{ 'down' if 'desc' in avg_order else 'up' }}"></i>
                                     </a>
                                 </th>
                                 <th class="border-0">
-                                    <a href="{{ url_for('portal.admin_stats', period_id=base_period, jenjang=base_jenjang, order=date_order, _anchor=anchor) }}" class="text-decoration-none d-flex align-items-center gap-1">
+                                    <a href="{{ url_for('portal.admin_stats', period_id=base_period, jenjang=base_jenjang, order=date_order, _anchor=anchor) }}"
+                                        class="text-decoration-none d-flex align-items-center gap-1">
                                         Tanggal
                                         <i class="bi bi-arrow-{{ 'down' if 'desc' in date_order else 'up' }}"></i>
                                     </a>
@@ -552,7 +569,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // --- Score Distribution Chart (9 Buckets) ---
+        // --- Score Distribution Chart ---
         const distEl = document.getElementById('scoreDistChart');
         if (distEl) {
             new Chart(distEl.getContext('2d'), {
@@ -562,11 +579,7 @@
                     datasets: [{
                         label: 'Jumlah Sekolah',
                         data: {{ score_dist | tojson }},
-                        backgroundColor: [
-                            '#dc3545',
-                            '#e75e4f', '#f0825a', '#f8a464', '#ffc107',
-                            '#d4e157', '#9ccc65', '#66bb6a', '#198754'
-                        ],
+                        backgroundColor: ['#dc3545', '#e75e4f', '#f0825a', '#f8a464', '#ffc107', '#d4e157', '#9ccc65', '#66bb6a', '#198754'],
                         borderRadius: 4,
                         barPercentage: 0.7
                     }]
@@ -576,11 +589,7 @@
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { precision: 0 },
-                            grid: { borderDash: [2, 4] }
-                        },
+                        y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4] } },
                         x: { grid: { display: false } }
                     }
                 }
@@ -605,9 +614,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     cutout: '70%',
-                    plugins: {
-                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
-                    }
+                    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } }
                 }
             });
         }
@@ -855,9 +862,9 @@
 
             modalImg.src = url;
             modalTitle.textContent = room || 'Foto';
-                    modalSubtitle.innerHTML = assessmentId
-                        ? `<a href="/portal/assessment/${assessmentId}" class="link-light text-decoration-underline">${school || 'Sekolah'}</a>`
-                        : (school || '');
+            modalSubtitle.innerHTML = assessmentId
+                ? `<a href="/portal/assessment/${assessmentId}" class="link-light text-decoration-underline">${school || 'Sekolah'}</a>`
+                : (school || '');
             modalScore.textContent = score;
             modalScore.className = 'badge ' + (el.querySelector('.gallery-badge-score')?.classList.value.replace('gallery-badge-score', '').trim() || 'bg-primary');
             var metaText = '';

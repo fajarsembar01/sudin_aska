@@ -69,6 +69,8 @@ from .queries import (
     get_aspect_by_id,
     update_aspect,
     delete_aspect,
+    list_kelurahan_by_urgency,
+    fetch_schools_for_sidak,
 )
 
 
@@ -1452,3 +1454,185 @@ def register_school() -> Response:
         "portal/register_school.html",
         coordinator_contacts=_build_coordinator_contacts(),
     )
+
+
+# ===== AI Sidak Route Planner =====
+
+
+@portal_bp.route("/admin/sidak-planner")
+@role_required("admin")
+def sidak_planner() -> Response:
+    """Admin page for AI-powered sidak route planning."""
+    period_id = request.args.get("period_id", type=int)
+    periods = list_periods()
+    
+    # Get kelurahan sorted by urgency (lowest score first)
+    kelurahan_list = list_kelurahan_by_urgency(period_id)
+    
+    # Get all kelurahan for Tab 2
+    all_kelurahan_list = list_kelurahan()
+    
+    return render_template(
+        "portal/sidak_planner.html",
+        kelurahan_list=kelurahan_list,
+        all_kelurahan_list=all_kelurahan_list,
+        periods=periods,
+        current_period_id=period_id,
+    )
+
+
+@portal_bp.route("/admin/sidak-route", methods=["POST"])
+@role_required("admin")
+def generate_sidak_route() -> Response:
+    """API endpoint to generate optimized sidak route for a kelurahan."""
+    data = request.get_json(silent=True) or {}
+    kelurahan_id = data.get("kelurahan_id")
+    period_id = data.get("period_id")
+    max_schools = data.get("max_schools", 10)
+    
+    if not kelurahan_id:
+        return jsonify({"success": False, "message": "Kelurahan harus dipilih"}), 400
+    
+    try:
+        kelurahan_id = int(kelurahan_id)
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "message": "Kelurahan ID tidak valid"}), 400
+    
+    # Get schools for sidak
+    schools = fetch_schools_for_sidak(
+        kelurahan_id=kelurahan_id,
+        max_score_pct=100,  # Get all schools, we'll filter in frontend
+        period_id=period_id,
+    )
+    
+    if not schools:
+        return jsonify({"success": False, "message": "Tidak ada sekolah dengan data penilaian di kelurahan ini"}), 404
+    
+    # Filter schools with GPS
+    schools_with_gps = [s for s in schools if s.get("latitude") and s.get("longitude")]
+    
+    if not schools_with_gps:
+        return jsonify({
+            "success": False, 
+            "message": "Tidak ada sekolah dengan data GPS di kelurahan ini. Perlu foto dengan lokasi.",
+            "schools": schools[:max_schools],
+        }), 200
+    
+    # Limit schools
+    schools_to_optimize = schools_with_gps[:max_schools]
+    
+    # Optimize route using nearest neighbor algorithm
+    from .ai_route_planner import (
+        optimize_route,
+        generate_gmaps_deeplink,
+        calculate_route_stats,
+        DEFAULT_START_LOCATION,
+    )
+    
+    optimized = optimize_route(
+        schools_to_optimize,
+        start_lat=DEFAULT_START_LOCATION["latitude"],
+        start_lon=DEFAULT_START_LOCATION["longitude"],
+    )
+    
+    # Generate Google Maps link
+    gmaps_link = generate_gmaps_deeplink(
+        optimized,
+        start_lat=DEFAULT_START_LOCATION["latitude"],
+        start_lon=DEFAULT_START_LOCATION["longitude"],
+    )
+    
+    # Calculate stats
+    stats = calculate_route_stats(
+        optimized,
+        start_lat=DEFAULT_START_LOCATION["latitude"],
+        start_lon=DEFAULT_START_LOCATION["longitude"],
+    )
+    
+    return jsonify({
+        "success": True,
+        "start_location": DEFAULT_START_LOCATION,
+        "schools": optimized,
+        "all_schools": schools,
+        "gmaps_link": gmaps_link,
+        "stats": stats,
+    })
+
+
+@portal_bp.route("/admin/school-rooms/<int:school_id>")
+@_portal_access_required
+def get_school_room_details(school_id: int) -> Response:
+    """Get room details with scores, photos, and notes grouped by staff."""
+    from .queries import get_cursor
+    
+    query = """
+        SELECT 
+            r.id as room_id,
+            r.name as room_name,
+            sr.id as school_room_id,
+            a.id as assessment_id,
+            u.full_name as staff_name,
+            u.id as staff_id,
+            -- Average score for this room (0-3 scale, convert to 0-100)
+            COALESCE(AVG(sc.score), 0)::DECIMAL(5,2) as avg_score_raw,
+            ROUND(COALESCE(AVG(sc.score), 0) / 3 * 100, 1) as avg_score_pct,
+            -- Photo path
+            (SELECT p.photo_path FROM portal_assessment_photos p 
+             WHERE p.assessment_id = a.id AND p.school_room_id = sr.id 
+             ORDER BY p.captured_at DESC NULLS LAST LIMIT 1) as photo_path,
+            -- Notes
+            (SELECT d.notes FROM portal_assessment_room_details d
+             WHERE d.assessment_id = a.id AND d.school_room_id = sr.id
+             LIMIT 1) as notes
+        FROM portal_school_rooms sr
+        JOIN portal_rooms r ON sr.room_id = r.id
+        JOIN portal_assessments a ON a.school_id = sr.school_id
+        JOIN dashboard_users u ON a.staff_id = u.id
+        LEFT JOIN portal_assessment_scores sc 
+            ON sc.assessment_id = a.id AND sc.school_room_id = sr.id
+        WHERE sr.school_id = %s
+          AND a.status = 'submitted'
+        GROUP BY r.id, r.name, sr.id, a.id, u.full_name, u.id
+        HAVING AVG(sc.score) IS NOT NULL
+        ORDER BY AVG(sc.score) ASC, r.name, u.full_name
+    """
+    
+    with get_cursor() as cur:
+        cur.execute(query, (school_id,))
+        rows = [dict(row) for row in cur.fetchall()]
+    
+    # Group by room, then by staff
+    rooms = {}
+    for row in rows:
+        room_id = row["room_id"]
+        if room_id not in rooms:
+            rooms[room_id] = {
+                "room_id": room_id,
+                "room_name": row["room_name"],
+                "staff_assessments": []
+            }
+        
+        photo_url = None
+        if row.get("photo_path"):
+            from pathlib import Path
+            filename = Path(row["photo_path"]).name
+            photo_url = url_for("portal.uploaded_file", filename=filename)
+        
+        rooms[room_id]["staff_assessments"].append({
+            "staff_id": row["staff_id"],
+            "staff_name": row["staff_name"],
+            "score_pct": float(row["avg_score_pct"]) if row.get("avg_score_pct") else 0,
+            "photo_url": photo_url,
+            "notes": row.get("notes") or "",
+        })
+    
+    # Sort rooms by lowest score first
+    result = sorted(rooms.values(), key=lambda r: min(
+        [s["score_pct"] for s in r["staff_assessments"]] or [100]
+    ))
+    
+    return jsonify({
+        "success": True,
+        "school_id": school_id,
+        "rooms": result,
+    })
