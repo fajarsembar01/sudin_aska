@@ -371,7 +371,7 @@
                     </div>
                     <div class="step-item" data-step="3">
                         <div class="step-icon"></div>
-                        <div class="step-line d-none d-md-block"></div>
+                        <div class="step-line" style="visibility: hidden;"></div>
                         <div class="step-meta">
                             <div class="step-label">Langkah 4</div>
                             <div class="step-title">Channel Opsional</div>
@@ -527,9 +527,18 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var shouldShow = {{ 'true' if show_profile_modal else 'false' }};
+
     var profileModalEl = document.getElementById('profileModal');
     if (shouldShow && profileModalEl && window.bootstrap) {
-        new bootstrap.Modal(profileModalEl, { backdrop: 'static', keyboard: false }).show();
+        var modal = new bootstrap.Modal(profileModalEl, { backdrop: 'static', keyboard: false });
+        // Hide prev button on first step when modal opens
+        profileModalEl.addEventListener('shown.bs.modal', function() {
+            var prevBtnInit = document.getElementById('modalPrev');
+            if (prevBtnInit) {
+                prevBtnInit.style.visibility = 'hidden';
+            }
+        }, { once: true });
+        modal.show();
     }
 
     var errorBox = document.getElementById('modalError');
@@ -613,7 +622,8 @@
             step.classList.toggle('active', i === index);
             step.classList.toggle('completed', i < index && valid);
 
-            icon.classList.remove('active', 'completed');
+            icon.classList.remove('active', 'completed', 'disabled');
+            step.classList.remove('disabled');
             if (i < index && valid) {
                 icon.classList.add('completed');
                 icon.innerHTML = '<i class="bi bi-check-lg"></i>';
@@ -627,6 +637,9 @@
                 status.className = 'step-status text-primary';
                 if (line) line.classList.remove('completed');
             } else {
+                // Steps after current and not completed - show as disabled
+                icon.classList.add('disabled');
+                step.classList.add('disabled');
                 icon.textContent = i + 1;
                 status.textContent = 'Pending';
                 status.className = 'step-status text-muted';
@@ -672,6 +685,7 @@
     }
 
     var nextBtn = document.getElementById('modalNext');
+    var prevBtn = document.getElementById('modalPrev');
     var nextLabel = nextBtn ? nextBtn.querySelector('.next-label') : null;
     if (nextBtn && carouselInstance) {
         nextBtn.addEventListener('click', function (e) {
@@ -692,6 +706,7 @@
         });
     }
 
+
     function updateNextLabel() {
         if (!nextLabel) return;
         if (currentStep >= steps.length - 1) {
@@ -700,6 +715,10 @@
         } else {
             nextLabel.textContent = 'Selanjutnya';
             nextBtn.querySelector('i').className = 'bi bi-chevron-right';
+        }
+        // Hide prev button on first step
+        if (prevBtn) {
+            prevBtn.style.visibility = currentStep === 0 ? 'hidden' : 'visible';
         }
     }
 
