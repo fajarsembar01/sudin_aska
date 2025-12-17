@@ -44,36 +44,48 @@
                 {% if assessments %}
                 <div class="list-group list-group-flush">
                     {% for a in assessments %}
-                    <a href="{% if a.status == 'draft' %}{{ url_for('portal.assess', school_id=a.school_id) }}{% else %}{{ url_for('portal.view_assessment', assessment_id=a.id) }}{% endif %}"
-                        class="list-group-item list-group-item-action d-flex align-items-center gap-3 px-0 py-3">
-                        <span class="icon-badge timeline-icon text-primary">
-                            <i class="bi bi-building"></i>
-                        </span>
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div class="fw-semibold">{{ a.school_name }}</div>
-                                    <small class="text-muted">{{ a.npsn }} • {{ a.jenjang }} • {{ a.assessment_date
-                                        }}</small>
-                                </div>
-                                <div class="text-end">
-                                    {% if a.status == 'draft' %}
-                                    <span class="status-badge status-draft">
-                                        <i class="bi bi-pencil"></i> Draft
-                                    </span>
-                                    {% elif a.status == 'submitted' %}
-                                    <span class="status-badge status-submitted">
-                                        <i class="bi bi-check-circle"></i> Submitted
-                                    </span>
-                                    {% endif %}
-                                    {% if a.total_score %}
-                                    <div class="small text-muted mt-1">Skor: {{ "%.2f"|format(a.total_score) }}</div>
-                                    {% endif %}
+                    <div class="list-group-item d-flex align-items-center gap-3 px-0 py-3">
+                        <a href="{% if a.status == 'draft' %}{{ url_for('portal.assess', school_id=a.school_id) }}{% else %}{{ url_for('portal.view_assessment', assessment_id=a.id) }}{% endif %}"
+                            class="d-flex align-items-center gap-3 flex-grow-1 text-decoration-none text-reset">
+                            <span class="icon-badge timeline-icon text-primary">
+                                <i class="bi bi-building"></i>
+                            </span>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="fw-semibold">{{ a.school_name }}</div>
+                                        <small class="text-muted">{{ a.npsn }} • {{ a.jenjang }} • {{ a.assessment_date
+                                            }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        {% if a.status == 'draft' %}
+                                        <span class="status-badge status-draft">
+                                            <i class="bi bi-pencil"></i> Draft
+                                        </span>
+                                        {% elif a.status == 'submitted' %}
+                                        <span class="status-badge status-submitted">
+                                            <i class="bi bi-check-circle"></i> Submitted
+                                        </span>
+                                        {% endif %}
+                                        {% if a.total_score %}
+                                        <div class="small text-muted mt-1">Skor: {{ "%.2f"|format(a.total_score) }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <i class="bi bi-chevron-right text-muted"></i>
-                    </a>
+                            <i class="bi bi-chevron-right text-muted"></i>
+                        </a>
+                        {% if a.status == 'draft' %}
+                        <form action="{{ url_for('portal.delete_draft_route', assessment_id=a.id) }}" method="POST"
+                            onsubmit="return confirm('Hapus draft penilaian untuk {{ a.school_name }}?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Hapus Draft">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
                     {% endfor %}
                 </div>
                 {% else %}

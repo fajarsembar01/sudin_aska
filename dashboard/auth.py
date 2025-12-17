@@ -128,6 +128,11 @@ def _redirect_after_login(user: dict, fallback: Optional[str] = None) -> str:
         return fallback
     
     role = user.get("role", "")
+    
+    # Admin goes to role selection
+    if role == "admin":
+        return url_for("main.admin_select_role")
+
     # Staff and sekolah roles should go to portal
     if role in ("staff", "sekolah"):
         return url_for("portal.home")

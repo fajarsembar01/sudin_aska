@@ -1,0 +1,490 @@
+{% extends "documentation/layout.html" %}
+
+{% block title %}Tutorial Portal ASKA - Dokumentasi{% endblock %}
+
+{% block doc_content %}
+<article class="docs-article">
+    <header class="mb-5 border-bottom pb-4" style="border-color: var(--border-soft) !important;">
+        <h1 class="fw-bold mb-3" style="color: var(--text-primary);">Tutorial Penggunaan Portal ASKA</h1>
+        <p class="lead" style="color: var(--text-secondary);">Panduan Lengkap untuk Sekolah, Staff Penilai, dan
+            Administrator</p>
+    </header>
+
+    <div class="doc-body" style="color: var(--text-secondary);">
+
+        <!-- Slide 1 -->
+        <section class="mb-5">
+            <h3 class="fw-bold mb-3" style="color: var(--text-primary);">Pendahuluan</h3>
+            <p>Tutorial ini mencakup tiga peran utama dalam sistem:</p>
+            <ul>
+                <li><strong>Sekolah:</strong> Pendaftaran dan konfigurasi awal.</li>
+                <li><strong>Staff/Penilai:</strong> Melakukan penilaian aset dan fasilitas lapangan.</li>
+                <li><strong>Admin:</strong> Monitoring statistik dan perencanaan (AI Sidak).</li>
+            </ul>
+        </section>
+
+        <hr class="border-soft my-5">
+
+        <!-- Slide 2 -->
+        <section class="mb-5">
+            <span class="badge bg-primary mb-2">Role Sekolah</span>
+            <h3 class="fw-bold mb-3" style="color: var(--text-primary);">1. Pendaftaran Akun</h3>
+            <p><strong>Tujuan:</strong> Sekolah mendaftarkan akun baru untuk mengakses portal.</p>
+
+            <div class="card bg-subtle border-0 mb-4" style="background-color: var(--bg-subtle);">
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li class="mb-2">Buka URL: <code>/portal/register</code></li>
+                        <li class="mb-2"><strong>Pilih Sekolah:</strong> Ketik NPSN atau Nama Sekolah pada kolom
+                            pencarian.</li>
+                        <li class="mb-2"><strong>Isi Kredensial:</strong> Masukkan Email resmi dan Password.</li>
+                        <li>Klik tombol <strong>Daftar</strong>.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <figure class="figure border rounded p-2 bg-white shadow-sm w-100">
+                <img src="{{ url_for('static', filename='img/tutorial/1_register_annotated.png') }}"
+                    class="figure-img img-fluid rounded mb-2" alt="Halaman Registrasi">
+                <figcaption class="figure-caption text-center">Gambar 1: Tampilan form registrasi pendaftaran akun
+                    sekolah</figcaption>
+            </figure>
+        </section>
+
+        <!-- Slide 3 -->
+        <section class="mb-5">
+            <span class="badge bg-primary mb-2">Role Sekolah</span>
+            <h3 class="fw-bold mb-3" style="color: var(--text-primary);">2. Login & Lengkapi Profil</h3>
+            <p><strong>Tujuan:</strong> Melengkapi data profil sekolah setelah login pertama kali.</p>
+
+            <div class="alert alert-warning border-0 shadow-sm mb-4" style="background-color: rgba(255, 193, 7, 0.15);">
+                <h6 class="fw-bold mb-2 text-warning-emphasis"><i class="bi bi-building me-2"></i>Akun Demo Sekolah</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted d-block uppercase" style="font-size: 0.7rem">EMAIL</small>
+                        <code class="fs-6 text-dark fw-bold">sekolah_demo@test.com</code>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block uppercase" style="font-size: 0.7rem">PASSWORD</small>
+                        <code class="fs-6 text-dark fw-bold">password123</code>
+                    </div>
+                </div>
+            </div>
+
+            <ol>
+                <li class="mb-2">Login menggunakan email & password demo di atas atau akun yang baru didaftarkan.</li>
+                <li class="mb-2">Sistem akan menampilkan <strong>Modal Lengkapi Profil</strong>.</li>
+                <li class="mb-2">Isi data penting: Alamat, Titik Gmaps, Jumlah Siswa, dan Kontak Sekolah.</li>
+                <li>Klik <strong>Simpan</strong> untuk melanjutkan.</li>
+            </ol>
+
+            <figure class="figure border rounded p-2 bg-white shadow-sm w-100">
+                <img src="{{ url_for('static', filename='img/tutorial/3b_after_next_click.png') }}"
+                    class="figure-img img-fluid rounded mb-2" alt="Modal Profil">
+                <figcaption class="figure-caption text-center">Gambar 2: Tampilan modal pengisian data kapasitas sekolah
+                </figcaption>
+            </figure>
+        </section>
+
+        <!-- Slide 4 -->
+        <section class="mb-5">
+            <span class="badge bg-primary mb-2">Role Sekolah</span>
+            <h3 class="fw-bold mb-3" style="color: var(--text-primary);">3. Konfigurasi Ruangan</h3>
+            <p><strong>Tujuan:</strong> Menentukan ruangan apa saja yang dimiliki sekolah untuk dinilai.</p>
+
+            <ol>
+                <li class="mb-2">Masuk ke menu <strong>Data Ruangan</strong>.</li>
+                <li class="mb-2">Centang daftar ruangan yang tersedia di sekolah (Contoh: Ruang Kepala Sekolah, Ruang
+                    Guru, Ruang Kelas).</li>
+                <li>Klik <strong>Simpan Konfigurasi</strong>.</li>
+            </ol>
+
+            <figure class="figure border rounded p-2 bg-white shadow-sm w-100">
+                <img src="{{ url_for('static', filename='img/tutorial/5_rooms_configured.png') }}"
+                    class="figure-img img-fluid rounded mb-2" alt="Konfigurasi Ruangan">
+                <figcaption class="figure-caption text-center">Gambar 3: Daftar checkbox ruangan yang telah dipilih
+                </figcaption>
+            </figure>
+        </section>
+
+        <hr class="border-soft my-5">
+
+        <!-- Slide: Login Staff -->
+        <section class="mb-5">
+            <span class="badge bg-success mb-2">Role Staff</span>
+            <h3 class="fw-bold mb-3" style="color: var(--text-primary);">4. Login Staff</h3>
+            <p><strong>Tujuan:</strong> Masuk sebagai staff untuk memulai tugas penilaian.</p>
+
+            <div class="alert alert-info border-0 shadow-sm mb-4">
+                <h6 class="fw-bold mb-2"><i class="bi bi-person-badge me-2"></i>Akun Demo Staff</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted d-block uppercase" style="font-size: 0.7rem">EMAIL</small>
+                        <code class="fs-6 text-dark fw-bold">staff_demo@test.com</code>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block uppercase" style="font-size: 0.7rem">PASSWORD</small>
+                        <code class="fs-6 text-dark fw-bold">password123</code>
+                    </div>
+                </div>
+            </div>
+
+            <ol>
+                <li class="mb-2">Buka halaman Login.</li>
+                <li class="mb-2">Masukkan Email & Password Staff.</li>
+                <li class="mb-2"><strong>Role Staff:</strong> Hanya bisa mengakses penilaian sekolah yang ditugaskan.
+                </li>
+            </ol>
+
+            <figure class="figure border rounded p-2 bg-white shadow-sm w-100">
+                <img src="{{ url_for('static', filename='img/tutorial/2_login_annotated.png') }}"
+                    class="figure-img img-fluid rounded mb-2" alt="Halaman Login">
+                <figcaption class="figure-caption text-center">Gambar 4: Dasbor login staff sekolah (Perhatikan tombol
+                    "Masuk")</figcaption>
+            </figure>
+        </section>
+
+        <!-- Slide 3 -->
+        <section class="mb-5">
+            <span class="badge bg-success mb-2">Role Staff</span>
+            <h3 class="fw-bold mb-3" style="color: var(--text-primary);">5. Pencarian Sekolah</h3>
+            <p><strong>Tujuan:</strong> Menemukan sekolah target yang akan dinilai.</p>
+
+            <ol>
+                <li class="mb-2">Pilih menu <strong>Daftar Sekolah</strong>.</li>
+                <li class="mb-2">Ketik nama sekolah atau NPSN pada kolom pencarian (Contoh: 20100677).</li>
+                <li>Klik tombol <strong>Nilai</strong> pada daftar yang muncul.</li>
+            </ol>
+
+            <figure class="figure border rounded p-2 bg-white shadow-sm w-100">
+                <img src="{{ url_for('static', filename='img/tutorial/7_school_search.png') }}"
+                    class="figure-img img-fluid rounded mb-2" alt="Pencarian Sekolah">
+                <figcaption class="figure-caption text-center">Gambar 5: Hasil pencarian sekolah pada menu staff
+                </figcaption>
+            </figure>
+        </section>
+
+        <!-- Slide 7 -->
+        <section class="mb-5">
+            <span class="badge bg-success mb-2">Role Staff</span>
+            <h3 class="fw-bold mb-3" style="color: var(--text-primary);">6. Input Penilaian</h3>
+            <p><strong>Tujuan:</strong> Memberikan skor dan bukti foto kondisi ruangan.</p>
+
+            <ol>
+                <li class="mb-2"><strong>Pilih Ruangan:</strong> Klik header ruangan (misal: Pintu Gerbang) untuk
+                    membuka detailnya.</li>
+                <li class="mb-2"><strong>Beri Nilai:</strong> Tentukan skor (0-3) untuk setiap aspek (Cat, Kondisi,
+                    dll).</li>
+                <li class="mb-2"><strong>Upload Foto:</strong> Klik tombol <strong>Ambil Foto Ruangan</strong> untuk
+                    dokumenasi real-time.</li>
+                <li class="mb-2"><strong>Isi Keterangan:</strong> Tambahkan catatan jika diperlukan.</li>
+                <li><strong>Submit:</strong> Klik tombol <strong>Submit Penilaian</strong>.</li>
+            </ol>
+
+            <figure class="figure border rounded p-2 bg-white shadow-sm w-100">
+                <img src="{{ url_for('static', filename='img/tutorial/8_assessment_annotated.png') }}"
+                    class="figure-img img-fluid rounded mb-2" alt="Form Penilaian">
+                <figcaption class="figure-caption text-center">Gambar 6: Form penilaian lengkap dengan 5 langkah (Pilih
+                    Ruangan s/d Submit)</figcaption>
+            </figure>
+        </section>
+
+        <hr class="border-soft my-5">
+
+        <!-- Slide 8 -->
+        <section class="mb-5">
+            <span class="badge bg-danger mb-2">Role Admin</span>
+            <h3 class="fw-bold mb-3" style="color: var(--text-primary);">7. Dashboard Monitoring</h3>
+            <p><strong>Tujuan:</strong> Memantau progres penilaian seluruh wilayah secara real-time.</p>
+
+            <div class="row g-4 mb-3">
+                <div class="col-md-6">
+                    <div class="card bg-subtle border-0 h-100" style="background-color: var(--bg-subtle);">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-2"><i class="bi bi-map me-2"></i>Peta Sebaran & Indikator Warna</h6>
+                            <p class="small mb-2">Warna titik GPS pada peta ditentukan berdasarkan <strong>Total Skor
+                                    Akhir</strong> sekolah:</p>
+                            <ul class="list-unstyled small mb-0">
+                                <li class="d-flex align-items-center mb-1">
+                                    <span class="d-inline-block rounded-circle me-2"
+                                        style="width: 12px; height: 12px; background-color: #198754;"></span>
+                                    <strong>Hijau:</strong> Kondisi Baik (Skor ≥ 85)
+                                </li>
+                                <li class="d-flex align-items-center mb-1">
+                                    <span class="d-inline-block rounded-circle me-2"
+                                        style="width: 12px; height: 12px; background-color: #ffc107;"></span>
+                                    <strong>Kuning:</strong> Cukup / Perhatian (Skor 70 - 84)
+                                </li>
+                                <li class="d-flex align-items-center mb-1">
+                                    <span class="d-inline-block rounded-circle me-2"
+                                        style="width: 12px; height: 12px; background-color: #dc3545;"></span>
+                                    <strong>Merah:</strong> Rusak / Butuh Renovasi (Skor 55 - 69)
+                                </li>
+                                <li class="d-flex align-items-center">
+                                    <span class="d-inline-block rounded-circle me-2"
+                                        style="width: 12px; height: 12px; background-color: #000;"></span>
+                                    <strong>Hitam:</strong> Kritis (Skor < 55) </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-subtle border-0 h-100" style="background-color: var(--bg-subtle);">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-2"><i class="bi bi-bar-chart me-2"></i>Komponen Dashboard</h6>
+                            <ul class="small mb-0 ps-3">
+                                <li class="mb-1"><strong>Total Sekolah:</strong> Jumlah seluruh data sekolah terdaftar.
+                                </li>
+                                <li class="mb-1"><strong>Status Draft:</strong> Penilaian yang sedang dikerjakan staff
+                                    tapi belum disubmit.</li>
+                                <li class="mb-1"><strong>Rata-rata Skor:</strong> Nilai rata-rata dari seluruh sekolah
+                                    yang sudah dinilai.</li>
+                                <li><strong>Grafik Status:</strong> Persentase progres penilaian (Submitted vs Draft).
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <figure class="figure border rounded p-2 bg-white shadow-sm w-100">
+                <img src="{{ url_for('static', filename='img/tutorial/11_admin_stats_annotated_v2.png') }}"
+                    class="figure-img img-fluid rounded mb-2" alt="Admin Dashboard">
+                <figcaption class="figure-caption text-center">Gambar 7a: Dashboard statistik monitoring admin dengan
+                    indikator peta</figcaption>
+            </figure>
+        </section>
+
+        <!-- Slide 7b: Lower Dashboard -->
+        <section class="mb-5">
+            <span class="badge bg-danger mb-2">Role Admin</span>
+            <h3 class="fw-bold mb-3" style="color: var(--text-primary);">7b. Analisis Statistik & Aktivitas</h3>
+            <p><strong>Tujuan:</strong> Melihat detail sebaran nilai dan bukti fisik penilaian.</p>
+
+            <div class="row g-4 mb-3">
+                <div class="col-md-6">
+                    <div class="card bg-subtle border-0 h-100" style="background-color: var(--bg-subtle);">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-2"><i class="bi bi-pie-chart me-2"></i>Grafik Analisis</h6>
+                            <ul class="small mb-0 ps-3">
+                                <li><strong>Distribusi Nilai:</strong> Histogram jumlah sekolah berdasarkan rentang
+                                    nilai (misal: berapa sekolah yang nilainya < 60).</li>
+                                <li><strong>Status Progress:</strong> Pie chart persentase sekolah yang sudah submit vs
+                                    masih draft.</li>
+                                <li><strong>Ranking Sekolah:</strong> Tab daftar sekolah dengan nilai tertinggi dan
+                                    terendah.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-subtle border-0 h-100" style="background-color: var(--bg-subtle);">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-2"><i class="bi bi-images me-2"></i>Galeri & Tabel</h6>
+                            <ul class="small mb-0 ps-3">
+                                <li><strong>Galeri Bukti:</strong>
+                                    <ul>
+                                        <li>Klik foto untuk memperbesar (zoom).</li>
+                                        <li>Gunakan filter <strong>Terbaru</strong> (update terakhir) atau
+                                            <strong>Terendah</strong> (kondisi butuh perbaikan) sesuai kebutuhan.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Tabel Aktivitas:</strong> Daftar penilaian terbaru yang masuk system
+                                    (real-time).</li>
+                                <li><strong>Aksi Cepat:</strong> Shortcut untuk menambah sekolah/ruangan baru.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <figure class="figure border rounded p-2 bg-white shadow-sm w-100 mb-4">
+                <img src="{{ url_for('static', filename='img/tutorial/11b_admin_charts_annotated.png') }}"
+                    class="figure-img img-fluid rounded mb-2" alt="Admin Charts">
+                <figcaption class="figure-caption text-center">Gambar 7b: Grafik distribusi nilai dan status progres
+                    penilaian</figcaption>
+            </figure>
+
+            <figure class="figure border rounded p-2 bg-white shadow-sm w-100">
+                <img src="{{ url_for('static', filename='img/tutorial/11c_admin_table_annotated.png') }}"
+                    class="figure-img img-fluid rounded mb-2" alt="Admin Table">
+                <figcaption class="figure-caption text-center">Gambar 7c: Galeri bukti foto dan tabel aktivitas terbaru
+                </figcaption>
+            </figure>
+        </section>
+
+        <!-- Slide 8: AI Sidak Planner -->
+        <section class="mb-5">
+            <span class="badge bg-danger mb-2">Role Admin</span>
+            <h3 class="fw-bold mb-3" style="color: var(--text-primary);">8a. Perencanaan Sidak (AI Planner)</h3>
+
+            <div class="card bg-light border-0 mb-3">
+                <div class="card-body py-2 px-3">
+                    <small class="text-muted fw-bold d-block mb-1">NAVIGASI MENU:</small>
+                    <i class="bi bi-arrow-return-right text-primary me-2"></i>
+                    Menu <strong>Admin</strong> <i class="bi bi-chevron-right mx-1 small"></i> Pilih <strong>Sidak
+                        Planner</strong>
+                </div>
+            </div>
+
+            <p><strong>Fungsi:</strong> Sistem rekomendasi cerdas untuk menentukan prioritas kunjungan lapangan.</p>
+            <div class="row g-4 mb-3">
+                <div class="col-md-6">
+                    <div class="card bg-subtle border-0 h-100" style="background-color: var(--bg-subtle);">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-2"><i class="bi bi-lightning-charge me-2"></i>Fitur Utama</h6>
+                            <ul class="small mb-0 ps-3">
+                                <li><strong>Generate Rute:</strong> Tombol <span
+                                        class="badge bg-primary">Generate</span> untuk membuat rute optimal hari ini.
+                                </li>
+                                <li><strong>Daftar Prioritas:</strong> Tabel sekolah dengan nilai terendah (Merah/Hitam)
+                                    yang butuh penanganan segera.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-subtle border-0 h-100" style="background-color: var(--bg-subtle);">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-circle me-2"></i>Indikator</h6>
+                            <ul class="small mb-0 ps-3">
+                                <li><strong>Skor Urgent:</strong> Sekolah dengan skor < 55 menjadi prioritas utama.</li>
+                                <li><strong>Jarak:</strong> Estimasi jarak tempuh dari lokasi admin.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <figure class="figure border rounded p-2 bg-white shadow-sm w-100 mb-4">
+                <img src="{{ url_for('static', filename='img/tutorial/12_admin_sidak_annotated.png') }}"
+                    class="figure-img img-fluid rounded mb-2" alt="AI Sidak Planner">
+                <figcaption class="figure-caption text-center">Gambar 8: Halaman perencana sidak dengan AI</figcaption>
+            </figure>
+        </section>
+
+        <!-- Slide 8b: Route Detail -->
+        <section class="mb-5">
+            <span class="badge bg-danger mb-2">Role Admin</span>
+            <h3 class="fw-bold mb-3" style="color: var(--text-primary);">8b. Detail Rute & Navigasi</h3>
+
+            <div class="alert alert-info py-2 small border-0 mb-3">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Cara Akses:</strong> Klik salah satu nama sekolah pada tabel "Daftar Prioritas Sidak" (Gambar
+                8).
+            </div>
+
+            <p><strong>Fitur Interaktif:</strong> Melihat rute perjalanan dan estimasi waktu.</p>
+
+            <div class="card bg-subtle border-0 mb-3" style="background-color: var(--bg-subtle);">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-2"><i class="bi bi-geo-alt me-2"></i>Informasi Perjalanan</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <ul class="small mb-0 ps-3">
+                                <li><strong>Estimasi Jarak & Waktu:</strong> Dihitung otomatis dari lokasi saat ini
+                                    (misal: 5.2 km, 15 menit).</li>
+                                <li><strong>Polyline Rute:</strong> Garis biru pada peta menunjukkan jalur tercepat yang
+                                    disarankan.</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="small mb-0 ps-3">
+                                <li><strong>Integrasi Google Maps:</strong> Klik tombol <span
+                                        class="badge bg-primary"><i class="bi bi-map"></i> Buka Maps</span> untuk
+                                    navigasi langsung di HP.</li>
+                                <li><strong>Marker Merah:</strong> Lokasi update sekolah tujuan sidak secara real-time.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <figure class="figure border rounded p-2 bg-white shadow-sm w-100">
+                <img src="{{ url_for('static', filename='img/tutorial/12b_sidak_route.png') }}"
+                    class="figure-img img-fluid rounded mb-2" alt="Sidak Route Detail">
+                <figcaption class="figure-caption text-center">Gambar 8b: Tampilan detail rute setelah memilih lokasi
+                    sidak</figcaption>
+            </figure>
+        </section>
+
+        <!-- Slide 9a: School Setup -->
+        <section class="mb-5">
+            <span class="badge bg-danger mb-2">Role Admin</span>
+            <h3 class="fw-bold mb-3" style="color: var(--text-primary);">9a. Input Data Sekolah</h3>
+
+            <div class="card bg-light border-0 mb-3">
+                <div class="card-body py-2 px-3">
+                    <small class="text-muted fw-bold d-block mb-1">NAVIGASI MENU:</small>
+                    <i class="bi bi-arrow-return-right text-primary me-2"></i>
+                    Menu <strong>Admin</strong> <i class="bi bi-chevron-right mx-1 small"></i> Pilih <strong>Setup
+                        Master</strong>
+                </div>
+            </div>
+
+            <p><strong>Tujuan:</strong> Menambah atau mengedit data profil sekolah.</p>
+
+            <div class="card bg-subtle border-0 mb-3" style="background-color: var(--bg-subtle);">
+                <div class="card-body py-3">
+                    <div class="d-flex flex-wrap gap-4">
+                        <div>
+                            <strong><i class="bi bi-building me-1"></i> Data Sekolah</strong>
+                            <div class="small text-muted">Tambah/Import data sekolah baru dan user kepala sekolah.</div>
+                        </div>
+                        <div>
+                            <strong><i class="bi bi-door-open me-1"></i> Data Ruangan</strong>
+                            <div class="small text-muted">Master daftar ruangan yang wajib dimiliki sekolah (misal: UKS,
+                                Perpus).</div>
+                        </div>
+                        <div>
+                            <strong><i class="bi bi-list-check me-1"></i> Aspek Penilaian</strong>
+                            <div class="small text-muted">Kriteria penilaian untuk setiap ruangan (misal: Kebersihan,
+                                Pencahayaan).</div>
+                            <div class="card bg-subtle border-0 mb-3" style="background-color: var(--bg-subtle);">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-2"><i class="bi bi-table me-2"></i>Fitur Tabel Master</h6>
+                                    <div class="small text-muted mb-2">Karena gambar di bawah menggunakan data asli
+                                        (tanpa panah), perhatikan elemen berikut:</div>
+                                    <div class="d-flex flex-wrap gap-4 small">
+                                        <div>
+                                            <strong><i class="bi bi-search me-1"></i> Pencarian (Pojok Kanan
+                                                Atas)</strong>
+                                            <div>Field input panjang bertuliskan "Cari ruangan..." untuk memfilter
+                                                daftar.</div>
+                                        </div>
+                                        <div>
+                                            <strong><i class="bi bi-list-task me-1"></i> Kolom Aspek (Tengah)</strong>
+                                            <div>Angka dalam lingkaran biru (misal: "4") menunjukkan jumlah kriteria
+                                                penilaian.</div>
+                                        </div>
+                                        <div>
+                                            <strong><i class="bi bi-gear me-1"></i> Aksi (Kolom Kanan)</strong>
+                                            <div>Tombol <i class="bi bi-pencil-square"></i> (Edit) dan <i
+                                                    class="bi bi-trash"></i> (Hapus) di setiap baris.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <figure class="figure border rounded p-2 bg-white shadow-sm w-100">
+                                <img src="{{ url_for('static', filename='img/tutorial/13b_setup_rooms_v2.png') }}"
+                                    class="figure-img img-fluid rounded mb-2" alt="Setup Rooms Table">
+                                <figcaption class="figure-caption text-center">Gambar 9b: Tabel master ruangan
+                                    (Perhatikan kolom Aksi di sisi kanan)</figcaption>
+                            </figure>
+                        </div>
+
+
+        </section>
+
+        <hr class="my-5 border-soft">
+
+        <div class="text-center p-4 rounded" style="background-color: var(--bg-muted);">
+            <h4 class="fw-bold" style="color: var(--accent);">Selesai! 🎉</h4>
+            <p class="mb-0">Anda telah mempelajari seluruh alur penggunaan sistem Portal ASKA.</p>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary mt-3">Ke Halaman Login</a>
+        </div>
+    </div>
+</article>
+{% endblock %}

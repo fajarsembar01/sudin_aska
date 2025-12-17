@@ -103,6 +103,13 @@
             Setup Email Domain
         </a>
     </li>
+    <li class="nav-item">
+        <a href="{{ url_for('main.doc_tutorial_portal') }}"
+            class="nav-link {% if request.endpoint == 'main.doc_tutorial_portal' %}active{% endif %}">
+            <i class="bi bi-book me-2"></i>
+            Tutorial Portal ASKA
+        </a>
+    </li>
     {% endmacro %}
 
     {% macro sidebar_footer() %}

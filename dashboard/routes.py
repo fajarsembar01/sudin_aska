@@ -223,7 +223,14 @@ def toggle_no_tester() -> Response:
     session_user["no_tester_enabled"] = enabled
     session["user"] = session_user
 
+
     return jsonify({"success": True, "enabled": enabled})
+
+
+@main_bp.route("/admin/select-role")
+@role_required("admin")
+def admin_select_role() -> Response:
+    return render_template("admin_selection.html")
 
 
 @main_bp.route("/")
@@ -1059,3 +1066,8 @@ def documentation() -> Response:
 @main_bp.route("/documentation/email-setup")
 def doc_email_setup() -> Response:
     return render_template("documentation/email_setup.html")
+
+
+@main_bp.route("/documentation/tutorial-portal")
+def doc_tutorial_portal() -> Response:
+    return render_template("documentation/tutorial_ppt.html")

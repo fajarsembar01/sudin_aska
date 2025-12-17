@@ -487,334 +487,450 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Rooms List -->
+            <!-- Combined Tabbed Card: Rooms & Schools -->
             <div class="card border-0 shadow-sm mb-3">
-                <div class="card-body">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="icon-badge section-icon text-success">
-                                <i class="bi bi-door-open"></i>
-                            </span>
-                            <div>
-                                <h2 class="h6 fw-bold mb-0">Daftar Ruangan & Aspek</h2>
-                                <p class="text-muted mb-0 small"><span id="roomCount">{{ rooms|length }}</span>
-                                    ruangan
-                                    terdaftar</p>
+                <div class="card-header bg-transparent py-3">
+                    <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="roomsListTab" data-bs-toggle="tab"
+                                data-bs-target="#roomsListPane" type="button" role="tab">
+                                <i class="bi bi-door-open me-1"></i>Daftar Ruangan & Aspek
+                                <span class="badge bg-success ms-1">{{ rooms|length }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="schoolsListTab" data-bs-toggle="tab"
+                                data-bs-target="#schoolsListPane" type="button" role="tab">
+                                <i class="bi bi-building me-1"></i>Daftar Sekolah
+                                <span class="badge bg-primary ms-1">{{ schools|length }}</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body" style="max-height: 65vh; overflow-y: auto;">
+                    <div class="tab-content">
+                        <!-- Schools List Tab -->
+                        <div class="tab-pane fade" id="schoolsListPane" role="tabpanel">
+                            <!-- Search and Pagination Controls -->
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                                <div class="position-relative" style="min-width: 250px;">
+                                    <input type="text" id="schoolSearch" class="form-control form-control-sm"
+                                        placeholder="Cari sekolah (NPSN, nama, kecamatan)..." autocomplete="off">
+                                    <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-2 text-muted"
+                                        style="pointer-events: none;"></i>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <small class="text-muted">
+                                        Menampilkan <span id="schoolShowingStart">1</span>-<span
+                                            id="schoolShowingEnd">20</span>
+                                        dari <span id="schoolTotalFiltered">{{ schools|length }}</span>
+                                    </small>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-secondary" id="schoolPrevBtn"
+                                            disabled>
+                                            <i class="bi bi-chevron-left"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" id="schoolNextBtn">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
+                            {% if schools %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0" id="schoolsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>NPSN</th>
+                                            <th>Nama</th>
+                                            <th>
+                                                <div class="dropdown d-inline-block">
+                                                    <button
+                                                        class="btn btn-link btn-sm p-0 text-reset text-decoration-none dropdown-toggle"
+                                                        type="button" data-bs-toggle="dropdown"
+                                                        data-bs-auto-close="true">
+                                                        Jenjang <span class="badge bg-primary ms-1 d-none"
+                                                            id="jenjangFilterBadge"></span>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end" id="jenjangFilterMenu">
+                                                        <li><a class="dropdown-item active" href="#"
+                                                                data-filter-value="">Semua</a></li>
+                                                        <li>
+                                                            <hr class="dropdown-divider">
+                                                        </li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="sd">SD</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="mi">MI</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="smp">SMP</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="mts">MTS</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="sma">SMA</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="ma">MA</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="smk">SMK</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="tk">TK</a></li>
+                                                    </ul>
+                                                </div>
+                                            </th>
+                                            <th>
+                                                <div class="dropdown d-inline-block">
+                                                    <button
+                                                        class="btn btn-link btn-sm p-0 text-reset text-decoration-none dropdown-toggle"
+                                                        type="button" data-bs-toggle="dropdown"
+                                                        data-bs-auto-close="true">
+                                                        Status <span class="badge bg-primary ms-1 d-none"
+                                                            id="statusFilterBadge"></span>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end" id="statusFilterMenu">
+                                                        <li><a class="dropdown-item active" href="#"
+                                                                data-filter-value="">Semua</a></li>
+                                                        <li>
+                                                            <hr class="dropdown-divider">
+                                                        </li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="negeri">NEGERI</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="swasta">SWASTA</a></li>
+                                                    </ul>
+                                                </div>
+                                            </th>
+                                            <th>
+                                                <div class="dropdown d-inline-block">
+                                                    <button
+                                                        class="btn btn-link btn-sm p-0 text-reset text-decoration-none dropdown-toggle"
+                                                        type="button" data-bs-toggle="dropdown"
+                                                        data-bs-auto-close="true">
+                                                        Kecamatan <span class="badge bg-primary ms-1 d-none"
+                                                            id="kecamatanFilterBadge"></span>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end" id="kecamatanFilterMenu"
+                                                        style="max-height: 300px; overflow-y: auto;">
+                                                        <li><a class="dropdown-item active" href="#"
+                                                                data-filter-value="">Semua</a></li>
+                                                        <li>
+                                                            <hr class="dropdown-divider">
+                                                        </li>
+                                                        {% for kec in kecamatan_list %}
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="{{ kec.name|lower }}">{{ kec.name
+                                                                }}</a></li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="schoolsTableBody">
+                                        {% for s in schools %}
+                                        <tr class="school-row" data-npsn="{{ s.npsn|lower }}"
+                                            data-name="{{ s.name|lower }}" data-jenjang="{{ s.jenjang|lower }}"
+                                            data-status="{{ (s.status or '')|lower }}"
+                                            data-kecamatan="{{ (s.kecamatan_name or '')|lower }}">
+                                            <td><code>{{ s.npsn }}</code></td>
+                                            <td>{{ s.name }}</td>
+                                            <td><span class="badge bg-secondary bg-opacity-75">{{ s.jenjang }}</span>
+                                            </td>
+                                            <td><span
+                                                    class="badge {% if s.status == 'NEGERI' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{
+                                                    s.status or '-' }}</span></td>
+                                            <td class="text-muted small">{{ s.kecamatan_name or '-' }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0">Belum ada sekolah</p>
+                            {% endif %}
                         </div>
-                        <div class="position-relative" style="min-width: 200px;">
-                            <input type="text" id="roomSearch" class="form-control form-control-sm"
-                                placeholder="Cari ruangan..." autocomplete="off">
-                            <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-2 text-muted"
-                                style="pointer-events: none;"></i>
-                        </div>
-                    </div>
-                    {% if rooms %}
-                    <div class="table-responsive">
-                        <style>
-                            /* Theme-aware flat table */
-                            #roomsTable {
-                                background: var(--bg-surface);
-                                border-radius: 12px;
-                                overflow: hidden;
-                                border: 1px solid var(--border-soft);
-                            }
 
-                            #roomsTable thead th {
-                                background: var(--bg-subtle);
-                                font-weight: 700;
-                                color: var(--text-primary);
-                                border-bottom: 1px solid var(--border-soft);
-                            }
+                        <!-- Rooms List Tab -->
+                        <div class="tab-pane fade show active" id="roomsListPane" role="tabpanel">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                                <div>
+                                    <span class="text-muted small"><span id="roomCount">{{ rooms|length }}</span>
+                                        ruangan terdaftar</span>
+                                </div>
+                                <div class="position-relative" style="min-width: 200px;">
+                                    <input type="text" id="roomSearch" class="form-control form-control-sm"
+                                        placeholder="Cari ruangan..." autocomplete="off">
+                                    <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-2 text-muted"
+                                        style="pointer-events: none;"></i>
+                                </div>
+                            </div>
+                            {% if rooms %}
+                            <div class="table-responsive">
+                                <style>
+                                    /* Theme-aware flat table */
+                                    #roomsTable {
+                                        background: var(--bg-surface);
+                                        border-radius: 12px;
+                                        overflow: hidden;
+                                        border: 1px solid var(--border-soft);
+                                    }
 
-                            #roomsTable tbody tr {
-                                background: var(--bg-surface);
-                            }
+                                    #roomsTable thead th {
+                                        background: var(--bg-subtle);
+                                        font-weight: 700;
+                                        color: var(--text-primary);
+                                        border-bottom: 1px solid var(--border-soft);
+                                    }
 
-                            #roomsTable tbody td {
-                                background: inherit;
-                                color: var(--text-primary);
-                                border-color: var(--border-soft);
-                            }
+                                    #roomsTable tbody tr {
+                                        background: var(--bg-surface);
+                                    }
 
-                            #roomsTable tbody tr:hover td {
-                                background: var(--bg-subtle);
-                            }
+                                    #roomsTable tbody td {
+                                        background: inherit;
+                                        color: var(--text-primary);
+                                        border-color: var(--border-soft);
+                                    }
 
-                            #roomsTable tbody tr.room-inactive td {
-                                background: var(--bg-subtle);
-                                color: var(--text-muted);
-                            }
+                                    #roomsTable tbody tr:hover td {
+                                        background: var(--bg-subtle);
+                                    }
 
-                            /* Highlight for recently edited room */
-                            @keyframes roomHighlight {
-                                0% {
-                                    background-color: rgba(13, 110, 253, 0.25);
-                                }
+                                    #roomsTable tbody tr.room-inactive td {
+                                        background: var(--bg-subtle);
+                                        color: var(--text-muted);
+                                    }
 
-                                100% {
-                                    background-color: transparent;
-                                }
-                            }
+                                    /* Highlight for recently edited room */
+                                    @keyframes roomHighlight {
+                                        0% {
+                                            background-color: rgba(13, 110, 253, 0.25);
+                                        }
 
-                            #roomsTable tbody tr.just-edited td {
-                                animation: roomHighlight 3s ease-out;
-                            }
+                                        100% {
+                                            background-color: transparent;
+                                        }
+                                    }
 
-                            #roomsTable .fw-semibold {
-                                color: var(--text-primary);
-                            }
+                                    #roomsTable tbody tr.just-edited td {
+                                        animation: roomHighlight 3s ease-out;
+                                    }
 
-                            #roomsTable tbody tr.room-inactive .fw-semibold {
-                                color: var(--text-muted);
-                            }
+                                    #roomsTable .fw-semibold {
+                                        color: var(--text-primary);
+                                    }
 
-                            #roomsTable small {
-                                color: var(--text-muted);
-                            }
+                                    #roomsTable tbody tr.room-inactive .fw-semibold {
+                                        color: var(--text-muted);
+                                    }
 
-                            #roomsTable .badge {
-                                font-weight: 600;
-                            }
-                        </style>
-                        <table class="table table-hover align-middle mb-0" id="roomsTable">
-                            <thead>
-                                <tr>
-                                    <th style="width: 36%;">Nama Ruangan</th>
-                                    <th style="width: 16%;">Kategori</th>
-                                    <th style="width: 12%;">Aspek</th>
-                                    <th style="width: 16%;">Status</th>
-                                    <th class="text-end" style="width: 20%;">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="roomsTableBody">
-                                {% for r in rooms %}
-                                <tr id="room-{{ r.id }}"
-                                    class="room-row border-bottom {% if not r.active %}room-inactive{% endif %}"
-                                    data-room-id="{{ r.id }}" data-room-name="{{ r.name|lower }}"
-                                    data-room-category="{{ r.category|lower }}"
-                                    data-room-active="{{ 'true' if r.active else 'false' }}">
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span class="icon-badge text-success"><i
-                                                    class="bi bi-door-open-fill"></i></span>
-                                            <div>
-                                                <div class="fw-semibold">{{ r.name }}</div>
-                                                {% if r.description %}
-                                                <small class="text-muted">{{ r.description }}</small>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td><span class="badge bg-secondary text-uppercase">{{ r.category }}</span></td>
-                                    <td><span class="badge bg-primary">{{ r.aspects|length }}</span></td>
-                                    <td>
-                                        <form method="POST"
-                                            action="{{ url_for('portal.toggle_room_status', room_id=r.id) }}"
-                                            class="d-inline">
-                                            <button type="submit"
-                                                class="btn btn-sm px-3 {% if r.active %}btn-success{% else %}btn-outline-danger{% endif %}"
-                                                title="Klik untuk {% if r.active %}nonaktifkan{% else %}aktifkan{% endif %}">
-                                                <i
-                                                    class="bi {% if r.active %}bi-toggle-on{% else %}bi-toggle-off{% endif %} me-1"></i>
-                                                {% if r.active %}Aktif{% else %}Nonaktif{% endif %}
-                                            </button>
-                                        </form>
-                                    </td>
-                                    <td class="text-end">
-                                        <div class="btn-group btn-group-sm">
-                                            <button type="button" class="btn btn-outline-primary"
-                                                data-bs-toggle="collapse" data-bs-target="#roomDetail{{ r.id }}"
-                                                title="Lihat Detail">
-                                                <i class="bi bi-chevron-down"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
-                                                data-bs-target="#deleteRoomModal{{ r.id }}" title="Hapus">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <!-- Expandable Detail Row -->
-                                <tr class="collapse" id="roomDetail{{ r.id }}">
-                                    <td colspan="5" class="p-0">
-                                        <div class="p-3 border-top" style="background: var(--bg-subtle);">
-                                            <!-- Edit Room Form -->
-                                            <form method="POST" action="{{ url_for('portal.edit_room', room_id=r.id) }}"
-                                                class="row g-2 mb-3">
-                                                <div class="col-md-4">
-                                                    <label class="form-label small mb-1">Nama Ruangan</label>
-                                                    <input type="text" name="name" class="form-control form-control-sm"
-                                                        value="{{ r.name }}" required>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <label class="form-label small mb-1">Kategori</label>
-                                                    <select name="category" class="form-select form-select-sm">
-                                                        <option value="umum" {% if r.category=='umum' %}selected{% endif
-                                                            %}>Umum</option>
-                                                        <option value="akademik" {% if r.category=='akademik'
-                                                            %}selected{% endif %}>Akademik</option>
-                                                        <option value="fasilitas" {% if r.category=='fasilitas'
-                                                            %}selected{% endif %}>Fasilitas</option>
-                                                        <option value="sanitasi" {% if r.category=='sanitasi'
-                                                            %}selected{% endif %}>Sanitasi</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <label class="form-label small mb-1">Urutan</label>
-                                                    <input type="number" name="sort_order"
-                                                        class="form-control form-control-sm" value="{{ r.sort_order }}">
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <label class="form-label small mb-1">Status</label>
-                                                    <div class="form-check mt-1">
-                                                        <input class="form-check-input" type="checkbox" name="active"
-                                                            id="roomActive{{ r.id }}" {% if r.active %}checked{% endif
-                                                            %}>
-                                                        <label class="form-check-label small"
-                                                            for="roomActive{{ r.id }}">Aktif</label>
+                                    #roomsTable small {
+                                        color: var(--text-muted);
+                                    }
+
+                                    #roomsTable .badge {
+                                        font-weight: 600;
+                                    }
+                                </style>
+                                <table class="table table-hover align-middle mb-0" id="roomsTable">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 36%;">Nama Ruangan</th>
+                                            <th style="width: 16%;">Kategori</th>
+                                            <th style="width: 12%;">Aspek</th>
+                                            <th style="width: 16%;">Status</th>
+                                            <th class="text-end" style="width: 20%;">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="roomsTableBody">
+                                        {% for r in rooms %}
+                                        <tr id="room-{{ r.id }}"
+                                            class="room-row border-bottom {% if not r.active %}room-inactive{% endif %}"
+                                            data-room-id="{{ r.id }}" data-room-name="{{ r.name|lower }}"
+                                            data-room-category="{{ r.category|lower }}"
+                                            data-room-active="{{ 'true' if r.active else 'false' }}">
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="icon-badge text-success"><i
+                                                            class="bi bi-door-open-fill"></i></span>
+                                                    <div>
+                                                        <div class="fw-semibold">{{ r.name }}</div>
+                                                        {% if r.description %}
+                                                        <small class="text-muted">{{ r.description }}</small>
+                                                        {% endif %}
                                                     </div>
                                                 </div>
-                                                <div class="col-md-2 d-flex align-items-end">
-                                                    <button type="submit" class="btn btn-primary btn-sm w-100">
-                                                        <i class="bi bi-check-lg me-1"></i>Simpan
+                                            </td>
+                                            <td><span class="badge bg-secondary text-uppercase">{{ r.category }}</span>
+                                            </td>
+                                            <td><span class="badge bg-primary">{{ r.aspects|length }}</span></td>
+                                            <td>
+                                                <form method="POST"
+                                                    action="{{ url_for('portal.toggle_room_status', room_id=r.id) }}"
+                                                    class="d-inline">
+                                                    <button type="submit"
+                                                        class="btn btn-sm px-3 {% if r.active %}btn-success{% else %}btn-outline-danger{% endif %}"
+                                                        title="Klik untuk {% if r.active %}nonaktifkan{% else %}aktifkan{% endif %}">
+                                                        <i
+                                                            class="bi {% if r.active %}bi-toggle-on{% else %}bi-toggle-off{% endif %} me-1"></i>
+                                                        {% if r.active %}Aktif{% else %}Nonaktif{% endif %}
+                                                    </button>
+                                                </form>
+                                            </td>
+                                            <td class="text-end">
+                                                <div class="btn-group btn-group-sm">
+                                                    <button type="button" class="btn btn-outline-primary"
+                                                        data-bs-toggle="collapse" data-bs-target="#roomDetail{{ r.id }}"
+                                                        title="Lihat Detail">
+                                                        <i class="bi bi-chevron-down"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-danger"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#deleteRoomModal{{ r.id }}" title="Hapus">
+                                                        <i class="bi bi-trash"></i>
                                                     </button>
                                                 </div>
-                                                <div class="col-12">
-                                                    <input type="text" name="description"
-                                                        class="form-control form-control-sm"
-                                                        value="{{ r.description or '' }}"
-                                                        placeholder="Deskripsi (opsional)">
-                                                </div>
-                                            </form>
-
-                                            <!-- Aspects Section -->
-                                            <div class="border-top pt-3">
-                                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                                    <span class="fw-semibold small"><i
-                                                            class="bi bi-list-check text-primary me-1"></i>Aspek
-                                                        Penilaian ({{ r.aspects|length }})</span>
-                                                </div>
-                                                {% if r.aspects %}
-                                                <div class="row g-2 mb-3">
-                                                    {% for a in r.aspects %}
-                                                    <div class="col-md-6">
-                                                        <div
-                                                            class="d-flex align-items-center justify-content-between p-2 border rounded small {% if not a.active %}opacity-50{% endif %}">
-                                                            <div class="d-flex align-items-center gap-2">
-                                                                <i class="bi bi-check-circle-fill text-success"></i>
-                                                                <span>{{ a.name }}</span>
-                                                                {% if not a.active %}<span
-                                                                    class="badge bg-danger">Off</span>{% endif %}
-                                                            </div>
-                                                            <div class="btn-group btn-group-sm">
-                                                                <button type="button"
-                                                                    class="btn btn-link btn-sm p-0 px-1 text-primary"
-                                                                    data-bs-toggle="modal"
-                                                                    data-bs-target="#editAspectModal{{ a.id }}"><i
-                                                                        class="bi bi-pencil"></i></button>
-                                                                <button type="button"
-                                                                    class="btn btn-link btn-sm p-0 px-1 text-danger"
-                                                                    data-bs-toggle="modal"
-                                                                    data-bs-target="#deleteAspectModal{{ a.id }}"><i
-                                                                        class="bi bi-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                        <!-- Expandable Detail Row -->
+                                        <tr class="collapse" id="roomDetail{{ r.id }}">
+                                            <td colspan="5" class="p-0">
+                                                <div class="p-3 border-top" style="background: var(--bg-subtle);">
+                                                    <!-- Edit Room Form -->
+                                                    <form method="POST"
+                                                        action="{{ url_for('portal.edit_room', room_id=r.id) }}"
+                                                        class="row g-2 mb-3">
+                                                        <div class="col-md-4">
+                                                            <label class="form-label small mb-1">Nama Ruangan</label>
+                                                            <input type="text" name="name"
+                                                                class="form-control form-control-sm"
+                                                                value="{{ r.name }}" required>
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <label class="form-label small mb-1">Kategori</label>
+                                                            <select name="category" class="form-select form-select-sm">
+                                                                <option value="umum" {% if r.category=='umum'
+                                                                    %}selected{% endif %}>Umum</option>
+                                                                <option value="akademik" {% if r.category=='akademik'
+                                                                    %}selected{% endif %}>Akademik</option>
+                                                                <option value="fasilitas" {% if r.category=='fasilitas'
+                                                                    %}selected{% endif %}>Fasilitas</option>
+                                                                <option value="sanitasi" {% if r.category=='sanitasi'
+                                                                    %}selected{% endif %}>Sanitasi</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <label class="form-label small mb-1">Urutan</label>
+                                                            <input type="number" name="sort_order"
+                                                                class="form-control form-control-sm"
+                                                                value="{{ r.sort_order }}">
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <label class="form-label small mb-1">Status</label>
+                                                            <div class="form-check mt-1">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    name="active" id="roomActive{{ r.id }}" {% if
+                                                                    r.active %}checked{% endif %}>
+                                                                <label class="form-check-label small"
+                                                                    for="roomActive{{ r.id }}">Aktif</label>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    {% endfor %}
-                                                </div>
-                                                {% else %}
-                                                <p class="text-muted small mb-3">Belum ada aspek penilaian</p>
-                                                {% endif %}
+                                                        <div class="col-md-2 d-flex align-items-end">
+                                                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                                                <i class="bi bi-check-lg me-1"></i>Simpan
+                                                            </button>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <input type="text" name="description"
+                                                                class="form-control form-control-sm"
+                                                                value="{{ r.description or '' }}"
+                                                                placeholder="Deskripsi (opsional)">
+                                                        </div>
+                                                    </form>
 
-                                                <!-- Add Aspect (Batch) -->
-                                                <div class="row g-2 align-items-end">
-                                                    <div class="col-md-6">
-                                                        <input type="text"
-                                                            class="form-control form-control-sm inline-aspect-input"
+                                                    <!-- Aspects Section -->
+                                                    <div class="border-top pt-3">
+                                                        <div
+                                                            class="d-flex justify-content-between align-items-center mb-2">
+                                                            <span class="fw-semibold small"><i
+                                                                    class="bi bi-list-check text-primary me-1"></i>Aspek
+                                                                Penilaian ({{ r.aspects|length }})</span>
+                                                        </div>
+                                                        {% if r.aspects %}
+                                                        <div class="row g-2 mb-3">
+                                                            {% for a in r.aspects %}
+                                                            <div class="col-md-6">
+                                                                <div
+                                                                    class="d-flex align-items-center justify-content-between p-2 border rounded small {% if not a.active %}opacity-50{% endif %}">
+                                                                    <div class="d-flex align-items-center gap-2">
+                                                                        <i
+                                                                            class="bi bi-check-circle-fill text-success"></i>
+                                                                        <span>{{ a.name }}</span>
+                                                                        {% if not a.active %}<span
+                                                                            class="badge bg-danger">Off</span>{% endif
+                                                                        %}
+                                                                    </div>
+                                                                    <div class="btn-group btn-group-sm">
+                                                                        <button type="button"
+                                                                            class="btn btn-link btn-sm p-0 px-1 text-primary"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#editAspectModal{{ a.id }}"><i
+                                                                                class="bi bi-pencil"></i></button>
+                                                                        <button type="button"
+                                                                            class="btn btn-link btn-sm p-0 px-1 text-danger"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#deleteAspectModal{{ a.id }}"><i
+                                                                                class="bi bi-trash"></i></button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                        {% else %}
+                                                        <p class="text-muted small mb-3">Belum ada aspek penilaian</p>
+                                                        {% endif %}
+
+                                                        <!-- Add Aspect (Batch) -->
+                                                        <div class="row g-2 align-items-end">
+                                                            <div class="col-md-6">
+                                                                <input type="text"
+                                                                    class="form-control form-control-sm inline-aspect-input"
+                                                                    data-room-id="{{ r.id }}"
+                                                                    placeholder="Nama aspek baru (Enter untuk tambah ke list)">
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <button type="button"
+                                                                    class="btn btn-outline-secondary btn-sm w-100 inline-add-btn"
+                                                                    data-room-id="{{ r.id }}">
+                                                                    <i class="bi bi-plus"></i> Ke List
+                                                                </button>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <button type="button"
+                                                                    class="btn btn-success btn-sm w-100 inline-save-btn d-none"
+                                                                    data-room-id="{{ r.id }}">
+                                                                    <i class="bi bi-check-lg me-1"></i>Simpan <span
+                                                                        class="inline-aspect-count">0</span>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <!-- Preview List -->
+                                                        <div class="inline-aspect-preview mt-2"
                                                             data-room-id="{{ r.id }}"
-                                                            placeholder="Nama aspek baru (Enter untuk tambah ke list)">
-                                                    </div>
-                                                    <div class="col-md-3">
-                                                        <button type="button"
-                                                            class="btn btn-outline-secondary btn-sm w-100 inline-add-btn"
-                                                            data-room-id="{{ r.id }}">
-                                                            <i class="bi bi-plus"></i> Ke List
-                                                        </button>
-                                                    </div>
-                                                    <div class="col-md-3">
-                                                        <button type="button"
-                                                            class="btn btn-success btn-sm w-100 inline-save-btn d-none"
-                                                            data-room-id="{{ r.id }}">
-                                                            <i class="bi bi-check-lg me-1"></i>Simpan <span
-                                                                class="inline-aspect-count">0</span>
-                                                        </button>
+                                                            style="max-height: 150px; overflow-y: auto;">
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <!-- Preview List -->
-                                                <div class="inline-aspect-preview mt-2" data-room-id="{{ r.id }}"
-                                                    style="max-height: 150px; overflow-y: auto;">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted mb-0">Belum ada ruangan</p>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Schools List -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <span class="icon-badge section-icon text-primary">
-                            <i class="bi bi-building"></i>
-                        </span>
-                        <div>
-                            <h2 class="h6 fw-bold mb-0">Daftar Sekolah</h2>
-                            <p class="text-muted mb-0 small">{{ schools|length }} sekolah terdaftar</p>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0">Belum ada ruangan</p>
+                            {% endif %}
                         </div>
                     </div>
-                    {% if schools %}
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover mb-0">
-                            <thead>
-                                <tr>
-                                    <th>NPSN</th>
-                                    <th>Nama</th>
-                                    <th>Jenjang</th>
-                                    <th>Status</th>
-                                    <th>Kecamatan</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for s in schools[:20] %}
-                                <tr>
-                                    <td><code>{{ s.npsn }}</code></td>
-                                    <td>{{ s.name }}</td>
-                                    <td><span class="badge bg-secondary bg-opacity-75">{{ s.jenjang }}</span></td>
-                                    <td><span
-                                            class="badge {% if s.status == 'NEGERI' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{
-                                            s.status or '-' }}</span></td>
-                                    <td class="text-muted small">{{ s.kecamatan_name or '-' }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% if schools|length > 20 %}
-                    <p class="text-muted small mt-2 mb-0">...dan {{ schools|length - 20 }} sekolah lainnya</p>
-                    {% endif %}
-                    {% else %}
-                    <p class="text-muted mb-0">Belum ada sekolah</p>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -915,6 +1031,131 @@
 {% block portal_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // ===== School Search & Pagination =====
+        const schoolSearch = document.getElementById('schoolSearch');
+        const schoolRows = document.querySelectorAll('.school-row');
+        const schoolPrevBtn = document.getElementById('schoolPrevBtn');
+        const schoolNextBtn = document.getElementById('schoolNextBtn');
+        const schoolShowingStart = document.getElementById('schoolShowingStart');
+        const schoolShowingEnd = document.getElementById('schoolShowingEnd');
+        const schoolTotalFiltered = document.getElementById('schoolTotalFiltered');
+
+        const PAGE_SIZE = 20;
+        let currentPage = 0;
+        let filteredSchools = Array.from(schoolRows);
+        let activeFilters = { jenjang: '', status: '', kecamatan: '', search: '' };
+
+        function updateSchoolTable() {
+            const start = currentPage * PAGE_SIZE;
+            const end = Math.min(start + PAGE_SIZE, filteredSchools.length);
+
+            // Hide all rows first
+            schoolRows.forEach(row => row.style.display = 'none');
+
+            // Show only current page
+            for (let i = start; i < end; i++) {
+                if (filteredSchools[i]) {
+                    filteredSchools[i].style.display = '';
+                }
+            }
+
+            // Update indicators
+            if (schoolShowingStart) schoolShowingStart.textContent = filteredSchools.length > 0 ? start + 1 : 0;
+            if (schoolShowingEnd) schoolShowingEnd.textContent = end;
+            if (schoolTotalFiltered) schoolTotalFiltered.textContent = filteredSchools.length;
+
+            // Update button states
+            if (schoolPrevBtn) schoolPrevBtn.disabled = currentPage === 0;
+            if (schoolNextBtn) schoolNextBtn.disabled = end >= filteredSchools.length;
+        }
+
+        function applyFilters() {
+            const searchQuery = activeFilters.search.toLowerCase().trim();
+            filteredSchools = Array.from(schoolRows).filter(row => {
+                const npsn = row.dataset.npsn || '';
+                const name = row.dataset.name || '';
+                const jenjang = row.dataset.jenjang || '';
+                const kecamatan = row.dataset.kecamatan || '';
+                const status = row.dataset.status || '';
+
+                // Check column filters
+                if (activeFilters.jenjang && jenjang !== activeFilters.jenjang) return false;
+                if (activeFilters.status && status !== activeFilters.status) return false;
+                if (activeFilters.kecamatan && kecamatan !== activeFilters.kecamatan) return false;
+
+                // Check search query
+                if (searchQuery.length >= 2) {
+                    return npsn.includes(searchQuery) || name.includes(searchQuery) || jenjang.includes(searchQuery) || kecamatan.includes(searchQuery);
+                }
+                return true;
+            });
+            currentPage = 0;
+            updateSchoolTable();
+        }
+
+        // Setup column dropdown filters
+        function setupColumnFilter(menuId, badgeId, filterKey) {
+            const menu = document.getElementById(menuId);
+            const badge = document.getElementById(badgeId);
+            if (!menu) return;
+
+            menu.querySelectorAll('.dropdown-item').forEach(item => {
+                item.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const value = this.dataset.filterValue || '';
+                    activeFilters[filterKey] = value;
+
+                    // Update active state
+                    menu.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Update badge
+                    if (badge) {
+                        if (value) {
+                            badge.textContent = this.textContent.trim();
+                            badge.classList.remove('d-none');
+                        } else {
+                            badge.classList.add('d-none');
+                        }
+                    }
+
+                    applyFilters();
+                });
+            });
+        }
+
+        setupColumnFilter('jenjangFilterMenu', 'jenjangFilterBadge', 'jenjang');
+        setupColumnFilter('statusFilterMenu', 'statusFilterBadge', 'status');
+        setupColumnFilter('kecamatanFilterMenu', 'kecamatanFilterBadge', 'kecamatan');
+
+        if (schoolSearch) {
+            schoolSearch.addEventListener('input', function () {
+                activeFilters.search = this.value;
+                applyFilters();
+            });
+        }
+
+        if (schoolPrevBtn) {
+            schoolPrevBtn.addEventListener('click', function () {
+                if (currentPage > 0) {
+                    currentPage--;
+                    updateSchoolTable();
+                }
+            });
+        }
+
+        if (schoolNextBtn) {
+            schoolNextBtn.addEventListener('click', function () {
+                if ((currentPage + 1) * PAGE_SIZE < filteredSchools.length) {
+                    currentPage++;
+                    updateSchoolTable();
+                }
+            });
+        }
+
+        // Initialize
+        updateSchoolTable();
+
         // ===== Room Search Filter =====
         const searchInput = document.getElementById('roomSearch');
         const roomRows = document.querySelectorAll('.room-row');

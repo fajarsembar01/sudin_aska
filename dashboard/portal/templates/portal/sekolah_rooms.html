@@ -114,6 +114,30 @@
                             </li>
                         </ul>
 
+                        <!-- Room Search (below tabs, filters active tab only) -->
+                        <div class="mb-3">
+                            <div class="position-relative">
+                                <input type="text" id="roomSearchInput" class="form-control form-control-sm"
+                                    placeholder="Cari ruangan di tab ini (min 3 huruf)..." autocomplete="off">
+                                <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-3 text-muted"
+                                    style="pointer-events: none;"></i>
+                            </div>
+                            <!-- No results message with contact admin -->
+                            <div id="noRoomResultsMsg"
+                                class="alert alert-warning py-2 mt-2 d-none align-items-center gap-2">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <span>Ruangan "<strong id="searchQueryDisplay"></strong>" tidak ditemukan di tab
+                                    ini.</span>
+                                <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
+                                    data-bs-toggle="modal" data-bs-target="#coordinatorModal">
+                                    <i class="bi bi-headset me-1"></i>Hubungi Admin {% if user_school and
+                                    user_school.kecamatan_name %}<span class="badge bg-secondary ms-1">{{
+                                        user_school.kecamatan_name }}</span>{% endif %}
+                                </button>
+                            </div>
+
+                        </div>
+
                         <div class="tab-content" id="roomJenjangTabContent">
                             <!-- SD Rooms -->
                             <div class="tab-pane fade" id="sd-rooms" role="tabpanel">
@@ -326,6 +350,90 @@
                 toggleAll(true, targetId);
             });
         }
+
+        // ===== Room Search (filters active tab only) =====
+        const roomSearchInput = document.getElementById('roomSearchInput');
+        const noResultsMsg = document.getElementById('noRoomResultsMsg');
+        const searchQueryDisplay = document.getElementById('searchQueryDisplay');
+
+        function filterActiveTabRooms() {
+            if (!roomSearchInput) {
+                console.warn('Room search input not found');
+                return;
+            }
+            const query = roomSearchInput.value.toLowerCase().trim();
+            const activePane = document.querySelector('#roomJenjangTabContent .tab-pane.show.active');
+            if (!activePane) {
+                console.warn('No active tab pane found');
+                return;
+            }
+
+            // Select all room labels in the active tab
+            const roomLabels = activePane.querySelectorAll('.list-group > label, label.list-group-item');
+            let foundCount = 0;
+            let totalCount = roomLabels.length;
+
+            roomLabels.forEach(label => {
+                // Find the room name element
+                const roomNameEl = label.querySelector('.fw-semibold');
+                const text = roomNameEl ? roomNameEl.textContent.toLowerCase().trim() : '';
+
+                // Show all if query is less than 3 chars, otherwise filter
+                if (query.length < 3 || text.includes(query)) {
+                    label.style.display = '';
+                    label.classList.remove('d-none');
+                    if (query.length >= 3 && text.includes(query)) foundCount++;
+                } else {
+                    label.style.display = 'none';
+                    label.classList.add('d-none');
+                }
+            });
+
+            // Count visible when query < 3
+            if (query.length < 3) {
+                foundCount = totalCount;
+            }
+
+            // Show/hide no results message
+            if (noResultsMsg && searchQueryDisplay) {
+                if (query.length >= 3 && foundCount === 0) {
+                    searchQueryDisplay.textContent = query;
+                    noResultsMsg.classList.remove('d-none');
+                    noResultsMsg.classList.add('d-flex');
+                } else {
+                    noResultsMsg.classList.add('d-none');
+                    noResultsMsg.classList.remove('d-flex');
+                }
+            }
+        }
+
+        if (roomSearchInput) {
+            // Attach input event listener
+            roomSearchInput.addEventListener('input', filterActiveTabRooms);
+            // Also attach keyup for extra compatibility
+            roomSearchInput.addEventListener('keyup', filterActiveTabRooms);
+        }
+
+        // Clear search and reset when tab changes
+        document.querySelectorAll('#roomJenjangTab button[data-bs-toggle="tab"]').forEach(btn => {
+            btn.addEventListener('shown.bs.tab', function () {
+                if (roomSearchInput) {
+                    roomSearchInput.value = '';
+                }
+                if (noResultsMsg) {
+                    noResultsMsg.classList.add('d-none');
+                    noResultsMsg.classList.remove('d-flex');
+                }
+                // Reset all rooms visibility in new active tab
+                const activePane = document.querySelector('#roomJenjangTabContent .tab-pane.show.active');
+                if (activePane) {
+                    activePane.querySelectorAll('.list-group > label, label.list-group-item').forEach(label => {
+                        label.style.display = '';
+                        label.classList.remove('d-none');
+                    });
+                }
+            });
+        });
     });
 </script>
 {% if user_school %}
@@ -522,7 +630,7 @@
     </div>
 </div>
 
-{% include "portal/components/_coordinator_modal.html" %}
+
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -532,7 +640,7 @@
     if (shouldShow && profileModalEl && window.bootstrap) {
         var modal = new bootstrap.Modal(profileModalEl, { backdrop: 'static', keyboard: false });
         // Hide prev button on first step when modal opens
-        profileModalEl.addEventListener('shown.bs.modal', function() {
+        profileModalEl.addEventListener('shown.bs.modal', function () {
             var prevBtnInit = document.getElementById('modalPrev');
             if (prevBtnInit) {
                 prevBtnInit.style.visibility = 'hidden';
@@ -773,4 +881,7 @@
     });
 </script>
 {% endif %}
+
+{% include "portal/components/_coordinator_modal.html" %}
+
 {% endblock %}

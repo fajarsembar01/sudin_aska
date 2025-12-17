@@ -750,6 +750,38 @@ def delete_assessment_route(assessment_id: int) -> Response:
     return redirect(url_for("portal.admin_stats"))
 
 
+@portal_bp.route("/assessment/<int:assessment_id>/delete-draft", methods=["POST"])
+@_portal_access_required
+def delete_draft_route(assessment_id: int) -> Response:
+    """Staff deletes their own draft assessment."""
+    user = current_user()
+    if user.get("role") not in ("admin", "staff"):
+        flash("Unauthorized", "danger")
+        return redirect(url_for("portal.home"))
+
+    assessment = get_assessment_by_id(assessment_id)
+    if not assessment:
+        flash("Penilaian tidak ditemukan.", "warning")
+        return redirect(url_for("portal.home"))
+
+    # Only drafts can be deleted by staff
+    if assessment.get("status") != "draft":
+        flash("Hanya draft yang dapat dihapus.", "warning")
+        return redirect(url_for("portal.home"))
+
+    # Only the owner (or admin) can delete
+    if assessment["staff_id"] != user["id"] and user["role"] != "admin":
+        flash("Anda tidak memiliki akses untuk menghapus draft ini.", "danger")
+        return redirect(url_for("portal.home"))
+
+    if delete_assessment(assessment_id):
+        flash("Draft penilaian berhasil dihapus.", "success")
+    else:
+        flash("Gagal menghapus draft.", "danger")
+
+    return redirect(url_for("portal.home"))
+
+
 # ===== Sekolah Portal Routes =====
 
 
