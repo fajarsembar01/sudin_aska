@@ -1,0 +1,210 @@
+{% extends "documentation/layout.html" %}
+
+{% block title %}Setup Email Domain - Dokumentasi{% endblock %}
+
+{% block doc_content %}
+<article class="docs-article">
+    <header class="mb-5 border-bottom pb-4" style="border-color: var(--border-soft) !important;">
+        <h1 class="fw-bold mb-3" style="color: var(--text-primary);">Cara Membuat Email Domain Sendiri Gratis</h1>
+        <p class="lead" style="color: var(--text-secondary);">Panduan lengkap membuat email profesional (seperti
+            <code>admin@sudindikju2.com</code>) menggunakan Cloudflare dan Gmail.
+        </p>
+    </header>
+
+    <div class="doc-body" style="color: var(--text-secondary);">
+
+        <section class="mb-5">
+            <h3 class="fw-bold mb-3" style="color: var(--text-primary);">Langkah 1: Request Pembuatan Email</h3>
+            <div class="alert alert-info d-flex align-items-center" role="alert">
+                <i class="bi bi-info-circle-fill flex-shrink-0 me-2"></i>
+                <div>
+                    Bagian teknis (Cloudflare/DNS) akan ditangani oleh developer. Anda cukup request melalui WhatsApp.
+                </div>
+            </div>
+
+            <div class="card mb-3 border-0 bg-subtle" style="background-color: var(--bg-subtle);">
+                <div class="card-body">
+                    <div class="card mb-3 border-0 bg-subtle" style="background-color: var(--bg-subtle);">
+                        <div class="card-body">
+                            <p class="mb-3">Silakan isi data berikut untuk request pembuatan email:</p>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label for="emailSudin" class="form-label small fw-bold">Email Sudin yang
+                                        diinginkan</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="emailSudinInput"
+                                            placeholder="misal: admin" aria-label="Username">
+                                        <span class="input-group-text text-muted">@sudindikju2.com</span>
+                                    </div>
+                                    <div class="form-text small">Contoh: admin@sudindikju2.com</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="emailGmail" class="form-label small fw-bold">Email Gmail
+                                        Penampung</label>
+                                    <input type="email" class="form-control" id="emailGmailInput"
+                                        placeholder="contoh: budi@gmail.com">
+                                    <div class="invalid-feedback">Mohon masukkan alamat email Gmail yang valid.</div>
+                                    <div class="form-text small">Email Gmail aktif milik Anda.</div>
+                                </div>
+                            </div>
+
+                            <div id="waButtonContainer" class="d-none">
+                                <hr class="border-soft">
+                                <p class="small text-muted mb-2">Klik tombol di bawah untuk mengirim request ke
+                                    Developer:</p>
+                                <a href="#" id="waLinkBtn"
+                                    class="btn btn-success d-inline-flex align-items-center gap-2 w-100 justify-content-center py-2"
+                                    target="_blank">
+                                    <i class="bi bi-whatsapp fs-5"></i>
+                                    <span class="fw-medium">Kirim Request via WhatsApp</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const sudinInput = document.getElementById('emailSudinInput');
+                            const gmailInput = document.getElementById('emailGmailInput');
+                            const waContainer = document.getElementById('waButtonContainer');
+                            const waBtn = document.getElementById('waLinkBtn');
+                            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                            function updateLink() {
+                                const sudinName = sudinInput.value.trim();
+                                const gmail = gmailInput.value.trim();
+
+                                // Reset validation state
+                                gmailInput.classList.remove('is-invalid');
+                                waContainer.classList.add('d-none');
+
+                                if (sudinName && gmail) {
+                                    if (!emailRegex.test(gmail)) {
+                                        gmailInput.classList.add('is-invalid');
+                                        return;
+                                    }
+
+                                    const fullSudinEmail = sudinName + "@sudindikju2.com";
+                                    const message = `Halo Kak Fajar, saya mau request bikin email sudin.\n\nEmail Sudin yg diminta: ${fullSudinEmail}\nEmail Gmail Penampung: ${gmail}`;
+                                    const encodedMsg = encodeURIComponent(message);
+                                    waBtn.href = `https://wa.me/6282143646463?text=${encodedMsg}`;
+                                    waContainer.classList.remove('d-none');
+                                }
+                            }
+
+                            sudinInput.addEventListener('input', updateLink);
+                            gmailInput.addEventListener('input', updateLink);
+                        });
+                    </script>
+                </div>
+            </div>
+            <p>Setelah request diproses dan dikonfirmasi aktif oleh Developer, silakan lanjut ke <strong>Langkah
+                    2</strong>.</p>
+        </section>
+
+        <section class="mb-5">
+            <h3 class="fw-bold mb-3" style="color: var(--text-primary);">Langkah 2: Setup Gmail agar Bisa Mengirim</h3>
+            <div class="alert alert-warning mb-4">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>Tunggu Konfirmasi!</strong> Jangan lakukan langkah ini sebelum mendapat konfirmasi dari
+                Developer bahwa email routing sudah aktif.
+            </div>
+
+            <h5 class="fw-bold mb-3" style="color: var(--text-primary);">A. Buat App Password Google</h5>
+            <div class="row g-4 mb-4">
+                <div class="col-md-7">
+                    <ol class="ps-3 mb-0">
+                        <li class="mb-2">Buka <a href="https://myaccount.google.com/security" target="_blank">Keamanan
+                                Akun Google</a>.</li>
+                        <li class="mb-2">Pastikan <strong>2-Step Verification</strong> sudah aktif.</li>
+                        <li class="mb-2">Cari menu <strong>App Passwords</strong> (Sandi Aplikasi).</li>
+                        <li class="mb-2">Buat password baru dengan nama "Email Domain".</li>
+                        <li class="mb-2"><strong>Salin kode 16 digit</strong> yang muncul.</li>
+                    </ol>
+                </div>
+                <div class="col-md-5">
+                    <img src="{{ url_for('static', filename='img/google_app_pass.png') }}"
+                        class="img-fluid rounded border shadow-sm" alt="Google App Password Setting">
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3 mt-4" style="color: var(--text-primary);">B. Setting SMTP di Gmail</h5>
+            <div class="row g-4">
+                <div class="col-md-7">
+                    <ol class="ps-3 mb-4">
+                        <li class="mb-2">Buka Gmail > Settings (⚙️) > <strong>Accounts and Import</strong>.</li>
+                        <li class="mb-2">Klik <strong>Add another email address</strong>.</li>
+                        <li class="mb-2">Masukkan Nama dan Email Domain baru.</li>
+                        <li class="mb-2"><span class="badge bg-danger">PENTING</span> Hilangkan centang <strong>Treat as
+                                an alias</strong>.</li>
+                        <li class="mb-2">Isi pengaturan SMTP seperti gambar di samping:
+                            <div class="p-3 rounded mt-2 font-monospace small"
+                                style="background-color: var(--bg-surface); border: 1px solid var(--border-soft);">
+                                <strong>SMTP Server:</strong> smtp.gmail.com<br>
+                                <strong>Port:</strong> 587 (TLS)<br>
+                                <strong>Username:</strong> [Email Gmail ASLI Anda]<br>
+                                <strong>Password:</strong> [Kode App Password 16 digit]<br>
+                            </div>
+                        </li>
+                        <li>Klik <strong>Add Account</strong> dan verifikasi kode yang dikirim ke email.</li>
+                    </ol>
+                </div>
+                <div class="col-md-5">
+                    <img src="{{ url_for('static', filename='img/gmail_smtp.png') }}"
+                        class="img-fluid rounded border shadow-sm" alt="Gmail SMTP Setting">
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-5">
+            <h3 class="fw-bold mb-3" style="color: var(--text-primary);">Langkah 3: Cara Mengirim Email dengan Domain
+                Baru</h3>
+            <p>Setelah setup selesai, Anda bisa langsung menggunakan email baru ini dari dalam Gmail.</p>
+
+            <div class="row g-4 mt-2">
+                <div class="col-md-6">
+                    <div class="card h-100 border-soft">
+                        <img src="{{ url_for('static', filename='img/gmail_compose.png') }}"
+                            class="card-img-top p-2 rounded-top" alt="Tombol Compose Gmail"
+                            style="object-fit: contain; max-height: 200px; background: #f8f9fa;">
+                        <div class="card-body">
+                            <h6 class="fw-bold">1. Buat Pesan Baru</h6>
+                            <p class="small text-muted mb-0">Klik tombol <strong>Compose (Tulis)</strong> di Gmail
+                                seperti biasa untuk memulai pesan baru.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100 border-soft">
+                        <img src="{{ url_for('static', filename='img/gmail_select.png') }}"
+                            class="card-img-top p-2 rounded-top" alt="Pilih Email Pengirim"
+                            style="object-fit: contain; max-height: 200px; background: #f8f9fa;">
+                        <div class="card-body">
+                            <h6 class="fw-bold">2. Pilih Pengirim (From)</h6>
+                            <p class="small text-muted mb-0">Klik pada bagian <strong>From (Dari)</strong>, lalu pilih
+                                email domain Anda (contoh: <code>admin@sudindikju2.com</code>) dari dropdown list.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-secondary mt-4 d-flex align-items-center">
+                <i class="bi bi-lightbulb-fill text-warning me-3 fs-4"></i>
+                <div class="small">
+                    <strong>Tips:</strong> Saat Anda menerima email di alamat domain dan membalasnya (Reply), Gmail
+                    biasanya otomatis memilih alamat domain tersebut sebagai pengirim. Namun, selalu pastikan ulang
+                    sebelum mengirim!
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-5" style="border-color: var(--border-soft);">
+
+        <div class="text-center p-4 rounded" style="background-color: var(--bg-muted);">
+            <h4 class="fw-bold" style="color: var(--accent);">Selesai! 🎉</h4>
+            <p class="mb-0">Email domain Anda siap digunakan.</p>
+        </div>
+    </div>
+</article>
+{% endblock %}

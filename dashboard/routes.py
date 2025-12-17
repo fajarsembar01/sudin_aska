@@ -1049,3 +1049,13 @@ def export_chats() -> Response:
     response = Response(buffer.getvalue(), mimetype="text/csv")
     response.headers["Content-Disposition"] = f"attachment; filename={filename}"
     return response
+
+
+@main_bp.route("/documentation")
+def documentation() -> Response:
+    return redirect(url_for("main.doc_email_setup"))
+
+
+@main_bp.route("/documentation/email-setup")
+def doc_email_setup() -> Response:
+    return render_template("documentation/email_setup.html")
