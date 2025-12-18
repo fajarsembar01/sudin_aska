@@ -787,6 +787,48 @@ def fetch_top_schools(limit: int = 5, period_id: Optional[int] = None) -> List[D
         columns = [desc[0] for desc in cur.description]
         return [dict(zip(columns, row)) for row in cur.fetchall()]
 
+def log_activity(
+    user_id: Optional[int],
+    action: str,
+    target_type: str,
+    target_id: Optional[int],
+    target_name: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+) -> None:
+    """Log an admin activity."""
+    import json
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO portal_activity_logs 
+                (user_id, action, target_type, target_id, target_name, details)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (user_id, action, target_type, target_id, target_name, json.dumps(details) if details else None),
+        )
+
+def fetch_activity_logs(limit: int = 50) -> List[Dict[str, Any]]:
+    """Fetch recent activity logs."""
+    query = """
+        SELECT 
+            l.id, l.user_id, l.action, l.target_type, l.target_id, l.target_name, 
+            l.details, l.created_at,
+            u.full_name as user_name, u.email as user_email
+        FROM portal_activity_logs l
+        LEFT JOIN dashboard_users u ON l.user_id = u.id
+        ORDER BY l.created_at DESC
+        LIMIT %s
+    """
+    with get_cursor() as cur:
+        cur.execute(query, (limit,))
+        return [dict(row) for row in cur.fetchall()]
+
+def delete_school(school_id: int) -> bool:
+    """Delete a school by ID."""
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM portal_schools WHERE id = %s", (school_id,))
+        return cur.rowcount > 0
+
 def fetch_bottom_schools(limit: int = 5, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
     """Fetch lowest performing schools based on their latest assessment."""
     where = "WHERE a.status = 'submitted'"
@@ -1126,6 +1168,18 @@ def delete_aspect(aspect_id: int) -> bool:
             )
         return cur.fetchone() is not None
 
+
+def get_school_by_npsn(npsn: str) -> Optional[Dict[str, Any]]:
+    """Get a school by its NPSN (exact match)."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT * FROM portal_schools WHERE npsn = %s
+            """,
+            (npsn,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
 
 def create_school(
     npsn: str,

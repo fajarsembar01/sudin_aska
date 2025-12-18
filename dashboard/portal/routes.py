@@ -1113,12 +1113,17 @@ def admin_setup() -> Response:
     schools = list_portal_schools(active_only=False)
     kecamatan_list = list_kecamatan()
     kelurahan_list = list_kelurahan()
+    
+    from .queries import fetch_activity_logs
+    activity_logs = fetch_activity_logs(limit=50)
+    
     return render_template(
         "portal/admin_setup.html",
         rooms=rooms,
         schools=schools,
         kecamatan_list=kecamatan_list,
         kelurahan_list=kelurahan_list,
+        activity_logs=activity_logs,
     )
 
 
@@ -1137,6 +1142,10 @@ def add_room() -> Response:
     
     try:
         create_room(name, description, category, sort_order)
+        
+        from .queries import log_activity
+        log_activity(current_user().get("id"), "CREATE", "ROOM", None, name, {"category": category})
+        
         flash(f"Ruangan '{name}' berhasil ditambahkan.", "success")
     except Exception as e:
         flash(f"Error: {e}", "danger")
@@ -1159,6 +1168,10 @@ def add_aspect() -> Response:
     
     try:
         create_aspect(int(room_id), name, description, sort_order)
+        
+        from .queries import log_activity
+        log_activity(current_user().get("id"), "CREATE", "ASPECT", None, name, {"room_id": room_id})
+        
         flash(f"Aspek '{name}' berhasil ditambahkan.", "success")
     except Exception as e:
         flash(f"Error: {e}", "danger")
@@ -1189,6 +1202,10 @@ def add_aspects_batch() -> Response:
         
         try:
             create_aspect(int(room_id), name, None, 0)
+            
+            from .queries import log_activity
+            log_activity(current_user().get("id"), "CREATE", "ASPECT", None, name, {"room_id": room_id, "batch": True})
+            
             created_count += 1
         except Exception as e:
             errors.append(f"Error creating '{name}': {str(e)}")
@@ -1220,6 +1237,9 @@ def edit_room(room_id: int) -> Response:
     try:
         result = update_room(room_id, name, description, category, sort_order, active)
         if result:
+            from .queries import log_activity
+            log_activity(current_user().get("id"), "UPDATE", "ROOM", room_id, name, {"active": active})
+            
             flash(f"Ruangan '{name}' berhasil diperbarui.", "success")
         else:
             flash("Ruangan tidak ditemukan.", "warning")
@@ -1249,6 +1269,9 @@ def toggle_room_status(room_id: int) -> Response:
             new_status
         )
         if result:
+            from .queries import log_activity
+            log_activity(current_user().get("id"), "UPDATE", "ROOM", room_id, room["name"], {"status": "active" if new_status else "inactive"})
+            
             status_text = "diaktifkan" if new_status else "dinonaktifkan"
             flash(f"Ruangan '{room['name']}' berhasil {status_text}.", "success")
         else:
@@ -1278,6 +1301,9 @@ def toggle_room_status_api(room_id: int) -> Response:
             new_status
         )
         if result:
+            from .queries import log_activity
+            log_activity(current_user().get("id"), "UPDATE", "ROOM", room_id, room["name"], {"status": "active" if new_status else "inactive"})
+            
             return jsonify({"success": True, "active": new_status, "room_id": room_id})
         else:
             return jsonify({"success": False, "error": "Gagal mengubah status"})
@@ -1296,6 +1322,9 @@ def delete_room_route(room_id: int) -> Response:
     
     try:
         if delete_room(room_id):
+            from .queries import log_activity
+            log_activity(current_user().get("id"), "DELETE", "ROOM", room_id, room["name"])
+            
             flash(f"Ruangan '{room['name']}' berhasil dihapus.", "success")
         else:
             flash("Gagal menghapus ruangan.", "danger")
@@ -1321,6 +1350,9 @@ def edit_aspect(aspect_id: int) -> Response:
     try:
         result = update_aspect(aspect_id, name, description, sort_order, active)
         if result:
+            from .queries import log_activity
+            log_activity(current_user().get("id"), "UPDATE", "ASPECT", aspect_id, name)
+            
             flash(f"Aspek '{name}' berhasil diperbarui.", "success")
         else:
             flash("Aspek tidak ditemukan.", "warning")
@@ -1341,6 +1373,9 @@ def delete_aspect_route(aspect_id: int) -> Response:
     
     try:
         if delete_aspect(aspect_id):
+            from .queries import log_activity
+            log_activity(current_user().get("id"), "DELETE", "ASPECT", aspect_id, aspect["name"])
+            
             flash(f"Aspek '{aspect['name']}' berhasil dihapus.", "success")
         else:
             flash("Gagal menghapus aspek.", "danger")
@@ -1369,8 +1404,41 @@ def add_school() -> Response:
         return redirect(url_for("portal.admin_setup"))
     
     try:
+        from .queries import get_school_by_npsn, log_activity
+        
+        # Check if school exists to determine log action
+        existing_school = get_school_by_npsn(npsn)
+        action = "UPDATE" if existing_school else "CREATE"
+        school_id = existing_school.get("id") if existing_school else None
+        
         create_school(npsn, name, jenjang, alamat, kelurahan_id, status)
-        flash(f"Sekolah '{name}' berhasil ditambahkan.", "success")
+        
+        log_activity(current_user().get("id"), action, "SCHOOL", school_id, name, {"npsn": npsn})
+        
+        flash(f"Sekolah '{name}' berhasil {'diperbarui' if action == 'UPDATE' else 'ditambahkan'}.", "success")
+    except Exception as e:
+        flash(f"Error: {e}", "danger")
+    
+    return redirect(url_for("portal.admin_setup"))
+
+
+@portal_bp.route("/admin/setup/school/<int:school_id>/delete", methods=["POST"])
+@role_required("admin")
+def delete_school_route(school_id: int) -> Response:
+    """Delete a school."""
+    from .queries import get_school_by_id, delete_school, log_activity
+    
+    school = get_school_by_id(school_id)
+    if not school:
+        flash("Sekolah tidak ditemukan.", "warning")
+        return redirect(url_for("portal.admin_setup"))
+    
+    try:
+        if delete_school(school_id):
+            log_activity(current_user().get("id"), "DELETE", "SCHOOL", school_id, school["name"])
+            flash(f"Sekolah '{school['name']}' berhasil dihapus.", "success")
+        else:
+            flash("Gagal menghapus sekolah.", "danger")
     except Exception as e:
         flash(f"Error: {e}", "danger")
     

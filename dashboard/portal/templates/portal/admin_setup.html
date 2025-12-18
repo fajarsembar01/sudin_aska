@@ -505,6 +505,12 @@
                                 <span class="badge bg-primary ms-1">{{ schools|length }}</span>
                             </button>
                         </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="historyTab" data-bs-toggle="tab" data-bs-target="#historyPane"
+                                type="button" role="tab">
+                                <i class="bi bi-clock-history me-1"></i>History
+                            </button>
+                        </li>
                     </ul>
                 </div>
                 <div class="card-body" style="max-height: 65vh; overflow-y: auto;">
@@ -623,6 +629,7 @@
                                                     </ul>
                                                 </div>
                                             </th>
+                                            <th class="text-end">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody id="schoolsTableBody">
@@ -639,6 +646,48 @@
                                                     class="badge {% if s.status == 'NEGERI' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{
                                                     s.status or '-' }}</span></td>
                                             <td class="text-muted small">{{ s.kecamatan_name or '-' }}</td>
+                                            <td class="text-end">
+                                                <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2"
+                                                    data-bs-toggle="modal" data-bs-target="#deleteSchoolModal{{ s.id }}"
+                                                    title="Hapus">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+
+                                                <!-- Delete Modal -->
+                                                <div class="modal fade" id="deleteSchoolModal{{ s.id }}" tabindex="-1"
+                                                    aria-hidden="true">
+                                                    <div class="modal-dialog modal-sm modal-dialog-centered">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header border-0 pb-0">
+                                                                <h6 class="modal-title fw-bold text-danger">Hapus
+                                                                    Sekolah?</h6>
+                                                                <button type="button" class="btn-close"
+                                                                    data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body text-center py-3">
+                                                                <div class="avatar avatar-lg bg-danger-subtle text-danger rounded-circle mb-3 mx-auto"
+                                                                    style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                                                    <i class="bi bi-exclamation-triangle fs-4"></i>
+                                                                </div>
+                                                                <p class="mb-1">Anda yakin ingin menghapus sekolah:</p>
+                                                                <p class="fw-bold mb-0 text-dark">{{ s.name }}</p>
+                                                                <p class="text-muted small mt-2 mb-0">Tindakan ini tidak
+                                                                    dapat dibatalkan.</p>
+                                                            </div>
+                                                            <div
+                                                                class="modal-footer border-0 pt-0 justify-content-center">
+                                                                <button type="button" class="btn btn-light btn-sm px-4"
+                                                                    data-bs-dismiss="modal">Batal</button>
+                                                                <form method="POST"
+                                                                    action="{{ url_for('portal.delete_school_route', school_id=s.id) }}">
+                                                                    <button type="submit"
+                                                                        class="btn btn-danger btn-sm px-4">Hapus</button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
@@ -647,6 +696,74 @@
                             {% else %}
                             <p class="text-muted mb-0">Belum ada sekolah</p>
                             {% endif %}
+                        </div>
+
+                        <!-- History Pane -->
+                        <div class="tab-pane fade" id="historyPane" role="tabpanel">
+                            <h6 class="text-muted mb-3 small">Aktivitas CRUD Terakhir ({{ activity_logs|length }})</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 15%;">Waktu</th>
+                                            <th style="width: 20%;">User</th>
+                                            <th style="width: 10%;">Aksi</th>
+                                            <th style="width: 15%;">Target</th>
+                                            <th style="width: 20%;">Nama</th>
+                                            <th style="width: 20%;">Detail</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for log in activity_logs %}
+                                        <tr>
+                                            <td class="text-muted">{{ log.created_at|jakarta }}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="avatar avatar-xs bg-primary-subtle text-primary rounded-circle"
+                                                        style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">
+                                                        {{ (log.user_name or 'S')[0]|upper }}
+                                                    </div>
+                                                    <span class="text-truncate" style="max-width: 120px;"
+                                                        title="{{ log.user_email }}">
+                                                        {{ log.user_name or 'System' }}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if log.action == 'CREATE' %}
+                                                <span
+                                                    class="badge bg-success-subtle text-success border border-success-subtle">CREATE</span>
+                                                {% elif log.action == 'UPDATE' %}
+                                                <span
+                                                    class="badge bg-warning-subtle text-warning border border-warning-subtle">UPDATE</span>
+                                                {% elif log.action == 'DELETE' %}
+                                                <span
+                                                    class="badge bg-danger-subtle text-danger border border-danger-subtle">DELETE</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">{{ log.action }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="fw-semibold text-muted small">{{ log.target_type }}</td>
+                                            <td class="fw-bold text-dark">{{ log.target_name or '-' }}</td>
+                                            <td>
+                                                {% if log.details %}
+                                                <code class="text-muted small">{{ log.details }}</code>
+                                                {% else %}
+                                                <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4 text-muted">
+                                                <i class="bi bi-clock-history fs-4 d-block mb-2"></i>
+                                                Belum ada aktivitas tercatat
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         <!-- Rooms List Tab -->

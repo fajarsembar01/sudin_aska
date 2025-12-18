@@ -401,6 +401,27 @@ _PORTAL_ASSESSMENT_ROOM_DETAILS_INDEX_SQL = """
 CREATE INDEX IF NOT EXISTS idx_portal_room_details_assessment ON portal_assessment_room_details (assessment_id);
 """
 
+_PORTAL_ACTIVITY_LOGS_SQL = """
+CREATE TABLE IF NOT EXISTS portal_activity_logs (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    action TEXT NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id INTEGER,
+    target_name TEXT,
+    details JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_PORTAL_ACTIVITY_LOGS_INDEX_CREATED = """
+CREATE INDEX IF NOT EXISTS idx_portal_activity_logs_created ON portal_activity_logs (created_at DESC);
+"""
+
+_PORTAL_ACTIVITY_LOGS_INDEX_TARGET = """
+CREATE INDEX IF NOT EXISTS idx_portal_activity_logs_target ON portal_activity_logs (target_type, target_id);
+"""
+
 
 def ensure_dashboard_schema() -> None:
     """Create core dashboard tables when they do not yet exist."""
@@ -448,6 +469,9 @@ def ensure_dashboard_schema() -> None:
         _PORTAL_ASSESSMENT_PHOTOS_INDEX_SQL,
         _PORTAL_ASSESSMENT_ROOM_DETAILS_SQL,
         _PORTAL_ASSESSMENT_ROOM_DETAILS_INDEX_SQL,
+        _PORTAL_ACTIVITY_LOGS_SQL,
+        _PORTAL_ACTIVITY_LOGS_INDEX_CREATED,
+        _PORTAL_ACTIVITY_LOGS_INDEX_TARGET,
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS no_tester_enabled BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS nrk TEXT",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS nip TEXT",
