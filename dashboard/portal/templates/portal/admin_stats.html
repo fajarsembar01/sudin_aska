@@ -12,6 +12,83 @@
         z-index: 1;
         border: 1px solid var(--border-soft);
     }
+
+    /* Legend Filter Interaktif */
+    .legend-filter-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid #dee2e6;
+        background: white;
+        user-select: none;
+    }
+
+    .legend-filter-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .legend-filter-item.active {
+        border-color: transparent;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+
+    .legend-filter-item:not(.active) {
+        opacity: 0.45;
+        filter: grayscale(0.7);
+    }
+
+    .legend-filter-item:not(.active):hover {
+        opacity: 0.7;
+        filter: grayscale(0.3);
+    }
+
+    .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .legend-label {
+        font-weight: 500;
+        font-size: 0.75rem;
+    }
+
+    .legend-count {
+        font-size: 0.65rem;
+        padding: 1px 5px;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.08);
+        font-weight: 600;
+        min-width: 18px;
+        text-align: center;
+    }
+
+    .legend-filter-item.active .legend-count {
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    /* Pulse animation for filtered state */
+    @keyframes legendPulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.05);
+        }
+    }
+
+    .legend-filter-item.solo-active {
+        animation: legendPulse 0.3s ease;
+    }
 </style>
 {% endblock %}
 
@@ -110,8 +187,12 @@
                 {% if kecamatan_stats %}
                 <div class="d-flex justify-content-between align-items-end mt-2">
                     {% for k in kecamatan_stats[:3] %}
+                    {# Set badge class based on score threshold #}
+                    {% set badge_class = 'bg-success text-white' if k.avg_score_pct >= 85 else ('bg-warning text-dark'
+                    if k.avg_score_pct >= 70 else ('bg-danger text-white' if k.avg_score_pct >= 55 else 'bg-dark
+                    text-white')) %}
                     <div class="text-center flex-fill">
-                        <span class="badge bg-soft-success text-success rounded-pill mb-1" style="font-size: 1.4rem;">
+                        <span class="badge {{ badge_class }} rounded-pill mb-1" style="font-size: 1.4rem;">
                             {{ "%.1f"|format(k.avg_score_pct) }}
                         </span>
                         <div class="text-muted small" style="white-space: nowrap;">
@@ -163,6 +244,54 @@
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <div id="map"></div>
+        </div>
+        <!-- Legend Warna Interaktif dengan Filter -->
+        <div class="card-footer bg-transparent border-0 py-2 px-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="d-flex flex-wrap align-items-center gap-2 small">
+                    <span class="text-muted fw-semibold me-1">Filter:</span>
+
+                    <!-- Legend Items - Clickable -->
+                    <span class="legend-filter-item active" data-level="excellent" role="button" tabindex="0"
+                        title="Klik untuk filter Sangat Baik">
+                        <span class="legend-dot" style="background:#198754"></span>
+                        <span class="legend-label">Sangat Baik</span>
+                        <span class="legend-count" id="countExcellent">0</span>
+                    </span>
+
+                    <span class="legend-filter-item active" data-level="good" role="button" tabindex="0"
+                        title="Klik untuk filter Baik">
+                        <span class="legend-dot" style="background:#ffc107"></span>
+                        <span class="legend-label">Baik</span>
+                        <span class="legend-count" id="countGood">0</span>
+                    </span>
+
+                    <span class="legend-filter-item active" data-level="poor" role="button" tabindex="0"
+                        title="Klik untuk filter Kurang">
+                        <span class="legend-dot" style="background:#fd7e14"></span>
+                        <span class="legend-label">Kurang</span>
+                        <span class="legend-count" id="countPoor">0</span>
+                    </span>
+
+                    <span class="legend-filter-item active" data-level="critical" role="button" tabindex="0"
+                        title="Klik untuk filter Kritis">
+                        <span class="legend-dot" style="background:#b02a37"></span>
+                        <span class="legend-label">Kritis</span>
+                        <span class="legend-count" id="countCritical">0</span>
+                    </span>
+
+                    <!-- Reset Filter Button -->
+                    <button type="button" class="btn btn-link btn-sm p-0 ms-2 text-decoration-none" id="resetFilter"
+                        title="Tampilkan Semua" style="font-size:0.75rem;">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reset
+                    </button>
+                </div>
+
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
+                    data-bs-target="#editThresholdModal" title="Edit Rumus Skoring">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            </div>
         </div>
     </div>
 </section>
@@ -456,11 +585,14 @@
 {% endblock %}
 
 {% block portal_scripts %}
+<script src="{{ url_for('static', filename='js/color-config.js') }}"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // Legend text is now static in the HTML, no dynamic update needed
+
     document.addEventListener('DOMContentLoaded', function () {
         // --- MAP LOGIC ---
         var map = L.map('map').setView([-6.2088, 106.8456], 11);
@@ -479,16 +611,24 @@
                 const group = L.featureGroup();
                 const heatPoints = [];
 
+                // Marker tracking untuk filter
+                const markersByLevel = {
+                    excellent: [],
+                    good: [],
+                    poor: [],
+                    critical: []
+                };
+                const markerCounts = { excellent: 0, good: 0, poor: 0, critical: 0 };
+
                 data.forEach(school => {
-                    let color = '#000000';
                     let rawScore = school.total_score ? parseFloat(school.total_score) : 0;
                     let score = (rawScore / 3.0) * 100;
 
-                    let intensity = 0;
-                    if (score >= 85) { color = '#198754'; intensity = 0.0; }
-                    else if (score >= 70) { color = '#ffc107'; intensity = 0.2; }
-                    else if (score >= 55) { color = '#dc3545'; intensity = 0.7; }
-                    else { color = '#000000'; intensity = 1.0; }
+                    // Use centralized color config
+                    const colorInfo = getScoreColor(score);
+                    let color = colorInfo.color;
+                    let level = colorInfo.level;
+                    let intensity = getHeatmapIntensity(score);
 
                     if (intensity > 0) {
                         heatPoints.push([school.latitude, school.longitude, intensity]);
@@ -502,6 +642,9 @@
                         opacity: 1,
                         fillOpacity: 0.9
                     }).addTo(map);
+
+                    // Store marker level
+                    marker._markerLevel = level;
 
                     marker.bindTooltip(`${school.name} (${score.toFixed(0)})`, {
                         permanent: false, direction: 'top', className: 'fw-bold'
@@ -518,7 +661,23 @@
                     `);
 
                     group.addLayer(marker);
+
+                    // Track markers by level
+                    if (markersByLevel[level]) {
+                        markersByLevel[level].push(marker);
+                        markerCounts[level]++;
+                    }
                 });
+
+                // Update legend counts
+                document.getElementById('countExcellent').textContent = markerCounts.excellent;
+                document.getElementById('countGood').textContent = markerCounts.good;
+                document.getElementById('countPoor').textContent = markerCounts.poor;
+                document.getElementById('countCritical').textContent = markerCounts.critical;
+
+                // Store globally for filter access
+                window.mapMarkersByLevel = markersByLevel;
+                window.mapInstance = map;
 
                 // Add Heatmap Layer
                 let heatLayer = null;
@@ -568,7 +727,7 @@
                                     container.style.color = 'black';
                                 } else {
                                     map.addLayer(heatLayer);
-                                    container.style.backgroundColor = '#dc3545';
+                                    container.style.backgroundColor = '#b02a37';
                                     container.style.color = 'white';
                                 }
                             };
@@ -594,46 +753,123 @@
                     datasets: [{
                         label: 'Jumlah Sekolah',
                         data: {{ score_dist | tojson }},
-                backgroundColor: ['#dc3545', '#e75e4f', '#f0825a', '#f8a464', '#ffc107', '#d4e157', '#9ccc65', '#66bb6a', '#198754'],
-                borderRadius: 4,
-                barPercentage: 0.7
+                        backgroundColor: PANBERSS_COLORS.CHART_GRADIENT,
+                        borderRadius: 4,
+                        barPercentage: 0.7
                     }]
-    },
-        options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-            y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4] } },
-            x: { grid: { display: false } }
-        }
-    }
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4] } },
+                        x: { grid: { display: false } }
+                    }
+                }
             });
         }
 
-    // --- Status Pie Chart ---
-    const pieEl = document.getElementById('statusPieChart');
-    if (pieEl) {
-        new Chart(pieEl.getContext('2d'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Draft', 'Submitted'],
-                datasets: [{
-                    data: [{{ stats.assessments.drafts or 0 }}, {{ stats.assessments.submitted or 0 }}],
-            backgroundColor: ['#ffc107', '#198754'],
-            borderWidth: 0,
-            hoverOffset: 4
-        }]
+        // --- Status Pie Chart ---
+        const pieEl = document.getElementById('statusPieChart');
+        if (pieEl) {
+            new Chart(pieEl.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Draft', 'Submitted'],
+                    datasets: [{
+                        data: [{{ stats.assessments.drafts or 0 }}, {{ stats.assessments.submitted or 0 }}],
+                        backgroundColor: ['#ffc107', '#198754'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
                 },
-    options: {
-        responsive: true,
-            maintainAspectRatio: false,
-                cutout: '70%',
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
                     plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } }
-    }
+                }
             });
         }
     });
+
+    // ========================================
+    // LEGEND FILTER INTERAKTIF
+    // ========================================
+    (function () {
+        const legendItems = document.querySelectorAll('.legend-filter-item');
+        const resetBtn = document.getElementById('resetFilter');
+
+        // Fungsi untuk update visibility marker
+        function updateMarkerVisibility() {
+            if (!window.mapMarkersByLevel || !window.mapInstance) return;
+
+            const activeLevels = new Set();
+            legendItems.forEach(item => {
+                if (item.classList.contains('active')) {
+                    activeLevels.add(item.dataset.level);
+                }
+            });
+
+            // Show/hide markers berdasarkan active levels
+            ['excellent', 'good', 'poor', 'critical'].forEach(level => {
+                const markers = window.mapMarkersByLevel[level] || [];
+                markers.forEach(marker => {
+                    if (activeLevels.has(level)) {
+                        marker.setStyle({ opacity: 1, fillOpacity: 0.9 });
+                        marker.setRadius(8);
+                    } else {
+                        marker.setStyle({ opacity: 0.15, fillOpacity: 0.15 });
+                        marker.setRadius(4);
+                    }
+                });
+            });
+        }
+
+        // Click handler untuk legend items - TOGGLE MODE
+        // Klik biasa = toggle on/off (bisa multi-select)
+        // Shift+Click = solo mode (hanya tampilkan yang diklik)
+        legendItems.forEach(item => {
+            item.addEventListener('click', function (e) {
+                if (e.shiftKey) {
+                    // Shift + Click: Solo mode - hanya tampilkan ini saja
+                    legendItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active', 'solo-active');
+                    setTimeout(() => this.classList.remove('solo-active'), 300);
+                } else {
+                    // Normal Click: Toggle on/off
+                    this.classList.toggle('active');
+                    
+                    // Jika semua mati, aktifkan semua kembali
+                    const newActiveCount = Array.from(legendItems).filter(i => i.classList.contains('active')).length;
+                    if (newActiveCount === 0) {
+                        legendItems.forEach(i => i.classList.add('active'));
+                    }
+                }
+
+                updateMarkerVisibility();
+            });
+
+            // Keyboard accessibility
+            item.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.click();
+                }
+            });
+        });
+
+        // Reset button handler
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function () {
+                legendItems.forEach(i => i.classList.add('active'));
+                updateMarkerVisibility();
+            });
+        }
+
+        console.log('[Legend Filter] Initialized');
+    })();
 </script>
 
 <style>
@@ -672,7 +908,7 @@
     }
 
     .badge-score-red {
-        background: #dc3545;
+        background: #b02a37;
     }
 
     .badge-score-orange {
@@ -919,9 +1155,9 @@
                     }
 
                     relatedThumbs.innerHTML = others.map(function (p) {
-                        var scoreClass = p.score <= 25 ? 'badge-score-red' :
-                            p.score <= 50 ? 'badge-score-orange' :
-                                p.score <= 75 ? 'badge-score-yellow' : 'badge-score-green';
+                        // Use centralized color config
+                        var colorInfo = getScoreColor(p.score);
+                        var scoreClass = colorInfo.badgeClass;
                         return `
                             <div class="related-thumb" role="button" tabindex="0" 
                                 style="flex-shrink:0; width:80px; height:80px; border-radius:8px; overflow:hidden; position:relative; cursor:pointer;"
@@ -1160,4 +1396,124 @@
         </form>
     </div>
 </div>
+
+<!-- Edit Threshold Modal -->
+<div class="modal fade" id="editThresholdModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-sliders me-2"></i>Edit Rumus Skoring Warna
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted mb-3">Ubah batas nilai untuk masing-masing kategori warna. Perubahan akan
+                    disimpan di browser Anda.</p>
+                <div class="mb-3">
+                    <label class="form-label d-flex align-items-center gap-2">
+                        <span class="d-inline-block rounded-circle"
+                            style="width:16px;height:16px;background:#198754"></span>
+                        Sangat Baik (Hijau)
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text">≥</span>
+                        <input type="number" class="form-control" id="thresholdExcellent" min="0" max="100" value="85">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label d-flex align-items-center gap-2">
+                        <span class="d-inline-block rounded-circle"
+                            style="width:16px;height:16px;background:#ffc107"></span>
+                        Baik (Kuning)
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text">≥</span>
+                        <input type="number" class="form-control" id="thresholdGood" min="0" max="100" value="70">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label d-flex align-items-center gap-2">
+                        <span class="d-inline-block rounded-circle"
+                            style="width:16px;height:16px;background:#fd7e14"></span>
+                        Kurang (Oranye)
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text">≥</span>
+                        <input type="number" class="form-control" id="thresholdPoor" min="0" max="100" value="55">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label d-flex align-items-center gap-2">
+                        <span class="d-inline-block rounded-circle"
+                            style="width:16px;height:16px;background:#b02a37"></span>
+                        Kritis (Merah)
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text">&lt;</span>
+                        <input type="text" class="form-control bg-light" id="thresholdCritical" value="55" readonly
+                            disabled>
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <small class="text-muted">Otomatis mengikuti nilai "Kurang"</small>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" onclick="resetThresholdsAndRefresh()">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Default
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" onclick="saveThresholdsAndRefresh()">
+                        <i class="bi bi-check-lg me-1"></i>Simpan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize threshold modal with current values
+    document.getElementById('editThresholdModal').addEventListener('show.bs.modal', function () {
+        const T = PANBERSS_COLORS.THRESHOLDS;
+        document.getElementById('thresholdExcellent').value = T.EXCELLENT;
+        document.getElementById('thresholdGood').value = T.GOOD;
+        document.getElementById('thresholdPoor').value = T.POOR;
+        document.getElementById('thresholdCritical').value = T.POOR;
+    });
+
+    // Update critical field when poor changes
+    document.getElementById('thresholdPoor').addEventListener('input', function () {
+        document.getElementById('thresholdCritical').value = this.value;
+    });
+
+    function saveThresholdsAndRefresh() {
+        const excellent = parseInt(document.getElementById('thresholdExcellent').value) || 85;
+        const good = parseInt(document.getElementById('thresholdGood').value) || 70;
+        const poor = parseInt(document.getElementById('thresholdPoor').value) || 55;
+
+        // Validate values
+        if (excellent <= good || good <= poor) {
+            alert('Nilai harus berurutan: Sangat Baik > Baik > Kurang');
+            return;
+        }
+
+        if (saveThresholds(excellent, good, poor)) {
+            bootstrap.Modal.getInstance(document.getElementById('editThresholdModal')).hide();
+            location.reload();
+        }
+    }
+
+    function resetThresholdsAndRefresh() {
+        if (confirm('Reset ke nilai default (85, 70, 55)?')) {
+            resetThresholds();
+            bootstrap.Modal.getInstance(document.getElementById('editThresholdModal')).hide();
+            location.reload();
+        }
+    }
+</script>
 {% endblock %}

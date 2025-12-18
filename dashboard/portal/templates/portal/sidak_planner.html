@@ -191,22 +191,24 @@
                                                 }} sekolah</div>
                                         </div>
                                         <div class="text-end">
-                                            {% if kel.avg_score_pct < 60 %} <span class="badge bg-danger urgency-badge">
-                                                {{ kel.avg_score_pct }}%</span>
-                                                {% elif kel.avg_score_pct < 70 %} <span
-                                                    class="badge bg-warning text-dark urgency-badge">{{
+                                            {# Using centralized threshold: >=85 green, >=70 yellow, >=55 orange, <55
+                                                red #} {% if kel.avg_score_pct>= 85 %}
+                                                <span class="badge bg-success urgency-badge">{{ kel.avg_score_pct
+                                                    }}%</span>
+                                                {% elif kel.avg_score_pct >= 70 %}
+                                                <span class="badge bg-warning text-dark urgency-badge">{{
                                                     kel.avg_score_pct }}%</span>
-                                                    {% elif kel.avg_score_pct < 80 %} <span
-                                                        class="badge bg-info urgency-badge">{{ kel.avg_score_pct
-                                                        }}%</span>
-                                                        {% else %}
-                                                        <span class="badge bg-success urgency-badge">{{
-                                                            kel.avg_score_pct }}%</span>
-                                                        {% endif %}
-                                                        {% if kel.low_score_count > 0 %}
-                                                        <div class="text-danger small">{{ kel.low_score_count }} rendah
-                                                        </div>
-                                                        {% endif %}
+                                                {% elif kel.avg_score_pct >= 55 %}
+                                                <span class="badge text-white urgency-badge"
+                                                    style="background:#fd7e14">{{ kel.avg_score_pct }}%</span>
+                                                {% else %}
+                                                <span class="badge bg-danger urgency-badge">{{ kel.avg_score_pct
+                                                    }}%</span>
+                                                {% endif %}
+                                                {% if kel.low_score_count > 0 %}
+                                                <div class="text-danger small">{{ kel.low_score_count }} rendah
+                                                </div>
+                                                {% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -348,6 +350,7 @@
 {% endblock %}
 
 {% block portal_scripts %}
+<script src="{{ url_for('static', filename='js/color-config.js') }}"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
@@ -480,7 +483,9 @@
                     routePoints.push(point);
                     bounds.extend(point);
 
-                    var color = school.score_pct < 60 ? '#dc3545' : (school.score_pct < 70 ? '#ffc107' : '#198754');
+                    // Use centralized color config
+                    var colorInfo = getScoreColor(school.score_pct);
+                    var color = colorInfo.color;
 
                     var marker = L.marker(point, {
                         icon: L.divIcon({
@@ -518,7 +523,9 @@
                 var listHtml = '';
                 data.schools.forEach(function (school, idx) {
                     var priorityClass = school.score_pct < 70 ? 'priority' : '';
-                    var scoreClass = school.score_pct < 60 ? 'bg-danger' : (school.score_pct < 70 ? 'bg-warning text-dark' : 'bg-success');
+                    // Use centralized color config
+                    var colorInfo = getScoreColor(school.score_pct);
+                    var scoreClass = colorInfo.className;
 
                     listHtml += '<div class="school-route-item ' + priorityClass + ' mb-2 py-2">' +
                         '<div class="d-flex align-items-center gap-2">' +
@@ -565,7 +572,9 @@
                     html += '<div class="card-body">';
 
                     room.staff_assessments.forEach(function (staff, sIdx) {
-                        var scoreClass = staff.score_pct < 60 ? 'bg-danger' : (staff.score_pct < 70 ? 'bg-warning text-dark' : 'bg-success');
+                        // Use centralized color config
+                        var colorInfo = getScoreColor(staff.score_pct);
+                        var scoreClass = colorInfo.className;
 
                         html += '<div class="border-bottom pb-3 mb-3">';
                         html += '<div class="d-flex align-items-center gap-2 mb-2">';

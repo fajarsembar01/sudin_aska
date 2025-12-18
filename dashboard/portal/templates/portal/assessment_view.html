@@ -116,7 +116,8 @@
                         <div>
                             <div class="fw-semibold mb-0">Rata-rata semua penilaian sekolah ini</div>
                             {% set pct_school_avg = ((school_avg or 0) / 3 * 100) if school_avg is not none else 0 %}
-                            <div class="text-muted small">{{ "%.2f"|format(school_avg or 0) }} / {{ "%.1f"|format(pct_school_avg) }}</div>
+                            <div class="text-muted small">{{ "%.2f"|format(school_avg or 0) }} / {{
+                                "%.1f"|format(pct_school_avg) }}</div>
                         </div>
                         {% if other_assessments %}
                         <div class="ms-auto">
@@ -138,13 +139,16 @@
                                         href="{% if not other.is_current %}{{ url_for('portal.view_assessment', assessment_id=other.id) }}{% else %}#{% endif %}">
                                         <div>
                                             <div class="fw-semibold">{{ other.assessor_name or 'Staff' }}</div>
-                                            <div class="text-muted small">{{ other.submitted_at.strftime('%d %b %Y %H:%M') if other.submitted_at else '-' }}</div>
+                                            <div class="text-muted small">{{ other.submitted_at.strftime('%d %b %Y
+                                                %H:%M') if other.submitted_at else '-' }}</div>
                                             {% if other.is_current %}
                                             <span class="badge bg-primary">Sedang Dilihat</span>
                                             {% endif %}
                                         </div>
-                                        {% set other_pct = ((other.total_score or 0) / 3 * 100) if other.total_score is not none else 0 %}
-                                        <span class="badge bg-primary rounded-pill">{{ other.total_score or '-' }} / {{ "%.1f"|format(other_pct) }}</span>
+                                        {% set other_pct = ((other.total_score or 0) / 3 * 100) if other.total_score is
+                                        not none else 0 %}
+                                        <span class="badge bg-primary rounded-pill">{{ other.total_score or '-' }} / {{
+                                            "%.1f"|format(other_pct) }}</span>
                                     </a>
                                     {% endfor %}
                                 </div>
@@ -159,9 +163,11 @@
                     <div class="room-item mb-3">
                         <div class="room-header">
                             <h5><i class="bi bi-door-open me-2"></i>{{ room.room_name }}</h5>
-                            {% set room_avg = (room.scores|map(attribute='score')|list|sum) / (room.scores|length or 1) %}
+                            {% set room_avg = (room.scores|map(attribute='score')|list|sum) / (room.scores|length or 1)
+                            %}
                             {% set room_pct = (room_avg / 3 * 100) if room_avg is not none else 0 %}
-                            <span class="badge bg-light text-dark">{{ "%.1f"|format(room_avg) }} / {{ "%.0f"|format(room_pct) }}</span>
+                            <span class="badge bg-light text-dark">{{ "%.1f"|format(room_avg) }} / {{
+                                "%.0f"|format(room_pct) }}</span>
                         </div>
                         <div class="room-body">
                             <table class="table table-sm mb-3">
@@ -170,7 +176,7 @@
                                     <td>{{ s.aspect_name }}</td>
                                     <td class="text-end">
                                         <span
-                                            class="badge {% if s.score == 3 %}text-bg-success{% elif s.score == 2 %}text-bg-info{% elif s.score == 1 %}text-bg-warning{% else %}text-bg-danger{% endif %}">
+                                            class="badge {% if s.score == 3 %}bg-success{% elif s.score == 2 %}bg-warning text-dark{% elif s.score == 1 %}bg-danger{% else %}bg-dark{% endif %}">
                                             {{ s.score }}
                                         </span>
                                     </td>
@@ -189,7 +195,8 @@
                                         <div class="position-absolute bottom-0 start-0 w-100 px-2 py-1 text-white small"
                                             style="background: linear-gradient(180deg, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.55) 100%); text-shadow: 0 1px 2px rgba(0,0,0,0.6);">
                                             <div>{{ p.uploader_name or assessment.assessor_name or 'Staff' }}</div>
-                                            <div class="small">{{ p.captured_at.strftime('%d %b %Y %H:%M') if p.captured_at else '' }}</div>
+                                            <div class="small">{{ p.captured_at.strftime('%d %b %Y %H:%M') if
+                                                p.captured_at else '' }}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -214,13 +221,15 @@
                                     <div class="row g-2">
                                         {% for rp in rel %}
                                         <div class="col-6 col-md-4 col-lg-3">
-                                            <div class="ratio ratio-1x1 rounded overflow-hidden shadow-sm position-relative">
+                                            <div
+                                                class="ratio ratio-1x1 rounded overflow-hidden shadow-sm position-relative">
                                                 <img src="{{ url_for('portal.uploaded_file', filename=rp.photo_path.split('/')[-1]) }}"
                                                     class="object-fit-cover w-100 h-100"
                                                     onerror="this.src='https://placehold.co/200x200?text=No+Image'">
                                                 <div class="position-absolute bottom-0 start-0 w-100 px-2 py-1 text-white small"
                                                     style="background: rgba(0,0,0,0.45); text-shadow: 0 1px 2px rgba(0,0,0,0.6);">
-                                                    {{ rp.captured_at.strftime('%d %b %Y %H:%M') if rp.captured_at else '' }}
+                                                    {{ rp.captured_at.strftime('%d %b %Y %H:%M') if rp.captured_at else
+                                                    '' }}
                                                 </div>
                                                 <div class="position-absolute top-0 start-0 w-100 px-2 py-1 text-white small"
                                                     style="background: rgba(0,0,0,0.35); text-shadow: 0 1px 2px rgba(0,0,0,0.6);">
