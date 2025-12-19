@@ -492,9 +492,34 @@
                         <div class="carousel-item active">
                             <div class="row g-3">
                                 <div class="col-12">
+                                    <label class="form-label fw-semibold">Logo Sekolah *</label>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="logo-preview-wrapper"
+                                            style="width: 80px; height: 80px; border: 2px dashed #dee2e6; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f8f9fa;">
+                                            <img id="modalLogoPreview"
+                                                src="{{ school_profile.logo_url if school_profile and school_profile.logo_url else '' }}"
+                                                alt="Logo"
+                                                style="width: 100%; height: 100%; object-fit: cover; display: {{ 'block' if school_profile and school_profile.logo_url else 'none' }};">
+                                            <i class="bi bi-image text-muted" id="modalLogoPlaceholder"
+                                                style="font-size: 2rem; display: {{ 'none' if school_profile and school_profile.logo_url else 'block' }};"></i>
+                                        </div>
+                                        <div>
+                                            <input type="file" id="modalLogoFile" accept="image/*" class="d-none">
+                                            <input type="hidden" id="modalLogoData" name="logo_data" value="">
+                                            <button type="button" class="btn btn-outline-primary btn-sm"
+                                                onclick="document.getElementById('modalLogoFile').click();">
+                                                <i class="bi bi-upload me-1"></i>Pilih Logo
+                                            </button>
+                                            <div class="text-muted small mt-1">Max 100KB, akan di-crop</div>
+                                        </div>
+                                    </div>
+                                    <div class="invalid-feedback" id="modalLogoData-error"></div>
+                                </div>
+                                <div class="col-12">
                                     <label class="form-label fw-semibold">Alamat Sekolah *</label>
                                     <textarea class="form-control" id="modalAlamat" rows="2"
                                         required>{{ (school_profile.alamat if school_profile else '') or '' }}</textarea>
+                                    <div class="invalid-feedback" id="modalAlamat-error"></div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Kecamatan *</label>
@@ -518,11 +543,33 @@
                                         {% endfor %}
                                     </select>
                                 </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">RT *</label>
+                                    <input type="text" class="form-control" id="modalRT" maxlength="3"
+                                        pattern="[0-9]{3}" placeholder="001"
+                                        value="{{ (school_profile.metadata.rt if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalRT-error"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">RW *</label>
+                                    <input type="text" class="form-control" id="modalRW" maxlength="3"
+                                        pattern="[0-9]{3}" placeholder="001"
+                                        value="{{ (school_profile.metadata.rw if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalRW-error"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Kode Pos *</label>
+                                    <input type="text" class="form-control" id="modalPostalCode" maxlength="5"
+                                        pattern="[0-9]{5}" placeholder="14xxx"
+                                        value="{{ (school_profile.metadata.postal_code if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalPostalCode-error"></div>
+                                </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-semibold">Link Google Maps *</label>
                                     <input type="url" class="form-control" id="modalGmaps"
                                         placeholder="https://maps.app.goo.gl/..."
                                         value="{{ (school_profile.metadata.gmaps_url if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalGmaps-error"></div>
                                 </div>
                             </div>
                         </div>
@@ -532,26 +579,37 @@
                                     <label class="form-label fw-semibold">Jumlah Siswa *</label>
                                     <input type="number" min="0" class="form-control" id="modalStudents"
                                         value="{{ (school_profile.metadata.student_count if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalStudents-error"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Jumlah Siswa Inklusi *</label>
+                                    <input type="number" min="0" class="form-control" id="modalInclusionStudents"
+                                        value="{{ (school_profile.metadata.inclusion_student_count if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalInclusionStudents-error"></div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Jumlah Bangku Kosong *</label>
                                     <input type="number" min="0" class="form-control" id="modalEmpty"
                                         value="{{ (school_profile.metadata.empty_seats if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalEmpty-error"></div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Jumlah Guru *</label>
                                     <input type="number" min="0" class="form-control" id="modalTeachers"
                                         value="{{ (school_profile.metadata.teacher_count if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalTeachers-error"></div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Jumlah Tenaga Kependidikan *</label>
                                     <input type="number" min="0" class="form-control" id="modalStaff"
                                         value="{{ (school_profile.metadata.staff_count if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalStaff-error"></div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Jumlah Rombel *</label>
                                     <input type="number" min="0" class="form-control" id="modalRombel"
                                         value="{{ (school_profile.metadata.rombel_count if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalRombel-error"></div>
                                 </div>
                             </div>
                         </div>
@@ -561,21 +619,42 @@
                                     <label class="form-label fw-semibold">Nomor Telepon Sekolah *</label>
                                     <input type="text" class="form-control" id="modalSchoolPhone"
                                         value="{{ (school_profile.metadata.school_phone if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalSchoolPhone-error"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Fax (Opsional)</label>
+                                    <input type="text" class="form-control" id="modalFax" placeholder="021xxxxxxx"
+                                        value="{{ (school_profile.metadata.fax if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalFax-error"></div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Nomor Operator Sekolah *</label>
                                     <input type="text" class="form-control" id="modalCoordinatorPhone"
                                         value="{{ (school_profile.metadata.coordinator_phone if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalCoordinatorPhone-error"></div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Email Sekolah (CS) *</label>
                                     <input type="email" class="form-control" id="modalCsEmail"
                                         value="{{ (school_profile.metadata.cs_email if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalCsEmail-error"></div>
                                 </div>
                             </div>
                         </div>
                         <div class="carousel-item">
                             <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Website (Opsional)</label>
+                                    <input type="url" class="form-control" id="modalWebsite"
+                                        placeholder="https://sekolah.sch.id"
+                                        value="{{ (school_profile.metadata.website if school_profile else '') or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Telegram (Opsional)</label>
+                                    <input type="text" class="form-control" id="modalTelegram"
+                                        placeholder="@sekolah atau https://t.me/..."
+                                        value="{{ (school_profile.metadata.telegram if school_profile else '') or '' }}">
+                                </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Instagram (Opsional)</label>
                                     <input type="text" class="form-control" id="modalInstagram"
@@ -616,8 +695,7 @@
             <div class="modal-footer d-flex justify-content-between">
                 <div class="text-danger small" id="modalError" style="display:none;"></div>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-target="#coordinatorModal"
-                        data-bs-toggle="modal">
+                    <button type="button" class="btn btn-outline-secondary" id="modalBantuanBtn">
                         <i class="bi bi-question-circle"></i> Bantuan
                     </button>
                     <a href="{{ url_for('portal.sekolah_profile') }}" class="btn btn-link">Buka Halaman Pengaturan</a>
@@ -630,11 +708,43 @@
     </div>
 </div>
 
+<!-- Crop Modal for Logo -->
+<div class="modal fade" id="cropLogoModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Crop Logo Sekolah</h5>
+            </div>
+            <div class="modal-body text-center">
+                <div style="max-height: 350px; overflow: hidden;">
+                    <img id="cropLogoImage" src="" style="max-width: 100%; display: block;">
+                </div>
+                <div class="mt-3 d-flex align-items-center gap-2 justify-content-center">
+                    <i class="bi bi-dash-lg"></i>
+                    <input type="range" id="cropLogoZoom" class="form-range" style="width: 200px;" min="0.1" max="3"
+                        step="0.1" value="1">
+                    <i class="bi bi-plus-lg"></i>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
+                    id="cropLogoCancel">Batal</button>
+                <button type="button" class="btn btn-primary" id="cropLogoConfirm">
+                    <i class="bi bi-check-lg me-1"></i>OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
+<!-- Cropper.js CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css">
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var shouldShow = {{ 'true' if show_profile_modal else 'false' }};
+
 
     var profileModalEl = document.getElementById('profileModal');
     if (shouldShow && profileModalEl && window.bootstrap) {
@@ -655,19 +765,217 @@
         errorBox.style.display = msg ? 'block' : 'none';
     }
 
+    // ===== Logo Cropper Handler =====
+    var cropper = null;
+    var cropModalEl = document.getElementById('cropLogoModal');
+    var cropModal = cropModalEl ? new bootstrap.Modal(cropModalEl) : null;
+    var logoFileInput = document.getElementById('modalLogoFile');
+    var cropImage = document.getElementById('cropLogoImage');
+    var cropZoom = document.getElementById('cropLogoZoom');
+    var cropConfirm = document.getElementById('cropLogoConfirm');
+    var logoPreview = document.getElementById('modalLogoPreview');
+    var logoPlaceholder = document.getElementById('modalLogoPlaceholder');
+    var logoDataInput = document.getElementById('modalLogoData');
+
+    if (logoFileInput) {
+        logoFileInput.addEventListener('change', function (e) {
+            var file = e.target.files[0];
+            if (!file || !file.type.startsWith('image/')) return;
+
+            var reader = new FileReader();
+            reader.onload = function (ev) {
+                cropImage.src = ev.target.result;
+                cropModal.show();
+
+                // Initialize cropper after modal shown
+                cropModalEl.addEventListener('shown.bs.modal', function () {
+                    if (cropper) cropper.destroy();
+                    cropper = new Cropper(cropImage, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        dragMode: 'move',
+                        cropBoxMovable: false,
+                        cropBoxResizable: false,
+                        toggleDragModeOnDblclick: false,
+                        minContainerWidth: 250,
+                        minContainerHeight: 250,
+                        background: false,
+                        ready: function () {
+                            // Set initial zoom
+                            cropZoom.value = 1;
+                        }
+                    });
+                }, { once: true });
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Zoom slider
+    if (cropZoom) {
+        cropZoom.addEventListener('input', function () {
+            if (cropper) {
+                cropper.zoomTo(parseFloat(this.value));
+            }
+        });
+    }
+
+    // Confirm crop
+    if (cropConfirm) {
+        cropConfirm.addEventListener('click', function () {
+            if (!cropper) return;
+
+            var canvas = cropper.getCroppedCanvas({
+                width: 400,
+                height: 400,
+                imageSmoothingQuality: 'high'
+            });
+
+            // Compress to max 100KB
+            var quality = 0.9;
+            var dataUrl;
+            do {
+                dataUrl = canvas.toDataURL('image/jpeg', quality);
+                quality -= 0.1;
+            } while (dataUrl.length / 1.37 > 100 * 1024 && quality > 0.1);
+
+            // Update preview
+            logoPreview.src = dataUrl;
+            logoPreview.style.display = 'block';
+            if (logoPlaceholder) logoPlaceholder.style.display = 'none';
+
+            // Store in hidden input
+            logoDataInput.value = dataUrl;
+
+            // Destroy cropper and close modal
+            cropper.destroy();
+            cropper = null;
+            cropModal.hide();
+            logoFileInput.value = '';
+        });
+    }
+
+    // Cancel crop - reset input
+    if (cropModalEl) {
+        cropModalEl.addEventListener('hidden.bs.modal', function () {
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            logoFileInput.value = '';
+        });
+    }
+    // ===== End Logo Cropper =====
+
+    // Real-time field validation rules
+    var fieldValidators = {
+        'modalAlamat': function (v) { return v.length < 10 ? 'Alamat minimal 10 karakter' : ''; },
+        'modalKelurahan': function (v) { return !v ? 'Kelurahan wajib dipilih' : ''; },
+        'modalRT': function (v) { return !/^[0-9]{3}$/.test(v) ? 'RT harus 3 angka (contoh: 001)' : ''; },
+        'modalRW': function (v) { return !/^[0-9]{3}$/.test(v) ? 'RW harus 3 angka (contoh: 001)' : ''; },
+        'modalPostalCode': function (v) { return !/^[0-9]{5}$/.test(v) ? 'Kode Pos harus 5 angka' : ''; },
+        'modalGmaps': function (v) {
+            if (!v) return 'Link Google Maps wajib diisi';
+            if (!/^https?:\/\/(maps\.google|goo\.gl|maps\.app\.goo\.gl|www\.google\..*\/maps)/i.test(v))
+                return 'Format harus link Google Maps (https://maps.app.goo.gl/...)';
+            return '';
+        },
+        'modalStudents': function (v) { return (v === '' || isNaN(v) || parseInt(v) < 0) ? 'Jumlah siswa harus angka >= 0' : ''; },
+        'modalInclusionStudents': function (v) { return (v === '' || isNaN(v) || parseInt(v) < 0) ? 'Jumlah siswa inklusi harus angka >= 0' : ''; },
+        'modalEmpty': function (v) { return (v === '' || isNaN(v) || parseInt(v) < 0) ? 'Jumlah bangku kosong harus angka >= 0' : ''; },
+        'modalTeachers': function (v) { return (v === '' || isNaN(v) || parseInt(v) < 0) ? 'Jumlah guru harus angka >= 0' : ''; },
+        'modalStaff': function (v) { return (v === '' || isNaN(v) || parseInt(v) < 0) ? 'Jumlah tendik harus angka >= 0' : ''; },
+        'modalRombel': function (v) { return (v === '' || isNaN(v) || parseInt(v) < 0) ? 'Jumlah rombel harus angka >= 0' : ''; },
+        'modalSchoolPhone': function (v) {
+            if (!v) return 'Nomor telepon sekolah wajib diisi';
+            if (!/^[0-9]+$/.test(v)) return 'Nomor telepon hanya boleh angka';
+            if (v.length < 8) return 'Nomor telepon minimal 8 digit';
+            return '';
+        },
+        'modalFax': function (v) { return (v && !/^[0-9]+$/.test(v)) ? 'Fax hanya boleh angka' : ''; },
+        'modalCoordinatorPhone': function (v) {
+            if (!v) return 'Nomor operator wajib diisi';
+            if (!/^[0-9]+$/.test(v)) return 'Nomor operator hanya boleh angka';
+            if (v.length < 10) return 'Nomor operator minimal 10 digit';
+            return '';
+        },
+        'modalCsEmail': function (v) {
+            if (!v) return 'Email sekolah wajib diisi';
+            if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) return 'Format email tidak valid';
+            return '';
+        },
+        'modalWebsite': function (v) { return (v && !/^https?:\/\/.+/.test(v)) ? 'Format harus URL (https://...)' : ''; },
+    };
+
+    function validateField(fieldId) {
+        var el = document.getElementById(fieldId);
+        var errorEl = document.getElementById(fieldId + '-error');
+        if (!el) return true;
+
+        var value = el.type === 'select-one' ? el.value : el.value.trim();
+        var validator = fieldValidators[fieldId];
+        var errorMsg = validator ? validator(value) : '';
+
+        if (errorMsg) {
+            el.classList.add('is-invalid');
+            el.classList.remove('is-valid');
+            if (errorEl) {
+                errorEl.textContent = errorMsg;
+                errorEl.style.display = 'block';
+            }
+            return false;
+        } else if (value) {
+            el.classList.remove('is-invalid');
+            el.classList.add('is-valid');
+            if (errorEl) {
+                errorEl.textContent = '';
+                errorEl.style.display = 'none';
+            }
+            return true;
+        } else {
+            el.classList.remove('is-invalid', 'is-valid');
+            if (errorEl) {
+                errorEl.textContent = '';
+                errorEl.style.display = 'none';
+            }
+            return true;
+        }
+    }
+
+    // Attach blur validation to all validated fields
+    Object.keys(fieldValidators).forEach(function (fieldId) {
+        var el = document.getElementById(fieldId);
+        if (el) {
+            el.addEventListener('blur', function () { validateField(fieldId); });
+            el.addEventListener('input', function () {
+                if (el.classList.contains('is-invalid')) {
+                    validateField(fieldId);
+                }
+            });
+        }
+    });
+
     function collectPayload() {
         return {
+            logo_data: document.getElementById('modalLogoData').value,
             alamat: document.getElementById('modalAlamat').value.trim(),
             kelurahan_id: document.getElementById('modalKelurahan').value,
             gmaps_url: document.getElementById('modalGmaps').value.trim(),
+            rt: document.getElementById('modalRT').value.trim(),
+            rw: document.getElementById('modalRW').value.trim(),
+            postal_code: document.getElementById('modalPostalCode').value.trim(),
             student_count: document.getElementById('modalStudents').value,
+            inclusion_student_count: document.getElementById('modalInclusionStudents').value,
             empty_seats: document.getElementById('modalEmpty').value,
             rombel_count: document.getElementById('modalRombel').value,
             teacher_count: document.getElementById('modalTeachers').value,
             staff_count: document.getElementById('modalStaff').value,
             school_phone: document.getElementById('modalSchoolPhone').value.trim(),
+            fax: document.getElementById('modalFax').value.trim(),
             coordinator_phone: document.getElementById('modalCoordinatorPhone').value.trim(),
             cs_email: document.getElementById('modalCsEmail').value.trim(),
+            website: document.getElementById('modalWebsite').value.trim(),
+            telegram: document.getElementById('modalTelegram').value.trim(),
             instagram: document.getElementById('modalInstagram').value.trim(),
             tiktok: document.getElementById('modalTiktok').value.trim(),
             youtube: document.getElementById('modalYoutube').value.trim(),
@@ -683,24 +991,36 @@
 
     function stepValidationMessage(stepIndex, data) {
         if (stepIndex === 0) {
-            if (!data.alamat) return "Alamat sekolah wajib diisi.";
+            // Check logo - either existing preview src or new data
+            var logoPreviewSrc = document.getElementById('modalLogoPreview').src || '';
+            var hasExistingLogo = logoPreviewSrc && !logoPreviewSrc.endsWith('/') && logoPreviewSrc !== window.location.href;
+            if (!data.logo_data && !hasExistingLogo) return "Logo sekolah wajib diupload.";
+            if (!data.alamat || data.alamat.length < 10) return "Alamat sekolah wajib diisi (minimal 10 karakter).";
             if (!data.kelurahan_id) return "Kelurahan wajib dipilih.";
+            if (!data.rt || !/^[0-9]{3}$/.test(data.rt)) return "RT harus 3 angka (contoh: 001).";
+            if (!data.rw || !/^[0-9]{3}$/.test(data.rw)) return "RW harus 3 angka (contoh: 001).";
+            if (!data.postal_code || !/^[0-9]{5}$/.test(data.postal_code)) return "Kode Pos harus 5 angka.";
             if (!data.gmaps_url) return "Link Google Maps wajib diisi.";
+            if (!/^https?:\/\/(maps\.google|goo\.gl|maps\.app\.goo\.gl|www\.google\..*\/maps)/i.test(data.gmaps_url))
+                return "Format harus link Google Maps yang valid.";
             return "";
         }
         if (stepIndex === 1) {
-            if (!data.student_count || isNaN(data.student_count)) return "Jumlah siswa wajib diisi.";
-            if (!data.empty_seats || isNaN(data.empty_seats)) return "Jumlah bangku kosong wajib diisi.";
-            if (!data.teacher_count || isNaN(data.teacher_count)) return "Jumlah guru wajib diisi.";
-            if (!data.staff_count || isNaN(data.staff_count)) return "Jumlah tendik wajib diisi.";
-            if (!data.rombel_count || isNaN(data.rombel_count)) return "Jumlah rombel wajib diisi.";
+            if (data.student_count === '' || isNaN(data.student_count) || parseInt(data.student_count) < 0) return "Jumlah siswa harus angka >= 0.";
+            if (data.inclusion_student_count === '' || isNaN(data.inclusion_student_count) || parseInt(data.inclusion_student_count) < 0) return "Jumlah siswa inklusi harus angka >= 0.";
+            if (data.empty_seats === '' || isNaN(data.empty_seats) || parseInt(data.empty_seats) < 0) return "Jumlah bangku kosong harus angka >= 0.";
+            if (data.teacher_count === '' || isNaN(data.teacher_count) || parseInt(data.teacher_count) < 0) return "Jumlah guru harus angka >= 0.";
+            if (data.staff_count === '' || isNaN(data.staff_count) || parseInt(data.staff_count) < 0) return "Jumlah tendik harus angka >= 0.";
+            if (data.rombel_count === '' || isNaN(data.rombel_count) || parseInt(data.rombel_count) < 0) return "Jumlah rombel harus angka >= 0.";
             return "";
         }
         if (stepIndex === 2) {
             if (!data.school_phone) return "Nomor telepon sekolah wajib diisi.";
             if (!/^[0-9]+$/.test(data.school_phone)) return "Nomor telepon sekolah hanya boleh angka.";
+            if (data.school_phone.length < 8) return "Nomor telepon sekolah minimal 8 digit.";
             if (!data.coordinator_phone) return "Nomor operator sekolah wajib diisi.";
             if (!/^[0-9]+$/.test(data.coordinator_phone)) return "Nomor operator sekolah hanya boleh angka.";
+            if (data.coordinator_phone.length < 10) return "Nomor operator sekolah minimal 10 digit.";
             if (!data.cs_email) return "Email sekolah (CS) wajib diisi.";
             var emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
             if (!emailRegex.test(data.cs_email)) return "Format email sekolah (CS) tidak valid.";
@@ -842,8 +1162,22 @@
         });
     }
 
+    // Bantuan button handler - open coordinator modal without closing profile modal
+    var bantuanBtn = document.getElementById('modalBantuanBtn');
+    var coordinatorModalEl = document.getElementById('coordinatorModal');
+    if (bantuanBtn && coordinatorModalEl) {
+        bantuanBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            // Show coordinator modal on top of profile modal
+            var coordModal = bootstrap.Modal.getOrCreateInstance(coordinatorModalEl);
+            coordModal.show();
+        });
+    }
+
+
     // Update stepper on field change to reflect validation status
-    ['modalAlamat', 'modalKelurahan', 'modalKecamatan', 'modalGmaps', 'modalStudents', 'modalEmpty', 'modalTeachers', 'modalStaff', 'modalRombel', 'modalSchoolPhone', 'modalCoordinatorPhone', 'modalCsEmail'].forEach(function (id) {
+    ['modalAlamat', 'modalKelurahan', 'modalKecamatan', 'modalGmaps', 'modalRT', 'modalRW', 'modalPostalCode', 'modalStudents', 'modalInclusionStudents', 'modalEmpty', 'modalTeachers', 'modalStaff', 'modalRombel', 'modalSchoolPhone', 'modalFax', 'modalCoordinatorPhone', 'modalCsEmail'].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) {
             el.addEventListener('input', function () { setActiveDot(currentStep); });

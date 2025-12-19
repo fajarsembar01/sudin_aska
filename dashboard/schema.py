@@ -528,6 +528,8 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE portal_schools DROP COLUMN IF EXISTS kelurahan",
         # School registration - link dashboard users to schools
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS school_id INTEGER REFERENCES portal_schools(id) ON DELETE SET NULL",
+        # School logo column
+        "ALTER TABLE portal_schools ADD COLUMN IF NOT EXISTS logo_url TEXT",
     )
     
     # Execute statements one by one to ensure partial success and better error reporting

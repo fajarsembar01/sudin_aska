@@ -227,13 +227,19 @@ def toggle_no_tester() -> Response:
     return jsonify({"success": True, "enabled": enabled})
 
 
+@main_bp.route("/")
+@role_required("admin")
+def index() -> Response:
+    return redirect(url_for("main.admin_select_role"))
+
+
 @main_bp.route("/admin/select-role")
 @role_required("admin")
 def admin_select_role() -> Response:
     return render_template("admin_selection.html")
 
 
-@main_bp.route("/")
+@main_bp.route("/overview")
 @role_required("admin")
 def dashboard() -> Response:
     metrics = fetch_overview_metrics(window_days=7)

@@ -605,8 +605,8 @@ def fetch_portal_stats(period_id: Optional[int] = None) -> Dict[str, Any]:
             SELECT 
                 COUNT(*) as total,
                 COUNT(*) FILTER (WHERE status = 'draft' {pid_cond}) as drafts,
-                COUNT(*) FILTER (WHERE status = 'submitted' {pid_cond}) as submitted,
-                AVG(total_score) FILTER (WHERE status = 'submitted' {pid_cond}) as avg_score
+                COUNT(*) FILTER (WHERE status IN ('submitted', 'verified') {pid_cond}) as submitted,
+                AVG(total_score) FILTER (WHERE status IN ('submitted', 'verified') {pid_cond}) as avg_score
             FROM portal_assessments
             WHERE 1=1 {pid_cond}
         """
@@ -623,7 +623,7 @@ def fetch_portal_stats(period_id: Optional[int] = None) -> Dict[str, Any]:
 
 def fetch_score_distribution(period_id: Optional[int] = None) -> List[int]:
     """Calculate score distribution (9 bins: <60, 60-65, ..., 95-100)."""
-    where_clause = "WHERE status = 'submitted' AND total_score IS NOT NULL"
+    where_clause = "WHERE status IN ('submitted', 'verified') AND total_score IS NOT NULL"
     params = []
     
     if period_id:
@@ -688,7 +688,7 @@ def fetch_map_data(period_id: Optional[int] = None) -> List[Dict[str, Any]]:
                 SELECT AVG(a2.total_score)::DECIMAL(5,2)
                 FROM portal_assessments a2
                 WHERE a2.school_id = s.id 
-                  AND a2.status = 'submitted'
+                  AND a2.status IN ('submitted', 'verified')
                   AND a2.total_score IS NOT NULL
                   {period_filter}
             ) AS school_avg_score,
@@ -697,7 +697,7 @@ def fetch_map_data(period_id: Optional[int] = None) -> List[Dict[str, Any]]:
                 SELECT a3.status 
                 FROM portal_assessments a3 
                 WHERE a3.school_id = s.id 
-                  AND a3.status = 'submitted'
+                  AND a3.status IN ('submitted', 'verified')
                   {period_filter}
                 ORDER BY a3.submitted_at DESC NULLS LAST
                 LIMIT 1
@@ -729,7 +729,7 @@ def fetch_map_data(period_id: Optional[int] = None) -> List[Dict[str, Any]]:
         WHERE EXISTS (
             SELECT 1 FROM portal_assessments a 
             WHERE a.school_id = s.id 
-              AND a.status = 'submitted'
+              AND a.status IN ('submitted', 'verified')
               {period_filter}
         )
     """
@@ -756,15 +756,16 @@ def fetch_map_data(period_id: Optional[int] = None) -> List[Dict[str, Any]]:
         return data
 
 
-def fetch_top_schools(limit: int = 5, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
+def fetch_top_schools(limit: int = 5, offset: int = 0, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
     """Fetch top performing schools based on their latest assessment."""
-    where = "WHERE a.status = 'submitted'"
+    where = "WHERE a.status IN ('submitted', 'verified')"
     params = []
     if period_id:
         where += " AND a.period_id = %s"
         params.append(period_id)
     
     params.append(limit)
+    params.append(offset)
         
     query = f"""
             SELECT * FROM (
@@ -779,7 +780,7 @@ def fetch_top_schools(limit: int = 5, period_id: Optional[int] = None) -> List[D
                 ORDER BY a.school_id, a.submitted_at DESC
             ) sub
             ORDER BY total_score DESC
-            LIMIT %s
+            LIMIT %s OFFSET %s
             """
             
     with get_cursor() as cur:
@@ -829,15 +830,16 @@ def delete_school(school_id: int) -> bool:
         cur.execute("DELETE FROM portal_schools WHERE id = %s", (school_id,))
         return cur.rowcount > 0
 
-def fetch_bottom_schools(limit: int = 5, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
+def fetch_bottom_schools(limit: int = 5, offset: int = 0, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
     """Fetch lowest performing schools based on their latest assessment."""
-    where = "WHERE a.status = 'submitted'"
+    where = "WHERE a.status IN ('submitted', 'verified')"
     params = []
     if period_id:
         where += " AND a.period_id = %s"
         params.append(period_id)
     
     params.append(limit)
+    params.append(offset)
         
     query = f"""
             SELECT * FROM (
@@ -852,7 +854,7 @@ def fetch_bottom_schools(limit: int = 5, period_id: Optional[int] = None) -> Lis
                 ORDER BY a.school_id, a.submitted_at DESC
             ) sub
             ORDER BY total_score ASC NULLS LAST
-            LIMIT %s
+            LIMIT %s OFFSET %s
             """
             
     with get_cursor() as cur:
@@ -868,7 +870,7 @@ def list_recent_assessments(
     order: str = "recent",
 ) -> List[Dict[str, Any]]:
     """List recent submitted assessments for admin dashboard."""
-    where = "WHERE a.status = 'submitted'"
+    where = "WHERE a.status IN ('submitted', 'verified')"
     params = []
     if period_id:
         where += " AND a.period_id = %s"
@@ -915,7 +917,7 @@ def list_recent_assessments(
             LEFT JOIN (
                 SELECT school_id, COUNT(DISTINCT staff_id) AS total_staff
                 FROM portal_assessments
-                WHERE status = 'submitted'
+                WHERE status IN ('submitted', 'verified')
                 GROUP BY school_id
             ) staff_counts ON staff_counts.school_id = s.id
             {where}
@@ -933,7 +935,7 @@ def list_recent_assessments(
 def fetch_school_avg_scores(period_id: Optional[int] = None) -> Dict[int, float]:
     """Return map {school_id: avg_score} for submitted assessments."""
     params = []
-    where = "WHERE status = 'submitted'"
+    where = "WHERE status IN ('submitted', 'verified')"
     if period_id:
         where += " AND period_id = %s"
         params.append(period_id)
@@ -995,7 +997,7 @@ def fetch_related_photos(
         LEFT JOIN portal_assessment_scores sc 
             ON sc.assessment_id = p.assessment_id 
            AND sc.school_room_id = p.school_room_id
-        WHERE a.status = 'submitted'
+        WHERE a.status IN ('submitted', 'verified')
           AND s.id = %s
           AND r.id = %s
         GROUP BY p.photo_path, s.name, s.id, r.name, r.id, p.captured_at, p.latitude, p.longitude
@@ -1385,7 +1387,7 @@ def get_portal_schools_paginated(
 
 def fetch_export_data(period_id: Optional[int] = None) -> List[Dict[str, Any]]:
     """Fetch all assessment data for Excel export."""
-    where_clause = "WHERE a.status = 'submitted'"
+    where_clause = "WHERE a.status IN ('submitted', 'verified')"
     params = []
     
     if period_id:
@@ -1446,7 +1448,7 @@ def list_kelurahan_by_urgency(period_id: Optional[int] = None) -> List[Dict[str,
             COUNT(DISTINCT s.id) FILTER (
                 WHERE EXISTS (
                     SELECT 1 FROM portal_assessments a4
-                    WHERE a4.school_id = s.id AND a4.status = 'submitted'
+                    WHERE a4.school_id = s.id AND a4.status IN ('submitted', 'verified')
                 )
             ) as school_count,
             -- Average score of schools in this kelurahan
@@ -1454,7 +1456,7 @@ def list_kelurahan_by_urgency(period_id: Optional[int] = None) -> List[Dict[str,
                 (SELECT AVG(a2.total_score)
                  FROM portal_assessments a2
                  WHERE a2.school_id = s.id 
-                   AND a2.status = 'submitted'
+                   AND a2.status IN ('submitted', 'verified')
                    AND a2.total_score IS NOT NULL
                    {period_cond})
             ), 0)::DECIMAL(5,2) as avg_score,
@@ -1463,7 +1465,7 @@ def list_kelurahan_by_urgency(period_id: Optional[int] = None) -> List[Dict[str,
                 WHERE (SELECT AVG(a3.total_score)
                        FROM portal_assessments a3
                        WHERE a3.school_id = s.id 
-                         AND a3.status = 'submitted'
+                         AND a3.status IN ('submitted', 'verified')
                          AND a3.total_score IS NOT NULL
                          {period_cond}) < 2.1
             ) as low_score_count
@@ -1474,7 +1476,7 @@ def list_kelurahan_by_urgency(period_id: Optional[int] = None) -> List[Dict[str,
         HAVING COUNT(DISTINCT s.id) FILTER (
             WHERE EXISTS (
                 SELECT 1 FROM portal_assessments a5
-                WHERE a5.school_id = s.id AND a5.status = 'submitted'
+                WHERE a5.school_id = s.id AND a5.status IN ('submitted', 'verified')
             )
         ) > 0
         ORDER BY avg_score ASC NULLS LAST, low_score_count DESC
@@ -1516,7 +1518,7 @@ def fetch_schools_for_sidak(
             (SELECT AVG(a.total_score)::DECIMAL(5,2)
              FROM portal_assessments a
              WHERE a.school_id = s.id 
-               AND a.status = 'submitted'
+               AND a.status IN ('submitted', 'verified')
                {period_cond}) as avg_score,
             (SELECT p.latitude
              FROM portal_assessment_photos p
@@ -1535,7 +1537,7 @@ def fetch_schools_for_sidak(
              JOIN portal_school_rooms sr ON sc.school_room_id = sr.id
              JOIN portal_rooms r ON sr.room_id = r.id
              JOIN portal_assessments a ON sc.assessment_id = a.id
-             WHERE a.school_id = s.id AND a.status = 'submitted'
+             WHERE a.school_id = s.id AND a.status IN ('submitted', 'verified')
              GROUP BY r.id, r.name
              ORDER BY AVG(sc.score) ASC
              LIMIT 1) as worst_room
@@ -1546,7 +1548,7 @@ def fetch_schools_for_sidak(
           AND s.active = TRUE
           AND EXISTS (
               SELECT 1 FROM portal_assessments a
-              WHERE a.school_id = s.id AND a.status = 'submitted'
+              WHERE a.school_id = s.id AND a.status IN ('submitted', 'verified')
           )
         ORDER BY avg_score ASC NULLS LAST
     """
@@ -1571,7 +1573,7 @@ def fetch_schools_for_sidak(
 
 def fetch_kecamatan_avg_scores(period_id: Optional[int] = None) -> List[Dict[str, Any]]:
     """Fetch average assessment scores grouped by kecamatan (0-100 scale)."""
-    where = "WHERE a.status = 'submitted'"
+    where = "WHERE a.status IN ('submitted', 'verified')"
     params = []
     if period_id:
         where += " AND a.period_id = %s"

@@ -162,13 +162,20 @@ def _compute_missing_profile_fields(school: dict | None) -> list[str]:
     required_keys = {
         "gmaps_url": "Link Google Maps",
         "student_count": "Jumlah siswa",
+        "inclusion_student_count": "Jumlah siswa inklusi",
         "empty_seats": "Jumlah bangku kosong",
         "rombel_count": "Jumlah rombel",
         "school_phone": "Nomor telepon sekolah",
         "coordinator_phone": "Nomor operator sekolah",
         "cs_email": "Email sekolah untuk CS",
+        "rt": "RT",
+        "rw": "RW",
+        "postal_code": "Kode Pos",
     }
     missing = []
+    # Logo is now required
+    if not school.get("logo_url"):
+        missing.append("Logo sekolah")
     # alamat + kelurahan/kecamatan
     if not (school.get("alamat") and school.get("kelurahan_name") and school.get("kecamatan_name")):
         missing.append("Alamat dan wilayah")
@@ -192,22 +199,38 @@ def _build_profile_payload(form_data: dict) -> dict:
         digits_only = "".join(ch for ch in raw if ch.isdigit())
         return digits_only
 
+    def _clean_padded(val, length=3):
+        """Clean and zero-pad a numeric string (for RT/RW)."""
+        raw = (val or "").strip()
+        digits_only = "".join(ch for ch in raw if ch.isdigit())
+        if not digits_only:
+            return ""
+        return digits_only.zfill(length)[:length]
+
     return {
+        "logo_data": (form_data.get("logo_data") or ""),
         "alamat": (form_data.get("alamat") or "").strip(),
         "kelurahan_id": _clean_int(form_data.get("kelurahan_id")),
         "gmaps_url": (form_data.get("gmaps_url") or "").strip(),
+        "rt": _clean_padded(form_data.get("rt"), 3),
+        "rw": _clean_padded(form_data.get("rw"), 3),
+        "postal_code": _clean_phone(form_data.get("postal_code")),
         "student_count": _clean_int(form_data.get("student_count")),
+        "inclusion_student_count": _clean_int(form_data.get("inclusion_student_count")),
         "empty_seats": _clean_int(form_data.get("empty_seats")),
         "rombel_count": _clean_int(form_data.get("rombel_count")),
         "teacher_count": _clean_int(form_data.get("teacher_count")),
         "staff_count": _clean_int(form_data.get("staff_count")),
         "school_phone": _clean_phone(form_data.get("school_phone")),
         "coordinator_phone": _clean_phone(form_data.get("coordinator_phone")),
+        "fax": (form_data.get("fax") or "").strip(),
         "cs_email": (form_data.get("cs_email") or "").strip(),
+        "website": (form_data.get("website") or "").strip(),
         "instagram": (form_data.get("instagram") or "").strip(),
         "tiktok": (form_data.get("tiktok") or "").strip(),
         "youtube": (form_data.get("youtube") or "").strip(),
         "wa_channel": (form_data.get("wa_channel") or "").strip(),
+        "telegram": (form_data.get("telegram") or "").strip(),
     }
 
 
@@ -221,8 +244,20 @@ def _validate_profile_data(payload: dict) -> list[str]:
         errors.append("Kelurahan wajib dipilih.")
     if not payload.get("gmaps_url"):
         errors.append("Link Google Maps wajib diisi.")
+    # RT and RW must be 3 digits
+    rt_val = payload.get("rt", "")
+    if not rt_val or len(rt_val) != 3 or not rt_val.isdigit():
+        errors.append("RT wajib diisi (3 angka, contoh: 001).")
+    rw_val = payload.get("rw", "")
+    if not rw_val or len(rw_val) != 3 or not rw_val.isdigit():
+        errors.append("RW wajib diisi (3 angka, contoh: 001).")
+    postal_code = payload.get("postal_code", "")
+    if not postal_code or not postal_code.isdigit():
+        errors.append("Kode Pos wajib diisi (angka).")
     if payload.get("student_count") is None:
         errors.append("Jumlah siswa wajib diisi.")
+    if payload.get("inclusion_student_count") is None:
+        errors.append("Jumlah siswa inklusi wajib diisi.")
     if payload.get("empty_seats") is None:
         errors.append("Jumlah bangku kosong wajib diisi.")
     if payload.get("rombel_count") is None:
@@ -249,20 +284,62 @@ def _validate_profile_data(payload: dict) -> list[str]:
 
 
 def _save_school_profile(school_id: int, data: dict) -> None:
-    """Persist profile data into portal_schools (address + metadata)."""
-    meta_fields = {k: v for k, v in data.items() if k not in {"alamat", "kelurahan_id"}}
+    """Persist profile data into portal_schools (address + metadata + logo)."""
+    import base64
+    
+    logo_data = data.get("logo_data", "")
+    logo_url = None
+    
+    # Handle logo upload from base64
+    if logo_data and logo_data.startswith("data:image"):
+        try:
+            # Remove data URL prefix
+            header, encoded = logo_data.split(",", 1)
+            img_bytes = base64.b64decode(encoded)
+            
+            # Create logos directory
+            logos_dir = UPLOAD_FOLDER / "logos"
+            logos_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Save with school_id as filename
+            filename = f"school_{school_id}.jpg"
+            filepath = logos_dir / filename
+            with open(filepath, "wb") as f:
+                f.write(img_bytes)
+            
+            logo_url = url_for("portal.uploaded_file", filename=f"logos/{filename}")
+        except Exception as e:
+            current_app.logger.exception(f"Error saving logo: {e}")
+    
+    # Exclude non-metadata fields
+    meta_fields = {k: v for k, v in data.items() if k not in {"alamat", "kelurahan_id", "logo_data"}}
+    
     with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
-            UPDATE portal_schools
-            SET alamat = %s,
-                kelurahan_id = %s,
-                metadata = COALESCE(metadata, '{}'::jsonb) || %s::jsonb,
-                updated_at = NOW()
-            WHERE id = %s
-            """,
-            (data.get("alamat"), data.get("kelurahan_id"), json.dumps(meta_fields), school_id),
-        )
+        if logo_url:
+            cur.execute(
+                """
+                UPDATE portal_schools
+                SET alamat = %s,
+                    kelurahan_id = %s,
+                    logo_url = %s,
+                    metadata = COALESCE(metadata, '{}'::jsonb) || %s::jsonb,
+                    updated_at = NOW()
+                WHERE id = %s
+                """,
+                (data.get("alamat"), data.get("kelurahan_id"), logo_url, json.dumps(meta_fields), school_id),
+            )
+        else:
+            cur.execute(
+                """
+                UPDATE portal_schools
+                SET alamat = %s,
+                    kelurahan_id = %s,
+                    metadata = COALESCE(metadata, '{}'::jsonb) || %s::jsonb,
+                    updated_at = NOW()
+                WHERE id = %s
+                """,
+                (data.get("alamat"), data.get("kelurahan_id"), json.dumps(meta_fields), school_id),
+            )
 
 
 def _sanitize_phone(phone: str) -> str:
@@ -311,6 +388,9 @@ def home() -> Response:
     
     if role == "sekolah":
         return redirect(url_for("portal.sekolah_rooms"))
+    
+    if role == "admin":
+        return redirect(url_for("portal.admin_stats"))
     
     assessments = list_staff_assessments(user["id"])
     return render_template(
@@ -884,8 +964,8 @@ def admin_stats() -> Response:
         jenjang=jenjang_filter,
         order=order,
     )
-    top_schools = fetch_top_schools(period_id=period_id)
-    bottom_schools = fetch_bottom_schools(period_id=period_id)
+    top_schools = fetch_top_schools(period_id=period_id, limit=10)
+    bottom_schools = fetch_bottom_schools(period_id=period_id, limit=10)
     photo_order = request.args.get("photo_order", "random")
     random_photos = fetch_random_photos(period_id=period_id, order=photo_order, limit=24)
     school_avg_map = fetch_school_avg_scores(period_id=period_id)
@@ -914,6 +994,23 @@ def admin_stats() -> Response:
         all_schools=all_schools,
         all_staff=all_staff,
     )
+
+
+@portal_bp.route("/api/rankings")
+@role_required("admin")
+def api_rankings() -> Response:
+    """API endpoint for fetching additional rankings."""
+    type_ = request.args.get("type", "best")
+    limit = request.args.get("limit", 10, type=int)
+    offset = request.args.get("offset", 0, type=int)
+    period_id = request.args.get("period_id", type=int) or None
+    
+    if type_ == "best":
+        data = fetch_top_schools(limit=limit, offset=offset, period_id=period_id)
+    else:
+        data = fetch_bottom_schools(limit=limit, offset=offset, period_id=period_id)
+        
+    return jsonify(data)
 
 
 @portal_bp.route("/admin/export/excel")

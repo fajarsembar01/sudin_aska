@@ -358,6 +358,12 @@
                             </div>
                             {% endfor %}
                         </div>
+                        <div class="text-center mt-2">
+                            <button id="loadMoreBest" class="btn btn-sm btn-link text-decoration-none"
+                                onclick="loadMoreRankings('best')">
+                                Lihat lagi <i class="bi bi-chevron-down"></i>
+                            </button>
+                        </div>
                         {% else %}
                         <p class="text-muted small text-center my-3">Belum ada data</p>
                         {% endif %}
@@ -381,6 +387,12 @@
                                 <span class="badge bg-danger text-white rounded-pill">{{ "%.1f"|format(pct) }}</span>
                             </div>
                             {% endfor %}
+                        </div>
+                        <div class="text-center mt-2">
+                            <button id="loadMoreWorst" class="btn btn-sm btn-link text-decoration-none"
+                                onclick="loadMoreRankings('worst')">
+                                Lihat lagi <i class="bi bi-chevron-down"></i>
+                            </button>
                         </div>
                         {% else %}
                         <p class="text-muted small text-center my-3">Belum ada data</p>
@@ -753,46 +765,123 @@
                     datasets: [{
                         label: 'Jumlah Sekolah',
                         data: {{ score_dist | tojson }},
-                        backgroundColor: PANBERSS_COLORS.CHART_GRADIENT,
-                        borderRadius: 4,
-                        barPercentage: 0.7
+                backgroundColor: PANBERSS_COLORS.CHART_GRADIENT,
+                borderRadius: 4,
+                barPercentage: 0.7
                     }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4] } },
-                        x: { grid: { display: false } }
-                    }
-                }
+    },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4] } },
+            x: { grid: { display: false } }
+        }
+    }
             });
         }
 
-        // --- Status Pie Chart ---
-        const pieEl = document.getElementById('statusPieChart');
-        if (pieEl) {
-            new Chart(pieEl.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Draft', 'Submitted'],
-                    datasets: [{
-                        data: [{{ stats.assessments.drafts or 0 }}, {{ stats.assessments.submitted or 0 }}],
-                        backgroundColor: ['#ffc107', '#198754'],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
+    // --- Status Pie Chart ---
+    const pieEl = document.getElementById('statusPieChart');
+    if (pieEl) {
+        new Chart(pieEl.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Draft', 'Submitted'],
+                datasets: [{
+                    data: [{{ stats.assessments.drafts or 0 }}, {{ stats.assessments.submitted or 0 }}],
+            backgroundColor: ['#ffc107', '#198754'],
+            borderWidth: 0,
+            hoverOffset: 4
+        }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
+    options: {
+        responsive: true,
+            maintainAspectRatio: false,
+                cutout: '70%',
                     plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } }
-                }
+    }
             });
         }
     });
+
+    // ========================================
+    // RANKING LOAD MORE LOGIC
+    // ========================================
+    let rankingOffset = { best: 10, worst: 10 };
+    const rankingLimit = 10;
+    const periodId = new URLSearchParams(window.location.search).get('period_id') || '';
+
+    function loadMoreRankings(type) {
+        const btnId = type === 'best' ? 'loadMoreBest' : 'loadMoreWorst';
+        const containerId = type === 'best' ? 'best-pane' : 'worst-pane';
+        const btn = document.getElementById(btnId);
+
+        if (!btn) return;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...';
+
+        const offset = rankingOffset[type];
+
+        fetch(`{{ url_for('portal.api_rankings') }}?type=${type}&limit=${rankingLimit}&offset=${offset}&period_id=${periodId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length > 0) {
+                    const listGroup = document.querySelector(`#${containerId} .list-group`);
+
+                    data.forEach((school, index) => {
+                        const score = school.total_score ? parseFloat(school.total_score) : 0;
+                        const pct = (score / 3 * 100).toFixed(1);
+                        const badgeClass = type === 'best' ? 'bg-primary' : 'bg-danger';
+
+                        const itemHtml = `
+                            <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-bottom-0 fade-in">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-muted small" style="width: 20px">${offset + index + 1}</span>
+                                    <div>
+                                        <div class="fw-semibold small">${school.name}</div>
+                                        <div class="text-muted" style="font-size: 0.7rem">${school.jenjang}</div>
+                                    </div>
+                                </div>
+                                <span class="badge ${badgeClass} text-white rounded-pill">${pct}</span>
+                            </div>
+                        `;
+                        listGroup.insertAdjacentHTML('beforeend', itemHtml);
+                    });
+
+                    rankingOffset[type] += data.length;
+
+                    // Hide button if fewer items returned than limit (end of list)
+                    if (data.length < rankingLimit) {
+                        btn.style.display = 'none';
+                    } else {
+                        btn.innerHTML = 'Lihat lagi <i class="bi bi-chevron-down"></i>';
+                        btn.disabled = false;
+                    }
+                } else {
+                    btn.style.display = 'none';
+                }
+            })
+            .catch(err => {
+                console.error('Error loading rankings:', err);
+                btn.innerHTML = 'Error';
+            });
+    }
+
+    // Add simple fade-in animation style
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    `;
+    document.head.appendChild(style);
 
     // ========================================
     // LEGEND FILTER INTERAKTIF
@@ -840,7 +929,7 @@
                 } else {
                     // Normal Click: Toggle on/off
                     this.classList.toggle('active');
-                    
+
                     // Jika semua mati, aktifkan semua kembali
                     const newActiveCount = Array.from(legendItems).filter(i => i.classList.contains('active')).length;
                     if (newActiveCount === 0) {
@@ -1031,7 +1120,7 @@
             <div class="modal-header">
                 <div class="d-flex flex-column">
                     <h5 class="modal-title" id="photoModalTitle">Foto</h5>
-                    <small class="text-muted" id="photoModalSubtitle"></small>
+                    <small id="photoModalSubtitle"></small>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge bg-primary" id="photoModalScore">-</span>

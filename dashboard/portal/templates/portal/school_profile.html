@@ -22,14 +22,16 @@
                     <form method="POST" action="{{ url_for('portal.sekolah_profile') }}" class="row g-3">
                         <div class="col-12">
                             <label class="form-label fw-semibold">Alamat Sekolah *</label>
-                            <textarea name="alamat" class="form-control" rows="2" required>{{ school.alamat or meta.alamat or '' }}</textarea>
+                            <textarea name="alamat" class="form-control" rows="2"
+                                required>{{ school.alamat or meta.alamat or '' }}</textarea>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Kecamatan *</label>
                             <select name="kecamatan_id" id="profileKecamatan" class="form-select">
                                 <option value="">-- Pilih Kecamatan --</option>
                                 {% for k in kecamatan_list %}
-                                <option value="{{ k.id }}" {% if school.kecamatan_name==k.name %}selected{% endif %}>{{ k.name }}</option>
+                                <option value="{{ k.id }}" {% if school.kecamatan_name==k.name %}selected{% endif %}>{{
+                                    k.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -38,20 +40,45 @@
                             <select name="kelurahan_id" id="profileKelurahan" class="form-select" required>
                                 <option value="">-- Pilih Kelurahan --</option>
                                 {% for l in kelurahan_list %}
-                                <option value="{{ l.id }}" data-kecamatan="{{ l.kecamatan_id }}"
-                                    {% if school.kelurahan_id==l.id %}selected{% endif %}>{{ l.name }}</option>
+                                <option value="{{ l.id }}" data-kecamatan="{{ l.kecamatan_id }}" {% if
+                                    school.kelurahan_id==l.id %}selected{% endif %}>{{ l.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">RT *</label>
+                            <input type="text" name="rt" id="profileRT" class="form-control" required maxlength="3"
+                                pattern="[0-9]{3}" value="{{ meta.rt or '' }}" placeholder="001">
+                            <div class="invalid-feedback" id="profileRT-error"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">RW *</label>
+                            <input type="text" name="rw" id="profileRW" class="form-control" required maxlength="3"
+                                pattern="[0-9]{3}" value="{{ meta.rw or '' }}" placeholder="001">
+                            <div class="invalid-feedback" id="profileRW-error"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Kode Pos *</label>
+                            <input type="text" name="postal_code" id="profilePostalCode" class="form-control" required
+                                maxlength="5" pattern="[0-9]{5}" value="{{ meta.postal_code or '' }}"
+                                placeholder="14xxx">
+                            <div class="invalid-feedback" id="profilePostalCode-error"></div>
+                        </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold">Link Google Maps *</label>
-                            <input type="url" name="gmaps_url" class="form-control" required
+                            <input type="url" name="gmaps_url" id="profileGmaps" class="form-control" required
                                 value="{{ meta.gmaps_url or '' }}" placeholder="https://maps.app.goo.gl/...">
+                            <div class="invalid-feedback" id="profileGmaps-error"></div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Jumlah Siswa *</label>
                             <input type="number" min="0" name="student_count" class="form-control" required
                                 value="{{ meta.student_count or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Jumlah Siswa Inklusi *</label>
+                            <input type="number" min="0" name="inclusion_student_count" class="form-control" required
+                                value="{{ meta.inclusion_student_count or '' }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Jumlah Bangku Kosong *</label>
@@ -79,6 +106,11 @@
                                 value="{{ meta.school_phone or '' }}" placeholder="Hanya angka">
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label fw-semibold">Fax (Opsional)</label>
+                            <input type="text" name="fax" class="form-control" value="{{ meta.fax or '' }}"
+                                placeholder="021-xxxxxxx">
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold">Nomor Operator Sekolah *</label>
                             <input type="text" name="coordinator_phone" class="form-control" required pattern="^[0-9]+$"
                                 value="{{ meta.coordinator_phone or '' }}" placeholder="Hanya angka">
@@ -91,8 +123,19 @@
 
                         <div class="col-12">
                             <div class="alert alert-light border">
-                                <div class="fw-semibold mb-2">Media Sosial (Opsional)</div>
+                                <div class="fw-semibold mb-2">Media Sosial & Website (Opsional)</div>
                                 <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">Website (Opsional)</label>
+                                        <input type="url" name="website" class="form-control"
+                                            value="{{ meta.website or '' }}" placeholder="https://sekolah.sch.id">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">Telegram (Opsional)</label>
+                                        <input type="text" name="telegram" class="form-control"
+                                            value="{{ meta.telegram or '' }}"
+                                            placeholder="@sekolah atau https://t.me/...">
+                                    </div>
                                     <div class="col-md-6">
                                         <label class="form-label small text-muted">Instagram (Opsional)</label>
                                         <input type="text" name="instagram" class="form-control"
@@ -136,7 +179,8 @@
                             <div class="fw-bold">{{ school.name }}</div>
                             <small class="text-muted">{{ school.npsn }} • {{ school.jenjang }}</small><br>
                             <small class="text-muted">{{ school.alamat or '-' }}</small><br>
-                            <small class="text-muted">{{ school.kecamatan_name or '-' }} • {{ school.kelurahan_name or '-' }}</small>
+                            <small class="text-muted">{{ school.kecamatan_name or '-' }} • {{ school.kelurahan_name or
+                                '-' }}</small>
                         </div>
                     </div>
                     {% if missing_fields %}
@@ -156,28 +200,90 @@
 </section>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        var kelurahans = {{ kelurahan_list|tojson }};
-        var kecSel = document.getElementById('profileKecamatan');
-        var kelSel = document.getElementById('profileKelurahan');
-        function populateKel() {
-            var kecId = kecSel.value;
-            var selected = kelSel.value;
-            kelSel.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
-            kelurahans.forEach(function (item) {
-                if (!kecId || String(item.kecamatan_id) === String(kecId)) {
-                    var opt = document.createElement('option');
-                    opt.value = item.id;
-                    opt.dataset.kecamatan = item.kecamatan_id;
-                    opt.textContent = item.name;
-                    if (String(item.id) === String(selected)) opt.selected = true;
-                    kelSel.appendChild(opt);
+        var kelurahans = {{ kelurahan_list | tojson
+    }};
+    var kecSel = document.getElementById('profileKecamatan');
+    var kelSel = document.getElementById('profileKelurahan');
+    function populateKel() {
+        var kecId = kecSel.value;
+        var selected = kelSel.value;
+        kelSel.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
+        kelurahans.forEach(function (item) {
+            if (!kecId || String(item.kecamatan_id) === String(kecId)) {
+                var opt = document.createElement('option');
+                opt.value = item.id;
+                opt.dataset.kecamatan = item.kecamatan_id;
+                opt.textContent = item.name;
+                if (String(item.id) === String(selected)) opt.selected = true;
+                kelSel.appendChild(opt);
+            }
+        });
+    }
+    if (kecSel && kelSel) {
+        kecSel.addEventListener('change', populateKel);
+        populateKel();
+    }
+
+    // Real-time field validation rules
+    var fieldValidators = {
+        'profileRT': function (v) { return !/^[0-9]{3}$/.test(v) ? 'RT harus 3 angka (contoh: 001)' : ''; },
+        'profileRW': function (v) { return !/^[0-9]{3}$/.test(v) ? 'RW harus 3 angka (contoh: 001)' : ''; },
+        'profilePostalCode': function (v) { return !/^[0-9]{5}$/.test(v) ? 'Kode Pos harus 5 angka' : ''; },
+        'profileGmaps': function (v) {
+            if (!v) return 'Link Google Maps wajib diisi';
+            if (!/^https?:\/\/(maps\.google|goo\.gl|maps\.app\.goo\.gl|www\.google\..*\/maps)/i.test(v))
+                return 'Format harus link Google Maps (https://maps.app.goo.gl/...)';
+            return '';
+        },
+    };
+
+    function validateField(fieldId) {
+        var el = document.getElementById(fieldId);
+        var errorEl = document.getElementById(fieldId + '-error');
+        if (!el) return true;
+
+        var value = el.value.trim();
+        var validator = fieldValidators[fieldId];
+        var errorMsg = validator ? validator(value) : '';
+
+        if (errorMsg) {
+            el.classList.add('is-invalid');
+            el.classList.remove('is-valid');
+            if (errorEl) {
+                errorEl.textContent = errorMsg;
+                errorEl.style.display = 'block';
+            }
+            return false;
+        } else if (value) {
+            el.classList.remove('is-invalid');
+            el.classList.add('is-valid');
+            if (errorEl) {
+                errorEl.textContent = '';
+                errorEl.style.display = 'none';
+            }
+            return true;
+        } else {
+            el.classList.remove('is-invalid', 'is-valid');
+            if (errorEl) {
+                errorEl.textContent = '';
+                errorEl.style.display = 'none';
+            }
+            return true;
+        }
+    }
+
+    // Attach blur validation to all validated fields
+    Object.keys(fieldValidators).forEach(function (fieldId) {
+        var el = document.getElementById(fieldId);
+        if (el) {
+            el.addEventListener('blur', function () { validateField(fieldId); });
+            el.addEventListener('input', function () {
+                if (el.classList.contains('is-invalid')) {
+                    validateField(fieldId);
                 }
             });
         }
-        if (kecSel && kelSel) {
-            kecSel.addEventListener('change', populateKel);
-            populateKel();
-        }
+    });
     });
 </script>
 {% endblock %}
