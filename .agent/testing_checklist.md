@@ -11,16 +11,16 @@ Aplikasi ASKA memiliki **2 app terpisah**:
 ### 1. **ASKA Insights** (Dashboard Utama)
 - **Base URL**: `http://127.0.0.1:5002/`
 - **Location**: `dashboard/` (routes di `dashboard/auth.py`, `dashboard/routes.py`)
-- **Fitur**: Chat logs, Reports, User Management, **Tim Monev**
+- **Fitur utama**: Chat logs, Reports, statistik global
 - **Menu**: Navbar biru dengan "ASKA Bot", "Laporan", "Manajemen"
 
 ### 2. **Portal PANBERSS** (Portal Penilaian Sekolah)
 - **Base URL**: `http://127.0.0.1:5002/portal/`
 - **Location**: `dashboard/portal/` (routes di `dashboard/portal/routes.py`)
-- **Fitur**: Penilaian Sekolah, Statistik, Setup Data Master, Sidak Planner
+- **Fitur utama**: Penilaian Sekolah, Statistik Portal, Setup Data, Sidak Planner, **User Dashboard & Tim Monev (baru)**
 - **Menu**: Navbar hijau dengan icon sekolah
 
-**⚠️ PENTING**: Fitur User Management dan Tim Monev yang kita test ada di **ASKA Insights**, bukan di Portal!
+**⚠️ PENTING**: Semua alur **User Dashboard & Tim Monev** yang baru (termasuk approval anggota) dites dari Portal (navbar hijau) via menu Admin.
 
 ---
 
@@ -28,6 +28,9 @@ Aplikasi ASKA memiliki **2 app terpisah**:
 
 - [x] Jalankan migration: `python3 run_monev_teams_migration.py`
   - Expected: "Migration completed successfully!"
+- [x] Pastikan migration request anggota sudah jalan (table `monev_team_member_requests` ada)
+  - File SQL: `migrations/add_team_member_requests.sql`
+  - Quick check (opsional): `\d monev_team_member_requests` di psql
 - [x] Start server: `python3 -m dashboard.app` atau `python3 app.py`
   - Expected: Server running di port 5002
 
@@ -57,14 +60,13 @@ Aplikasi ASKA memiliki **2 app terpisah**:
 
 ---
 
-## TEST 2: Admin - User Verification
+## TEST 2: Admin - User Verification (Portal)
 
-**App Context**: 🎯 ASKA Insights (Dashboard Utama)
+**App Context**: 🎯 Portal PANBERSS (navbar hijau)
 
 ### 2.1 Login sebagai Admin
-- [x] Login dengan akun admin di ASKA Insights
-- [x] Pastikan di navbar ada menu "Manajemen" (warna biru)
-- [x] Go to: Manajemen → Admin Dashboard (`/settings/users`)
+- [x] Login dengan akun admin di Portal (`/portal/login` atau dari sesi aktif)
+- [x] Buka menu **Admin → User Dashboard** (`/portal/settings/users`)
 - [x] Expected: Halaman dengan 2 tab (Daftar User & Verifikasi User)
 
 ### 2.2 Verify Tab "Verifikasi User"
@@ -89,30 +91,27 @@ Aplikasi ASKA memiliki **2 app terpisah**:
 
 ---
 
-## TEST 3: Admin - Konfigurasi Tim Monev
+## TEST 3: Admin - Tim Monev & Approval (Portal)
 
-**App Context**: 🎯 ASKA Insights (Dashboard Utama)
+**App Context**: 🎯 Portal PANBERSS (navbar hijau)
 
 ### 3.1 Access Monev Teams
-- [ ] Pastikan masih login sebagai admin di ASKA Insights (navbar biru)
-- [ ] Go to: Manajemen → Tim Monev (`/settings/monev-teams`)
-- [ ] **JANGAN** buka dari Portal (navbar hijau) - fitur ini khusus ASKA Insights!
-- [ ] Expected: Halaman dengan tab per kecamatan
+- [ ] Pastikan login sebagai admin
+- [ ] Buka menu **Admin → Tim Monev** (`/portal/settings/monev-teams`)
+- [ ] Expected: Ada tab Tim Kasi, Tim Kecamatan, Tim Khusus
 
 ### 3.2 Assign Coordinator
-- [ ] Pilih tab "Cilincing" (atau kecamatan lain)
-- [ ] Di dropdown "Pilih Koordinator", pilih user dengan role coordinator
+- [ ] Pilih tab kecamatan/kasi sesuai tim
+- [ ] Dropdown "Pilih Koordinator" → pilih user role coordinator
 - [ ] Klik "Simpan"
 - [ ] Expected: Flash "Koordinator berhasil diperbarui"
 - [ ] Expected: Alert biru muncul: "Koordinator saat ini: [Nama]"
 
-### 3.3 Add Team Member
-- [ ] Scroll ke section "Tambah Anggota"
-- [ ] Pilih `Test Staff Updated` dari dropdown
+### 3.3 Add Team Member (langsung oleh admin)
+- [ ] Section "Tambah Anggota" → pilih `Test Staff Updated`
 - [ ] Klik "Tambah"
 - [ ] Expected: Flash "Anggota berhasil ditambahkan"
-- [ ] Expected: Nama muncul di table anggota
-- [ ] Expected: Badge count di tab bertambah
+- [ ] Expected: Nama muncul di table anggota & badge count bertambah
 
 ### 3.4 Remove Team Member
 - [ ] Klik icon 🗑️ di samping anggota
@@ -120,25 +119,35 @@ Aplikasi ASKA memiliki **2 app terpisah**:
 - [ ] Expected: Flash "Anggota berhasil dihapus"
 - [ ] Expected: Nama hilang dari table
 
+### 3.5 Approve/Reject Request (baru)
+- [ ] Pastikan ada permintaan pending (lihat TEST 4)
+- [ ] Di kartu "Permintaan Anggota" klik **Setujui** → expected: flash "Permintaan anggota ... disetujui" dan anggota otomatis masuk tabel tim
+- [ ] Coba kasus **Tolak** untuk request lain → expected: flash info penolakan, status di tabel permintaan menjadi "Ditolak"
+
 ---
 
-## TEST 4: Coordinator/Staff View
+## TEST 4: Coordinator - Tim Saya & Pengajuan Anggota
 
-### 4.1 Login as Coordinator/Staff
+### 4.1 Login as Coordinator
 - [ ] Logout dari admin
-- [ ] Login dengan akun `test.staff@testing.com` (password: `testing123`)
-- [ ] Expected: Menu "Tim Saya" muncul di navbar
+- [ ] Login dengan akun koordinator (contoh: `test.staff@testing.com`)
+- [ ] Expected: Menu "Tim Saya" muncul di navbar hijau
 
-### 4.2 View Team
-- [ ] Klik "Tim Saya" (`/my-team`)
-- [ ] Expected: Tampil info tim (Kecamatan, Koordinator, Jumlah Anggota)
-- [ ] Expected: Badge "Anda adalah Anggota tim ini" (hijau)
-- [ ] Expected: Row dengan nama Anda ter-highlight (biru)
-- [ ] Expected: Badge "Anda" di samping nama
+### 4.2 View Team (Tim Saya)
+- [ ] Klik "Tim Saya" (`/portal/my-team`)
+- [ ] Expected: Tampil info tim (kecamatan/koordinator/jumlah anggota)
+- [ ] Expected: Row dengan nama Anda ter-highlight (biru) + badge "Anda"
 
-### 4.3 Test Read-Only
-- [ ] Expected: TIDAK ADA button edit/hapus
-- [ ] Expected: Hanya tampilan informasi saja
+### 4.3 Cari & Ajukan Anggota
+- [ ] Di form "Ajukan Penambahan Anggota" ketik di input pencarian (nama/email/NIP) → dropdown menyaring opsi
+- [ ] Pilih satu staff lalu isi catatan opsional, klik "Ajukan"
+- [ ] Expected: Flash "Permintaan tambah anggota dikirim..."
+- [ ] Expected: Tabel "Status Permintaan Anggota" menampilkan baris baru status Pending
+
+### 4.4 Role Member (read-only)
+- [ ] Login sebagai anggota biasa yang tergabung di tim
+- [ ] Buka `/portal/my-team`
+- [ ] Expected: Hanya tampilan informasi, tidak ada tombol tambah anggota
 
 ---
 
@@ -146,7 +155,7 @@ Aplikasi ASKA memiliki **2 app terpisah**:
 
 ### 5.1 Test Sticky Behavior
 - [ ] Login sebagai admin
-- [ ] Go to `/settings/users`
+- [ ] Go to `/portal/settings/users`
 - [ ] Scroll down list "Daftar User" yang panjang
 - [ ] Expected: Form kiri tetap di atas, tidak ikut scroll
 
@@ -165,6 +174,13 @@ SELECT
     u.email
 FROM monev_team_members mtm
 JOIN dashboard_users u ON mtm.staff_id = u.id;
+
+-- Check member requests
+SELECT 
+    r.*, t.name AS team_name, u.full_name AS staff_name
+FROM monev_team_member_requests r
+JOIN monev_teams t ON r.team_id = t.id
+JOIN dashboard_users u ON r.staff_id = u.id;
 
 -- Check user verification
 SELECT 
@@ -193,6 +209,8 @@ WHERE email = 'test.staff@testing.com';
 | Assign Coordinator | ✅ | ✅ |
 | Add Team Member | ✅ | ✅ |
 | Remove Team Member | ✅ | ✅ |
+| Member Request Flow (Coordinator→Admin) | ☐ | ☐ |
+| Dropdown Search Staff (Tim Saya) | ☐ | ☐ |
 | Coordinator View Team | ✅ | ✅ |
 | Read-Only Permissions | ✅ | ✅ |
 | Portal Admin Stats (All data) | ☐ | ☐ |

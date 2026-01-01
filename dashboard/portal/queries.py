@@ -333,13 +333,20 @@ def fetch_random_photos(
     period_id: Optional[int] = None,
     order: str = "random",
     staff_ids: Optional[List[int]] = None,
+    restrict_to_staff: bool = False,
 ) -> List[Dict[str, Any]]:
     """Fetch photos for stats gallery, with room score summary.
     
     Returns one photo per unique school+room combination.
     Score is the average of all aspect scores for that room.
     """
+    order = (order or "random").strip().lower()
+    allowed_orders = {"random", "newest", "lowest"}
+    if order not in allowed_orders:
+        order = "random"
     if staff_ids is not None and len(staff_ids) == 0:
+        return []
+    if restrict_to_staff and not staff_ids:
         return []
     
     clauses = ["a.status = 'submitted'"]
@@ -384,9 +391,9 @@ def fetch_random_photos(
     
     order_clause = "ORDER BY RANDOM()"
     if order == "newest":
-        order_clause = "ORDER BY captured_at DESC NULLS LAST"
+        order_clause = "ORDER BY captured_at DESC NULLS LAST, room_score ASC NULLS LAST, school_name, room_name"
     elif order == "lowest":
-        order_clause = "ORDER BY room_score ASC NULLS LAST"
+        order_clause = "ORDER BY room_score ASC NULLS LAST, captured_at DESC NULLS LAST, school_name, room_name"
     
     query += f" {order_clause} LIMIT %s"
     params.append(limit)
@@ -1906,6 +1913,9 @@ def get_portal_schools_paginated(
             "total_pages": total_pages,
             "has_prev": page > 1,
             "has_next": page < total_pages,
+            # Compatibility keys for templates expecting .pages and .current_page
+            "pages": total_pages,
+            "current_page": page,
         }
 
 
@@ -2216,135 +2226,6 @@ def get_team_assessment_stats(section_id: int):
             WHERE u.section_id = %s AND u.role = 'staff'
         """, (section_id,))
         return cur.fetchone()
-
-
-def get_all_sections():
-    """Get all sections."""
-    from dashboard.db_access import get_cursor
-    with get_cursor() as cur:
-        cur.execute("""
-            SELECT s.*, 
-                   u.full_name as coordinator_name,
-                   COUNT(DISTINCT staff.id) as staff_count
-            FROM sections s
-            LEFT JOIN dashboard_users u ON s.coordinator_id = u.id
-            LEFT JOIN dashboard_users staff ON staff.section_id = s.id AND staff.role = 'staff'
-            GROUP BY s.id, u.full_name
-            ORDER BY s.id
-        """)
-        return cur.fetchall()
-
-
-# ==========================================
-# Team Management Queries (Admin)
-# ==========================================
-
-def get_all_users_for_team_management():
-    """Get all users with their section and supervisor info for admin team management."""
-    from dashboard.db_access import get_cursor
-    with get_cursor() as cur:
-        cur.execute("""
-            SELECT 
-                u.id,
-                u.email,
-                u.full_name,
-                u.role,
-                u.jabatan,
-                u.whatsapp_number,
-                u.account_status,
-                u.section_id,
-                s.name as section_name,
-                u.supervisor_id,
-                sup.full_name as supervisor_name,
-                u.created_at
-            FROM dashboard_users u
-            LEFT JOIN sections s ON u.section_id = s.id
-            LEFT JOIN dashboard_users sup ON u.supervisor_id = sup.id
-            WHERE u.role IN ('admin', 'coordinator', 'staff')
-            ORDER BY 
-                CASE u.role 
-                    WHEN 'admin' THEN 1
-                    WHEN 'coordinator' THEN 2
-                    WHEN 'staff' THEN 3
-                END,
-                s.name,
-                u.full_name
-        """)
-        return cur.fetchall()
-
-
-def assign_coordinator_to_section(user_id: int, section_id: int):
-    """Assign a user as coordinator of a section."""
-    from dashboard.db_access import get_cursor
-    with get_cursor(commit=True) as cur:
-        # Update user
-        cur.execute("""
-            UPDATE dashboard_users 
-            SET role = 'coordinator',
-                section_id = %s,
-                supervisor_id = NULL
-            WHERE id = %s
-        """, (section_id, user_id))
-        
-        # Update section coordinator reference
-        cur.execute("""
-            UPDATE sections 
-            SET coordinator_id = %s,
-                updated_at = NOW()
-            WHERE id = %s
-        """, (user_id, section_id))
-        
-        return True
-
-
-def assign_staff_to_section(user_id: int, section_id: int, supervisor_id: int = None):
-    """Assign a user as staff to a section with optional supervisor."""
-    from dashboard.db_access import get_cursor
-    with get_cursor(commit=True) as cur:
-        cur.execute("""
-            UPDATE dashboard_users 
-            SET role = 'staff',
-                section_id = %s,
-                supervisor_id = %s
-            WHERE id = %s
-        """, (section_id, supervisor_id, user_id))
-        return True
-
-
-def remove_team_assignment(user_id: int):
-    """Remove user from team (clear section and supervisor)."""
-    from dashboard.db_access import get_cursor
-    with get_cursor(commit=True) as cur:
-        cur.execute("""
-            UPDATE dashboard_users 
-            SET section_id = NULL,
-                supervisor_id = NULL
-            WHERE id = %s
-        """, (user_id,))
-        return True
-
-
-def get_coordinators_for_section(section_id: int = None):
-    """Get all coordinators, optionally filtered by section."""
-    from dashboard.db_access import get_cursor
-    with get_cursor() as cur:
-        if section_id:
-            cur.execute("""
-                SELECT u.id, u.full_name, u.email, s.name as section_name
-                FROM dashboard_users u
-                LEFT JOIN sections s ON u.section_id = s.id
-                WHERE u.role = 'coordinator' AND u.section_id = %s
-                ORDER BY u.full_name
-            """, (section_id,))
-        else:
-            cur.execute("""
-                SELECT u.id, u.full_name, u.email, s.name as section_name
-                FROM dashboard_users u
-                LEFT JOIN sections s ON u.section_id = s.id
-                WHERE u.role = 'coordinator'
-                ORDER BY s.name, u.full_name
-            """)
-        return cur.fetchall()
 
 
 # =====================================================

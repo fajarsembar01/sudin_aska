@@ -559,12 +559,6 @@
                             <i class="bi bi-graph-up nav-icon"></i>Statistik Tim
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'portal.coordinator_team' %}active{% endif %}"
-                            href="{{ url_for('portal.coordinator_team') }}">
-                            <i class="bi bi-person-lines-fill nav-icon"></i>Kelola Tim
-                        </a>
-                    </li>
                     {% endif %}
 
                     {% if current_user and current_user.role == 'staff' %}
@@ -612,11 +606,6 @@
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('portal.admin_stats') }}">
                                     <i class="bi bi-bar-chart me-2"></i>Statistik
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('portal.admin_team_management') }}">
-                                    <i class="bi bi-diagram-3 me-2"></i>Team Management
                                 </a>
                             </li>
                             <li>

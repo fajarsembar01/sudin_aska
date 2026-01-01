@@ -98,6 +98,14 @@ from .queries import (
     delete_school_classroom,
     save_school_classrooms_batch,
 )
+from dashboard.queries import (
+    create_team_member_request,
+    list_team_member_requests,
+    list_team_member_requests_for_team,
+    update_team_member_request_status,
+    get_team_member_request,
+    get_available_staff,
+)
 
 
 portal_bp = Blueprint(
@@ -1133,6 +1141,7 @@ def coordinator_stats() -> Response:
         order=photo_order,
         limit=24,
         staff_ids=staff_ids,
+        restrict_to_staff=True,
     )
     school_avg_map = fetch_school_avg_scores(period_id=period_id, staff_ids=staff_ids)
     periods = list_periods()
@@ -1155,6 +1164,7 @@ def coordinator_stats() -> Response:
         jenjang_filter=jenjang_filter,
         order=order,
         photo_order=photo_order,
+        selected_team_id=my_team.get("id"),
     )
 
 
@@ -1422,14 +1432,17 @@ def admin_photos_partial() -> Response:
     staff_ids = None
     if team_id:
         staff_ids, team = _get_team_staff_ids(team_id)
-        if team is None:
-            staff_ids = None
-    
+        if not team:
+            return render_template("portal/_gallery_grid.html", random_photos=[])
+        if not staff_ids:
+            return render_template("portal/_gallery_grid.html", random_photos=[])
+
     photos = fetch_random_photos(
         period_id=period_id,
         order=photo_order,
         limit=24,
         staff_ids=staff_ids,
+        restrict_to_staff=True,
     )
     return render_template("portal/_gallery_grid.html", random_photos=photos)
 
@@ -1441,7 +1454,15 @@ def coordinator_photos_partial() -> Response:
     period_id = request.args.get("period_id", type=int)
     photo_order = request.args.get("photo_order", "random")
     user = current_user()
-    _, _, staff_ids = _get_coordinator_team_context(user.get("id"))
+
+    # Always scope to the coordinator's own team; optional team_id must match
+    team_id = request.args.get("team_id", type=int)
+    my_team, _, staff_ids = _get_coordinator_team_context(user.get("id"))
+    if not my_team or not staff_ids:
+        return render_template("portal/_gallery_grid.html", random_photos=[])
+    if team_id and team_id != my_team.get("id"):
+        return render_template("portal/_gallery_grid.html", random_photos=[])
+
     photos = fetch_random_photos(
         period_id=period_id,
         order=photo_order,
@@ -2403,122 +2424,46 @@ def coordinator_dashboard() -> Response:
 @portal_bp.route("/coordinator/team")
 @role_required("coordinator")
 def coordinator_team() -> Response:
-    """View and manage team members."""
-    from dashboard.queries import get_monev_teams, get_team_members
-    
+    """Redirect legacy Kelola Tim to Tim Saya (single page experience)."""
+    return redirect(url_for("portal.view_my_team"))
+
+
+@portal_bp.route("/coordinator/team/request-member", methods=["POST"])
+@role_required("coordinator")
+def coordinator_request_member() -> Response:
+    """Coordinator submits a member addition request for admin approval."""
     user = current_user()
     user_id = user.get("id")
+    staff_id = request.form.get("staff_id", type=int)
+    note = (request.form.get("note") or "").strip()
     
-    # Find the team where current user is coordinator
-    all_teams = get_monev_teams()
-    my_team = None
-    
-    for team in all_teams:
-        if team.get('coordinator_id') == user_id:
-            my_team = team
-            break
-    
+    my_team, _, _ = _get_coordinator_team_context(user_id)
     if not my_team:
-        # Show empty page instead of redirecting
-        return render_template(
-            "portal/coordinator_team.html",
-            section={"name": "Belum Ditugaskan", "description": "Anda belum menjadi koordinator tim manapun."},
-            team_members=[],
-            user=user,
-        )
+        flash("Anda belum memiliki tim.", "warning")
+        return redirect(url_for("portal.view_my_team"))
     
-    team_members_data = get_team_members(my_team['id'])
+    if not staff_id:
+        flash("Pilih staff yang ingin diajukan.", "warning")
+        return redirect(url_for("portal.coordinator_team"))
     
-    # Create a section-like object for template compatibility
-    team_as_section = {
-        "name": my_team.get('name') or my_team.get('kecamatan_name') or f"Tim ID {my_team['id']}",
-        "description": f"Tim Monev ({my_team.get('team_type', 'kecamatan')})",
-    }
-    
-    return render_template(
-        "portal/coordinator_team.html",
-        section=team_as_section,
-        team_members=team_members_data,
-        user=user,
+    result = create_team_member_request(
+        team_id=my_team["id"],
+        staff_id=staff_id,
+        requested_by=user_id,
+        note=note or None,
     )
-
-
-# ===== Admin Team Management Routes =====
-
-@portal_bp.route("/admin/team-management")
-@role_required("admin")
-def admin_team_management() -> Response:
-    """Admin interface for managing team structure."""
-    from .queries import get_all_users_for_team_management, get_all_sections
     
-    users = get_all_users_for_team_management()
-    sections = get_all_sections()
+    status = result.get("status")
+    if status == "already_member":
+        flash("Staff sudah menjadi anggota tim.", "info")
+    elif status == "pending":
+        flash("Permintaan serupa masih menunggu persetujuan admin.", "info")
+    elif status == "created":
+        flash("Permintaan tambah anggota dikirim ke admin untuk verifikasi.", "success")
+    else:
+        flash("Gagal mengirim permintaan.", "danger")
     
-    return render_template(
-        "portal/admin_team_management.html",
-        users=users,
-        sections=sections,
-    )
-
-
-@portal_bp.route("/admin/assign-coordinator", methods=["POST"])
-@role_required("admin")
-def admin_assign_coordinator() -> Response:
-    """API to assign user as coordinator."""
-    from .queries import assign_coordinator_to_section
-    
-    data = request.get_json()
-    user_id = data.get("user_id")
-    section_id = data.get("section_id")
-    
-    if not user_id or not section_id:
-        return jsonify({"success": False, "message": "Missing required fields"}), 400
-    
-    try:
-        assign_coordinator_to_section(int(user_id), int(section_id))
-        return jsonify({"success": True, "message": "Coordinator assigned successfully"})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
-
-
-@portal_bp.route("/admin/assign-staff", methods=["POST"])
-@role_required("admin")
-def admin_assign_staff() -> Response:
-    """API to assign user as staff to section."""
-    from .queries import assign_staff_to_section
-    
-    data = request.get_json()
-    user_id = data.get("user_id")
-    section_id = data.get("section_id")
-    supervisor_id = data.get("supervisor_id") or None
-    
-    if not user_id or not section_id:
-        return jsonify({"success": False, "message": "Missing required fields"}), 400
-    
-    try:
-        assign_staff_to_section(int(user_id), int(section_id), int(supervisor_id) if supervisor_id else None)
-        return jsonify({"success": True, "message": "Staff assigned successfully"})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
-
-
-@portal_bp.route("/admin/remove-team-assignment", methods=["POST"])
-@role_required("admin")
-def admin_remove_team_assignment() -> Response:
-    """API to remove user from team."""
-    from .queries import remove_team_assignment
-    
-    data = request.get_json()
-    user_id = data.get("user_id")
-    
-    if not user_id:
-        return jsonify({"success": False, "message": "Missing user_id"}), 400
-    
-    try:
-        remove_team_assignment(int(user_id))
-        return jsonify({"success": True, "message": "Team assignment removed"})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+    return redirect(url_for("portal.coordinator_team"))
 
 
 # =====================================================
@@ -2594,6 +2539,9 @@ def manage_monev_teams() -> Response:
         get_available_staff,
         create_monev_team,
         delete_monev_team,
+        list_team_member_requests,
+        update_team_member_request_status,
+        get_team_member_request,
     )
     from dashboard.portal.queries import list_kecamatan
     
@@ -2652,6 +2600,27 @@ def manage_monev_teams() -> Response:
                     flash("Anggota berhasil dihapus dari tim.", "success")
                 else:
                     flash("Gagal menghapus anggota.", "danger")
+            
+            elif action == "approve_request":
+                request_id = int(request.form.get("request_id"))
+                admin_id = current_user().get("id") if current_user() else None
+                req = get_team_member_request(request_id)
+                if not req:
+                    flash("Permintaan tidak ditemukan.", "danger")
+                else:
+                    update_team_member_request_status(request_id, "approved", admin_id)
+                    add_team_member(req["team_id"], req["staff_id"], admin_id)
+                    flash(f"Permintaan anggota untuk {req.get('staff_name') or 'staff'} disetujui.", "success")
+            
+            elif action == "reject_request":
+                request_id = int(request.form.get("request_id"))
+                admin_id = current_user().get("id") if current_user() else None
+                req = get_team_member_request(request_id)
+                if not req:
+                    flash("Permintaan tidak ditemukan.", "danger")
+                else:
+                    update_team_member_request_status(request_id, "rejected", admin_id)
+                    flash(f"Permintaan anggota untuk {req.get('staff_name') or 'staff'} ditolak.", "info")
                     
         except Exception as exc:
             current_app.logger.error(f"Error managing monev team: {exc}")
@@ -2671,6 +2640,7 @@ def manage_monev_teams() -> Response:
         team['members'] = get_team_members(team['id'])
     
     available_staff = get_available_staff()
+    pending_requests = list_team_member_requests(status="pending")
     kecamatan_list = list_kecamatan()
     
     return render_template("portal/monev_teams_portal.html", 
@@ -2678,6 +2648,7 @@ def manage_monev_teams() -> Response:
                            kecamatan_teams=kecamatan_teams, 
                            custom_teams=custom_teams,
                            available_staff=available_staff,
+                           pending_requests=pending_requests,
                            kecamatan_list=kecamatan_list)
 
 
@@ -2709,5 +2680,24 @@ def view_my_team() -> Response:
     
     if my_team:
         my_team['members'] = get_team_members(my_team['id'])
+        if my_team_role == "coordinator":
+            existing_member_ids = {m["staff_id"] for m in my_team["members"]}
+            available_staff = [
+                s for s in get_available_staff()
+                if s["id"] not in existing_member_ids
+            ]
+            member_requests = list_team_member_requests_for_team(my_team["id"])
+        else:
+            available_staff = []
+            member_requests = []
+    else:
+        available_staff = []
+        member_requests = []
     
-    return render_template("portal/my_team_portal.html", team=my_team, team_role=my_team_role)
+    return render_template(
+        "portal/my_team_portal.html",
+        team=my_team,
+        team_role=my_team_role,
+        available_staff=available_staff,
+        member_requests=member_requests,
+    )

@@ -1972,6 +1972,155 @@ def get_available_staff() -> List[Dict[str, Any]]:
         """)
         return [dict(row) for row in cur.fetchall()]
 
+def create_team_member_request(
+    team_id: int,
+    staff_id: int,
+    requested_by: int,
+    note: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Create a join request for adding a staff to a team.
+    
+    Returns dict with 'status' = created|pending|already_member and optional request data.
+    """
+    with get_cursor(commit=True) as cur:
+        # Already a member?
+        cur.execute(
+            "SELECT 1 FROM monev_team_members WHERE team_id = %s AND staff_id = %s",
+            (team_id, staff_id),
+        )
+        if cur.fetchone():
+            return {"status": "already_member"}
+        
+        # Existing pending request?
+        cur.execute(
+            """
+            SELECT id, status, created_at
+            FROM monev_team_member_requests
+            WHERE team_id = %s AND staff_id = %s AND status = 'pending'
+            """,
+            (team_id, staff_id),
+        )
+        pending = cur.fetchone()
+        if pending:
+            return {"status": "pending", "request": dict(pending)}
+        
+        # Insert new request
+        cur.execute(
+            """
+            INSERT INTO monev_team_member_requests (team_id, staff_id, requested_by, note)
+            VALUES (%s, %s, %s, %s)
+            RETURNING *
+            """,
+            (team_id, staff_id, requested_by, note),
+        )
+        row = cur.fetchone()
+        return {"status": "created", "request": dict(row)}
+
+
+def list_team_member_requests(status: Optional[str] = None) -> List[Dict[str, Any]]:
+    """List member requests, optionally filtered by status."""
+    conditions = []
+    params: List[Any] = []
+    if status:
+        conditions.append("r.status = %s")
+        params.append(status)
+    where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
+    
+    query = f"""
+        SELECT 
+            r.*,
+            t.name as team_name,
+            t.team_type,
+            u.full_name as staff_name,
+            u.email as staff_email,
+            rb.full_name as requested_by_name,
+            rv.full_name as reviewed_by_name
+        FROM monev_team_member_requests r
+        JOIN monev_teams t ON r.team_id = t.id
+        JOIN dashboard_users u ON r.staff_id = u.id
+        JOIN dashboard_users rb ON r.requested_by = rb.id
+        LEFT JOIN dashboard_users rv ON r.reviewed_by = rv.id
+        {where_clause}
+        ORDER BY r.created_at DESC
+    """
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def list_team_member_requests_for_team(
+    team_id: int,
+    status: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """List requests for a specific team."""
+    conditions = ["r.team_id = %s"]
+    params: List[Any] = [team_id]
+    if status:
+        conditions.append("r.status = %s")
+        params.append(status)
+    where_clause = "WHERE " + " AND ".join(conditions)
+    
+    query = f"""
+        SELECT 
+            r.*,
+            u.full_name as staff_name,
+            u.email as staff_email,
+            rb.full_name as requested_by_name,
+            rv.full_name as reviewed_by_name
+        FROM monev_team_member_requests r
+        JOIN dashboard_users u ON r.staff_id = u.id
+        JOIN dashboard_users rb ON r.requested_by = rb.id
+        LEFT JOIN dashboard_users rv ON r.reviewed_by = rv.id
+        {where_clause}
+        ORDER BY r.created_at DESC
+    """
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_team_member_request(request_id: int) -> Optional[Dict[str, Any]]:
+    """Fetch a single team member request."""
+    query = """
+        SELECT 
+            r.*,
+            t.name as team_name,
+            u.full_name as staff_name,
+            rb.full_name as requested_by_name,
+            rv.full_name as reviewed_by_name
+        FROM monev_team_member_requests r
+        JOIN monev_teams t ON r.team_id = t.id
+        JOIN dashboard_users u ON r.staff_id = u.id
+        JOIN dashboard_users rb ON r.requested_by = rb.id
+        LEFT JOIN dashboard_users rv ON r.reviewed_by = rv.id
+        WHERE r.id = %s
+    """
+    with get_cursor() as cur:
+        cur.execute(query, (request_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def update_team_member_request_status(
+    request_id: int,
+    status: str,
+    reviewed_by: int,
+) -> Optional[Dict[str, Any]]:
+    """Update request status and return updated row."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE monev_team_member_requests
+            SET status = %s,
+                reviewed_by = %s,
+                reviewed_at = NOW()
+            WHERE id = %s
+            RETURNING *
+            """,
+            (status, reviewed_by, request_id),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
 
 
 def upsert_dashboard_user(

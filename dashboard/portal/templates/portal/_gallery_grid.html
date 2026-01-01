@@ -18,7 +18,9 @@
             data-school="{{ p.school_name }}" data-school-id="{{ p.school_id }}"
             data-assessment-id="{{ p.assessment_id }}" data-room="{{ p.room_name }}" data-room-id="{{ p.room_id }}"
             data-score="{{ '%.1f'|format(score_pct) }}" data-date="{{ (p.captured_at or '') }}"
-            data-lat="{{ p.latitude }}" data-lon="{{ p.longitude }}">
+            data-lat="{{ p.latitude }}" data-lon="{{ p.longitude }}"
+            onclick="window.PANBERSS_OPEN_GALLERY && PANBERSS_OPEN_GALLERY(this)"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.PANBERSS_OPEN_GALLERY && PANBERSS_OPEN_GALLERY(this);}">
             <img src="{{ photo_url }}" class="object-fit-cover w-100 h-100" alt="{{ p.room_name }}" loading="lazy"
                 onerror="this.src='https://placehold.co/200x200?text=No+Image'">
             <div

@@ -86,11 +86,106 @@
             <p>Hubungi Admin untuk menambahkan anggota ke tim Anda.</p>
         </div>
         {% endif %}
+        </div>
     </div>
-</div>
+    
+    <!-- Request New Member -->
+    <div class="card shadow-sm mt-3">
+        <div class="card-body">
+            <h6 class="card-title mb-3">
+                <i class="bi bi-person-plus me-2"></i>Ajukan Penambahan Anggota
+            </h6>
+            {% if available_staff %}
+            <form method="post" action="{{ url_for('portal.coordinator_request_member') }}" class="row g-3 align-items-end">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="col-md-6">
+                    <label class="form-label">Pilih Staff</label>
+                    <select name="staff_id" class="form-select" required>
+                        <option value="">-- Pilih Staff --</option>
+                        {% for staff in available_staff %}
+                        <option value="{{ staff.id }}">
+                            {{ staff.full_name }} ({{ staff.role|upper }})
+                            {% if staff.jabatan %} - {{ staff.jabatan }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Catatan (opsional)</label>
+                    <input type="text" name="note" class="form-control" placeholder="Keperluan penugasan">
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-send me-1"></i>Ajukan
+                    </button>
+                </div>
+            </form>
+            {% else %}
+            <div class="alert alert-info mb-0">
+                <i class="bi bi-info-circle me-2"></i>Semua staff tersedia sudah menjadi anggota tim ini.
+            </div>
+            {% endif %}
+        </div>
+    </div>
 
-<!-- Quick Actions -->
-<div class="card shadow-sm mt-4">
+    <!-- Request Status -->
+    <div class="card shadow-sm mt-3">
+        <div class="card-body">
+            <h6 class="card-title mb-3">
+                <i class="bi bi-inbox me-2"></i>Status Permintaan Anggota
+            </h6>
+            {% if member_requests %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Staff</th>
+                            <th>Diajukan</th>
+                            <th>Status</th>
+                            <th>Admin</th>
+                            <th>Catatan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in member_requests %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">{{ req.staff_name or 'Staff' }}</div>
+                                <small class="text-muted">{{ req.staff_email }}</small>
+                            </td>
+                            <td><small>{{ req.created_at.strftime('%d %b %Y %H:%M') if req.created_at else '-' }}</small></td>
+                            <td>
+                                {% if req.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif req.status == 'approved' %}
+                                <span class="badge bg-success">Disetujui</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Ditolak</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if req.reviewed_by_name %}
+                                <small>{{ req.reviewed_by_name }}</small>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td><small class="text-muted">{{ req.note or '-' }}</small></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-light mb-0">
+                Belum ada permintaan anggota.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card shadow-sm mt-4">
     <div class="card-body">
         <h5 class="card-title mb-3"><i class="bi bi-lightning-fill me-2"></i>Aksi Cepat</h5>
         <div class="d-flex gap-2 flex-wrap">

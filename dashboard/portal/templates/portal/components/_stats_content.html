@@ -10,7 +10,7 @@ tim Anda') %}
 {% set photos_endpoint = 'portal.admin_photos_partial' if is_admin else 'portal.coordinator_photos_partial' %}
 {% set related_photos_endpoint = 'portal.admin_related_photos' if is_admin else 'portal.coordinator_related_photos' %}
 {% set ranking_endpoint = 'portal.api_rankings' if is_admin else 'portal.coordinator_api_rankings' %}
-{% set current_team_id = selected_team_id|default(None) %}
+{% set current_team_id = selected_team_id if selected_team_id is not none else (team.id if team else None) %}
 {% set teams = monev_teams|default([]) %}
 
 <section class="mb-4">
@@ -347,15 +347,22 @@ tim Anda') %}
                         style="width: 32px; height: 32px; font-size: 0.9rem;">
                         <i class="bi bi-images"></i>
                     </span>
-                    <h6 class="fw-bold mb-0" id="galleryTitle">Galeri Foto {{ 'Acak' if photo_order=='random' else
+                        <h6 class="fw-bold mb-0" id="galleryTitle">Galeri Foto {{ 'Acak' if photo_order=='random' else
                         ('Terbaru' if photo_order=='newest' else 'Terendah') }}</h6>
                 </div>
-                <div class="d-inline-flex align-items-center gap-2">
-                    <select name="photo_order" id="photoOrderSelect" class="form-select form-select-sm">
-                        <option value="random" {% if photo_order=='random' %}selected{% endif %}>Random</option>
-                        <option value="newest" {% if photo_order=='newest' %}selected{% endif %}>Terbaru</option>
-                        <option value="lowest" {% if photo_order=='lowest' %}selected{% endif %}>Terendah</option>
-                    </select>
+                <div class="btn-group btn-group-sm" role="group" aria-label="Urutkan galeri">
+                    <a class="btn btn-outline-primary {% if photo_order=='random' %}active{% endif %}"
+                        href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='random') }}#galleryTitle">
+                        Random
+                    </a>
+                    <a class="btn btn-outline-primary {% if photo_order=='newest' %}active{% endif %}"
+                        href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='newest') }}#galleryTitle">
+                        Terbaru
+                    </a>
+                    <a class="btn btn-outline-primary {% if photo_order=='lowest' %}active{% endif %}"
+                        href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='lowest') }}#galleryTitle">
+                        Terendah
+                    </a>
                 </div>
             </div>
             <div class="card-body">
@@ -566,7 +573,7 @@ tim Anda') %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const CURRENT_PERIOD_ID = "{{ current_period_id or '' }}";
-    const CURRENT_TEAM_ID = "{{ current_team_id or '' }}";
+    const CURRENT_TEAM_ID = "{{ current_team_id if current_team_id is not none else (team.id if team else '') }}";
     // Legend text is now static in the HTML, no dynamic update needed
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -1136,254 +1143,113 @@ tim Anda') %}
 </div>
 
 <script>
-    (function () {
-        var thumbs = [];
+// Galeri foto: klik -> modal + navigasi panah
+document.addEventListener('DOMContentLoaded', function () {
+    var modalEl = document.getElementById('photoModal');
+    var modalImg = document.getElementById('photoModalImg');
+    var modalTitle = document.getElementById('photoModalTitle');
+    var modalSubtitle = document.getElementById('photoModalSubtitle');
+    var modalScore = document.getElementById('photoModalScore');
+    var modalMeta = document.getElementById('photoModalMeta');
+    var prevBtn = document.getElementById('photoPrevBtn');
+    var nextBtn = document.getElementById('photoNextBtn');
+    var prevBtnTop = document.getElementById('photoPrevBtnTop');
+    var nextBtnTop = document.getElementById('photoNextBtnTop');
+    var galleryGrid = document.getElementById('galleryGrid');
 
-        var modalEl = document.getElementById('photoModal');
-        var modalImg = document.getElementById('photoModalImg');
-        var modalTitle = document.getElementById('photoModalTitle');
-        var modalSubtitle = document.getElementById('photoModalSubtitle');
-        var modalScore = document.getElementById('photoModalScore');
-        var modalMeta = document.getElementById('photoModalMeta');
-        var prevBtn = document.getElementById('photoPrevBtn');
-        var nextBtn = document.getElementById('photoNextBtn');
-        var prevBtnTop = document.getElementById('photoPrevBtnTop');
-        var nextBtnTop = document.getElementById('photoNextBtnTop');
-        var modal = new bootstrap.Modal(modalEl);
-        var currentIndex = 0;
-        var thumbs = [];
+    if (!modalEl || !modalImg || !galleryGrid) return;
+    var modal = new bootstrap.Modal(modalEl);
+    var thumbs = [];
+    var currentIndex = 0;
 
-        function assessmentIdForThumb(list, url) {
-            var t = list.find(function (el) { return el.dataset.photoUrl === url; });
-            return t ? t.dataset.assessmentId : '';
-        }
-
-        function bindThumbs() {
-            thumbs = Array.from(document.querySelectorAll('.gallery-thumb-original'));
-        }
-
-        function show(index) {
-            if (!thumbs.length) return;
-            if (index < 0) index = thumbs.length - 1;
-            if (index >= thumbs.length) index = 0;
-            currentIndex = index;
-            var el = thumbs[index];
+    function collectThumbs() {
+        var seen = new Set();
+        thumbs = [];
+        document.querySelectorAll('.gallery-thumb').forEach(function (el) {
             var url = el.dataset.photoUrl;
-            var school = el.dataset.school || '';
-            var room = el.dataset.room || '';
-            var score = el.dataset.score || '-';
-            var date = el.dataset.date || '';
-            var lat = el.dataset.lat;
-            var lon = el.dataset.lon;
-            var schoolId = el.dataset.schoolId;
-            var roomId = el.dataset.roomId;
-
-            modalImg.src = url;
-            modalTitle.textContent = room || 'Foto';
-            modalSubtitle.innerHTML = assessmentId
-                ? `<a href="/portal/assessment/${assessmentId}" class="link-light text-decoration-underline">${school || 'Sekolah'}</a>`
-                : (school || '');
-            modalScore.textContent = score;
-            modalScore.className = 'badge ' + (el.querySelector('.gallery-badge-score')?.classList.value.replace('gallery-badge-score', '').trim() || 'bg-primary');
-            var metaText = '';
-            if (date) {
-                var d = new Date(date);
-                metaText += d.toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-            }
-            if (lat && lon) {
-                if (metaText) metaText += ' • ';
-                metaText += `${Number(lat).toFixed(4)}, ${Number(lon).toFixed(4)}`;
-            }
-            modalMeta.textContent = metaText || '-';
-            modal.show();
-
-            // Load related photos
-            loadRelatedPhotos(schoolId, roomId, url);
-        }
-
-        var relatedSection = document.getElementById('relatedPhotosSection');
-        var relatedThumbs = document.getElementById('relatedPhotosThumbs');
-
-        function loadRelatedPhotos(schoolId, roomId, currentUrl) {
-            if (!schoolId || !roomId) {
-                relatedSection.style.display = 'none';
-                return;
-            }
-
-            const relatedPhotosEndpoint = "{{ url_for(related_photos_endpoint) }}";
-            const relatedParams = new URLSearchParams({ school_id: schoolId, room_id: roomId });
-            if (CURRENT_TEAM_ID) relatedParams.set('team_id', CURRENT_TEAM_ID);
-            fetch(relatedPhotosEndpoint + '?' + relatedParams.toString())
-                .then(function (res) { return res.json(); })
-                .then(function (photos) {
-                    // Filter out current photo and show only if > 1 photos
-                    var others = photos.filter(function (p) { return p.photo_url !== currentUrl; });
-
-                    if (others.length === 0) {
-                        relatedSection.style.display = 'none';
-                        return;
-                    }
-
-                    relatedThumbs.innerHTML = others.map(function (p) {
-                        // Use centralized color config
-                        var colorInfo = getScoreColor(p.score);
-                        var scoreClass = colorInfo.badgeClass;
-                        return `
-                            <div class="related-thumb" role="button" tabindex="0" 
-                                style="flex-shrink:0; width:80px; height:80px; border-radius:8px; overflow:hidden; position:relative; cursor:pointer;"
-                                data-url="${p.photo_url}" data-score="${p.score}" data-date="${p.captured_at || ''}" 
-                                data-lat="${p.latitude || ''}" data-lon="${p.longitude || ''}">
-                                <img src="${p.photo_url}" style="width:100%; height:100%; object-fit:cover;" 
-                                    onerror="this.src='https://placehold.co/80x80?text=Error'">
-                                <span class="position-absolute bottom-0 end-0 px-1 small ${scoreClass}" 
-                                    style="font-size:0.65rem; border-radius:4px 0 0 0;">${p.score}</span>
-                            </div>
-                        `;
-                    }).join('');
-
-                    // Click handlers for related thumbnails
-                    relatedThumbs.querySelectorAll('.related-thumb').forEach(function (thumb) {
-                        thumb.onclick = function () {
-                            var newUrl = this.dataset.url;
-                            modalImg.src = newUrl;
-                            modalScore.textContent = this.dataset.score || '-';
-
-                            var metaText = '';
-                            if (this.dataset.date) {
-                                var d = new Date(this.dataset.date);
-                                metaText += d.toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-                            }
-                            if (this.dataset.lat && this.dataset.lon) {
-                                if (metaText) metaText += ' • ';
-                                metaText += Number(this.dataset.lat).toFixed(4) + ', ' + Number(this.dataset.lon).toFixed(4);
-                            }
-                            modalMeta.textContent = metaText || '-';
-
-                            // Reload related photos with new current
-                            loadRelatedPhotos(schoolId, roomId, newUrl);
-                        };
-                    });
-
-                    relatedSection.style.display = 'flex';
-                })
-                .catch(function (err) {
-                    console.error('Failed to load related photos:', err);
-                    relatedSection.style.display = 'none';
-                });
-        }
-
-        function attachEvents() {
-            // Use event delegation for all gallery-thumb elements (including clones)
-            var galleryGrid = document.getElementById('galleryGrid');
-            if (galleryGrid) {
-                galleryGrid.onclick = function (e) {
-                    var thumb = e.target.closest('.gallery-thumb');
-                    if (!thumb) return;
-
-                    // Get data directly from clicked element
-                    var url = thumb.dataset.photoUrl;
-                    var school = thumb.dataset.school || '';
-                    var room = thumb.dataset.room || '';
-                    var score = thumb.dataset.score || '-';
-                    var date = thumb.dataset.date || '';
-                    var lat = thumb.dataset.lat;
-                    var lon = thumb.dataset.lon;
-                    var schoolId = thumb.dataset.schoolId;
-                    var assessmentId = thumb.dataset.assessmentId;
-                    var roomId = thumb.dataset.roomId;
-
-                    modalImg.src = url;
-                    modalTitle.textContent = room || 'Foto';
-                    modalSubtitle.innerHTML = assessmentId
-                        ? `<a href="/portal/assessment/${assessmentId}" class="link-light text-decoration-underline">${school || 'Sekolah'}</a>`
-                        : (school || '');
-                    modalScore.textContent = score;
-                    modalScore.className = 'badge ' + (thumb.querySelector('.gallery-badge-score')?.classList.value.replace('gallery-badge-score', '').trim() || 'bg-primary');
-
-                    var metaText = '';
-                    if (date) {
-                        var d = new Date(date);
-                        metaText += d.toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-                    }
-                    if (lat && lon) {
-                        if (metaText) metaText += ' • ';
-                        metaText += Number(lat).toFixed(4) + ', ' + Number(lon).toFixed(4);
-                    }
-                    modalMeta.textContent = metaText || '-';
-
-                    // Find index in original thumbs for navigation
-                    currentIndex = thumbs.findIndex(function (t) { return t.dataset.photoUrl === url; });
-                    if (currentIndex < 0) currentIndex = 0;
-
-                    modal.show();
-                    loadRelatedPhotos(schoolId, roomId, url);
-                };
-            }
-        }
-
-        var triggerPrev = function () { show(currentIndex - 1); };
-        var triggerNext = function () { show(currentIndex + 1); };
-        if (prevBtn) prevBtn.addEventListener('click', function (e) { e.stopPropagation(); triggerPrev(); });
-        if (nextBtn) nextBtn.addEventListener('click', function (e) { e.stopPropagation(); triggerNext(); });
-        if (prevBtnTop) prevBtnTop.addEventListener('click', function (e) { e.stopPropagation(); triggerPrev(); });
-        if (nextBtnTop) nextBtnTop.addEventListener('click', function (e) { e.stopPropagation(); triggerNext(); });
-
-        document.addEventListener('keydown', function (e) {
-            if (!modalEl.classList.contains('show')) return;
-            if (e.key === 'ArrowLeft') {
-                e.preventDefault();
-                show(currentIndex - 1);
-            } else if (e.key === 'ArrowRight') {
-                e.preventDefault(); show(currentIndex + 1);
-            } else if (e.key === 'Escape') {
-                modal.hide();
-            }
+            if (!url || seen.has(url)) return;
+            seen.add(url);
+            thumbs.push(el);
         });
+    }
 
-        // Dynamic filter
-        var select = document.getElementById('photoOrderSelect');
-        var galleryGrid = document.getElementById('galleryGrid');
-        var galleryTitle = document.getElementById('galleryTitle');
-        if (select) {
-            select.addEventListener('change', function () {
-                var val = this.value || 'random';
-                var params = new URLSearchParams();
-                params.set('photo_order', val);
-                var period = CURRENT_PERIOD_ID;
-                var team = CURRENT_TEAM_ID;
-                if (period) params.set('period_id', period);
-                if (team) params.set('team_id', team);
-                const photosEndpoint = "{{ url_for(photos_endpoint) }}";
-                fetch(photosEndpoint + '?' + params.toString())
-                    .then(function (res) { return res.text(); })
-                    .then(function (html) {
-                        galleryGrid.innerHTML = html;
-                        var titleMap = { random: 'Acak', newest: 'Terbaru', lowest: 'Terendah' };
-                        galleryTitle.textContent = 'Galeri Foto ' + (titleMap[val] || 'Acak');
-                        bindThumbs();
-                        attachEvents();
-                    })
-                    .catch(function (err) {
-                        console.error(err);
-                    });
-            });
+    function fillModal(el) {
+        modalImg.src = el.dataset.photoUrl || '';
+        var school = el.dataset.school || '';
+        var room = el.dataset.room || '';
+        var score = el.dataset.score || '-';
+        var date = el.dataset.date || '';
+        var lat = el.dataset.lat;
+        var lon = el.dataset.lon;
+        var assessmentId = el.dataset.assessmentId;
+
+        modalTitle.textContent = room || 'Foto';
+        modalSubtitle.innerHTML = assessmentId
+            ? `<a href="/portal/assessment/${assessmentId}" class="link-light text-decoration-underline">${school || 'Sekolah'}</a>`
+            : (school || '');
+
+        var badge = el.querySelector('.gallery-badge-score');
+        modalScore.className = 'badge ' + (badge ? badge.classList.value.replace('gallery-badge-score', '').trim() : 'bg-primary');
+        modalScore.textContent = score;
+
+        var metaText = '';
+        if (date) {
+            var d = new Date(date);
+            metaText += d.toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
         }
-
-        // Filter form scroll anchor
-        var filterForm = document.getElementById('recentFilterForm');
-        if (filterForm) {
-            filterForm.addEventListener('submit', function (e) {
-                e.preventDefault();
-                var params = new URLSearchParams(new FormData(filterForm));
-                var url = window.location.pathname + '?' + params.toString() + '#recent-assessments';
-                window.location = url;
-            });
+        if (lat && lon) {
+            if (metaText) metaText += ' • ';
+            metaText += Number(lat).toFixed(4) + ', ' + Number(lon).toFixed(4);
         }
+        modalMeta.textContent = metaText || '-';
+    }
 
-        // initial bind
-        bindThumbs();
-        attachEvents();
-    })();
+    function show(index) {
+        if (!thumbs.length) return;
+        if (index < 0) index = thumbs.length - 1;
+        if (index >= thumbs.length) index = 0;
+        currentIndex = index;
+        fillModal(thumbs[currentIndex]);
+        modal.show();
+    }
+
+    function openThumb(el) {
+        collectThumbs();
+        currentIndex = thumbs.findIndex(function (t) { return t.dataset.photoUrl === el.dataset.photoUrl; });
+        if (currentIndex < 0) currentIndex = 0;
+        show(currentIndex);
+    }
+
+    galleryGrid.addEventListener('click', function (e) {
+        var thumb = e.target.closest('.gallery-thumb');
+        if (!thumb) return;
+        openThumb(thumb);
+    });
+    galleryGrid.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        var thumb = e.target.closest('.gallery-thumb');
+        if (!thumb) return;
+        e.preventDefault();
+        openThumb(thumb);
+    });
+
+    var triggerPrev = function () { show(currentIndex - 1); };
+    var triggerNext = function () { show(currentIndex + 1); };
+    if (prevBtn) prevBtn.addEventListener('click', function (e) { e.stopPropagation(); triggerPrev(); });
+    if (nextBtn) nextBtn.addEventListener('click', function (e) { e.stopPropagation(); triggerNext(); });
+    if (prevBtnTop) prevBtnTop.addEventListener('click', function (e) { e.stopPropagation(); triggerPrev(); });
+    if (nextBtnTop) nextBtnTop.addEventListener('click', function (e) { e.stopPropagation(); triggerNext(); });
+
+    document.addEventListener('keydown', function (e) {
+        if (!modalEl.classList.contains('show')) return;
+        if (e.key === 'ArrowLeft') { e.preventDefault(); triggerPrev(); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); triggerNext(); }
+        if (e.key === 'Escape') { modal.hide(); }
+    });
+
+    // Inline handler fallback
+    window.PANBERSS_OPEN_GALLERY = openThumb;
+});
 </script>
 
 <!-- Modals -->
