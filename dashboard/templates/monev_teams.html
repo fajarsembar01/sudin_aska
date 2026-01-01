@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% block title %}Konfigurasi Tim Monev - ASKA Insights{% endblock %}
+{% block content %}
+<section class="page-header">
+    <div class="page-title-group">
+        <span class="icon-badge feature-icon text-primary">
+            <i class="bi bi-people-fill"></i>
+        </span>
+        <div>
+            <h1 class="h4 fw-bold page-title mb-0">Konfigurasi Tim Monev</h1>
+            <p class="page-subtitle">Kelola koordinator dan anggota tim monitoring evaluasi.</p>
+        </div>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTeamModal">
+        <i class="bi bi-plus-lg me-2"></i>Tambah Tim Baru
+    </button>
+</section>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <!-- Main Tab: Kasi vs Kecamatan vs Custom -->
+        <ul class="nav nav-tabs mb-4" id="mainTeamTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="kasi-tab" data-bs-toggle="tab" data-bs-target="#kasi-pane"
+                    type="button" role="tab">
+                    <i class="bi bi-diagram-3 me-2"></i>Tim Kasi
+                    <span class="badge bg-info ms-2">{{ kasi_teams|length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="kecamatan-tab" data-bs-toggle="tab" data-bs-target="#kecamatan-pane"
+                    type="button" role="tab">
+                    <i class="bi bi-geo-alt me-2"></i>Tim Kecamatan
+                    <span class="badge bg-success ms-2">{{ kecamatan_teams|length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="custom-tab" data-bs-toggle="tab" data-bs-target="#custom-pane"
+                    type="button" role="tab">
+                    <i class="bi bi-stars me-2"></i>Tim Khusus
+                    <span class="badge bg-warning ms-2">{{ custom_teams|length if custom_teams else 0 }}</span>
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="mainTeamTabsContent">
+            <!-- KASI TEAMS -->
+            <div class="tab-pane fade show active" id="kasi-pane" role="tabpanel" tabindex="0">
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Tim Kasi</strong> memantau sekolah berdasarkan <strong>jenjang pendidikan</strong>.
+                </div>
+
+                {% if kasi_teams %}
+                <ul class="nav nav-pills mb-3" id="kasiSubTabs" role="tablist">
+                    {% for team in kasi_teams %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {% if loop.first %}active{% endif %}" id="kasi-tab-{{ team.id }}"
+                            data-bs-toggle="tab" data-bs-target="#kasi-pane-{{ team.id }}" type="button" role="tab">
+                            {{ team.name }}
+                            {% if team.members %}
+                            <span class="badge bg-primary ms-2">{{ team.members|length }}</span>
+                            {% endif %}
+                        </button>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                <div class="tab-content" id="kasiSubTabsContent">
+                    {% for team in kasi_teams %}
+                    <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="kasi-pane-{{ team.id }}"
+                        role="tabpanel" tabindex="0">
+                        {% include 'monev_team_panel.html' %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-warning">Belum ada Tim Kasi. Klik "Tambah Tim Baru" untuk membuat.</div>
+                {% endif %}
+            </div>
+
+            <!-- KECAMATAN TEAMS -->
+            <div class="tab-pane fade" id="kecamatan-pane" role="tabpanel" tabindex="0">
+                <div class="alert alert-success mb-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Tim Kecamatan</strong> memantau <strong>semua jenjang</strong> di wilayah masing-masing.
+                </div>
+
+                {% if kecamatan_teams %}
+                <ul class="nav nav-pills mb-3" id="kecamatanSubTabs" role="tablist">
+                    {% for team in kecamatan_teams %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {% if loop.first %}active{% endif %}" id="kec-tab-{{ team.id }}"
+                            data-bs-toggle="tab" data-bs-target="#kec-pane-{{ team.id }}" type="button" role="tab">
+                            {{ team.kecamatan_name or team.name }}
+                            {% if team.members %}
+                            <span class="badge bg-primary ms-2">{{ team.members|length }}</span>
+                            {% endif %}
+                        </button>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                <div class="tab-content" id="kecamatanSubTabsContent">
+                    {% for team in kecamatan_teams %}
+                    <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="kec-pane-{{ team.id }}"
+                        role="tabpanel" tabindex="0">
+                        {% include 'monev_team_panel.html' %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-warning">Belum ada Tim Kecamatan.</div>
+                {% endif %}
+            </div>
+
+            <!-- CUSTOM TEAMS -->
+            <div class="tab-pane fade" id="custom-pane" role="tabpanel" tabindex="0">
+                <div class="alert alert-warning mb-4">
+                    <i class="bi bi-stars me-2"></i>
+                    <strong>Tim Khusus</strong> untuk kebutuhan proyek atau kegiatan tertentu.
+                </div>
+
+                {% if custom_teams %}
+                <ul class="nav nav-pills mb-3" id="customSubTabs" role="tablist">
+                    {% for team in custom_teams %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {% if loop.first %}active{% endif %}" id="custom-tab-{{ team.id }}"
+                            data-bs-toggle="tab" data-bs-target="#custom-pane-{{ team.id }}" type="button" role="tab">
+                            {{ team.name }}
+                            {% if team.members %}
+                            <span class="badge bg-primary ms-2">{{ team.members|length }}</span>
+                            {% endif %}
+                        </button>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                <div class="tab-content" id="customSubTabsContent">
+                    {% for team in custom_teams %}
+                    <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="custom-pane-{{ team.id }}"
+                        role="tabpanel" tabindex="0">
+                        <!-- Delete button for custom teams -->
+                        <div class="mb-3 text-end">
+                            <form method="post" style="display:inline;"
+                                onsubmit="return confirm('Hapus tim {{ team.name }}? Semua anggota akan dihapus.')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <input type="hidden" name="action" value="delete_team">
+                                <input type="hidden" name="team_id" value="{{ team.id }}">
+                                <input type="hidden" name="team_name" value="{{ team.name }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash me-1"></i>Hapus Tim
+                                </button>
+                            </form>
+                        </div>
+                        {% include 'monev_team_panel.html' %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-folder-plus display-4 text-muted"></i>
+                    <p class="text-muted mt-3">Belum ada Tim Khusus.</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTeamModal">
+                        <i class="bi bi-plus-lg me-2"></i>Buat Tim Khusus
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Team Modal -->
+<div class="modal fade" id="createTeamModal" tabindex="-1" aria-labelledby="createTeamModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="action" value="create_team">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createTeamModalLabel">
+                        <i class="bi bi-plus-circle me-2"></i>Tambah Tim Baru
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nama Tim <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="team_name" required
+                            placeholder="Contoh: Tim Audit 2026">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Tipe Tim <span class="text-danger">*</span></label>
+                        <select class="form-select" name="team_type" id="teamTypeSelect" required>
+                            <option value="custom">Tim Khusus (Custom)</option>
+                            <option value="kasi">Tim Kasi (Jenjang)</option>
+                            <option value="kecamatan">Tim Kecamatan</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="kecamatanField" style="display:none;">
+                        <label class="form-label">Kecamatan</label>
+                        <select class="form-select" name="kecamatan_id">
+                            <option value="">-- Pilih Kecamatan --</option>
+                            {% for kec in kecamatan_list %}
+                            <option value="{{ kec.id }}">{{ kec.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-2"></i>Buat Tim
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('teamTypeSelect').addEventListener('change', function () {
+        const kecField = document.getElementById('kecamatanField');
+        kecField.style.display = this.value === 'kecamatan' ? 'block' : 'none';
+    });
+</script>
+{% endblock %}

@@ -129,7 +129,7 @@
                                 <span>Ruangan "<strong id="searchQueryDisplay"></strong>" tidak ditemukan di tab
                                     ini.</span>
                                 <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
-                                    data-bs-toggle="modal" data-bs-target="#coordinatorModal">
+                                    data-bs-toggle="modal" data-bs-target="#areaContactModal">
                                     <i class="bi bi-headset me-1"></i>Hubungi Admin {% if user_school and
                                     user_school.kecamatan_name %}<span class="badge bg-secondary ms-1">{{
                                         user_school.kecamatan_name }}</span>{% endif %}
@@ -330,6 +330,10 @@
             </div>
         </div>
     </form>
+
+    <!-- Classroom Configuration Section -->
+    {% include 'portal/components/_classroom_config.html' %}
+
 </section>
 
 <script>
@@ -743,7 +747,8 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        var shouldShow = {{ 'true' if show_profile_modal else 'false' }};
+        var shouldShow = {{ 'true' if show_profile_modal else 'false' }
+    };
 
 
     var profileModalEl = document.getElementById('profileModal');
@@ -1162,15 +1167,15 @@
         });
     }
 
-    // Bantuan button handler - open coordinator modal without closing profile modal
+    // Bantuan button handler - Auto-show contact modal with Bantuan button
     var bantuanBtn = document.getElementById('modalBantuanBtn');
-    var coordinatorModalEl = document.getElementById('coordinatorModal');
-    if (bantuanBtn && coordinatorModalEl) {
+    var areaContactModalEl = document.getElementById('areaContactModal');
+    if (bantuanBtn && areaContactModalEl) {
         bantuanBtn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            // Show coordinator modal on top of profile modal
-            var coordModal = bootstrap.Modal.getOrCreateInstance(coordinatorModalEl);
+
+            var coordModal = bootstrap.Modal.getOrCreateInstance(areaContactModalEl);
             coordModal.show();
         });
     }
@@ -1216,6 +1221,6 @@
 </script>
 {% endif %}
 
-{% include "portal/components/_coordinator_modal.html" %}
+{% include "portal/components/_area_contact_modal.html" %}
 
 {% endblock %}

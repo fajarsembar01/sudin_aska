@@ -1,6 +1,6 @@
 {% extends "portal/base_portal.html" %}
-{% set page_title = "Statistik Penilaian" %}
-{% set stats_role = 'admin' %}
+{% set page_title = "Statistik Tim " ~ (team.name or team.kecamatan_name or "Koordinator") %}
+{% set stats_role = 'coordinator' %}
 
 {% block head_extra %}
 {% include 'portal/components/_stats_head.html' %}

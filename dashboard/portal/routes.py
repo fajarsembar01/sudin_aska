@@ -25,6 +25,14 @@ from werkzeug.utils import secure_filename
 
 from ..auth import current_user, role_required
 from dashboard.db_access import get_cursor
+from .permissions import (
+    is_superadmin,
+    can_assign_staff,
+    can_manage_periods,
+    can_reopen_assessment,
+    can_delete_assessment,
+    can_access_aska,
+)
 from .queries import (
     list_portal_schools,
     list_portal_rooms,
@@ -71,6 +79,24 @@ from .queries import (
     delete_aspect,
     list_kelurahan_by_urgency,
     fetch_schools_for_sidak,
+    # Kecamatan access control
+    get_user_kecamatan_ids,
+    get_user_kecamatan_details,
+    assign_user_kecamatan,
+    list_schools_by_kecamatan,
+    get_portal_schools_paginated,
+    # Staff school assignments
+    assign_staff_to_school,
+    get_staff_assigned_schools,
+    get_schools_assigned_to_staff_ids,
+    remove_staff_school_assignment,
+    list_all_staff_with_assignments,
+    # Classroom configuration
+    list_school_classrooms,
+    create_school_classroom,
+    update_school_classroom,
+    delete_school_classroom,
+    save_school_classrooms_batch,
 )
 
 
@@ -84,7 +110,7 @@ portal_bp = Blueprint(
 
 UPLOAD_FOLDER = Path(__file__).parent.parent.parent / "uploads" / "portal"
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
-COORDINATOR_CONTACTS = [
+AREA_CONTACTS = [
     {"area": "Cilincing", "name": "Neni", "phone": "+62 851-1085-1681"},
     {"area": "Kelapa Gading", "name": "Slamet", "phone": "+62 859-2123-2424"},
     {"area": "Koja", "name": "Rani", "phone": "+62 878-8032-8670"},
@@ -103,7 +129,7 @@ def _allowed_file(filename: str) -> bool:
 
 
 def _portal_access_required(view):
-    """Decorator for portal access (staff, sekolah, or admin)."""
+    """Decorator for portal access (staff, sekolah, coordinator, or admin)."""
     from functools import wraps
 
     @wraps(view)
@@ -113,7 +139,7 @@ def _portal_access_required(view):
             flash("Silakan login terlebih dahulu.", "warning")
             return redirect(url_for("auth.login", next=request.path))
         role = user.get("role")
-        if role not in ("admin", "staff", "sekolah"):
+        if role not in ("admin", "coordinator", "staff", "sekolah"):
             flash("Anda tidak memiliki akses ke portal.", "danger")
             return redirect(url_for("auth.login"))
         return view(*args, **kwargs)
@@ -349,7 +375,7 @@ def _sanitize_phone(phone: str) -> str:
 
 
 def _build_coordinator_contacts(school: dict | None = None) -> list[dict]:
-    """Return coordinator list with wa links, optionally personalized with school info."""
+    """Return area contact list with wa links, optionally personalized with school info."""
     contacts = []
     message = "Halo, kami ingin mengganti email akun portal sekolah."
     if school:
@@ -358,7 +384,7 @@ def _build_coordinator_contacts(school: dict | None = None) -> list[dict]:
             "ingin mengganti email akun portal sekolah."
         )
 
-    for c in COORDINATOR_CONTACTS:
+    for c in AREA_CONTACTS:
         phone_for_link = _sanitize_phone(c["phone"])
         is_user_area = False
         if school:
@@ -392,6 +418,9 @@ def home() -> Response:
     if role == "admin":
         return redirect(url_for("portal.admin_stats"))
     
+    if role == "coordinator":
+        return redirect(url_for("portal.coordinator_dashboard"))
+    
     assessments = list_staff_assessments(user["id"])
     return render_template(
         "portal/staff_home.html",
@@ -405,20 +434,35 @@ def home() -> Response:
 def schools() -> Response:
     """List schools available for assessment."""
     user = current_user()
-    if user.get("role") == "sekolah":
+    role = user.get("role")
+    
+    # Sekolah role redirect
+    if role == "sekolah":
         return redirect(url_for("portal.sekolah_rooms"))
+    
+    # Staff can only see assigned schools - redirect to assignments page
+    if role == "staff":
+        return redirect(url_for("portal.staff_assignments"))
+    
+    # Admin users - filter by kecamatan access
+    kecamatan_filter = None
+    if role == "admin":
+        kecamatan_filter = get_user_kecamatan_ids(user["id"])
+        if not kecamatan_filter:
+            flash("Anda belum memiliki akses ke kecamatan manapun. Hubungi administrator.", "warning")
+            return redirect(url_for("portal.home"))
     
     search = request.args.get("q", "").strip()
     jenjang = request.args.get("jenjang", "").strip() or None
     page = request.args.get("page", 1, type=int)
     per_page = 20
     
-    from .queries import get_portal_schools_paginated
     pagination = get_portal_schools_paginated(
         page=page, 
         per_page=per_page, 
         search=search or None, 
-        jenjang=jenjang
+        jenjang=jenjang,
+        kecamatan_ids=kecamatan_filter
     )
     
     return render_template(
@@ -435,9 +479,18 @@ def schools() -> Response:
 def assess(school_id: int) -> Response:
     """Start or continue assessment for a school."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff"):
+    role = user.get("role")
+    
+    if role not in ("admin", "staff"):
         flash("Hanya staff yang bisa melakukan penilaian.", "danger")
         return redirect(url_for("portal.home"))
+    
+    # Staff access control - verify assignment
+    if role == "staff":
+        assigned_school_ids = get_schools_assigned_to_staff_ids(user["id"])
+        if school_id not in assigned_school_ids:
+            flash("Anda tidak memiliki akses ke sekolah ini. Hubungi admin untuk penugasan.", "danger")
+            return redirect(url_for("portal.staff_assignments"))
     
     school = get_school_by_id(school_id)
     if not school:
@@ -862,6 +915,28 @@ def delete_draft_route(assessment_id: int) -> Response:
     return redirect(url_for("portal.home"))
 
 
+# ===== Staff Assignment Routes =====
+
+
+@portal_bp.route("/staff/assignments")
+@_portal_access_required
+def staff_assignments() -> Response:
+    """Staff view their assigned schools."""
+    user = current_user()
+    
+    if user.get("role") != "staff":
+        flash("Halaman ini hanya untuk staf.", "warning")
+        return redirect(url_for("portal.home"))
+    
+    assigned_schools = get_staff_assigned_schools(user["id"])
+    
+    return render_template(
+        "portal/staff_assignments.html",
+        assigned_schools=assigned_schools,
+        user=user,
+    )
+
+
 # ===== Sekolah Portal Routes =====
 
 
@@ -915,6 +990,11 @@ def sekolah_rooms() -> Response:
     show_profile_modal = bool(missing_fields)
     kecamatan_list = list_kecamatan()
     kelurahan_list = list_kelurahan()  # full list to allow sekolah update
+    
+    # Get classroom configurations for current school
+    classrooms = []
+    if current_school_id:
+        classrooms = list_school_classrooms(current_school_id)
 
     return render_template(
         "portal/sekolah_rooms.html",
@@ -928,10 +1008,154 @@ def sekolah_rooms() -> Response:
         coordinator_contacts=_build_coordinator_contacts(user_school),
         kecamatan_list=kecamatan_list,
         kelurahan_list=kelurahan_list,
+        classrooms=classrooms,
     )
 
 
+# ===== Coordinator helpers =====
+
+
+def _get_coordinator_team_context(user_id: int):
+    """Return (team, team_members, staff_ids) for a coordinator."""
+    from dashboard.queries import get_monev_teams, get_team_members
+    
+    all_teams = get_monev_teams()
+    team = next((t for t in all_teams if t.get("coordinator_id") == user_id), None)
+    if not team:
+        return None, [], []
+    
+    team_members = get_team_members(team["id"])
+    staff_ids = [m["staff_id"] for m in team_members]
+    if user_id not in staff_ids:
+        staff_ids.append(user_id)
+    
+    return team, team_members, staff_ids
+
+
+def _get_team_staff_ids(team_id: int):
+    """Return (staff_ids, team) for a given team id (includes coordinator)."""
+    from dashboard.queries import get_monev_teams, get_team_members
+    
+    teams = get_monev_teams()
+    team = next((t for t in teams if t.get("id") == team_id), None)
+    if not team:
+        return [], None
+    
+    members = get_team_members(team_id)
+    staff_ids = [m["staff_id"] for m in members]
+    coordinator_id = team.get("coordinator_id")
+    if coordinator_id and coordinator_id not in staff_ids:
+        staff_ids.append(coordinator_id)
+    
+    return staff_ids, team
+
+
+def _serialize_related_photos(school_id: int | None, room_id: int | None, staff_ids: list[int] | None = None):
+    """Serialize related photos response with optional staff filtering."""
+    if not school_id or not room_id:
+        return []
+    
+    from .queries import fetch_related_photos
+    
+    photos = fetch_related_photos(
+        school_id=school_id,
+        room_id=room_id,
+        limit=10,
+        staff_ids=staff_ids,
+    )
+    
+    result = []
+    for p in photos:
+        filename = (p.get("photo_path") or "").split("/")[-1]
+        if p.get("photo_path", "").startswith("http"):
+            photo_url = p["photo_path"]
+        else:
+            photo_url = url_for("portal.uploaded_file", filename=filename) if filename else None
+        
+        score_base = float(p.get("room_score") or 0)
+        score_pct = (score_base / 3 * 100) if score_base else 0
+        
+        result.append({
+            "photo_url": photo_url,
+            "school_name": p.get("school_name"),
+            "room_name": p.get("room_name"),
+            "score": round(score_pct, 1),
+            "captured_at": p["captured_at"].isoformat() if p.get("captured_at") else None,
+            "latitude": float(p["latitude"]) if p.get("latitude") else None,
+            "longitude": float(p["longitude"]) if p.get("longitude") else None,
+        })
+    return result
+
+
 # ===== Admin Routes =====
+
+
+@portal_bp.route("/coordinator/stats")
+@role_required("coordinator")
+def coordinator_stats() -> Response:
+    """Coordinator view of team statistics - same as admin but filtered to team members only."""
+    from .queries import (
+        list_team_assessments,
+        fetch_team_top_schools,
+        fetch_team_bottom_schools,
+        list_periods,
+        fetch_portal_stats,
+        fetch_score_distribution,
+        fetch_random_photos,
+        fetch_school_avg_scores,
+        fetch_kecamatan_avg_scores,
+    )
+    
+    user = current_user()
+    user_id = user.get("id")
+    period_id = request.args.get("period_id", type=int)
+    jenjang_filter = request.args.get("jenjang") or None
+    order = request.args.get("order") or "recent"
+    photo_order = request.args.get("photo_order", "random")
+    
+    my_team, team_members, staff_ids = _get_coordinator_team_context(user_id)
+    
+    if not my_team:
+        flash("Anda belum ditugaskan sebagai koordinator tim manapun.", "warning")
+        return redirect(url_for("portal.home"))
+        
+    stats = fetch_portal_stats(period_id=period_id, staff_ids=staff_ids)
+    score_dist = fetch_score_distribution(period_id=period_id, staff_ids=staff_ids)
+    
+    # Get team-filtered assessments
+    recent_assessments = list_team_assessments(staff_ids, limit=50, period_id=period_id)
+    top_schools = fetch_team_top_schools(staff_ids, period_id=period_id, limit=10)
+    bottom_schools = fetch_team_bottom_schools(staff_ids, period_id=period_id, limit=10)
+    
+    # Other data for display
+    random_photos = fetch_random_photos(
+        period_id=period_id,
+        order=photo_order,
+        limit=24,
+        staff_ids=staff_ids,
+    )
+    school_avg_map = fetch_school_avg_scores(period_id=period_id, staff_ids=staff_ids)
+    periods = list_periods()
+    kecamatan_stats = fetch_kecamatan_avg_scores(period_id=period_id, staff_ids=staff_ids)
+    
+    return render_template(
+        "portal/coordinator_stats.html",
+        team=my_team,
+        team_members=team_members,
+        stats=stats,
+        score_dist=score_dist,
+        kecamatan_stats=kecamatan_stats,
+        recent_assessments=recent_assessments,
+        top_schools=top_schools,
+        bottom_schools=bottom_schools,
+        random_photos=random_photos,
+        school_avg_map=school_avg_map,
+        periods=periods,
+        current_period_id=period_id,
+        jenjang_filter=jenjang_filter,
+        order=order,
+        photo_order=photo_order,
+    )
 
 
 @portal_bp.route("/admin/stats")
@@ -939,7 +1163,11 @@ def sekolah_rooms() -> Response:
 def admin_stats() -> Response:
     """Admin view of portal statistics."""
     # Trigger reload
+    from dashboard.queries import get_monev_teams
+    from .queries import fetch_team_top_schools, fetch_team_bottom_schools
+
     period_id = request.args.get("period_id", type=int)
+    team_id = request.args.get("team_id", type=int)
     jenjang_filter = request.args.get("jenjang") or None
     order = request.args.get("order") or "recent"
     allowed_orders = {
@@ -956,25 +1184,43 @@ def admin_stats() -> Response:
     if order not in allowed_orders:
         order = "recent"
     
-    stats = fetch_portal_stats(period_id)
+    staff_ids: list[int] | None = None
+    selected_team = None
+    if team_id:
+        staff_ids, selected_team = _get_team_staff_ids(team_id)
+        if selected_team is None:
+            staff_ids = None
+    
+    stats = fetch_portal_stats(period_id, staff_ids=staff_ids)
     from .queries import fetch_score_distribution
-    score_dist = fetch_score_distribution(period_id)
+    score_dist = fetch_score_distribution(period_id, staff_ids=staff_ids)
     recent_assessments = list_recent_assessments(
         period_id=period_id,
         jenjang=jenjang_filter,
         order=order,
+        staff_ids=staff_ids,
     )
-    top_schools = fetch_top_schools(period_id=period_id, limit=10)
-    bottom_schools = fetch_bottom_schools(period_id=period_id, limit=10)
+    if staff_ids:
+        top_schools = fetch_team_top_schools(staff_ids, period_id=period_id, limit=10)
+        bottom_schools = fetch_team_bottom_schools(staff_ids, period_id=period_id, limit=10)
+    else:
+        top_schools = fetch_top_schools(period_id=period_id, limit=10)
+        bottom_schools = fetch_bottom_schools(period_id=period_id, limit=10)
     photo_order = request.args.get("photo_order", "random")
-    random_photos = fetch_random_photos(period_id=period_id, order=photo_order, limit=24)
-    school_avg_map = fetch_school_avg_scores(period_id=period_id)
+    random_photos = fetch_random_photos(
+        period_id=period_id,
+        order=photo_order,
+        limit=24,
+        staff_ids=staff_ids,
+    )
+    school_avg_map = fetch_school_avg_scores(period_id=period_id, staff_ids=staff_ids)
     periods = list_periods()
     all_schools = list_portal_schools()
     all_staff = list_all_staff()
+    monev_teams = get_monev_teams()
     
     from .queries import fetch_kecamatan_avg_scores
-    kecamatan_stats = fetch_kecamatan_avg_scores(period_id)
+    kecamatan_stats = fetch_kecamatan_avg_scores(period_id, staff_ids=staff_ids)
     
     return render_template(
         "portal/admin_stats.html",
@@ -988,11 +1234,14 @@ def admin_stats() -> Response:
         school_avg_map=school_avg_map,
         periods=periods,
         current_period_id=period_id,
+        selected_team_id=team_id,
+        selected_team=selected_team,
         jenjang_filter=jenjang_filter,
         order=order,
         photo_order=photo_order,
         all_schools=all_schools,
         all_staff=all_staff,
+        monev_teams=monev_teams,
     )
 
 
@@ -1000,15 +1249,54 @@ def admin_stats() -> Response:
 @role_required("admin")
 def api_rankings() -> Response:
     """API endpoint for fetching additional rankings."""
+    from .queries import fetch_team_top_schools, fetch_team_bottom_schools
+    
+    type_ = request.args.get("type", "best")
+    limit = request.args.get("limit", 10, type=int)
+    offset = request.args.get("offset", 0, type=int)
+    period_id = request.args.get("period_id", type=int) or None
+    team_id = request.args.get("team_id", type=int)
+    
+    staff_ids = None
+    if team_id:
+        staff_ids, team = _get_team_staff_ids(team_id)
+        if team is None:
+            staff_ids = None
+    
+    if type_ == "best":
+        if staff_ids:
+            data = fetch_team_top_schools(staff_ids, period_id=period_id, limit=limit, offset=offset)
+        else:
+            data = fetch_top_schools(limit=limit, offset=offset, period_id=period_id)
+    else:
+        if staff_ids:
+            data = fetch_team_bottom_schools(staff_ids, period_id=period_id, limit=limit, offset=offset)
+        else:
+            data = fetch_bottom_schools(limit=limit, offset=offset, period_id=period_id)
+        
+    return jsonify(data)
+
+
+@portal_bp.route("/coordinator/api/rankings")
+@role_required("coordinator")
+def coordinator_api_rankings() -> Response:
+    """API endpoint for coordinator rankings limited to their team."""
+    from .queries import fetch_team_top_schools, fetch_team_bottom_schools
+    
     type_ = request.args.get("type", "best")
     limit = request.args.get("limit", 10, type=int)
     offset = request.args.get("offset", 0, type=int)
     period_id = request.args.get("period_id", type=int) or None
     
+    user = current_user()
+    _, _, staff_ids = _get_coordinator_team_context(user.get("id"))
+    if not staff_ids:
+        return jsonify([])
+    
     if type_ == "best":
-        data = fetch_top_schools(limit=limit, offset=offset, period_id=period_id)
+        data = fetch_team_top_schools(staff_ids, period_id=period_id, limit=limit, offset=offset)
     else:
-        data = fetch_bottom_schools(limit=limit, offset=offset, period_id=period_id)
+        data = fetch_team_bottom_schools(staff_ids, period_id=period_id, limit=limit, offset=offset)
         
     return jsonify(data)
 
@@ -1059,8 +1347,29 @@ def export_excel() -> Response:
 def admin_map_data() -> Response:
     """Return JSON data for school locations map."""
     period_id = request.args.get("period_id", type=int)
+    team_id = request.args.get("team_id", type=int)
     from .queries import fetch_map_data
-    data = fetch_map_data(period_id)
+    
+    staff_ids = None
+    if team_id:
+        staff_ids, team = _get_team_staff_ids(team_id)
+        if team is None:
+            staff_ids = None
+    
+    data = fetch_map_data(period_id, staff_ids=staff_ids)
+    return jsonify(data)
+
+
+@portal_bp.route("/coordinator/map-data")
+@role_required("coordinator")
+def coordinator_map_data() -> Response:
+    """Return JSON data for school locations map - for coordinator role."""
+    period_id = request.args.get("period_id", type=int)
+    from .queries import fetch_map_data
+    
+    user = current_user()
+    _, _, staff_ids = _get_coordinator_team_context(user.get("id"))
+    data = fetch_map_data(period_id, staff_ids=staff_ids)
     return jsonify(data)
 
 
@@ -1108,7 +1417,37 @@ def admin_photos_partial() -> Response:
     """Return gallery grid partial for photo order changes (AJAX)."""
     period_id = request.args.get("period_id", type=int)
     photo_order = request.args.get("photo_order", "random")
-    photos = fetch_random_photos(period_id=period_id, order=photo_order, limit=24)
+    team_id = request.args.get("team_id", type=int)
+    
+    staff_ids = None
+    if team_id:
+        staff_ids, team = _get_team_staff_ids(team_id)
+        if team is None:
+            staff_ids = None
+    
+    photos = fetch_random_photos(
+        period_id=period_id,
+        order=photo_order,
+        limit=24,
+        staff_ids=staff_ids,
+    )
+    return render_template("portal/_gallery_grid.html", random_photos=photos)
+
+
+@portal_bp.route("/coordinator/photos")
+@role_required("coordinator")
+def coordinator_photos_partial() -> Response:
+    """Return gallery grid partial filtered to coordinator team."""
+    period_id = request.args.get("period_id", type=int)
+    photo_order = request.args.get("photo_order", "random")
+    user = current_user()
+    _, _, staff_ids = _get_coordinator_team_context(user.get("id"))
+    photos = fetch_random_photos(
+        period_id=period_id,
+        order=photo_order,
+        limit=24,
+        staff_ids=staff_ids,
+    )
     return render_template("portal/_gallery_grid.html", random_photos=photos)
 
 
@@ -1116,37 +1455,30 @@ def admin_photos_partial() -> Response:
 @role_required("admin")
 def admin_related_photos() -> Response:
     """Return related photos for the same school and room type (AJAX JSON)."""
-    from .queries import fetch_related_photos
     school_id = request.args.get("school_id", type=int)
     room_id = request.args.get("room_id", type=int)
+    team_id = request.args.get("team_id", type=int)
     
-    if not school_id or not room_id:
-        return jsonify([])
+    staff_ids = None
+    if team_id:
+        staff_ids, team = _get_team_staff_ids(team_id)
+        if team is None:
+            staff_ids = None
     
-    photos = fetch_related_photos(school_id=school_id, room_id=room_id, limit=10)
+    result = _serialize_related_photos(school_id, room_id, staff_ids=staff_ids)
+    return jsonify(result)
+
+
+@portal_bp.route("/coordinator/related-photos")
+@role_required("coordinator")
+def coordinator_related_photos() -> Response:
+    """Related photos restricted to coordinator's team assessments."""
+    school_id = request.args.get("school_id", type=int)
+    room_id = request.args.get("room_id", type=int)
+    user = current_user()
+    _, _, staff_ids = _get_coordinator_team_context(user.get("id"))
     
-    # Format photo URLs
-    result = []
-    for p in photos:
-        filename = (p.get("photo_path") or "").split("/")[-1]
-        if p.get("photo_path", "").startswith("http"):
-            photo_url = p["photo_path"]
-        else:
-            photo_url = url_for("portal.uploaded_file", filename=filename) if filename else None
-        
-        score_base = float(p.get("room_score") or 0)
-        score_pct = (score_base / 3 * 100) if score_base else 0
-        
-        result.append({
-            "photo_url": photo_url,
-            "school_name": p.get("school_name"),
-            "room_name": p.get("room_name"),
-            "score": round(score_pct, 1),
-            "captured_at": p["captured_at"].isoformat() if p.get("captured_at") else None,
-            "latitude": float(p["latitude"]) if p.get("latitude") else None,
-            "longitude": float(p["longitude"]) if p.get("longitude") else None,
-        })
-    
+    result = _serialize_related_photos(school_id, room_id, staff_ids=staff_ids)
     return jsonify(result)
 
 @portal_bp.route("/admin/periods", methods=["POST"])
@@ -1837,3 +2169,545 @@ def get_school_room_details(school_id: int) -> Response:
         "school_id": school_id,
         "rooms": result,
     })
+
+
+@portal_bp.route("/sekolah/classrooms", methods=["POST"])
+@_portal_access_required
+def save_classrooms() -> Response:
+    """Save classroom configurations for a school."""
+    user = current_user()
+    
+    if user.get("role") != "sekolah":
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    
+    user_school = _fetch_user_school(user["id"])
+    if not user_school:
+        return jsonify({"success": False, "message": "Sekolah tidak ditemukan"}), 404
+    
+    data = request.get_json(silent=True) or {}
+    classrooms = data.get("classrooms", [])
+    
+    try:
+        save_school_classrooms_batch(user_school["id"], classrooms)
+        return jsonify({"success": True, "message": "Konfigurasi kelas berhasil disimpan"})
+    except Exception as e:
+        current_app.logger.exception("Error saving classrooms")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@portal_bp.route("/sekolah/classrooms/<int:classroom_id>/delete", methods=["POST"])
+@_portal_access_required
+def delete_classroom_route(classroom_id: int) -> Response:
+    """Delete a classroom configuration."""
+    user = current_user()
+    
+    if user.get("role") != "sekolah":
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    
+    try:
+        if delete_school_classroom(classroom_id):
+            return jsonify({"success": True})
+        return jsonify({"success": False, "message": "Gagal menghapus kelas"}), 400
+    except Exception as e:
+        current_app.logger.exception("Error deleting classroom")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+# ===== Admin Staff Management Routes =====
+
+
+@portal_bp.route("/admin/manage-staff")
+@role_required("admin")
+def admin_manage_staff() -> Response:
+    """Admin interface to manage staff-school assignments."""
+    user = current_user()
+    
+    # Superadmin only - viewer cannot manage staff
+    if not can_assign_staff(user):
+        flash("Anda tidak memiliki izin untuk mengelola staff. Hubungi superadmin.", "warning")
+        return redirect(url_for("portal.admin_stats"))
+    
+    # Get admin's kecamatan access
+    admin_kecamatan_ids = get_user_kecamatan_ids(user["id"])
+    if not admin_kecamatan_ids:
+        flash("Anda belum memiliki akses ke kecamatan manapun.", "warning")
+        return redirect(url_for("portal.admin_stats"))
+    
+    # Get all staff with their assignments
+    all_staff = list_all_staff_with_assignments()
+    
+    # Get schools within admin's kecamatan access
+    available_schools = list_schools_by_kecamatan(admin_kecamatan_ids)
+    
+    return render_template(
+        "portal/admin_manage_staff.html",
+        staff_list=all_staff,
+        available_schools=available_schools,
+        admin_kecamatan_ids=admin_kecamatan_ids,
+        user=user,
+    )
+
+
+@portal_bp.route("/admin/assign-school", methods=["POST"])
+@role_required("admin")
+def admin_assign_school() -> Response:
+    """Admin assigns a school to a staff member."""
+    user = current_user()
+    
+    # Superadmin only
+    if not can_assign_staff(user):
+        return jsonify({"success": False, "message": "Tidak memiliki izin"}), 403
+    
+    staff_id = request.form.get("staff_id", type=int)
+    school_id = request.form.get("school_id", type=int)
+    notes = request.form.get("notes", "").strip()
+    
+    if not staff_id or not school_id:
+        return jsonify({"success": False, "message": "Data tidak lengkap"}), 400
+    
+    # Verify school is within admin's kecamatan access
+    admin_kecamatan_ids = get_user_kecamatan_ids(user["id"])
+    school = get_school_by_id(school_id)
+    
+    if not school or school.get("kecamatan_id") not in admin_kecamatan_ids:
+        return jsonify({"success": False, "message": "Sekolah tidak dalam akses kecamatan Anda"}), 403
+    
+    try:
+        assign_staff_to_school(staff_id, school_id, user["id"], notes)
+        flash(f"Sekolah berhasil ditugaskan ke staf.", "success")
+        return jsonify({"success": True})
+    except Exception as e:
+        current_app.logger.exception("Error assigning school")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@portal_bp.route("/admin/remove-assignment", methods=["POST"])
+@role_required("admin")
+def admin_remove_assignment() -> Response:
+    """Admin removes a school assignment from a staff member."""
+    user = current_user()
+    
+    # Superadmin only
+    if not can_assign_staff(user):
+        return jsonify({"success": False, "message": "Tidak memiliki izin"}), 403
+    
+    staff_id = request.form.get("staff_id", type=int)
+    school_id = request.form.get("school_id", type=int)
+    
+    if not staff_id or not school_id:
+        return jsonify({"success": False, "message": "Data tidak lengkap"}), 400
+    
+    try:
+        if remove_staff_school_assignment(staff_id, school_id):
+            flash("Penugasan berhasil dihapus.", "success")
+            return jsonify({"success": True})
+        return jsonify({"success": False, "message": "Gagal menghapus penugasan"}), 400
+    except Exception as e:
+        current_app.logger.exception("Error removing assignment")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+
+@portal_bp.route("/admin/staff/<int:staff_id>/assignments")
+@role_required("admin")
+def get_staff_assignments_api(staff_id: int) -> Response:
+    """API endpoint to get assignments for a specific staff member."""
+    try:
+        assignments = get_staff_assigned_schools(staff_id)
+        return jsonify({
+            "success": True,
+            "assignments": assignments
+        })
+    except Exception as e:
+        current_app.logger.exception("Error fetching staff assignments")
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
+
+
+
+# Add permissions to template context globally
+@portal_bp.context_processor
+def inject_permissions():
+    """Inject permission checks into all portal templates."""
+    user = current_user()
+    if not user:
+        return {}
+    
+    from .permissions import get_permission_summary
+    return {
+        'permissions': get_permission_summary(user),
+        'is_superadmin': is_superadmin(user),
+        'can_access_aska': can_access_aska(user),
+    }
+
+
+
+# ===== Coordinator Dashboard Routes =====
+
+@portal_bp.route("/coordinator/dashboard")
+@role_required("coordinator")
+def coordinator_dashboard() -> Response:
+    """Coordinator dashboard - view team progress."""
+    from dashboard.queries import get_monev_teams, get_team_members
+    
+    user = current_user()
+    user_id = user.get("id")
+    
+    # Find the team where current user is coordinator
+    all_teams = get_monev_teams()
+    my_team = None
+    
+    for team in all_teams:
+        if team.get('coordinator_id') == user_id:
+            my_team = team
+            break
+    
+    if not my_team:
+        # Show empty dashboard instead of redirecting to avoid loop
+        return render_template(
+            "portal/coordinator_dashboard.html",
+            section={"name": "Belum Ditugaskan", "description": "Anda belum menjadi koordinator tim manapun."},
+            team_members=[],
+            stats={"total_staff": 0, "total_assessments": 0, "completed_assessments": 0, "schools_assessed": 0},
+            user=user,
+        )
+    
+    # Get team members
+    team_members_data = get_team_members(my_team['id'])
+    
+    # Build team stats (basic)
+    stats = {
+        "total_staff": len(team_members_data),
+        "total_assessments": 0,
+        "completed_assessments": 0,
+        "schools_assessed": 0,
+    }
+    
+    # Create a section-like object for template compatibility
+    team_as_section = {
+        "name": my_team.get('name') or my_team.get('kecamatan_name') or f"Tim ID {my_team['id']}",
+        "description": f"Tim Monev ({my_team.get('team_type', 'kecamatan')})",
+    }
+    
+    return render_template(
+        "portal/coordinator_dashboard.html",
+        section=team_as_section,
+        team_members=team_members_data,
+        stats=stats,
+        user=user,
+    )
+
+
+@portal_bp.route("/coordinator/team")
+@role_required("coordinator")
+def coordinator_team() -> Response:
+    """View and manage team members."""
+    from dashboard.queries import get_monev_teams, get_team_members
+    
+    user = current_user()
+    user_id = user.get("id")
+    
+    # Find the team where current user is coordinator
+    all_teams = get_monev_teams()
+    my_team = None
+    
+    for team in all_teams:
+        if team.get('coordinator_id') == user_id:
+            my_team = team
+            break
+    
+    if not my_team:
+        # Show empty page instead of redirecting
+        return render_template(
+            "portal/coordinator_team.html",
+            section={"name": "Belum Ditugaskan", "description": "Anda belum menjadi koordinator tim manapun."},
+            team_members=[],
+            user=user,
+        )
+    
+    team_members_data = get_team_members(my_team['id'])
+    
+    # Create a section-like object for template compatibility
+    team_as_section = {
+        "name": my_team.get('name') or my_team.get('kecamatan_name') or f"Tim ID {my_team['id']}",
+        "description": f"Tim Monev ({my_team.get('team_type', 'kecamatan')})",
+    }
+    
+    return render_template(
+        "portal/coordinator_team.html",
+        section=team_as_section,
+        team_members=team_members_data,
+        user=user,
+    )
+
+
+# ===== Admin Team Management Routes =====
+
+@portal_bp.route("/admin/team-management")
+@role_required("admin")
+def admin_team_management() -> Response:
+    """Admin interface for managing team structure."""
+    from .queries import get_all_users_for_team_management, get_all_sections
+    
+    users = get_all_users_for_team_management()
+    sections = get_all_sections()
+    
+    return render_template(
+        "portal/admin_team_management.html",
+        users=users,
+        sections=sections,
+    )
+
+
+@portal_bp.route("/admin/assign-coordinator", methods=["POST"])
+@role_required("admin")
+def admin_assign_coordinator() -> Response:
+    """API to assign user as coordinator."""
+    from .queries import assign_coordinator_to_section
+    
+    data = request.get_json()
+    user_id = data.get("user_id")
+    section_id = data.get("section_id")
+    
+    if not user_id or not section_id:
+        return jsonify({"success": False, "message": "Missing required fields"}), 400
+    
+    try:
+        assign_coordinator_to_section(int(user_id), int(section_id))
+        return jsonify({"success": True, "message": "Coordinator assigned successfully"})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@portal_bp.route("/admin/assign-staff", methods=["POST"])
+@role_required("admin")
+def admin_assign_staff() -> Response:
+    """API to assign user as staff to section."""
+    from .queries import assign_staff_to_section
+    
+    data = request.get_json()
+    user_id = data.get("user_id")
+    section_id = data.get("section_id")
+    supervisor_id = data.get("supervisor_id") or None
+    
+    if not user_id or not section_id:
+        return jsonify({"success": False, "message": "Missing required fields"}), 400
+    
+    try:
+        assign_staff_to_section(int(user_id), int(section_id), int(supervisor_id) if supervisor_id else None)
+        return jsonify({"success": True, "message": "Staff assigned successfully"})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@portal_bp.route("/admin/remove-team-assignment", methods=["POST"])
+@role_required("admin")
+def admin_remove_team_assignment() -> Response:
+    """API to remove user from team."""
+    from .queries import remove_team_assignment
+    
+    data = request.get_json()
+    user_id = data.get("user_id")
+    
+    if not user_id:
+        return jsonify({"success": False, "message": "Missing user_id"}), 400
+    
+    try:
+        remove_team_assignment(int(user_id))
+        return jsonify({"success": True, "message": "Team assignment removed"})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+# =====================================================
+# User Management & Monev Teams (Portal Integration)
+# =====================================================
+
+@portal_bp.route("/settings/users", methods=["GET", "POST"])
+@role_required("admin")
+def manage_users() -> Response:
+    """Manage dashboard users from Portal app."""
+    from dashboard.queries import list_dashboard_users, create_dashboard_user, update_dashboard_user
+    from werkzeug.security import generate_password_hash
+    
+    if request.method == "POST":
+        action = request.form.get("action", "create")
+        user_id = request.form.get("user_id")
+        
+        email = (request.form.get("email") or "").strip().lower()
+        full_name = (request.form.get("full_name") or "").strip()
+        password = request.form.get("password") or ""
+        role = (request.form.get("role") or "viewer").strip()
+        account_status = request.form.get("account_status")
+
+        try:
+            if action == "create":
+                if not all([email, full_name, password]):
+                    flash("Semua field wajib diisi.", "warning")
+                else:
+                    password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=12)
+                    create_dashboard_user(email=email, full_name=full_name, password_hash=password_hash, role=role)
+                    flash(f"User {full_name} berhasil dibuat.", "success")
+                    
+            elif action == "update":
+                if not user_id:
+                    flash("ID User tidak valid.", "danger")
+                else:
+                    pw_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=12) if password else None
+                    update_dashboard_user(
+                        user_id=int(user_id), 
+                        full_name=full_name, 
+                        role=role, 
+                        email=email, 
+                        password_hash=pw_hash,
+                        account_status=account_status
+                    )
+                    flash(f"Data user {full_name} berhasil diperbarui.", "success")
+                    
+            elif action == "verify":
+                if not user_id or not account_status:
+                     flash("Data tidak lengkap.", "warning")
+                else:
+                     update_dashboard_user(user_id=int(user_id), full_name=full_name, role=role, account_status=account_status)
+                     flash(f"Status user berhasil diubah menjadi {account_status}.", "success")
+
+        except Exception as exc: 
+            current_app.logger.error(f"Error managing user: {exc}")
+            flash(f"Gagal memproses data: {exc}", "danger")
+
+    users = list_dashboard_users()
+    return render_template("portal/manage_users_portal.html", users=users)
+
+
+@portal_bp.route("/settings/monev-teams", methods=["GET", "POST"])
+@role_required("admin")
+def manage_monev_teams() -> Response:
+    """Manage monev teams from Portal app."""
+    from dashboard.queries import (
+        get_monev_teams,
+        get_team_members,
+        update_team_coordinator,
+        add_team_member,
+        remove_team_member,
+        get_available_staff,
+        create_monev_team,
+        delete_monev_team,
+    )
+    from dashboard.portal.queries import list_kecamatan
+    
+    if request.method == "POST":
+        action = request.form.get("action")
+        
+        try:
+            if action == "create_team":
+                name = request.form.get("team_name", "").strip()
+                team_type = request.form.get("team_type", "custom")
+                kecamatan_id = request.form.get("kecamatan_id")
+                kecamatan_id = int(kecamatan_id) if kecamatan_id else None
+                
+                if not name:
+                    flash("Nama tim tidak boleh kosong.", "warning")
+                else:
+                    team_id = create_monev_team(name, team_type, kecamatan_id)
+                    if team_id:
+                        flash(f"Tim '{name}' berhasil dibuat.", "success")
+                    else:
+                        flash("Gagal membuat tim.", "danger")
+                        
+            elif action == "delete_team":
+                team_id = int(request.form.get("team_id"))
+                team_name = request.form.get("team_name", "")
+                
+                if delete_monev_team(team_id):
+                    flash(f"Tim '{team_name}' berhasil dihapus.", "success")
+                else:
+                    flash("Gagal menghapus tim.", "danger")
+                    
+            elif action == "update_coordinator":
+                team_id = int(request.form.get("team_id"))
+                coordinator_id = request.form.get("coordinator_id")
+                coordinator_id = int(coordinator_id) if coordinator_id else None
+                
+                if update_team_coordinator(team_id, coordinator_id):
+                    flash("Koordinator berhasil diperbarui.", "success")
+                else:
+                    flash("Gagal memperbarui koordinator.", "danger")
+                    
+            elif action == "add_member":
+                team_id = int(request.form.get("team_id"))
+                staff_id = int(request.form.get("staff_id"))
+                admin_id = current_user().get("id") if current_user() else None
+                
+                if add_team_member(team_id, staff_id, admin_id):
+                    flash("Anggota berhasil ditambahkan.", "success")
+                else:
+                    flash("Anggota sudah ada dalam tim atau gagal ditambahkan.", "warning")
+                    
+            elif action == "remove_member":
+                member_id = int(request.form.get("member_id"))
+                
+                if remove_team_member(member_id):
+                    flash("Anggota berhasil dihapus dari tim.", "success")
+                else:
+                    flash("Gagal menghapus anggota.", "danger")
+                    
+        except Exception as exc:
+            current_app.logger.error(f"Error managing monev team: {exc}")
+            flash(f"Terjadi kesalahan: {exc}", "danger")
+    
+    # GET: Fetch teams by type and enrich with members
+    kasi_teams = get_monev_teams(team_type='kasi')
+    for team in kasi_teams:
+        team['members'] = get_team_members(team['id'])
+    
+    kecamatan_teams = get_monev_teams(team_type='kecamatan')
+    for team in kecamatan_teams:
+        team['members'] = get_team_members(team['id'])
+    
+    custom_teams = get_monev_teams(team_type='custom')
+    for team in custom_teams:
+        team['members'] = get_team_members(team['id'])
+    
+    available_staff = get_available_staff()
+    kecamatan_list = list_kecamatan()
+    
+    return render_template("portal/monev_teams_portal.html", 
+                           kasi_teams=kasi_teams, 
+                           kecamatan_teams=kecamatan_teams, 
+                           custom_teams=custom_teams,
+                           available_staff=available_staff,
+                           kecamatan_list=kecamatan_list)
+
+
+@portal_bp.route("/my-team")
+@role_required("coordinator", "staff")
+def view_my_team() -> Response:
+    """View monev team for coordinator or staff member (Portal)."""
+    from dashboard.queries import get_monev_teams, get_team_members
+    
+    user = current_user()
+    user_id = user.get("id")
+    
+    all_teams = get_monev_teams()
+    
+    my_team = None
+    my_team_role = None
+    
+    for team in all_teams:
+        if team.get('coordinator_id') == user_id:
+            my_team = team
+            my_team_role = 'coordinator'
+            break
+        
+        members = get_team_members(team['id'])
+        if any(m.get('staff_id') == user_id for m in members):
+            my_team = team
+            my_team_role = 'member'
+            break
+    
+    if my_team:
+        my_team['members'] = get_team_members(my_team['id'])
+    
+    return render_template("portal/my_team_portal.html", team=my_team, team_role=my_team_role)

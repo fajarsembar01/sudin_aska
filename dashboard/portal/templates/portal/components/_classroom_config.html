@@ -1,0 +1,249 @@
+<!-- Classroom Configuration Section -->
+{% if user_school %}
+<section class="mt-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="d-flex align-items-center gap-3 text-white">
+                <span class="icon-badge text-white" style="background: rgba(255,255,255,0.2);">
+                    <i class="bi bi-diagram-3"></i>
+                </span>
+                <div>
+                    <h5 class="mb-0 fw-bold">Konfigurasi Kelas</h5>
+                    <small>Atur varian kelas yang ada di sekolah (contoh: Kelas 1A, Kelas 1B, dst)</small>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Existing ClassRooms -->
+            <div id="classroomList" class="mb-3">
+                {% if classrooms %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nama Kelas</th>
+                                <th>Tingkat</th>
+                                <th>Varian</th>
+                                <th>Kapasitas</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="classroomTableBody">
+                            {% for classroom in classrooms %}
+                            <tr data-classroom-id="{{ classroom.id }}">
+                                <td class="fw-semibold">{{ classroom.name }}</td>
+                                <td><span class="badge bg-info">Kelas {{ classroom.grade_level }}</span></td>
+                                <td>{{ classroom.variant or '-' }}</td>
+                                <td>{{ classroom.capacity or '-' }} siswa</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger delete-classroom" data-id="{{ classroom.id }}"
+                                        data-name="{{ classroom.name }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Belum ada konfigurasi kelas. Tambahkan kelas di bawah ini.
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Add New Classroom Form -->
+            <div class="border-top pt-3">
+                <h6 class="fw-bold mb-3">
+                    <i class="bi bi-plus-circle text-primary"></i> Tambah Kelas Baru
+                </h6>
+
+                <form id="addClassroomForm">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Nama Kelas *</label>
+                            <input type="text" class="form-control" id="classroomName" placeholder="Misal: Kelas 1A"
+                                required>
+                            <small class="text-muted">Contoh: Kelas 1A, Kelas 2B</small>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Tingkat *</label>
+                            <select class="form-select" id="classroomGrade" required>
+                                <option value="">--</option>
+                                {% if user_school.jenjang == 'SD' %}
+                                {% for i in range(1, 7) %}
+                                <option value="{{ i }}">{{ i }}</option>
+                                {% endfor %}
+                                {% elif user_school.jenjang == 'SMP' %}
+                                {% for i in range(7, 10) %}
+                                <option value="{{ i }}">{{ i }}</option>
+                                {% endfor %}
+                                {% elif user_school.jenjang in ['SMA', 'SMK'] %}
+                                {% for i in range(10, 13) %}
+                                <option value="{{ i }}">{{ i }}</option>
+                                {% endfor %}
+                                {% else %}
+                                {% for i in range(1, 13) %}
+                                <option value="{{ i }}">{{ i }}</option>
+                                {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Varian</label>
+                            <input type="text" class="form-control" id="classroomVariant" placeholder="A" maxlength="5">
+                            <small class="text-muted">A, B, C, dst</small>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Kapasitas</label>
+                            <input type="number" class="form-control" id="classroomCapacity" min="1" placeholder="30">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-plus-lg"></i> Tambah
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-12 mt-2">
+                        <label class="form-label">Catatan (Opsional)</label>
+                        <input type="text" class="form-control form-control-sm" id="classroomNotes"
+                            placeholder="Catatan tambahan...">
+                    </div>
+                </form>
+            </div>
+
+            <!-- Batch Save -->
+            <div class="border-top pt-3 mt-3">
+                <button type="button" class="btn btn-success" id="saveAllClassrooms">
+                    <i class="bi bi-floppy"></i> Simpan Semua Konfigurasi Kelas
+                </button>
+                <small class="text-muted ms-2">Simpan semua perubahan konfigurasi kelas</small>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        let classrooms = {{ classrooms | tojson
+    }};
+
+    // Add classroom form
+    const addForm = document.getElementById('addClassroomForm');
+    if (addForm) {
+        addForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const name = document.getElementById('classroomName').value.trim();
+            const grade = document.getElementById('classroomGrade').value;
+            const variant = document.getElementById('classroomVariant').value.trim();
+            const capacity = document.getElementById('classroomCapacity').value;
+            const notes = document.getElementById('classroomNotes').value.trim();
+
+            if (!name || !grade) {
+                alert('Nama kelas dan tingkat wajib diisi!');
+                return;
+            }
+
+            // Add to local array (will be saved on batch save)
+            const newClassroom = {
+                name: name,
+                grade_level: parseInt(grade),
+                variant: variant || null,
+                capacity: capacity ? parseInt(capacity) : null,
+                notes: notes || null,
+                id: 'temp_' + Date.now() // temporary ID
+            };
+
+            classrooms.push(newClassroom);
+            updateClassroomTable();
+
+            // Reset form
+            addForm.reset();
+            alert('Kelas ditambahkan! Jangan lupa klik "Simpan Semua Konfigurasi Kelas"');
+        });
+    }
+
+    // Delete classroom
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('.delete-classroom')) {
+            const btn = e.target.closest('.delete-classroom');
+            const id = btn.dataset.id;
+            const name = btn.dataset.name;
+
+            if (confirm(`Hapus ${name}?`)) {
+                // Remove from local array
+                classrooms = classrooms.filter(c => c.id != id);
+                updateClassroomTable();
+                alert('Kelas dihapus dari daftar! Jangan lupa klik "Simpan Semua Konfigurasi Kelas"');
+            }
+        }
+    });
+
+    // Save all classrooms
+    document.getElementById('saveAllClassrooms')?.addEventListener('click', function () {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menyimpan...';
+
+        fetch('/portal/sekolah/classrooms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ classrooms: classrooms })
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Konfigurasi kelas berhasil disimpan!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(err => {
+                alert('Gagal menyimpan konfigurasi kelas');
+                console.error(err);
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-floppy"></i> Simpan Semua Konfigurasi Kelas';
+            });
+    });
+
+    function updateClassroomTable() {
+        const tbody = document.getElementById('classroomTableBody');
+        if (!tbody) return;
+
+        if (classrooms.length === 0) {
+            tbody.parentElement.parentElement.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Belum ada konfigurasi kelas. Tambahkan kelas di bawah ini.
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        classrooms.forEach(c => {
+            html += `
+                <tr data-classroom-id="${c.id}">
+                    <td class="fw-semibold">${c.name}</td>
+                    <td><span class="badge bg-info">Kelas ${c.grade_level}</span></td>
+                    <td>${c.variant || '-'}</td>
+                    <td>${c.capacity || '-'} siswa</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger delete-classroom" 
+                                data-id="${c.id}"
+                                data-name="${c.name}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+    }
+});
+</script>
+{% endif %}

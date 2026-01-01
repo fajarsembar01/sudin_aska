@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light" data-bs-theme="light">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Status Pendaftaran - Portal ASKA</title>
+    <meta name="description" content="Cek status pendaftaran akun Portal ASKA">
+    <link rel="shortcut icon" href="https://www.svgrepo.com/show/331368/bot.svg" type="image/svg+xml">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <script>
+        (function () {
+            try {
+                var storageKey = 'theme';
+                var storedTheme = localStorage.getItem(storageKey);
+                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var theme = storedTheme || (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+                document.documentElement.setAttribute('data-bs-theme', theme);
+            } catch (error) {
+                document.documentElement.setAttribute('data-theme', 'light');
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+        })();
+    </script>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .status-container {
+            width: 100%;
+            max-width: 520px;
+        }
+
+        .status-card {
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .status-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+            padding: 16px 20px;
+            color: white;
+        }
+
+        html[data-theme="dark"] .status-header {
+            background: linear-gradient(135deg, #4f8bff 0%, #0d6efd 100%);
+        }
+
+        .status-header .header-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-header .icon-badge {
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+            box-shadow: none;
+        }
+
+        .status-header .header-text h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0 0 2px 0;
+        }
+
+        .status-header .header-text p {
+            opacity: 0.9;
+            margin: 0;
+            font-size: 0.8rem;
+        }
+
+        .status-header .theme-toggle-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.3s ease;
+        }
+
+        .status-header .theme-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .status-header .theme-toggle-btn.rotating {
+            transform: rotate(360deg);
+        }
+
+        .status-header .theme-icon {
+            width: 18px;
+            height: 18px;
+            display: none;
+        }
+
+        html[data-theme="light"] .theme-icon-sun {
+            display: block;
+        }
+
+        html[data-theme="dark"] .theme-icon-moon {
+            display: block;
+        }
+
+        .status-body {
+            padding: 32px 24px;
+        }
+
+        .status-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-icon.pending {
+            background: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+        }
+
+        .status-icon.approved {
+            background: rgba(25, 135, 84, 0.1);
+            color: #198754;
+        }
+
+        .status-icon.rejected {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="status-container">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1200;">
+            {% for category, message in messages %}
+            <div class="toast align-items-center text-bg-{{ 'primary' if category == 'message' else category }} border-0 show"
+                role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">{{ message }}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                        data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="card status-card shadow-sm border-0">
+            <div class="status-header">
+                <div class="header-content">
+                    <div class="icon-badge">
+                        <i class="bi bi-clipboard-check"></i>
+                    </div>
+                    <div class="header-text flex-grow-1">
+                        <h1>Status Pendaftaran</h1>
+                        <p>Portal ASKA Sudin Dikdas</p>
+                    </div>
+                    <div class="theme-toggle">
+                        <button type="button" class="theme-toggle-btn" id="themeToggleBtn" title="Mode Gelap">
+                            <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="12" cy="12" r="4"></circle>
+                                <line x1="12" y1="3" x2="12" y2="6"></line>
+                                <line x1="12" y1="18" x2="12" y2="21"></line>
+                                <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"></line>
+                                <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"></line>
+                                <line x1="3" y1="12" x2="6" y2="12"></line>
+                                <line x1="18" y1="12" x2="21" y2="12"></line>
+                                <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"></line>
+                                <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"></line>
+                            </svg>
+                            <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <path d="M21 12.79A9 9 0 0 1 11.21 3a7 7 0 1 0 9.79 9.79z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-body text-center">
+                {% if user %}
+                {% if user.account_status == 'pending' %}
+                <!-- Pending Status -->
+                <div class="status-icon pending">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <h2 class="h4 fw-bold text-warning mb-2">Menunggu Verifikasi</h2>
+                <p class="text-muted mb-4">
+                    Permohonan akun Anda sedang ditinjau oleh admin kecamatan {{ user.kecamatan_name or '-' }}
+                </p>
+
+                <div class="alert alert-info text-start mb-3">
+                    <div class="fw-semibold mb-2"><i class="bi bi-info-circle me-1"></i> Detail Pendaftaran</div>
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted" width="40%">Nama:</td>
+                            <td class="fw-semibold">{{ user.full_name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Email:</td>
+                            <td>{{ user.email }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Kecamatan:</td>
+                            <td>{{ user.kecamatan_name or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Tanggal:</td>
+                            <td>{{ user.created_at.strftime('%d %b %Y %H:%M') if user.created_at else '-' }}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- WhatsApp Koordinator Button -->
+                <div class="alert alert-success text-start mb-3">
+                    <div class="fw-semibold mb-2">
+                        <i class="bi bi-whatsapp text-success me-1"></i> Percepat Verifikasi
+                    </div>
+                    <p class="small mb-3">Hubungi koordinator kecamatan Anda untuk mempercepat proses verifikasi.</p>
+                    <button type="button" class="btn btn-success w-100" data-bs-toggle="modal"
+                        data-bs-target="#coordinatorModal">
+                        <i class="bi bi-telephone-outbound me-2"></i>Hubungi Koordinator Kecamatan
+                    </button>
+                </div>
+
+                {% elif user.account_status == 'approved' %}
+                <!-- Approved Status -->
+                <div class="status-icon approved">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <h2 class="h4 fw-bold text-success mb-2">Akun Disetujui!</h2>
+                <p class="text-muted mb-4">Selamat! Akun Anda telah diverifikasi dan dapat digunakan.</p>
+
+                <div class="alert alert-success text-start mb-3">
+                    <div class="fw-semibold mb-2">Informasi Akun</div>
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted" width="40%">Email Login:</td>
+                            <td class="fw-semibold">{{ user.email }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Disetujui:</td>
+                            <td>{{ user.verified_at.strftime('%d %b %Y %H:%M') if user.verified_at else '-' }}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <a href="{{ url_for('auth.login') }}" class="btn btn-success btn-lg w-100">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Login Sekarang
+                </a>
+
+                {% elif user.account_status == 'rejected' %}
+                <!-- Rejected Status -->
+                <div class="status-icon rejected">
+                    <i class="bi bi-x-circle-fill"></i>
+                </div>
+                <h2 class="h4 fw-bold text-danger mb-2">Permohonan Ditolak</h2>
+                <p class="text-muted mb-4">Maaf, permohonan akun Anda tidak dapat disetujui.</p>
+
+                {% if user.verification_notes %}
+                <div class="alert alert-danger text-start mb-3">
+                    <div class="fw-semibold mb-2">
+                        <i class="bi bi-info-circle me-1"></i> Alasan
+                    </div>
+                    <p class="mb-0">{{ user.verification_notes }}</p>
+                </div>
+                {% endif %}
+
+                <p class="text-muted small">
+                    Hubungi admin kecamatan {{ user.kecamatan_name or '-' }} untuk informasi lebih lanjut.
+                </p>
+
+                {% else %}
+                <!-- Unknown Status -->
+                <div class="alert alert-warning">
+                    <i class="bi bi-question-circle me-2"></i>
+                    Status tidak diketahui: {{ user.account_status }}
+                </div>
+                {% endif %}
+                {% else %}
+                <!-- User Not Found -->
+                <div class="status-icon" style="background: rgba(108, 117, 125, 0.1); color: #6c757d;">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <h2 class="h4 fw-bold mb-2">Data Tidak Ditemukan</h2>
+                <p class="text-muted">Email tidak ditemukan dalam sistem.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <p class="footer-text">
+            <a href="{{ url_for('auth.login') }}" class="text-decoration-none text-muted">
+                <i class="bi bi-arrow-left me-1"></i>Kembali ke Login
+            </a>
+        </p>
+    </div>
+
+    <!-- Coordinator Modal -->
+    <div class="modal fade" id="coordinatorModal" tabindex="-1" aria-labelledby="coordinatorModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="coordinatorModalLabel">
+                        <i class="bi bi-telephone-outbound me-2 text-success"></i>Hubungi Koordinator Wilayah
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {% if user %}
+                    <div class="alert alert-primary py-2 mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <span>Wilayah Anda: <strong>{{ user.kecamatan_name or '-' }}</strong></span>
+                    </div>
+                    {% endif %}
+
+                    <p class="mb-3">Butuh bantuan? Silakan hubungi koordinator wilayah berikut:</p>
+                    <div class="list-group">
+                        {% set coordinators = [
+                        {'area': 'Cilincing', 'name': 'Neni', 'phone': '+6285110851681'},
+                        {'area': 'Kelapa Gading', 'name': 'Slamet', 'phone': '+6285921232424'},
+                        {'area': 'Koja', 'name': 'Rani', 'phone': '+6287880328670'}
+                        ] %}
+                        {% for coord in coordinators %}
+                        {% set is_user_area = user and user.kecamatan_name and coord.area.lower() in
+                        user.kecamatan_name.lower() %}
+                        <div class="list-group-item d-flex justify-content-between align-items-start {% if is_user_area %}border-primary border-2{% endif %}"
+                            {% if is_user_area %}style="border-left: 4px solid var(--bs-primary) !important;" {% endif
+                            %}>
+                            <div>
+                                <div class="fw-semibold">{{ coord.area }}
+                                    {% if is_user_area %}
+                                    <span class="badge bg-primary ms-2">Wilayah Anda</span>
+                                    {% endif %}
+                                </div>
+                                <div class="text-muted small">{{ coord.name }} • {{ coord.phone }}</div>
+                            </div>
+                            {% if user %}
+                            {% set message = "Halo " ~ coord.name ~ ", saya " ~ user.full_name ~ " baru mendaftar akun
+                            Portal ASKA untuk kecamatan " ~ user.kecamatan_name ~ ".\n\nEmail: " ~ user.email ~
+                            "\n\nDitunggu verifikasi akun saya, terima kasih." %}
+                            {% else %}
+                            {% set message = "Halo " ~ coord.name ~ ", saya ingin bertanya tentang pendaftaran Portal
+                            ASKA." %}
+                            {% endif %}
+                            <a class="btn btn-success btn-sm d-inline-flex align-items-center gap-2"
+                                href="https://api.whatsapp.com/send?phone={{ coord.phone.replace('+', '') }}&text={{ message|urlencode }}"
+                                target="_blank" rel="noopener">
+                                <i class="bi bi-whatsapp"></i><span>WhatsApp</span>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="alert alert-info mt-3 mb-0 small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Koordinator siap membantu verifikasi atau pembaruan akun Anda.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Theme toggle
+        (function () {
+            var storageKey = 'theme';
+            var root = document.documentElement;
+            var toggleBtn = document.getElementById('themeToggleBtn');
+
+            function getCurrentTheme() {
+                return root.getAttribute('data-theme') || 'light';
+            }
+
+            function applyTheme(theme, persist) {
+                var nextTheme = theme === 'dark' ? 'dark' : 'light';
+
+                if (toggleBtn) {
+                    toggleBtn.classList.add('rotating');
+                    setTimeout(function () {
+                        toggleBtn.classList.remove('rotating');
+                    }, 300);
+                }
+
+                root.setAttribute('data-theme', nextTheme);
+                root.setAttribute('data-bs-theme', nextTheme);
+
+                if (toggleBtn) {
+                    toggleBtn.setAttribute('title', nextTheme === 'dark' ? 'Mode Terang' : 'Mode Gelap');
+                }
+
+                if (persist) {
+                    try {
+                        localStorage.setItem(storageKey, nextTheme);
+                    } catch (error) { }
+                }
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function () {
+                    var currentTheme = getCurrentTheme();
+                    applyTheme(currentTheme === 'dark' ? 'light' : 'dark', true);
+                });
+            }
+
+            if (window.matchMedia) {
+                var mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+                var hasStoredPreference = false;
+                try {
+                    hasStoredPreference = localStorage.getItem(storageKey) !== null;
+                } catch (error) { }
+
+                var mediaChangeHandler = function (event) {
+                    if (!hasStoredPreference) {
+                        applyTheme(event.matches ? 'dark' : 'light', false);
+                    }
+                };
+                if (mediaQuery.addEventListener) {
+                    mediaQuery.addEventListener('change', mediaChangeHandler);
+                } else if (mediaQuery.addListener) {
+                    mediaQuery.addListener(mediaChangeHandler);
+                }
+            }
+        })();
+    </script>
+</body>
+
+</html>

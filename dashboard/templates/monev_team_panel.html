@@ -1,0 +1,135 @@
+<!-- Team Panel Component - used for both Kasi and Kecamatan teams -->
+<!-- Variables expected: team, available_staff -->
+
+<!-- Coordinator Section -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Koordinator Tim</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" class="row g-3 align-items-end">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input type="hidden" name="action" value="update_coordinator">
+            <input type="hidden" name="team_id" value="{{ team.id }}">
+
+            <div class="col-md-9">
+                <label class="form-label">Pilih Koordinator</label>
+                <select class="form-select" name="coordinator_id">
+                    <option value="">-- Belum Ada Koordinator --</option>
+                    {% for staff in available_staff %}
+                    <option value="{{ staff.id }}" {% if team.coordinator_id==staff.id %}selected{% endif %}>
+                        {{ staff.full_name }}
+                        ({{ staff.role|upper }})
+                        {% if staff.nip %} - NIP: {{ staff.nip }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-save me-2"></i>Simpan
+                </button>
+            </div>
+        </form>
+
+        {% if team.coordinator_name %}
+        <div class="alert alert-info mt-3 mb-0">
+            <i class="bi bi-info-circle me-2"></i>
+            Koordinator saat ini: <strong>{{ team.coordinator_name }}</strong> ({{ team.coordinator_role|upper }})
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Members Section -->
+<div class="card">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-people me-2"></i>Anggota Tim</h5>
+    </div>
+    <div class="card-body">
+        <!-- Current Members Table -->
+        {% if team.members %}
+        <div class="table-responsive mb-4">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nama</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Jabatan</th>
+                        <th class="text-end">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for member in team.members %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ member.full_name }}</div>
+                            {% if member.nip %}
+                            <small class="text-muted">NIP: {{ member.nip }}</small>
+                            {% endif %}
+                        </td>
+                        <td><small>{{ member.email }}</small></td>
+                        <td><span class="badge bg-secondary text-uppercase">{{ member.role }}</span></td>
+                        <td>{{ member.jabatan or '-' }}</td>
+                        <td class="text-end">
+                            <form method="post" style="display:inline;"
+                                onsubmit="return confirm('Hapus {{ member.full_name }} dari tim?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <input type="hidden" name="action" value="remove_member">
+                                <input type="hidden" name="member_id" value="{{ member.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Belum ada anggota tim. Tambahkan anggota di bawah.
+        </div>
+        {% endif %}
+
+        <!-- Add Member Form -->
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6 class="card-title mb-3">
+                    <i class="bi bi-person-plus me-2"></i>Tambah Anggota
+                </h6>
+                <form method="post" class="row g-3 align-items-end">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="action" value="add_member">
+                    <input type="hidden" name="team_id" value="{{ team.id }}">
+
+                    <div class="col-md-9">
+                        <label class="form-label">Pilih Staff</label>
+                        <select class="form-select" name="staff_id" required>
+                            <option value="">-- Pilih Staff --</option>
+                            {% for staff in available_staff %}
+                            {% set is_member = team.members|selectattr('staff_id', 'equalto', staff.id)|list|length > 0
+                            %}
+                            {% if not is_member %}
+                            <option value="{{ staff.id }}">
+                                {{ staff.full_name }}
+                                ({{ staff.role|upper }})
+                                {% if staff.jabatan %} - {{ staff.jabatan }}{% endif %}
+                            </option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-plus-lg me-2"></i>Tambah
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

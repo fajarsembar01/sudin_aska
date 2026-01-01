@@ -526,7 +526,8 @@
 <body>
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container-fluid px-lg-4">
-            <a class="navbar-brand" href="{% if current_user and current_user.role == 'admin' %}{{ url_for('portal.admin_stats') }}{% else %}{{ url_for('portal.home') }}{% endif %}">
+            <a class="navbar-brand"
+                href="{% if current_user and current_user.role == 'admin' %}{{ url_for('portal.admin_stats') }}{% else %}{{ url_for('portal.home') }}{% endif %}">
                 <span class="icon-badge brand-icon text-primary">
                     <i class="bi bi-clipboard2-check"></i>
                 </span>
@@ -543,13 +544,65 @@
                             <i class="bi bi-house nav-icon"></i>Beranda
                         </a>
                     </li>
+
+                    {% if current_user and current_user.role == 'coordinator' %}
+                    <!-- Coordinator: Dashboard -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'portal.coordinator_dashboard' %}active{% endif %}"
+                            href="{{ url_for('portal.coordinator_dashboard') }}">
+                            <i class="bi bi-people nav-icon"></i>Dashboard Tim
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'portal.coordinator_stats' %}active{% endif %}"
+                            href="{{ url_for('portal.coordinator_stats') }}">
+                            <i class="bi bi-graph-up nav-icon"></i>Statistik Tim
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'portal.coordinator_team' %}active{% endif %}"
+                            href="{{ url_for('portal.coordinator_team') }}">
+                            <i class="bi bi-person-lines-fill nav-icon"></i>Kelola Tim
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if current_user and current_user.role == 'staff' %}
+                    <!-- Staff: Tugas Monev -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'portal.staff_assignments' %}active{% endif %}"
+                            href="{{ url_for('portal.staff_assignments') }}">
+                            <i class="bi bi-list-check nav-icon"></i>Tugas Monev
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'portal.view_my_team' %}active{% endif %}"
+                            href="{{ url_for('portal.view_my_team') }}">
+                            <i class="bi bi-people nav-icon"></i>Tim Saya
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if current_user and current_user.role == 'coordinator' %}
+                    <!-- Coordinator: Tim Saya -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'portal.view_my_team' %}active{% endif %}"
+                            href="{{ url_for('portal.view_my_team') }}">
+                            <i class="bi bi-people nav-icon"></i>Tim Saya
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if current_user and current_user.role == 'admin' %}
+                    <!-- Admin: Sekolah menu -->
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'portal.schools' %}active{% endif %}"
                             href="{{ url_for('portal.schools') }}">
                             <i class="bi bi-building nav-icon"></i>Sekolah
                         </a>
                     </li>
-                    {% if current_user and current_user.role == 'admin' %}
+
+                    <!-- Admin dropdown with new Kelola Staff -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if 'admin' in request.endpoint %}active{% endif %}"
                             href="#" data-bs-toggle="dropdown">
@@ -562,6 +615,31 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.admin_team_management') }}">
+                                    <i class="bi bi-diagram-3 me-2"></i>Team Management
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.manage_users') }}">
+                                    <i class="bi bi-people me-2"></i>User Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.manage_monev_teams') }}">
+                                    <i class="bi bi-people-fill me-2"></i>Tim Monev
+                                </a>
+                            </li>
+                            {% if permissions.can_assign_staff %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.admin_manage_staff') }}">
+                                    <i class="bi bi-people me-2"></i>Kelola Staff
+                                </a>
+                            </li>
+                            {% endif %}
+                            <li>
                                 <a class="dropdown-item" href="{{ url_for('portal.admin_setup') }}">
                                     <i class="bi bi-tools me-2"></i>Setup Data
                                 </a>
@@ -569,12 +647,24 @@
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
+                            {% if can_access_aska %}
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('main.dashboard') }}">
                                     <i class="bi bi-speedometer2 me-2"></i>Dashboard ASKA
                                 </a>
                             </li>
+                            {% endif %}
                         </ul>
+                    </li>
+                    {% endif %}
+
+                    {% if current_user and current_user.role == 'sekolah' %}
+                    <!-- Sekolah: Konfigurasi menu -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'portal.sekolah_rooms' %}active{% endif %}"
+                            href="{{ url_for('portal.sekolah_rooms') }}">
+                            <i class="bi bi-sliders nav-icon"></i>Konfigurasi
+                        </a>
                     </li>
                     {% endif %}
                 </ul>
@@ -604,15 +694,26 @@
                             <li class="px-3 py-2">
                                 <div class="fw-semibold">{{ current_user.full_name or 'User' }}</div>
                                 <small class="text-muted">{{ current_user.email }}</small>
+                                {% if current_user.role == 'admin' and current_user.admin_level == 'viewer' %}
+                                <div class="mt-1">
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-eye"></i> View Only
+                                    </span>
+                                </div>
+                                {% endif %}
                             </li>
-                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             {% if current_user.role == 'sekolah' %}
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('portal.sekolah_profile') }}">
                                     <i class="bi bi-gear me-2"></i>Pengaturan Sekolah
                                 </a>
                             </li>
-                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             {% endif %}
                             <li>
                                 <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">

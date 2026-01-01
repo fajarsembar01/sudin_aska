@@ -234,8 +234,17 @@ def index() -> Response:
 
 
 @main_bp.route("/admin/select-role")
-@role_required("admin")
 def admin_select_role() -> Response:
+    user = current_user()
+    if not user:
+        flash("Silakan login terlebih dahulu.", "warning")
+        return redirect(url_for("auth.login"))
+    
+    role = user.get("role", "")
+    # Allow all admin-like roles
+    if role not in ("admin", "superadmin") and "admin" not in role:
+        flash("Halaman ini hanya untuk admin.", "danger")
+        return redirect(url_for("portal.home"))
     return render_template("admin_selection.html")
 
 

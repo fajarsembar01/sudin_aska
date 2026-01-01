@@ -118,9 +118,9 @@
                             </li>
                         </ul>
                     </li>
-                    {% if is_admin %}
+                    {% if is_admin %}>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['auth.manage_users', 'auth.manage_aska_users'] %}active{% endif %}"
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['auth.manage_users', 'auth.manage_aska_users', 'auth.manage_monev_teams'] %}active{% endif %}"
                             href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-gear nav-icon"></i>Manajemen
                         </a>
@@ -128,13 +128,19 @@
                             <li>
                                 <a class="dropdown-item {% if request.endpoint == 'auth.manage_users' %}active{% endif %}"
                                     href="{{ url_for('auth.manage_users') }}">
-                                    Admin Dashboard
+                                    <i class="bi bi-people me-2"></i>Admin Dashboard
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.endpoint == 'auth.manage_aska_users' %}active{% endif %}"
                                     href="{{ url_for('auth.manage_aska_users') }}">
-                                    User ASKA
+                                    <i class="bi bi-person-check me-2"></i>User ASKA
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'auth.manage_monev_teams' %}active{% endif %}"
+                                    href="{{ url_for('auth.manage_monev_teams') }}">
+                                    <i class="bi bi-people-fill me-2"></i>Tim Monev
                                 </a>
                             </li>
                         </ul>
@@ -164,6 +170,14 @@
                                 </a>
                             </li>
                         </ul>
+                    </li>
+                    {% endif %}
+                    {% if current_role in ['coordinator', 'staff'] %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'auth.view_my_team' %}active{% endif %}"
+                            href="{{ url_for('auth.view_my_team') }}">
+                            <i class="bi bi-people nav-icon"></i>Tim Saya
+                        </a>
                     </li>
                     {% endif %}
                 </ul>

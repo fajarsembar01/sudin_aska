@@ -4,8 +4,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login - ASKA Portal</title>
-    <meta name="description" content="Portal resmi ASKA untuk admin, staff, dan sekolah">
+    <title>Daftar Akun Baru - Portal ASKA</title>
+    <meta name="description" content="Daftarkan akun Anda untuk mengakses Portal ASKA">
     <link rel="shortcut icon" href="https://www.svgrepo.com/show/331368/bot.svg" type="image/svg+xml">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -36,33 +36,33 @@
             padding: 20px;
         }
 
-        .login-container {
+        .register-container {
             width: 100%;
-            max-width: 420px;
+            max-width: 480px;
         }
 
-        .login-card {
+        .register-card {
             border-radius: 16px;
             overflow: hidden;
         }
 
-        .login-header {
+        .register-header {
             background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
             padding: 16px 20px;
             color: white;
         }
 
-        html[data-theme="dark"] .login-header {
+        html[data-theme="dark"] .register-header {
             background: linear-gradient(135deg, #4f8bff 0%, #0d6efd 100%);
         }
 
-        .login-header .header-content {
+        .register-header .header-content {
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
-        .login-header .icon-badge {
+        .register-header .icon-badge {
             width: 44px;
             height: 44px;
             background: rgba(255, 255, 255, 0.2);
@@ -75,27 +75,27 @@
             box-shadow: none;
         }
 
-        .login-header .header-text {
+        .register-header .header-text {
             flex: 1;
         }
 
-        .login-header .header-text h1 {
+        .register-header .header-text h1 {
             font-size: 1.25rem;
             font-weight: 700;
             margin: 0 0 2px 0;
         }
 
-        .login-header .header-text p {
+        .register-header .header-text p {
             opacity: 0.9;
             margin: 0;
             font-size: 0.8rem;
         }
 
-        .login-header .theme-toggle {
+        .register-header .theme-toggle {
             flex-shrink: 0;
         }
 
-        .login-header .theme-toggle-btn {
+        .register-header .theme-toggle-btn {
             width: 36px;
             height: 36px;
             border-radius: 8px;
@@ -109,15 +109,15 @@
             transition: background-color 0.2s ease, transform 0.3s ease;
         }
 
-        .login-header .theme-toggle-btn:hover {
+        .register-header .theme-toggle-btn:hover {
             background: rgba(255, 255, 255, 0.3);
         }
 
-        .login-header .theme-toggle-btn.rotating {
+        .register-header .theme-toggle-btn.rotating {
             transform: rotate(360deg);
         }
 
-        .login-header .theme-icon {
+        .register-header .theme-icon {
             width: 18px;
             height: 18px;
             display: none;
@@ -131,39 +131,8 @@
             display: block;
         }
 
-        .login-body {
+        .register-body {
             padding: 28px 24px;
-        }
-
-        .separator {
-            display: flex;
-            align-items: center;
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin: 20px 0;
-        }
-
-        .separator::before,
-        .separator::after {
-            content: '';
-            flex: 1;
-            border-bottom: 1px solid var(--border-soft);
-        }
-
-        .separator:not(:empty)::before {
-            margin-right: .75em;
-        }
-
-        .separator:not(:empty)::after {
-            margin-left: .75em;
-        }
-
-        .oauth-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
         }
 
         .input-group .btn {
@@ -181,7 +150,7 @@
 </head>
 
 <body>
-    <div class="login-container">
+    <div class="register-container">
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -200,15 +169,15 @@
         {% endif %}
         {% endwith %}
 
-        <div class="card login-card shadow-sm border-0">
-            <div class="login-header">
+        <div class="card register-card shadow-sm border-0">
+            <div class="register-header">
                 <div class="header-content">
                     <div class="icon-badge">
-                        <i class="bi bi-columns-gap"></i>
+                        <i class="bi bi-person-plus"></i>
                     </div>
                     <div class="header-text">
-                        <h1>ASKA Portal</h1>
-                        <p>Portal resmi untuk admin, staff, dan sekolah</p>
+                        <h1>Daftar Akun Baru</h1>
+                        <p>Staff & Admin Portal ASKA</p>
                     </div>
                     <div class="theme-toggle">
                         <button type="button" class="theme-toggle-btn" id="themeToggleBtn" title="Mode Gelap"
@@ -233,117 +202,132 @@
                     </div>
                 </div>
             </div>
-            <div class="login-body">
-                <form method="post" class="needs-validation" novalidate>
+            <div class="register-body">
+                <form method="POST" id="registerForm">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- Nama Lengkap -->
                     <div class="mb-3">
-                        <label class="form-label" for="email">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" value="{{ email or '' }}"
-                            required autofocus>
-                        <div class="invalid-feedback">Masukkan email yang valid.</div>
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-person me-1"></i>Nama Lengkap
+                        </label>
+                        <input type="text" class="form-control" name="full_name" required
+                            placeholder="Masukkan nama lengkap">
                     </div>
+
+                    <!-- Email -->
                     <div class="mb-3">
-                        <label class="form-label" for="password">Password</label>
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-envelope me-1"></i>Email
+                        </label>
+                        <input type="email" class="form-control" name="email" required placeholder="nama@example.com">
+                        <small class="text-muted">Email akan digunakan untuk login</small>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-lock me-1"></i>Password
+                        </label>
                         <div class="input-group">
-                            <input type="password" class="form-control" id="password" name="password" required>
-                            <button type="button" class="btn btn-outline-secondary" id="togglePasswordButton"
-                                aria-label="Tampilkan password">
+                            <input type="password" class="form-control" name="password" id="password" required
+                                minlength="8" placeholder="Minimal 8 karakter">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="togglePassword('password', this)">
                                 <i class="bi bi-eye"></i>
                             </button>
                         </div>
-                        <div class="invalid-feedback">Password wajib diisi.</div>
                     </div>
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" value="on" id="remember" name="remember">
-                        <label class="form-check-label" for="remember">
-                            Ingat saya
+
+                    <!-- Confirm Password -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-lock-fill me-1"></i>Konfirmasi Password
                         </label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" name="confirm_password" id="confirmPassword"
+                                required placeholder="Ulangi password">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="togglePassword('confirmPassword', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-box-arrow-in-right me-2"></i>Masuk
+
+                    <!-- Kecamatan only (role defaults to staff) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-geo-alt me-1"></i>Kecamatan
+                        </label>
+                        <select class="form-select" name="kecamatan_id" required>
+                            <option value="">-- Pilih Kecamatan --</option>
+                            {% for kec in kecamatan_list %}
+                            <option value="{{ kec.id }}">{{ kec.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- WhatsApp -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-whatsapp me-1"></i>No. WhatsApp
+                        </label>
+                        <input type="tel" class="form-control" name="whatsapp_number" required placeholder="08123456789"
+                            pattern="[0-9]{10,15}">
+                    </div>
+
+                    <!-- NIP, NRK (Required), Jabatan (Optional) -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-person-badge me-1"></i>NIP
+                            </label>
+                            <input type="text" class="form-control" name="nip" required placeholder="NIP pegawai">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-person-vcard me-1"></i>NRK
+                            </label>
+                            <input type="text" class="form-control" name="nrk" required placeholder="NRK pegawai">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Jabatan <span class="text-muted">(Opsional)</span></label>
+                        <input type="text" class="form-control" name="jabatan" placeholder="Jabatan di Sudin">
+                    </div>
+
+                    <!-- Info Box -->
+                    <div class="alert alert-info py-2 small mb-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Catatan:</strong> Akun Anda akan diverifikasi oleh admin kecamatan sebelum dapat
+                        digunakan.
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="btn btn-primary w-100 mb-3">
+                        <i class="bi bi-person-plus me-2"></i>Daftar Sekarang
                     </button>
-                    <a class="btn btn-outline-success w-100 mt-2 oauth-btn"
-                        href="{{ url_for('portal.register_school') }}">
-                        <i class="bi bi-building-add"></i>
-                        <span>Daftar Akun Sekolah</span>
-                    </a>
-                    <a class="btn btn-sm btn-link text-decoration-none w-100 mt-2"
-                        href="{{ url_for('auth.register') }}">
-                        <i class="bi bi-person-plus me-1"></i>Daftar Akun Baru (Staff/Admin)
-                    </a>
-                    <div class="separator">atau</div>
-                    <div class="d-grid gap-2">
-                        <a class="btn btn-outline-primary oauth-btn"
-                            href="{{ url_for('auth.google_login', provider='belajar', next=request.args.get('next')) }}"
-                            role="button" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Gunakan kredensial belajar.id yang sudah disinkronkan oleh admin.">
-                            <i class="bi bi-mortarboard-fill"></i>
-                            <span>Login via belajar.id</span>
-                        </a>
-                        <a class="btn btn-outline-danger oauth-btn"
-                            href="{{ url_for('auth.google_login', provider='gmail', next=request.args.get('next')) }}"
-                            role="button" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Gunakan akun Gmail yang sudah diverifikasi admin.">
-                            <i class="bi bi-google"></i>
-                            <span>Login via Gmail</span>
-                        </a>
-                    </div>
-                    <p class="text-center text-muted small mt-3 mb-0">
-                        Akses terbatas untuk akun terdaftar.
+
+                    <p class="text-center text-muted small mb-0">
+                        Sudah punya akun? <a href="{{ url_for('auth.login') }}" class="text-decoration-none">Login di
+                            sini</a>
                     </p>
                 </form>
             </div>
         </div>
-        <p class="text-center mt-3 mb-0">
-            <a href="{{ url_for('main.documentation') }}" class="text-decoration-none small text-muted">
-                <i class="bi bi-book me-1"></i>Lihat Panduan & Dokumentasi
+
+        <p class="footer-text">
+            <a href="{{ url_for('auth.login') }}" class="text-decoration-none text-muted">
+                <i class="bi bi-arrow-left me-1"></i>Kembali ke Login
             </a>
         </p>
-        <p class="footer-text">
-            <button type="button" class="btn btn-link btn-sm text-muted p-0" data-bs-toggle="modal"
-                data-bs-target="#helpModal">
-                <i class="bi bi-question-circle me-1"></i>Butuh bantuan? Hubungi admin
-            </button>
-        </p>
-    </div>
-
-    <!-- Help Modal - Coordinator per Wilayah -->
-    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="helpModalLabel">
-                        <i class="bi bi-telephone-outbound me-2 text-success"></i>Hubungi Koordinator Wilayah
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-3">Butuh bantuan? Silakan hubungi koordinator wilayah berikut:</p>
-                    <div class="list-group">
-                        {% for c in coordinator_contacts or [] %}
-                        <div class="list-group-item d-flex justify-content-between align-items-start">
-                            <div>
-                                <div class="fw-semibold">{{ c.area }}</div>
-                                <div class="text-muted small">{{ c.name }} • {{ c.phone }}</div>
-                            </div>
-                            <a class="btn btn-success btn-sm d-inline-flex align-items-center gap-2"
-                                href="{{ c.wa_link }}" target="_blank" rel="noopener">
-                                <i class="bi bi-whatsapp"></i><span>WhatsApp</span>
-                            </a>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <div class="alert alert-info mt-3 mb-0 small">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Koordinator siap membantu reset password atau verifikasi akun Anda.
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Theme toggle
         (function () {
             var storageKey = 'theme';
             var root = document.documentElement;
@@ -384,7 +368,6 @@
                 });
             }
 
-            // Listen for system preference changes
             if (window.matchMedia) {
                 var mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
                 var hasStoredPreference = false;
@@ -405,32 +388,31 @@
             }
         })();
 
-        // Password toggle and tooltips
-        document.addEventListener('DOMContentLoaded', function () {
-            var toggleButton = document.getElementById('togglePasswordButton');
-            var passwordInput = document.getElementById('password');
-            if (toggleButton && passwordInput) {
-                var icon = toggleButton.querySelector('i');
-                toggleButton.addEventListener('click', function () {
-                    var currentlyHidden = passwordInput.type === 'password';
-                    passwordInput.type = currentlyHidden ? 'text' : 'password';
-                    if (currentlyHidden) {
-                        icon.classList.remove('bi-eye');
-                        icon.classList.add('bi-eye-slash');
-                        toggleButton.setAttribute('aria-label', 'Sembunyikan password');
-                    } else {
-                        icon.classList.remove('bi-eye-slash');
-                        icon.classList.add('bi-eye');
-                        toggleButton.setAttribute('aria-label', 'Tampilkan password');
-                    }
-                });
+        // Toggle password visibility
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
             }
+        }
 
-            // Initialize tooltips
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
+        // Password match validation
+        document.getElementById('registerForm').addEventListener('submit', function (e) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('Password dan konfirmasi password tidak cocok!');
+                return false;
+            }
         });
     </script>
 </body>

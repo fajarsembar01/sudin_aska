@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Session Cleared</title>
+    <meta http-equiv="refresh" content="2;url=/login">
+</head>
+<body style="font-family: Arial; text-align: center; padding: 50px;">
+    <h1>✅ Session Cleared!</h1>
+    <p>Redirecting to login...</p>
+    <p><a href="/login">Click here if not redirected</a></p>
+    <script>
+        // Clear all cookies
+        document.cookie.split(";").forEach(function(c) { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        });
+        
+        // Clear localStorage
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        console.log("✓ Cookies, localStorage, sessionStorage cleared");
+    </script>
+</body>
+</html>
