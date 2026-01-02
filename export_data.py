@@ -46,30 +46,48 @@ def export_data(output_file="data_export.sql"):
     # Define table priority (parents first, children last)
     # Higher priority (lower index) tables are exported first.
     # Tables not listed here will be sorted alphabetically after these.
+    # Urutan prioritas agar parent di-insert dulu (hindari FK error saat import)
     PRIORITY_TABLES = [
-        # Users & Core
-        "web_users",
-        "telegram_users",
-        "dashboard_users",
-        
-        # Portal Master Data
+        # Portal master (wilayah dan sekolah)
+        "portal_kecamatan",
+        "portal_kelurahan",
         "portal_schools",
         "portal_rooms",
         "portal_aspects",
         "portal_school_rooms",
+        # Kelas & seksi
+        "school_classes",
+        "sections",
+        # Pengguna (butuh sekolah/kelas/seksi sudah ada)
+        "dashboard_users",
+        "web_users",
+        "telegram_users",
+        # Portal periode & assessment
         "portal_assessment_periods",
-        
-        # Portal Transaction Data
         "portal_assessments",
         "portal_assessment_room_details",
         "portal_assessment_scores",
         "portal_assessment_photos",
-        
-        # Other Reports
-        "bullying_reports",
-        "bullying_report_events",
+        # Aktivitas & akses
+        "portal_activity_logs",
+        "user_kecamatan",
+        "staff_school_assignments",
+        "school_classrooms",
+        # Monev
+        "monev_teams",
+        "monev_team_members",
+        "monev_team_member_requests",
+        # Laporan & chat
         "chat_logs",
         "chat_feedback",
+        "bullying_reports",
+        "bullying_report_events",
+        "psych_reports",
+        "corruption_reports",
+        "notifications",
+        # Lain-lain
+        "students",
+        "twitter_worker_logs",
     ]
 
     # Get all tables
