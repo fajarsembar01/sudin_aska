@@ -14,6 +14,29 @@
             </div>
         </div>
         <div class="card-body">
+            {% if user_school.jenjang == 'SD' %}
+            <div class="alert alert-light border d-flex align-items-center gap-2 mb-3">
+                <i class="bi bi-magic text-primary"></i>
+                <div>
+                    <div class="fw-semibold">Pengaturan paralel kelas SD</div>
+                    <div class="text-muted small">Tentukan jumlah kelas per tingkat (1-6). Sistem otomatis membuat Kelas 1A, 1B, dst sesuai kebutuhan.</div>
+                </div>
+            </div>
+            <div class="row g-3 mb-3" id="sdParallelControls">
+                {% for i in range(1, 7) %}
+                <div class="col-sm-6 col-lg-4">
+                    <label class="form-label small mb-1">Kelas {{ i }}</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">Jumlah</span>
+                        <input type="number" class="form-control" min="0" max="26" value="0"
+                            data-grade-parallel="{{ i }}">
+                        <span class="input-group-text bg-light text-muted">paralel</span>
+                    </div>
+                    <small class="text-muted">Otomatis jadi Kelas {{ i }}A, {{ i }}B, dst</small>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
             <!-- Existing ClassRooms -->
             <div id="classroomList" class="mb-3">
                 {% if classrooms %}
@@ -54,6 +77,7 @@
             </div>
 
             <!-- Add New Classroom Form -->
+            {% if user_school.jenjang != 'SD' %}
             <div class="border-top pt-3">
                 <h6 class="fw-bold mb-3">
                     <i class="bi bi-plus-circle text-primary"></i> Tambah Kelas Baru
@@ -112,6 +136,14 @@
                     </div>
                 </form>
             </div>
+            {% else %}
+            <div class="border-top pt-3">
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    Isi jumlah paralel per tingkat di panel atas, lalu klik "Simpan Semua Konfigurasi Kelas".
+                </div>
+            </div>
+            {% endif %}
 
             <!-- Batch Save -->
             <div class="border-top pt-3 mt-3">
@@ -126,124 +158,191 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        let classrooms = {{ classrooms | tojson
-    }};
+        let classrooms = {{ classrooms | default([]) | tojson | safe }};
+        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
 
-    // Add classroom form
-    const addForm = document.getElementById('addClassroomForm');
-    if (addForm) {
-        addForm.addEventListener('submit', function (e) {
-            e.preventDefault();
+        // ===== Helpers for paralel kelas (SD) =====
+        const gradeParallelInputs = document.querySelectorAll('[data-grade-parallel]');
 
-            const name = document.getElementById('classroomName').value.trim();
-            const grade = document.getElementById('classroomGrade').value;
-            const variant = document.getElementById('classroomVariant').value.trim();
-            const capacity = document.getElementById('classroomCapacity').value;
-            const notes = document.getElementById('classroomNotes').value.trim();
+        function refreshGradeInputs() {
+            if (!gradeParallelInputs.length) return;
+            const counts = {};
+            classrooms.forEach(c => {
+                const g = parseInt(c.grade_level);
+                if (!isNaN(g)) {
+                    counts[g] = (counts[g] || 0) + 1;
+                }
+            });
+            gradeParallelInputs.forEach(input => {
+                const grade = parseInt(input.dataset.gradeParallel, 10);
+                input.value = counts[grade] || 0;
+            });
+        }
 
-            if (!name || !grade) {
-                alert('Nama kelas dan tingkat wajib diisi!');
+        function updateClassroomTable() {
+            const tbody = document.getElementById('classroomTableBody');
+            if (!tbody) return;
+
+            const sorted = [...classrooms].sort((a, b) => {
+                const gradeA = parseInt(a.grade_level) || 999;
+                const gradeB = parseInt(b.grade_level) || 999;
+                if (gradeA !== gradeB) return gradeA - gradeB;
+                const varA = (a.variant || '').toString();
+                const varB = (b.variant || '').toString();
+                if (varA.toUpperCase() !== varB.toUpperCase()) return varA.localeCompare(varB);
+                return (a.name || '').localeCompare(b.name || '');
+            });
+            classrooms = sorted;
+
+            if (sorted.length === 0) {
+                tbody.parentElement.parentElement.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Belum ada konfigurasi kelas. Tambahkan kelas di bawah ini.
+                    </div>
+                `;
+                refreshGradeInputs();
                 return;
             }
 
-            // Add to local array (will be saved on batch save)
-            const newClassroom = {
-                name: name,
-                grade_level: parseInt(grade),
-                variant: variant || null,
-                capacity: capacity ? parseInt(capacity) : null,
-                notes: notes || null,
-                id: 'temp_' + Date.now() // temporary ID
-            };
-
-            classrooms.push(newClassroom);
-            updateClassroomTable();
-
-            // Reset form
-            addForm.reset();
-            alert('Kelas ditambahkan! Jangan lupa klik "Simpan Semua Konfigurasi Kelas"');
-        });
-    }
-
-    // Delete classroom
-    document.addEventListener('click', function (e) {
-        if (e.target.closest('.delete-classroom')) {
-            const btn = e.target.closest('.delete-classroom');
-            const id = btn.dataset.id;
-            const name = btn.dataset.name;
-
-            if (confirm(`Hapus ${name}?`)) {
-                // Remove from local array
-                classrooms = classrooms.filter(c => c.id != id);
-                updateClassroomTable();
-                alert('Kelas dihapus dari daftar! Jangan lupa klik "Simpan Semua Konfigurasi Kelas"');
-            }
-        }
-    });
-
-    // Save all classrooms
-    document.getElementById('saveAllClassrooms')?.addEventListener('click', function () {
-        const btn = this;
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menyimpan...';
-
-        fetch('/portal/sekolah/classrooms', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ classrooms: classrooms })
-        })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Konfigurasi kelas berhasil disimpan!');
-                    location.reload();
-                } else {
-                    alert('Error: ' + (data.message || 'Unknown error'));
-                }
-            })
-            .catch(err => {
-                alert('Gagal menyimpan konfigurasi kelas');
-                console.error(err);
-            })
-            .finally(() => {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-floppy"></i> Simpan Semua Konfigurasi Kelas';
+            let html = '';
+            sorted.forEach(c => {
+                html += `
+                    <tr data-classroom-id="${c.id}">
+                        <td class="fw-semibold">${c.name}</td>
+                        <td><span class="badge bg-info">Kelas ${c.grade_level}</span></td>
+                        <td>${c.variant || '-'}</td>
+                        <td>${c.capacity || '-'} siswa</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger delete-classroom" 
+                                    data-id="${c.id}"
+                                    data-name="${c.name}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
             });
-    });
-
-    function updateClassroomTable() {
-        const tbody = document.getElementById('classroomTableBody');
-        if (!tbody) return;
-
-        if (classrooms.length === 0) {
-            tbody.parentElement.parentElement.innerHTML = `
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> Belum ada konfigurasi kelas. Tambahkan kelas di bawah ini.
-                </div>
-            `;
-            return;
+            tbody.innerHTML = html;
+            refreshGradeInputs();
         }
 
-        let html = '';
-        classrooms.forEach(c => {
-            html += `
-                <tr data-classroom-id="${c.id}">
-                    <td class="fw-semibold">${c.name}</td>
-                    <td><span class="badge bg-info">Kelas ${c.grade_level}</span></td>
-                    <td>${c.variant || '-'}</td>
-                    <td>${c.capacity || '-'} siswa</td>
-                    <td>
-                        <button class="btn btn-sm btn-danger delete-classroom" 
-                                data-id="${c.id}"
-                                data-name="${c.name}">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
+        function applyParallelCount(grade, count) {
+            if (isNaN(grade)) return;
+            const maxParallel = alphabet.length;
+            const target = Math.max(0, Math.min(count || 0, maxParallel));
+
+            const existingByVariant = {};
+            classrooms
+                .filter(c => parseInt(c.grade_level) === grade && c.variant)
+                .forEach(c => {
+                    existingByVariant[String(c.variant).toUpperCase()] = c;
+                });
+
+            classrooms = classrooms.filter(c => parseInt(c.grade_level) !== grade);
+
+            for (let i = 0; i < target; i++) {
+                const variant = alphabet[i] || String(i + 1);
+                const existing = existingByVariant[variant];
+                classrooms.push({
+                    name: (existing && existing.name) ? existing.name : `Kelas ${grade}${variant}`,
+                    grade_level: grade,
+                    variant: variant,
+                    capacity: existing ? existing.capacity : null,
+                    notes: existing ? existing.notes : null,
+                    id: existing ? existing.id : `temp_${Date.now()}_${grade}_${variant}`
+                });
+            }
+            updateClassroomTable();
+        }
+
+        gradeParallelInputs.forEach(input => {
+            input.addEventListener('change', function () {
+                const grade = parseInt(this.dataset.gradeParallel, 10);
+                const val = parseInt(this.value || "0", 10);
+                applyParallelCount(grade, isNaN(val) ? 0 : val);
+            });
         });
-        tbody.innerHTML = html;
-    }
-});
+
+        // Add classroom form
+        const addForm = document.getElementById('addClassroomForm');
+        if (addForm) {
+            addForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const name = document.getElementById('classroomName').value.trim();
+                const grade = document.getElementById('classroomGrade').value;
+                const variant = document.getElementById('classroomVariant').value.trim();
+                const capacity = document.getElementById('classroomCapacity').value;
+                const notes = document.getElementById('classroomNotes').value.trim();
+
+                if (!name || !grade) {
+                    alert('Nama kelas dan tingkat wajib diisi!');
+                    return;
+                }
+
+                const newClassroom = {
+                    name: name,
+                    grade_level: parseInt(grade),
+                    variant: variant || null,
+                    capacity: capacity ? parseInt(capacity) : null,
+                    notes: notes || null,
+                    id: 'temp_' + Date.now()
+                };
+
+                classrooms.push(newClassroom);
+                updateClassroomTable();
+
+                addForm.reset();
+                alert('Kelas ditambahkan! Jangan lupa klik "Simpan Semua Konfigurasi Kelas"');
+            });
+        }
+
+        // Delete classroom
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('.delete-classroom')) {
+                const btn = e.target.closest('.delete-classroom');
+                const id = btn.dataset.id;
+                const name = btn.dataset.name;
+
+                if (confirm(`Hapus ${name}?`)) {
+                    classrooms = classrooms.filter(c => c.id != id);
+                    updateClassroomTable();
+                    alert('Kelas dihapus dari daftar! Jangan lupa klik "Simpan Semua Konfigurasi Kelas"');
+                }
+            }
+        });
+
+        // Save all classrooms
+        document.getElementById('saveAllClassrooms')?.addEventListener('click', function () {
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menyimpan...';
+
+            fetch('/portal/sekolah/classrooms', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ classrooms: classrooms })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Konfigurasi kelas berhasil disimpan!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(err => {
+                    alert('Gagal menyimpan konfigurasi kelas');
+                    console.error(err);
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-floppy"></i> Simpan Semua Konfigurasi Kelas';
+                });
+        });
+
+        updateClassroomTable();
+    });
 </script>
 {% endif %}

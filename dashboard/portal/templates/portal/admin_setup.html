@@ -3,6 +3,19 @@
 
 {% block portal_content %}
 <section class="mb-4">
+    {% set display_rooms = [] %}
+    {% if base_rooms is defined %}
+        {% for r in base_rooms %}
+            {% set nm = (r.name or '') %}
+            {% set tail = nm.lower().replace('ruang kelas', '').strip() %}
+            {% set is_variant = tail and tail[-1].isalpha() and tail[:-1].strip() and tail[:-1].strip()[-1].isdigit() %}
+            {% if not is_variant %}
+                {% set _ = display_rooms.append(r) %}
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        {% set display_rooms = [] %}
+    {% endif %}
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div class="d-flex align-items-center gap-3">
             <a href="{{ url_for('portal.admin_stats') }}" class="btn btn-outline-secondary">
@@ -134,7 +147,7 @@
                                 <div class="col-12">
                                     <select id="aspectRoomSelect" class="form-select form-select-sm" required>
                                         <option value="">-- Pilih Ruangan --</option>
-                                        {% for room in rooms %}
+                                        {% for room in display_rooms %}
                                         <option value="{{ room.id }}" data-room-name="{{ room.name }}">{{ room.name }}
                                         </option>
                                         {% endfor %}
@@ -186,6 +199,7 @@
                         <div>
                             <h2 class="h6 fw-bold mb-0">Preview: Konfigurasi Ruangan per Jenjang</h2>
                             <p class="text-muted mb-0 small">Contoh tampilan halaman konfigurasi sekolah</p>
+                            <p class="text-muted mb-0 small">Tip: Untuk ruang kelas, cukup set aspek di satu template jenjang (mis. "Ruang Kelas 1" untuk SD); sistem otomatis menerapkannya ke Kelas 1–6 dan paralel A/B/C milik sekolah.</p>
                         </div>
                     </div>
                     <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
@@ -288,7 +302,7 @@
                                                 <div class="small fw-semibold text-success mb-2"><i
                                                         class="bi bi-layers me-1"></i>Ruang Lainnya</div>
                                                 <div class="list-group list-group-flush" style="font-size: 0.75rem;">
-                                                    {% for room in rooms[:6] %}
+                                                    {% for room in display_rooms[:6] %}
                                                     <label
                                                         class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
                                                         <input class="form-check-input flex-shrink-0" type="checkbox" {%
@@ -355,7 +369,7 @@
                                                 <div class="small fw-semibold text-info mb-2"><i
                                                         class="bi bi-layers me-1"></i>Ruang Lainnya</div>
                                                 <div class="list-group list-group-flush" style="font-size: 0.75rem;">
-                                                    {% for room in rooms[:6] %}
+                                                    {% for room in display_rooms[:6] %}
                                                     <label
                                                         class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
                                                         <input class="form-check-input flex-shrink-0" type="checkbox" {%
@@ -434,7 +448,7 @@
                                                             checked disabled>
                                                         <span>Lab IPA/Kimia</span>
                                                     </label>
-                                                    {% for room in rooms[:4] %}
+                                                    {% for room in display_rooms[:4] %}
                                                     <label
                                                         class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
                                                         <input class="form-check-input flex-shrink-0" type="checkbox" {%
@@ -495,7 +509,7 @@
                             <button class="nav-link active" id="roomsListTab" data-bs-toggle="tab"
                                 data-bs-target="#roomsListPane" type="button" role="tab">
                                 <i class="bi bi-door-open me-1"></i>Daftar Ruangan & Aspek
-                                <span class="badge bg-success ms-1">{{ rooms|length }}</span>
+                                <span class="badge bg-success ms-1">{{ display_rooms|length }}</span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
@@ -770,7 +784,7 @@
                         <div class="tab-pane fade show active" id="roomsListPane" role="tabpanel">
                             <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
                                 <div>
-                                    <span class="text-muted small"><span id="roomCount">{{ rooms|length }}</span>
+                                    <span class="text-muted small"><span id="roomCount">{{ display_rooms|length }}</span>
                                         ruangan terdaftar</span>
                                 </div>
                                 <div class="position-relative" style="min-width: 200px;">
@@ -780,7 +794,7 @@
                                         style="pointer-events: none;"></i>
                                 </div>
                             </div>
-                            {% if rooms %}
+                            {% if display_rooms %}
                             <div class="table-responsive">
                                 <style>
                                     /* Theme-aware flat table */
@@ -859,7 +873,7 @@
                                         </tr>
                                     </thead>
                                     <tbody id="roomsTableBody">
-                                        {% for r in rooms %}
+                                        {% for r in display_rooms %}
                                         <tr id="room-{{ r.id }}"
                                             class="room-row border-bottom {% if not r.active %}room-inactive{% endif %}"
                                             data-room-id="{{ r.id }}" data-room-name="{{ r.name|lower }}"
@@ -1055,7 +1069,7 @@
 </section>
 
 <!-- Delete Room Modals -->
-{% for r in rooms %}
+{% for r in display_rooms %}
 <div class="modal fade" id="deleteRoomModal{{ r.id }}" tabindex="-1">
     <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
@@ -1080,7 +1094,7 @@
 {% endfor %}
 
 <!-- Edit Aspect Modals -->
-{% for r in rooms %}
+{% for r in display_rooms %}
 {% for a in r.aspects %}
 <div class="modal fade" id="editAspectModal{{ a.id }}" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">

@@ -20,8 +20,8 @@ from flask import (
     url_for,
     current_app,
     send_from_directory,
+    abort,
 )
-from werkzeug.utils import secure_filename
 
 from ..auth import current_user, role_required
 from dashboard.db_access import get_cursor
@@ -67,6 +67,7 @@ from .queries import (
     fetch_school_avg_scores,
     fetch_bottom_schools,
     delete_photo,
+    ensure_classroom_rooms_for_school,
     list_kecamatan,
     list_kelurahan,
     search_schools_by_npsn,
@@ -127,9 +128,11 @@ AREA_CONTACTS = [
 
 @portal_bp.route("/uploads/<path:filename>")
 def uploaded_file(filename):
-    """Serve uploaded files."""
-    safe_name = secure_filename(filename)
-    return send_from_directory(UPLOAD_FOLDER, safe_name)
+    """Serve uploaded files (supports nested paths)."""
+    requested_path = Path(filename)
+    if requested_path.is_absolute() or ".." in requested_path.parts:
+        abort(404)
+    return send_from_directory(UPLOAD_FOLDER, str(requested_path))
 
 
 def _allowed_file(filename: str) -> bool:
@@ -172,10 +175,11 @@ def _fetch_user_school(user_id: int) -> dict | None:
                    s.jenjang,
                    s.status,
                    s.alamat,
+                   s.logo_url,
                    s.metadata,
                    s.kelurahan_id,
                    l.name AS kelurahan_name,
-                   k.name AS kecamatan_name
+                    k.name AS kecamatan_name
             FROM dashboard_users u
             JOIN portal_schools s ON u.school_id = s.id
             LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
@@ -522,6 +526,12 @@ def assess(school_id: int) -> Response:
             
     assessment_id = assessment["id"]
     
+    # Ensure classroom variants are materialized as rooms for this school
+    try:
+        ensure_classroom_rooms_for_school(school_id)
+    except Exception:
+        current_app.logger.exception("Failed to sync classroom rooms")
+
     # Get school rooms with aspects
     rooms = list_school_rooms(school_id)
     if not rooms:
@@ -979,6 +989,32 @@ def sekolah_rooms() -> Response:
                 flash(f"Error: {e}", "danger")
     
     all_rooms = list_portal_rooms()
+    # Categorize rooms by grade number (so SD tab doesn't show kelas 10-12)
+    def _room_grade(room: dict) -> int | None:
+        m = re.search(r"\bKelas\s+(\d+)", room.get("name") or "", flags=re.IGNORECASE)
+        if not m:
+            return None
+        try:
+            return int(m.group(1))
+        except (TypeError, ValueError):
+            return None
+
+    sd_rooms = []
+    smp_rooms = []
+    sma_rooms = []
+    umum_rooms = []
+    for r in all_rooms:
+        grade = _room_grade(r)
+        if grade is None:
+            umum_rooms.append(r)
+        elif 1 <= grade <= 6:
+            sd_rooms.append(r)
+        elif 7 <= grade <= 9:
+            smp_rooms.append(r)
+        elif 10 <= grade <= 12:
+            sma_rooms.append(r)
+        else:
+            umum_rooms.append(r)
     schools = [user_school] if user_school else list_portal_schools()
     
     # Get saved room IDs for current school
@@ -988,7 +1024,14 @@ def sekolah_rooms() -> Response:
         current_school_id = user_school["id"]
     elif request.args.get("school_id"):
         current_school_id = int(request.args.get("school_id"))
-    
+
+    # Materialize classroom-based rooms before loading saved room IDs
+    if current_school_id:
+        try:
+            ensure_classroom_rooms_for_school(current_school_id)
+        except Exception:
+            current_app.logger.exception("Failed to sync classroom rooms on sekolah_rooms")
+
     if current_school_id:
         from .queries import list_school_rooms
         saved_rooms = list_school_rooms(current_school_id)
@@ -1004,6 +1047,11 @@ def sekolah_rooms() -> Response:
     if current_school_id:
         classrooms = list_school_classrooms(current_school_id)
 
+    # Determine selected school for jenjang-aware UI
+    selected_school = user_school
+    if not selected_school and current_school_id:
+        selected_school = next((s for s in schools if s.get("id") == current_school_id), None)
+
     return render_template(
         "portal/sekolah_rooms.html",
         all_rooms=all_rooms,
@@ -1017,6 +1065,11 @@ def sekolah_rooms() -> Response:
         kecamatan_list=kecamatan_list,
         kelurahan_list=kelurahan_list,
         classrooms=classrooms,
+        selected_school=selected_school,
+        sd_rooms=sd_rooms,
+        smp_rooms=smp_rooms,
+        sma_rooms=sma_rooms,
+        umum_rooms=umum_rooms,
     )
 
 
@@ -1563,6 +1616,45 @@ def admin_setup() -> Response:
     schools = list_portal_schools(active_only=False)
     kecamatan_list = list_kecamatan()
     kelurahan_list = list_kelurahan()
+
+    def _room_grade(name: str) -> int | None:
+        m = re.search(r"\bKelas\s+(\d+)", name or "", flags=re.IGNORECASE)
+        if not m:
+            return None
+        try:
+            return int(m.group(1))
+        except (TypeError, ValueError):
+            return None
+
+    def _is_variant_class(name: str) -> bool:
+        # Detect names like "Ruang Kelas 1A" "Ruang Kelas 1B" etc.
+        return bool(re.search(r"^Ruang\\s+Kelas\\s+\\d+\\s*[A-Za-z]+$", name or "", flags=re.IGNORECASE))
+
+    # Build base rooms: keep non-class rooms and only one representative per jenjang band (SD=1, SMP=7, SMA=10)
+    base_rooms = []
+    seen_names = set()
+    for r in rooms:
+        name = r.get("name") or ""
+        grade = _room_grade(name)
+        is_variant = _is_variant_class(name)
+        templ = None
+        if grade is not None:
+            if grade <= 6:
+                templ = 1
+            elif grade <= 9:
+                templ = 7
+            elif grade <= 12:
+                templ = 10
+
+        should_keep = False
+        if grade is None:
+            should_keep = True  # non-class room
+        elif templ in (1, 7, 10) and grade == templ and not is_variant:
+            should_keep = True  # representative per band
+
+        if should_keep and name not in seen_names:
+            base_rooms.append(r)
+            seen_names.add(name)
     
     from .queries import fetch_activity_logs
     activity_logs = fetch_activity_logs(limit=50)
@@ -1570,6 +1662,7 @@ def admin_setup() -> Response:
     return render_template(
         "portal/admin_setup.html",
         rooms=rooms,
+        base_rooms=base_rooms,
         schools=schools,
         kecamatan_list=kecamatan_list,
         kelurahan_list=kelurahan_list,
@@ -2210,6 +2303,10 @@ def save_classrooms() -> Response:
     
     try:
         save_school_classrooms_batch(user_school["id"], classrooms)
+        try:
+            ensure_classroom_rooms_for_school(user_school["id"])
+        except Exception:
+            current_app.logger.exception("Failed to sync classroom rooms after save")
         return jsonify({"success": True, "message": "Konfigurasi kelas berhasil disimpan"})
     except Exception as e:
         current_app.logger.exception("Error saving classrooms")

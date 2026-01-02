@@ -86,6 +86,10 @@
                             </div>
                         </div>
 
+                        {% set jenjang = selected_school.jenjang if selected_school else None %}
+                        {% set show_sd = (jenjang is none) or jenjang == 'SD' %}
+                        {% set show_smp = (jenjang is none) or jenjang == 'SMP' %}
+                        {% set show_sma = (jenjang is none) or jenjang in ['SMA','SMK'] %}
                         <!-- Jenjang Tabs -->
                         <ul class="nav nav-pills nav-fill mb-3" id="roomJenjangTab" role="tablist">
                             <li class="nav-item" role="presentation">
@@ -94,24 +98,30 @@
                                     <i class="bi bi-grid me-1 d-none d-sm-inline"></i>Umum
                                 </button>
                             </li>
+                            {% if show_sd %}
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="sd-room-tab" data-bs-toggle="tab"
                                     data-bs-target="#sd-rooms" type="button">
                                     <i class="bi bi-mortarboard-fill me-1 d-none d-sm-inline"></i>SD
                                 </button>
                             </li>
+                            {% endif %}
+                            {% if show_smp %}
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="smp-room-tab" data-bs-toggle="tab"
                                     data-bs-target="#smp-rooms" type="button">
                                     <i class="bi bi-book me-1 d-none d-sm-inline"></i>SMP
                                 </button>
                             </li>
+                            {% endif %}
+                            {% if show_sma %}
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="sma-room-tab" data-bs-toggle="tab"
                                     data-bs-target="#sma-rooms" type="button">
                                     <i class="bi bi-building me-1 d-none d-sm-inline"></i>SMA/SMK
                                 </button>
                             </li>
+                            {% endif %}
                         </ul>
 
                         <!-- Room Search (below tabs, filters active tab only) -->
@@ -139,6 +149,7 @@
                         </div>
 
                         <div class="tab-content" id="roomJenjangTabContent">
+                            {% if show_sd %}
                             <!-- SD Rooms -->
                             <div class="tab-pane fade" id="sd-rooms" role="tabpanel">
                                 <div class="alert alert-info py-2 mb-3 small">
@@ -146,9 +157,7 @@
                                         1-6)</strong>
                                 </div>
                                 <div class="list-group list-group-flush">
-                                    {% for room in all_rooms %}
-                                    {% if 'Kelas 1' in room.name or 'Kelas 2' in room.name or 'Kelas 3' in room.name or
-                                    'Kelas 4' in room.name or 'Kelas 5' in room.name or 'Kelas 6' in room.name %}
+                                    {% for room in sd_rooms %}
                                     {% set display_name = room.name %}
                                     <label class="list-group-item d-flex align-items-start gap-3 py-2">
                                         <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
@@ -179,11 +188,12 @@
                                             {% endif %}
                                         </div>
                                     </label>
-                                    {% endif %}
                                     {% endfor %}
                                 </div>
                             </div>
+                            {% endif %}
 
+                            {% if show_smp %}
                             <!-- SMP Rooms -->
                             <div class="tab-pane fade" id="smp-rooms" role="tabpanel">
                                 <div class="alert alert-success py-2 mb-3 small">
@@ -191,8 +201,7 @@
                                         7-9)</strong>
                                 </div>
                                 <div class="list-group list-group-flush">
-                                    {% for room in all_rooms %}
-                                    {% if 'Kelas 7' in room.name or 'Kelas 8' in room.name or 'Kelas 9' in room.name %}
+                                    {% for room in smp_rooms %}
                                     <label class="list-group-item d-flex align-items-start gap-3 py-2">
                                         <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
                                             name="room_ids" value="{{ room.id }}" {% if room.id in saved_room_ids
@@ -222,11 +231,12 @@
                                             {% endif %}
                                         </div>
                                     </label>
-                                    {% endif %}
                                     {% endfor %}
                                 </div>
                             </div>
+                            {% endif %}
 
+                            {% if show_sma %}
                             <!-- SMA/SMK Rooms -->
                             <div class="tab-pane fade" id="sma-rooms" role="tabpanel">
                                 <div class="alert alert-warning py-2 mb-3 small">
@@ -234,9 +244,7 @@
                                         (Kelas 10-12)</strong>
                                 </div>
                                 <div class="list-group list-group-flush">
-                                    {% for room in all_rooms %}
-                                    {% if 'Kelas 10' in room.name or 'Kelas 11' in room.name or 'Kelas 12' in room.name
-                                    %}
+                                    {% for room in sma_rooms %}
                                     <label class="list-group-item d-flex align-items-start gap-3 py-2">
                                         <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
                                             name="room_ids" value="{{ room.id }}" {% if room.id in saved_room_ids
@@ -266,10 +274,10 @@
                                             {% endif %}
                                         </div>
                                     </label>
-                                    {% endif %}
                                     {% endfor %}
                                 </div>
                             </div>
+                            {% endif %}
 
                             <!-- Umum Rooms (non-classroom) -->
                             <div class="tab-pane fade show active" id="umum-rooms" role="tabpanel">
@@ -278,8 +286,7 @@
                                         jenjang</strong>
                                 </div>
                                 <div class="list-group list-group-flush">
-                                    {% for room in all_rooms %}
-                                    {% if 'Kelas' not in room.name %}
+                                    {% for room in umum_rooms %}
                                     <label class="list-group-item d-flex align-items-start gap-3 py-2">
                                         <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
                                             name="room_ids" value="{{ room.id }}" {% if room.id in saved_room_ids
@@ -312,7 +319,6 @@
                                             {% endif %}
                                         </div>
                                     </label>
-                                    {% endif %}
                                     {% endfor %}
                                 </div>
                             </div>
@@ -747,9 +753,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        var shouldShow = {{ 'true' if show_profile_modal else 'false' }
-    };
-
+    var shouldShow = {{ 'true' if show_profile_modal else 'false' }};
 
     var profileModalEl = document.getElementById('profileModal');
     if (shouldShow && profileModalEl && window.bootstrap) {

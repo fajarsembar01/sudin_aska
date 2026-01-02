@@ -2177,6 +2177,113 @@ def save_school_classrooms_batch(
 # Section & Coordinator Queries
 # ==========================================
 
+
+def ensure_classroom_rooms_for_school(school_id: int) -> None:
+    """
+    Ensure there is a portal_room + portal_school_rooms entry for each configured classroom.
+    Uses the base room for the matching grade (e.g., "Ruang Kelas 1") as a template and
+    copies its aspects to generated rooms (e.g., "Ruang Kelas 1A").
+    """
+    classrooms = list_school_classrooms(school_id, active_only=True)
+    if not classrooms:
+        return
+
+    all_rooms = list_portal_rooms(active_only=True)
+
+    def _room_grade(room_name: str) -> Optional[int]:
+        import re
+        m = re.search(r"\bKelas\s+(\d+)", room_name or "", flags=re.IGNORECASE)
+        if not m:
+            return None
+        try:
+            return int(m.group(1))
+        except (TypeError, ValueError):
+            return None
+
+    # Map grade -> base room
+    template_by_grade: Dict[int, Dict[str, Any]] = {}
+    for room in all_rooms:
+        name_val = room.get("name") or ""
+        # Skip variant names like "Ruang Kelas 1A" when choosing template
+        if re.search(r"\bKelas\s+\d+[A-Z]+$", name_val, flags=re.IGNORECASE):
+            continue
+        grade = _room_grade(name_val)
+        if grade is not None and grade not in template_by_grade:
+            template_by_grade[grade] = room
+
+    # Quick lookup by name (case-insensitive)
+    room_by_name = {r["name"].lower(): r for r in all_rooms if r.get("name")}
+
+    with get_cursor(commit=True) as cur:
+        for cls in classrooms:
+            grade = cls.get("grade_level")
+            if grade is None:
+                continue
+            try:
+                grade_int = int(grade)
+            except (TypeError, ValueError):
+                continue
+
+            base_room = template_by_grade.get(grade_int)
+            if not base_room:
+                continue
+
+            variant = (cls.get("variant") or "").strip().upper()
+            base_name = base_room.get("name") or f"Kelas {grade_int}"
+            target_name = f"{base_name}{variant}" if variant else base_name
+
+            existing_room = room_by_name.get(target_name.lower())
+            if existing_room:
+                target_room_id = existing_room["id"]
+            else:
+                cur.execute(
+                    """
+                    INSERT INTO portal_rooms (name, description, category, sort_order, active)
+                    VALUES (%s, %s, %s, %s, TRUE)
+                    RETURNING id, name, description, category, sort_order
+                    """,
+                    (
+                        target_name,
+                        base_room.get("description"),
+                        base_room.get("category") or "akademik",
+                        base_room.get("sort_order") or 0,
+                    ),
+                )
+                new_room = dict(cur.fetchone())
+                room_by_name[target_name.lower()] = new_room
+                target_room_id = new_room["id"]
+
+                # Copy aspects from base room if target has none
+                base_aspects = base_room.get("aspects") or []
+                for idx, asp in enumerate(base_aspects):
+                    cur.execute(
+                        """
+                        INSERT INTO portal_aspects (room_id, name, description, sort_order, active)
+                        VALUES (%s, %s, %s, %s, TRUE)
+                        """,
+                        (
+                            target_room_id,
+                            asp.get("name"),
+                            asp.get("description"),
+                            asp.get("sort_order") if asp.get("sort_order") is not None else idx,
+                        ),
+                    )
+
+            # Attach room to school with quantity = capacity (fallback 1)
+            quantity_val = cls.get("capacity") or 1
+            notes_val = cls.get("notes")
+            cur.execute(
+                """
+                INSERT INTO portal_school_rooms (school_id, room_id, quantity, notes)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (school_id, room_id)
+                DO UPDATE SET 
+                    quantity = EXCLUDED.quantity,
+                    notes = EXCLUDED.notes
+                """,
+                (school_id, target_room_id, quantity_val, notes_val),
+            )
+
 def get_section_by_coordinator(coordinator_id: int):
     """Get section managed by coordinator."""
     from dashboard.db_access import get_cursor
