@@ -26,6 +26,24 @@ def get_connection():
 def format_value(value):
     if value is None:
         return "NULL"
+    # Attempt to normalize JSON-like strings that use single quotes/True/False into proper JSON
+    if isinstance(value, str):
+        trimmed = value.strip()
+        if trimmed.startswith("{") or trimmed.startswith("["):
+            import ast, json as _json
+            # First attempt: parse as-is
+            for candidate in (trimmed, trimmed.replace("''", "'")):
+                try:
+                    parsed = ast.literal_eval(candidate)
+                    if isinstance(parsed, (dict, list)):
+                        serialized = _json.dumps(parsed, ensure_ascii=False)
+                        serialized = serialized.replace("'", "''")
+                        return f"'{serialized}'"
+                except Exception:
+                    continue
+        # Basic escaping for plain strings
+        escaped = value.replace("'", "''")
+        return f"'{escaped}'"
     if isinstance(value, (int, float)):
         return str(value)
     if isinstance(value, bool):
