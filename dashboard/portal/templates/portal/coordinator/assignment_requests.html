@@ -22,17 +22,27 @@
                         <div class="mb-3">
                             <label class="form-label small">Pilih Staff</label>
                             <select name="staff_id" id="staffSelect" class="form-select" required>
-                                <option value="">-- Pilih --</option>
-                                {% for m in staff_options %}
-                                <option value="{{ m.staff_id }}">{{ m.full_name }} ({{ m.role|upper }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small">Tambah Sekolah (ketik min. 3 huruf untuk cari)</label>
-                            <input type="text" id="schoolSearch" class="form-control" placeholder="Cari sekolah atau NPSN">
-                            <div id="schoolSearchResults" class="border rounded mt-2 d-none" style="max-height: 220px; overflow-y: auto;">
-                                <div class="p-2 text-muted small">Ketik minimal 3 huruf untuk menampilkan hasil.</div>
+                        <option value="">-- Pilih --</option>
+                        {% for m in staff_options %}
+                        <option value="{{ m.staff_id }}">{{ m.full_name }} ({{ m.role|upper }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small">Pilih Periode</label>
+                    <select name="period_id" id="periodSelect" class="form-select">
+                        <option value="">{% if active_period_id %}Periode aktif (default){% else %}-- Pilih periode (boleh periode mendatang) --{% endif %}</option>
+                        {% for p in periods %}
+                        <option value="{{ p.id }}" {% if active_period_id and active_period_id==p.id %}selected{% endif %}>{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">{% if active_period_id %}Jika kosong, pakai periode aktif.{% else %}Tidak ada periode aktif; pilih periode yang akan dipakai, termasuk periode mendatang.{% endif %}</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small">Tambah Sekolah (ketik min. 3 huruf untuk cari)</label>
+                    <input type="text" id="schoolSearch" class="form-control" placeholder="Cari sekolah atau NPSN">
+                    <div id="schoolSearchResults" class="border rounded mt-2 d-none" style="max-height: 220px; overflow-y: auto;">
+                        <div class="p-2 text-muted small">Ketik minimal 3 huruf untuk menampilkan hasil.</div>
                             </div>
                             <small class="text-muted">Tambah beberapa sekolah lalu simpan sekaligus.</small>
                         </div>
@@ -67,6 +77,7 @@
                                 <tr>
                                     <th>Staf</th>
                                     <th>Sekolah</th>
+                                    <th>Periode</th>
                                     <th>Status</th>
                                     <th>Catatan</th>
                                     <th>Waktu</th>
@@ -83,6 +94,7 @@
                                         <div class="fw-semibold">{{ req.school_name }}</div>
                                         <small class="text-muted">{{ req.school_npsn }}</small>
                                     </td>
+                                    <td><small class="text-muted">{{ req.period_name or 'Periode aktif' }}</small></td>
                                     <td>
                                         {% set st = req.status %}
                                         {% if st == 'pending' %}
@@ -119,6 +131,8 @@
         const noteInput = document.getElementById('noteInput');
         const queueList = document.getElementById('queueList');
         const submitBtn = document.getElementById('submitRequests');
+        const periodSelect = document.getElementById('periodSelect');
+        const defaultPeriodValue = periodSelect ? periodSelect.value : '';
 
         function renderQueue() {
             queueList.innerHTML = '';
@@ -201,6 +215,7 @@
                 alert('Tambah minimal satu sekolah.');
                 return;
             }
+            const periodId = periodSelect && periodSelect.value ? parseInt(periodSelect.value, 10) : null;
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Mengirim...';
             fetch("{{ url_for('portal.coordinator_assignment_requests') }}", {
@@ -212,7 +227,8 @@
                 body: JSON.stringify({
                     staff_id: parseInt(staffId, 10),
                     school_ids: queue.map(q => parseInt(q.id, 10)),
-                    note: noteInput.value || null
+                    note: noteInput.value || null,
+                    period_id: isNaN(periodId) ? null : periodId
                 })
             })
             .then(r => r.json())
@@ -223,6 +239,9 @@
                     renderQueue();
                     noteInput.value = '';
                     staffSelect.value = '';
+                    if (periodSelect) {
+                        periodSelect.value = defaultPeriodValue;
+                    }
                     setTimeout(() => window.location.reload(), 600);
                 } else {
                     alert(data.message || 'Gagal mengirim permintaan.');

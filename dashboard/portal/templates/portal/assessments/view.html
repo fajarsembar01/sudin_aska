@@ -17,6 +17,10 @@
             <i class="bi bi-{% if assessment.status == 'submitted' %}check-circle{% else %}pencil{% endif %}"></i>
             {{ assessment.status|capitalize }}
         </span>
+        <span class="badge bg-primary-subtle text-primary border">
+            <i class="bi bi-calendar-event"></i>
+            {{ assessment.period_name or 'Periode aktif saat dibuat' }}
+        </span>
     </div>
 
     <div class="row g-4">
@@ -74,12 +78,98 @@
                             <td class="text-end">{{ assessment.assessment_date }}</td>
                         </tr>
                         <tr>
+                            <td class="text-muted">Periode</td>
+                            <td class="text-end">
+                                <div class="fw-medium">{{ assessment.period_name or 'Periode aktif saat dibuat' }}</div>
+                                {% if assessment.period_start_date and assessment.period_end_date %}
+                                <div class="small text-muted">{{ assessment.period_start_date }} — {{ assessment.period_end_date }}</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
                             <td class="text-muted">Status</td>
                             <td class="text-end">{{ assessment.status|capitalize }}</td>
                         </tr>
                     </table>
                 </div>
             </div>
+
+            {% set req = latest_reopen_request %}
+            {% if assessment.status == 'submitted' %}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-arrow-counterclockwise text-primary"></i>
+                        <h6 class="fw-bold mb-0">Permintaan Reopen</h6>
+                    </div>
+                    {% if user.role == 'staff' %}
+                        {% if req and req.status == 'pending' %}
+                            <div class="alert alert-info small mb-2">
+                                Menunggu persetujuan admin. Diajukan {{ req.created_at }}.
+                                {% if req.reason %}<br><span class="fw-semibold">Alasan:</span> {{ req.reason }}{% endif %}
+                            </div>
+                        {% elif req and req.status == 'rejected' %}
+                            <div class="alert alert-warning small mb-2">
+                                Permintaan ditolak {{ req.reviewed_at or '' }}.
+                                {% if req.reviewer_note %}<br><span class="fw-semibold">Catatan admin:</span> {{ req.reviewer_note }}{% endif %}
+                            </div>
+                        {% elif req and req.status == 'approved' %}
+                            <div class="alert alert-success small mb-2">
+                                Permintaan sebelumnya sudah disetujui {{ req.reviewed_at or '' }}.
+                            </div>
+                        {% endif %}
+                        <form method="post" action="{{ url_for('portal.request_reopen', assessment_id=assessment.id) }}">
+                            <label class="form-label small text-muted">Alasan (opsional)</label>
+                            <textarea class="form-control form-control-sm mb-2" name="reason" rows="2"
+                                placeholder="Jelaskan kenapa perlu dibuka kembali..."></textarea>
+                            <button type="submit" class="btn btn-outline-primary w-100"
+                                {% if req and req.status == 'pending' %}disabled{% endif %}>
+                                <i class="bi bi-send"></i> Ajukan ke Admin
+                            </button>
+                            {% if req and req.status == 'pending' %}
+                            <div class="small text-muted mt-1">Sudah ada permintaan menunggu persetujuan.</div>
+                            {% endif %}
+                        </form>
+                    {% elif user.role == 'admin' %}
+                        {% if req %}
+                            <div class="small text-muted mb-2">Diajukan oleh {{ req.staff_name or 'Staff' }} pada {{
+                                req.created_at }}</div>
+                            {% if req.reason %}
+                            <div class="alert alert-secondary small">Alasan: {{ req.reason }}</div>
+                            {% endif %}
+                            {% if req.status == 'pending' %}
+                            <form class="mb-2" method="post"
+                                action="{{ url_for('portal.approve_reopen', assessment_id=assessment.id) }}">
+                                <input type="hidden" name="request_id" value="{{ req.id }}">
+                                <label class="form-label small text-muted mb-1">Catatan admin (opsional)</label>
+                                <textarea class="form-control form-control-sm mb-2" name="reviewer_note" rows="2"
+                                    placeholder="Catatan persetujuan"></textarea>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-success w-50">
+                                        <i class="bi bi-check-circle"></i> Setujui & Reopen
+                                    </button>
+                                    <button type="submit" formaction="{{ url_for('portal.reject_reopen', assessment_id=assessment.id) }}"
+                                        class="btn btn-outline-danger w-50">
+                                        <i class="bi bi-x-circle"></i> Tolak
+                                    </button>
+                                </div>
+                            </form>
+                            {% elif req.status == 'approved' %}
+                            <div class="alert alert-success small mb-0">Sudah disetujui {{ req.reviewed_at or '' }} oleh {{
+                                req.reviewer_name or 'Admin' }}.</div>
+                            {% elif req.status == 'rejected' %}
+                            <div class="alert alert-warning small mb-0">
+                                Ditolak {{ req.reviewed_at or '' }} oleh {{ req.reviewer_name or 'Admin' }}.
+                                {% if req.reviewer_note %}<br>Catatan: {{ req.reviewer_note }}{% endif %}
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="small text-muted">Belum ada permintaan reopen.</div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
 
             {% if user.role == 'admin' and assessment.status != 'draft' %}
             <div class="card border-0 shadow-sm">

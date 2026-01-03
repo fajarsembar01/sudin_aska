@@ -196,6 +196,15 @@
                                                             class="d-flex align-items-start justify-content-between gap-2">
                                                             <div class="flex-grow-1">
                                                                 <div class="d-flex align-items-center gap-2">
+                                                                    {% if asp.is_required %}
+                                                                    <input class="form-check-input" type="checkbox" checked disabled>
+                                                                    <input type="hidden" name="aspects_{{ room.id }}[]" value="{{ asp.id }}">
+                                                                    {% else %}
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        name="aspects_{{ room.id }}[]"
+                                                                        value="{{ asp.id }}"
+                                                                        {% if asp.is_selected %}checked{% endif %}>
+                                                                    {% endif %}
                                                                     <span class="text-muted">{{ asp.name }}</span>
                                                                     {% if asp.is_required %}
                                                                     <span class="badge bg-warning-subtle text-warning">Wajib</span>
@@ -275,6 +284,15 @@
                                                         <div class="d-flex align-items-start justify-content-between gap-2">
                                                             <div class="flex-grow-1">
                                                                 <div class="d-flex align-items-center gap-2">
+                                                                    {% if asp.is_required %}
+                                                                    <input class="form-check-input" type="checkbox" checked disabled>
+                                                                    <input type="hidden" name="aspects_{{ room.id }}[]" value="{{ asp.id }}">
+                                                                    {% else %}
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        name="aspects_{{ room.id }}[]"
+                                                                        value="{{ asp.id }}"
+                                                                        {% if asp.is_selected %}checked{% endif %}>
+                                                                    {% endif %}
                                                                     <span class="text-muted">{{ asp.name }}</span>
                                                                     {% if asp.is_required %}
                                                                     <span class="badge bg-warning-subtle text-warning">Wajib</span>
@@ -352,6 +370,15 @@
                                                         <div class="d-flex align-items-start justify-content-between gap-2">
                                                             <div class="flex-grow-1">
                                                                 <div class="d-flex align-items-center gap-2">
+                                                                    {% if asp.is_required %}
+                                                                    <input class="form-check-input" type="checkbox" checked disabled>
+                                                                    <input type="hidden" name="aspects_{{ room.id }}[]" value="{{ asp.id }}">
+                                                                    {% else %}
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        name="aspects_{{ room.id }}[]"
+                                                                        value="{{ asp.id }}"
+                                                                        {% if asp.is_selected %}checked{% endif %}>
+                                                                    {% endif %}
                                                                     <span class="text-muted">{{ asp.name }}</span>
                                                                     {% if asp.is_required %}
                                                                     <span class="badge bg-warning-subtle text-warning">Wajib</span>
@@ -433,6 +460,15 @@
                                                         <div class="d-flex align-items-start justify-content-between gap-2">
                                                             <div class="flex-grow-1">
                                                                 <div class="d-flex align-items-center gap-2">
+                                                                    {% if asp.is_required %}
+                                                                    <input class="form-check-input" type="checkbox" checked disabled>
+                                                                    <input type="hidden" name="aspects_{{ room.id }}[]" value="{{ asp.id }}">
+                                                                    {% else %}
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        name="aspects_{{ room.id }}[]"
+                                                                        value="{{ asp.id }}"
+                                                                        {% if asp.is_selected %}checked{% endif %}>
+                                                                    {% endif %}
                                                                     <span class="text-muted">{{ asp.name }}</span>
                                                                     {% if asp.is_required %}
                                                                     <span class="badge bg-warning-subtle text-warning">Wajib</span>

@@ -110,6 +110,16 @@
                                         <textarea class="form-control" id="notesInput" rows="2"
                                             placeholder="Catatan khusus untuk penugasan ini..."></textarea>
                                     </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Periode Penilaian</label>
+                                        <select class="form-select" id="periodSelect">
+                                            <option value="">{% if active_period_id %}Periode aktif (default){% else %}-- Pilih periode (boleh periode mendatang) --{% endif %}</option>
+                                            {% for p in periods %}
+                                            <option value="{{ p.id }}" {% if active_period_id and active_period_id==p.id %}selected{% endif %}>{{ p.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <small class="text-muted">{% if active_period_id %}Draft akan memakai pilihan Anda (default periode aktif).{% else %}Tidak ada periode aktif, pilih periode yang akan dipakai (bisa periode yang belum aktif).{% endif %}</small>
+                                    </div>
 
                                     <div class="mb-3">
                                         <h6 class="fw-semibold mb-2">Daftar Penugasan Baru</h6>
@@ -160,6 +170,7 @@
                                     <th>Koordinator</th>
                                     <th>Staff</th>
                                     <th>Sekolah</th>
+                                    <th>Periode</th>
                                     <th>Catatan</th>
                                     <th>Waktu</th>
                                     <th class="text-end">Aksi</th>
@@ -176,6 +187,9 @@
                                     <td>
                                         <div class="fw-semibold">{{ req.school_name }}</div>
                                         <small class="text-muted">{{ req.school_npsn }}{% if req.kecamatan_name %} • {{ req.kecamatan_name }}{% endif %}</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ req.period_name or 'Periode aktif' }}</small>
                                     </td>
                                     <td><small class="text-muted">{{ req.note or '-' }}</small></td>
                                     <td><small class="text-muted">{{ req.created_at.strftime('%d %b %Y %H:%M') if req.created_at else '-' }}</small></td>
@@ -240,6 +254,7 @@
         const clearQueueBtn = document.getElementById('clearQueueBtn');
         const searchStaff = document.getElementById('searchStaff');
         const assignFeedback = document.getElementById('assignFeedback');
+        const periodSelect = document.getElementById('periodSelect');
         const approveButtons = document.querySelectorAll('.approve-btn');
         const rejectButtons = document.querySelectorAll('.reject-btn');
         const availableSchools = {{ available_schools | tojson | safe }};
@@ -425,6 +440,7 @@
                 alert('Tambahkan minimal satu sekolah.');
                 return;
             }
+            const periodId = periodSelect && periodSelect.value ? parseInt(periodSelect.value, 10) : null;
             saveQueueBtn.disabled = true;
             saveQueueBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menyimpan...';
 
@@ -437,7 +453,8 @@
                 body: JSON.stringify({
                     staff_id: parseInt(staffId, 10),
                     school_ids: queue.map(q => q.id),
-                    notes: notesInput.value || null
+                    notes: notesInput.value || null,
+                    period_id: isNaN(periodId) ? null : periodId
                 })
                 })
                 .then(r => r.json())

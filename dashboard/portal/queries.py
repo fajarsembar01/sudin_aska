@@ -111,34 +111,74 @@ def list_portal_rooms(active_only: bool = True) -> List[Dict[str, Any]]:
         return [dict(row) for row in cur.fetchall()]
 
 
-def list_school_rooms(school_id: int) -> List[Dict[str, Any]]:
-    """Fetch rooms configured for a specific school with aspects."""
-    query = """
-        SELECT 
-            sr.id as school_room_id,
-            sr.quantity,
-            sr.notes,
-            r.id as room_id,
-            r.name as room_name,
-            r.category,
-            COALESCE(
-                json_agg(
-                    json_build_object(
-                        'id', a.id,
-                        'name', a.name,
-                        'description', a.description,
-                        'is_required', a.is_required
-                    ) ORDER BY a.sort_order, a.id
-                ) FILTER (WHERE a.id IS NOT NULL),
-                '[]'
-            ) as aspects
-        FROM portal_school_rooms sr
-        JOIN portal_rooms r ON r.id = sr.room_id
-        LEFT JOIN portal_aspects a ON a.room_id = r.id AND a.active = TRUE
-        WHERE sr.school_id = %s AND r.active = TRUE
-        GROUP BY sr.id, sr.quantity, sr.notes, r.id, r.name, r.category
-        ORDER BY r.sort_order, r.id
+def list_school_rooms(school_id: int, include_all_aspects: bool = False) -> List[Dict[str, Any]]:
     """
+    Fetch rooms configured for a specific school with aspects.
+    - If include_all_aspects=True: return all aspects with is_selected flag.
+    - If False: return only required or selected aspects (enabled for scoring).
+    """
+    if include_all_aspects:
+        query = """
+            SELECT 
+                sr.id as school_room_id,
+                sr.quantity,
+                sr.notes,
+                r.id as room_id,
+                r.name as room_name,
+                r.category,
+                COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'id', a.id,
+                            'name', a.name,
+                            'description', a.description,
+                            'is_required', a.is_required,
+                            'is_selected', (a.is_required OR psra.aspect_id IS NOT NULL)
+                        ) ORDER BY a.sort_order, a.id
+                    ) FILTER (WHERE a.id IS NOT NULL),
+                    '[]'
+                ) as aspects
+            FROM portal_school_rooms sr
+            JOIN portal_rooms r ON r.id = sr.room_id
+            LEFT JOIN portal_aspects a ON a.room_id = r.id AND a.active = TRUE
+            LEFT JOIN portal_school_room_aspects psra ON psra.school_room_id = sr.id AND psra.aspect_id = a.id
+            WHERE sr.school_id = %s AND r.active = TRUE
+            GROUP BY sr.id, sr.quantity, sr.notes, r.id, r.name, r.category
+            ORDER BY r.sort_order, r.id
+        """
+    else:
+        query = """
+            SELECT 
+                sr.id as school_room_id,
+                sr.quantity,
+                sr.notes,
+                r.id as room_id,
+                r.name as room_name,
+                r.category,
+                COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'id', a.id,
+                            'name', a.name,
+                            'description', a.description,
+                            'is_required', a.is_required
+                        ) ORDER BY a.sort_order, a.id
+                    ) FILTER (WHERE a.id IS NOT NULL),
+                    '[]'
+                ) as aspects
+            FROM portal_school_rooms sr
+            JOIN portal_rooms r ON r.id = sr.room_id
+            LEFT JOIN portal_aspects a 
+                ON a.room_id = r.id 
+                AND a.active = TRUE
+                AND (a.is_required = TRUE OR EXISTS (
+                    SELECT 1 FROM portal_school_room_aspects psra 
+                    WHERE psra.school_room_id = sr.id AND psra.aspect_id = a.id
+                ))
+            WHERE sr.school_id = %s AND r.active = TRUE
+            GROUP BY sr.id, sr.quantity, sr.notes, r.id, r.name, r.category
+            ORDER BY r.sort_order, r.id
+        """
     
     with get_cursor() as cur:
         cur.execute(query, (school_id,))
@@ -148,13 +188,36 @@ def list_school_rooms(school_id: int) -> List[Dict[str, Any]]:
 def create_assessment(
     school_id: int,
     staff_id: int,
+    period_id: Optional[int] = None,
     creator_email: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Create a new draft assessment for the active period (if any)."""
-    period = get_active_period()
-    period_id = period["id"] if period else None
+    """Create a new draft assessment for the given period (defaults to active)."""
+    if period_id is None:
+        period = get_active_period()
+        period_id = period["id"] if period else None
 
     with get_cursor(commit=True) as cur:
+        # Avoid duplicate drafts for the same staff/school/period
+        cur.execute(
+            """
+            SELECT id, school_id, staff_id, status, created_at, period_id
+            FROM portal_assessments
+            WHERE school_id = %s
+              AND staff_id = %s
+              AND status = 'draft'
+              AND (
+                    (period_id IS NULL AND %s IS NULL)
+                    OR period_id = %s
+                  )
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            (school_id, staff_id, period_id, period_id),
+        )
+        existing = cur.fetchone()
+        if existing:
+            return dict(existing)
+
         cur.execute(
             """
             INSERT INTO portal_assessments (school_id, staff_id, period_id, status)
@@ -174,10 +237,15 @@ def get_assessment_by_id(assessment_id: int) -> Optional[Dict[str, Any]]:
             a.id, a.school_id, a.staff_id, a.assessment_date,
             a.status, a.total_score, a.notes, a.submitted_at,
             a.created_at, a.updated_at,
+            a.period_id,
+            p.name AS period_name,
+            p.start_date AS period_start_date,
+            p.end_date AS period_end_date,
             s.name as school_name, s.npsn, s.jenjang,
             u.full_name as assessor_name, u.email as assessor_email
         FROM portal_assessments a
         JOIN portal_schools s ON s.id = a.school_id
+        LEFT JOIN portal_assessment_periods p ON p.id = a.period_id
         LEFT JOIN dashboard_users u ON u.id = a.staff_id
         WHERE a.id = %s
     """
@@ -185,6 +253,83 @@ def get_assessment_by_id(assessment_id: int) -> Optional[Dict[str, Any]]:
         cur.execute(query, (assessment_id,))
         row = cur.fetchone()
         return dict(row) if row else None
+
+
+# ===== Reopen Requests =====
+
+def get_latest_reopen_request(assessment_id: int) -> Optional[Dict[str, Any]]:
+    query = """
+        SELECT r.*, u.full_name AS staff_name, u.email AS staff_email,
+               reviewer.full_name AS reviewer_name, reviewer.email AS reviewer_email
+        FROM portal_assessment_reopen_requests r
+        JOIN dashboard_users u ON u.id = r.staff_id
+        LEFT JOIN dashboard_users reviewer ON reviewer.id = r.reviewer_id
+        WHERE r.assessment_id = %s
+        ORDER BY r.created_at DESC
+        LIMIT 1
+    """
+    with get_cursor() as cur:
+        cur.execute(query, (assessment_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def create_reopen_request(assessment_id: int, staff_id: int, reason: Optional[str] = None) -> Dict[str, Any]:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO portal_assessment_reopen_requests
+                (assessment_id, staff_id, reason, status)
+            VALUES (%s, %s, %s, 'pending')
+            RETURNING *
+            """,
+            (assessment_id, staff_id, reason),
+        )
+        return dict(cur.fetchone())
+
+
+def update_reopen_request_status(
+    request_id: int,
+    status: str,
+    reviewer_id: int,
+    reviewer_note: Optional[str] = None,
+) -> bool:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE portal_assessment_reopen_requests
+            SET status = %s,
+                reviewer_id = %s,
+                reviewer_note = %s,
+                reviewed_at = NOW()
+            WHERE id = %s
+            """,
+            (status, reviewer_id, reviewer_note, request_id),
+        )
+        return cur.rowcount > 0
+
+
+def list_reopen_requests(status: Optional[str] = None) -> List[Dict[str, Any]]:
+    clauses = []
+    params: list[Any] = []
+    if status:
+        clauses.append("r.status = %s")
+        params.append(status)
+    where_sql = "WHERE " + " AND ".join(clauses) if clauses else ""
+    query = f"""
+        SELECT r.*, s.name AS school_name, s.npsn, u.full_name AS staff_name,
+               reviewer.full_name AS reviewer_name
+        FROM portal_assessment_reopen_requests r
+        JOIN portal_assessments a ON a.id = r.assessment_id
+        JOIN portal_schools s ON s.id = a.school_id
+        JOIN dashboard_users u ON u.id = r.staff_id
+        LEFT JOIN dashboard_users reviewer ON reviewer.id = r.reviewer_id
+        {where_sql}
+        ORDER BY r.created_at DESC
+    """
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
 
 
 def get_or_create_draft_assessment(school_id: int, staff_id: int) -> Dict[str, Any]:
@@ -310,14 +455,35 @@ def assign_assessment(school_id: int, staff_id: int, period_id: Optional[int] = 
             cur.execute("SELECT id FROM portal_assessment_periods WHERE is_active = TRUE")
             row = cur.fetchone()
             period_id = row["id"] if row else None
-        
+
+        # Avoid duplicate drafts for the same staff/school/period
+        cur.execute(
+            """
+            SELECT id
+            FROM portal_assessments
+            WHERE school_id = %s
+              AND staff_id = %s
+              AND status = 'draft'
+              AND (
+                    (period_id IS NULL AND %s IS NULL)
+                    OR period_id = %s
+                  )
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            (school_id, staff_id, period_id, period_id),
+        )
+        existing = cur.fetchone()
+        if existing:
+            return dict(existing)
+
         cur.execute(
             """
             INSERT INTO portal_assessments (school_id, staff_id, period_id, status)
             VALUES (%s, %s, %s, 'draft')
             RETURNING id
             """,
-            (school_id, staff_id, period_id)
+            (school_id, staff_id, period_id),
         )
         return dict(cur.fetchone())
 
@@ -583,8 +749,12 @@ def list_staff_assessments(
         return [dict(row) for row in cur.fetchall()]
 
 
-def get_active_assessment(school_id: int, staff_id: Optional[int] = None) -> Optional[Dict[str, Any]]:
-    """Get an active draft assessment for a school."""
+def get_active_assessment(
+    school_id: int,
+    staff_id: Optional[int] = None,
+    period_id: Optional[int] = None,
+) -> Optional[Dict[str, Any]]:
+    """Get an active draft assessment for a school (optionally filtered by period)."""
     query = """
         SELECT *
         FROM portal_assessments
@@ -595,6 +765,10 @@ def get_active_assessment(school_id: int, staff_id: Optional[int] = None) -> Opt
     if staff_id:
         query += " AND staff_id = %s"
         params.append(staff_id)
+
+    if period_id is not None:
+        query += " AND period_id = %s"
+        params.append(period_id)
         
     query += " ORDER BY created_at DESC LIMIT 1"
 
@@ -1353,25 +1527,72 @@ def create_school(
         return dict(cur.fetchone())
 
 
-def update_school_rooms(school_id: int, room_ids: List[int]) -> int:
-    """Update the rooms available for a school. Returns count of rooms set."""
+def update_school_rooms(
+    school_id: int,
+    room_ids: List[int],
+    aspect_map: Optional[Dict[int, List[int]]] = None,
+) -> int:
+    """
+    Update the rooms and enabled aspects for a school.
+    - room_ids: list of portal_room IDs to enable
+    - aspect_map: mapping room_id -> list of aspect IDs selected (optional aspects)
+    Required aspects are auto-enabled.
+    """
+    aspect_map = aspect_map or {}
     with get_cursor(commit=True) as cur:
-        # Remove existing
+        # Remove existing rooms (cascade removes aspect selections)
         cur.execute(
             "DELETE FROM portal_school_rooms WHERE school_id = %s",
             (school_id,),
         )
-        
-        # Add new
-        if room_ids:
-            values = [(school_id, rid) for rid in room_ids]
-            from psycopg2.extras import execute_values
-            execute_values(
-                cur,
-                "INSERT INTO portal_school_rooms (school_id, room_id) VALUES %s",
-                values,
+
+        # Add rooms and collect mapping to school_room_id
+        room_map: Dict[int, int] = {}
+        for rid in room_ids:
+            cur.execute(
+                """
+                INSERT INTO portal_school_rooms (school_id, room_id)
+                VALUES (%s, %s)
+                RETURNING id
+                """,
+                (school_id, rid),
             )
-        
+            sr_id = cur.fetchone()[0]
+            room_map[rid] = sr_id
+
+        if room_map:
+            # Required aspects per room
+            cur.execute(
+                """
+                SELECT id, room_id
+                FROM portal_aspects
+                WHERE room_id = ANY(%s) AND is_required = TRUE
+                """,
+                ([rid for rid in room_ids],),
+            )
+            required_by_room: Dict[int, List[int]] = {}
+            for row in cur.fetchall():
+                required_by_room.setdefault(row["room_id"], []).append(row["id"])
+
+            aspect_values: List[tuple[int, int]] = []
+            for room_id, sr_id in room_map.items():
+                selected: set[int] = set(required_by_room.get(room_id, []))
+                selected.update(aspect_map.get(room_id, []) or [])
+                for aid in selected:
+                    aspect_values.append((sr_id, aid))
+
+            if aspect_values:
+                from psycopg2.extras import execute_values
+                execute_values(
+                    cur,
+                    """
+                    INSERT INTO portal_school_room_aspects (school_room_id, aspect_id)
+                    VALUES %s
+                    ON CONFLICT DO NOTHING
+                    """,
+                    aspect_values,
+                )
+
         return len(room_ids)
 
 
@@ -2005,7 +2226,47 @@ def get_staff_assigned_schools(staff_id: int) -> List[Dict[str, Any]]:
                       AND a.status = 'draft'
                     ORDER BY a.created_at DESC
                     LIMIT 1
-                ) as draft_assessment_id
+                ) as draft_assessment_id,
+                (
+                    SELECT a.period_id
+                    FROM portal_assessments a
+                    WHERE a.school_id = s.id 
+                      AND a.staff_id = %s 
+                      AND a.status = 'draft'
+                    ORDER BY a.created_at DESC
+                    LIMIT 1
+                ) as draft_period_id,
+                (
+                    SELECT p.name
+                    FROM portal_assessment_periods p
+                    WHERE p.id = (
+                        SELECT a.period_id
+                        FROM portal_assessments a
+                        WHERE a.school_id = s.id 
+                          AND a.staff_id = %s 
+                          AND a.status = 'draft'
+                        ORDER BY a.created_at DESC
+                        LIMIT 1
+                    )
+                ) as draft_period_name,
+                (
+                    SELECT a.period_id
+                    FROM portal_assessments a
+                    WHERE a.school_id = s.id AND a.staff_id = %s
+                    ORDER BY a.created_at DESC
+                    LIMIT 1
+                ) as last_period_id,
+                (
+                    SELECT p.name
+                    FROM portal_assessment_periods p
+                    WHERE p.id = (
+                        SELECT a.period_id
+                        FROM portal_assessments a
+                        WHERE a.school_id = s.id AND a.staff_id = %s
+                        ORDER BY a.created_at DESC
+                        LIMIT 1
+                    )
+                ) as last_period_name
             FROM staff_school_assignments ssa
             JOIN portal_schools s ON ssa.school_id = s.id
             LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
@@ -2014,7 +2275,7 @@ def get_staff_assigned_schools(staff_id: int) -> List[Dict[str, Any]]:
             WHERE ssa.staff_id = %s AND s.active = TRUE
             ORDER BY k.name, s.name
             """,
-            (staff_id, staff_id, staff_id)
+            (staff_id, staff_id, staff_id, staff_id, staff_id, staff_id, staff_id)
         )
         return [dict(row) for row in cur.fetchall()]
 
@@ -2074,19 +2335,24 @@ def create_assignment_request(
     staff_id: int,
     school_id: int,
     note: Optional[str] = None,
+    period_id: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Coordinator submits assignment request."""
+    if period_id is None:
+        period = get_active_period()
+        period_id = period["id"] if period else None
+
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
-            INSERT INTO staff_assignment_requests (coordinator_id, staff_id, school_id, note)
-            VALUES (%s, %s, %s, %s)
-            ON CONFLICT (coordinator_id, staff_id, school_id)
+            INSERT INTO staff_assignment_requests (coordinator_id, staff_id, school_id, note, period_id)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (coordinator_id, staff_id, school_id, period_id)
             WHERE status = 'pending'
-            DO UPDATE SET updated_at = NOW(), note = EXCLUDED.note
+            DO UPDATE SET updated_at = NOW(), note = EXCLUDED.note, period_id = EXCLUDED.period_id
             RETURNING *
             """,
-            (coordinator_id, staff_id, school_id, note),
+            (coordinator_id, staff_id, school_id, note, period_id),
         )
         return dict(cur.fetchone())
 
@@ -2110,6 +2376,7 @@ def list_assignment_requests(
             sch.name AS school_name,
             sch.npsn AS school_npsn,
             k.name AS kecamatan_name,
+            p.name AS period_name,
             r.full_name AS reviewer_name
         FROM staff_assignment_requests sar
         JOIN dashboard_users c ON sar.coordinator_id = c.id
@@ -2117,6 +2384,7 @@ def list_assignment_requests(
         JOIN portal_schools sch ON sar.school_id = sch.id
         LEFT JOIN portal_kelurahan l ON sch.kelurahan_id = l.id
         LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+        LEFT JOIN portal_assessment_periods p ON sar.period_id = p.id
         LEFT JOIN dashboard_users r ON sar.reviewed_by = r.id
         {where_clause}
         ORDER BY sar.created_at DESC
@@ -2169,18 +2437,72 @@ def list_coordinator_requests(
             s.nip AS staff_nip,
             sch.name AS school_name,
             sch.npsn AS school_npsn,
-            k.name AS kecamatan_name
+            k.name AS kecamatan_name,
+            p.name AS period_name
         FROM staff_assignment_requests sar
         JOIN dashboard_users s ON sar.staff_id = s.id
         JOIN portal_schools sch ON sar.school_id = sch.id
         LEFT JOIN portal_kelurahan l ON sch.kelurahan_id = l.id
         LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+        LEFT JOIN portal_assessment_periods p ON sar.period_id = p.id
         {where_clause}
         ORDER BY sar.created_at DESC
     """
     with get_cursor() as cur:
         cur.execute(query, params)
         return [dict(row) for row in cur.fetchall()]
+
+
+def set_active_period(period_id: int) -> bool:
+    """Set the given period as active (others become inactive)."""
+    with get_cursor(commit=True) as cur:
+        cur.execute("SELECT id FROM portal_assessment_periods WHERE id = %s", (period_id,))
+        if not cur.fetchone():
+            return False
+        cur.execute("UPDATE portal_assessment_periods SET is_active = FALSE WHERE id <> %s", (period_id,))
+        cur.execute("UPDATE portal_assessment_periods SET is_active = TRUE WHERE id = %s", (period_id,))
+        return True
+
+
+def update_period(
+    period_id: int,
+    name: str,
+    start_date: str,
+    end_date: str,
+    is_active: bool,
+) -> bool:
+    """Update an assessment period; optionally set as active."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE portal_assessment_periods
+            SET name = %s,
+                start_date = %s,
+                end_date = %s,
+                is_active = %s
+            WHERE id = %s
+            RETURNING id
+            """,
+            (name, start_date, end_date, is_active, period_id),
+        )
+        updated = cur.fetchone()
+        if not updated:
+            return False
+        if is_active:
+            cur.execute("UPDATE portal_assessment_periods SET is_active = FALSE WHERE id <> %s", (period_id,))
+            cur.execute("UPDATE portal_assessment_periods SET is_active = TRUE WHERE id = %s", (period_id,))
+        return True
+
+
+def delete_period(period_id: int) -> bool:
+    """Delete a period if it is not active and not referenced."""
+    with get_cursor(commit=True) as cur:
+        cur.execute("SELECT is_active FROM portal_assessment_periods WHERE id = %s", (period_id,))
+        row = cur.fetchone()
+        if not row or row["is_active"]:
+            return False
+        cur.execute("DELETE FROM portal_assessment_periods WHERE id = %s", (period_id,))
+        return cur.rowcount > 0
 
 
 def get_dashboard_user_profile(user_id: int) -> Optional[Dict[str, Any]]:
@@ -2495,6 +2817,18 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                     notes = EXCLUDED.notes
                 """,
                 (school_id, target_room_id, quantity_val, notes_val),
+            )
+            # Ensure required aspects are marked enabled for this school room
+            cur.execute(
+                """
+                INSERT INTO portal_school_room_aspects (school_room_id, aspect_id)
+                SELECT sr.id, a.id
+                FROM portal_school_rooms sr
+                JOIN portal_aspects a ON a.room_id = sr.room_id AND a.is_required = TRUE
+                WHERE sr.school_id = %s AND sr.room_id = %s
+                ON CONFLICT DO NOTHING
+                """,
+                (school_id, target_room_id),
             )
 
 def get_section_by_coordinator(coordinator_id: int):

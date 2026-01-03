@@ -18,6 +18,17 @@
                 <i class="bi bi-file-earmark-text"></i>
                 Assessment #{{ assessment.id }}
             </span>
+            {% if assessment_period %}
+            <span class="badge bg-primary-subtle text-primary border">
+                <i class="bi bi-calendar-event"></i>
+                {{ assessment_period.name }}
+            </span>
+            {% else %}
+            <span class="badge bg-secondary-subtle text-secondary border">
+                <i class="bi bi-calendar-event"></i>
+                Periode aktif saat dibuat
+            </span>
+            {% endif %}
         </div>
     </div>
 
@@ -172,6 +183,14 @@
                     <span class="fw-semibold">{{ total_aspects }}</span>
                 </div>
                 <p class="text-muted small">Pastikan semua aspek sudah dinilai sebelum submit.</p>
+                <form action="{{ url_for('portal.save_draft', school_id=school.id) }}" method="POST" class="mb-2">
+                    <input type="hidden" name="assessment_id" value="{{ assessment.id }}">
+                    <button type="submit"
+                        class="btn btn-outline-secondary w-100 d-inline-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-save"></i>
+                        <span>Simpan Draft</span>
+                    </button>
+                </form>
                 <form action="{{ url_for('portal.submit', school_id=school.id) }}" method="POST">
                     <input type="hidden" name="assessment_id" value="{{ assessment.id }}">
                     <button type="submit"

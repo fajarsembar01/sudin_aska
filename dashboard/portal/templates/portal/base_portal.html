@@ -545,7 +545,8 @@
                     'portal.coordinator_dashboard',
                     'portal.coordinator_stats',
                     'portal.coordinator_assignment_requests',
-                    'portal.view_my_team'
+                    'portal.view_my_team',
+                    'portal.coordinator_assessments'
                     ] %}
                     <!-- Coordinator: Kelola Tim dropdown -->
                     <li class="nav-item dropdown">
@@ -567,6 +568,11 @@
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('portal.coordinator_assignment_requests') }}">
                                     <i class="bi bi-send me-2"></i>Pengajuan Penugasan
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.coordinator_assessments') }}">
+                                    <i class="bi bi-clipboard-check me-2"></i>Penilaian Saya
                                 </a>
                             </li>
                             <li>
@@ -613,6 +619,16 @@
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('portal.admin_stats') }}">
                                     <i class="bi bi-bar-chart me-2"></i>Statistik
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.admin_periods') }}">
+                                    <i class="bi bi-calendar-event me-2"></i>Periode Penilaian
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.admin_reopen_requests') }}">
+                                    <i class="bi bi-arrow-counterclockwise me-2"></i>Permintaan Reopen
                                 </a>
                             </li>
                             <li>

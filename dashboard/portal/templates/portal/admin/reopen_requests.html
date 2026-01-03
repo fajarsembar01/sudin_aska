@@ -1,0 +1,97 @@
+{% extends 'portal/base_portal.html' %}
+
+{% block portal_content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+                <h1 class="h5 fw-bold mb-1">Permintaan Reopen Penilaian</h1>
+                <p class="text-muted small mb-0">Pantau dan proses pengajuan buka ulang penilaian yang sudah disubmit.</p>
+            </div>
+            <div class="btn-group btn-group-sm" role="group">
+                {% set statuses = [('', 'Semua'), ('pending', 'Pending'), ('approved', 'Disetujui'), ('rejected', 'Ditolak')] %}
+                {% for key, label in statuses %}
+                {% set target = url_for('portal.admin_reopen_requests') if not key else url_for('portal.admin_reopen_requests', status=key) %}
+                <a class="btn btn-outline-primary {% if (status_filter or '') == key %}active{% endif %}"
+                    href="{{ target }}">{{ label }}</a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body table-responsive">
+                {% if requests %}
+                <table class="table align-middle">
+                    <thead>
+                        <tr class="text-muted small">
+                            <th>#</th>
+                            <th>Sekolah</th>
+                            <th>Staf</th>
+                            <th>Diajukan</th>
+                            <th>Status</th>
+                            <th>Alasan</th>
+                            <th>Catatan Admin</th>
+                            <th class="text-end">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in requests %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                <div class="fw-semibold">{{ r.school_name or 'Sekolah' }}</div>
+                                <div class="text-muted small">{{ r.npsn or '-' }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">{{ r.staff_name or 'Staff' }}</div>
+                                <div class="text-muted small">{{ r.staff_id }}</div>
+                            </td>
+                            <td class="text-muted small">{{ r.created_at }}</td>
+                            <td>
+                                {% set status = r.status or 'pending' %}
+                                {% if status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif status == 'approved' %}
+                                <span class="badge bg-success-subtle text-success">Disetujui</span>
+                                {% elif status == 'rejected' %}
+                                <span class="badge bg-danger-subtle text-danger">Ditolak</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ status }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="small">{{ r.reason or '-' }}</td>
+                            <td class="small">{{ r.reviewer_note or '-' }}</td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2 flex-wrap">
+                                    <a class="btn btn-sm btn-outline-primary"
+                                        href="{{ url_for('portal.view_assessment', assessment_id=r.assessment_id) }}">
+                                        Lihat &amp; Detail
+                                    </a>
+                                    {% if status == 'pending' %}
+                                    <form method="post" action="{{ url_for('portal.approve_reopen', assessment_id=r.assessment_id) }}"
+                                        class="d-inline">
+                                        <input type="hidden" name="request_id" value="{{ r.id }}">
+                                        <button type="submit" class="btn btn-sm btn-success">Setujui</button>
+                                    </form>
+                                    <form method="post" action="{{ url_for('portal.reject_reopen', assessment_id=r.assessment_id) }}"
+                                        class="d-inline">
+                                        <input type="hidden" name="request_id" value="{{ r.id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Tolak</button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="alert alert-secondary mb-0">
+                    Belum ada permintaan reopen.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

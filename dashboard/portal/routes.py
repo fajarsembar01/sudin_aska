@@ -94,6 +94,9 @@ from .queries import (
     list_assignment_requests,
     update_assignment_request_status,
     list_coordinator_requests,
+    set_active_period,
+    update_period,
+    delete_period,
     get_dashboard_user_profile,
     update_dashboard_user_profile,
     # Classroom configuration
@@ -102,6 +105,10 @@ from .queries import (
     update_school_classroom,
     delete_school_classroom,
     save_school_classrooms_batch,
+    create_reopen_request,
+    get_latest_reopen_request,
+    update_reopen_request_status,
+    list_reopen_requests,
 )
 from dashboard.queries import (
     create_team_member_request,
@@ -576,6 +583,7 @@ def assess(school_id: int) -> Response:
     """Start or continue assessment for a school."""
     user = current_user()
     role = user.get("role")
+    period_id_arg = request.args.get("period_id", type=int)
     
     if role not in ("admin", "staff", "coordinator"):
         flash("Hanya staff atau koordinator yang bisa melakukan penilaian.", "danger")
@@ -594,13 +602,14 @@ def assess(school_id: int) -> Response:
         return redirect(url_for("portal.schools"))
     
     # Get active draft for THIS user
-    assessment = get_active_assessment(school_id, staff_id=user["id"])
+    assessment = get_active_assessment(school_id, staff_id=user["id"], period_id=period_id_arg)
     if not assessment:
         # Create new assessment
         try:
             assessment = create_assessment(
                 school_id,
                 staff_id=user["id"],
+                period_id=period_id_arg,
                 creator_email=user["email"],
             )
         except Exception as e:
@@ -659,6 +668,9 @@ def assess(school_id: int) -> Response:
     rooms = filtered_rooms
     total_aspects = sum(len(r.get("aspects", [])) for r in rooms)
     
+    # Periode penilaian untuk badge UI
+    assessment_period = get_period_by_id(assessment.get("period_id")) if assessment.get("period_id") else get_active_period()
+
     # Get existing scores
     existing_scores = get_assessment_scores(assessment_id)
     scores_map = {
@@ -688,6 +700,7 @@ def assess(school_id: int) -> Response:
         photos_map=photos_map,
         room_notes=room_notes,
         total_aspects=total_aspects,
+        assessment_period=assessment_period,
     )
 
 
@@ -879,6 +892,11 @@ def submit(school_id: int) -> Response:
     if assessment["staff_id"] != user["id"] and user["role"] != "admin":
         flash("Anda tidak memiliki akses untuk submit penilaian ini.", "danger")
         return redirect(url_for("portal.assess", school_id=school_id))
+    if user["role"] == "staff":
+        assigned_school_ids = get_schools_assigned_to_staff_ids(user["id"])
+        if assessment["school_id"] not in assigned_school_ids:
+            flash("Penugasan ke sekolah ini sudah tidak aktif. Hubungi admin.", "danger")
+            return redirect(url_for("portal.staff_assignments"))
     
     try:
         success = submit_assessment(assessment_id_int)
@@ -891,6 +909,161 @@ def submit(school_id: int) -> Response:
         flash(f"Error: {e}", "danger")
     
     return redirect(url_for("portal.home"))
+
+
+@portal_bp.route("/assess/<int:school_id>/save-draft", methods=["POST"])
+@_portal_access_required
+def save_draft(school_id: int) -> Response:
+    """Explicitly save assessment as draft (no submit)."""
+    user = current_user()
+    if user.get("role") not in ("admin", "staff"):
+        flash("Unauthorized", "danger")
+        return redirect(url_for("portal.home"))
+
+    assessment_id = request.form.get("assessment_id")
+    if not assessment_id:
+        flash("Assessment ID tidak valid.", "danger")
+        return redirect(url_for("portal.assess", school_id=school_id))
+
+    try:
+        assessment_id_int = int(assessment_id)
+    except (TypeError, ValueError):
+        flash("Data assessment tidak valid.", "danger")
+        return redirect(url_for("portal.assess", school_id=school_id))
+
+    assessment = get_assessment_by_id(assessment_id_int)
+    if not assessment:
+        flash("Penilaian tidak ditemukan.", "danger")
+        return redirect(url_for("portal.assess", school_id=school_id))
+
+    if assessment["school_id"] != school_id:
+        flash("Penilaian tidak sesuai sekolah.", "danger")
+        return redirect(url_for("portal.assess", school_id=school_id))
+
+    if assessment["staff_id"] != user["id"] and user["role"] != "admin":
+        flash("Anda tidak memiliki akses untuk menyimpan draft ini.", "danger")
+        return redirect(url_for("portal.assess", school_id=school_id))
+    if user["role"] == "staff":
+        assigned_school_ids = get_schools_assigned_to_staff_ids(user["id"])
+        if assessment["school_id"] not in assigned_school_ids:
+            flash("Penugasan ke sekolah ini sudah tidak aktif. Hubungi admin.", "danger")
+            return redirect(url_for("portal.staff_assignments"))
+
+    try:
+        with get_cursor(commit=True) as cur:
+            cur.execute(
+                """
+                UPDATE portal_assessments
+                SET status = 'draft', updated_at = NOW()
+                WHERE id = %s
+                """,
+                (assessment_id_int,),
+            )
+        flash("Draft berhasil disimpan.", "success")
+    except Exception as e:
+        current_app.logger.exception("Error saving draft")
+        flash(f"Gagal menyimpan draft: {e}", "danger")
+
+    return redirect(url_for("portal.assess", school_id=school_id))
+
+
+@portal_bp.route("/assessment/<int:assessment_id>/request-reopen", methods=["POST"])
+@_portal_access_required
+def request_reopen(assessment_id: int) -> Response:
+    """Staff requests admin approval to reopen a submitted assessment."""
+    user = current_user()
+    if user.get("role") not in ("admin", "staff"):
+        flash("Unauthorized", "danger")
+        return redirect(url_for("portal.home"))
+
+    assessment = get_assessment_by_id(assessment_id)
+    if not assessment:
+        flash("Penilaian tidak ditemukan.", "danger")
+        return redirect(url_for("portal.home"))
+
+    if assessment.get("status") != "submitted":
+        flash("Hanya penilaian yang sudah disubmit yang bisa diajukan reopen.", "warning")
+        return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
+
+    if assessment["staff_id"] != user["id"] and user["role"] != "admin":
+        flash("Anda tidak memiliki akses untuk mengajukan reopen penilaian ini.", "danger")
+        return redirect(url_for("portal.home"))
+
+    # Pastikan staf masih ditugaskan
+    if user["role"] == "staff":
+        assigned_school_ids = get_schools_assigned_to_staff_ids(user["id"])
+        if assessment["school_id"] not in assigned_school_ids:
+            flash("Penugasan sudah tidak aktif. Hubungi admin.", "danger")
+            return redirect(url_for("portal.staff_assignments"))
+
+    latest_req = get_latest_reopen_request(assessment_id)
+    if latest_req and latest_req.get("status") == "pending":
+        flash("Permintaan reopen sebelumnya masih menunggu persetujuan admin.", "warning")
+        return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
+
+    reason = request.form.get("reason", "").strip() or None
+    try:
+        create_reopen_request(assessment_id, user["id"], reason)
+        flash("Permintaan reopen dikirim. Menunggu persetujuan admin.", "success")
+    except Exception as e:
+        current_app.logger.exception("Error creating reopen request")
+        flash(f"Gagal mengajukan reopen: {e}", "danger")
+
+    return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
+
+
+@portal_bp.route("/assessment/<int:assessment_id>/approve-reopen", methods=["POST"])
+@role_required("admin")
+def approve_reopen(assessment_id: int) -> Response:
+    """Admin approves reopen request and reopens assessment."""
+    request_id = request.form.get("request_id", type=int)
+    note = request.form.get("reviewer_note", "").strip() or None
+    if not request_id:
+        flash("Permintaan tidak valid.", "danger")
+        return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
+
+    try:
+        ok = update_reopen_request_status(
+            request_id=request_id,
+            status="approved",
+            reviewer_id=current_user()["id"],
+            reviewer_note=note,
+        )
+        if ok and reopen_assessment(assessment_id):
+            flash("Reopen disetujui dan penilaian dibuka kembali.", "success")
+        else:
+            flash("Gagal menyetujui reopen.", "danger")
+    except Exception as e:
+        current_app.logger.exception("Error approving reopen")
+        flash(f"Gagal menyetujui reopen: {e}", "danger")
+    return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
+
+
+@portal_bp.route("/assessment/<int:assessment_id>/reject-reopen", methods=["POST"])
+@role_required("admin")
+def reject_reopen(assessment_id: int) -> Response:
+    """Admin rejects reopen request."""
+    request_id = request.form.get("request_id", type=int)
+    note = request.form.get("reviewer_note", "").strip() or None
+    if not request_id:
+        flash("Permintaan tidak valid.", "danger")
+        return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
+
+    try:
+        ok = update_reopen_request_status(
+            request_id=request_id,
+            status="rejected",
+            reviewer_id=current_user()["id"],
+            reviewer_note=note,
+        )
+        if ok:
+            flash("Permintaan reopen ditolak.", "info")
+        else:
+            flash("Gagal menolak reopen.", "danger")
+    except Exception as e:
+        current_app.logger.exception("Error rejecting reopen")
+        flash(f"Gagal menolak reopen: {e}", "danger")
+    return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
 
 
 @portal_bp.route("/assessment/<int:assessment_id>")
@@ -965,6 +1138,8 @@ def view_assessment(assessment_id: int) -> Response:
             )
         except Exception:
             related_photos[room_id] = []
+
+    latest_reopen_request = get_latest_reopen_request(assessment_id)
     
     return render_template(
         "portal/assessments/view.html",
@@ -976,6 +1151,7 @@ def view_assessment(assessment_id: int) -> Response:
         school_avg=school_avg,
         rooms_data=rooms_data,
         related_photos=related_photos,
+        latest_reopen_request=latest_reopen_request,
     )
 
 
@@ -1067,10 +1243,14 @@ def staff_assignments() -> Response:
         return redirect(url_for("portal.home"))
     
     assigned_schools = get_staff_assigned_schools(user["id"])
+    periods = list_periods()
+    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
     
     return render_template(
         "portal/staff/assignments.html",
         assigned_schools=assigned_schools,
+        periods=periods,
+        active_period_id=active_period_id,
         user=user,
     )
 
@@ -1093,6 +1273,8 @@ def sekolah_rooms() -> Response:
             flash("Akun Anda belum terhubung dengan sekolah. Hubungi admin.", "warning")
             return redirect(url_for("portal.home"))
     
+    current_school_id = None
+
     if request.method == "POST":
         school_id = request.form.get("school_id")
         room_ids = request.form.getlist("room_ids", type=int)
@@ -1101,36 +1283,79 @@ def sekolah_rooms() -> Response:
         if user.get("role") == "sekolah" and user_school:
             school_id = str(user_school["id"])
         
+        aspect_map: dict[int, list[int]] = {}
+        for rid in room_ids:
+            aspect_ids = request.form.getlist(f"aspects_{rid}[]", type=int)
+            if not aspect_ids:
+                # Fallback for older form names without [] suffix
+                aspect_ids = request.form.getlist(f"aspects_{rid}", type=int)
+            if aspect_ids:
+                aspect_map[rid] = aspect_ids
+
         if school_id:
+            current_school_id = int(school_id)
+            # Debug log to trace submitted data vs persisted
+            current_app.logger.info(
+                "[sekolah_rooms] submit user=%s role=%s school_id=%s room_ids=%s aspect_map=%s form_keys=%s",
+                user.get("id"),
+                user.get("role"),
+                current_school_id,
+                room_ids,
+                {rid: sorted(vals) for rid, vals in aspect_map.items()},
+                [k for k in request.form.keys() if k.startswith("aspects_")],
+            )
             try:
-                count = update_school_rooms(int(school_id), room_ids)
-                flash(f"Berhasil menyimpan {count} ruangan.", "success")
+                count = update_school_rooms(current_school_id, room_ids, aspect_map)
+                # Log what is stored after save
+                saved_after = list_school_rooms(current_school_id, include_all_aspects=True)
+                saved_map = {
+                    r["room_id"]: [
+                        (a["id"], bool(a.get("is_required")), bool(a.get("is_selected")))
+                        for a in r.get("aspects", [])
+                    ]
+                    for r in saved_after
+                }
+                current_app.logger.info(
+                    "[sekolah_rooms] persisted rooms=%s aspects=%s",
+                    [r["room_id"] for r in saved_after],
+                    saved_map,
+                )
+                flash(f"Berhasil menyimpan {count} ruangan beserta konfigurasi aspek.", "success")
             except Exception as e:
                 flash(f"Error: {e}", "danger")
-    
+
     # Determine selected school early (needed for filtering variant rooms)
     schools = [user_school] if user_school else list_portal_schools()
     saved_room_ids: set[int] = set()
-    current_school_id = None
-    if user_school:
-        current_school_id = user_school["id"]
-    elif request.args.get("school_id"):
-        current_school_id = int(request.args.get("school_id"))
-
-    # Materialize classroom-based rooms before loading saved room IDs
-    if current_school_id:
-        try:
-            ensure_classroom_rooms_for_school(current_school_id)
-        except Exception:
-            current_app.logger.exception("Failed to sync classroom rooms on sekolah_rooms")
+    if current_school_id is None:
+        if user_school:
+            current_school_id = user_school["id"]
+        elif request.args.get("school_id"):
+            current_school_id = int(request.args.get("school_id"))
 
     saved_rooms = []
     if current_school_id:
-        from .queries import list_school_rooms
-        saved_rooms = list_school_rooms(current_school_id)
+        saved_rooms = list_school_rooms(current_school_id, include_all_aspects=True)
         saved_room_ids = {r["room_id"] for r in saved_rooms}
 
     all_rooms = list_portal_rooms()
+    # Tag aspek yang sudah dipilih agar checkbox tercentang saat render
+    if saved_rooms:
+        saved_aspects_by_room = {
+            r["room_id"]: {a["id"]: bool(a.get("is_required") or a.get("is_selected")) for a in (r.get("aspects") or [])}
+            for r in saved_rooms
+        }
+        for r in all_rooms:
+            aspects = r.get("aspects") or []
+            selected_flags = saved_aspects_by_room.get(r["id"], {})
+            r["aspects"] = [
+                {
+                    **a,
+                    "is_selected": bool(a.get("is_required")) or bool(selected_flags.get(a.get("id"), False)),
+                }
+                for a in aspects
+            ]
+
     # Categorize rooms by grade number (so SD tab doesn't show kelas 10-12)
     variant_pattern = re.compile(r"^\s*Ruang\s+Kelas\s+(\d+)\s*([A-Za-z]+)\s*$", re.IGNORECASE)
     base_pattern = re.compile(r"\bKelas\s+(\d+)", re.IGNORECASE)
@@ -1712,10 +1937,14 @@ def coordinator_related_photos() -> Response:
     result = _serialize_related_photos(school_id, room_id, staff_ids=staff_ids)
     return jsonify(result)
 
-@portal_bp.route("/admin/periods", methods=["POST"])
+@portal_bp.route("/admin/periods/create", methods=["POST"])
 @role_required("admin")
 def create_period_route() -> Response:
     """Create a new period."""
+    user = current_user()
+    if not can_manage_periods(user):
+        flash("Anda tidak memiliki izin mengelola periode.", "warning")
+        return redirect(url_for("portal.admin_stats"))
     name = request.form.get("name")
     start_date = request.form.get("start_date")
     end_date = request.form.get("end_date")
@@ -1731,6 +1960,118 @@ def create_period_route() -> Response:
             flash(f"Error: {e}", "danger")
         
     return redirect(url_for("portal.admin_stats"))
+
+
+@portal_bp.route("/admin/reopen-requests")
+@role_required("admin")
+def admin_reopen_requests() -> Response:
+    """Admin page to view reopen requests."""
+    status = request.args.get("status") or None
+    requests = list_reopen_requests(status=status)
+    return render_template(
+        "portal/admin/reopen_requests.html",
+        requests=requests,
+        status_filter=status,
+    )
+
+
+@portal_bp.route("/admin/periods", methods=["GET", "POST"])
+@role_required("admin")
+def admin_periods() -> Response:
+    """Admin page to manage assessment periods."""
+    user = current_user()
+    if not can_manage_periods(user):
+        flash("Anda tidak memiliki izin mengelola periode.", "warning")
+        return redirect(url_for("portal.admin_stats"))
+
+    if request.method == "POST":
+        name = request.form.get("name")
+        start_date = request.form.get("start_date")
+        end_date = request.form.get("end_date")
+        is_active = request.form.get("is_active") == "on"
+        if not all([name, start_date, end_date]):
+            flash("Nama, tanggal mulai, dan selesai wajib diisi.", "warning")
+        else:
+            try:
+                create_period(name, start_date, end_date, is_active)
+                flash("Periode baru berhasil dibuat.", "success")
+            except Exception as exc:
+                flash(f"Gagal membuat periode: {exc}", "danger")
+        return redirect(url_for("portal.admin_periods"))
+
+    periods = list_periods()
+    has_active = any(p.get("is_active") for p in periods)
+    return render_template(
+        "portal/admin/periods.html",
+        periods=periods,
+        user=user,
+        has_active=has_active,
+    )
+
+
+@portal_bp.route("/admin/periods/<int:period_id>/activate", methods=["POST"])
+@role_required("admin")
+def admin_activate_period(period_id: int) -> Response:
+    """Set a period as the active period."""
+    user = current_user()
+    if not can_manage_periods(user):
+        flash("Anda tidak memiliki izin mengelola periode.", "warning")
+        return redirect(url_for("portal.admin_stats"))
+
+    if set_active_period(period_id):
+        flash("Periode berhasil diaktifkan.", "success")
+    else:
+        flash("Periode tidak ditemukan.", "danger")
+    return redirect(url_for("portal.admin_periods"))
+
+
+@portal_bp.route("/admin/periods/<int:period_id>/edit", methods=["POST"])
+@role_required("admin")
+def admin_edit_period(period_id: int) -> Response:
+    """Edit an existing period."""
+    user = current_user()
+    if not can_manage_periods(user):
+        flash("Anda tidak memiliki izin mengelola periode.", "warning")
+        return redirect(url_for("portal.admin_stats"))
+
+    name = request.form.get("name")
+    start_date = request.form.get("start_date")
+    end_date = request.form.get("end_date")
+    is_active = request.form.get("is_active") == "on"
+    if not all([name, start_date, end_date]):
+        flash("Nama dan tanggal wajib diisi.", "warning")
+    else:
+        try:
+            ok = update_period(period_id, name, start_date, end_date, is_active)
+            if ok:
+                flash("Periode berhasil diperbarui.", "success")
+            else:
+                flash("Periode tidak ditemukan.", "danger")
+        except Exception as exc:
+            current_app.logger.exception("Error updating period")
+            flash(f"Gagal memperbarui periode: {exc}", "danger")
+    return redirect(url_for("portal.admin_periods"))
+
+
+@portal_bp.route("/admin/periods/<int:period_id>/delete", methods=["POST"])
+@role_required("admin")
+def admin_delete_period(period_id: int) -> Response:
+    """Delete a non-active period."""
+    user = current_user()
+    if not can_manage_periods(user):
+        flash("Anda tidak memiliki izin mengelola periode.", "warning")
+        return redirect(url_for("portal.admin_stats"))
+
+    try:
+        ok = delete_period(period_id)
+        if ok:
+            flash("Periode berhasil dihapus.", "success")
+        else:
+            flash("Tidak bisa menghapus periode aktif atau tidak ditemukan.", "warning")
+    except Exception as exc:
+        current_app.logger.exception("Error deleting period")
+        flash(f"Gagal menghapus periode: {exc}", "danger")
+    return redirect(url_for("portal.admin_periods"))
 
 
 @portal_bp.route("/admin/assign", methods=["POST"])
@@ -2672,12 +3013,16 @@ def admin_manage_staff() -> Response:
     # Admin dapat melihat semua sekolah
     available_schools = list_portal_schools()
     pending_requests = list_assignment_requests(status="pending")
+    periods = list_periods()
+    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
     
     return render_template(
         "portal/admin/manage_staff.html",
         staff_list=all_staff,
         available_schools=available_schools,
         pending_requests=pending_requests,
+        periods=periods,
+        active_period_id=active_period_id,
         user=user,
     )
 
@@ -2694,6 +3039,7 @@ def admin_assign_school() -> Response:
     
     staff_id = request.form.get("staff_id", type=int)
     school_id = request.form.get("school_id", type=int)
+    period_id = request.form.get("period_id", type=int)
     notes = request.form.get("notes", "").strip()
     
     if not staff_id or not school_id:
@@ -2701,6 +3047,7 @@ def admin_assign_school() -> Response:
     
     try:
         assign_staff_to_school(staff_id, school_id, user["id"], notes)
+        assign_assessment(school_id, staff_id, period_id)
         flash(f"Sekolah berhasil ditugaskan ke staf.", "success")
         return jsonify({"success": True})
     except Exception as e:
@@ -2719,6 +3066,7 @@ def admin_assign_school_batch() -> Response:
     data = request.get_json(silent=True) or {}
     staff_id = data.get("staff_id")
     school_ids = data.get("school_ids") or []
+    period_id_raw = data.get("period_id")
     notes = (data.get("notes") or "").strip() or None
 
     if not staff_id or not school_ids:
@@ -2727,6 +3075,7 @@ def admin_assign_school_batch() -> Response:
     try:
         staff_id_int = int(staff_id)
         school_ids_int = {int(sid) for sid in school_ids if sid}
+        period_id_int = int(period_id_raw) if period_id_raw not in (None, "") else None
     except (TypeError, ValueError):
         return jsonify({"success": False, "message": "Format data tidak valid"}), 400
 
@@ -2736,6 +3085,7 @@ def admin_assign_school_batch() -> Response:
         try:
             assign_staff_to_school(staff_id_int, sid, user["id"], notes)
             assigned += 1
+            assign_assessment(sid, staff_id_int, period_id_int)
         except Exception as exc:
             current_app.logger.exception("Error assigning school %s", sid)
             errors.append(f"{sid}: {exc}")
@@ -2763,6 +3113,7 @@ def admin_approve_assignment_request(request_id: int) -> Response:
         return jsonify({"success": False, "message": "Request tidak ditemukan"}), 404
     try:
         assign_staff_to_school(req["staff_id"], req["school_id"], user["id"], req.get("note"))
+        assign_assessment(req["school_id"], req["staff_id"], req.get("period_id"))
     except Exception as exc:
         current_app.logger.exception("Error assigning after approval")
         return jsonify({"success": False, "message": str(exc)}), 500
@@ -3206,38 +3557,29 @@ def manage_monev_teams() -> Response:
     kasi_teams = _with_counts(kasi_teams)
     kecamatan_teams = _with_counts(kecamatan_teams)
     custom_teams = _with_counts(custom_teams)
-    
+
+    # Dedup Kasi teams by (slugged name + coordinator), keep the one with most members (fallback to highest id)
+    def _slug(name: str) -> str:
+        import re
+        return re.sub(r"[^a-z0-9]+", "", (name or "").strip().lower())
+
+    deduped_kasi: dict[tuple[str, int | None], dict] = {}
+    for team in kasi_teams:
+        slug = _slug(team.get("name"))
+        key = (slug, team.get("coordinator_id"))
+        current = deduped_kasi.get(key)
+        if not current:
+            deduped_kasi[key] = team
+            continue
+        curr_count = current.get("member_count_with_coord", 0)
+        new_count = team.get("member_count_with_coord", 0)
+        if new_count > curr_count or (new_count == curr_count and team.get("id", 0) > current.get("id", 0)):
+            deduped_kasi[key] = team
+    kasi_teams = list(deduped_kasi.values())
+
     available_staff = get_available_staff()
     pending_requests = list_team_member_requests(status="pending")
     kecamatan_list = list_kecamatan()
-
-    def _slug(name: str) -> str:
-        import re
-        return re.sub(r"[^a-z0-9]", "", (name or "").strip().lower())
-
-    # Deduplicate + order Kasi teams by predefined jenjang buckets
-    predefined_order = [
-        "paudpmpk",
-        "sd",
-        "smpsma",
-        "smkkursuspelatihan",
-    ]
-    seen_kasi = set()
-    ordered_kasi: list[dict] = []
-    # bucketize by slug order, keep first per slug
-    for slug_name in predefined_order:
-        match = next((t for t in kasi_teams if _slug(t.get("name")) == slug_name and slug_name not in seen_kasi), None)
-        if match:
-            ordered_kasi.append(match)
-            seen_kasi.add(slug_name)
-    # append any remaining unique ones
-    for t in kasi_teams:
-        s = _slug(t.get("name"))
-        if s in seen_kasi:
-            continue
-        ordered_kasi.append(t)
-        seen_kasi.add(s)
-    kasi_teams = ordered_kasi
 
     return render_template("portal/admin/monev_teams.html", 
                            kasi_teams=kasi_teams, 
@@ -3312,6 +3654,8 @@ def coordinator_assignment_requests() -> Response:
     # Build staff options (team members only)
     staff_options = team_members
     schools = list_portal_schools()
+    periods = list_periods()
+    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
 
     if request.method == "POST":
         if request.is_json:
@@ -3319,16 +3663,21 @@ def coordinator_assignment_requests() -> Response:
             staff_id = data.get("staff_id", None)
             school_ids = data.get("school_ids") or []
             note = (data.get("note") or "").strip() or None
+            period_id_raw = data.get("period_id")
             if not staff_id or not school_ids:
                 return jsonify(success=False, message="Pilih staff dan minimal satu sekolah."), 400
             if staff_id not in staff_ids and staff_id != user.get("id"):
                 return jsonify(success=False, message="Staff tidak ada di tim Anda."), 403
+            try:
+                period_id = int(period_id_raw) if period_id_raw not in (None, "") else None
+            except (TypeError, ValueError):
+                return jsonify(success=False, message="Periode tidak valid."), 400
 
             created = 0
             errors = []
             for sid in school_ids:
                 try:
-                    create_assignment_request(user["id"], int(staff_id), int(sid), note)
+                    create_assignment_request(user["id"], int(staff_id), int(sid), note, period_id)
                     created += 1
                 except Exception as exc:
                     errors.append(str(exc))
@@ -3337,6 +3686,7 @@ def coordinator_assignment_requests() -> Response:
         # Fallback: single submission via form
         staff_id = request.form.get("staff_id", type=int)
         school_id = request.form.get("school_id", type=int)
+        period_id = request.form.get("period_id", type=int)
         note = (request.form.get("note") or "").strip() or None
         if not staff_id or not school_id:
             flash("Pilih staff dan sekolah.", "warning")
@@ -3344,7 +3694,7 @@ def coordinator_assignment_requests() -> Response:
             flash("Staff tidak ada di tim Anda.", "danger")
         else:
             try:
-                create_assignment_request(user["id"], staff_id, school_id, note)
+                create_assignment_request(user["id"], staff_id, school_id, note, period_id)
                 flash("Permintaan penugasan dikirim ke admin.", "success")
             except Exception as exc:
                 flash(f"Gagal mengirim permintaan: {exc}", "danger")
@@ -3356,4 +3706,24 @@ def coordinator_assignment_requests() -> Response:
         staff_options=staff_options,
         schools=schools,
         requests_list=requests_list,
+        periods=periods,
+        active_period_id=active_period_id,
+    )
+
+
+@portal_bp.route("/coordinator/assessments")
+@role_required("coordinator")
+def coordinator_assessments() -> Response:
+    """Coordinator can start/continue their own assessments."""
+    user = current_user()
+    assigned_schools = get_staff_assigned_schools(user["id"])
+    periods = list_periods()
+    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
+    
+    return render_template(
+        "portal/coordinator/assessments.html",
+        assigned_schools=assigned_schools,
+        periods=periods,
+        active_period_id=active_period_id,
+        user=user,
     )
