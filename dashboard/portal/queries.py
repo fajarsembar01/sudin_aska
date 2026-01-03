@@ -85,7 +85,7 @@ def list_portal_rooms(active_only: bool = True) -> List[Dict[str, Any]]:
     
     query = f"""
         SELECT 
-            r.id, r.name, r.description, r.category, r.sort_order, r.active,
+            r.id, r.name, r.description, r.category, r.sort_order, r.active, r.is_required,
             COALESCE(
                 json_agg(
                     json_build_object(
@@ -93,7 +93,8 @@ def list_portal_rooms(active_only: bool = True) -> List[Dict[str, Any]]:
                         'name', a.name,
                         'description', a.description,
                         'sort_order', a.sort_order,
-                        'active', a.active
+                        'active', a.active,
+                        'is_required', a.is_required
                     ) ORDER BY a.sort_order, a.id
                 ) FILTER (WHERE a.id IS NOT NULL),
                 '[]'
@@ -101,7 +102,7 @@ def list_portal_rooms(active_only: bool = True) -> List[Dict[str, Any]]:
         FROM portal_rooms r
         LEFT JOIN portal_aspects a ON a.room_id = r.id {aspect_condition}
         {condition}
-        GROUP BY r.id, r.name, r.description, r.category, r.sort_order, r.active
+        GROUP BY r.id, r.name, r.description, r.category, r.sort_order, r.active, r.is_required
         ORDER BY r.sort_order, r.id
     """
     
@@ -125,7 +126,8 @@ def list_school_rooms(school_id: int) -> List[Dict[str, Any]]:
                     json_build_object(
                         'id', a.id,
                         'name', a.name,
-                        'description', a.description
+                        'description', a.description,
+                        'is_required', a.is_required
                     ) ORDER BY a.sort_order, a.id
                 ) FILTER (WHERE a.id IS NOT NULL),
                 '[]'
@@ -889,19 +891,38 @@ def log_activity(
 
 def fetch_activity_logs(limit: int = 50) -> List[Dict[str, Any]]:
     """Fetch recent activity logs."""
+    import json
     query = """
         SELECT 
             l.id, l.user_id, l.action, l.target_type, l.target_id, l.target_name, 
             l.details, l.created_at,
-            u.full_name as user_name, u.email as user_email
+            u.full_name as user_name, u.email as user_email,
+            r.name AS room_name_fallback
         FROM portal_activity_logs l
         LEFT JOIN dashboard_users u ON l.user_id = u.id
+        LEFT JOIN portal_aspects pa ON l.target_type = 'ASPECT' AND l.target_id = pa.id
+        LEFT JOIN portal_rooms r ON pa.room_id = r.id
         ORDER BY l.created_at DESC
         LIMIT %s
     """
     with get_cursor() as cur:
         cur.execute(query, (limit,))
-        return [dict(row) for row in cur.fetchall()]
+        rows = []
+        for row in cur.fetchall():
+            d = dict(row)
+            if d.get("details"):
+                try:
+                    d["details"] = json.loads(d["details"])
+                except Exception:
+                    pass
+            # Normalize details to include room name when applicable
+            if isinstance(d.get("details"), dict):
+                if d.get("room_name_fallback") and not d["details"].get("room_name"):
+                    d["details"]["room_name"] = d["room_name_fallback"]
+            elif d.get("room_name_fallback"):
+                d["details"] = {"room_name": d["room_name_fallback"]}
+            rows.append(d)
+        return rows
 
 def delete_school(school_id: int) -> bool:
     """Delete a school by ID."""
@@ -1133,16 +1154,17 @@ def create_room(
     description: Optional[str] = None,
     category: str = "umum",
     sort_order: int = 0,
+    is_required: bool = True,
 ) -> Dict[str, Any]:
     """Create a new room type."""
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
-            INSERT INTO portal_rooms (name, description, category, sort_order)
-            VALUES (%s, %s, %s, %s)
-            RETURNING id, name, description, category, sort_order
+            INSERT INTO portal_rooms (name, description, category, sort_order, is_required)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id, name, description, category, sort_order, active, is_required
             """,
-            (name, description, category, sort_order),
+            (name, description, category, sort_order, is_required),
         )
         return dict(cur.fetchone())
 
@@ -1152,16 +1174,17 @@ def create_aspect(
     name: str,
     description: Optional[str] = None,
     sort_order: int = 0,
+    is_required: bool = True,
 ) -> Dict[str, Any]:
     """Create a new aspect for a room."""
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
-            INSERT INTO portal_aspects (room_id, name, description, sort_order)
-            VALUES (%s, %s, %s, %s)
-            RETURNING id, room_id, name, description, sort_order
+            INSERT INTO portal_aspects (room_id, name, description, sort_order, is_required)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id, room_id, name, description, sort_order, active, is_required
             """,
-            (room_id, name, description, sort_order),
+            (room_id, name, description, sort_order, is_required),
         )
         return dict(cur.fetchone())
 
@@ -1170,7 +1193,7 @@ def get_room_by_id(room_id: int) -> Optional[Dict[str, Any]]:
     """Get a single room by ID."""
     with get_cursor() as cur:
         cur.execute(
-            "SELECT id, name, description, category, sort_order, active FROM portal_rooms WHERE id = %s",
+            "SELECT id, name, description, category, sort_order, active, is_required FROM portal_rooms WHERE id = %s",
             (room_id,),
         )
         row = cur.fetchone()
@@ -1184,17 +1207,18 @@ def update_room(
     category: str = "umum",
     sort_order: int = 0,
     active: bool = True,
+    is_required: bool = False,
 ) -> Optional[Dict[str, Any]]:
     """Update an existing room."""
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
             UPDATE portal_rooms 
-            SET name = %s, description = %s, category = %s, sort_order = %s, active = %s
+            SET name = %s, description = %s, category = %s, sort_order = %s, active = %s, is_required = %s
             WHERE id = %s
-            RETURNING id, name, description, category, sort_order, active
+            RETURNING id, name, description, category, sort_order, active, is_required
             """,
-            (name, description, category, sort_order, active, room_id),
+            (name, description, category, sort_order, active, is_required, room_id),
         )
         row = cur.fetchone()
         return dict(row) if row else None
@@ -1232,7 +1256,7 @@ def get_aspect_by_id(aspect_id: int) -> Optional[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT a.id, a.room_id, a.name, a.description, a.sort_order, a.active, r.name as room_name
+            SELECT a.id, a.room_id, a.name, a.description, a.sort_order, a.active, a.is_required, r.name as room_name
             FROM portal_aspects a
             JOIN portal_rooms r ON a.room_id = r.id
             WHERE a.id = %s
@@ -1249,17 +1273,18 @@ def update_aspect(
     description: Optional[str] = None,
     sort_order: int = 0,
     active: bool = True,
+    is_required: bool = True,
 ) -> Optional[Dict[str, Any]]:
     """Update an existing aspect."""
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
             UPDATE portal_aspects 
-            SET name = %s, description = %s, sort_order = %s, active = %s
+            SET name = %s, description = %s, sort_order = %s, active = %s, is_required = %s
             WHERE id = %s
-            RETURNING id, room_id, name, description, sort_order, active
+            RETURNING id, room_id, name, description, sort_order, active, is_required
             """,
-            (name, description, sort_order, active, aspect_id),
+            (name, description, sort_order, active, is_required, aspect_id),
         )
         row = cur.fetchone()
         return dict(row) if row else None
@@ -2041,6 +2066,192 @@ def list_all_staff_with_assignments() -> List[Dict[str, Any]]:
 
 
 # ============================================
+# Staff Assignment Requests (Coordinator -> Admin)
+# ============================================
+
+def create_assignment_request(
+    coordinator_id: int,
+    staff_id: int,
+    school_id: int,
+    note: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Coordinator submits assignment request."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO staff_assignment_requests (coordinator_id, staff_id, school_id, note)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (coordinator_id, staff_id, school_id)
+            WHERE status = 'pending'
+            DO UPDATE SET updated_at = NOW(), note = EXCLUDED.note
+            RETURNING *
+            """,
+            (coordinator_id, staff_id, school_id, note),
+        )
+        return dict(cur.fetchone())
+
+
+def list_assignment_requests(
+    status: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """List assignment requests for admin review."""
+    params: List[Any] = []
+    where = []
+    if status:
+        where.append("sar.status = %s")
+        params.append(status)
+    where_clause = f"WHERE {' AND '.join(where)}" if where else ""
+    query = f"""
+        SELECT
+            sar.*,
+            c.full_name AS coordinator_name,
+            s.full_name AS staff_name,
+            s.email AS staff_email,
+            sch.name AS school_name,
+            sch.npsn AS school_npsn,
+            k.name AS kecamatan_name,
+            r.full_name AS reviewer_name
+        FROM staff_assignment_requests sar
+        JOIN dashboard_users c ON sar.coordinator_id = c.id
+        JOIN dashboard_users s ON sar.staff_id = s.id
+        JOIN portal_schools sch ON sar.school_id = sch.id
+        LEFT JOIN portal_kelurahan l ON sch.kelurahan_id = l.id
+        LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+        LEFT JOIN dashboard_users r ON sar.reviewed_by = r.id
+        {where_clause}
+        ORDER BY sar.created_at DESC
+    """
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def update_assignment_request_status(
+    request_id: int,
+    status: str,
+    reviewer_id: Optional[int] = None,
+) -> Optional[Dict[str, Any]]:
+    """Approve/reject an assignment request."""
+    if status not in ("approved", "rejected"):
+        raise ValueError("Invalid status")
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE staff_assignment_requests
+            SET status = %s,
+                reviewed_by = %s,
+                reviewed_at = NOW(),
+                updated_at = NOW()
+            WHERE id = %s
+            RETURNING *
+            """,
+            (status, reviewer_id, request_id),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def list_coordinator_requests(
+    coordinator_id: int,
+    status: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """List requests submitted by a coordinator."""
+    params: List[Any] = [coordinator_id]
+    where = ["sar.coordinator_id = %s"]
+    if status:
+        where.append("sar.status = %s")
+        params.append(status)
+    where_clause = "WHERE " + " AND ".join(where)
+    query = f"""
+        SELECT
+            sar.*,
+            s.full_name AS staff_name,
+            s.nip AS staff_nip,
+            sch.name AS school_name,
+            sch.npsn AS school_npsn,
+            k.name AS kecamatan_name
+        FROM staff_assignment_requests sar
+        JOIN dashboard_users s ON sar.staff_id = s.id
+        JOIN portal_schools sch ON sar.school_id = sch.id
+        LEFT JOIN portal_kelurahan l ON sch.kelurahan_id = l.id
+        LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+        {where_clause}
+        ORDER BY sar.created_at DESC
+    """
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_dashboard_user_profile(user_id: int) -> Optional[Dict[str, Any]]:
+    """Fetch basic profile info (including password hash) for a dashboard user."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                id,
+                email,
+                full_name,
+                role,
+                nip,
+                nrk,
+                jabatan,
+                whatsapp_number,
+                password_hash
+            FROM dashboard_users
+            WHERE id = %s
+            LIMIT 1
+            """,
+            (user_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def update_dashboard_user_profile(
+    user_id: int,
+    *,
+    full_name: Optional[str] = None,
+    email: Optional[str] = None,
+    whatsapp_number: Optional[str] = None,
+    nip: Optional[str] = None,
+    nrk: Optional[str] = None,
+    jabatan: Optional[str] = None,
+    password_hash: Optional[str] = None,
+) -> bool:
+    """Update editable profile fields for a dashboard user."""
+    updates = []
+    params: List[Any] = []
+
+    if full_name:
+        updates.append("full_name = %s")
+        params.append(full_name)
+    if email:
+        updates.append("email = %s")
+        params.append(email)
+    updates.append("whatsapp_number = %s")
+    params.append(whatsapp_number)
+    updates.append("nip = %s")
+    params.append(nip)
+    updates.append("nrk = %s")
+    params.append(nrk)
+    updates.append("jabatan = %s")
+    params.append(jabatan)
+    if password_hash:
+        updates.append("password_hash = %s")
+        params.append(password_hash)
+
+    if not updates:
+        return False
+
+    params.append(user_id)
+    query = f"UPDATE dashboard_users SET {', '.join(updates)} WHERE id = %s"
+    with get_cursor(commit=True) as cur:
+        cur.execute(query, params)
+        return cur.rowcount > 0
+
+
+# ============================================
 # School Classroom Configuration Functions
 # ============================================
 
@@ -2238,15 +2449,16 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
             else:
                 cur.execute(
                     """
-                    INSERT INTO portal_rooms (name, description, category, sort_order, active)
-                    VALUES (%s, %s, %s, %s, TRUE)
-                    RETURNING id, name, description, category, sort_order
+                    INSERT INTO portal_rooms (name, description, category, sort_order, active, is_required)
+                    VALUES (%s, %s, %s, %s, TRUE, %s)
+                    RETURNING id, name, description, category, sort_order, is_required
                     """,
                     (
                         target_name,
                         base_room.get("description"),
                         base_room.get("category") or "akademik",
                         base_room.get("sort_order") or 0,
+                        base_room.get("is_required") or False,
                     ),
                 )
                 new_room = dict(cur.fetchone())
@@ -2258,14 +2470,15 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                 for idx, asp in enumerate(base_aspects):
                     cur.execute(
                         """
-                        INSERT INTO portal_aspects (room_id, name, description, sort_order, active)
-                        VALUES (%s, %s, %s, %s, TRUE)
+                        INSERT INTO portal_aspects (room_id, name, description, sort_order, active, is_required)
+                        VALUES (%s, %s, %s, %s, TRUE, %s)
                         """,
                         (
                             target_room_id,
                             asp.get("name"),
                             asp.get("description"),
                             asp.get("sort_order") if asp.get("sort_order") is not None else idx,
+                            asp.get("is_required") or False,
                         ),
                     )
 

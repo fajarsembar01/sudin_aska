@@ -15,6 +15,10 @@
         </div>
     </div>
 
+    {% set grade_map = {'SD':[1,2,3,4,5,6],'SMP':[7,8,9],'SMA':[10,11,12],'SMK':[10,11,12]} %}
+    {% set grade_levels = grade_map.get(school.jenjang, []) %}
+    {% set empty_by_grade = (meta.empty_seats_by_grade or {}) if meta else {} %}
+
     <div class="row g-4">
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm">
@@ -80,11 +84,33 @@
                             <input type="number" min="0" name="inclusion_student_count" class="form-control" required
                                 value="{{ meta.inclusion_student_count or '' }}">
                         </div>
+                        {% if grade_levels %}
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Jumlah Bangku Kosong per Kelas *</label>
+                            <input type="hidden" name="empty_seats_by_grade" id="emptySeatsByGrade">
+                            <input type="hidden" name="empty_seats" id="emptySeatsTotal">
+                            <div class="row g-2">
+                                {% for g in grade_levels %}
+                                <div class="col-md-4">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">Kelas {{ g }}</span>
+                                        <input type="number" min="0" class="form-control empty-seat-input-profile"
+                                            data-grade="{{ g }}" required
+                                            value="{{ empty_by_grade.get(g|string) or '' }}"
+                                            placeholder="0">
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="text-muted small mt-1">Isi bangku kosong untuk tiap kelas sesuai jenjang {{ school.jenjang }}.</div>
+                        </div>
+                        {% else %}
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Jumlah Bangku Kosong *</label>
                             <input type="number" min="0" name="empty_seats" class="form-control" required
                                 value="{{ meta.empty_seats or '' }}">
                         </div>
+                        {% endif %}
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Jumlah Guru *</label>
                             <input type="number" min="0" name="teacher_count" class="form-control" required
@@ -222,6 +248,30 @@
     if (kecSel && kelSel) {
         kecSel.addEventListener('change', populateKel);
         populateKel();
+    }
+
+    // Serialize bangku kosong per kelas sebelum submit
+    var profileForm = document.querySelector('form[action="{{ url_for('portal.sekolah_profile') }}"]');
+    var emptyInputs = document.querySelectorAll('.empty-seat-input-profile');
+    var hiddenMap = document.getElementById('emptySeatsByGrade');
+    var hiddenTotal = document.getElementById('emptySeatsTotal');
+    if (profileForm && emptyInputs.length > 0 && hiddenMap && hiddenTotal) {
+        profileForm.addEventListener('submit', function () {
+            var map = {};
+            var total = 0;
+            emptyInputs.forEach(function (inp) {
+                var g = inp.getAttribute('data-grade');
+                var val = parseInt(inp.value, 10);
+                if (!isNaN(val) && val >= 0) {
+                    map[g] = val;
+                    total += val;
+                } else {
+                    map[g] = inp.value;
+                }
+            });
+            hiddenMap.value = JSON.stringify(map);
+            hiddenTotal.value = total;
+        });
     }
 
     // Real-time field validation rules

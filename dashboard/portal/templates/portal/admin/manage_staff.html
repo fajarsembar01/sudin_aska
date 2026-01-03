@@ -1,0 +1,531 @@
+{% extends "portal/base_portal.html" %}
+
+{% block title %}Kelola Staff - Portal PANBERSS{% endblock %}
+
+{% block portal_content %}
+<div class="container-fluid py-4">
+    <div class="row mb-3">
+        <div class="col-12 d-flex align-items-center justify-content-between">
+            <div>
+                <h2 class="mb-0"><i class="bi bi-people-fill"></i> Kelola Staff & Penugasan Sekolah</h2>
+                <p class="text-muted mb-0">Tugaskan sekolah ke staff untuk penilaian</p>
+            </div>
+            <div class="btn-group">
+                <a href="{{ url_for('portal.coordinator_assignment_requests') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-send"></i> Halaman Koordinator
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav nav-pills mb-3" id="staffTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-assign" data-bs-toggle="tab" data-bs-target="#pane-assign"
+                type="button" role="tab">Penugasan</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-requests" data-bs-toggle="tab" data-bs-target="#pane-requests"
+                type="button" role="tab">
+                Konfirmasi
+                <span class="badge bg-warning text-dark ms-1">{{ pending_requests|length if pending_requests else 0 }}</span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="pane-assign" role="tabpanel">
+            <div class="row">
+                <!-- Staff List -->
+                <div class="col-md-5">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-person-badge"></i> Daftar Staff</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <input type="text" class="form-control" id="searchStaff" placeholder="Cari staff...">
+                            </div>
+
+                            <div class="list-group" id="staffList">
+                                {% for staff in staff_list %}
+                                <a href="#" class="list-group-item list-group-item-action staff-item"
+                                    data-staff-id="{{ staff.id }}" data-staff-name="{{ staff.full_name }}"
+                                    data-staff-email="{{ staff.email }}" data-assigned-count="{{ staff.assigned_schools_count }}">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ staff.full_name }}</h6>
+                                        <span class="badge bg-info staff-count">{{ staff.assigned_schools_count }} sekolah</span>
+                                    </div>
+                                    <small class="text-muted">{{ staff.email }}</small>
+                                    {% if staff.nip %}
+                                    <br><small class="text-muted">NIP: {{ staff.nip }}</small>
+                                    {% endif %}
+                                </a>
+                                {% endfor %}
+                            </div>
+
+                            {% if not staff_list %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i> Belum ada staff terdaftar
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assignment Panel / Help -->
+                <div class="col-md-7">
+                    <div class="card shadow-sm" id="assignmentPanel" style="display: none;">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clipboard-check"></i> Penugasan untuk <span id="selectedStaffName">-</span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="assignFeedback" class="alert alert-success d-none py-2 px-3 mb-3 small"></div>
+                            <!-- Current Assignments -->
+                            <div class="mb-4">
+                                <h6 class="border-bottom pb-2">Sekolah yang Sudah Ditugaskan</h6>
+                                <div id="currentAssignments">
+                                    <p class="text-muted">Pilih staff untuk melihat penugasan</p>
+                                </div>
+                            </div>
+
+                            <!-- Add New Assignment -->
+                            <div>
+                                <h6 class="border-bottom pb-2">Tugaskan Sekolah Baru</h6>
+                                <form id="assignSchoolForm">
+                                    <input type="hidden" id="selectedStaffId" name="staff_id">
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Cari & Pilih Sekolah (ketik min. 3 huruf)</label>
+                                        <input type="text" class="form-control" id="schoolSearchInput"
+                                            placeholder="Nama sekolah / NPSN..." autocomplete="off">
+                                        <div class="list-group mt-1 d-none" id="schoolSearchResults"
+                                            style="max-height: 240px; overflow-y: auto;"></div>
+                                        <small class="text-muted">Klik hasil untuk menambah ke daftar penugasan.</small>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Catatan (Opsional, berlaku untuk semua)</label>
+                                        <textarea class="form-control" id="notesInput" rows="2"
+                                            placeholder="Catatan khusus untuk penugasan ini..."></textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <h6 class="fw-semibold mb-2">Daftar Penugasan Baru</h6>
+                                        <div id="assignmentQueue" class="vstack gap-2">
+                                            <div class="text-muted small">Belum ada sekolah ditambahkan.</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-outline-secondary flex-fill"
+                                            id="clearQueueBtn">
+                                            <i class="bi bi-x-circle"></i> Reset Daftar
+                                        </button>
+                                        <button type="button" class="btn btn-success flex-fill" id="saveQueueBtn">
+                                            <i class="bi bi-save"></i> Simpan Semua Penugasan
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Help Text (shown when no staff selected) -->
+                    <div class="card shadow-sm" id="helpPanel">
+                        <div class="card-body text-center py-5">
+                            <i class="bi bi-arrow-left-circle fs-1 text-muted mb-3 d-block"></i>
+                            <h5 class="text-muted">Pilih Staff</h5>
+                            <p class="text-muted mb-0">Klik nama staff di sebelah kiri untuk mengelola penugasan sekolah</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="pane-requests" role="tabpanel">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning d-flex justify-content-between align-items-center">
+                    <div class="text-dark fw-semibold">
+                        <i class="bi bi-inbox me-2"></i>Permintaan Penugasan Pending
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if pending_requests %}
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Koordinator</th>
+                                    <th>Staff</th>
+                                    <th>Sekolah</th>
+                                    <th>Catatan</th>
+                                    <th>Waktu</th>
+                                    <th class="text-end">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in pending_requests %}
+                                <tr id="req-{{ req.id }}">
+                                    <td>{{ req.coordinator_name }}</td>
+                                    <td>
+                                        <div class="fw-semibold">{{ req.staff_name }}</div>
+                                        <small class="text-muted">{{ req.staff_email }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">{{ req.school_name }}</div>
+                                        <small class="text-muted">{{ req.school_npsn }}{% if req.kecamatan_name %} • {{ req.kecamatan_name }}{% endif %}</small>
+                                    </td>
+                                    <td><small class="text-muted">{{ req.note or '-' }}</small></td>
+                                    <td><small class="text-muted">{{ req.created_at.strftime('%d %b %Y %H:%M') if req.created_at else '-' }}</small></td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-success approve-btn" data-id="{{ req.id }}">
+                                            <i class="bi bi-check-lg"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger reject-btn" data-id="{{ req.id }}">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">Tidak ada permintaan pending.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .staff-item.active {
+        background-color: #e7f3ff !important;
+        border-left: 4px solid #0d6efd;
+    }
+
+    .assignment-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        margin-bottom: 0.5rem;
+        background: #f8f9fa;
+    }
+
+    .assignment-item:hover {
+        background: #e9ecef;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const staffItems = document.querySelectorAll('.staff-item');
+        const assignmentPanel = document.getElementById('assignmentPanel');
+        const helpPanel = document.getElementById('helpPanel');
+        const currentAssignments = document.getElementById('currentAssignments');
+        const selectedStaffName = document.getElementById('selectedStaffName');
+        const selectedStaffId = document.getElementById('selectedStaffId');
+        const assignForm = document.getElementById('assignSchoolForm');
+        const schoolSearchInput = document.getElementById('schoolSearchInput');
+        const schoolSearchResults = document.getElementById('schoolSearchResults');
+        const notesInput = document.getElementById('notesInput');
+        const assignmentQueue = document.getElementById('assignmentQueue');
+        const saveQueueBtn = document.getElementById('saveQueueBtn');
+        const clearQueueBtn = document.getElementById('clearQueueBtn');
+        const searchStaff = document.getElementById('searchStaff');
+        const assignFeedback = document.getElementById('assignFeedback');
+        const approveButtons = document.querySelectorAll('.approve-btn');
+        const rejectButtons = document.querySelectorAll('.reject-btn');
+        const availableSchools = {{ available_schools | tojson | safe }};
+        let queue = [];
+
+        function updateStaffBadge(staffId, count) {
+            const badge = document.querySelector(`.staff-item[data-staff-id="${staffId}"] .staff-count`);
+            if (badge) {
+                badge.textContent = `${count} sekolah`;
+            }
+        }
+
+        function showFeedback(message) {
+            if (!assignFeedback) return;
+            assignFeedback.textContent = message;
+            assignFeedback.classList.remove('d-none');
+            setTimeout(() => assignFeedback.classList.add('d-none'), 3000);
+        }
+
+        // Staff search
+        searchStaff.addEventListener('input', function () {
+            const query = this.value.toLowerCase();
+            staffItems.forEach(item => {
+                const name = item.dataset.staffName.toLowerCase();
+                const email = item.dataset.staffEmail.toLowerCase();
+                if (name.includes(query) || email.includes(query)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+
+        // Staff selection
+        staffItems.forEach(item => {
+            item.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                // Remove active from all
+                staffItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+
+                const staffId = this.dataset.staffId;
+                const staffName = this.dataset.staffName;
+
+                selectedStaffName.textContent = staffName;
+                selectedStaffId.value = staffId;
+                if (assignFeedback) assignFeedback.classList.add('d-none');
+                queue = [];
+                renderQueue();
+                notesInput.value = '';
+                schoolSearchInput.value = '';
+                schoolSearchResults.classList.add('d-none');
+
+                helpPanel.style.display = 'none';
+                assignmentPanel.style.display = 'block';
+
+                // Load current assignments
+                loadAssignments(staffId);
+            });
+        });
+
+        function renderQueue() {
+            if (!assignmentQueue) return;
+            assignmentQueue.innerHTML = '';
+            if (queue.length === 0) {
+                assignmentQueue.innerHTML = '<div class="text-muted small">Belum ada sekolah ditambahkan.</div>';
+                return;
+            }
+            queue.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'assignment-item';
+                div.innerHTML = `
+                    <div>
+                        <strong>${item.name}</strong><br>
+                        <small class="text-muted">${item.npsn} - ${item.kecamatan || '-'}</small>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" data-idx="${idx}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                `;
+                div.querySelector('button').addEventListener('click', () => {
+                    queue.splice(idx, 1);
+                    renderQueue();
+                });
+                assignmentQueue.appendChild(div);
+            });
+        }
+
+        function showSearchResults(list) {
+            schoolSearchResults.innerHTML = '';
+            if (!list.length) {
+                schoolSearchResults.classList.add('d-none');
+                return;
+            }
+            list.slice(0, 20).forEach(s => {
+                const a = document.createElement('a');
+                a.href = '#';
+                a.className = 'list-group-item list-group-item-action';
+                a.innerHTML = `<div class="fw-semibold">${s.name}</div>
+                               <small class="text-muted">${s.npsn} • ${s.kecamatan_name || '-'}</small>`;
+                a.addEventListener('click', e => {
+                    e.preventDefault();
+                    if (!queue.find(q => q.id === s.id)) {
+                        queue.push({
+                            id: s.id,
+                            name: s.name,
+                            npsn: s.npsn,
+                            kecamatan: s.kecamatan_name
+                        });
+                        renderQueue();
+                    }
+                    schoolSearchResults.classList.add('d-none');
+                    schoolSearchInput.value = '';
+                });
+                schoolSearchResults.appendChild(a);
+            });
+            schoolSearchResults.classList.remove('d-none');
+        }
+
+        schoolSearchInput.addEventListener('input', function () {
+            const q = this.value.trim().toLowerCase();
+            if (q.length < 3) {
+                schoolSearchResults.classList.add('d-none');
+                return;
+            }
+            const filtered = availableSchools.filter(s =>
+                (s.name || '').toLowerCase().includes(q) ||
+                (s.npsn || '').toLowerCase().includes(q)
+            );
+            showSearchResults(filtered);
+        });
+
+        clearQueueBtn.addEventListener('click', function () {
+            queue = [];
+            renderQueue();
+        });
+
+        // Load assignments for selected staff
+        function loadAssignments(staffId) {
+            currentAssignments.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm"></div> Memuat...</div>';
+
+            return fetch(`/portal/admin/staff/${staffId}/assignments`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success && data.assignments.length > 0) {
+                        let html = '';
+                        data.assignments.forEach(assignment => {
+                            html += `
+                            <div class="assignment-item">
+                                <div>
+                                    <strong>${assignment.school_name}</strong><br>
+                                    <small class="text-muted">${assignment.npsn} - ${assignment.kecamatan_name || 'N/A'}</small>
+                                </div>
+                                <button class="btn btn-sm btn-danger" onclick="removeAssignment(${staffId}, ${assignment.school_id})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        `;
+                        });
+                        currentAssignments.innerHTML = html;
+                    } else {
+                        currentAssignments.innerHTML = '<p class="text-muted fst-italic">Belum ada sekolah yang ditugaskan</p>';
+                    }
+                    updateStaffBadge(staffId, data.assignments ? data.assignments.length : 0);
+                    return data.assignments ? data.assignments.length : 0;
+                })
+                .catch(err => {
+                    currentAssignments.innerHTML = '<p class="text-danger">Error memuat data</p>';
+                    console.error(err);
+                    return 0;
+                });
+        }
+
+        // Save batch assignments
+        saveQueueBtn.addEventListener('click', function () {
+            const staffId = selectedStaffId.value;
+            if (!staffId) {
+                alert('Pilih staff terlebih dahulu.');
+                return;
+            }
+            if (queue.length === 0) {
+                alert('Tambahkan minimal satu sekolah.');
+                return;
+            }
+            saveQueueBtn.disabled = true;
+            saveQueueBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menyimpan...';
+
+            fetch('/portal/admin/assign-schools-batch', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    staff_id: parseInt(staffId, 10),
+                    school_ids: queue.map(q => q.id),
+                    notes: notesInput.value || null
+                })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        queue = [];
+                        renderQueue();
+                        notesInput.value = '';
+                        schoolSearchInput.value = '';
+                        schoolSearchResults.classList.add('d-none');
+                        loadAssignments(staffId).then(count => {
+                            if (data.total_assignments !== undefined) {
+                                updateStaffBadge(staffId, data.total_assignments);
+                            } else if (typeof count === 'number') {
+                                updateStaffBadge(staffId, count);
+                            }
+                        });
+                        showFeedback('Penugasan berhasil disimpan.');
+                    } else {
+                        alert(data.message || 'Gagal menyimpan penugasan.');
+                    }
+                })
+                .catch(err => {
+                    alert('Gagal menyimpan penugasan');
+                    console.error(err);
+                })
+                .finally(() => {
+                    saveQueueBtn.disabled = false;
+                    saveQueueBtn.innerHTML = '<i class="bi bi-save"></i> Simpan Semua Penugasan';
+                });
+        });
+
+        // Remove assignment (global function)
+        window.removeAssignment = function (staffId, schoolId) {
+            if (!confirm('Hapus penugasan sekolah ini?')) return;
+
+            const formData = new FormData();
+            formData.append('staff_id', staffId);
+            formData.append('school_id', schoolId);
+
+            fetch('/portal/admin/remove-assignment', {
+                method: 'POST',
+                body: formData
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        loadAssignments(staffId).then(count => updateStaffBadge(staffId, count));
+                        showFeedback('Penugasan berhasil dihapus.');
+                    } else {
+                        alert('Error: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(err => {
+                    alert('Gagal menghapus penugasan');
+                    console.error(err);
+                });
+        };
+
+        // Approve/reject assignment requests
+        function handleRequest(id, action) {
+            const btn = document.querySelector(`.${action}-btn[data-id="${id}"]`);
+            if (!btn) return;
+            btn.disabled = true;
+            fetch(`/portal/admin/assignment-requests/${id}/${action}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const row = document.getElementById(`req-${id}`);
+                    if (row) row.remove();
+                    showFeedback(action === 'approve' ? 'Permintaan disetujui.' : 'Permintaan ditolak.');
+                } else {
+                    alert(data.message || 'Gagal memproses permintaan.');
+                }
+            })
+            .catch(() => alert('Gagal memproses permintaan.'))
+            .finally(() => btn.disabled = false);
+        }
+
+        approveButtons.forEach(b => b.addEventListener('click', () => handleRequest(b.dataset.id, 'approve')));
+        rejectButtons.forEach(b => b.addEventListener('click', () => handleRequest(b.dataset.id, 'reject')));
+    });
+</script>
+{% endblock %}

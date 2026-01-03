@@ -213,12 +213,7 @@
         }
 
         .aspect-item {
-            padding: 0.75rem 0;
-            border-bottom: 1px solid var(--border-soft);
-        }
-
-        .aspect-item: last-child {
-            border-bottom: none;
+            padding: 0.25rem 0;
         }
 
         .aspect-name {
@@ -546,18 +541,40 @@
                     </li>
 
                     {% if current_user and current_user.role == 'coordinator' %}
-                    <!-- Coordinator: Dashboard -->
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'portal.coordinator_dashboard' %}active{% endif %}"
-                            href="{{ url_for('portal.coordinator_dashboard') }}">
-                            <i class="bi bi-people nav-icon"></i>Dashboard Tim
+                    {% set coordinator_menu_endpoints = [
+                    'portal.coordinator_dashboard',
+                    'portal.coordinator_stats',
+                    'portal.coordinator_assignment_requests',
+                    'portal.view_my_team'
+                    ] %}
+                    <!-- Coordinator: Kelola Tim dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in coordinator_menu_endpoints %}active{% endif %}"
+                            href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-people nav-icon"></i>Kelola Tim
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'portal.coordinator_stats' %}active{% endif %}"
-                            href="{{ url_for('portal.coordinator_stats') }}">
-                            <i class="bi bi-graph-up nav-icon"></i>Statistik Tim
-                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.coordinator_dashboard') }}">
+                                    <i class="bi bi-people me-2"></i>Dashboard Tim
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.coordinator_stats') }}">
+                                    <i class="bi bi-graph-up me-2"></i>Statistik Tim
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.coordinator_assignment_requests') }}">
+                                    <i class="bi bi-send me-2"></i>Pengajuan Penugasan
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.view_my_team') }}">
+                                    <i class="bi bi-people-fill me-2"></i>Tim Saya
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     {% endif %}
 
@@ -569,16 +586,6 @@
                             <i class="bi bi-list-check nav-icon"></i>Tugas Monev
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'portal.view_my_team' %}active{% endif %}"
-                            href="{{ url_for('portal.view_my_team') }}">
-                            <i class="bi bi-people nav-icon"></i>Tim Saya
-                        </a>
-                    </li>
-                    {% endif %}
-
-                    {% if current_user and current_user.role == 'coordinator' %}
-                    <!-- Coordinator: Tim Saya -->
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'portal.view_my_team' %}active{% endif %}"
                             href="{{ url_for('portal.view_my_team') }}">
@@ -683,13 +690,6 @@
                             <li class="px-3 py-2">
                                 <div class="fw-semibold">{{ current_user.full_name or 'User' }}</div>
                                 <small class="text-muted">{{ current_user.email }}</small>
-                                {% if current_user.role == 'admin' and current_user.admin_level == 'viewer' %}
-                                <div class="mt-1">
-                                    <span class="badge bg-warning text-dark">
-                                        <i class="bi bi-eye"></i> View Only
-                                    </span>
-                                </div>
-                                {% endif %}
                             </li>
                             <li>
                                 <hr class="dropdown-divider">
@@ -698,6 +698,16 @@
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('portal.sekolah_profile') }}">
                                     <i class="bi bi-gear me-2"></i>Pengaturan Sekolah
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            {% endif %}
+                            {% if current_user.role in ['admin', 'coordinator', 'staff'] %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.user_profile_settings') }}">
+                                    <i class="bi bi-person-gear me-2"></i>Pengaturan Profil
                                 </a>
                             </li>
                             <li>

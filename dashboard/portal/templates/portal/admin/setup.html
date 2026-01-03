@@ -5,16 +5,16 @@
 <section class="mb-4">
     {% set display_rooms = [] %}
     {% if base_rooms is defined %}
-        {% for r in base_rooms %}
-            {% set nm = (r.name or '') %}
-            {% set tail = nm.lower().replace('ruang kelas', '').strip() %}
-            {% set is_variant = tail and tail[-1].isalpha() and tail[:-1].strip() and tail[:-1].strip()[-1].isdigit() %}
-            {% if not is_variant %}
-                {% set _ = display_rooms.append(r) %}
-            {% endif %}
-        {% endfor %}
+    {% for r in base_rooms %}
+    {% set nm = (r.name or '') %}
+    {% set tail = nm.lower().replace('ruang kelas', '').strip() %}
+    {% set is_variant = tail and tail[-1].isalpha() and tail[:-1].strip() and tail[:-1].strip()[-1].isdigit() %}
+    {% if not is_variant %}
+    {% set _ = display_rooms.append(r) %}
+    {% endif %}
+    {% endfor %}
     {% else %}
-        {% set display_rooms = [] %}
+    {% set display_rooms = [] %}
     {% endif %}
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div class="d-flex align-items-center gap-3">
@@ -133,6 +133,14 @@
                                         </select>
                                     </div>
                                     <div class="col-12">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="is_required"
+                                                id="addRoomRequired" checked>
+                                            <label class="form-check-label small" for="addRoomRequired">Wajib (selalu
+                                                dipilih sekolah)</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
                                         <button type="submit" class="btn btn-success btn-sm w-100">
                                             <i class="bi bi-plus-lg me-1"></i>Tambah Ruangan
                                         </button>
@@ -156,6 +164,13 @@
                                 <div class="col-8">
                                     <input type="text" id="aspectNameInput" class="form-control form-control-sm"
                                         placeholder="Nama Aspek">
+                                </div>
+                                <div class="col-4">
+                                    <div class="form-check mt-1">
+                                        <input class="form-check-input" type="checkbox" id="aspectRequiredInput"
+                                            checked>
+                                        <label class="form-check-label small" for="aspectRequiredInput">Wajib</label>
+                                    </div>
                                 </div>
                                 <div class="col-4">
                                     <button type="button" class="btn btn-outline-secondary btn-sm w-100"
@@ -199,7 +214,9 @@
                         <div>
                             <h2 class="h6 fw-bold mb-0">Preview: Konfigurasi Ruangan per Jenjang</h2>
                             <p class="text-muted mb-0 small">Contoh tampilan halaman konfigurasi sekolah</p>
-                            <p class="text-muted mb-0 small">Tip: Untuk ruang kelas, cukup set aspek di satu template jenjang (mis. "Ruang Kelas 1" untuk SD); sistem otomatis menerapkannya ke Kelas 1–6 dan paralel A/B/C milik sekolah.</p>
+                            <p class="text-muted mb-0 small">Tip: Untuk ruang kelas, cukup set aspek di satu template
+                                jenjang (mis. "Ruang Kelas 1" untuk SD); sistem otomatis menerapkannya ke Kelas 1–6 dan
+                                paralel A/B/C milik sekolah.</p>
                         </div>
                     </div>
                     <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
@@ -761,7 +778,29 @@
                                             <td class="fw-bold text-dark">{{ log.target_name or '-' }}</td>
                                             <td>
                                                 {% if log.details %}
-                                                <code class="text-muted small">{{ log.details }}</code>
+                                                {% set det = log.details if log.details is mapping else
+                                                (log.details|safe) %}
+                                                {% if det is mapping %}
+                                                <div class="text-muted small">
+                                                    {% if det.room_name %}
+                                                    <div><strong>Ruang:</strong> {{ det.room_name }}</div>
+                                                    {% endif %}
+                                                    {% if det.npsn %}
+                                                    <div><strong>NPSN:</strong> {{ det.npsn }}</div>
+                                                    {% endif %}
+                                                    {% if det.category %}
+                                                    <div><strong>Kategori:</strong> {{ det.category }}</div>
+                                                    {% endif %}
+                                                    {% if det.status %}
+                                                    <div><strong>Status:</strong> {{ det.status }}</div>
+                                                    {% endif %}
+                                                    {% if det.info %}
+                                                    <div>{{ det.info }}</div>
+                                                    {% endif %}
+                                                </div>
+                                                {% else %}
+                                                <code class="text-muted small">{{ det }}</code>
+                                                {% endif %}
                                                 {% else %}
                                                 <span class="text-muted">-</span>
                                                 {% endif %}
@@ -784,7 +823,8 @@
                         <div class="tab-pane fade show active" id="roomsListPane" role="tabpanel">
                             <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
                                 <div>
-                                    <span class="text-muted small"><span id="roomCount">{{ display_rooms|length }}</span>
+                                    <span class="text-muted small"><span id="roomCount">{{ display_rooms|length
+                                            }}</span>
                                         ruangan terdaftar</span>
                                 </div>
                                 <div class="position-relative" style="min-width: 200px;">
@@ -819,11 +859,24 @@
                                     #roomsTable tbody td {
                                         background: inherit;
                                         color: var(--text-primary);
-                                        border-color: var(--border-soft);
+                                        border: none !important;
+                                    }
+
+                                    /* Override bootstrap table borders completely */
+                                    #roomsTable.table>:not(caption)>*>* {
+                                        border-bottom: 0 !important;
+                                        box-shadow: none !important;
                                     }
 
                                     #roomsTable tbody tr:hover td {
                                         background: var(--bg-subtle);
+                                    }
+
+                                    #roomsTable tr.collapse>td {
+                                        border: 0 !important;
+                                        border-bottom: 0 !important;
+                                        padding-top: 0;
+                                        padding-bottom: 0;
                                     }
 
                                     #roomsTable tbody tr.room-inactive td {
@@ -861,6 +914,28 @@
                                     #roomsTable .badge {
                                         font-weight: 600;
                                     }
+
+                                    .aspect-chip {
+                                        display: flex;
+                                        justify-content: space-between;
+                                        align-items: center;
+                                        gap: 8px;
+                                        padding: 10px 12px;
+                                        border: 1px solid var(--border-soft);
+                                        border-radius: 10px;
+                                        background: var(--bg-surface);
+                                        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+                                    }
+
+                                    .aspect-chip .icon-badge {
+                                        width: 28px;
+                                        height: 28px;
+                                        border-radius: 8px;
+                                        display: inline-flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        font-size: 0.9rem;
+                                    }
                                 </style>
                                 <table class="table table-hover align-middle mb-0" id="roomsTable">
                                     <thead>
@@ -868,14 +943,15 @@
                                             <th style="width: 36%;">Nama Ruangan</th>
                                             <th style="width: 16%;">Kategori</th>
                                             <th style="width: 12%;">Aspek</th>
-                                            <th style="width: 16%;">Status</th>
+                                            <th style="width: 10%;">Status</th>
+                                            <th style="width: 10%;">Wajib</th>
                                             <th class="text-end" style="width: 20%;">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody id="roomsTableBody">
                                         {% for r in display_rooms %}
                                         <tr id="room-{{ r.id }}"
-                                            class="room-row border-bottom {% if not r.active %}room-inactive{% endif %}"
+                                            class="room-row {% if not r.active %}room-inactive{% endif %}"
                                             data-room-id="{{ r.id }}" data-room-name="{{ r.name|lower }}"
                                             data-room-category="{{ r.category|lower }}"
                                             data-room-active="{{ 'true' if r.active else 'false' }}">
@@ -899,11 +975,24 @@
                                                     action="{{ url_for('portal.toggle_room_status', room_id=r.id) }}"
                                                     class="d-inline">
                                                     <button type="submit"
-                                                        class="btn btn-sm px-3 {% if r.active %}btn-success{% else %}btn-outline-danger{% endif %}"
-                                                        title="Klik untuk {% if r.active %}nonaktifkan{% else %}aktifkan{% endif %}">
+                                                        class="btn btn-sm d-inline-flex align-items-center gap-1 {% if r.active %}btn-success{% else %}btn-outline-secondary{% endif %}"
+                                                        title="Toggle aktif/nonaktif">
                                                         <i
-                                                            class="bi {% if r.active %}bi-toggle-on{% else %}bi-toggle-off{% endif %} me-1"></i>
-                                                        {% if r.active %}Aktif{% else %}Nonaktif{% endif %}
+                                                            class="bi {% if r.active %}bi-toggle-on{% else %}bi-toggle-off{% endif %}"></i>
+                                                        <span>{% if r.active %}On{% else %}Off{% endif %}</span>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                            <td>
+                                                <form method="POST"
+                                                    action="{{ url_for('portal.toggle_room_required', room_id=r.id) }}"
+                                                    class="d-inline">
+                                                    <button type="submit"
+                                                        class="btn btn-sm d-inline-flex align-items-center gap-1 {% if r.is_required %}btn-success{% else %}btn-outline-secondary{% endif %}"
+                                                        title="Toggle wajib/opsional">
+                                                        <i
+                                                            class="bi {% if r.is_required %}bi-toggle-on{% else %}bi-toggle-off{% endif %}"></i>
+                                                        <span>{% if r.is_required %}On{% else %}Off{% endif %}</span>
                                                     </button>
                                                 </form>
                                             </td>
@@ -924,13 +1013,13 @@
                                         </tr>
                                         <!-- Expandable Detail Row -->
                                         <tr class="collapse" id="roomDetail{{ r.id }}">
-                                            <td colspan="5" class="p-0">
-                                                <div class="p-3 border-top" style="background: var(--bg-subtle);">
+                                            <td colspan="6" class="p-0">
+                                                <div class="p-3" style="background: var(--bg-subtle);">
                                                     <!-- Edit Room Form -->
                                                     <form method="POST"
                                                         action="{{ url_for('portal.edit_room', room_id=r.id) }}"
-                                                        class="row g-2 mb-3">
-                                                        <div class="col-md-4">
+                                                        class="row g-2 mb-3 align-items-end">
+                                                        <div class="col-md-5">
                                                             <label class="form-label small mb-1">Nama Ruangan</label>
                                                             <input type="text" name="name"
                                                                 class="form-control form-control-sm"
@@ -949,23 +1038,33 @@
                                                                     %}selected{% endif %}>Sanitasi</option>
                                                             </select>
                                                         </div>
-                                                        <div class="col-md-2">
+                                                        <div class="col-md-1">
                                                             <label class="form-label small mb-1">Urutan</label>
                                                             <input type="number" name="sort_order"
                                                                 class="form-control form-control-sm"
                                                                 value="{{ r.sort_order }}">
                                                         </div>
-                                                        <div class="col-md-2">
+                                                        <div class="col-md-1">
+                                                            <label class="form-label small mb-1">Wajib</label>
+                                                            <div class="form-check mt-1">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    name="is_required" id="roomReq{{ r.id }}" {% if
+                                                                    r.is_required %}checked{% endif %}>
+                                                                <label class="form-check-label small"
+                                                                    for="roomReq{{ r.id }}"></label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-1">
                                                             <label class="form-label small mb-1">Status</label>
                                                             <div class="form-check mt-1">
                                                                 <input class="form-check-input" type="checkbox"
                                                                     name="active" id="roomActive{{ r.id }}" {% if
                                                                     r.active %}checked{% endif %}>
                                                                 <label class="form-check-label small"
-                                                                    for="roomActive{{ r.id }}">Aktif</label>
+                                                                    for="roomActive{{ r.id }}"></label>
                                                             </div>
                                                         </div>
-                                                        <div class="col-md-2 d-flex align-items-end">
+                                                        <div class="col-md-2 d-flex">
                                                             <button type="submit" class="btn btn-primary btn-sm w-100">
                                                                 <i class="bi bi-check-lg me-1"></i>Simpan
                                                             </button>
@@ -982,43 +1081,78 @@
                                                     <div class="border-top pt-3">
                                                         <div
                                                             class="d-flex justify-content-between align-items-center mb-2">
-                                                            <span class="fw-semibold small"><i
-                                                                    class="bi bi-list-check text-primary me-1"></i>Aspek
-                                                                Penilaian ({{ r.aspects|length }})</span>
+                                                            <span class="fw-semibold small">
+                                                                <i class="bi bi-list-check text-primary me-1"></i>
+                                                                Aspek Penilaian (<span
+                                                                    id="room-aspects-count-{{ r.id }}">{{
+                                                                    r.aspects|length }}</span>)
+                                                            </span>
                                                         </div>
-                                                        {% if r.aspects %}
-                                                        <div class="row g-2 mb-3">
+                                                        <div class="row g-1 mb-2 aspect-list"
+                                                            id="room-aspects-{{ r.id }}" data-room-id="{{ r.id }}"
+                                                            data-room-name="{{ r.name }}">
+                                                            {% if r.aspects %}
                                                             {% for a in r.aspects %}
-                                                            <div class="col-md-6">
+                                                            <div class="col-12 col-sm-6 col-lg-4 aspect-item"
+                                                                data-aspect-id="{{ a.id }}">
                                                                 <div
-                                                                    class="d-flex align-items-center justify-content-between p-2 border rounded small {% if not a.active %}opacity-50{% endif %}">
-                                                                    <div class="d-flex align-items-center gap-2">
-                                                                        <i
-                                                                            class="bi bi-check-circle-fill text-success"></i>
-                                                                        <span>{{ a.name }}</span>
-                                                                        {% if not a.active %}<span
-                                                                            class="badge bg-danger">Off</span>{% endif
-                                                                        %}
+                                                                    class="d-flex align-items-center justify-content-between gap-2 rounded border px-2 py-1 bg-light small {% if not a.active %}opacity-75{% endif %}">
+                                                                    <div
+                                                                        class="d-flex align-items-center gap-2 text-truncate">
+                                                                        <span
+                                                                            class="badge bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center"
+                                                                            style="width: 20px; height: 20px;">
+                                                                            <i class="bi bi-check-lg"
+                                                                                style="font-size: 0.75rem;"></i>
+                                                                        </span>
+                                                                        <span class="text-truncate">{{ a.name }}</span>
+                                                                        <span
+                                                                            class="badge rounded-pill aspect-required-badge {% if a.is_required %}bg-warning-subtle text-warning{% else %}bg-secondary-subtle text-secondary{% endif %}"
+                                                                            data-aspect-id="{{ a.id }}"
+                                                                            data-room-id="{{ r.id }}"
+                                                                            data-is-required="{{ 'true' if a.is_required else 'false' }}"
+                                                                            style="cursor: pointer;">
+                                                                            {% if a.is_required %}Wajib{% else
+                                                                            %}Opsional{% endif %}
+                                                                        </span>
+                                                                        {% if not a.active %}
+                                                                        <span
+                                                                            class="badge bg-danger-subtle text-danger">Off</span>
+                                                                        {% endif %}
                                                                     </div>
-                                                                    <div class="btn-group btn-group-sm">
+                                                                    <div
+                                                                        class="d-flex align-items-center gap-1 flex-shrink-0">
                                                                         <button type="button"
-                                                                            class="btn btn-link btn-sm p-0 px-1 text-primary"
-                                                                            data-bs-toggle="modal"
-                                                                            data-bs-target="#editAspectModal{{ a.id }}"><i
-                                                                                class="bi bi-pencil"></i></button>
+                                                                            class="btn btn-link btn-sm p-0 text-primary"
+                                                                            data-edit-aspect="{{ a.id }}"
+                                                                            data-room-id="{{ r.id }}"
+                                                                            data-room-name="{{ r.name }}"
+                                                                            data-aspect-name="{{ a.name }}"
+                                                                            data-aspect-desc="{{ a.description or '' }}"
+                                                                            data-aspect-order="{{ a.sort_order or 0 }}"
+                                                                            data-aspect-active="{{ 'true' if a.active else 'false' }}"
+                                                                            data-aspect-required="{{ 'true' if a.is_required else 'false' }}"
+                                                                            title="Edit aspek">
+                                                                            <i class="bi bi-pencil"></i>
+                                                                        </button>
                                                                         <button type="button"
-                                                                            class="btn btn-link btn-sm p-0 px-1 text-danger"
-                                                                            data-bs-toggle="modal"
-                                                                            data-bs-target="#deleteAspectModal{{ a.id }}"><i
-                                                                                class="bi bi-trash"></i></button>
+                                                                            class="btn btn-link btn-sm p-0 text-danger"
+                                                                            data-delete-aspect="{{ a.id }}"
+                                                                            data-room-id="{{ r.id }}"
+                                                                            data-room-name="{{ r.name }}"
+                                                                            data-aspect-name="{{ a.name }}"
+                                                                            title="Hapus aspek">
+                                                                            <i class="bi bi-trash"></i>
+                                                                        </button>
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                             {% endfor %}
+                                                            {% else %}
+                                                            <p class="text-muted small mb-3">Belum ada aspek penilaian
+                                                            </p>
+                                                            {% endif %}
                                                         </div>
-                                                        {% else %}
-                                                        <p class="text-muted small mb-3">Belum ada aspek penilaian</p>
-                                                        {% endif %}
 
                                                         <!-- Add Aspect (Batch) -->
                                                         <div class="row g-2 align-items-end">
@@ -1093,75 +1227,145 @@
 </div>
 {% endfor %}
 
-<!-- Edit Aspect Modals -->
-{% for r in display_rooms %}
-{% for a in r.aspects %}
-<div class="modal fade" id="editAspectModal{{ a.id }}" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form method="POST" action="{{ url_for('portal.edit_aspect', aspect_id=a.id) }}">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Aspek</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Nama Aspek</label>
-                        <input type="text" name="name" class="form-control" value="{{ a.name }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Deskripsi</label>
-                        <input type="text" name="description" class="form-control" value="{{ a.description or '' }}">
-                    </div>
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <label class="form-label small fw-semibold">Urutan</label>
-                            <input type="number" name="sort_order" class="form-control" value="{{ a.sort_order }}">
-                        </div>
-                        <div class="col-6 d-flex align-items-end">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="active"
-                                    id="aspectActive{{ a.id }}" {% if a.active %}checked{% endif %}>
-                                <label class="form-check-label" for="aspectActive{{ a.id }}">Aktif</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary btn-sm">Simpan</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="deleteAspectModal{{ a.id }}" tabindex="-1">
+<!-- Confirm Delete Aspect Modal -->
+<div class="modal fade" id="aspectDeleteConfirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Hapus Aspek</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Yakin ingin menghapus aspek <strong>{{ a.name }}</strong>?</p>
+                <p class="mb-1">Yakin hapus aspek <strong id="deleteAspectName"></strong>?</p>
+                <p class="text-muted small mb-0">Ruang: <span id="deleteAspectRoom"></span></p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                <form method="POST" action="{{ url_for('portal.delete_aspect_route', aspect_id=a.id) }}"
-                    class="d-inline">
-                    <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
-                </form>
+                <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteAspectBtn">
+                    <i class="bi bi-trash"></i> Hapus
+                </button>
             </div>
         </div>
     </div>
 </div>
-{% endfor %}
-{% endfor %}
+
+<!-- Edit Aspect Modal -->
+<div class="modal fade" id="aspectEditModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Aspek</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-2">
+                    <label class="form-label small">Nama Aspek</label>
+                    <input type="text" class="form-control" id="editAspectNameInput">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small">Deskripsi</label>
+                    <input type="text" class="form-control" id="editAspectDescInput">
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label small">Urutan</label>
+                        <input type="number" class="form-control" id="editAspectOrderInput" value="0">
+                    </div>
+                    <div class="col-6 d-flex flex-column justify-content-end gap-2">
+                        <div class="form-check mb-0">
+                            <input class="form-check-input" type="checkbox" id="editAspectActiveInput" checked>
+                            <label class="form-check-label" for="editAspectActiveInput">Aktif</label>
+                        </div>
+                        <div class="form-check mb-0">
+                            <input class="form-check-input" type="checkbox" id="editAspectRequiredInput" checked>
+                            <label class="form-check-label" for="editAspectRequiredInput">Wajib</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary btn-sm" id="saveAspectEditBtn">
+                    <i class="bi bi-check-lg"></i> Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% block portal_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const setupToast = document.getElementById('assignFeedback') || null;
+        function showToast(message, isError = false) {
+            const existing = document.getElementById('setupToast') || document.createElement('div');
+            existing.id = 'setupToast';
+            existing.className = `alert ${isError ? 'alert-danger' : 'alert-success'} alert-dismissible fade show position-fixed`;
+            existing.style.top = '80px';
+            existing.style.right = '20px';
+            existing.style.zIndex = '1080';
+            existing.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(existing);
+            setTimeout(() => existing.classList.contains('show') && bootstrap.Alert.getOrCreateInstance(existing).close(), 3000);
+        }
+
+        function renderAspects(roomId, aspects) {
+            const container = document.getElementById(`room-aspects-${roomId}`);
+            const countEl = document.getElementById(`room-aspects-count-${roomId}`);
+            if (!container) return;
+            if (!aspects || aspects.length === 0) {
+                container.innerHTML = '<p class="text-muted small mb-3">Belum ada aspek penilaian</p>';
+                if (countEl) countEl.textContent = '0';
+                return;
+            }
+            container.innerHTML = aspects.map(a => `
+                <div class="col-12 col-sm-6 col-lg-4 aspect-item" data-aspect-id="${a.id}">
+                    <div class="d-flex align-items-center justify-content-between gap-2 rounded border px-2 py-1 bg-light small ${a.active ? '' : 'opacity-75'}">
+                        <div class="d-flex align-items-center gap-2 text-truncate">
+                            <span class="badge bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px;">
+                                <i class="bi bi-check-lg" style="font-size: 0.75rem;"></i>
+                            </span>
+                            <span class="text-truncate">${a.name}</span>
+                            <span class="badge rounded-pill aspect-required-badge ${a.is_required ? 'bg-warning-subtle text-warning' : 'bg-secondary-subtle text-secondary'}"
+                                data-aspect-id="${a.id}"
+                                data-room-id="${roomId}"
+                                data-is-required="${a.is_required ? 'true' : 'false'}"
+                                style="cursor: pointer;">
+                                ${a.is_required ? 'Wajib' : 'Opsional'}
+                            </span>
+                            ${a.active ? '' : '<span class="badge bg-danger-subtle text-danger">Off</span>'}
+                        </div>
+                        <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                            <button type="button" class="btn btn-link btn-sm p-0 text-primary"
+                                data-edit-aspect="${a.id}"
+                                data-room-id="${roomId}"
+                                data-room-name="${container.dataset.roomName || ''}"
+                                data-aspect-name="${a.name}"
+                                data-aspect-desc="${a.description || ''}"
+                                data-aspect-order="${a.sort_order || 0}"
+                                data-aspect-active="${a.active ? 'true' : 'false'}"
+                                data-aspect-required="${a.is_required ? 'true' : 'false'}"
+                                title="Edit aspek">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button type="button" class="btn btn-link btn-sm p-0 text-danger"
+                                data-delete-aspect="${a.id}"
+                                data-room-id="${roomId}"
+                                data-aspect-name="${a.name}"
+                                title="Hapus aspek">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            if (countEl) countEl.textContent = aspects.length;
+        }
+
         // ===== School Search & Pagination =====
         const schoolSearch = document.getElementById('schoolSearch');
         const schoolRows = document.querySelectorAll('.school-row');
@@ -1444,8 +1648,15 @@
                     const data = await response.json();
 
                     if (data.success) {
-                        // Reload page to show new aspects
-                        window.location.reload();
+                        // Update UI per room
+                        if (data.room_aspects) {
+                            Object.entries(data.room_aspects).forEach(([rid, aspects]) => {
+                                renderAspects(rid, aspects);
+                            });
+                        }
+                        aspectList = [];
+                        updateAspectPreview();
+                        showToast('Aspek berhasil disimpan.');
                     } else {
                         alert('Gagal menyimpan: ' + (data.error || 'Unknown error'));
                         this.disabled = false;
@@ -1541,6 +1752,263 @@
             }
         });
 
+        // Delete aspect (AJAX) with single confirm modal
+        let pendingDelete = null;
+        const deleteModalEl = document.getElementById('aspectDeleteConfirmModal');
+        const deleteModal = deleteModalEl ? new bootstrap.Modal(deleteModalEl) : null;
+        const deleteAspectNameEl = document.getElementById('deleteAspectName');
+        const deleteAspectRoomEl = document.getElementById('deleteAspectRoom');
+        const deleteAspectBtn = document.getElementById('confirmDeleteAspectBtn');
+        const editModalEl = document.getElementById('aspectEditModal');
+        const editModal = editModalEl ? new bootstrap.Modal(editModalEl) : null;
+        const editNameInput = document.getElementById('editAspectNameInput');
+        const editDescInput = document.getElementById('editAspectDescInput');
+        const editOrderInput = document.getElementById('editAspectOrderInput');
+        const editActiveInput = document.getElementById('editAspectActiveInput');
+        const editRequiredInput = document.getElementById('editAspectRequiredInput');
+        const saveAspectEditBtn = document.getElementById('saveAspectEditBtn');
+        let pendingEdit = null;
+
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('[data-delete-aspect]');
+            if (!btn || !deleteModal) return;
+            const aspectId = btn.getAttribute('data-delete-aspect');
+            const roomId = btn.getAttribute('data-room-id');
+            const aspectName = btn.getAttribute('data-aspect-name') || 'Aspek';
+            const roomName = btn.getAttribute('data-room-name') || 'Ruang';
+            pendingDelete = { aspectId, roomId, aspectName, roomName, trigger: btn };
+            if (deleteAspectNameEl) deleteAspectNameEl.textContent = aspectName;
+            if (deleteAspectRoomEl) deleteAspectRoomEl.textContent = roomName;
+            deleteModal.show();
+        });
+
+        // Edit aspect
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('[data-edit-aspect]');
+            if (!btn || !editModal) return;
+            const aspectId = btn.getAttribute('data-edit-aspect');
+            const roomId = btn.getAttribute('data-room-id');
+            const aspectName = btn.getAttribute('data-aspect-name') || '';
+            const aspectDesc = btn.getAttribute('data-aspect-desc') || '';
+            const aspectOrder = btn.getAttribute('data-aspect-order') || '0';
+            const aspectActive = btn.getAttribute('data-aspect-active') === 'true';
+            const aspectRequired = btn.getAttribute('data-aspect-required') === 'true';
+            pendingEdit = { aspectId, roomId };
+            editNameInput.value = aspectName;
+            editDescInput.value = aspectDesc;
+            editOrderInput.value = aspectOrder;
+            editActiveInput.checked = aspectActive;
+            if (editRequiredInput) editRequiredInput.checked = aspectRequired;
+            saveAspectEditBtn.disabled = false;
+            saveAspectEditBtn.innerHTML = '<i class="bi bi-check-lg"></i> Simpan';
+            editModal.show();
+        });
+
+        saveAspectEditBtn?.addEventListener('click', async function () {
+            if (!pendingEdit) return;
+            const { aspectId, roomId } = pendingEdit;
+            const payload = {
+                name: editNameInput.value.trim(),
+                description: editDescInput.value.trim(),
+                sort_order: parseInt(editOrderInput.value || "0", 10),
+                active: editActiveInput.checked,
+                is_required: editRequiredInput ? editRequiredInput.checked : false,
+            };
+            if (!payload.name) {
+                alert('Nama aspek wajib diisi.');
+                return;
+            }
+            saveAspectEditBtn.disabled = true;
+            saveAspectEditBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            try {
+                const res = await fetch(`/portal/admin/setup/aspect/${aspectId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken || ''
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    renderAspects(roomId, data.aspects);
+                    showToast('Aspek diperbarui.');
+                    editModal.hide();
+                } else {
+                    alert(data.message || 'Gagal memperbarui aspek');
+                }
+            } catch (err) {
+                alert('Gagal memperbarui aspek');
+                console.error(err);
+            } finally {
+                saveAspectEditBtn.disabled = false;
+                saveAspectEditBtn.innerHTML = '<i class="bi bi-check-lg"></i> Simpan';
+                pendingEdit = null;
+            }
+        });
+
+        deleteAspectBtn?.addEventListener('click', async function () {
+            if (!pendingDelete) return;
+            const { aspectId, roomId, aspectName, trigger } = pendingDelete;
+            deleteAspectBtn.disabled = true;
+            deleteAspectBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            try {
+                const res = await fetch(`/portal/admin/setup/aspect/${aspectId}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken || ''
+                    },
+                    body: JSON.stringify({})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    renderAspects(roomId, data.aspects);
+                    showToast(`${aspectName} dihapus.`);
+                    deleteModal.hide();
+                } else {
+                    alert(data.message || 'Gagal menghapus aspek');
+                }
+            } catch (err) {
+                alert('Gagal menghapus aspek');
+                console.error(err);
+            } finally {
+                deleteAspectBtn.disabled = false;
+                deleteAspectBtn.innerHTML = '<i class="bi bi-trash"></i> Hapus';
+                if (trigger) trigger.disabled = false;
+                pendingDelete = null;
+            }
+        });
+
+        // Reset state on modal close (prevent lingering backdrop/blocking)
+        [deleteModalEl, editModalEl].forEach(el => {
+            if (!el) return;
+            el.addEventListener('hidden.bs.modal', () => {
+                pendingDelete = null;
+                pendingEdit = null;
+                deleteAspectBtn && (deleteAspectBtn.disabled = false, deleteAspectBtn.innerHTML = '<i class="bi bi-trash"></i> Hapus');
+                saveAspectEditBtn && (saveAspectEditBtn.disabled = false, saveAspectEditBtn.innerHTML = '<i class="bi bi-check-lg"></i> Simpan');
+                document.body.classList.remove('modal-open');
+                document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+            });
+        });
+
+        // Toggle required badge (AJAX)
+        document.addEventListener('click', async function (e) {
+            console.log('Click event detected:', e.target);
+            const badge = e.target.closest('.aspect-required-badge');
+            console.log('Badge found:', badge);
+
+            if (!badge) return;
+
+            // Prevent event bubbling IMMEDIATELY
+            e.stopPropagation();
+            e.preventDefault();
+
+            console.log('Badge clicked! classList:', badge.classList.value);
+            console.log('Badge attributes:', {
+                aspectId: badge.getAttribute('data-aspect-id'),
+                roomId: badge.getAttribute('data-room-id'),
+                isRequired: badge.getAttribute('data-is-required'),
+                pointerEvents: badge.style.pointerEvents
+            });
+
+            const aspectId = badge.getAttribute('data-aspect-id');
+            const roomId = badge.getAttribute('data-room-id');
+
+            if (!aspectId || !roomId) {
+                console.error('Missing aspectId or roomId', { aspectId, roomId });
+                showToast('Error: Data aspek tidak lengkap', true);
+                return;
+            }
+
+            // Check if already processing
+            if (badge.style.pointerEvents === 'none') {
+                console.warn('Badge already processing, ignoring click');
+                return;
+            }
+
+            // Add loading state
+            badge.classList.add('opacity-50');
+            badge.style.pointerEvents = 'none';
+            console.log('Loading state applied');
+
+            try {
+                console.log(`Sending request to /portal/admin/setup/aspect/${aspectId}/toggle-required`);
+
+                const res = await fetch(`/portal/admin/setup/aspect/${aspectId}/toggle-required`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({})
+                });
+
+                console.log('Response received:', res.status, res.statusText);
+
+                if (!res.ok) {
+                    console.error('Response not OK:', res.status, res.statusText);
+                    const errorText = await res.text();
+                    console.error('Error response body:', errorText);
+                    showToast(`Gagal mengubah status: ${res.status} ${res.statusText}`, true);
+                    badge.classList.remove('opacity-50');
+                    badge.style.pointerEvents = '';
+                    return;
+                }
+
+                const data = await res.json();
+                console.log('Toggle response data:', data);
+
+                if (data.success) {
+                    console.log('Toggle successful, is_required:', data.is_required);
+
+                    // Re-render all aspects in the room to sync state
+                    if (data.aspects && data.room_id) {
+                        console.log('Re-rendering aspects for room:', data.room_id);
+                        renderAspects(data.room_id, data.aspects);
+                        showToast(`✓ Status berhasil diubah menjadi ${data.is_required ? 'Wajib' : 'Opsional'}`);
+                    } else {
+                        console.log('Updating badge directly');
+                        // Fallback: update only this badge
+                        const isReq = data.is_required;
+                        badge.setAttribute('data-is-required', isReq ? 'true' : 'false');
+                        badge.textContent = isReq ? 'Wajib' : 'Opsional';
+
+                        // Remove old classes
+                        badge.classList.remove('bg-warning-subtle', 'text-warning', 'bg-secondary-subtle', 'text-secondary');
+
+                        // Add new classes
+                        if (isReq) {
+                            badge.classList.add('bg-warning-subtle', 'text-warning');
+                        } else {
+                            badge.classList.add('bg-secondary-subtle', 'text-secondary');
+                        }
+
+                        showToast(`✓ Status berhasil diubah menjadi ${isReq ? 'Wajib' : 'Opsional'}`);
+                    }
+                } else {
+                    console.error('Toggle failed:', data.message);
+                    showToast(data.message || 'Gagal mengubah status wajib.', true);
+                    badge.classList.remove('opacity-50');
+                    badge.style.pointerEvents = '';
+                }
+            } catch (err) {
+                console.error('Toggle error (catch):', err);
+                console.error('Error stack:', err.stack);
+                showToast('Gagal mengubah status. Silakan coba lagi.', true);
+                badge.classList.remove('opacity-50');
+                badge.style.pointerEvents = '';
+            } finally {
+                // ALWAYS restore clickability
+                console.log('Finally block: restoring badge state');
+                setTimeout(() => {
+                    badge.classList.remove('opacity-50');
+                    badge.style.pointerEvents = '';
+                    console.log('Badge restored to clickable state');
+                }, 100);
+            }
+        }, { capture: true }); // Use capture phase to ensure we catch the event early
+
         // Save button
         document.querySelectorAll('.inline-save-btn').forEach(btn => {
             btn.addEventListener('click', async function () {
@@ -1553,7 +2021,8 @@
                 this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
                 try {
-                    const aspects = list.map(name => ({ roomId, name }));
+                    const requiredFlag = document.getElementById('aspectRequiredInput')?.checked ?? true;
+                    const aspects = list.map(name => ({ roomId, name, is_required: requiredFlag }));
                     const response = await fetch('/portal/admin/setup/aspects/batch', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1562,8 +2031,15 @@
                     const data = await response.json();
 
                     if (data.success) {
-                        window.location.href = window.location.pathname + '#room-' + roomId;
-                        window.location.reload();
+                        if (data.room_aspects && data.room_aspects[roomId]) {
+                            renderAspects(roomId, data.room_aspects[roomId]);
+                        }
+                        inlineAspectLists[roomId] = [];
+                        updateInlinePreview(roomId);
+                        showToast('Aspek berhasil disimpan.');
+                        document.getElementById(`room-${roomId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        this.disabled = false;
+                        this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan 0';
                     } else {
                         alert('Gagal: ' + (data.error || 'Unknown error'));
                         this.disabled = false;

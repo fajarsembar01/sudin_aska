@@ -241,8 +241,8 @@ def admin_select_role() -> Response:
         return redirect(url_for("auth.login"))
     
     role = user.get("role", "")
-    # Allow all admin-like roles
-    if role not in ("admin", "superadmin") and "admin" not in role:
+    # Allow admin role only
+    if role != "admin":
         flash("Halaman ini hanya untuk admin.", "danger")
         return redirect(url_for("portal.home"))
     return render_template("admin_selection.html")

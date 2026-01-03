@@ -3,7 +3,7 @@ User CRUD API endpoints - Add to dashboard/routes.py
 """
 
 @main_bp.route('/users/<int:user_id>', methods=['GET'])
-@role_required('superadmin')  
+@role_required('admin')  
 def get_user_api(user_id: int) -> Response:
     """Get user data for editing"""
     from dashboard.db_access import get_cursor
@@ -24,7 +24,7 @@ def get_user_api(user_id: int) -> Response:
 
 
 @main_bp.route('/users/<int:user_id>', methods=['PUT'])
-@role_required('superadmin')
+@role_required('admin')
 def update_user_api(user_id: int) -> Response:
     """Update existing user"""
     from dashboard.db_access import get_cursor
@@ -69,7 +69,7 @@ def update_user_api(user_id: int) -> Response:
 
 
 @main_bp.route('/users/<int:user_id>', methods=['DELETE'])
-@role_required('superadmin')
+@role_required('admin')
 def delete_user_api(user_id: int) -> Response:
     """Delete user"""
     from dashboard.db_access import get_cursor

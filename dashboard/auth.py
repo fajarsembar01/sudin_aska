@@ -140,7 +140,7 @@ def _redirect_after_login(user: dict, fallback: Optional[str] = None) -> str:
     role = user.get("role", "")
 
     # For admin, root is an acceptable redirection (it redirects to select-role)
-    if fallback == "/" and (role == "admin" or role == "superadmin"):
+    if fallback == "/" and role == "admin":
         return fallback
     
     

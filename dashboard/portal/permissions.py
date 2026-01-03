@@ -5,15 +5,9 @@ from typing import Dict, Any
 
 def is_superadmin(user: Dict[str, Any]) -> bool:
     """
-    Check if user is a superadmin with full CRUD access.
-    
-    Args:
-        user: Current user dict with role, admin_level fields
-        
-    Returns:
-        True if user is admin with superadmin level
+    Legacy helper: superadmin is now equivalent to admin.
     """
-    return user.get("role") == "admin" and user.get("admin_level") == "superadmin"
+    return user.get("role") == "admin"
 
 
 def is_viewer_admin(user: Dict[str, Any]) -> bool:
@@ -26,7 +20,7 @@ def is_viewer_admin(user: Dict[str, Any]) -> bool:
     Returns:
         True if user is admin with viewer level
     """
-    return user.get("role") == "admin" and user.get("admin_level") == "viewer"
+    return False
 
 
 def can_access_aska(user: Dict[str, Any]) -> bool:
@@ -39,14 +33,14 @@ def can_access_aska(user: Dict[str, Any]) -> bool:
     Returns:
         True if user has full_access scope
     """
-    return user.get("access_scope") == "full_access"
+    return user.get("role") == "admin"
 
 
 def can_edit_data(user: Dict[str, Any]) -> bool:
     """
     Check if user can edit/delete data (CRUD operations).
     
-    Only superadmins can edit data. Viewer admins are read-only.
+    Admins can edit data.
     
     Args:
         user: Current user dict
@@ -54,7 +48,7 @@ def can_edit_data(user: Dict[str, Any]) -> bool:
     Returns:
         True if user can perform edit/delete operations
     """
-    return is_superadmin(user)
+    return user.get("role") == "admin"
 
 
 def can_assign_staff(user: Dict[str, Any]) -> bool:
@@ -67,7 +61,7 @@ def can_assign_staff(user: Dict[str, Any]) -> bool:
     Returns:
         True if user can manage staff assignments
     """
-    return is_superadmin(user)
+    return user.get("role") == "admin"
 
 
 def can_manage_periods(user: Dict[str, Any]) -> bool:
@@ -80,7 +74,7 @@ def can_manage_periods(user: Dict[str, Any]) -> bool:
     Returns:
         True if user can manage periods
     """
-    return is_superadmin(user)
+    return user.get("role") == "admin"
 
 
 def can_reopen_assessment(user: Dict[str, Any]) -> bool:
@@ -93,7 +87,7 @@ def can_reopen_assessment(user: Dict[str, Any]) -> bool:
     Returns:
         True if user can reopen assessments
     """
-    return is_superadmin(user)
+    return user.get("role") == "admin"
 
 
 def can_delete_assessment(user: Dict[str, Any]) -> bool:
@@ -106,15 +100,14 @@ def can_delete_assessment(user: Dict[str, Any]) -> bool:
     Returns:
         True if user can delete assessments
     """
-    return is_superadmin(user)
+    return user.get("role") == "admin"
 
 
 def can_export_data(user: Dict[str, Any]) -> bool:
     """
     Check if user can export data.
     
-    Both superadmin and viewer can export, but viewer only gets
-    data from their assigned kecamatans.
+    Admins can export data.
     
     Args:
         user: Current user dict
@@ -122,7 +115,7 @@ def can_export_data(user: Dict[str, Any]) -> bool:
     Returns:
         True if user can export data
     """
-    return user.get("role") == "admin"  # Both superadmin and viewer
+    return user.get("role") == "admin"
 
 
 def get_permission_summary(user: Dict[str, Any]) -> Dict[str, bool]:
