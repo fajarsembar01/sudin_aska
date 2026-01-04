@@ -1,46 +1,7 @@
--- Portal export with schema + data
--- Generated at 2026-01-04T07:15:44.257161
+-- Portal export with schema + data (CLEANED)
+-- Generated at 2026-01-04T07:53:57.205283
 
 SET search_path TO public;
-
--- Drop all foreign key constraints before import (if they exist)
-DO $$ 
-DECLARE
-    r RECORD;
-BEGIN
-    FOR r IN (
-        SELECT constraint_name, table_name 
-        FROM information_schema.table_constraints 
-        WHERE constraint_type = 'FOREIGN KEY' 
-        AND table_schema = 'public'
-        AND table_name IN (
-            'dashboard_users', 'portal_kelurahan', 'portal_schools', 'portal_aspects',
-            'portal_school_rooms', 'portal_school_room_aspects', 'portal_assessments',
-            'portal_assessment_room_details', 'portal_assessment_scores', 'portal_assessment_photos',
-            'portal_activity_logs', 'portal_assessment_reopen_requests'
-        )
-    ) LOOP
-        EXECUTE 'ALTER TABLE ' || r.table_name || ' DROP CONSTRAINT IF EXISTS ' || r.constraint_name;
-    END LOOP;
-END $$;
-
--- Disable all triggers to prevent foreign key checks during import (only if table exists)
-DO $$ 
-BEGIN
-    EXECUTE (SELECT string_agg('ALTER TABLE ' || tablename || ' DISABLE TRIGGER ALL;', ' ')
-             FROM pg_tables 
-             WHERE schemaname = 'public' 
-             AND tablename IN (
-                 'dashboard_users', 'portal_kecamatan', 'portal_kelurahan', 'portal_schools', 
-                 'portal_rooms', 'portal_aspects', 'portal_school_rooms', 'portal_school_room_aspects',
-                 'portal_assessment_periods', 'portal_assessments', 'portal_assessment_room_details',
-                 'portal_assessment_scores', 'portal_assessment_photos', 'portal_activity_logs',
-                 'portal_assessment_reopen_requests'
-             ));
-END $$;
-
--- Temporarily disable foreign key constraints to allow inserting data in any order
-SET session_replication_role = 'replica';
 
 -- Schema for table: school_classes
 CREATE TABLE IF NOT EXISTS "school_classes" (
@@ -815,7 +776,6 @@ INSERT INTO "portal_schools" ("id", "npsn", "name", "jenjang", "alamat", "user_i
 INSERT INTO "portal_schools" ("id", "npsn", "name", "jenjang", "alamat", "user_id", "metadata", "active", "created_at", "updated_at", "status", "kelurahan_id", "logo_url") VALUES (1238, '20100775', 'SMKS JAYA JAKARTA', 'SMK', 'JL. PERINTIS KEMERDEKAAN', NULL, NULL, TRUE, '2025-12-17 20:05:57.500069+0700', '2025-12-17 20:05:57.500069+0700', 'SWASTA', 15, NULL) ON CONFLICT DO NOTHING;
 INSERT INTO "portal_schools" ("id", "npsn", "name", "jenjang", "alamat", "user_id", "metadata", "active", "created_at", "updated_at", "status", "kelurahan_id", "logo_url") VALUES (1239, '20107425', 'SMKS KASIH ANANDA', 'SMK', 'Jl. Pegangsaan Dua Km. 5', NULL, NULL, TRUE, '2025-12-17 20:05:57.500525+0700', '2025-12-17 20:05:57.500525+0700', 'SWASTA', 16, NULL) ON CONFLICT DO NOTHING;
 INSERT INTO "portal_schools" ("id", "npsn", "name", "jenjang", "alamat", "user_id", "metadata", "active", "created_at", "updated_at", "status", "kelurahan_id", "logo_url") VALUES (1240, '20107443', 'SMKS PELAYARAN JAKARTA RAYA', 'SMK', 'JL. PERINTIS KEMERDEKAAN KOMPLEK TNI-AL', NULL, NULL, TRUE, '2025-12-17 20:05:57.501360+0700', '2025-12-17 20:05:57.501360+0700', 'SWASTA', 17, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO "portal_schools" ("id", "npsn", "name", "jenjang", "alamat", "user_id", "metadata", "active", "created_at", "updated_at", "status", "kelurahan_id", "logo_url") VALUES (1241, '20178282', 'SMKS PGRI 38 JAKARTA', 'SMK', 'JL TABAH I NO 5 KOMP TNI AL KODAMAR', NULL, NULL, TRUE, '2025-12-17 20:05:57.502332+0700', '2025-12-17 20:05:57.502332+0700', 'SWASTA', 17, NULL) ON CONFLICT DO NOTHING;
 SELECT setval('public.portal_schools_id_seq', COALESCE((SELECT MAX("id") FROM "portal_schools"), 1), TRUE);
 
 -- Schema for table: portal_rooms
@@ -971,7 +931,7 @@ INSERT INTO "portal_aspects" ("id", "room_id", "name", "description", "sort_orde
 INSERT INTO "portal_aspects" ("id", "room_id", "name", "description", "sort_order", "active", "created_at", "is_required") VALUES (52, 9, 'Keamanan', NULL, 6, TRUE, '2025-12-07 16:13:51.594996+0700', TRUE) ON CONFLICT DO NOTHING;
 INSERT INTO "portal_aspects" ("id", "room_id", "name", "description", "sort_order", "active", "created_at", "is_required") VALUES (53, 10, 'Cat', NULL, 1, TRUE, '2025-12-07 16:13:51.594996+0700', TRUE) ON CONFLICT DO NOTHING;
 INSERT INTO "portal_aspects" ("id", "room_id", "name", "description", "sort_order", "active", "created_at", "is_required") VALUES (54, 10, 'Kondisi Lantai', NULL, 2, TRUE, '2025-12-07 16:13:51.594996+0700', TRUE) ON CONFLICT DO NOTHING;
-INSERT INTO "portal_aspects" ("id", "room_id",   "name", "description", "sort_order", "active", "created_at", "is_required") VALUES (55, 10, 'Kebersihan', NULL, 3, TRUE, '2025-12-07 16:13:51.594996+0700', TRUE) ON CONFLICT DO NOTHING;
+INSERT INTO "portal_aspects" ("id", "room_id", "name", "description", "sort_order", "active", "created_at", "is_required") VALUES (55, 10, 'Kebersihan', NULL, 3, TRUE, '2025-12-07 16:13:51.594996+0700', TRUE) ON CONFLICT DO NOTHING;
 INSERT INTO "portal_aspects" ("id", "room_id", "name", "description", "sort_order", "active", "created_at", "is_required") VALUES (56, 10, 'Kerapian', NULL, 4, TRUE, '2025-12-07 16:13:51.594996+0700', TRUE) ON CONFLICT DO NOTHING;
 INSERT INTO "portal_aspects" ("id", "room_id", "name", "description", "sort_order", "active", "created_at", "is_required") VALUES (57, 10, 'AC/Pendingin', NULL, 5, TRUE, '2025-12-07 16:13:51.594996+0700', TRUE) ON CONFLICT DO NOTHING;
 INSERT INTO "portal_aspects" ("id", "room_id", "name", "description", "sort_order", "active", "created_at", "is_required") VALUES (58, 10, 'Instalasi Listrik', NULL, 6, TRUE, '2025-12-07 16:13:51.594996+0700', TRUE) ON CONFLICT DO NOTHING;
@@ -1344,24 +1304,6 @@ INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "no
 INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1238, 704, 46, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1239, 704, 47, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1240, 704, 48, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1241, 704, 1, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1242, 704, 2, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1243, 704, 3, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1244, 704, 4, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1245, 704, 5, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1246, 704, 6, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1247, 704, 7, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1248, 704, 8, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1249, 704, 9, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1250, 704, 10, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1251, 704, 11, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1252, 704, 12, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1253, 704, 13, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1254, 704, 14, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1255, 704, 15, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1256, 704, 16, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1257, 704, 17, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_rooms" ("id", "school_id", "room_id", "quantity", "notes", "created_at") VALUES (1258, 704, 18, 1, NULL, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
 SELECT setval('public.portal_school_rooms_id_seq', COALESCE((SELECT MAX("id") FROM "portal_school_rooms"), 1), TRUE);
 
 -- Schema for table: portal_school_room_aspects
@@ -1485,114 +1427,6 @@ INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "create
 INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1239, 348, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1239, 349, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1239, 350, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1240, 352, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1240, 353, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1240, 354, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1240, 355, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1240, 356, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1240, 357, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1240, 358, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1240, 351, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1241, 1, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1241, 2, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1241, 3, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1241, 4, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1242, 8, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1242, 5, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1242, 6, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1242, 7, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1243, 9, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1243, 10, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1243, 11, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1243, 12, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1244, 13, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1244, 14, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1244, 15, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1244, 16, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1244, 17, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1244, 18, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1244, 19, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1245, 20, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1245, 21, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1245, 22, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1245, 23, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1245, 24, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1245, 25, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1245, 26, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1246, 32, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1246, 27, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1246, 28, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1246, 29, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1246, 30, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1246, 31, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1247, 33, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1247, 34, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1247, 35, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1247, 36, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1247, 37, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1247, 38, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1247, 39, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1247, 40, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1248, 41, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1248, 42, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1248, 43, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1248, 44, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1248, 45, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1248, 46, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1249, 47, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1249, 48, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1249, 49, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1249, 50, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1249, 51, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1249, 52, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1250, 53, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1250, 54, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1250, 55, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1250, 56, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1250, 57, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1250, 58, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1251, 64, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1251, 59, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1251, 60, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1251, 61, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1251, 62, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1251, 63, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1252, 65, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1252, 66, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1252, 67, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1252, 68, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1252, 69, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1252, 70, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1253, 71, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1253, 72, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1253, 73, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1253, 74, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1253, 75, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1254, 76, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1254, 77, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1254, 78, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1254, 79, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1254, 80, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1254, 81, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1255, 82, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1255, 83, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1255, 84, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1255, 85, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1255, 86, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1255, 87, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1256, 89, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1256, 90, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1256, 91, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1256, 92, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1256, 93, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1257, 96, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1257, 97, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1257, 94, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1257, 95, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1258, 98, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1258, 99, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1258, 100, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_school_room_aspects" ("school_room_id", "aspect_id", "created_at") VALUES (1258, 101, '2026-01-04 04:22:10.668019+0700') ON CONFLICT DO NOTHING;
 
 -- Schema for table: portal_assessment_periods
 CREATE TABLE IF NOT EXISTS "portal_assessment_periods" (
@@ -2090,11 +1924,6 @@ INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id",
 INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (612, 131, 176, 2, 3, NULL, '2025-12-10 10:38:13.169072+0700', '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (613, 131, 176, 3, 3, NULL, '2025-12-10 10:38:13.169072+0700', '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (614, 131, 176, 4, 3, NULL, '2025-12-10 10:38:13.169072+0700', '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (830, 145, 1241, 2, 2, NULL, '2026-01-04 04:28:21.628733+0700', '2026-01-04 04:28:21.628733+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (831, 145, 1241, 4, 2, NULL, '2026-01-04 04:28:22.276315+0700', '2026-01-04 04:28:22.276315+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (832, 145, 1247, 36, 2, NULL, '2026-01-04 04:28:27.451817+0700', '2026-01-04 04:28:27.827923+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (834, 145, 1254, 78, 2, NULL, '2026-01-04 04:29:08.011733+0700', '2026-01-04 04:29:08.011733+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (835, 145, 1254, 79, 2, NULL, '2026-01-04 04:29:08.577565+0700', '2026-01-04 04:29:08.577565+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (836, 145, 1227, 254, 2, NULL, '2026-01-04 04:29:12.254226+0700', '2026-01-04 04:29:12.254226+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (837, 145, 1227, 248, 2, NULL, '2026-01-04 04:29:13.883967+0700', '2026-01-04 04:29:13.883967+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (838, 145, 1235, 312, 1, NULL, '2026-01-04 04:29:16.678083+0700', '2026-01-04 04:29:16.678083+0700') ON CONFLICT DO NOTHING;
@@ -2207,110 +2036,6 @@ INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id",
 INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (945, 145, 1239, 348, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (946, 145, 1239, 349, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (947, 145, 1239, 350, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (948, 145, 1240, 351, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (949, 145, 1240, 352, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (950, 145, 1240, 353, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (951, 145, 1240, 354, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (952, 145, 1240, 355, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (953, 145, 1240, 356, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (954, 145, 1240, 357, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (955, 145, 1240, 358, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (956, 145, 1241, 1, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (957, 145, 1241, 3, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (958, 145, 1242, 5, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (959, 145, 1242, 6, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (960, 145, 1242, 7, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (961, 145, 1242, 8, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (962, 145, 1243, 9, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (963, 145, 1243, 10, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (964, 145, 1243, 11, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (965, 145, 1243, 12, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (966, 145, 1244, 13, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (967, 145, 1244, 14, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (968, 145, 1244, 15, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (969, 145, 1244, 16, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (970, 145, 1244, 17, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (971, 145, 1244, 18, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (972, 145, 1244, 19, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (973, 145, 1245, 20, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (974, 145, 1245, 21, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (975, 145, 1245, 22, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (976, 145, 1245, 23, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (977, 145, 1245, 24, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (978, 145, 1245, 25, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (979, 145, 1245, 26, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (980, 145, 1246, 27, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (981, 145, 1246, 28, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (982, 145, 1246, 29, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (983, 145, 1246, 30, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (984, 145, 1246, 31, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (985, 145, 1246, 32, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (986, 145, 1247, 33, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (987, 145, 1247, 34, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (988, 145, 1247, 35, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (989, 145, 1247, 37, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (990, 145, 1247, 38, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (991, 145, 1247, 39, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (992, 145, 1247, 40, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (993, 145, 1248, 41, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (994, 145, 1248, 42, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (995, 145, 1248, 43, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (996, 145, 1248, 44, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (997, 145, 1248, 45, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (998, 145, 1248, 46, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (999, 145, 1249, 47, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1000, 145, 1249, 48, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1001, 145, 1249, 49, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1002, 145, 1249, 50, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1003, 145, 1249, 51, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1004, 145, 1249, 52, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1005, 145, 1250, 53, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1006, 145, 1250, 54, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1007, 145, 1250, 55, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1008, 145, 1250, 56, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1009, 145, 1250, 57, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1010, 145, 1250, 58, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1011, 145, 1251, 59, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1012, 145, 1251, 60, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1013, 145, 1251, 61, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1014, 145, 1251, 62, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1015, 145, 1251, 63, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1016, 145, 1251, 64, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1017, 145, 1252, 65, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1018, 145, 1252, 66, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1019, 145, 1252, 67, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1020, 145, 1252, 68, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1021, 145, 1252, 69, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1022, 145, 1252, 70, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1023, 145, 1253, 71, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1024, 145, 1253, 72, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1025, 145, 1253, 73, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1026, 145, 1253, 74, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1027, 145, 1253, 75, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1028, 145, 1254, 76, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1029, 145, 1254, 77, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1030, 145, 1254, 80, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1031, 145, 1254, 81, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1032, 145, 1255, 82, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1033, 145, 1255, 83, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1034, 145, 1255, 84, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1035, 145, 1255, 85, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1036, 145, 1255, 86, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1037, 145, 1255, 87, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1038, 145, 1256, 90, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1039, 145, 1256, 88, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1040, 145, 1256, 89, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1041, 145, 1256, 91, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1042, 145, 1256, 92, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1043, 145, 1256, 93, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1044, 145, 1257, 94, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1045, 145, 1257, 95, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1046, 145, 1257, 96, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1047, 145, 1257, 97, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1048, 145, 1258, 98, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1049, 145, 1258, 99, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1050, 145, 1258, 100, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_scores" ("id", "assessment_id", "school_room_id", "aspect_id", "score", "notes", "created_at", "updated_at") VALUES (1051, 145, 1258, 101, 3, NULL, '2026-01-04 04:29:23.872052+0700', '2026-01-04 04:29:23.872052+0700') ON CONFLICT DO NOTHING;
 SELECT setval('public.portal_assessment_scores_id_seq', COALESCE((SELECT MAX("id") FROM "portal_assessment_scores"), 1), TRUE);
 
 -- Schema for table: portal_assessment_photos
@@ -2344,7 +2069,6 @@ INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id",
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (27, 45, 116, 'uploads/portal/school_hallway_1_1765337195854.png', -6.16135000, 106.94606000, '2025-11-10 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (28, 46, 117, 'uploads/portal/school_library_1_1765337233210.png', -6.25706300, 106.90502600, '2025-11-25 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (29, 47, 118, 'uploads/portal/school_hallway_1_1765337195854.png', -6.17453900, 106.85657400, '2025-12-05 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (30, 48, 119, 'uploads/portal/school_toilet_1_1765337213676.png', -6.27221600, 106.79498900, '2025-12-01 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (31, 49, 120, 'uploads/portal/school_canteen_1_1765337251722.png', -6.24600400, 106.86564600, '2025-11-30 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (32, 50, 121, 'uploads/portal/school_toilet_1_1765337213676.png', -6.17983300, 106.90287600, '2025-12-02 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (33, 51, 122, 'uploads/portal/school_gate_1_1765337270090.png', -6.15024400, 106.85432600, '2025-11-30 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
@@ -2355,16 +2079,13 @@ INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id",
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (40, 120, 129, 'uploads/portal/school_gate_indonesia_1765511107530.png', -6.28270900, 106.75928000, '2025-11-17 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (41, 60, 130, 'uploads/portal/school_toilet_1_1765337213676.png', -6.23659100, 106.93591200, '2025-11-27 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (42, 62, 131, 'uploads/portal/school_library_1_1765337233210.png', -6.18247700, 106.75158700, '2025-11-24 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (43, 64, 132, 'uploads/portal/school_gate_1_1765337270090.png', -6.19843300, 106.80751600, '2025-11-25 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (44, 66, 133, 'uploads/portal/school_toilet_1_1765337213676.png', -6.24325700, 106.93266700, '2025-11-20 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (45, 67, 134, 'uploads/portal/classroom_sample_1_1765337156962.png', -6.19515600, 106.80729500, '2025-11-15 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (46, 68, 135, 'uploads/portal/school_toilet_1_1765337213676.png', -6.10348700, 106.94499900, '2025-12-02 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (47, 69, 136, 'uploads/portal/school_gate_1_1765337270090.png', -6.23884800, 106.82305600, '2025-11-30 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (48, 70, 137, 'uploads/portal/school_gate_1_1765337270090.png', -6.20121300, 106.90824800, '2025-11-17 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (49, 71, 138, 'uploads/portal/school_hallway_1_1765337195854.png', -6.20315400, 106.93659300, '2025-12-01 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (50, 123, 139, 'uploads/portal/school_hallway_1_1765337195854.png', -6.24509200, 106.89027900, '2025-12-04 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (51, 72, 140, 'uploads/portal/school_gate_indonesia_1765511107530.png', -6.14790600, 106.92722200, '2025-11-14 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (52, 124, 141, 'uploads/portal/school_gate_1_1765337270090.png', -6.17541400, 106.76843900, '2025-11-21 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (53, 74, 142, 'uploads/portal/classroom_sample_1_1765337156962.png', -6.26519500, 106.92343000, '2025-11-30 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (54, 75, 143, 'uploads/portal/school_hallway_1_1765337195854.png', -6.19384600, 106.81654400, '2025-12-07 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (55, 76, 144, 'uploads/portal/classroom_sample_1_1765337156962.png', -6.21259700, 106.93226600, '2025-11-17 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
@@ -2378,7 +2099,6 @@ INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id",
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (63, 83, 152, 'uploads/portal/school_hallway_1_1765337195854.png', -6.24827800, 106.91272100, '2025-11-28 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (64, 84, 153, 'uploads/portal/school_gate_1_1765337270090.png', -6.14210900, 106.92934300, '2025-12-06 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (65, 85, 154, 'uploads/portal/school_library_1_1765337233210.png', -6.19940100, 106.81198100, '2025-11-19 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (66, 127, 155, 'uploads/portal/school_hallway_1_1765337195854.png', -6.16506000, 106.92201800, '2025-12-10 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (67, 88, 156, 'uploads/portal/school_gate_1_1765337270090.png', -6.19659100, 106.85525400, '2025-11-17 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (68, 89, 157, 'uploads/portal/school_library_1_1765337233210.png', -6.27557700, 106.94444700, '2025-11-20 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (69, 90, 158, 'uploads/portal/school_library_1_1765337233210.png', -6.14410200, 106.85760500, '2025-11-12 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
@@ -2393,7 +2113,6 @@ INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id",
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (78, 104, 167, 'uploads/portal/classroom_sample_1_1765337156962.png', -6.24769200, 106.79548400, '2025-11-15 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (79, 105, 168, 'uploads/portal/school_hallway_1_1765337195854.png', -6.27327300, 106.76024100, '2025-11-13 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (80, 129, 169, 'uploads/portal/school_hallway_1_1765337195854.png', -6.20525500, 106.75466700, '2025-12-03 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (81, 106, 170, 'uploads/portal/school_hallway_1_1765337195854.png', -6.29113100, 106.88211700, '2025-12-01 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (82, 130, 171, 'uploads/portal/school_hallway_1_1765337195854.png', -6.14019000, 106.92977800, '2025-12-01 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (83, 108, 172, 'uploads/portal/school_toilet_1_1765337213676.png', -6.15003500, 106.88043100, '2025-11-18 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (84, 110, 173, 'uploads/portal/school_hallway_1_1765337195854.png', -6.24876300, 106.78306100, '2025-12-06 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
@@ -2401,9 +2120,7 @@ INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id",
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (86, 112, 175, 'uploads/portal/classroom_sample_1_1765337156962.png', -6.10720800, 106.81361100, '2025-12-10 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (87, 131, 176, 'uploads/portal/school_gate_1_1765337270090.png', -6.29669400, 106.79346900, '2025-12-08 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (88, 114, 177, 'uploads/portal/school_gate_indonesia_1765511107530.png', -6.23470100, 106.77363100, '2025-12-02 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (89, 115, 178, 'uploads/portal/school_library_1_1765337233210.png', -6.20431100, 106.81451800, '2025-12-08 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (90, 116, 179, 'uploads/portal/school_toilet_1_1765337213676.png', -6.19740400, 106.87818100, '2025-11-17 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
-INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (91, 117, 180, 'uploads/portal/school_canteen_1_1765337251722.png', -6.17121400, 106.77647600, '2025-11-25 10:38:13.169072+0700', NULL, '2025-12-10 10:38:13.169072+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (375, 134, 104, 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=400', -6.09915547, 106.80583095, '2025-12-09 11:11:57.538658+0700', NULL, '2025-12-10 11:11:57.526546+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (376, 135, 104, 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400', -6.10331146, 106.80261175, '2025-12-02 11:11:57.540280+0700', NULL, '2025-12-10 11:11:57.526546+0700') ON CONFLICT DO NOTHING;
 INSERT INTO "portal_assessment_photos" ("id", "assessment_id", "school_room_id", "photo_path", "latitude", "longitude", "captured_at", "notes", "created_at") VALUES (377, 136, 105, 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=400', -6.10774561, 106.79569697, '2025-12-02 11:11:57.541536+0700', NULL, '2025-12-10 11:11:57.526546+0700') ON CONFLICT DO NOTHING;
@@ -2561,8 +2278,6 @@ INSERT INTO "portal_activity_logs" ("id", "user_id", "action", "target_type", "t
 SELECT setval('public.portal_activity_logs_id_seq', COALESCE((SELECT MAX("id") FROM "portal_activity_logs"), 1), TRUE);
 
 -- Schema for table: portal_assessment_reopen_requests
-CREATE SEQUENCE IF NOT EXISTS portal_assessment_reopen_requests_id_seq;
-
 CREATE TABLE IF NOT EXISTS "portal_assessment_reopen_requests" (
     "id" INTEGER NOT NULL DEFAULT nextval('portal_assessment_reopen_requests_id_seq'::regclass),
     "assessment_id" INTEGER NOT NULL,
@@ -2576,145 +2291,7 @@ CREATE TABLE IF NOT EXISTS "portal_assessment_reopen_requests" (
     CONSTRAINT "portal_assessment_reopen_requests_pkey" PRIMARY KEY (id)
 );
 
-
 -- Data for table: portal_assessment_reopen_requests
 INSERT INTO "portal_assessment_reopen_requests" ("id", "assessment_id", "staff_id", "reason", "status", "reviewer_id", "reviewer_note", "created_at", "reviewed_at") VALUES (1, 145, 26, NULL, 'pending', NULL, NULL, '2026-01-04 04:29:36.836634+0700', NULL) ON CONFLICT DO NOTHING;
 SELECT setval('public.portal_assessment_reopen_requests_id_seq', COALESCE((SELECT MAX("id") FROM "portal_assessment_reopen_requests"), 1), TRUE);
 
--- Foreign key constraints (only add if not exists)
-DO $$ 
-BEGIN
-    -- dashboard_users constraints
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'dashboard_users_assigned_class_id_fkey') THEN
-        ALTER TABLE "dashboard_users" ADD CONSTRAINT "dashboard_users_assigned_class_id_fkey" FOREIGN KEY (assigned_class_id) REFERENCES school_classes(id) ON DELETE SET NULL;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'dashboard_users_requested_kecamatan_fkey') THEN
-        ALTER TABLE "dashboard_users" ADD CONSTRAINT "dashboard_users_requested_kecamatan_fkey" FOREIGN KEY (requested_kecamatan) REFERENCES portal_kecamatan(id);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'dashboard_users_school_id_fkey') THEN
-        ALTER TABLE "dashboard_users" ADD CONSTRAINT "dashboard_users_school_id_fkey" FOREIGN KEY (school_id) REFERENCES portal_schools(id) ON DELETE SET NULL;
-    END IF;
-    -- Skip section_id foreign key as sections table does not exist
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'dashboard_users_supervisor_id_fkey') THEN
-        ALTER TABLE "dashboard_users" ADD CONSTRAINT "dashboard_users_supervisor_id_fkey" FOREIGN KEY (supervisor_id) REFERENCES dashboard_users(id) ON DELETE SET NULL;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'dashboard_users_verified_by_fkey') THEN
-        ALTER TABLE "dashboard_users" ADD CONSTRAINT "dashboard_users_verified_by_fkey" FOREIGN KEY (verified_by) REFERENCES dashboard_users(id);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_users_kecamatan') THEN
-        ALTER TABLE "dashboard_users" ADD CONSTRAINT "fk_users_kecamatan" FOREIGN KEY (kecamatan_id) REFERENCES portal_kecamatan(id) ON DELETE SET NULL;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_users_secondary_supervisor') THEN
-        ALTER TABLE "dashboard_users" ADD CONSTRAINT "fk_users_secondary_supervisor" FOREIGN KEY (secondary_supervisor_id) REFERENCES dashboard_users(id) ON DELETE SET NULL;
-    END IF;
-    
-    -- portal_kelurahan constraints
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_kelurahan_kecamatan_id_fkey') THEN
-        ALTER TABLE "portal_kelurahan" ADD CONSTRAINT "portal_kelurahan_kecamatan_id_fkey" FOREIGN KEY (kecamatan_id) REFERENCES portal_kecamatan(id) ON DELETE CASCADE;
-    END IF;
-    
-    -- portal_schools constraints
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_schools_kelurahan_id_fkey') THEN
-        ALTER TABLE "portal_schools" ADD CONSTRAINT "portal_schools_kelurahan_id_fkey" FOREIGN KEY (kelurahan_id) REFERENCES portal_kelurahan(id) ON DELETE SET NULL;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_schools_user_id_fkey') THEN
-        ALTER TABLE "portal_schools" ADD CONSTRAINT "portal_schools_user_id_fkey" FOREIGN KEY (user_id) REFERENCES dashboard_users(id) ON DELETE SET NULL;
-    END IF;
-    
-    -- portal_aspects constraints
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_aspects_room_id_fkey') THEN
-        ALTER TABLE "portal_aspects" ADD CONSTRAINT "portal_aspects_room_id_fkey" FOREIGN KEY (room_id) REFERENCES portal_rooms(id) ON DELETE CASCADE;
-    END IF;
-    
-    -- portal_school_rooms constraints
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_school_rooms_room_id_fkey') THEN
-        ALTER TABLE "portal_school_rooms" ADD CONSTRAINT "portal_school_rooms_room_id_fkey" FOREIGN KEY (room_id) REFERENCES portal_rooms(id) ON DELETE CASCADE;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_school_rooms_school_id_fkey') THEN
-        ALTER TABLE "portal_school_rooms" ADD CONSTRAINT "portal_school_rooms_school_id_fkey" FOREIGN KEY (school_id) REFERENCES portal_schools(id) ON DELETE CASCADE;
-    END IF;
-    
-    -- portal_school_room_aspects constraints
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_school_room_aspects_aspect_id_fkey') THEN
-        ALTER TABLE "portal_school_room_aspects" ADD CONSTRAINT "portal_school_room_aspects_aspect_id_fkey" FOREIGN KEY (aspect_id) REFERENCES portal_aspects(id) ON DELETE CASCADE;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_school_room_aspects_school_room_id_fkey') THEN
-        ALTER TABLE "portal_school_room_aspects" ADD CONSTRAINT "portal_school_room_aspects_school_room_id_fkey" FOREIGN KEY (school_room_id) REFERENCES portal_school_rooms(id) ON DELETE CASCADE;
-    END IF;
-    
-    -- portal_assessments constraints
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_assessments_period_id_fkey') THEN
-        ALTER TABLE "portal_assessments" ADD CONSTRAINT "portal_assessments_period_id_fkey" FOREIGN KEY (period_id) REFERENCES portal_assessment_periods(id);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_assessments_school_id_fkey') THEN
-        ALTER TABLE "portal_assessments" ADD CONSTRAINT "portal_assessments_school_id_fkey" FOREIGN KEY (school_id) REFERENCES portal_schools(id) ON DELETE CASCADE;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_assessments_staff_id_fkey') THEN
-        ALTER TABLE "portal_assessments" ADD CONSTRAINT "portal_assessments_staff_id_fkey" FOREIGN KEY (staff_id) REFERENCES dashboard_users(id) ON DELETE CASCADE;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_assessments_verified_by_fkey') THEN
-        ALTER TABLE "portal_assessments" ADD CONSTRAINT "portal_assessments_verified_by_fkey" FOREIGN KEY (verified_by) REFERENCES dashboard_users(id) ON DELETE SET NULL;
-    END IF;
-    
-    -- portal_assessment_room_details constraints
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_assessment_room_details_assessment_id_fkey') THEN
-        ALTER TABLE "portal_assessment_room_details" ADD CONSTRAINT "portal_assessment_room_details_assessment_id_fkey" FOREIGN KEY (assessment_id) REFERENCES portal_assessments(id) ON DELETE CASCADE;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_assessment_room_details_school_room_id_fkey') THEN
-        ALTER TABLE "portal_assessment_room_details" ADD CONSTRAINT "portal_assessment_room_details_school_room_id_fkey" FOREIGN KEY (school_room_id) REFERENCES portal_school_rooms(id) ON DELETE CASCADE;
-    END IF;
-    
-    -- portal_assessment_scores constraints
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_assessment_scores_aspect_id_fkey') THEN
-        ALTER TABLE "portal_assessment_scores" ADD CONSTRAINT "portal_assessment_scores_aspect_id_fkey" FOREIGN KEY (aspect_id) REFERENCES portal_aspects(id) ON DELETE CASCADE;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_assessment_scores_assessment_id_fkey') THEN
-        ALTER TABLE "portal_assessment_scores" ADD CONSTRAINT "portal_assessment_scores_assessment_id_fkey" FOREIGN KEY (assessment_id) REFERENCES portal_assessments(id) ON DELETE CASCADE;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_assessment_scores_school_room_id_fkey') THEN
-        ALTER TABLE "portal_assessment_scores" ADD CONSTRAINT "portal_assessment_scores_school_room_id_fkey" FOREIGN KEY (school_room_id) REFERENCES portal_school_rooms(id) ON DELETE CASCADE;
-    END IF;
-    
-    -- portal_assessment_photos constraints
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_assessment_photos_assessment_id_fkey') THEN
-        ALTER TABLE "portal_assessment_photos" ADD CONSTRAINT "portal_assessment_photos_assessment_id_fkey" FOREIGN KEY (assessment_id) REFERENCES portal_assessments(id) ON DELETE CASCADE;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_assessment_photos_school_room_id_fkey') THEN
-        ALTER TABLE "portal_assessment_photos" ADD CONSTRAINT "portal_assessment_photos_school_room_id_fkey" FOREIGN KEY (school_room_id) REFERENCES portal_school_rooms(id) ON DELETE CASCADE;
-    END IF;
-    
-    -- portal_activity_logs constraints
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_activity_logs_user_id_fkey') THEN
-        ALTER TABLE "portal_activity_logs" ADD CONSTRAINT "portal_activity_logs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES dashboard_users(id) ON DELETE SET NULL;
-    END IF;
-    
-    -- portal_assessment_reopen_requests constraints
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_assessment_reopen_requests_assessment_id_fkey') THEN
-        ALTER TABLE "portal_assessment_reopen_requests" ADD CONSTRAINT "portal_assessment_reopen_requests_assessment_id_fkey" FOREIGN KEY (assessment_id) REFERENCES portal_assessments(id) ON DELETE CASCADE;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_assessment_reopen_requests_reviewer_id_fkey') THEN
-        ALTER TABLE "portal_assessment_reopen_requests" ADD CONSTRAINT "portal_assessment_reopen_requests_reviewer_id_fkey" FOREIGN KEY (reviewer_id) REFERENCES dashboard_users(id);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'portal_assessment_reopen_requests_staff_id_fkey') THEN
-        ALTER TABLE "portal_assessment_reopen_requests" ADD CONSTRAINT "portal_assessment_reopen_requests_staff_id_fkey" FOREIGN KEY (staff_id) REFERENCES dashboard_users(id) ON DELETE CASCADE;
-    END IF;
-END $$;
-
-
--- Re-enable foreign key constraints after import
-SET session_replication_role = 'origin';
-
--- Re-enable all triggers after import (only if table exists)
-DO $$ 
-BEGIN
-    EXECUTE (SELECT string_agg('ALTER TABLE ' || tablename || ' ENABLE TRIGGER ALL;', ' ')
-             FROM pg_tables 
-             WHERE schemaname = 'public' 
-             AND tablename IN (
-                 'dashboard_users', 'portal_kecamatan', 'portal_kelurahan', 'portal_schools', 
-                 'portal_rooms', 'portal_aspects', 'portal_school_rooms', 'portal_school_room_aspects',
-                 'portal_assessment_periods', 'portal_assessments', 'portal_assessment_room_details',
-                 'portal_assessment_scores', 'portal_assessment_photos', 'portal_activity_logs',
-                 'portal_assessment_reopen_requests'
-             ));
-END $$;

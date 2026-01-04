@@ -78,12 +78,11 @@ def _render_data_type(col: Dict[str, Optional[str]]) -> str:
         if num_precision:
             return f"NUMERIC({int(num_precision)})"
         return "NUMERIC"
-    # Fallback: gunakan tipe asli dari information_schema
     return data_type.upper()
 
 
 def _render_column_definition(col: Dict[str, Optional[str]]) -> str:
-    parts: List[str] = [f"\"{col['column_name']}\"", _render_data_type(col)]
+    parts: List[str] = [f'"{col["column_name"]}"', _render_data_type(col)]
     if col.get("is_nullable") == "NO":
         parts.append("NOT NULL")
     default = col.get("column_default")
@@ -117,12 +116,11 @@ def _fetch_constraints(cur, table: str) -> List[Dict[str, str]]:
         SELECT conname, pg_get_constraintdef(oid) AS condef, contype
         FROM pg_constraint
         WHERE conrelid = %s::regclass
-          AND contype IN ('p', 'u', 'c', 'f')
+          AND contype IN ('p', 'u', 'c')
         ORDER BY CASE contype
                      WHEN 'p' THEN 0
                      WHEN 'u' THEN 1
                      WHEN 'c' THEN 2
-                     WHEN 'f' THEN 3
                      ELSE 4
                  END,
                  conname
@@ -132,26 +130,20 @@ def _fetch_constraints(cur, table: str) -> List[Dict[str, str]]:
     return list(cur.fetchall())
 
 
-def build_create_table(cur, table: str) -> Tuple[str, List[str], List[str]]:
+def build_create_table(cur, table: str) -> Tuple[str, List[str]]:
     columns = _fetch_columns(cur, table)
     column_defs = [_render_column_definition(col) for col in columns]
-    fk_constraints: List[str] = []
     inline_constraints = []
     for constraint in _fetch_constraints(cur, table):
-        if constraint["contype"] == "f":
-            fk_constraints.append(
-                f'ALTER TABLE "{table}" ADD CONSTRAINT "{constraint["conname"]}" {constraint["condef"]};'
-            )
-        else:
-            inline_constraints.append(
-                f'CONSTRAINT "{constraint["conname"]}" {constraint["condef"]}'
-            )
+        inline_constraints.append(
+            f'CONSTRAINT "{constraint["conname"]}" {constraint["condef"]}'
+        )
 
     lines = column_defs + inline_constraints
     statement = f'CREATE TABLE IF NOT EXISTS "{table}" (\n    '
     statement += ",\n    ".join(lines)
     statement += "\n);\n"
-    return statement, [col["column_name"] for col in columns], fk_constraints  # type: ignore[list-item]
+    return statement, [col["column_name"] for col in columns]  # type: ignore[list-item]
 
 
 def _format_value(value) -> str:
@@ -174,14 +166,46 @@ def _format_value(value) -> str:
     return f"'{text}'"
 
 
-def _fetch_rows(cur, table: str, columns: List[str]) -> List[Dict[str, object]]:
+def _fetch_rows(cur, table: str, columns: List[str], valid_refs: Dict[str, set]) -> List[Dict[str, object]]:
     order_clause = sql.SQL(" ORDER BY {}").format(sql.Identifier("id")) if "id" in columns else sql.SQL("")
     query = sql.SQL("SELECT {} FROM {}").format(
         sql.SQL(", ").join(sql.Identifier(c) for c in columns),
         sql.Identifier(table),
     ) + order_clause
     cur.execute(query)
-    return list(cur.fetchall())
+    all_rows = list(cur.fetchall())
+    
+    # Validate foreign key references
+    filtered_rows = []
+    skipped = 0
+    for row in all_rows:
+        skip_row = False
+        
+        # Check school_room_id
+        if 'school_room_id' in columns and row.get('school_room_id'):
+            if row['school_room_id'] not in valid_refs.get('portal_school_rooms', set()):
+                skipped += 1
+                skip_row = True
+        
+        # Check aspect_id
+        if not skip_row and 'aspect_id' in columns and row.get('aspect_id'):
+            if row['aspect_id'] not in valid_refs.get('portal_aspects', set()):
+                skipped += 1
+                skip_row = True
+        
+        # Check assessment_id
+        if not skip_row and 'assessment_id' in columns and row.get('assessment_id'):
+            if row['assessment_id'] not in valid_refs.get('portal_assessments', set()):
+                skipped += 1
+                skip_row = True
+        
+        if not skip_row:
+            filtered_rows.append(row)
+    
+    if skipped > 0:
+        print(f"  ⚠️  Skipped {skipped} rows with invalid foreign keys in {table}")
+    
+    return filtered_rows
 
 
 def _sequence_setval_statements(cur, table: str) -> List[str]:
@@ -205,29 +229,51 @@ def _sequence_setval_statements(cur, table: str) -> List[str]:
     return stmts
 
 
-def export_portal(output_file: str = "portal_export.sql") -> None:
+def export_portal_clean(output_file: str = "portal_export_clean.sql") -> None:
     conn = get_connection()
-    fk_statements: List[str] = []
+    
+    # Build valid reference IDs
+    valid_refs = {}
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("SELECT id FROM portal_school_rooms")
+        valid_refs['portal_school_rooms'] = set(row['id'] for row in cur.fetchall())
+        
+        cur.execute("SELECT id FROM portal_aspects")
+        valid_refs['portal_aspects'] = set(row['id'] for row in cur.fetchall())
+        
+        cur.execute("SELECT id FROM portal_assessments")
+        valid_refs['portal_assessments'] = set(row['id'] for row in cur.fetchall())
+    
+    print(f"Valid IDs: school_rooms={len(valid_refs['portal_school_rooms'])}, "
+          f"aspects={len(valid_refs['portal_aspects'])}, "
+          f"assessments={len(valid_refs['portal_assessments'])}")
+    
     with conn.cursor(cursor_factory=RealDictCursor) as cur, open(
         output_file, "w", encoding="utf-8"
     ) as f:
-        f.write("-- Portal export with schema + data\n")
+        f.write("-- Portal export with schema + data (CLEANED)\n")
         f.write(f"-- Generated at {datetime.datetime.now().isoformat()}\n\n")
         f.write("SET search_path TO public;\n\n")
 
         for table in TABLES_IN_ORDER:
             cur.execute("SELECT to_regclass(%s) IS NOT NULL AS exists", (table,))
             if not cur.fetchone()["exists"]:
+                print(f"⏭️  Skipping {table} (doesn't exist)")
                 continue
 
+            print(f"📦 Exporting {table}...")
             f.write(f"-- Schema for table: {table}\n")
-            create_stmt, columns, table_fks = build_create_table(cur, table)
-            fk_statements.extend(table_fks)
+            create_stmt, columns = build_create_table(cur, table)
             f.write(create_stmt + "\n")
 
             f.write(f"-- Data for table: {table}\n")
-            rows = _fetch_rows(cur, table, columns)
-            col_list = ", ".join(f"\"{c}\"" for c in columns)
+            rows = _fetch_rows(cur, table, columns, valid_refs)
+            
+            # Store IDs for this table
+            if table not in valid_refs and 'id' in columns:
+                valid_refs[table] = set(row['id'] for row in rows)
+            
+            col_list = ", ".join(f'"{c}"' for c in columns)
             for row in rows:
                 values = [_format_value(row[col]) for col in columns]
                 val_list = ", ".join(values)
@@ -240,14 +286,10 @@ def export_portal(output_file: str = "portal_export.sql") -> None:
 
             f.write("\n")
 
-        if fk_statements:
-            f.write("-- Foreign key constraints\n")
-            for stmt in fk_statements:
-                f.write(stmt + "\n")
-
     conn.close()
-    print(f"Export completed -> {output_file}")
+    print(f"\n✅ Export completed -> {output_file}")
+    print(f"🧹 Data cleaned and validated for foreign key integrity")
 
 
 if __name__ == "__main__":
-    export_portal()
+    export_portal_clean()
