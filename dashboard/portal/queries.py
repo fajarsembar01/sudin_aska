@@ -230,6 +230,31 @@ def create_assessment(
         return dict(cur.fetchone())
 
 
+def get_latest_final_assessment_for_period(
+    school_id: int,
+    staff_id: int,
+    period_id: Optional[int],
+) -> Optional[Dict[str, Any]]:
+    """Get the latest submitted/verified assessment for a staff & school in a given period."""
+    query = """
+        SELECT id, status, period_id, created_at
+        FROM portal_assessments
+        WHERE school_id = %s
+          AND staff_id = %s
+          AND status IN ('submitted', 'verified')
+          AND (
+                (period_id IS NULL AND %s IS NULL)
+                OR period_id = %s
+              )
+        ORDER BY created_at DESC
+        LIMIT 1
+    """
+    with get_cursor() as cur:
+        cur.execute(query, (school_id, staff_id, period_id, period_id))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
 def get_assessment_by_id(assessment_id: int) -> Optional[Dict[str, Any]]:
     """Get assessment details with school info."""
     query = """
@@ -2221,6 +2246,13 @@ def get_staff_assigned_schools(staff_id: int) -> List[Dict[str, Any]]:
                 (
                     SELECT a.id
                     FROM portal_assessments a
+                    WHERE a.school_id = s.id AND a.staff_id = %s
+                    ORDER BY a.created_at DESC
+                    LIMIT 1
+                ) as last_assessment_id,
+                (
+                    SELECT a.id
+                    FROM portal_assessments a
                     WHERE a.school_id = s.id 
                       AND a.staff_id = %s 
                       AND a.status = 'draft'
@@ -2275,7 +2307,7 @@ def get_staff_assigned_schools(staff_id: int) -> List[Dict[str, Any]]:
             WHERE ssa.staff_id = %s AND s.active = TRUE
             ORDER BY k.name, s.name
             """,
-            (staff_id, staff_id, staff_id, staff_id, staff_id, staff_id, staff_id)
+            (staff_id, staff_id, staff_id, staff_id, staff_id, staff_id, staff_id, staff_id)
         )
         return [dict(row) for row in cur.fetchall()]
 

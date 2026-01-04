@@ -41,6 +41,7 @@ from .queries import (
     list_school_rooms,
     get_school_by_id,
     get_active_assessment,
+    get_active_period,
     create_assessment,
     get_assessment_by_id,
     get_assessment_scores,
@@ -89,6 +90,7 @@ from .queries import (
     get_schools_assigned_to_staff_ids,
     remove_staff_school_assignment,
     list_all_staff_with_assignments,
+    get_latest_final_assessment_for_period,
     # Assignment requests
     create_assignment_request,
     list_assignment_requests,
@@ -604,6 +606,19 @@ def assess(school_id: int) -> Response:
     # Get active draft for THIS user
     assessment = get_active_assessment(school_id, staff_id=user["id"], period_id=period_id_arg)
     if not assessment:
+        # Prevent new draft if sudah ada penilaian selesai untuk periode yang sama
+        target_period_id = period_id_arg
+        if target_period_id is None:
+            active_period = get_active_period()
+            target_period_id = active_period["id"] if active_period else None
+
+        existing_final = get_latest_final_assessment_for_period(
+            school_id, user["id"], target_period_id
+        )
+        if existing_final:
+            flash("Sekolah ini sudah disubmit untuk periode tersebut. Silakan buka penilaian yang ada.", "info")
+            return redirect(url_for("portal.view_assessment", assessment_id=existing_final["id"]))
+
         # Create new assessment
         try:
             assessment = create_assessment(
@@ -729,6 +744,9 @@ def save_score(school_id: int) -> Response:
         if assessment["school_id"] != school_id:
             return jsonify({"success": False, "message": "Assessment tidak sesuai sekolah"}), 400
 
+        if assessment.get("status") != "draft":
+            return jsonify({"success": False, "message": "Penilaian sudah dikirim/terverifikasi."}), 400
+
         if assessment["staff_id"] != user["id"] and user["role"] != "admin":
             return jsonify({"success": False, "message": "Unauthorized access to this assessment"}), 403
 
@@ -774,6 +792,9 @@ def save_note(school_id: int) -> Response:
     if assessment["school_id"] != school_id:
         return jsonify({"success": False, "message": "Assessment tidak sesuai sekolah"}), 400
 
+    if assessment.get("status") != "draft":
+        return jsonify({"success": False, "message": "Penilaian sudah dikirim/terverifikasi."}), 400
+
     if assessment["staff_id"] != user["id"] and user["role"] != "admin":
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
@@ -811,6 +832,9 @@ def upload_photo(school_id: int) -> Response:
 
     if assessment["school_id"] != school_id:
         return jsonify({"success": False, "message": "Assessment tidak sesuai sekolah"}), 400
+
+    if assessment.get("status") != "draft":
+        return jsonify({"success": False, "message": "Penilaian sudah dikirim/terverifikasi."}), 400
 
     if assessment["staff_id"] != user["id"] and user["role"] != "admin":
         return jsonify({"success": False, "message": "Unauthorized"}), 403
@@ -884,6 +908,11 @@ def submit(school_id: int) -> Response:
     if not assessment:
         flash("Penilaian tidak ditemukan.", "danger")
         return redirect(url_for("portal.assess", school_id=school_id))
+
+    # Hanya draft yang boleh disimpan ulang, cegah status submitted/verified berubah jadi draft
+    if assessment.get("status") != "draft":
+        flash("Penilaian sudah dikirim/terverifikasi, tidak bisa disimpan ulang.", "warning")
+        return redirect(url_for("portal.view_assessment", assessment_id=assessment_id_int))
 
     if assessment["school_id"] != school_id:
         flash("Penilaian tidak sesuai sekolah.", "danger")
@@ -1173,6 +1202,10 @@ def delete_photo_route(school_id: int, photo_id: int) -> Response:
         return jsonify({"success": False, "message": "Assessment tidak ditemukan"}), 404
     if assessment["school_id"] != school_id:
         return jsonify({"success": False, "message": "Assessment tidak sesuai sekolah"}), 400
+
+    if assessment.get("status") != "draft":
+        return jsonify({"success": False, "message": "Penilaian sudah dikirim/terverifikasi."}), 400
+
     if assessment["staff_id"] != user["id"] and user["role"] != "admin":
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
