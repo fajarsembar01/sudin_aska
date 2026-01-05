@@ -229,6 +229,18 @@
                         <!-- Jenjang Tabs -->
                         <ul class="nav nav-pills nav-fill mb-3" id="jenjangTab" role="tablist">
                             <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="paud-tab" data-bs-toggle="tab"
+                                    data-bs-target="#paud-pane" type="button">
+                                    <i class="bi bi-stars me-1"></i>PAUD
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="tk-tab" data-bs-toggle="tab"
+                                    data-bs-target="#tk-pane" type="button">
+                                    <i class="bi bi-flower1 me-1"></i>TK
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
                                 <button class="nav-link active" id="sd-tab" data-bs-toggle="tab"
                                     data-bs-target="#sd-pane" type="button">
                                     <i class="bi bi-mortarboard-fill me-1"></i>SD
@@ -249,6 +261,86 @@
                         </ul>
 
                         <div class="tab-content" id="jenjangTabContent">
+                            <!-- PAUD Tab -->
+                            <div class="tab-pane fade" id="paud-pane" role="tabpanel">
+                                <div class="border rounded-3 p-3"
+                                    style="background: linear-gradient(135deg, #f3e8ff 0%, #e0c3fc 100%);">
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                                <div class="small fw-semibold text-primary mb-2"><i
+                                                        class="bi bi-door-open me-1"></i>Ruang Kelas PAUD</div>
+                                                <div class="list-group list-group-flush" style="font-size: 0.75rem;">
+                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                        <span>Ruang Kelas PAUD (dasar)</span>
+                                                    </label>
+                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                        <span>Kelompok A</span>
+                                                    </label>
+                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                        <span>Kelompok B</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                                <div class="small fw-semibold text-primary mb-2"><i
+                                                        class="bi bi-journal-text me-1"></i>Aspek Penilaian PAUD</div>
+                                                <ul class="list-unstyled small mb-0">
+                                                    <li class="mb-1">• Kebersihan</li>
+                                                    <li class="mb-1">• Keamanan</li>
+                                                    <li class="mb-1">• Kenyamanan</li>
+                                                    <li class="mb-1">• Ventilasi</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- TK Tab -->
+                            <div class="tab-pane fade" id="tk-pane" role="tabpanel">
+                                <div class="border rounded-3 p-3"
+                                    style="background: linear-gradient(135deg, #e8f0fe 0%, #d2e3fc 100%);">
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                                <div class="small fw-semibold text-primary mb-2"><i
+                                                        class="bi bi-door-open me-1"></i>Ruang Kelas TK</div>
+                                                <div class="list-group list-group-flush" style="font-size: 0.75rem;">
+                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                        <span>Ruang Kelas TK (dasar)</span>
+                                                    </label>
+                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                        <span>Kelompok A</span>
+                                                    </label>
+                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                        <span>Kelompok B</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                                <div class="small fw-semibold text-primary mb-2"><i
+                                                        class="bi bi-journal-text me-1"></i>Aspek Penilaian TK</div>
+                                                <ul class="list-unstyled small mb-0">
+                                                    <li class="mb-1">• Kebersihan</li>
+                                                    <li class="mb-1">• Keamanan</li>
+                                                    <li class="mb-1">• Kerapian</li>
+                                                    <li class="mb-1">• Pencahayaan</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <!-- SD Tab -->
                             <div class="tab-pane fade show active" id="sd-pane" role="tabpanel">
                                 <div class="border rounded-3 p-3"
@@ -884,6 +976,20 @@
                                         color: var(--text-muted);
                                     }
 
+                                    #roomsTableBody.drag-saving {
+                                        opacity: 0.6;
+                                        pointer-events: none;
+                                    }
+
+                                    .room-drag-handle {
+                                        cursor: grab;
+                                    }
+
+                                    .room-row.dragging td {
+                                        opacity: 0.8;
+                                        background: var(--bg-subtle);
+                                    }
+
                                     /* Highlight for recently edited room */
                                     @keyframes roomHighlight {
                                         0% {
@@ -957,8 +1063,10 @@
                                             data-room-active="{{ 'true' if r.active else 'false' }}">
                                             <td>
                                                 <div class="d-flex align-items-center gap-2">
-                                                    <span class="icon-badge text-success"><i
-                                                            class="bi bi-door-open-fill"></i></span>
+                                                    <span class="icon-badge text-success room-drag-handle"
+                                                        draggable="true" title="Tarik untuk ubah urutan">
+                                                        <i class="bi bi-door-open-fill"></i>
+                                                    </span>
                                                     <div>
                                                         <div class="fw-semibold">{{ r.name }}</div>
                                                         {% if r.description %}
@@ -1520,6 +1628,116 @@
                 if (roomCount) {
                     roomCount.textContent = visibleCount;
                 }
+            });
+        }
+
+        // ===== Room Drag & Drop Reorder =====
+        const roomsTableBody = document.getElementById('roomsTableBody');
+        let draggingRoomRow = null;
+        let draggingDetailRow = null;
+        let isSavingRoomOrder = false;
+
+        function getRoomDetailRow(roomId) {
+            return document.getElementById(`roomDetail${roomId}`);
+        }
+
+        function refreshSortOrderInputs() {
+            if (!roomsTableBody) return;
+            const rows = Array.from(roomsTableBody.querySelectorAll('tr.room-row'));
+            rows.forEach((row, idx) => {
+                const detailRow = getRoomDetailRow(row.dataset.roomId);
+                const sortInput = detailRow?.querySelector('input[name="sort_order"]');
+                if (sortInput) sortInput.value = idx;
+            });
+        }
+
+        async function persistRoomOrder() {
+            if (!roomsTableBody) return;
+            const orderedIds = Array.from(roomsTableBody.querySelectorAll('tr.room-row'))
+                .map(r => parseInt(r.dataset.roomId || "", 10))
+                .filter(Boolean);
+            if (!orderedIds.length) return;
+
+            roomsTableBody.classList.add('drag-saving');
+            try {
+                const res = await fetch('/portal/admin/setup/rooms/reorder', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken || ''
+                    },
+                    body: JSON.stringify({ room_ids: orderedIds })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    throw new Error(data.message || 'Gagal menyimpan urutan ruangan');
+                }
+                showToast('Urutan ruangan disimpan.');
+            } catch (err) {
+                showToast(err.message || 'Gagal menyimpan urutan ruangan', true);
+            } finally {
+                roomsTableBody.classList.remove('drag-saving');
+            }
+        }
+
+        function moveDraggedRow(targetRow, placeAfter = false) {
+            if (!roomsTableBody || !draggingRoomRow || !targetRow) return;
+            const targetDetail = getRoomDetailRow(targetRow.dataset.roomId);
+            const anchor = placeAfter ? (targetDetail || targetRow).nextSibling : targetRow;
+
+            roomsTableBody.insertBefore(draggingRoomRow, anchor);
+            if (draggingDetailRow) {
+                roomsTableBody.insertBefore(draggingDetailRow, anchor);
+            }
+        }
+
+        async function finalizeRoomDrag() {
+            if (!draggingRoomRow || isSavingRoomOrder) return;
+            isSavingRoomOrder = true;
+            refreshSortOrderInputs();
+            await persistRoomOrder();
+            draggingRoomRow.classList.remove('dragging');
+            draggingDetailRow?.classList.remove('dragging');
+            draggingRoomRow = null;
+            draggingDetailRow = null;
+            isSavingRoomOrder = false;
+        }
+
+        if (roomsTableBody) {
+            roomsTableBody.addEventListener('dragstart', function (e) {
+                const handle = e.target.closest('.room-drag-handle');
+                if (!handle) {
+                    e.preventDefault();
+                    return;
+                }
+                draggingRoomRow = handle.closest('tr.room-row');
+                if (!draggingRoomRow) return;
+                draggingDetailRow = getRoomDetailRow(draggingRoomRow.dataset.roomId);
+                draggingRoomRow.classList.add('dragging');
+                draggingDetailRow?.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', draggingRoomRow.dataset.roomId || '');
+            });
+
+            roomsTableBody.addEventListener('dragover', function (e) {
+                if (!draggingRoomRow) return;
+                const targetRow = e.target.closest('tr.room-row');
+                if (!targetRow || targetRow === draggingRoomRow) return;
+
+                e.preventDefault();
+                const rect = targetRow.getBoundingClientRect();
+                const shouldPlaceAfter = (e.clientY - rect.top) > rect.height / 2;
+                moveDraggedRow(targetRow, shouldPlaceAfter);
+            });
+
+            roomsTableBody.addEventListener('drop', function (e) {
+                if (!draggingRoomRow) return;
+                e.preventDefault();
+                finalizeRoomDrag();
+            });
+
+            roomsTableBody.addEventListener('dragend', function () {
+                finalizeRoomDrag();
             });
         }
 

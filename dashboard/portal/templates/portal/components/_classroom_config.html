@@ -14,17 +14,30 @@
             </div>
         </div>
         <div class="card-body">
-            {% if user_school.jenjang == 'SD' %}
+            {% set jenjang = user_school.jenjang %}
+            {% if jenjang in ['PAUD', 'TK'] %}
+                {% set grade_levels = range(1, 3) %}
+            {% elif jenjang == 'SD' %}
+                {% set grade_levels = range(1, 7) %}
+            {% elif jenjang == 'SMP' %}
+                {% set grade_levels = range(7, 10) %}
+            {% elif jenjang in ['SMA', 'SMK'] %}
+                {% set grade_levels = range(10, 13) %}
+            {% else %}
+                {% set grade_levels = range(1, 13) %}
+            {% endif %}
+
+            {% if grade_levels %}
             <div class="alert alert-light border d-flex align-items-center gap-2 mb-3">
                 <i class="bi bi-magic text-primary"></i>
                 <div>
-                    <div class="fw-semibold">Pengaturan paralel kelas SD</div>
-                    <div class="text-muted small">Tentukan jumlah kelas per tingkat (1-6). Sistem otomatis membuat Kelas
-                        1A, 1B, dst sesuai kebutuhan.</div>
+                    <div class="fw-semibold">Pengaturan paralel kelas {{ jenjang }}</div>
+                    <div class="text-muted small">Tentukan jumlah kelas per tingkat ({{ grade_levels|first }}-{{ grade_levels|last }}).
+                        Sistem otomatis membuat Kelas {{ grade_levels|first }}A, {{ grade_levels|first }}B, dst sesuai kebutuhan.</div>
                 </div>
             </div>
-            <div class="row g-3 mb-3" id="sdParallelControls">
-                {% for i in range(1, 7) %}
+            <div class="row g-3 mb-3" id="parallelControls">
+                {% for i in grade_levels %}
                 <div class="col-sm-6 col-lg-4">
                     <label class="form-label small mb-1">Kelas {{ i }}</label>
                     <div class="input-group input-group-sm">
@@ -76,7 +89,6 @@
             </div>
 
             <!-- Add New Classroom Form -->
-            {% if user_school.jenjang != 'SD' %}
             <div class="border-top pt-3">
                 <h6 class="fw-bold mb-3">
                     <i class="bi bi-plus-circle text-primary"></i> Tambah Kelas Baru
@@ -94,23 +106,9 @@
                             <label class="form-label">Tingkat *</label>
                             <select class="form-select" id="classroomGrade" required>
                                 <option value="">--</option>
-                                {% if user_school.jenjang == 'SD' %}
-                                {% for i in range(1, 7) %}
+                                {% for i in grade_levels %}
                                 <option value="{{ i }}">{{ i }}</option>
                                 {% endfor %}
-                                {% elif user_school.jenjang == 'SMP' %}
-                                {% for i in range(7, 10) %}
-                                <option value="{{ i }}">{{ i }}</option>
-                                {% endfor %}
-                                {% elif user_school.jenjang in ['SMA', 'SMK'] %}
-                                {% for i in range(10, 13) %}
-                                <option value="{{ i }}">{{ i }}</option>
-                                {% endfor %}
-                                {% else %}
-                                {% for i in range(1, 13) %}
-                                <option value="{{ i }}">{{ i }}</option>
-                                {% endfor %}
-                                {% endif %}
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -131,14 +129,6 @@
                     </div>
                 </form>
             </div>
-            {% else %}
-            <div class="border-top pt-3">
-                <div class="alert alert-info mb-0">
-                    <i class="bi bi-info-circle"></i>
-                    Isi jumlah paralel per tingkat di panel atas, lalu klik "Simpan Semua Konfigurasi Kelas".
-                </div>
-            </div>
-            {% endif %}
 
             <!-- Batch Save -->
             <div class="border-top pt-3 mt-3">

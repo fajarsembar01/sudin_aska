@@ -2433,6 +2433,45 @@ def toggle_room_required(room_id: int) -> Response:
     return redirect(url_for("portal.admin_setup") + f"#room-{room_id}")
 
 
+@portal_bp.route("/admin/setup/rooms/reorder", methods=["POST"])
+@role_required("admin")
+def reorder_rooms() -> Response:
+    """Persist new room order based on a drag-and-drop list."""
+    data = request.get_json(silent=True) or {}
+    room_ids_raw = data.get("room_ids") or []
+
+    try:
+        room_ids = [int(rid) for rid in room_ids_raw if rid is not None]
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "message": "Data ruangan tidak valid"}), 400
+
+    if not room_ids:
+        return jsonify({"success": False, "message": "Tidak ada ruangan untuk diurutkan"}), 400
+
+    try:
+        with get_cursor(commit=True) as cur:
+            for idx, rid in enumerate(room_ids):
+                cur.execute(
+                    "UPDATE portal_rooms SET sort_order = %s WHERE id = %s",
+                    (idx, rid),
+                )
+
+        from .queries import log_activity
+
+        log_activity(
+            current_user().get("id"),
+            "UPDATE",
+            "ROOM",
+            None,
+            "Reorder Rooms",
+            {"count": len(room_ids)},
+        )
+        return jsonify({"success": True, "room_ids": room_ids})
+    except Exception as exc:  # pragma: no cover - defensive
+        current_app.logger.exception("Failed to reorder rooms")
+        return jsonify({"success": False, "message": str(exc)}), 500
+
+
 @portal_bp.route("/admin/setup/room/<int:room_id>/toggle-api", methods=["POST"])
 @role_required("admin")
 def toggle_room_status_api(room_id: int) -> Response:

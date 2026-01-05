@@ -81,8 +81,7 @@
                             <div class="btn-group btn-group-sm">
                                 <button type="button" class="btn btn-outline-primary" id="selectAllBtn">Pilih
                                     Semua</button>
-                                <button type="button" class="btn btn-outline-secondary"
-                                    onclick="toggleAll(false)">Reset</button>
+                                <button type="button" class="btn btn-outline-secondary" id="resetAllBtn">Reset</button>
                             </div>
                         </div>
 
@@ -159,7 +158,7 @@
                                 <div class="list-group list-group-flush">
                                     {% for room in sd_rooms %}
                                     {% set display_name = room.name %}
-                                    <label class="list-group-item d-flex align-items-start gap-3 py-2">
+                                    <label class="list-group-item d-flex align-items-start gap-3 py-2 clickable-row" data-toggle-scope="room">
                                         <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
                                             name="room_ids" value="{{ room.id }}"
                                             data-required="{{ 'true' if room.is_required else 'false' }}" {% if
@@ -188,10 +187,10 @@
                                                 {% endif %}
                                             </div>
                                             {% if room.aspects %}
-                                            <div class="collapse mt-2" id="aspects-{{ room.id }}">
+                                            <div class="collapse mt-2 room-aspects" id="aspects-{{ room.id }}">
                                                 <ul class="list-unstyled mb-0 small">
                                                     {% for asp in room.aspects %}
-                                                    <li class="mb-2">
+                                                    <li class="mb-2 aspect-item clickable-row" data-toggle-scope="aspect">
                                                         <div
                                                             class="d-flex align-items-start justify-content-between gap-2">
                                                             <div class="flex-grow-1">
@@ -248,7 +247,7 @@
                                 </div>
                                 <div class="list-group list-group-flush">
                                     {% for room in smp_rooms %}
-                                    <label class="list-group-item d-flex align-items-start gap-3 py-2">
+                                    <label class="list-group-item d-flex align-items-start gap-3 py-2 clickable-row" data-toggle-scope="room">
                                         <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
                                             name="room_ids" value="{{ room.id }}"
                                             data-required="{{ 'true' if room.is_required else 'false' }}" {% if
@@ -277,10 +276,10 @@
                                                 {% endif %}
                                             </div>
                                             {% if room.aspects %}
-                                            <div class="collapse mt-2" id="aspects-{{ room.id }}">
+                                            <div class="collapse mt-2 room-aspects" id="aspects-{{ room.id }}">
                                                 <ul class="list-unstyled mb-0 small">
                                                     {% for asp in room.aspects %}
-                                                    <li class="mb-2">
+                                                    <li class="mb-2 aspect-item clickable-row" data-toggle-scope="aspect">
                                                         <div class="d-flex align-items-start justify-content-between gap-2">
                                                             <div class="flex-grow-1">
                                                                 <div class="d-flex align-items-center gap-2">
@@ -336,7 +335,7 @@
                                 </div>
                                 <div class="list-group list-group-flush">
                                     {% for room in sma_rooms %}
-                                    <label class="list-group-item d-flex align-items-start gap-3 py-2">
+                                    <label class="list-group-item d-flex align-items-start gap-3 py-2 clickable-row" data-toggle-scope="room">
                                         <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
                                             name="room_ids" value="{{ room.id }}"
                                             data-required="{{ 'true' if room.is_required else 'false' }}" {% if
@@ -363,10 +362,10 @@
                                                 {% endif %}
                                             </div>
                                             {% if room.aspects %}
-                                            <div class="collapse mt-2" id="aspects-{{ room.id }}">
+                                            <div class="collapse mt-2 room-aspects" id="aspects-{{ room.id }}">
                                                 <ul class="list-unstyled mb-0 small">
                                                     {% for asp in room.aspects %}
-                                                    <li class="mb-2">
+                                                    <li class="mb-2 aspect-item clickable-row" data-toggle-scope="aspect">
                                                         <div class="d-flex align-items-start justify-content-between gap-2">
                                                             <div class="flex-grow-1">
                                                                 <div class="d-flex align-items-center gap-2">
@@ -421,7 +420,7 @@
                                 </div>
                                 <div class="list-group list-group-flush">
                                     {% for room in umum_rooms %}
-                                    <label class="list-group-item d-flex align-items-start gap-3 py-2">
+                                    <label class="list-group-item d-flex align-items-start gap-3 py-2 clickable-row" data-toggle-scope="room">
                                         <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
                                             name="room_ids" value="{{ room.id }}"
                                             data-required="{{ 'true' if room.is_required else 'false' }}"
@@ -453,10 +452,10 @@
                                                 {% endif %}
                                             </div>
                                             {% if room.aspects %}
-                                            <div class="collapse mt-2" id="aspects-{{ room.id }}">
+                                            <div class="collapse mt-2 room-aspects" id="aspects-{{ room.id }}">
                                                 <ul class="list-unstyled mb-0 small">
                                                     {% for asp in room.aspects %}
-                                                    <li class="mb-2">
+                                                    <li class="mb-2 aspect-item clickable-row" data-toggle-scope="aspect">
                                                         <div class="d-flex align-items-start justify-content-between gap-2">
                                                             <div class="flex-grow-1">
                                                                 <div class="d-flex align-items-center gap-2">
@@ -524,8 +523,24 @@
 <script>
     function toggleAll(checked, containerId) {
         var container = containerId ? document.getElementById(containerId) : document;
+        // Ruangan
         container.querySelectorAll('input[name="room_ids"]').forEach(input => {
             if (input.disabled) return; // wajib: jangan diubah
+            input.checked = checked;
+        });
+        // Aspek pada ruangan yang terlihat di container
+        container.querySelectorAll('input[type="checkbox"][name^="aspects_"]').forEach(input => {
+            if (input.disabled) return; // aspek wajib
+            input.checked = checked;
+        });
+    }
+
+    function toggleRoomAspects(roomId, checked) {
+        if (!roomId) return;
+        document.querySelectorAll(
+            `input[type="checkbox"][name="aspects_${roomId}[]"], input[type="checkbox"][name="aspects_${roomId}"]`
+        ).forEach(input => {
+            if (input.disabled) return;
             input.checked = checked;
         });
     }
@@ -533,13 +548,59 @@
     // Select all per active tab - works for all roles
     document.addEventListener('DOMContentLoaded', function () {
         const selectAllBtn = document.getElementById('selectAllBtn');
+        const resetAllBtn = document.getElementById('resetAllBtn');
+
+        function activePaneId() {
+            const activePane = document.querySelector('#roomJenjangTabContent .tab-pane.show.active');
+            return activePane ? activePane.id : null;
+        }
+
         if (selectAllBtn) {
             selectAllBtn.addEventListener('click', function () {
-                const activePane = document.querySelector('#roomJenjangTabContent .tab-pane.show.active');
-                const targetId = activePane ? activePane.id : null;
-                toggleAll(true, targetId);
+                toggleAll(true, activePaneId());
             });
         }
+        if (resetAllBtn) {
+            resetAllBtn.addEventListener('click', function () {
+                toggleAll(false, activePaneId());
+            });
+        }
+
+        // Jangan toggle checkbox ruangan ketika klik area aspek (inside collapse)
+        document.querySelectorAll('.room-aspects').forEach(el => {
+            el.addEventListener('click', function (e) {
+                // Prevent default label toggle on parent room checkbox
+                e.preventDefault();
+            }, true); // capture to cancel label default early
+        });
+
+        // Buat seluruh baris klikabel (kecuali kontrol interaktif)
+        const skipSelector = 'button, a, input, textarea, select, [data-no-toggle]';
+        document.querySelectorAll('.clickable-row').forEach(row => {
+            row.addEventListener('click', function (e) {
+                if (e.target.closest(skipSelector)) return;
+                const scope = row.dataset.toggleScope || '';
+                if (scope === 'room' && e.target.closest('.aspect-item')) return;
+                const cb = row.querySelector('input[type="checkbox"]');
+                if (!cb || cb.disabled) return;
+                // Untuk klik di luar checkbox, cegah toggle ganda lalu toggle manual
+                e.preventDefault();
+                cb.checked = !cb.checked;
+                cb.dispatchEvent(new Event('change', { bubbles: true }));
+                if (scope === 'aspect') {
+                    e.stopPropagation(); // jangan memicu handler/label ruangan
+                }
+            });
+        });
+
+        // Saat ruangan dicentang/dikosongkan, ikutkan aspek ruangan tersebut
+        document.querySelectorAll('input[name="room_ids"]').forEach(input => {
+            input.addEventListener('change', function (e) {
+                const roomId = e.target.value;
+                const checked = e.target.checked;
+                toggleRoomAspects(roomId, checked);
+            });
+        });
 
         // ===== Room Search (filters active tab only) =====
         const roomSearchInput = document.getElementById('roomSearchInput');
