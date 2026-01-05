@@ -247,18 +247,19 @@ def _compute_missing_profile_fields(school: dict | None) -> list[str]:
         missing.append("Alamat dan wilayah")
     for key, label in required_keys.items():
         value = meta.get(key)
-        if value in (None, "", 0, "0"):
+        # Anggap 0 sebagai nilai valid; hanya kosong yang dianggap belum diisi
+        if value is None or value == "":
             missing.append(label)
     # Bangku kosong per jenjang
     if expected_grades:
         empty_map = meta.get("empty_seats_by_grade") or {}
         for g in expected_grades:
             val = empty_map.get(str(g))
-            if val in (None, "", "0", 0):
+            if val is None or val == "":
                 missing.append("Jumlah bangku kosong per kelas")
                 break
     else:
-        if meta.get("empty_seats") in (None, "", 0, "0"):
+        if meta.get("empty_seats") is None or meta.get("empty_seats") == "":
             missing.append("Jumlah bangku kosong")
     return missing
 
