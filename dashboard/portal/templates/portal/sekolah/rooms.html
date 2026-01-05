@@ -1,0 +1,1465 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Konfigurasi Ruangan" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex align-items-start gap-3 flex-wrap">
+                <span class="icon-badge feature-icon text-primary">
+                    <i class="bi bi-door-open"></i>
+                </span>
+                <div>
+                    <h1 class="h3 fw-bold page-title mb-1">Konfigurasi Ruangan Sekolah</h1>
+                    <p class="page-subtitle mb-0">Pilih ruangan yang tersedia di sekolah Anda</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form id="schoolRoomsForm" method="POST" action="{{ url_for('portal.sekolah_rooms') }}">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm sticky-top" style="top: 80px;">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            {% if user_school %}
+                            <!-- Sekolah role: show fixed school info -->
+                            <label class="form-label fw-semibold">Sekolah Anda</label>
+                            <div class="p-3 rounded-3 border" style="background-color: var(--bg-subtle);">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="flex-shrink-0">
+                                        <span class="icon-badge text-primary">
+                                            <i class="bi bi-building"></i>
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0">{{ user_school.name }}</h6>
+                                        <small class="text-muted">
+                                            {{ user_school.npsn }} • {{ user_school.jenjang }}
+                                            {% if user_school.kecamatan_name %} • {{ user_school.kecamatan_name }}{%
+                                            endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="school_id" value="{{ user_school.id }}">
+                            {% else %}
+                            <!-- Admin/Staff: show dropdown -->
+                            <label class="form-label fw-semibold">Pilih Sekolah</label>
+                            <select name="school_id" class="form-select" required id="schoolSelect"
+                                onchange="if(this.value) window.location.href = window.location.pathname + '?school_id=' + this.value">
+                                <option value="">-- Pilih Sekolah --</option>
+                                {% for s in schools %}
+                                <option value="{{ s.id }}" {% if request.args.get('school_id') and
+                                    request.args.get('school_id')|int==s.id %}selected{% endif %}>{{ s.name }} ({{
+                                    s.npsn }})</option>
+                                {% endfor %}
+                            </select>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit"
+                            class="btn btn-primary w-100 d-inline-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-check-lg"></i>
+                            <span>Simpan Konfigurasi</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="icon-badge section-icon text-success">
+                                    <i class="bi bi-check2-square"></i>
+                                </span>
+                                <h2 class="h6 fw-bold mb-0">Pilih Ruangan</h2>
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary" id="selectAllBtn">Pilih
+                                    Semua</button>
+                                <button type="button" class="btn btn-outline-secondary"
+                                    onclick="toggleAll(false)">Reset</button>
+                            </div>
+                        </div>
+
+                        {% set jenjang = selected_school.jenjang if selected_school else None %}
+                        {% set show_sd = (jenjang is none) or jenjang == 'SD' %}
+                        {% set show_smp = (jenjang is none) or jenjang == 'SMP' %}
+                        {% set show_sma = (jenjang is none) or jenjang in ['SMA','SMK'] %}
+                        <!-- Jenjang Tabs -->
+                        <ul class="nav nav-pills nav-fill mb-3" id="roomJenjangTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="umum-room-tab" data-bs-toggle="tab"
+                                    data-bs-target="#umum-rooms" type="button">
+                                    <i class="bi bi-grid me-1 d-none d-sm-inline"></i>Umum
+                                </button>
+                            </li>
+                            {% if show_sd %}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="sd-room-tab" data-bs-toggle="tab"
+                                    data-bs-target="#sd-rooms" type="button">
+                                    <i class="bi bi-mortarboard-fill me-1 d-none d-sm-inline"></i>SD
+                                </button>
+                            </li>
+                            {% endif %}
+                            {% if show_smp %}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="smp-room-tab" data-bs-toggle="tab"
+                                    data-bs-target="#smp-rooms" type="button">
+                                    <i class="bi bi-book me-1 d-none d-sm-inline"></i>SMP
+                                </button>
+                            </li>
+                            {% endif %}
+                            {% if show_sma %}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="sma-room-tab" data-bs-toggle="tab"
+                                    data-bs-target="#sma-rooms" type="button">
+                                    <i class="bi bi-building me-1 d-none d-sm-inline"></i>SMA/SMK
+                                </button>
+                            </li>
+                            {% endif %}
+                        </ul>
+
+                        <!-- Room Search (below tabs, filters active tab only) -->
+                        <div class="mb-3">
+                            <div class="position-relative">
+                                <input type="text" id="roomSearchInput" class="form-control form-control-sm"
+                                    placeholder="Cari ruangan di tab ini (min 3 huruf)..." autocomplete="off">
+                                <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-3 text-muted"
+                                    style="pointer-events: none;"></i>
+                            </div>
+                            <!-- No results message with contact admin -->
+                            <div id="noRoomResultsMsg"
+                                class="alert alert-warning py-2 mt-2 d-none align-items-center gap-2">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <span>Ruangan "<strong id="searchQueryDisplay"></strong>" tidak ditemukan di tab
+                                    ini.</span>
+                                <button type="button" class="btn btn-sm btn-outline-primary ms-auto"
+                                    data-bs-toggle="modal" data-bs-target="#areaContactModal">
+                                    <i class="bi bi-headset me-1"></i>Hubungi Admin {% if user_school and
+                                    user_school.kecamatan_name %}<span class="badge bg-secondary ms-1">{{
+                                        user_school.kecamatan_name }}</span>{% endif %}
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <div class="tab-content" id="roomJenjangTabContent">
+                            {% if show_sd %}
+                            <!-- SD Rooms -->
+                            <div class="tab-pane fade" id="sd-rooms" role="tabpanel">
+                                <div class="alert alert-info py-2 mb-3 small">
+                                    <i class="bi bi-info-circle me-1"></i>Ruangan kelas untuk jenjang <strong>SD (Kelas
+                                        1-6)</strong>
+                                </div>
+                                <div class="list-group list-group-flush">
+                                    {% for room in sd_rooms %}
+                                    {% set display_name = room.name %}
+                                    <label class="list-group-item d-flex align-items-start gap-3 py-2">
+                                        <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
+                                            name="room_ids" value="{{ room.id }}"
+                                            data-required="{{ 'true' if room.is_required else 'false' }}" {% if
+                                            room.is_required %}checked disabled{% elif room.id in saved_room_ids
+                                            %}checked{% endif %}>
+                                        {% if room.is_required %}
+                                        <input type="hidden" name="room_ids" value="{{ room.id }}">
+                                        {% endif %}
+                                        <div class="w-100">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <div class="fw-semibold d-flex align-items-center gap-2">
+                                                        {{ display_name }}
+                                                        {% if room.is_required %}
+                                                        <span class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <small class="text-muted">{{ room.aspects|length }} aspek
+                                                        penilaian</small>
+                                                </div>
+                                                {% if room.aspects %}
+                                                <button class="btn btn-link btn-sm p-0" type="button"
+                                                    data-bs-toggle="collapse" data-bs-target="#aspects-{{ room.id }}">
+                                                    Aspek
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                            {% if room.aspects %}
+                                            <div class="collapse mt-2" id="aspects-{{ room.id }}">
+                                                <ul class="list-unstyled mb-0 small">
+                                                    {% for asp in room.aspects %}
+                                                    <li class="mb-2">
+                                                        <div
+                                                            class="d-flex align-items-start justify-content-between gap-2">
+                                                            <div class="flex-grow-1">
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    {% if asp.is_required %}
+                                                                    <input class="form-check-input" type="checkbox" checked disabled>
+                                                                    <input type="hidden" name="aspects_{{ room.id }}[]" value="{{ asp.id }}">
+                                                                    {% else %}
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        name="aspects_{{ room.id }}[]"
+                                                                        value="{{ asp.id }}"
+                                                                        {% if asp.is_selected %}checked{% endif %}>
+                                                                    {% endif %}
+                                                                    <span class="text-muted">{{ asp.name }}</span>
+                                                                    {% if asp.is_required %}
+                                                                    <span class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                                    {% endif %}
+                                                                    <button class="btn btn-link btn-sm p-0 text-muted" type="button"
+                                                                        data-bs-toggle="collapse"
+                                                                        data-bs-target="#room-{{ room.id }}-asp-{{ asp.id }}-desc"
+                                                                        title="Lihat deskripsi">
+                                                                        <i class="bi bi-info-circle"></i>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="collapse mt-1" id="room-{{ room.id }}-asp-{{ asp.id }}-desc">
+                                                                    <div class="ps-3 border-start border-2 border-primary">
+                                                                        {% if asp.description %}
+                                                                        <small class="text-muted fst-italic">{{ asp.description }}</small>
+                                                                        {% else %}
+                                                                        <small class="text-muted fst-italic">Tidak ada deskripsi untuk aspek ini.</small>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if show_smp %}
+                            <!-- SMP Rooms -->
+                            <div class="tab-pane fade" id="smp-rooms" role="tabpanel">
+                                <div class="alert alert-success py-2 mb-3 small">
+                                    <i class="bi bi-info-circle me-1"></i>Ruangan kelas untuk jenjang <strong>SMP (Kelas
+                                        7-9)</strong>
+                                </div>
+                                <div class="list-group list-group-flush">
+                                    {% for room in smp_rooms %}
+                                    <label class="list-group-item d-flex align-items-start gap-3 py-2">
+                                        <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
+                                            name="room_ids" value="{{ room.id }}"
+                                            data-required="{{ 'true' if room.is_required else 'false' }}" {% if
+                                            room.is_required %}checked disabled{% elif room.id in saved_room_ids
+                                            %}checked{% endif %}>
+                                        {% if room.is_required %}
+                                        <input type="hidden" name="room_ids" value="{{ room.id }}">
+                                        {% endif %}
+                                        <div class="w-100">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <div class="fw-semibold d-flex align-items-center gap-2">
+                                                        {{ room.name }}
+                                                        {% if room.is_required %}
+                                                        <span class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <small class="text-muted">{{ room.aspects|length }} aspek
+                                                        penilaian</small>
+                                                </div>
+                                                {% if room.aspects %}
+                                                <button class="btn btn-link btn-sm p-0" type="button"
+                                                    data-bs-toggle="collapse" data-bs-target="#aspects-{{ room.id }}">
+                                                    Aspek
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                            {% if room.aspects %}
+                                            <div class="collapse mt-2" id="aspects-{{ room.id }}">
+                                                <ul class="list-unstyled mb-0 small">
+                                                    {% for asp in room.aspects %}
+                                                    <li class="mb-2">
+                                                        <div class="d-flex align-items-start justify-content-between gap-2">
+                                                            <div class="flex-grow-1">
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    {% if asp.is_required %}
+                                                                    <input class="form-check-input" type="checkbox" checked disabled>
+                                                                    <input type="hidden" name="aspects_{{ room.id }}[]" value="{{ asp.id }}">
+                                                                    {% else %}
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        name="aspects_{{ room.id }}[]"
+                                                                        value="{{ asp.id }}"
+                                                                        {% if asp.is_selected %}checked{% endif %}>
+                                                                    {% endif %}
+                                                                    <span class="text-muted">{{ asp.name }}</span>
+                                                                    {% if asp.is_required %}
+                                                                    <span class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                                    {% endif %}
+                                                                    <button class="btn btn-link btn-sm p-0 text-muted" type="button"
+                                                                        data-bs-toggle="collapse"
+                                                                        data-bs-target="#room-{{ room.id }}-asp-{{ asp.id }}-desc"
+                                                                        title="Lihat deskripsi">
+                                                                        <i class="bi bi-info-circle"></i>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="collapse mt-1" id="room-{{ room.id }}-asp-{{ asp.id }}-desc">
+                                                                    <div class="ps-3 border-start border-2 border-primary">
+                                                                        {% if asp.description %}
+                                                                        <small class="text-muted fst-italic">{{ asp.description }}</small>
+                                                                        {% else %}
+                                                                        <small class="text-muted fst-italic">Tidak ada deskripsi untuk aspek ini.</small>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if show_sma %}
+                            <!-- SMA/SMK Rooms -->
+                            <div class="tab-pane fade" id="sma-rooms" role="tabpanel">
+                                <div class="alert alert-warning py-2 mb-3 small">
+                                    <i class="bi bi-info-circle me-1"></i>Ruangan kelas untuk jenjang <strong>SMA/SMK
+                                        (Kelas 10-12)</strong>
+                                </div>
+                                <div class="list-group list-group-flush">
+                                    {% for room in sma_rooms %}
+                                    <label class="list-group-item d-flex align-items-start gap-3 py-2">
+                                        <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
+                                            name="room_ids" value="{{ room.id }}"
+                                            data-required="{{ 'true' if room.is_required else 'false' }}" {% if
+                                            room.is_required %}checked disabled{% elif room.id in saved_room_ids
+                                            %}checked{% endif %}>
+                                        {% if room.is_required %}
+                                        <input type="hidden" name="room_ids" value="{{ room.id }}">
+                                        {% endif %}
+                                        <div class="w-100">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <div class="fw-semibold">{{ room.name }}</div>
+                                                    {% if room.is_required %}
+                                                    <span class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                    {% endif %}
+                                                    <small class="text-muted">{{ room.aspects|length }} aspek
+                                                        penilaian</small>
+                                                </div>
+                                                {% if room.aspects %}
+                                                <button class="btn btn-link btn-sm p-0" type="button"
+                                                    data-bs-toggle="collapse" data-bs-target="#aspects-{{ room.id }}">
+                                                    Aspek
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                            {% if room.aspects %}
+                                            <div class="collapse mt-2" id="aspects-{{ room.id }}">
+                                                <ul class="list-unstyled mb-0 small">
+                                                    {% for asp in room.aspects %}
+                                                    <li class="mb-2">
+                                                        <div class="d-flex align-items-start justify-content-between gap-2">
+                                                            <div class="flex-grow-1">
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    {% if asp.is_required %}
+                                                                    <input class="form-check-input" type="checkbox" checked disabled>
+                                                                    <input type="hidden" name="aspects_{{ room.id }}[]" value="{{ asp.id }}">
+                                                                    {% else %}
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        name="aspects_{{ room.id }}[]"
+                                                                        value="{{ asp.id }}"
+                                                                        {% if asp.is_selected %}checked{% endif %}>
+                                                                    {% endif %}
+                                                                    <span class="text-muted">{{ asp.name }}</span>
+                                                                    {% if asp.is_required %}
+                                                                    <span class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                                    {% endif %}
+                                                                    <button class="btn btn-link btn-sm p-0 text-muted" type="button"
+                                                                        data-bs-toggle="collapse"
+                                                                        data-bs-target="#room-{{ room.id }}-asp-{{ asp.id }}-desc"
+                                                                        title="Lihat deskripsi">
+                                                                        <i class="bi bi-info-circle"></i>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="collapse mt-1" id="room-{{ room.id }}-asp-{{ asp.id }}-desc">
+                                                                    <div class="ps-3 border-start border-2 border-primary">
+                                                                        {% if asp.description %}
+                                                                        <small class="text-muted fst-italic">{{ asp.description }}</small>
+                                                                        {% else %}
+                                                                        <small class="text-muted fst-italic">Tidak ada deskripsi untuk aspek ini.</small>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Umum Rooms (non-classroom) -->
+                            <div class="tab-pane fade show active" id="umum-rooms" role="tabpanel">
+                                <div class="alert alert-secondary py-2 mb-3 small">
+                                    <i class="bi bi-info-circle me-1"></i>Ruangan umum yang tersedia untuk <strong>semua
+                                        jenjang</strong>
+                                </div>
+                                <div class="list-group list-group-flush">
+                                    {% for room in umum_rooms %}
+                                    <label class="list-group-item d-flex align-items-start gap-3 py-2">
+                                        <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
+                                            name="room_ids" value="{{ room.id }}"
+                                            data-required="{{ 'true' if room.is_required else 'false' }}"
+                                            {% if room.is_required %}checked disabled{% elif room.id in saved_room_ids
+                                            %}checked{% endif %}>
+                                        {% if room.is_required %}
+                                        <input type="hidden" name="room_ids" value="{{ room.id }}">
+                                        {% endif %}
+                                        <div class="w-100">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <div class="fw-semibold d-flex align-items-center gap-2">
+                                                        {{ room.name }}
+                                                        {% if room.is_required %}
+                                                        <span class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    {% if room.description %}
+                                                    <small class="text-muted">{{ room.description }}</small><br>
+                                                    {% endif %}
+                                                    <small class="text-muted">{{ room.aspects|length }} aspek
+                                                        penilaian</small>
+                                                </div>
+                                                {% if room.aspects %}
+                                                <button class="btn btn-link btn-sm p-0" type="button"
+                                                    data-bs-toggle="collapse" data-bs-target="#aspects-{{ room.id }}">
+                                                    Aspek
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                            {% if room.aspects %}
+                                            <div class="collapse mt-2" id="aspects-{{ room.id }}">
+                                                <ul class="list-unstyled mb-0 small">
+                                                    {% for asp in room.aspects %}
+                                                    <li class="mb-2">
+                                                        <div class="d-flex align-items-start justify-content-between gap-2">
+                                                            <div class="flex-grow-1">
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    {% if asp.is_required %}
+                                                                    <input class="form-check-input" type="checkbox" checked disabled>
+                                                                    <input type="hidden" name="aspects_{{ room.id }}[]" value="{{ asp.id }}">
+                                                                    {% else %}
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        name="aspects_{{ room.id }}[]"
+                                                                        value="{{ asp.id }}"
+                                                                        {% if asp.is_selected %}checked{% endif %}>
+                                                                    {% endif %}
+                                                                    <span class="text-muted">{{ asp.name }}</span>
+                                                                    {% if asp.is_required %}
+                                                                    <span class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                                    {% endif %}
+                                                                    <button class="btn btn-link btn-sm p-0 text-muted" type="button"
+                                                                        data-bs-toggle="collapse"
+                                                                        data-bs-target="#room-{{ room.id }}-asp-{{ asp.id }}-desc"
+                                                                        title="Lihat deskripsi">
+                                                                        <i class="bi bi-info-circle"></i>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="collapse mt-1" id="room-{{ room.id }}-asp-{{ asp.id }}-desc">
+                                                                    <div class="ps-3 border-start border-2 border-primary">
+                                                                        {% if asp.description %}
+                                                                        <small class="text-muted fst-italic">{{ asp.description }}</small>
+                                                                        {% else %}
+                                                                        <small class="text-muted fst-italic">Tidak ada deskripsi untuk aspek ini.</small>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-3">
+                            <button type="submit"
+                                class="btn btn-primary d-inline-flex align-items-center justify-content-center gap-2">
+                                <i class="bi bi-check-lg"></i>
+                                <span>Simpan Konfigurasi</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Classroom Configuration Section -->
+    {% include 'portal/components/_classroom_config.html' %}
+
+</section>
+
+<script>
+    function toggleAll(checked, containerId) {
+        var container = containerId ? document.getElementById(containerId) : document;
+        container.querySelectorAll('input[name="room_ids"]').forEach(input => {
+            if (input.disabled) return; // wajib: jangan diubah
+            input.checked = checked;
+        });
+    }
+
+    // Select all per active tab - works for all roles
+    document.addEventListener('DOMContentLoaded', function () {
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', function () {
+                const activePane = document.querySelector('#roomJenjangTabContent .tab-pane.show.active');
+                const targetId = activePane ? activePane.id : null;
+                toggleAll(true, targetId);
+            });
+        }
+
+        // ===== Room Search (filters active tab only) =====
+        const roomSearchInput = document.getElementById('roomSearchInput');
+        const noResultsMsg = document.getElementById('noRoomResultsMsg');
+        const searchQueryDisplay = document.getElementById('searchQueryDisplay');
+
+        function filterActiveTabRooms() {
+            if (!roomSearchInput) {
+                console.warn('Room search input not found');
+                return;
+            }
+            const query = roomSearchInput.value.toLowerCase().trim();
+            const activePane = document.querySelector('#roomJenjangTabContent .tab-pane.show.active');
+            if (!activePane) {
+                console.warn('No active tab pane found');
+                return;
+            }
+
+            // Select all room labels in the active tab
+            const roomLabels = activePane.querySelectorAll('.list-group > label, label.list-group-item');
+            let foundCount = 0;
+            let totalCount = roomLabels.length;
+
+            roomLabels.forEach(label => {
+                // Find the room name element
+                const roomNameEl = label.querySelector('.fw-semibold');
+                const text = roomNameEl ? roomNameEl.textContent.toLowerCase().trim() : '';
+
+                // Show all if query is less than 3 chars, otherwise filter
+                if (query.length < 3 || text.includes(query)) {
+                    label.style.display = '';
+                    label.classList.remove('d-none');
+                    if (query.length >= 3 && text.includes(query)) foundCount++;
+                } else {
+                    label.style.display = 'none';
+                    label.classList.add('d-none');
+                }
+            });
+
+            // Count visible when query < 3
+            if (query.length < 3) {
+                foundCount = totalCount;
+            }
+
+            // Show/hide no results message
+            if (noResultsMsg && searchQueryDisplay) {
+                if (query.length >= 3 && foundCount === 0) {
+                    searchQueryDisplay.textContent = query;
+                    noResultsMsg.classList.remove('d-none');
+                    noResultsMsg.classList.add('d-flex');
+                } else {
+                    noResultsMsg.classList.add('d-none');
+                    noResultsMsg.classList.remove('d-flex');
+                }
+            }
+        }
+
+        if (roomSearchInput) {
+            // Attach input event listener
+            roomSearchInput.addEventListener('input', filterActiveTabRooms);
+            // Also attach keyup for extra compatibility
+            roomSearchInput.addEventListener('keyup', filterActiveTabRooms);
+        }
+
+        // Clear search and reset when tab changes
+        document.querySelectorAll('#roomJenjangTab button[data-bs-toggle="tab"]').forEach(btn => {
+            btn.addEventListener('shown.bs.tab', function () {
+                if (roomSearchInput) {
+                    roomSearchInput.value = '';
+                }
+                if (noResultsMsg) {
+                    noResultsMsg.classList.add('d-none');
+                    noResultsMsg.classList.remove('d-flex');
+                }
+                // Reset all rooms visibility in new active tab
+                const activePane = document.querySelector('#roomJenjangTabContent .tab-pane.show.active');
+                if (activePane) {
+                    activePane.querySelectorAll('.list-group > label, label.list-group-item').forEach(label => {
+                        label.style.display = '';
+                        label.classList.remove('d-none');
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% if user_school %}
+<!-- Profile completion modal -->
+<div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-clipboard2-check me-2 text-primary"></i>Lengkapi Profil Sekolah
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% set school_jenjang = selected_school.jenjang if selected_school else (user_school.jenjang if
+                user_school else None) %}
+                {% set grade_map = {'SD':[1,2,3,4,5,6],'SMP':[7,8,9],'SMA':[10,11,12],'SMK':[10,11,12]} %}
+                {% set grade_levels = grade_map.get(school_jenjang, []) %}
+                {% set empty_by_grade = (school_profile.metadata.empty_seats_by_grade if school_profile else {}) or {}
+                %}
+                <div class="stepper mb-3" id="profileStepper">
+                    <div class="step-item" data-step="0">
+                        <div class="step-icon">
+                            <i class="bi bi-check-lg"></i>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="step-meta">
+                            <div class="step-label">Langkah 1</div>
+                            <div class="step-title">Lokasi & GMaps</div>
+                            <div class="step-status text-success">Completed</div>
+                        </div>
+                    </div>
+                    <div class="step-item" data-step="1">
+                        <div class="step-icon"></div>
+                        <div class="step-line"></div>
+                        <div class="step-meta">
+                            <div class="step-label">Langkah 2</div>
+                            <div class="step-title">Kapasitas</div>
+                            <div class="step-status text-primary">In Progress</div>
+                        </div>
+                    </div>
+                    <div class="step-item" data-step="2">
+                        <div class="step-icon"></div>
+                        <div class="step-line"></div>
+                        <div class="step-meta">
+                            <div class="step-label">Langkah 3</div>
+                            <div class="step-title">Kontak Sekolah</div>
+                            <div class="step-status text-muted">Pending</div>
+                        </div>
+                    </div>
+                    <div class="step-item" data-step="3">
+                        <div class="step-icon"></div>
+                        <div class="step-line" style="visibility: hidden;"></div>
+                        <div class="step-meta">
+                            <div class="step-label">Langkah 4</div>
+                            <div class="step-title">Channel Opsional</div>
+                            <div class="step-status text-muted">Pending</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="profileCarousel" class="carousel slide" data-bs-interval="false">
+                    <div class="carousel-inner">
+                        <div class="carousel-item active">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Logo Sekolah *</label>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="logo-preview-wrapper"
+                                            style="width: 80px; height: 80px; border: 2px dashed #dee2e6; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f8f9fa;">
+                                            <img id="modalLogoPreview"
+                                                src="{{ school_profile.logo_url if school_profile and school_profile.logo_url else '' }}"
+                                                alt="Logo"
+                                                style="width: 100%; height: 100%; object-fit: cover; display: {{ 'block' if school_profile and school_profile.logo_url else 'none' }};">
+                                            <i class="bi bi-image text-muted" id="modalLogoPlaceholder"
+                                                style="font-size: 2rem; display: {{ 'none' if school_profile and school_profile.logo_url else 'block' }};"></i>
+                                        </div>
+                                        <div>
+                                            <input type="file" id="modalLogoFile" accept="image/*" class="d-none">
+                                            <input type="hidden" id="modalLogoData" name="logo_data" value="">
+                                            <button type="button" class="btn btn-outline-primary btn-sm"
+                                                onclick="document.getElementById('modalLogoFile').click();">
+                                                <i class="bi bi-upload me-1"></i>Pilih Logo
+                                            </button>
+                                            <div class="text-muted small mt-1">Max 100KB, akan di-crop</div>
+                                        </div>
+                                    </div>
+                                    <div class="invalid-feedback" id="modalLogoData-error"></div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Alamat Sekolah *</label>
+                                    <textarea class="form-control" id="modalAlamat" rows="2"
+                                        required>{{ (school_profile.alamat if school_profile else '') or '' }}</textarea>
+                                    <div class="invalid-feedback" id="modalAlamat-error"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Kecamatan *</label>
+                                    <select class="form-select" id="modalKecamatan">
+                                        <option value="">-- Pilih Kecamatan --</option>
+                                        {% for k in kecamatan_list %}
+                                        <option value="{{ k.id }}" {% if school_profile and
+                                            school_profile.kecamatan_name==k.name %}selected{% endif %}>{{ k.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Kelurahan *</label>
+                                    <select class="form-select" id="modalKelurahan" required>
+                                        <option value="">-- Pilih Kelurahan --</option>
+                                        {% for l in kelurahan_list %}
+                                        <option value="{{ l.id }}" data-kecamatan="{{ l.kecamatan_id }}" {% if
+                                            school_profile and school_profile.kelurahan_id==l.id %}selected{% endif %}>
+                                            {{ l.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">RT *</label>
+                                    <input type="text" class="form-control" id="modalRT" maxlength="3"
+                                        pattern="[0-9]{3}" placeholder="001"
+                                        value="{{ (school_profile.metadata.rt if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalRT-error"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">RW *</label>
+                                    <input type="text" class="form-control" id="modalRW" maxlength="3"
+                                        pattern="[0-9]{3}" placeholder="001"
+                                        value="{{ (school_profile.metadata.rw if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalRW-error"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Kode Pos *</label>
+                                    <input type="text" class="form-control" id="modalPostalCode" maxlength="5"
+                                        pattern="[0-9]{5}" placeholder="14xxx"
+                                        value="{{ (school_profile.metadata.postal_code if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalPostalCode-error"></div>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-semibold">Link Google Maps *</label>
+                                    <input type="url" class="form-control" id="modalGmaps"
+                                        placeholder="https://maps.app.goo.gl/..."
+                                        value="{{ (school_profile.metadata.gmaps_url if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalGmaps-error"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="carousel-item">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Jumlah Siswa *</label>
+                                    <input type="number" min="0" class="form-control" id="modalStudents"
+                                        value="{{ (school_profile.metadata.student_count if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalStudents-error"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Jumlah Siswa Inklusi *</label>
+                                    <input type="number" min="0" class="form-control" id="modalInclusionStudents"
+                                        value="{{ (school_profile.metadata.inclusion_student_count if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalInclusionStudents-error"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Jumlah Rombel *</label>
+                                    <input type="number" min="0" class="form-control" id="modalRombel"
+                                        value="{{ (school_profile.metadata.rombel_count if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalRombel-error"></div>
+                                </div>
+                                {% if grade_levels %}
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Jumlah Bangku Kosong per Kelas *</label>
+                                    <div class="row g-2">
+                                        {% for g in grade_levels %}
+                                        <div class="col-md-4">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">Kelas {{ g }}</span>
+                                                <input type="number" min="0" class="form-control empty-seat-input"
+                                                    data-grade="{{ g }}"
+                                                    value="{{ empty_by_grade.get(g|string) or '' }}" placeholder="0">
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="text-muted small mt-1">Isi sesuai jumlah bangku kosong untuk tiap kelas.
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Jumlah Bangku Kosong *</label>
+                                    <input type="number" min="0" class="form-control" id="modalEmpty"
+                                        value="{{ (school_profile.metadata.empty_seats if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalEmpty-error"></div>
+                                </div>
+                                {% endif %}
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Jumlah Guru *</label>
+                                    <input type="number" min="0" class="form-control" id="modalTeachers"
+                                        value="{{ (school_profile.metadata.teacher_count if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalTeachers-error"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Jumlah Tenaga Kependidikan *</label>
+                                    <input type="number" min="0" class="form-control" id="modalStaff"
+                                        value="{{ (school_profile.metadata.staff_count if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalStaff-error"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="carousel-item">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Nomor Telepon Sekolah *</label>
+                                    <input type="text" class="form-control" id="modalSchoolPhone"
+                                        value="{{ (school_profile.metadata.school_phone if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalSchoolPhone-error"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Fax (Opsional)</label>
+                                    <input type="text" class="form-control" id="modalFax" placeholder="021xxxxxxx"
+                                        value="{{ (school_profile.metadata.fax if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalFax-error"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Nomor Operator Sekolah *</label>
+                                    <input type="text" class="form-control" id="modalCoordinatorPhone"
+                                        value="{{ (school_profile.metadata.coordinator_phone if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalCoordinatorPhone-error"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Email Sekolah (CS) *</label>
+                                    <input type="email" class="form-control" id="modalCsEmail"
+                                        value="{{ (school_profile.metadata.cs_email if school_profile else '') or '' }}">
+                                    <div class="invalid-feedback" id="modalCsEmail-error"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="carousel-item">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Website (Opsional)</label>
+                                    <input type="url" class="form-control" id="modalWebsite"
+                                        placeholder="https://sekolah.sch.id"
+                                        value="{{ (school_profile.metadata.website if school_profile else '') or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Telegram (Opsional)</label>
+                                    <input type="text" class="form-control" id="modalTelegram"
+                                        placeholder="@sekolah atau https://t.me/..."
+                                        value="{{ (school_profile.metadata.telegram if school_profile else '') or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Instagram (Opsional)</label>
+                                    <input type="text" class="form-control" id="modalInstagram"
+                                        value="{{ (school_profile.metadata.instagram if school_profile else '') or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">TikTok (Opsional)</label>
+                                    <input type="text" class="form-control" id="modalTiktok"
+                                        value="{{ (school_profile.metadata.tiktok if school_profile else '') or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">YouTube (Opsional)</label>
+                                    <input type="text" class="form-control" id="modalYoutube"
+                                        value="{{ (school_profile.metadata.youtube if school_profile else '') or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">WA Channel (Opsional)</label>
+                                    <input type="text" class="form-control" id="modalWaChannel"
+                                        value="{{ (school_profile.metadata.wa_channel if school_profile else '') or '' }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <button class="btn btn-outline-secondary" type="button" id="modalPrev"
+                            data-bs-target="#profileCarousel" data-bs-slide="prev">
+                            <i class="bi bi-chevron-left"></i> Sebelumnya
+                        </button>
+                        <div class="text-muted small">
+                            Pastikan data wajib terisi sebelum menyimpan.
+                        </div>
+                        <button class="btn btn-outline-primary" type="button" id="modalNext">
+                            <span class="next-label">Selanjutnya</span> <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <div class="text-danger small" id="modalError" style="display:none;"></div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary" id="modalBantuanBtn">
+                        <i class="bi bi-question-circle"></i> Bantuan
+                    </button>
+                    <a href="{{ url_for('portal.sekolah_profile') }}" class="btn btn-link">Buka Halaman Pengaturan</a>
+                    <button type="button" class="btn btn-primary" id="modalSave">
+                        <i class="bi bi-save me-1"></i>Simpan Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Crop Modal for Logo -->
+<div class="modal fade" id="cropLogoModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Crop Logo Sekolah</h5>
+            </div>
+            <div class="modal-body text-center">
+                <div style="max-height: 350px; overflow: hidden;">
+                    <img id="cropLogoImage" src="" style="max-width: 100%; display: block;">
+                </div>
+                <div class="mt-3 d-flex align-items-center gap-2 justify-content-center">
+                    <i class="bi bi-dash-lg"></i>
+                    <input type="range" id="cropLogoZoom" class="form-range" style="width: 200px;" min="0.1" max="3"
+                        step="0.1" value="1">
+                    <i class="bi bi-plus-lg"></i>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
+                    id="cropLogoCancel">Batal</button>
+                <button type="button" class="btn btn-primary" id="cropLogoConfirm">
+                    <i class="bi bi-check-lg me-1"></i>OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cropper.js CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css">
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var shouldShow = {{ 'true' if show_profile_modal else 'false' }};
+        var gradeLevels = {{ grade_levels| tojson }};
+
+        var profileModalEl = document.getElementById('profileModal');
+        if (shouldShow && profileModalEl && window.bootstrap) {
+            var modal = new bootstrap.Modal(profileModalEl, { backdrop: 'static', keyboard: false });
+        // Hide prev button on first step when modal opens
+        profileModalEl.addEventListener('shown.bs.modal', function () {
+            var prevBtnInit = document.getElementById('modalPrev');
+            if (prevBtnInit) {
+                prevBtnInit.style.visibility = 'hidden';
+            }
+        }, { once: true });
+        modal.show();
+    }
+
+    var errorBox = document.getElementById('modalError');
+    function showError(msg) {
+        errorBox.textContent = msg;
+        errorBox.style.display = msg ? 'block' : 'none';
+    }
+
+    // ===== Logo Cropper Handler =====
+    var cropper = null;
+    var cropModalEl = document.getElementById('cropLogoModal');
+    var cropModal = cropModalEl ? new bootstrap.Modal(cropModalEl) : null;
+    var logoFileInput = document.getElementById('modalLogoFile');
+    var cropImage = document.getElementById('cropLogoImage');
+    var cropZoom = document.getElementById('cropLogoZoom');
+    var cropConfirm = document.getElementById('cropLogoConfirm');
+    var logoPreview = document.getElementById('modalLogoPreview');
+    var logoPlaceholder = document.getElementById('modalLogoPlaceholder');
+    var logoDataInput = document.getElementById('modalLogoData');
+
+    if (logoFileInput) {
+        logoFileInput.addEventListener('change', function (e) {
+            var file = e.target.files[0];
+            if (!file || !file.type.startsWith('image/')) return;
+
+            var reader = new FileReader();
+            reader.onload = function (ev) {
+                cropImage.src = ev.target.result;
+                cropModal.show();
+
+                // Initialize cropper after modal shown
+                cropModalEl.addEventListener('shown.bs.modal', function () {
+                    if (cropper) cropper.destroy();
+                    cropper = new Cropper(cropImage, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        dragMode: 'move',
+                        cropBoxMovable: false,
+                        cropBoxResizable: false,
+                        toggleDragModeOnDblclick: false,
+                        minContainerWidth: 250,
+                        minContainerHeight: 250,
+                        background: false,
+                        ready: function () {
+                            // Set initial zoom
+                            cropZoom.value = 1;
+                        }
+                    });
+                }, { once: true });
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Zoom slider
+    if (cropZoom) {
+        cropZoom.addEventListener('input', function () {
+            if (cropper) {
+                cropper.zoomTo(parseFloat(this.value));
+            }
+        });
+    }
+
+    // Confirm crop
+    if (cropConfirm) {
+        cropConfirm.addEventListener('click', function () {
+            if (!cropper) return;
+
+            var canvas = cropper.getCroppedCanvas({
+                width: 400,
+                height: 400,
+                imageSmoothingQuality: 'high'
+            });
+
+            // Compress to max 100KB
+            var quality = 0.9;
+            var dataUrl;
+            do {
+                dataUrl = canvas.toDataURL('image/jpeg', quality);
+                quality -= 0.1;
+            } while (dataUrl.length / 1.37 > 100 * 1024 && quality > 0.1);
+
+            // Update preview
+            logoPreview.src = dataUrl;
+            logoPreview.style.display = 'block';
+            if (logoPlaceholder) logoPlaceholder.style.display = 'none';
+
+            // Store in hidden input
+            logoDataInput.value = dataUrl;
+
+            // Destroy cropper and close modal
+            cropper.destroy();
+            cropper = null;
+            cropModal.hide();
+            logoFileInput.value = '';
+        });
+    }
+
+    // Cancel crop - reset input
+    if (cropModalEl) {
+        cropModalEl.addEventListener('hidden.bs.modal', function () {
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            logoFileInput.value = '';
+        });
+    }
+    // ===== End Logo Cropper =====
+
+    // Real-time field validation rules
+    var fieldValidators = {
+        'modalAlamat': function (v) { return v.length < 10 ? 'Alamat minimal 10 karakter' : ''; },
+        'modalKelurahan': function (v) { return !v ? 'Kelurahan wajib dipilih' : ''; },
+        'modalRT': function (v) { return !/^[0-9]{3}$/.test(v) ? 'RT harus 3 angka (contoh: 001)' : ''; },
+        'modalRW': function (v) { return !/^[0-9]{3}$/.test(v) ? 'RW harus 3 angka (contoh: 001)' : ''; },
+        'modalPostalCode': function (v) { return !/^[0-9]{5}$/.test(v) ? 'Kode Pos harus 5 angka' : ''; },
+        'modalGmaps': function (v) {
+            if (!v) return 'Link Google Maps wajib diisi';
+            if (!/^https?:\/\/(maps\.google|goo\.gl|maps\.app\.goo\.gl|www\.google\..*\/maps)/i.test(v))
+                return 'Format harus link Google Maps (https://maps.app.goo.gl/...)';
+            return '';
+        },
+        'modalStudents': function (v) { return (v === '' || isNaN(v) || parseInt(v) < 0) ? 'Jumlah siswa harus angka >= 0' : ''; },
+        'modalInclusionStudents': function (v) { return (v === '' || isNaN(v) || parseInt(v) < 0) ? 'Jumlah siswa inklusi harus angka >= 0' : ''; },
+        'modalEmpty': function (v) { return (v === '' || isNaN(v) || parseInt(v) < 0) ? 'Jumlah bangku kosong harus angka >= 0' : ''; },
+        'modalTeachers': function (v) { return (v === '' || isNaN(v) || parseInt(v) < 0) ? 'Jumlah guru harus angka >= 0' : ''; },
+        'modalStaff': function (v) { return (v === '' || isNaN(v) || parseInt(v) < 0) ? 'Jumlah tendik harus angka >= 0' : ''; },
+        'modalRombel': function (v) { return (v === '' || isNaN(v) || parseInt(v) < 0) ? 'Jumlah rombel harus angka >= 0' : ''; },
+        'modalSchoolPhone': function (v) {
+            if (!v) return 'Nomor telepon sekolah wajib diisi';
+            if (!/^[0-9]+$/.test(v)) return 'Nomor telepon hanya boleh angka';
+            if (v.length < 8) return 'Nomor telepon minimal 8 digit';
+            return '';
+        },
+        'modalFax': function (v) { return (v && !/^[0-9]+$/.test(v)) ? 'Fax hanya boleh angka' : ''; },
+        'modalCoordinatorPhone': function (v) {
+            if (!v) return 'Nomor operator wajib diisi';
+            if (!/^[0-9]+$/.test(v)) return 'Nomor operator hanya boleh angka';
+            if (v.length < 10) return 'Nomor operator minimal 10 digit';
+            return '';
+        },
+        'modalCsEmail': function (v) {
+            if (!v) return 'Email sekolah wajib diisi';
+            if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) return 'Format email tidak valid';
+            return '';
+        },
+        'modalWebsite': function (v) { return (v && !/^https?:\/\/.+/.test(v)) ? 'Format harus URL (https://...)' : ''; },
+    };
+
+    function validateField(fieldId) {
+        var el = document.getElementById(fieldId);
+        var errorEl = document.getElementById(fieldId + '-error');
+        if (!el) return true;
+
+        var value = el.type === 'select-one' ? el.value : el.value.trim();
+        var validator = fieldValidators[fieldId];
+        var errorMsg = validator ? validator(value) : '';
+
+        if (errorMsg) {
+            el.classList.add('is-invalid');
+            el.classList.remove('is-valid');
+            if (errorEl) {
+                errorEl.textContent = errorMsg;
+                errorEl.style.display = 'block';
+            }
+            return false;
+        } else if (value) {
+            el.classList.remove('is-invalid');
+            el.classList.add('is-valid');
+            if (errorEl) {
+                errorEl.textContent = '';
+                errorEl.style.display = 'none';
+            }
+            return true;
+        } else {
+            el.classList.remove('is-invalid', 'is-valid');
+            if (errorEl) {
+                errorEl.textContent = '';
+                errorEl.style.display = 'none';
+            }
+            return true;
+        }
+    }
+
+    // Attach blur validation to all validated fields
+    Object.keys(fieldValidators).forEach(function (fieldId) {
+        var el = document.getElementById(fieldId);
+        if (el) {
+            el.addEventListener('blur', function () { validateField(fieldId); });
+            el.addEventListener('input', function () {
+                if (el.classList.contains('is-invalid')) {
+                    validateField(fieldId);
+                }
+            });
+        }
+    });
+
+    function collectPayload() {
+        var emptySeatMap = {};
+        var totalEmptySeats = 0;
+        var emptyInputs = document.querySelectorAll('.empty-seat-input');
+        if (emptyInputs.length > 0) {
+            emptyInputs.forEach(function (inp) {
+                var val = inp.value;
+                var grade = inp.getAttribute('data-grade');
+                var num = parseInt(val, 10);
+                if (!isNaN(num) && num >= 0) {
+                    emptySeatMap[grade] = num;
+                    totalEmptySeats += num;
+                } else {
+                    emptySeatMap[grade] = val;
+                }
+            });
+        }
+        return {
+            logo_data: document.getElementById('modalLogoData').value,
+            alamat: document.getElementById('modalAlamat').value.trim(),
+            kelurahan_id: document.getElementById('modalKelurahan').value,
+            gmaps_url: document.getElementById('modalGmaps').value.trim(),
+            rt: document.getElementById('modalRT').value.trim(),
+            rw: document.getElementById('modalRW').value.trim(),
+            postal_code: document.getElementById('modalPostalCode').value.trim(),
+            student_count: document.getElementById('modalStudents').value,
+            inclusion_student_count: document.getElementById('modalInclusionStudents').value,
+            empty_seats: emptyInputs.length > 0 ? totalEmptySeats : document.getElementById('modalEmpty').value,
+            empty_seats_by_grade: emptyInputs.length > 0 ? JSON.stringify(emptySeatMap) : "",
+            rombel_count: document.getElementById('modalRombel').value,
+            teacher_count: document.getElementById('modalTeachers').value,
+            staff_count: document.getElementById('modalStaff').value,
+            school_phone: document.getElementById('modalSchoolPhone').value.trim(),
+            fax: document.getElementById('modalFax').value.trim(),
+            coordinator_phone: document.getElementById('modalCoordinatorPhone').value.trim(),
+            cs_email: document.getElementById('modalCsEmail').value.trim(),
+            website: document.getElementById('modalWebsite').value.trim(),
+            telegram: document.getElementById('modalTelegram').value.trim(),
+            instagram: document.getElementById('modalInstagram').value.trim(),
+            tiktok: document.getElementById('modalTiktok').value.trim(),
+            youtube: document.getElementById('modalYoutube').value.trim(),
+            wa_channel: document.getElementById('modalWaChannel').value.trim(),
+        };
+    }
+
+    // Stepper & validation logic
+    var carouselEl = document.getElementById('profileCarousel');
+    var steps = Array.from(document.querySelectorAll('#profileStepper .step-item'));
+    var currentStep = 0;
+    var carouselInstance = carouselEl ? bootstrap.Carousel.getOrCreateInstance(carouselEl, { interval: false, ride: false }) : null;
+
+    function stepValidationMessage(stepIndex, data) {
+        if (stepIndex === 0) {
+            // Check logo - either existing preview src or new data
+            var logoPreviewSrc = document.getElementById('modalLogoPreview').src || '';
+            var hasExistingLogo = logoPreviewSrc && !logoPreviewSrc.endsWith('/') && logoPreviewSrc !== window.location.href;
+            if (!data.logo_data && !hasExistingLogo) return "Logo sekolah wajib diupload.";
+            if (!data.alamat || data.alamat.length < 10) return "Alamat sekolah wajib diisi (minimal 10 karakter).";
+            if (!data.kelurahan_id) return "Kelurahan wajib dipilih.";
+            if (!data.rt || !/^[0-9]{3}$/.test(data.rt)) return "RT harus 3 angka (contoh: 001).";
+            if (!data.rw || !/^[0-9]{3}$/.test(data.rw)) return "RW harus 3 angka (contoh: 001).";
+            if (!data.postal_code || !/^[0-9]{5}$/.test(data.postal_code)) return "Kode Pos harus 5 angka.";
+            if (!data.gmaps_url) return "Link Google Maps wajib diisi.";
+            if (!/^https?:\/\/(maps\.google|goo\.gl|maps\.app\.goo\.gl|www\.google\..*\/maps)/i.test(data.gmaps_url))
+                return "Format harus link Google Maps yang valid.";
+            return "";
+        }
+        if (stepIndex === 1) {
+            if (data.student_count === '' || isNaN(data.student_count) || parseInt(data.student_count) < 0) return "Jumlah siswa harus angka >= 0.";
+            if (data.inclusion_student_count === '' || isNaN(data.inclusion_student_count) || parseInt(data.inclusion_student_count) < 0) return "Jumlah siswa inklusi harus angka >= 0.";
+            if (gradeLevels && gradeLevels.length > 0) {
+                var map = {};
+                try { map = JSON.parse(data.empty_seats_by_grade || "{}"); } catch (e) { map = {}; }
+                for (var i = 0; i < gradeLevels.length; i++) {
+                    var g = gradeLevels[i];
+                    var val = map[String(g)];
+                    if (val === undefined || val === null || val === '') return "Bangku kosong kelas " + g + " wajib diisi.";
+                    if (isNaN(val) || parseInt(val) < 0) return "Bangku kosong kelas " + g + " harus angka >= 0.";
+                }
+            } else {
+                if (data.empty_seats === '' || isNaN(data.empty_seats) || parseInt(data.empty_seats) < 0) return "Jumlah bangku kosong harus angka >= 0.";
+            }
+            if (data.teacher_count === '' || isNaN(data.teacher_count) || parseInt(data.teacher_count) < 0) return "Jumlah guru harus angka >= 0.";
+            if (data.staff_count === '' || isNaN(data.staff_count) || parseInt(data.staff_count) < 0) return "Jumlah tendik harus angka >= 0.";
+            if (data.rombel_count === '' || isNaN(data.rombel_count) || parseInt(data.rombel_count) < 0) return "Jumlah rombel harus angka >= 0.";
+            return "";
+        }
+        if (stepIndex === 2) {
+            if (!data.school_phone) return "Nomor telepon sekolah wajib diisi.";
+            if (!/^[0-9]+$/.test(data.school_phone)) return "Nomor telepon sekolah hanya boleh angka.";
+            if (data.school_phone.length < 8) return "Nomor telepon sekolah minimal 8 digit.";
+            if (!data.coordinator_phone) return "Nomor operator sekolah wajib diisi.";
+            if (!/^[0-9]+$/.test(data.coordinator_phone)) return "Nomor operator sekolah hanya boleh angka.";
+            if (data.coordinator_phone.length < 10) return "Nomor operator sekolah minimal 10 digit.";
+            if (!data.cs_email) return "Email sekolah (CS) wajib diisi.";
+            var emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+            if (!emailRegex.test(data.cs_email)) return "Format email sekolah (CS) tidak valid.";
+            return "";
+        }
+        return "";
+    }
+
+    function validateRequired(data) {
+        var err0 = stepValidationMessage(0, data);
+        if (err0) return err0;
+        var err1 = stepValidationMessage(1, data);
+        if (err1) return err1;
+        var err2 = stepValidationMessage(2, data);
+        if (err2) return err2;
+        return "";
+    }
+
+    function setActiveDot(index) {
+        var data = collectPayload();
+        currentStep = index;
+        steps.forEach(function (step, i) {
+            var icon = step.querySelector('.step-icon');
+            var status = step.querySelector('.step-status');
+            var line = step.querySelector('.step-line');
+            var valid = !stepValidationMessage(i, data);
+            step.classList.toggle('active', i === index);
+            step.classList.toggle('completed', i < index && valid);
+
+            icon.classList.remove('active', 'completed', 'disabled');
+            step.classList.remove('disabled');
+            if (i < index && valid) {
+                icon.classList.add('completed');
+                icon.innerHTML = '<i class="bi bi-check-lg"></i>';
+                status.textContent = 'Completed';
+                status.className = 'step-status text-success';
+                if (line) line.classList.add('completed');
+            } else if (i === index) {
+                icon.classList.add('active');
+                icon.textContent = i + 1;
+                status.textContent = 'In Progress';
+                status.className = 'step-status text-primary';
+                if (line) line.classList.remove('completed');
+            } else {
+                // Steps after current and not completed - show as disabled
+                icon.classList.add('disabled');
+                step.classList.add('disabled');
+                icon.textContent = i + 1;
+                status.textContent = 'Pending';
+                status.className = 'step-status text-muted';
+                if (line) line.classList.remove('completed');
+            }
+        });
+    }
+
+    if (carouselEl) {
+        carouselEl.addEventListener('slid.bs.carousel', function (e) {
+            setActiveDot(e.to);
+            updateNextLabel();
+        });
+        setActiveDot(0);
+        updateNextLabel();
+    }
+
+    var saveBtn = document.getElementById('modalSave');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async function () {
+            var payload = collectPayload();
+            var error = validateRequired(payload);
+            if (error) {
+                showError(error);
+                return;
+            }
+            showError("");
+            try {
+                var res = await fetch("{{ url_for('portal.sekolah_profile') }}", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams(payload),
+                });
+                if (res.redirected) {
+                    window.location.href = res.url;
+                    return;
+                }
+                showError("Gagal menyimpan, coba lagi.");
+            } catch (err) {
+                showError("Terjadi kesalahan jaringan.");
+            }
+        });
+    }
+
+    var nextBtn = document.getElementById('modalNext');
+    var prevBtn = document.getElementById('modalPrev');
+    var nextLabel = nextBtn ? nextBtn.querySelector('.next-label') : null;
+    if (nextBtn && carouselInstance) {
+        nextBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            var payload = collectPayload();
+            var error = stepValidationMessage(currentStep, payload);
+            if (error) {
+                showError(error);
+                return;
+            }
+            showError("");
+            if (currentStep >= steps.length - 1) {
+                // final step acts as save
+                saveBtn.click();
+            } else {
+                carouselInstance.next();
+            }
+        });
+    }
+
+
+    function updateNextLabel() {
+        if (!nextLabel) return;
+        if (currentStep >= steps.length - 1) {
+            nextLabel.textContent = 'Simpan';
+            nextBtn.querySelector('i').className = 'bi bi-save';
+        } else {
+            nextLabel.textContent = 'Selanjutnya';
+            nextBtn.querySelector('i').className = 'bi bi-chevron-right';
+        }
+        // Hide prev button on first step
+        if (prevBtn) {
+            prevBtn.style.visibility = currentStep === 0 ? 'hidden' : 'visible';
+        }
+    }
+
+    // Prevent closing modal if data wajib belum valid
+    if (profileModalEl) {
+        profileModalEl.addEventListener('hide.bs.modal', function (event) {
+            var payload = collectPayload();
+            var error = validateRequired(payload);
+            if (error) {
+                event.preventDefault();
+                showError(error);
+            }
+        });
+    }
+
+    // Bantuan button handler - Auto-show contact modal with Bantuan button
+    var bantuanBtn = document.getElementById('modalBantuanBtn');
+    var areaContactModalEl = document.getElementById('areaContactModal');
+    if (bantuanBtn && areaContactModalEl) {
+        bantuanBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            var coordModal = bootstrap.Modal.getOrCreateInstance(areaContactModalEl);
+            coordModal.show();
+        });
+    }
+
+
+    // Update stepper on field change to reflect validation status
+    ['modalAlamat', 'modalKelurahan', 'modalKecamatan', 'modalGmaps', 'modalRT', 'modalRW', 'modalPostalCode', 'modalStudents', 'modalInclusionStudents', 'modalEmpty', 'modalTeachers', 'modalStaff', 'modalRombel', 'modalSchoolPhone', 'modalFax', 'modalCoordinatorPhone', 'modalCsEmail'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', function () { setActiveDot(currentStep); });
+            el.addEventListener('change', function () { setActiveDot(currentStep); updateNextLabel(); });
+        }
+    });
+
+    // Dependent kelurahan dropdown
+    var kelurahanOptions = {{ kelurahan_list| tojson }};
+    var kecSelect = document.getElementById('modalKecamatan');
+    var kelSelect = document.getElementById('modalKelurahan');
+    function refreshKelurahan() {
+        if (!kelSelect) return;
+        var selected = kelSelect.value;
+        var kec = kecSelect ? kecSelect.value : '';
+        kelSelect.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
+        kelurahanOptions.forEach(function (item) {
+            if (!kec || String(item.kecamatan_id) === String(kec)) {
+                var opt = document.createElement('option');
+                opt.value = item.id;
+                opt.dataset.kecamatan = item.kecamatan_id;
+                opt.textContent = item.name;
+                if (String(item.id) === String(selected)) opt.selected = true;
+                kelSelect.appendChild(opt);
+            }
+        });
+    }
+    if (kecSelect) {
+        kecSelect.addEventListener('change', function () {
+            refreshKelurahan();
+            setActiveDot(currentStep);
+        });
+        refreshKelurahan();
+    }
+    });
+</script>
+{% endif %}
+
+{% include "portal/components/_area_contact_modal.html" %}
+
+{% endblock %}

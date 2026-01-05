@@ -1,0 +1,15 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Statistik Penilaian" %}
+{% set stats_role = 'admin' %}
+
+{% block head_extra %}
+{% include 'portal/components/_stats_head.html' %}
+{% endblock %}
+
+{% block portal_content %}
+{% include 'portal/components/_stats_content.html' with context %}
+{% endblock %}
+
+{% block portal_scripts %}
+{# Scripts are included in _stats_content.html #}
+{% endblock %}

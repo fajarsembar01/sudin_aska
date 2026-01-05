@@ -79,6 +79,7 @@ def login_required(view: Callable) -> Callable:
 
 
 def role_required(*roles: str) -> Callable:
+    """Check if user has required role. Simplified version without admin_level/access_scope."""
     def decorator(view: Callable) -> Callable:
         @wraps(view)
         def wrapper(*args, **kwargs):
@@ -86,14 +87,24 @@ def role_required(*roles: str) -> Callable:
             if not user:
                 flash("Silakan login terlebih dahulu.", "warning")
                 return redirect(url_for("auth.login", next=request.path))
+            
             role = user.get("role")
             if role not in roles:
                 flash("Anda tidak memiliki akses ke fitur ini.", "danger")
-                return redirect(url_for("main.dashboard"))
+                # Simple role-based redirect
+                if role == "admin":
+                    return redirect(url_for("main.admin_select_role"))
+                elif role == "coordinator":
+                    return redirect(url_for("portal.coordinator_dashboard"))
+                elif role == "staff":
+                    return redirect(url_for("portal.home"))
+                elif role == "sekolah":
+                    return redirect(url_for("portal.sekolah_rooms"))
+                else:
+                    return redirect(url_for("auth.logout"))
+            
             return view(*args, **kwargs)
-
         return wrapper
-
     return decorator
 
 
@@ -122,23 +133,149 @@ def _establish_session(user: dict, *, remember: bool = False, email_override: Op
 
 
 def _redirect_after_login(user: dict, fallback: Optional[str] = None) -> str:
-    """Determine the appropriate redirect destination after login."""
-    if fallback:
+    """Determine the appropriate redirect destination after login. Simplified."""
+    if fallback and fallback != "/":
         return fallback
     
     role = user.get("role", "")
-    # Staff and sekolah roles should go to portal
-    if role in ("staff", "sekolah"):
-        return url_for("portal.home")
+
+    # For admin, root is an acceptable redirection (it redirects to select-role)
+    if fallback == "/" and role == "admin":
+        return fallback
     
-    return url_for("main.dashboard")
+    
+    # Simple role-based redirect
+    if role == "admin":
+        return url_for("main.admin_select_role")
+    elif role == "coordinator":
+        return url_for("portal.coordinator_dashboard")
+    elif role == "staff":
+        return url_for("portal.home")
+    elif role == "sekolah":
+        return url_for("portal.sekolah_rooms")
+    else:
+        return url_for("auth.login")
+
+
+
+@auth_bp.route("/register", methods=["GET", "POST"])
+def register() -> Response:
+    """Handle new staff account registration."""
+    if current_user():
+        return redirect(url_for("portal.home"))
+        
+    if request.method == "POST":
+        try:
+            full_name = request.form.get("full_name")
+            email = request.form.get("email")
+            password = request.form.get("password")
+            confirm_password = request.form.get("confirm_password")
+            kecamatan_id = request.form.get("kecamatan_id")
+            whatsapp = request.form.get("whatsapp_number")
+            nip = request.form.get("nip")
+            nrk = request.form.get("nrk")
+            jabatan = request.form.get("jabatan")
+            
+            # Basic validation
+            if not all([full_name, email, password, whatsapp, nip, nrk]):
+                flash("Mohon lengkapi semua data wajib.", "warning")
+                # Fallback list if DB fails or query not ready
+                return render_template("register.html", kecamatan_list=[])
+                
+            if password != confirm_password:
+                flash("Password tidak cocok.", "warning")
+                return render_template("register.html", kecamatan_list=[])
+                
+            # Check existing user
+            from dashboard.queries import get_user_by_email
+            if get_user_by_email(email):
+                flash("Email sudah terdaftar. Silakan login.", "warning")
+                return redirect(url_for("auth.login"))
+                
+            # Create user
+            from werkzeug.security import generate_password_hash
+            from dashboard.auth_queries import create_pending_user
+            
+            user_id = create_pending_user(
+                email=email,
+                full_name=full_name,
+                password_hash=generate_password_hash(password, method='pbkdf2:sha256'),
+                role="staff",
+                whatsapp=whatsapp,
+                nip=nip,
+                nrk=nrk,
+                jabatan=jabatan,
+                kecamatan_id=int(kecamatan_id) if kecamatan_id else None
+            )
+            
+            flash("Pendaftaran berhasil! Akun Anda sedang diverifikasi oleh admin.", "success")
+            return redirect(url_for("auth.registration_status", user_id=user_id))
+            
+        except Exception as e:
+            print(f"Registration error: {e}")
+            flash("Terjadi kesalahan saat mendaftar. Silakan coba lagi.", "danger")
+            
+    # GET request
+    from dashboard.db_access import get_cursor
+    kecamatan_list = []
+    try:
+        with get_cursor() as cur:
+            cur.execute("SELECT id, name FROM portal_kecamatan ORDER BY name")
+            kecamatan_list = [dict(row) for row in cur.fetchall()]
+    except Exception:
+        pass
+        
+    return render_template("register.html", kecamatan_list=kecamatan_list)
+
+
+@auth_bp.route("/registration-status/<int:user_id>")
+def registration_status(user_id: int) -> Response:
+    """Show registration status for a new user."""
+    from dashboard.db_access import get_cursor
+    
+    with get_cursor() as cur:
+        # Fetch user details + kecamatan name
+        query = """
+            SELECT u.*, k.name as kecamatan_name
+            FROM dashboard_users u
+            LEFT JOIN portal_kecamatan k ON u.requested_kecamatan = k.id
+            WHERE u.id = %s
+        """
+        cur.execute(query, (user_id,))
+        user = cur.fetchone()
+        
+    if not user:
+        flash("Data pendaftaran tidak ditemukan.", "danger")
+        return redirect(url_for("auth.register"))
+        
+    return render_template("registration_status.html", user=dict(user))
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login() -> Response:
     existing = current_user()
     if existing:
-        return redirect(url_for("main.dashboard"))
+        return redirect(_redirect_after_login(existing))
+
+    # Build coordinator contacts for help modal
+    from urllib.parse import quote_plus
+    coordinator_list = [
+        {"area": "Cilincing", "name": "Neni", "phone": "+62 851-1085-1681"},
+        {"area": "Kelapa Gading", "name": "Slamet", "phone": "+62 859-2123-2424"},
+        {"area": "Koja", "name": "Rani", "phone": "+62 878-8032-8670"},
+    ]
+    message = "Halo, saya butuh bantuan untuk akses portal ASKA."
+    coordinator_contacts = []
+    for c in coordinator_list:
+        phone = "".join(ch for ch in c["phone"] if ch.isdigit() or ch == "+")
+        if phone.startswith("0"):
+            phone = "62" + phone[1:]
+        phone = phone.replace("+", "")
+        coordinator_contacts.append({
+            **c,
+            "wa_link": f"https://api.whatsapp.com/send?phone={phone}&text={quote_plus(message)}",
+            "is_user_area": False,
+        })
 
     if request.method == "POST":
         email = (request.form.get("email") or "").strip().lower()
@@ -148,17 +285,17 @@ def login() -> Response:
         user = get_user_by_email(email)
         if not user:
             flash("Email belum terdaftar. Hubungi admin untuk membuat akun.", "danger")
-            return render_template("login.html", email=email)
+            return render_template("login.html", email=email, coordinator_contacts=coordinator_contacts)
 
         if not check_password_hash(user["password_hash"], password):
             flash("Salah password, hubungi admin untuk reset akses.", "danger")
-            return render_template("login.html", email=email)
+            return render_template("login.html", email=email, coordinator_contacts=coordinator_contacts)
 
         _establish_session(user, remember=remember, email_override=email)
         flash("Selamat datang kembali!", "success")
         return redirect(_redirect_after_login(user, request.args.get("next")))
 
-    return render_template("login.html")
+    return render_template("login.html", coordinator_contacts=coordinator_contacts)
 
 
 @auth_bp.route("/logout")
@@ -167,6 +304,13 @@ def logout() -> Response:
     session.clear()
     flash("Anda telah logout.", "info")
     return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/clear-session")
+def clear_session() -> Response:
+    """Force clear all session data - emergency escape from loops."""
+    session.clear()
+    return render_template("clear_session.html")
 
 
 @auth_bp.route("/login/google/<provider>")
@@ -243,24 +387,198 @@ def google_callback() -> Response:
 @auth_bp.route("/settings/users", methods=["GET", "POST"])
 @role_required("admin")
 def manage_users() -> Response:
+    from dashboard.queries import update_dashboard_user
+    
     if request.method == "POST":
+        action = request.form.get("action", "create")
+        user_id = request.form.get("user_id")
+        
         email = (request.form.get("email") or "").strip().lower()
         full_name = (request.form.get("full_name") or "").strip()
         password = request.form.get("password") or ""
         role = (request.form.get("role") or "viewer").strip()
+        
+        # New feature: Account Status (for manual verification/rejection)
+        account_status = request.form.get("account_status")
 
-        if not all([email, full_name, password]):
-            flash("Semua field wajib diisi.", "warning")
-        else:
-            password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=12)
-            try:
-                create_dashboard_user(email=email, full_name=full_name, password_hash=password_hash, role=role)
-                flash(f"User {full_name} berhasil dibuat.", "success")
-            except Exception as exc:  # pragma: no cover - surfaces to UI
-                flash(f"Gagal membuat user baru: {exc}", "danger")
+        try:
+            if action == "create":
+                if not all([email, full_name, password]):
+                    flash("Semua field wajib diisi.", "warning")
+                else:
+                    password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=12)
+                    create_dashboard_user(email=email, full_name=full_name, password_hash=password_hash, role=role)
+                    flash(f"User {full_name} berhasil dibuat.", "success")
+                    
+            elif action == "update":
+                if not user_id:
+                    flash("ID User tidak valid.", "danger")
+                else:
+                    # Only hash password if provided
+                    pw_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=12) if password else None
+                    update_dashboard_user(
+                        user_id=int(user_id), 
+                        full_name=full_name, 
+                        role=role, 
+                        email=email, 
+                        password_hash=pw_hash,
+                        account_status=account_status
+                    )
+                    flash(f"Data user {full_name} berhasil diperbarui.", "success")
+                    
+            elif action == "verify":
+                # Quick action for verify/reject
+                if not user_id or not account_status:
+                     flash("Data tidak lengkap.", "warning")
+                else:
+                     update_dashboard_user(user_id=int(user_id), full_name=full_name, role=role, account_status=account_status)
+                     flash(f"Status user berhasil diubah menjadi {account_status}.", "success")
+
+        except Exception as exc: 
+            current_app.logger.error(f"Error managing user: {exc}")
+            flash(f"Gagal memproses data: {exc}", "danger")
 
     users = list_dashboard_users()
     return render_template("manage_users.html", users=users)
+
+
+@auth_bp.route("/settings/monev-teams", methods=["GET", "POST"])
+@role_required("admin")
+def manage_monev_teams() -> Response:
+    """Manage monev teams configuration."""
+    from dashboard.queries import (
+        get_monev_teams,
+        get_team_members,
+        update_team_coordinator,
+        add_team_member,
+        remove_team_member,
+        get_available_staff,
+        create_monev_team,
+        delete_monev_team,
+    )
+    from dashboard.portal.queries import list_kecamatan
+    
+    if request.method == "POST":
+        action = request.form.get("action")
+        
+        try:
+            if action == "create_team":
+                name = request.form.get("team_name", "").strip()
+                team_type = request.form.get("team_type", "custom")
+                kecamatan_id = request.form.get("kecamatan_id")
+                kecamatan_id = int(kecamatan_id) if kecamatan_id else None
+                
+                if not name:
+                    flash("Nama tim tidak boleh kosong.", "warning")
+                else:
+                    team_id = create_monev_team(name, team_type, kecamatan_id)
+                    if team_id:
+                        flash(f"Tim '{name}' berhasil dibuat.", "success")
+                    else:
+                        flash("Gagal membuat tim.", "danger")
+                        
+            elif action == "delete_team":
+                team_id = int(request.form.get("team_id"))
+                team_name = request.form.get("team_name", "")
+                
+                if delete_monev_team(team_id):
+                    flash(f"Tim '{team_name}' berhasil dihapus.", "success")
+                else:
+                    flash("Gagal menghapus tim.", "danger")
+                    
+            elif action == "update_coordinator":
+                team_id = int(request.form.get("team_id"))
+                coordinator_id = request.form.get("coordinator_id")
+                coordinator_id = int(coordinator_id) if coordinator_id else None
+                
+                if update_team_coordinator(team_id, coordinator_id):
+                    flash("Koordinator berhasil diperbarui.", "success")
+                else:
+                    flash("Gagal memperbarui koordinator.", "danger")
+                    
+            elif action == "add_member":
+                team_id = int(request.form.get("team_id"))
+                staff_id = int(request.form.get("staff_id"))
+                admin_id = current_user().get("id") if current_user() else None
+                
+                if add_team_member(team_id, staff_id, admin_id):
+                    flash("Anggota berhasil ditambahkan.", "success")
+                else:
+                    flash("Anggota sudah ada dalam tim atau gagal ditambahkan.", "warning")
+                    
+            elif action == "remove_member":
+                member_id = int(request.form.get("member_id"))
+                
+                if remove_team_member(member_id):
+                    flash("Anggota berhasil dihapus dari tim.", "success")
+                else:
+                    flash("Gagal menghapus anggota.", "danger")
+                    
+        except Exception as exc:
+            current_app.logger.error(f"Error managing monev team: {exc}")
+            flash(f"Terjadi kesalahan: {exc}", "danger")
+    
+    # GET: Fetch teams by type and enrich with members
+    kasi_teams = get_monev_teams(team_type='kasi')
+    for team in kasi_teams:
+        team['members'] = get_team_members(team['id'])
+    
+    kecamatan_teams = get_monev_teams(team_type='kecamatan')
+    for team in kecamatan_teams:
+        team['members'] = get_team_members(team['id'])
+    
+    custom_teams = get_monev_teams(team_type='custom')
+    for team in custom_teams:
+        team['members'] = get_team_members(team['id'])
+    
+    available_staff = get_available_staff()
+    kecamatan_list = list_kecamatan()
+    
+    return render_template("monev_teams.html", 
+                           kasi_teams=kasi_teams, 
+                           kecamatan_teams=kecamatan_teams, 
+                           custom_teams=custom_teams,
+                           available_staff=available_staff,
+                           kecamatan_list=kecamatan_list)
+
+
+@auth_bp.route("/my-team")
+@role_required("coordinator", "staff")
+def view_my_team() -> Response:
+    """View monev team for coordinator or staff member."""
+    from dashboard.queries import get_monev_teams, get_team_members
+    
+    user = current_user()
+    user_id = user.get("id")
+    user_role = user.get("role")
+    
+    # Get all teams
+    all_teams = get_monev_teams()
+    
+    # Find team where user is coordinator or member
+    my_team = None
+    my_team_role = None  # 'coordinator' or 'member'
+    
+    for team in all_teams:
+        # Check if coordinator
+        if team.get('coordinator_id') == user_id:
+            my_team = team
+            my_team_role = 'coordinator'
+            break
+        
+        # Check if member
+        members = get_team_members(team['id'])
+        if any(m.get('staff_id') == user_id for m in members):
+            my_team = team
+            my_team_role = 'member'
+            break
+    
+    if my_team:
+        my_team['members'] = get_team_members(my_team['id'])
+    
+    return render_template("my_team.html", team=my_team, team_role=my_team_role)
+
+
 
 
 @auth_bp.route("/settings/aska-users")

@@ -401,6 +401,83 @@ _PORTAL_ASSESSMENT_ROOM_DETAILS_INDEX_SQL = """
 CREATE INDEX IF NOT EXISTS idx_portal_room_details_assessment ON portal_assessment_room_details (assessment_id);
 """
 
+_PORTAL_ACTIVITY_LOGS_SQL = """
+CREATE TABLE IF NOT EXISTS portal_activity_logs (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    action TEXT NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id INTEGER,
+    target_name TEXT,
+    details JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_PORTAL_ACTIVITY_LOGS_INDEX_CREATED = """
+CREATE INDEX IF NOT EXISTS idx_portal_activity_logs_created ON portal_activity_logs (created_at DESC);
+"""
+
+_PORTAL_ACTIVITY_LOGS_INDEX_TARGET = """
+CREATE INDEX IF NOT EXISTS idx_portal_activity_logs_target ON portal_activity_logs (target_type, target_id);
+"""
+
+_USER_KECAMATAN_SQL = """
+CREATE TABLE IF NOT EXISTS user_kecamatan (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    kecamatan_id INTEGER NOT NULL REFERENCES portal_kecamatan(id) ON DELETE CASCADE,
+    assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    assigned_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    UNIQUE (user_id, kecamatan_id)
+);
+"""
+
+_USER_KECAMATAN_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_user_kecamatan_user ON user_kecamatan (user_id);
+CREATE INDEX IF NOT EXISTS idx_user_kecamatan_kecamatan ON user_kecamatan (kecamatan_id);
+"""
+
+_STAFF_SCHOOL_ASSIGNMENTS_SQL = """
+CREATE TABLE IF NOT EXISTS staff_school_assignments (
+    id SERIAL PRIMARY KEY,
+    staff_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+    assigned_by INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    notes TEXT,
+    UNIQUE (staff_id, school_id)
+);
+"""
+
+_STAFF_SCHOOL_ASSIGNMENTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_staff_assignments_staff ON staff_school_assignments (staff_id);
+CREATE INDEX IF NOT EXISTS idx_staff_assignments_school ON staff_school_assignments (school_id);
+CREATE INDEX IF NOT EXISTS idx_staff_assignments_assigned_by ON staff_school_assignments (assigned_by);
+"""
+
+_SCHOOL_CLASSROOMS_SQL = """
+CREATE TABLE IF NOT EXISTS school_classrooms (
+    id SERIAL PRIMARY KEY,
+    school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    grade_level INTEGER,
+    variant TEXT,
+    capacity INTEGER,
+    notes TEXT,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (school_id, name)
+);
+"""
+
+_SCHOOL_CLASSROOMS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_school_classrooms_school ON school_classrooms (school_id);
+CREATE INDEX IF NOT EXISTS idx_school_classrooms_grade ON school_classrooms (grade_level);
+CREATE INDEX IF NOT EXISTS idx_school_classrooms_active ON school_classrooms (active);
+"""
+
 
 def ensure_dashboard_schema() -> None:
     """Create core dashboard tables when they do not yet exist."""
@@ -448,6 +525,18 @@ def ensure_dashboard_schema() -> None:
         _PORTAL_ASSESSMENT_PHOTOS_INDEX_SQL,
         _PORTAL_ASSESSMENT_ROOM_DETAILS_SQL,
         _PORTAL_ASSESSMENT_ROOM_DETAILS_INDEX_SQL,
+        _PORTAL_ACTIVITY_LOGS_SQL,
+        _PORTAL_ACTIVITY_LOGS_INDEX_CREATED,
+        _PORTAL_ACTIVITY_LOGS_INDEX_TARGET,
+        # Kecamatan access control tables
+        _USER_KECAMATAN_SQL,
+        _USER_KECAMATAN_INDEX_SQL,
+        # Staff school assignments
+        _STAFF_SCHOOL_ASSIGNMENTS_SQL,
+        _STAFF_SCHOOL_ASSIGNMENTS_INDEX_SQL,
+        # School classroom configuration
+        _SCHOOL_CLASSROOMS_SQL,
+        _SCHOOL_CLASSROOMS_INDEX_SQL,
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS no_tester_enabled BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS nrk TEXT",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS nip TEXT",
@@ -504,6 +593,10 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE portal_schools DROP COLUMN IF EXISTS kelurahan",
         # School registration - link dashboard users to schools
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS school_id INTEGER REFERENCES portal_schools(id) ON DELETE SET NULL",
+        # School logo column
+        "ALTER TABLE portal_schools ADD COLUMN IF NOT EXISTS logo_url TEXT",
+        # Kecamatan cache column for dashboard_users
+        "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS kecamatan_cache JSONB",
     )
     
     # Execute statements one by one to ensure partial success and better error reporting

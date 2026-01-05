@@ -23,7 +23,7 @@ from responses import detect_bullying_category, is_corruption_report_intent
 from utils import normalize_input, replace_bot_mentions
 
 LIMIT_BLOCK_MESSAGE = (
-    "Ups! Kuota 3 chat untuk akses Gmail sudah habis. "
+    f"Ups! Kuota {DEFAULT_LIMITED_QUOTA} chat untuk akses Gmail sudah habis. "
     "Tunggu hitung mundur selesai atau login pakai akun belajar.id / Telegram biar bebas limit ya! 🚀"
 )
 GMAIL_ALLOWED_DOMAINS = {"gmail.com", "googlemail.com"}

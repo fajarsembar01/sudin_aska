@@ -1,0 +1,75 @@
+{#
+============================================
+MACRO WARNA TERPUSAT PORTAL PANBERSS
+============================================
+
+CARA MENGUBAH THRESHOLD:
+Edit nilai di bawah ini untuk mengubah batas skor:
+#}
+
+{% set COLOR_THRESHOLDS = {
+'excellent': 85,
+'good': 70,
+'poor': 55
+} %}
+
+{% set COLOR_CODES = {
+'excellent': '#198754',
+'good': '#ffc107',
+'poor': '#fd7e14',
+'critical': '#b02a37'
+} %}
+
+{% set BADGE_CLASSES = {
+'excellent': 'badge-score-green',
+'good': 'badge-score-yellow',
+'poor': 'badge-score-orange',
+'critical': 'badge-score-red'
+} %}
+
+{% set BOOTSTRAP_CLASSES = {
+'excellent': 'bg-success',
+'good': 'bg-warning text-dark',
+'poor': 'bg-orange text-white',
+'critical': 'bg-danger'
+} %}
+
+{# Macro untuk mendapatkan badge class galeri berdasarkan skor persen #}
+{% macro get_score_badge_class(score_pct) -%}
+{%- if score_pct >= COLOR_THRESHOLDS.excellent -%}
+{{ BADGE_CLASSES.excellent }}
+{%- elif score_pct >= COLOR_THRESHOLDS.good -%}
+{{ BADGE_CLASSES.good }}
+{%- elif score_pct >= COLOR_THRESHOLDS.poor -%}
+{{ BADGE_CLASSES.poor }}
+{%- else -%}
+{{ BADGE_CLASSES.critical }}
+{%- endif -%}
+{%- endmacro %}
+
+{# Macro untuk mendapatkan Bootstrap class berdasarkan skor persen #}
+{% macro get_score_bootstrap_class(score_pct) -%}
+{%- if score_pct >= COLOR_THRESHOLDS.excellent -%}
+{{ BOOTSTRAP_CLASSES.excellent }}
+{%- elif score_pct >= COLOR_THRESHOLDS.good -%}
+{{ BOOTSTRAP_CLASSES.good }}
+{%- elif score_pct >= COLOR_THRESHOLDS.poor -%}
+{{ BOOTSTRAP_CLASSES.poor }}
+{%- else -%}
+{{ BOOTSTRAP_CLASSES.critical }}
+{%- endif -%}
+{%- endmacro %}
+
+{# Macro khusus untuk badge aspek (skor mentah 0-3) #}
+{# Rule: 0=hitam, 1=merah, 2=kuning, 3=hijau #}
+{% macro get_aspect_badge_class(score_raw) -%}
+{%- if score_raw == 3 -%}
+bg-success
+{%- elif score_raw == 2 -%}
+bg-warning text-dark
+{%- elif score_raw == 1 -%}
+bg-danger
+{%- else -%}
+bg-dark
+{%- endif -%}
+{%- endmacro %}

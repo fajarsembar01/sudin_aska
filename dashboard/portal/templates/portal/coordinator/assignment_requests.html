@@ -1,0 +1,263 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Permintaan Penugasan" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="d-flex align-items-center gap-3 mb-3">
+        <span class="icon-badge feature-icon text-primary">
+            <i class="bi bi-send-check"></i>
+        </span>
+        <div>
+            <h1 class="h5 fw-bold mb-0">Permintaan Penugasan</h1>
+            <p class="text-muted mb-0 small">Ajukan sekolah untuk staf di tim Anda, admin akan menyetujui.</p>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="fw-semibold mb-3"><i class="bi bi-plus-circle me-2"></i>Ajukan Penugasan Baru</h6>
+                    <form id="requestForm" onsubmit="return false;">
+                        <div class="mb-3">
+                            <label class="form-label small">Pilih Staff</label>
+                            <select name="staff_id" id="staffSelect" class="form-select" required>
+                        <option value="">-- Pilih --</option>
+                        {% for m in staff_options %}
+                        <option value="{{ m.staff_id }}">{{ m.full_name }} ({{ m.role|upper }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small">Pilih Periode</label>
+                    <select name="period_id" id="periodSelect" class="form-select">
+                        <option value="">{% if active_period_id %}Periode aktif (default){% else %}-- Pilih periode (boleh periode mendatang) --{% endif %}</option>
+                        {% for p in periods %}
+                        <option value="{{ p.id }}" {% if active_period_id and active_period_id==p.id %}selected{% endif %}>{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">{% if active_period_id %}Jika kosong, pakai periode aktif.{% else %}Tidak ada periode aktif; pilih periode yang akan dipakai, termasuk periode mendatang.{% endif %}</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small">Tambah Sekolah (ketik min. 3 huruf untuk cari)</label>
+                    <input type="text" id="schoolSearch" class="form-control" placeholder="Cari sekolah atau NPSN">
+                    <div id="schoolSearchResults" class="border rounded mt-2 d-none" style="max-height: 220px; overflow-y: auto;">
+                        <div class="p-2 text-muted small">Ketik minimal 3 huruf untuk menampilkan hasil.</div>
+                            </div>
+                            <small class="text-muted">Tambah beberapa sekolah lalu simpan sekaligus.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small">Daftar Sekolah yang Diajukan</label>
+                            <div id="queueList" class="border rounded p-2" style="min-height: 60px; background: var(--bs-body-bg);">
+                                <div class="text-muted small mb-0">Belum ada sekolah yang dipilih.</div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small">Catatan (opsional)</label>
+                            <textarea name="note" id="noteInput" class="form-control" rows="2"
+                                placeholder="Penjelasan penugasan"></textarea>
+                        </div>
+                        <button type="button" id="submitRequests" class="btn btn-primary w-100">
+                            <i class="bi bi-send"></i> Kirim Permintaan
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="fw-semibold mb-0"><i class="bi bi-inbox me-2"></i>Riwayat Permintaan</h6>
+                    </div>
+                    {% if requests_list %}
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Staf</th>
+                                    <th>Sekolah</th>
+                                    <th>Periode</th>
+                                    <th>Status</th>
+                                    <th>Catatan</th>
+                                    <th>Waktu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in requests_list %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">{{ req.staff_name }}</div>
+                                        <small class="text-muted">NIP: {{ req.staff_nip or '-' }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">{{ req.school_name }}</div>
+                                        <small class="text-muted">{{ req.school_npsn }}</small>
+                                    </td>
+                                    <td><small class="text-muted">{{ req.period_name or 'Periode aktif' }}</small></td>
+                                    <td>
+                                        {% set st = req.status %}
+                                        {% if st == 'pending' %}
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                        {% elif st == 'approved' %}
+                                        <span class="badge bg-success">Disetujui</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Ditolak</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><small class="text-muted">{{ req.note or '-' }}</small></td>
+                                    <td><small class="text-muted">{{ req.created_at.strftime('%d %b %Y %H:%M') if req.created_at else '-' }}</small></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">Belum ada permintaan.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    (function () {
+        const schools = {{ schools|tojson }};
+        const queue = [];
+        const schoolSearch = document.getElementById('schoolSearch');
+        const searchResults = document.getElementById('schoolSearchResults');
+        const staffSelect = document.getElementById('staffSelect');
+        const noteInput = document.getElementById('noteInput');
+        const queueList = document.getElementById('queueList');
+        const submitBtn = document.getElementById('submitRequests');
+        const periodSelect = document.getElementById('periodSelect');
+        const defaultPeriodValue = periodSelect ? periodSelect.value : '';
+
+        function renderQueue() {
+            queueList.innerHTML = '';
+            if (queue.length === 0) {
+                queueList.innerHTML = '<div class="text-muted small">Belum ada sekolah yang dipilih.</div>';
+                return;
+            }
+            queue.forEach((item, idx) => {
+                const row = document.createElement('div');
+                row.className = 'd-flex align-items-center justify-content-between py-1 border-bottom small';
+                row.innerHTML = `
+                    <div>
+                        <div class="fw-semibold">${item.name}</div>
+                        <div class="text-muted">${item.npsn || '-'}</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-idx="${idx}">
+                        <i class="bi bi-x"></i>
+                    </button>
+                `;
+                row.querySelector('button').addEventListener('click', () => {
+                    queue.splice(idx, 1);
+                    renderQueue();
+                });
+                queueList.appendChild(row);
+            });
+        }
+
+        function attachResultHandlers() {
+            searchResults.querySelectorAll('[data-school-id]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const schoolId = btn.getAttribute('data-school-id');
+                    if (queue.some(q => String(q.id) === String(schoolId))) {
+                        alert('Sekolah sudah ada di daftar.');
+                        return;
+                    }
+                    const s = schools.find(sc => String(sc.id) === String(schoolId));
+                    if (!s) return;
+                    queue.push({ id: String(s.id), name: s.name, npsn: s.npsn });
+                    renderQueue();
+                    searchResults.classList.add('d-none');
+                    schoolSearch.value = '';
+                });
+            });
+        }
+
+        schoolSearch.addEventListener('input', () => {
+            const q = (schoolSearch.value || '').trim().toLowerCase();
+            if (q.length < 3) {
+                searchResults.innerHTML = '<div class="p-2 text-muted small">Ketik minimal 3 huruf untuk menampilkan hasil.</div>';
+                searchResults.classList.add('d-none');
+                return;
+            }
+            const filtered = schools.filter(s =>
+                (s.name && s.name.toLowerCase().includes(q)) ||
+                (s.npsn && String(s.npsn).toLowerCase().includes(q))
+            ).slice(0, 20);
+            if (filtered.length === 0) {
+                searchResults.innerHTML = '<div class="p-2 text-muted small">Tidak ada hasil.</div>';
+                searchResults.classList.remove('d-none');
+                return;
+            }
+            searchResults.innerHTML = filtered.map(s => `
+                <button type="button" class="list-group-item list-group-item-action border-0 border-bottom"
+                    data-school-id="${s.id}">
+                    <div class="fw-semibold">${s.name}</div>
+                    <div class="text-muted small">${s.npsn || '-'}</div>
+                </button>
+            `).join('');
+            searchResults.classList.remove('d-none');
+            attachResultHandlers();
+        });
+
+        submitBtn.addEventListener('click', () => {
+            const staffId = staffSelect.value;
+            if (!staffId) {
+                alert('Pilih staff terlebih dahulu.');
+                return;
+            }
+            if (queue.length === 0) {
+                alert('Tambah minimal satu sekolah.');
+                return;
+            }
+            const periodId = periodSelect && periodSelect.value ? parseInt(periodSelect.value, 10) : null;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Mengirim...';
+            fetch("{{ url_for('portal.coordinator_assignment_requests') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name=\"csrf-token\"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    staff_id: parseInt(staffId, 10),
+                    school_ids: queue.map(q => parseInt(q.id, 10)),
+                    note: noteInput.value || null,
+                    period_id: isNaN(periodId) ? null : periodId
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Permintaan dikirim ke admin.');
+                    queue.splice(0, queue.length);
+                    renderQueue();
+                    noteInput.value = '';
+                    staffSelect.value = '';
+                    if (periodSelect) {
+                        periodSelect.value = defaultPeriodValue;
+                    }
+                    setTimeout(() => window.location.reload(), 600);
+                } else {
+                    alert(data.message || 'Gagal mengirim permintaan.');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Terjadi kesalahan saat mengirim.');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-send"></i> Kirim Permintaan';
+            });
+        });
+
+        renderQueue();
+    })();
+</script>
+{% endblock %}

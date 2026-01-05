@@ -53,10 +53,10 @@ conn = psycopg2.connect(**conn_args)
 _CHAT_TOPIC_AVAILABLE: Optional[bool] = None
 _CHAT_CHANNEL_AVAILABLE: Optional[bool] = None
 MAX_TWITTER_LOG_ROWS = max(0, int(os.getenv("TWITTER_LOG_MAX_ROWS", "100") or 100))
-DEFAULT_LIMITED_QUOTA = 3
+DEFAULT_LIMITED_QUOTA = 20
 LIMIT_COOLDOWN_HOURS = 24
 DEFAULT_LIMITED_REASON = (
-    "Akses Gmail: maksimal 3 chat per 24 jam. "
+    f"Akses Gmail: maksimal {DEFAULT_LIMITED_QUOTA} chat per 24 jam. "
     "Kalau mau unlimited, pakai akun belajar.id atau Telegram."
 )
 STATUS_ENUM_SQL = ", ".join(f"'{status}'" for status in ACCOUNT_STATUS_CHOICES)
@@ -1276,7 +1276,9 @@ def consume_chat_quota(user_id: int) -> Dict[str, Any]:
 
         new_remaining = max(0, quota_remaining - 1)
         new_reset_at = reset_at
-        if new_remaining == 0:
+        # Start cooldown timer when first chat is used (quota decreases from full)
+        # This ensures quota refills after 24 hours from first usage, not from depletion
+        if new_reset_at is None:
             new_reset_at = now + timedelta(hours=LIMIT_COOLDOWN_HOURS)
 
         cur.execute(

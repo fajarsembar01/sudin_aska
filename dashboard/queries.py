@@ -1707,25 +1707,73 @@ def list_dashboard_users() -> List[Dict[str, Any]]:
         cur.execute(
             """
             SELECT
-                id,
-                email,
-                full_name,
-                role,
-                nrk,
-                nip,
-                jabatan,
-                degree_prefix,
-                degree_suffix,
-                no_tester_enabled,
-                assigned_class_id,
-                created_at,
-                last_login_at
-            FROM dashboard_users
-            ORDER BY created_at ASC
+                u.id,
+                u.email,
+                u.full_name,
+                u.role,
+                u.nrk,
+                u.nip,
+                u.jabatan,
+                u.degree_prefix,
+                u.degree_suffix,
+                u.no_tester_enabled,
+                u.assigned_class_id,
+                u.created_at,
+                u.last_login_at,
+                u.account_status,
+                u.whatsapp_number,
+                u.requested_kecamatan,
+                u.verification_notes,
+                k.name as kecamatan_name
+            FROM dashboard_users u
+            LEFT JOIN portal_kecamatan k ON u.requested_kecamatan = k.id
+            ORDER BY u.created_at DESC
             """
         )
         rows = cur.fetchall()
     return [dict(row) for row in rows]
+
+
+def update_dashboard_user(
+    user_id: int,
+    full_name: str,
+    role: str,
+    email: Optional[str] = None,
+    password_hash: Optional[str] = None,
+    account_status: Optional[str] = None
+) -> bool:
+    """Update an existing dashboard user."""
+    updates = [
+        "full_name = %s",
+        "role = %s",
+        "updated_at = NOW()"  # Assuming updated_at exists or handled by DB trigger? If not, ignore
+    ]
+    params = [full_name, role]
+    
+    if email:
+        updates.append("email = %s")
+        params.append(email)
+        
+    if password_hash:
+        updates.append("password_hash = %s")
+        params.append(password_hash)
+        
+    if account_status:
+        updates.append("account_status = %s")
+        params.append(account_status)
+        
+    # check for updated_at column or just ignore it for now if unsure
+    # Safer to check schema first? Or just try basic updates
+    # Let's remove updated_at from list to be safe as it wasn't in original schema view
+    updates = [u for u in updates if "updated_at" not in u]
+        
+    query = f"UPDATE dashboard_users SET {', '.join(updates)} WHERE id = %s"
+    params.append(user_id)
+    
+    with get_cursor(commit=True) as cur:
+        cur.execute(query, params)
+        return cur.rowcount > 0
+
 
 def create_dashboard_user(
     email: str,
@@ -1750,6 +1798,329 @@ def create_dashboard_user(
         )
         new_id = cur.fetchone()[0]
     return int(new_id)
+
+
+# =====================================================
+# Monev Team Management
+# =====================================================
+
+def get_monev_teams(team_type: str = None) -> List[Dict[str, Any]]:
+    """Get all monev teams with kecamatan and coordinator info.
+    
+    Args:
+        team_type: Optional filter - 'kasi' or 'kecamatan'. None returns all.
+    """
+    with get_cursor() as cur:
+        query = """
+            SELECT 
+                mt.id,
+                mt.kecamatan_id,
+                mt.coordinator_id,
+                mt.name,
+                mt.notes,
+                mt.team_type,
+                mt.created_at,
+                mt.updated_at,
+                k.name as kecamatan_name,
+                u.full_name as coordinator_name,
+                u.role as coordinator_role
+            FROM monev_teams mt
+            LEFT JOIN portal_kecamatan k ON mt.kecamatan_id = k.id
+            LEFT JOIN dashboard_users u ON mt.coordinator_id = u.id
+        """
+        if team_type:
+            query += " WHERE mt.team_type = %s"
+            query += " ORDER BY mt.name"
+            cur.execute(query, (team_type,))
+        else:
+            query += " ORDER BY mt.team_type, mt.name"
+            cur.execute(query)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def create_monev_team(name: str, team_type: str, kecamatan_id: int = None) -> Optional[int]:
+    """Create a new monev team.
+    
+    Args:
+        name: Team name
+        team_type: Type - 'kasi', 'kecamatan', or 'custom'
+        kecamatan_id: Optional kecamatan ID (for kecamatan type teams)
+    
+    Returns:
+        New team ID if successful, None otherwise
+    """
+    with get_cursor() as cur:
+        cur.execute("""
+            INSERT INTO monev_teams (name, team_type, kecamatan_id, created_at, updated_at)
+            VALUES (%s, %s, %s, NOW(), NOW())
+            RETURNING id
+        """, (name, team_type, kecamatan_id))
+        row = cur.fetchone()
+        return row['id'] if row else None
+
+
+def delete_monev_team(team_id: int) -> bool:
+    """Delete a monev team and its members.
+    
+    Args:
+        team_id: ID of team to delete
+    
+    Returns:
+        True if deleted, False otherwise
+    """
+    with get_cursor() as cur:
+        # First delete all team members
+        cur.execute("DELETE FROM monev_team_members WHERE team_id = %s", (team_id,))
+        # Then delete the team
+        cur.execute("DELETE FROM monev_teams WHERE id = %s", (team_id,))
+        return cur.rowcount > 0
+
+
+def get_monev_team_by_kecamatan(kecamatan_id: int) -> Optional[Dict[str, Any]]:
+    """Get monev team for a specific kecamatan."""
+    with get_cursor() as cur:
+        cur.execute("""
+            SELECT 
+                mt.id,
+                mt.kecamatan_id,
+                mt.coordinator_id,
+                mt.name,
+                mt.notes,
+                mt.created_at,
+                mt.updated_at,
+                k.name as kecamatan_name,
+                u.full_name as coordinator_name,
+                u.role as coordinator_role
+            FROM monev_teams mt
+            JOIN portal_kecamatan k ON mt.kecamatan_id = k.id
+            LEFT JOIN dashboard_users u ON mt.coordinator_id = u.id
+            WHERE mt.kecamatan_id = %s
+        """, (kecamatan_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_team_members(team_id: int) -> List[Dict[str, Any]]:
+    """Get all members of a monev team."""
+    with get_cursor() as cur:
+        cur.execute("""
+            SELECT 
+                mtm.id,
+                mtm.team_id,
+                mtm.staff_id,
+                mtm.added_at,
+                u.full_name,
+                u.email,
+                u.role,
+                u.nip,
+                u.jabatan
+            FROM monev_team_members mtm
+            JOIN dashboard_users u ON mtm.staff_id = u.id
+            WHERE mtm.team_id = %s
+            ORDER BY mtm.added_at
+        """, (team_id,))
+        return [dict(row) for row in cur.fetchall()]
+
+
+def update_team_coordinator(team_id: int, coordinator_id: Optional[int]) -> bool:
+    """Update the coordinator for a monev team."""
+    with get_cursor(commit=True) as cur:
+        cur.execute("""
+            UPDATE monev_teams 
+            SET coordinator_id = %s, updated_at = NOW()
+            WHERE id = %s
+        """, (coordinator_id, team_id))
+        return cur.rowcount > 0
+
+
+def add_team_member(team_id: int, staff_id: int, added_by: Optional[int] = None) -> bool:
+    """Add a member to a monev team."""
+    try:
+        with get_cursor(commit=True) as cur:
+            cur.execute("""
+                INSERT INTO monev_team_members (team_id, staff_id, added_by)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (team_id, staff_id) DO NOTHING
+            """, (team_id, staff_id, added_by))
+            return cur.rowcount > 0
+    except Exception:
+        return False
+
+
+def remove_team_member(member_id: int) -> bool:
+    """Remove a member from a monev team."""
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM monev_team_members WHERE id = %s", (member_id,))
+        return cur.rowcount > 0
+
+
+def get_available_staff() -> List[Dict[str, Any]]:
+    """Get staff users who can be assigned to teams (coordinator or staff role)."""
+    with get_cursor() as cur:
+        cur.execute("""
+            SELECT 
+                id,
+                full_name,
+                email,
+                role,
+                nip,
+                jabatan
+            FROM dashboard_users
+            WHERE role IN ('coordinator', 'staff', 'admin')
+              AND account_status = 'approved'
+            ORDER BY full_name
+        """)
+        return [dict(row) for row in cur.fetchall()]
+
+def create_team_member_request(
+    team_id: int,
+    staff_id: int,
+    requested_by: int,
+    note: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Create a join request for adding a staff to a team.
+    
+    Returns dict with 'status' = created|pending|already_member and optional request data.
+    """
+    with get_cursor(commit=True) as cur:
+        # Already a member?
+        cur.execute(
+            "SELECT 1 FROM monev_team_members WHERE team_id = %s AND staff_id = %s",
+            (team_id, staff_id),
+        )
+        if cur.fetchone():
+            return {"status": "already_member"}
+        
+        # Existing pending request?
+        cur.execute(
+            """
+            SELECT id, status, created_at
+            FROM monev_team_member_requests
+            WHERE team_id = %s AND staff_id = %s AND status = 'pending'
+            """,
+            (team_id, staff_id),
+        )
+        pending = cur.fetchone()
+        if pending:
+            return {"status": "pending", "request": dict(pending)}
+        
+        # Insert new request
+        cur.execute(
+            """
+            INSERT INTO monev_team_member_requests (team_id, staff_id, requested_by, note)
+            VALUES (%s, %s, %s, %s)
+            RETURNING *
+            """,
+            (team_id, staff_id, requested_by, note),
+        )
+        row = cur.fetchone()
+        return {"status": "created", "request": dict(row)}
+
+
+def list_team_member_requests(status: Optional[str] = None) -> List[Dict[str, Any]]:
+    """List member requests, optionally filtered by status."""
+    conditions = []
+    params: List[Any] = []
+    if status:
+        conditions.append("r.status = %s")
+        params.append(status)
+    where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
+    
+    query = f"""
+        SELECT 
+            r.*,
+            t.name as team_name,
+            t.team_type,
+            u.full_name as staff_name,
+            u.email as staff_email,
+            rb.full_name as requested_by_name,
+            rv.full_name as reviewed_by_name
+        FROM monev_team_member_requests r
+        JOIN monev_teams t ON r.team_id = t.id
+        JOIN dashboard_users u ON r.staff_id = u.id
+        JOIN dashboard_users rb ON r.requested_by = rb.id
+        LEFT JOIN dashboard_users rv ON r.reviewed_by = rv.id
+        {where_clause}
+        ORDER BY r.created_at DESC
+    """
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def list_team_member_requests_for_team(
+    team_id: int,
+    status: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """List requests for a specific team."""
+    conditions = ["r.team_id = %s"]
+    params: List[Any] = [team_id]
+    if status:
+        conditions.append("r.status = %s")
+        params.append(status)
+    where_clause = "WHERE " + " AND ".join(conditions)
+    
+    query = f"""
+        SELECT 
+            r.*,
+            u.full_name as staff_name,
+            u.email as staff_email,
+            rb.full_name as requested_by_name,
+            rv.full_name as reviewed_by_name
+        FROM monev_team_member_requests r
+        JOIN dashboard_users u ON r.staff_id = u.id
+        JOIN dashboard_users rb ON r.requested_by = rb.id
+        LEFT JOIN dashboard_users rv ON r.reviewed_by = rv.id
+        {where_clause}
+        ORDER BY r.created_at DESC
+    """
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_team_member_request(request_id: int) -> Optional[Dict[str, Any]]:
+    """Fetch a single team member request."""
+    query = """
+        SELECT 
+            r.*,
+            t.name as team_name,
+            u.full_name as staff_name,
+            rb.full_name as requested_by_name,
+            rv.full_name as reviewed_by_name
+        FROM monev_team_member_requests r
+        JOIN monev_teams t ON r.team_id = t.id
+        JOIN dashboard_users u ON r.staff_id = u.id
+        JOIN dashboard_users rb ON r.requested_by = rb.id
+        LEFT JOIN dashboard_users rv ON r.reviewed_by = rv.id
+        WHERE r.id = %s
+    """
+    with get_cursor() as cur:
+        cur.execute(query, (request_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def update_team_member_request_status(
+    request_id: int,
+    status: str,
+    reviewed_by: int,
+) -> Optional[Dict[str, Any]]:
+    """Update request status and return updated row."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE monev_team_member_requests
+            SET status = %s,
+                reviewed_by = %s,
+                reviewed_at = NOW()
+            WHERE id = %s
+            RETURNING *
+            """,
+            (status, reviewed_by, request_id),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
 
 
 def upsert_dashboard_user(

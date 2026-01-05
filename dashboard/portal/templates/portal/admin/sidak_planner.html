@@ -1,0 +1,609 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "ASKA Sidak Route Planner" %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<style>
+    #sidakMap {
+        height: 400px;
+        border-radius: 12px;
+        z-index: 1;
+        border: 1px solid var(--border-soft);
+    }
+
+    .kelurahan-card {
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .kelurahan-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-soft);
+    }
+
+    .kelurahan-card.selected {
+        border-color: var(--bs-primary) !important;
+        background: rgba(var(--bs-primary-rgb), 0.05);
+    }
+
+    .school-route-item {
+        border-left: 4px solid var(--bs-gray-300);
+        padding-left: 1rem;
+        margin-left: 0.5rem;
+    }
+
+    .school-route-item.priority {
+        border-left-color: var(--bs-danger);
+    }
+
+    .route-number {
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-weight: 700;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+
+    .urgency-badge {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.5rem;
+    }
+
+    /* Mobile: Hide/Show kelurahan section */
+    @media (max-width: 991.98px) {
+
+        #kelurahanSection.collapsed .card-body,
+        #kelurahanSection.collapsed .nav-tabs {
+            display: none;
+        }
+
+        #kelurahanSection .toggle-btn {
+            display: block;
+        }
+
+        /* Compact header on mobile */
+        .portal-hero .card-body {
+            padding: 0.75rem !important;
+        }
+
+        .portal-hero .icon-badge {
+            width: 36px !important;
+            height: 36px !important;
+            font-size: 1rem !important;
+        }
+
+        .portal-hero .page-title {
+            font-size: 1.1rem !important;
+        }
+
+        .portal-hero .page-subtitle {
+            font-size: 0.8rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        .portal-hero .btn {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .portal-hero .form-select {
+            padding: 0.35rem 0.5rem;
+            font-size: 0.8rem;
+            min-width: 120px !important;
+        }
+
+        #sidakMap {
+            height: 280px;
+        }
+    }
+
+    @media (min-width: 992px) {
+        #kelurahanSection .toggle-btn {
+            display: none !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-4">
+                <div class="d-flex align-items-start gap-3 flex-wrap">
+                    <span class="icon-badge feature-icon text-primary">
+                        <i class="bi bi-map"></i>
+                    </span>
+                    <div>
+                        <h1 class="h3 fw-bold page-title mb-1">ASKA Sidak Route Planner</h1>
+                        <p class="page-subtitle mb-0">Rute optimal kunjungan sekolah berdasarkan urgensi</p>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('portal.admin_stats') }}"
+                        class="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-arrow-left"></i>
+                        <span>Kembali</span>
+                    </a>
+                    <form method="get" class="d-inline-flex">
+                        <select name="period_id" class="form-select border-primary text-primary fw-medium"
+                            onchange="this.form.submit()" style="min-width: 150px;">
+                            <option value="">Semua Periode</option>
+                            {% for p in periods %}
+                            <option value="{{ p.id }}" {% if current_period_id==p.id %}selected{% endif %}>{{ p.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4">
+    <!-- Left: Kelurahan List -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm" id="kelurahanSection">
+            <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                <!-- Mobile Toggle Button -->
+                <button
+                    class="btn btn-outline-primary w-100 mb-2 toggle-btn d-flex align-items-center justify-content-between"
+                    onclick="toggleKelurahanSection()">
+                    <span><i class="bi bi-geo-alt"></i> Pilih Kelurahan</span>
+                    <i class="bi bi-chevron-down" id="toggleIcon"></i>
+                </button>
+                <!-- Tabs -->
+                <ul class="nav nav-tabs nav-fill mb-2" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active small" data-bs-toggle="tab" data-bs-target="#tabUrgency"
+                            type="button">
+                            <i class="bi bi-exclamation-triangle text-danger"></i> Urgensi
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link small" data-bs-toggle="tab" data-bs-target="#tabAll" type="button">
+                            <i class="bi bi-list-ul text-primary"></i> Semua
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body pt-2">
+                <div class="tab-content" style="max-height: 480px; overflow-y: auto;">
+                    <!-- Tab 1: Urgency -->
+                    <div class="tab-pane fade show active" id="tabUrgency">
+                        {% if kelurahan_list %}
+                        <p class="text-muted small mb-2">Diurutkan dari skor terendah</p>
+                        <div class="d-flex flex-column gap-2" id="kelurahanList">
+                            {% for kel in kelurahan_list %}
+                            <div class="card kelurahan-card border" data-id="{{ kel.id }}" data-name="{{ kel.name }}"
+                                onclick="selectKelurahan(this, {{ kel.id }}, '{{ kel.name }}')">
+                                <div class="card-body py-2 px-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-semibold">{{ kel.name }}</div>
+                                            <div class="text-muted small">{{ kel.kecamatan_name }} • {{ kel.school_count
+                                                }} sekolah</div>
+                                        </div>
+                                        <div class="text-end">
+                                            {# Using centralized threshold: >=85 green, >=70 yellow, >=55 orange, <55
+                                                red #} {% if kel.avg_score_pct>= 85 %}
+                                                <span class="badge bg-success urgency-badge">{{ kel.avg_score_pct
+                                                    }}%</span>
+                                                {% elif kel.avg_score_pct >= 70 %}
+                                                <span class="badge bg-warning text-dark urgency-badge">{{
+                                                    kel.avg_score_pct }}%</span>
+                                                {% elif kel.avg_score_pct >= 55 %}
+                                                <span class="badge text-white urgency-badge"
+                                                    style="background:#fd7e14">{{ kel.avg_score_pct }}%</span>
+                                                {% else %}
+                                                <span class="badge bg-danger urgency-badge">{{ kel.avg_score_pct
+                                                    }}%</span>
+                                                {% endif %}
+                                                {% if kel.low_score_count > 0 %}
+                                                <div class="text-danger small">{{ kel.low_score_count }} rendah
+                                                </div>
+                                                {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-geo-alt display-6 opacity-50"></i>
+                            <p class="mt-2 mb-0">Belum ada data penilaian</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Tab 2: All Kelurahan -->
+                    <div class="tab-pane fade" id="tabAll">
+                        <p class="text-muted small mb-2">Semua kelurahan (A-Z)</p>
+                        <div class="d-flex flex-column gap-2">
+                            {% for kel in all_kelurahan_list %}
+                            <div class="card kelurahan-card border" data-id="{{ kel.id }}" data-name="{{ kel.name }}"
+                                onclick="selectKelurahan(this, {{ kel.id }}, '{{ kel.name }}')">
+                                <div class="card-body py-2 px-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-semibold">{{ kel.name }}</div>
+                                            <div class="text-muted small">{{ kel.kecamatan_name }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Map and Route -->
+    <div class="col-lg-8">
+        <!-- Map -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-0">
+                <div id="sidakMap"></div>
+            </div>
+        </div>
+
+        <!-- Route Result -->
+        <div class="card border-0 shadow-sm" id="routeCard" style="display: none;">
+            <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="icon-badge section-icon text-success"
+                            style="width: 32px; height: 32px; font-size: 0.9rem;">
+                            <i class="bi bi-signpost-2"></i>
+                        </span>
+                        <div>
+                            <h6 class="fw-bold mb-0" id="routeTitle">Rute Sidak</h6>
+                            <p class="text-muted small mb-0" id="routeSubtitle">-</p>
+                        </div>
+                    </div>
+                    <div>
+                        <a href="#" id="gmapsLink" target="_blank"
+                            class="btn btn-primary d-inline-flex align-items-center gap-2">
+                            <i class="bi bi-google"></i>
+                            <span>Buka di Google Maps</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="d-flex gap-4 mb-3 flex-wrap">
+                    <div>
+                        <span class="text-muted small">Jarak</span>
+                        <div class="fw-bold" id="routeDistance">-</div>
+                    </div>
+                    <div>
+                        <span class="text-muted small">Waktu Perjalanan</span>
+                        <div class="fw-bold" id="routeTravelTime">-</div>
+                    </div>
+                    <div>
+                        <span class="text-muted small">Total (inc. kunjungan)</span>
+                        <div class="fw-bold" id="routeTotalTime">-</div>
+                    </div>
+                    <div>
+                        <span class="text-muted small">Sekolah</span>
+                        <div class="fw-bold" id="routeSchoolCount">-</div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="route-number bg-success text-white">📍</span>
+                        <span class="fw-semibold">Kantor Walikota Jakarta Utara</span>
+                        <span class="badge bg-light text-dark">Start</span>
+                    </div>
+                </div>
+
+                <div id="routeSchoolList">
+                    <!-- Schools will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading / Empty State -->
+        <div class="card border-0 shadow-sm" id="emptyCard">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="bi bi-cursor display-4 opacity-50"></i>
+                <p class="mt-3 mb-1">Pilih kelurahan untuk memulai</p>
+                <small>ASKA akan mengoptimalkan rute kunjungan</small>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm" id="loadingCard" style="display: none;">
+            <div class="card-body text-center py-5">
+                <div class="spinner-border text-primary mb-3" role="status"></div>
+                <p class="mb-0">ASKA sedang menganalisis rute optimal...</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Room Details Modal -->
+<div class="modal fade" id="roomDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="roomModalTitle">Detail Ruangan Bermasalah</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="roomModalBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block portal_scripts %}
+<script src="{{ url_for('static', filename='js/color-config.js') }}"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    var map;
+    var routeLayer;
+    var markersLayer;
+    var selectedKelurahanId = null;
+    var periodId = {{ current_period_id| tojson if current_period_id else 'null' }};
+
+    // Start location: Walikota Jakarta Utara
+    var startLocation = { lat: -6.1203950, lon: 106.8920090, name: 'Kantor Walikota Jakarta Utara' };
+
+    // Mobile toggle functions
+    function toggleKelurahanSection() {
+        var section = document.getElementById('kelurahanSection');
+        var icon = document.getElementById('toggleIcon');
+        if (section.classList.contains('collapsed')) {
+            section.classList.remove('collapsed');
+            icon.classList.remove('bi-chevron-up');
+            icon.classList.add('bi-chevron-down');
+        } else {
+            section.classList.add('collapsed');
+            icon.classList.remove('bi-chevron-down');
+            icon.classList.add('bi-chevron-up');
+        }
+    }
+
+    function collapseKelurahanOnMobile() {
+        if (window.innerWidth < 992) {
+            var section = document.getElementById('kelurahanSection');
+            var icon = document.getElementById('toggleIcon');
+            section.classList.add('collapsed');
+            if (icon) {
+                icon.classList.remove('bi-chevron-down');
+                icon.classList.add('bi-chevron-up');
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Default collapse on mobile on first load
+        collapseKelurahanOnMobile();
+
+        // Initialize map
+        map = L.map('sidakMap').setView([startLocation.lat, startLocation.lon], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Add start marker
+        L.marker([startLocation.lat, startLocation.lon], {
+            icon: L.divIcon({
+                className: 'start-marker',
+                html: '<div style="background: #198754; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">📍</div>',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            })
+        }).addTo(map).bindPopup('<b>' + startLocation.name + '</b><br>Titik Awal');
+
+        routeLayer = L.layerGroup().addTo(map);
+        markersLayer = L.layerGroup().addTo(map);
+    });
+
+    function selectKelurahan(el, id, name) {
+        // Update UI
+        document.querySelectorAll('.kelurahan-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+
+        // Collapse kelurahan section on mobile after selection
+        collapseKelurahanOnMobile();
+
+        selectedKelurahanId = id;
+        generateRoute(id, name);
+    }
+
+    function generateRoute(kelurahanId, kelurahanName) {
+        document.getElementById('emptyCard').style.display = 'none';
+        document.getElementById('routeCard').style.display = 'none';
+        document.getElementById('loadingCard').style.display = 'block';
+
+        // Clear existing route
+        routeLayer.clearLayers();
+        markersLayer.clearLayers();
+
+        fetch('{{ url_for("portal.generate_sidak_route") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                kelurahan_id: kelurahanId,
+                period_id: periodId,
+                max_schools: 10
+            })
+        })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('loadingCard').style.display = 'none';
+
+                if (!data.success) {
+                    document.getElementById('emptyCard').style.display = 'block';
+                    alert(data.message || 'Tidak dapat generate rute');
+                    return;
+                }
+
+                document.getElementById('routeCard').style.display = 'block';
+
+                // Update title
+                document.getElementById('routeTitle').textContent = 'Rute Sidak: ' + kelurahanName;
+                document.getElementById('routeSubtitle').textContent = data.schools.length + ' sekolah dengan GPS';
+
+                // Update stats
+                if (data.stats) {
+                    document.getElementById('routeDistance').textContent = data.stats.distance_km + ' km';
+                    document.getElementById('routeTravelTime').textContent = data.stats.travel_minutes + ' menit';
+                    document.getElementById('routeTotalTime').textContent = data.stats.total_minutes + ' menit';
+                    document.getElementById('routeSchoolCount').textContent = data.stats.school_count + ' sekolah';
+                }
+
+                // Update Google Maps link
+                document.getElementById('gmapsLink').href = data.gmaps_link || '#';
+
+                // Draw route on map
+                var routePoints = [[startLocation.lat, startLocation.lon]];
+                var bounds = L.latLngBounds([[startLocation.lat, startLocation.lon]]);
+
+                // Add school markers
+                data.schools.forEach(function (school, idx) {
+                    if (!school.latitude || !school.longitude) return;
+
+                    var point = [school.latitude, school.longitude];
+                    routePoints.push(point);
+                    bounds.extend(point);
+
+                    // Use centralized color config
+                    var colorInfo = getScoreColor(school.score_pct);
+                    var color = colorInfo.color;
+
+                    var marker = L.marker(point, {
+                        icon: L.divIcon({
+                            className: 'school-marker',
+                            html: '<div style="background: ' + color + '; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">' + (idx + 1) + '</div>',
+                            iconSize: [28, 28],
+                            iconAnchor: [14, 14]
+                        })
+                    });
+
+                    marker.bindPopup(
+                        '<b>' + school.name + '</b><br>' +
+                        'Skor: ' + school.score_pct + '%<br>' +
+                        (school.worst_room ? 'Masalah: ' + school.worst_room : '')
+                    );
+
+                    markersLayer.addLayer(marker);
+                });
+
+                // Draw polyline
+                if (routePoints.length > 1) {
+                    var polyline = L.polyline(routePoints, {
+                        color: '#0d6efd',
+                        weight: 4,
+                        opacity: 0.7,
+                        dashArray: '10, 10'
+                    });
+                    routeLayer.addLayer(polyline);
+                }
+
+                // Fit bounds
+                map.fitBounds(bounds, { padding: [50, 50] });
+
+                // Populate school list with Lihat button
+                var listHtml = '';
+                data.schools.forEach(function (school, idx) {
+                    var priorityClass = school.score_pct < 70 ? 'priority' : '';
+                    // Use centralized color config
+                    var colorInfo = getScoreColor(school.score_pct);
+                    var scoreClass = colorInfo.className;
+
+                    listHtml += '<div class="school-route-item ' + priorityClass + ' mb-2 py-2">' +
+                        '<div class="d-flex align-items-center gap-2">' +
+                        '<span class="route-number ' + scoreClass + ' text-white">' + (idx + 1) + '</span>' +
+                        '<div class="flex-grow-1">' +
+                        '<div class="fw-semibold">' + school.name + '</div>' +
+                        '<div class="text-muted small">' + school.jenjang + (school.worst_room ? ' • Masalah: ' + school.worst_room : '') + '</div>' +
+                        '</div>' +
+                        '<button class="btn btn-sm btn-outline-primary" onclick="showRoomDetails(' + school.id + ', \'' + school.name.replace(/'/g, "\\'") + '\')">' +
+                        '<i class="bi bi-eye"></i> Lihat' +
+                        '</button>' +
+                        '<span class="badge ' + scoreClass + '">' + school.score_pct + '%</span>' +
+                        '</div></div>';
+                });
+                document.getElementById('routeSchoolList').innerHTML = listHtml;
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('loadingCard').style.display = 'none';
+                document.getElementById('emptyCard').style.display = 'block';
+                alert('Error: ' + err.message);
+            });
+    }
+
+    // Show room details modal
+    function showRoomDetails(schoolId, schoolName) {
+        var modal = new bootstrap.Modal(document.getElementById('roomDetailsModal'));
+        document.getElementById('roomModalTitle').textContent = 'Detail Ruangan: ' + schoolName;
+        document.getElementById('roomModalBody').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+        modal.show();
+
+        fetch('/portal/admin/school-rooms/' + schoolId)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success || !data.rooms.length) {
+                    document.getElementById('roomModalBody').innerHTML = '<div class="text-center text-muted py-4">Tidak ada data ruangan</div>';
+                    return;
+                }
+
+                var html = '';
+                data.rooms.forEach(function (room) {
+                    html += '<div class="card mb-3">';
+                    html += '<div class="card-header bg-light"><strong><i class="bi bi-door-open me-2"></i>' + room.room_name + '</strong></div>';
+                    html += '<div class="card-body">';
+
+                    room.staff_assessments.forEach(function (staff, sIdx) {
+                        // Use centralized color config
+                        var colorInfo = getScoreColor(staff.score_pct);
+                        var scoreClass = colorInfo.className;
+
+                        html += '<div class="border-bottom pb-3 mb-3">';
+                        html += '<div class="d-flex align-items-center gap-2 mb-2">';
+                        html += '<i class="bi bi-person-circle text-primary"></i>';
+                        html += '<strong>' + staff.staff_name + '</strong>';
+                        html += '<span class="badge ' + scoreClass + ' ms-auto">' + staff.score_pct + '%</span>';
+                        html += '</div>';
+
+                        if (staff.photo_url) {
+                            html += '<img src="' + staff.photo_url + '" class="img-fluid rounded mb-2" style="max-height: 150px;" onerror="this.style.display=\'none\'">';
+                        }
+
+                        if (staff.notes) {
+                            html += '<div class="text-muted small"><i class="bi bi-chat-left-text me-1"></i>' + staff.notes + '</div>';
+                        } else {
+                            html += '<div class="text-muted small fst-italic">Tidak ada catatan</div>';
+                        }
+                        html += '</div>';
+                    });
+
+                    html += '</div></div>';
+                });
+
+                document.getElementById('roomModalBody').innerHTML = html;
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('roomModalBody').innerHTML = '<div class="text-center text-danger py-4">Error: ' + err.message + '</div>';
+            });
+    }
+</script>
+{% endblock %}

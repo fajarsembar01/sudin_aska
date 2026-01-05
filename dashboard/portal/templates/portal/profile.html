@@ -1,0 +1,96 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Pengaturan Profil" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="d-flex align-items-center gap-3 mb-3">
+        <span class="icon-badge feature-icon text-primary">
+            <i class="bi bi-person-gear"></i>
+        </span>
+        <div>
+            <h1 class="h5 fw-bold mb-0">Pengaturan Profil</h1>
+            <p class="text-muted mb-0 small">Ubah data akun dan ganti password Anda.</p>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="fw-semibold mb-3"><i class="bi bi-person-lines-fill me-2"></i>Data Profil</h6>
+                    <form method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Nama Lengkap</label>
+                            <input type="text" name="full_name" class="form-control" required
+                                value="{{ profile.full_name or '' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" required
+                                value="{{ profile.email or '' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">NIP</label>
+                            <input type="text" name="nip" class="form-control" value="{{ profile.nip or '' }}"
+                                placeholder="Opsional">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">NRK</label>
+                            <input type="text" name="nrk" class="form-control" value="{{ profile.nrk or '' }}"
+                                placeholder="Opsional">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Jabatan</label>
+                            <input type="text" name="jabatan" class="form-control" value="{{ profile.jabatan or '' }}"
+                                placeholder="Opsional">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">No. WhatsApp</label>
+                            <input type="tel" name="whatsapp_number" class="form-control"
+                                value="{{ profile.whatsapp_number or '' }}" placeholder="08123456789">
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('portal.home') }}" class="btn btn-light w-50">Batal</a>
+                            <button type="submit" class="btn btn-primary w-50">
+                                <i class="bi bi-save"></i> Simpan Profil
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="fw-semibold mb-3"><i class="bi bi-shield-lock me-2"></i>Ganti Password</h6>
+                    <div class="alert alert-info small">
+                        Isi bagian ini hanya jika ingin mengganti password.
+                    </div>
+                    <form method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Password Saat Ini</label>
+                            <input type="password" name="current_password" class="form-control" autocomplete="current-password">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password Baru</label>
+                            <input type="password" name="new_password" class="form-control" autocomplete="new-password">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Konfirmasi Password Baru</label>
+                            <input type="password" name="confirm_password" class="form-control" autocomplete="new-password">
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="reset" class="btn btn-light w-50">Reset</button>
+                            <button type="submit" class="btn btn-success w-50">
+                                <i class="bi bi-key"></i> Simpan Password
+                            </button>
+                        </div>
+                        <p class="text-muted small mt-2 mb-0">Minimal 8 karakter. Password baru akan menggantikan yang lama setelah disimpan.</p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

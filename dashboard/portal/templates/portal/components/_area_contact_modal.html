@@ -1,0 +1,50 @@
+<div class="modal fade" id="areaContactModal" tabindex="-1" aria-labelledby="areaContactModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="areaContactModalLabel">
+                    <i class="bi bi-telephone-outbound me-2 text-success"></i>Hubungi Admin Wilayah
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if user_school and user_school.kecamatan_name %}
+                <div class="alert alert-primary py-2 mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-geo-alt-fill"></i>
+                    <span>Wilayah Anda: <strong>{{ user_school.kecamatan_name }}</strong></span>
+                </div>
+                {% elif user_school %}
+                <div class="alert alert-warning py-2 mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <span>Wilayah sekolah Anda belum diatur. Silakan lengkapi profil sekolah.</span>
+                </div>
+                {% endif %}
+
+                <p class="mb-3">Butuh bantuan? Silakan hubungi admin wilayah berikut:</p>
+                <div class="list-group">
+                    {% for c in area_contacts or [] %}
+                    <div class="list-group-item d-flex justify-content-between align-items-start {% if c.is_user_area %}border-primary border-2{% endif %}"
+                        {% if c.is_user_area %}style="border-left: 4px solid var(--bs-primary) !important;" {% endif %}>
+                        <div>
+                            <div class="fw-semibold">{{ c.area }}
+                                {% if c.is_user_area %}
+                                <span class="badge bg-primary ms-2">Wilayah Anda</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-muted small">{{ c.name }} • {{ c.phone }}</div>
+                        </div>
+                        <a class="btn btn-success btn-sm d-inline-flex align-items-center gap-2" href="{{ c.wa_link }}"
+                            target="_blank" rel="noopener">
+                            <i class="bi bi-whatsapp"></i><span>WhatsApp</span>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="alert alert-info mt-3 mb-0 small">
+                    Admin wilayah siap membantu verifikasi data atau pembaruan akun sekolah Anda.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

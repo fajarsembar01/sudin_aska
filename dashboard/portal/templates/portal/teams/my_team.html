@@ -1,0 +1,256 @@
+{% extends 'portal/base_portal.html' %}
+{% set page_title = "Tim Saya" %}
+{% block portal_content %}
+<section class="page-header">
+    <div class="page-title-group">
+        <span class="icon-badge feature-icon text-primary">
+            <i class="bi bi-people-fill"></i>
+        </span>
+        <div>
+            <h1 class="h4 fw-bold page-title mb-0">Tim Monev Saya</h1>
+            <p class="page-subtitle">Informasi tim monitoring evaluasi Anda.</p>
+        </div>
+    </div>
+</section>
+
+{% if team %}
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-geo-alt-fill me-2"></i>{{ team.kecamatan_name }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Team Info -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="icon-badge text-primary">
+                                <i class="bi bi-person-badge"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted mb-1">Koordinator Tim</h6>
+                                {% if team.coordinator_name %}
+                                <p class="fw-semibold mb-0">{{ team.coordinator_name }}</p>
+                                <small class="text-muted">{{ team.coordinator_role|upper }}</small>
+                                {% else %}
+                                <p class="text-muted mb-0">Belum ada koordinator</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="icon-badge text-success">
+                                <i class="bi bi-people"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted mb-1">Jumlah Anggota</h6>
+                                <p class="fw-semibold mb-0">{{ team.members|length }} orang</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Your Role Badge -->
+                {% if team_role == 'coordinator' %}
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-star-fill me-2"></i>
+                    <strong>Anda adalah Koordinator tim ini</strong>
+                </div>
+                {% else %}
+                <div class="alert alert-success mb-4">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <strong>Anda adalah Anggota tim ini</strong>
+                </div>
+                {% endif %}
+
+                <!-- Members List -->
+                <h6 class="mb-3">
+                    <i class="bi bi-card-list me-2"></i>Daftar Anggota Tim
+                </h6>
+
+                {% if team.members %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nama</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Jabatan</th>
+                                <th>NIP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in team.members %}
+                            <tr {% if member.staff_id==current_user.id %}class="table-primary" {% endif %}>
+                                <td>
+                                    <div class="fw-semibold">{{ member.full_name }}</div>
+                                    {% if member.staff_id == current_user.id %}
+                                    <small class="badge bg-primary">Anda</small>
+                                    {% endif %}
+                                </td>
+                                <td><small>{{ member.email }}</small></td>
+                                <td><span class="badge bg-secondary text-uppercase">{{ member.role }}</span></td>
+                                <td>{{ member.jabatan or '-' }}</td>
+                                <td><small>{{ member.nip or '-' }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Belum ada anggota dalam tim ini.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if team_role == 'coordinator' %}
+<div class="row g-4 mt-1">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3"><i class="bi bi-person-plus me-2"></i>Ajukan Penambahan Anggota</h6>
+                {% if available_staff %}
+                <form method="post" action="{{ url_for('portal.coordinator_request_member') }}" class="row g-3 align-items-end">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="col-md-6">
+                        <label class="form-label">Pilih Staff</label>
+                        <input type="text" id="staffSearch" class="form-control mb-2" placeholder="Cari nama / email / NIP">
+                        <select name="staff_id" id="staffSelect" class="form-select" required>
+                            <option value="">-- Pilih Staff --</option>
+                            {% for staff in available_staff %}
+                            {% set search_label = (staff.full_name ~ ' ' ~ staff.email ~ ' ' ~ (staff.nip or '')) | lower %}
+                            <option value="{{ staff.id }}" data-search="{{ search_label }}">
+                                {{ staff.full_name }} ({{ staff.role|upper }})
+                                {% if staff.jabatan %} - {{ staff.jabatan }}{% endif %}
+                                {% if staff.nip %} • NIP: {{ staff.nip }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Catatan (opsional)</label>
+                        <input type="text" name="note" class="form-control" placeholder="Keperluan penugasan">
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-send me-1"></i>Ajukan
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Semua staff tersedia sudah menjadi anggota tim ini.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3"><i class="bi bi-inbox me-2"></i>Status Permintaan Anggota</h6>
+                {% if member_requests %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Staff</th>
+                                <th>Diajukan</th>
+                                <th>Status</th>
+                                <th>Admin</th>
+                                <th>Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in member_requests %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">{{ req.staff_name or 'Staff' }}</div>
+                                    <small class="text-muted">{{ req.staff_email }}</small>
+                                </td>
+                                <td><small>{{ req.created_at.strftime('%d %b %Y %H:%M') if req.created_at else '-' }}</small></td>
+                                <td>
+                                    {% if req.status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                    {% elif req.status == 'approved' %}
+                                    <span class="badge bg-success">Disetujui</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Ditolak</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if req.reviewed_by_name %}
+                                    <small>{{ req.reviewed_by_name }}</small>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td><small class="text-muted">{{ req.note or '-' }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-light mb-0">Belum ada permintaan anggota.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>
+    <strong>Anda belum tergabung dalam tim monev manapun.</strong>
+    <p class="mb-0 mt-2">Silakan hubungi administrator untuk ditambahkan ke tim.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+    // Simple client-side search for the staff dropdown using name, email, or NIP
+    document.addEventListener('DOMContentLoaded', function () {
+        var searchInput = document.getElementById('staffSearch');
+        var select = document.getElementById('staffSelect');
+        if (!searchInput || !select) return;
+
+        var options = Array.prototype.slice.call(select.options);
+
+        function filterOptions(term) {
+            var needle = term.trim().toLowerCase();
+            var firstVisible = null;
+
+            options.forEach(function (opt) {
+                if (!opt.value) return; // skip placeholder
+                var matches = !needle || (opt.dataset.search || '').includes(needle);
+                opt.hidden = !matches;
+                if (matches && !firstVisible) firstVisible = opt;
+            });
+
+            // Keep selection aligned with visible options
+            if (firstVisible) {
+                select.value = firstVisible.value;
+            } else {
+                select.value = '';
+            }
+        }
+
+        searchInput.addEventListener('input', function (evt) {
+            filterOptions(evt.target.value);
+        });
+    });
+</script>
+{% endblock %}

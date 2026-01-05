@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Dokumentasi - Dashboard Sekolah{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-2">Dokumentasi & Panduan</h1>
+        <p class="text-gray-600">Kumpulan panduan penggunaan sistem dan fitur dashboard.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <!-- Sidebar Navigation -->
+        <div class="md:col-span-1">
+            <div class="bg-white rounded-lg shadow p-4 sticky top-4">
+                <h3 class="font-semibold text-lg mb-4 text-gray-800">Daftar Isi</h3>
+                <nav class="space-y-2">
+                    <a href="#email-sudin" class="block px-3 py-2 rounded text-blue-600 bg-blue-50 font-medium">1.
+                        Daftar Email Sudin</a>
+                    <!-- Placeholder for future docs -->
+                    <!-- <a href="#other-topic" class="block px-3 py-2 rounded text-gray-600 hover:bg-gray-50 hover:text-gray-900">2. Topik Lain</a> -->
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="md:col-span-3">
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+
+                <!-- Topic: Email Sudin -->
+                <article id="email-sudin" class="p-8">
+                    <header class="mb-8 pb-8 border-b">
+                        <h2 class="text-2xl font-bold mb-4">Cara Membuat Email Domain Sendiri Gratis</h2>
+                        <div class="prose max-w-none text-gray-600">
+                            <p>Panduan ini menjelaskan cara membuat email profesional menggunakan domain sekolah sendiri
+                                (contoh: <code>nama@sekolah.sch.id</code> atau <code>admin@sudindikju2.com</code>)
+                                secara gratis menggunakan layanan Cloudflare Email Routing dan Gmail.</p>
+                        </div>
+                    </header>
+
+                    <div class="space-y-8">
+                        <section>
+                            <h3 class="text-xl font-semibold mb-4 text-gray-800">Prasyarat</h3>
+                            <ul
+                                class="list-disc list-inside space-y-2 text-gray-600 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                                <li>Sudah memiliki nama domain (beli di Niagahoster, Cloudflare, dll).</li>
+                                <li>Memiliki akun Gmail pribadi (untuk inbox penampung).</li>
+                            </ul>
+                        </section>
+
+                        <section>
+                            <h3 class="text-xl font-semibold mb-4 text-gray-800">Langkah 1: Hubungkan Domain ke
+                                Cloudflare</h3>
+                            <ol class="list-decimal list-outside ml-5 space-y-3 text-gray-700">
+                                <li>Daftar akun gratis di <a href="https://dash.cloudflare.com" target="_blank"
+                                        class="text-blue-600 underline">Cloudflare</a>.</li>
+                                <li>Klik <strong>Add a Site</strong> dan masukkan nama domain Anda.</li>
+                                <li>Pilih <strong>Free Plan</strong>.</li>
+                                <li>Cloudflare akan memberikan 2 Nameserver baru.</li>
+                                <li>Login ke tempat Anda membeli domain, lalu ubah Nameserver lama menjadi Nameserver
+                                    dari Cloudflare.</li>
+                                <li>Tunggu hingga status domain di Cloudflare menjadi <strong>Active</strong>.</li>
+                            </ol>
+                        </section>
+
+                        <section>
+                            <h3 class="text-xl font-semibold mb-4 text-gray-800">Langkah 2: Aktifkan Email Routing</h3>
+                            <ol class="list-decimal list-outside ml-5 space-y-3 text-gray-700">
+                                <li>Di dashboard Cloudflare, buka menu <strong>Email</strong> > <strong>Email
+                                        Routing</strong>.</li>
+                                <li>Klik <strong>Get Started</strong>.</li>
+                                <li>Masukkan alamat email kustom yang diinginkan (misal: <code>admin</code>) dan email
+                                    tujuan (Gmail Anda).</li>
+                                <li>Klik <strong>Create and Continue</strong>.</li>
+                                <li>Jika diminta menambahkan DNS Records otomatis, klik <strong>Add records and
+                                        enable</strong>.</li>
+                                <li>Buka Inbox Gmail Anda, cari email verifikasi dari Cloudflare, dan klik link
+                                    verifikasinya.</li>
+                                <li>Pastikan status Email Routing di Cloudflare sudah <strong>Enabled</strong> (Hijau).
+                                </li>
+                            </ol>
+                            <div class="mt-4 p-4 bg-green-50 text-green-800 rounded">
+                                <strong>Hasil:</strong> Sekarang Anda sudah bisa MENERIMA email. Semua email ke domain
+                                baru akan masuk ke Gmail Anda.
+                            </div>
+                        </section>
+
+                        <section>
+                            <h3 class="text-xl font-semibold mb-4 text-gray-800">Langkah 3: Setup Gmail agar Bisa
+                                Mengirim (Send As)</h3>
+                            <p class="mb-4 text-gray-600">Agar bisa membalas email menggunakan nama domain, ikuti
+                                langkah ini:</p>
+
+                            <div class="mb-6">
+                                <h4 class="font-bold text-gray-700 mb-2">A. Buat App Password Google</h4>
+                                <ol class="list-decimal list-outside ml-5 space-y-2 text-gray-700">
+                                    <li>Buka <a href="https://myaccount.google.com/security" target="_blank"
+                                            class="text-blue-600 underline">Pengaturan Keamanan Google</a>.</li>
+                                    <li>Pastikan <strong>2-Step Verification</strong> sudah menyala.</li>
+                                    <li>Cari menu <strong>App Passwords</strong> (Sandi Aplikasi).</li>
+                                    <li>Buat App Password baru dengan nama "Email Domain".</li>
+                                    <li>Copy kode 16 digit yang muncul.</li>
+                                </ol>
+                            </div>
+
+                            <div>
+                                <h4 class="font-bold text-gray-700 mb-2">B. Setting SMTP di Gmail</h4>
+                                <ol class="list-decimal list-outside ml-5 space-y-2 text-gray-700">
+                                    <li>Buka Gmail > Settings (⚙️) > <strong>Accounts and Import</strong>.</li>
+                                    <li>Di bagian "Send mail as", klik <strong>Add another email address</strong>.</li>
+                                    <li>Masukkan Nama dan Email Domain baru. <br><span
+                                            class="text-red-500 font-bold">PENTING:</span> HILANGKAN centang
+                                        <strong>Treat as an alias</strong>. Klik Next.
+                                    </li>
+                                    <li>Isi pengaturan SMTP:
+                                        <ul
+                                            class="list-disc list-inside ml-4 mt-2 bg-gray-100 p-3 rounded text-sm font-mono">
+                                            <li>SMTP Server: smtp.gmail.com</li>
+                                            <li>Port: 587 (TLS)</li>
+                                            <li>Username: Email Gmail ASLI Anda</li>
+                                            <li>Password: Kode App Password 16 digit (Bukan password login biasa)</li>
+                                        </ul>
+                                    </li>
+                                    <li>Klik <strong>Add Account</strong> dan verifikasi kode yang dikirim ke email.
+                                    </li>
+                                </ol>
+                            </div>
+                        </section>
+
+                        <section class="bg-blue-50 p-6 rounded-lg border border-blue-100 mt-8">
+                            <h3 class="text-lg font-bold text-blue-900 mb-2">Selesai! 🎉</h3>
+                            <p class="text-blue-800">
+                                Sekarang Anda bisa meneria dan mengirim email menggunakan domain sendiri secara gratis
+                                selamanya.
+                            </p>
+                        </section>
+                    </div>
+                </article>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

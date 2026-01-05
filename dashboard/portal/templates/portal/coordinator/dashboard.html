@@ -1,0 +1,162 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Dashboard Tim - " ~ (section.name or "Koordinator") %}
+
+{% block portal_content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="bi bi-people-fill me-2"></i>Dashboard Seksi {{ section.name }}</h2>
+            <p class="text-muted">{{ section.description }}</p>
+        </div>
+    </div>
+
+    <!-- Team Statistics -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <div class="text-primary mb-2">
+                        <i class="bi bi-people fs-1"></i>
+                    </div>
+                    <h5 class="card-title text-muted mb-1">Total Staff</h5>
+                    <h2 class="mb-0">{{ stats.total_staff or 0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <div class="text-info mb-2">
+                        <i class="bi bi-clipboard-data fs-1"></i>
+                    </div>
+                    <h5 class="card-title text-muted mb-1">Total Penilaian</h5>
+                    <h2 class="mb-0">{{ stats.total_assessments or 0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <div class="text-success mb-2">
+                        <i class="bi bi-check-circle fs-1"></i>
+                    </div>
+                    <h5 class="card-title text-muted mb-1">Selesai</h5>
+                    <h2 class="mb-0">{{ stats.completed_assessments or 0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <div class="text-warning mb-2">
+                        <i class="bi bi-building fs-1"></i>
+                    </div>
+                    <h5 class="card-title text-muted mb-1">Sekolah Dinilai</h5>
+                    <h2 class="mb-0">{{ stats.schools_assessed or 0 }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Members -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-person-lines-fill me-2"></i>Tim Seksi {{ section.name }}</h5>
+            <span class="badge bg-light text-primary">{{ team_members|length }} Staff</span>
+        </div>
+        <div class="card-body p-0">
+            {% if team_members %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>No</th>
+                            <th>Nama</th>
+                            <th>Email</th>
+                            <th>Jabatan</th>
+                            <th>WhatsApp</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in team_members %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-primary text-white me-2">
+                                        {{ member.full_name[0]|upper }}
+                                    </div>
+                                    <strong>{{ member.full_name }}</strong>
+                                </div>
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ member.email }}</small>
+                            </td>
+                            <td>{{ member.jabatan or '-' }}</td>
+                            <td>
+                                {% if member.whatsapp_number %}
+                                <a href="https://wa.me/{{ member.whatsapp_number }}" target="_blank"
+                                    class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-whatsapp"></i> Chat
+                                </a>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if member.account_status == 'approved' %}
+                                <span class="badge bg-success">Aktif</span>
+                                {% elif member.account_status == 'pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ member.account_status or 'Unknown' }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                <p>Belum ada staff yang ditugaskan di seksi ini.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3"><i class="bi bi-lightning-fill me-2"></i>Aksi Cepat</h5>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ url_for('portal.coordinator_team') }}" class="btn btn-primary">
+                            <i class="bi bi-people me-1"></i> Kelola Tim
+                        </a>
+                        <a href="{{ url_for('portal.admin_stats') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-graph-up me-1"></i> Lihat Statistik
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 16px;
+    }
+</style>
+{% endblock %}

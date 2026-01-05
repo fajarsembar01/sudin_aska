@@ -187,7 +187,7 @@ def build_qa_chain():
 
     retriever = vectorstore.as_retriever(
         search_type="mmr",
-        search_kwargs={"k": 3, "fetch_k": 25, "lambda_mult": 0.8}
+        search_kwargs={"k": 5, "fetch_k": 25, "lambda_mult": 0.8}
     )
     # TAHAP 1: BUAT RETRIEVER YANG SADAR HISTORY
     # Tujuan: Mengubah pertanyaan user (misal: "kalau untuk SMA?") menjadi pertanyaan mandiri

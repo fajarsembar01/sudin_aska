@@ -583,8 +583,7 @@
             gap: 8px;
             align-items: center;
             justify-content: flex-end;
-            margin-top: 8px;
-            padding-top: 4px;
+            margin-top: 0;
             width: 100%;
         }
 
@@ -681,7 +680,7 @@
     {% endif %}
     {% endwith %}
 
-    {% set raw_limit = quota.quotaLimit if quota and quota.quotaLimit is not none else 3 %}
+    {% set raw_limit = quota.quotaLimit if quota and quota.quotaLimit is not none else 20 %}
     {% set raw_remaining = quota.quotaRemaining if quota and quota.quotaRemaining is not none else raw_limit %}
     {% set status_notice = status_notice or None %}
 
@@ -771,7 +770,8 @@
                     Kamu masih punya {{ 0 if raw_remaining < 0 else raw_remaining }} dari {{ raw_limit }} chat tersisa.
                     {% endif %} {% else %} Akses penuh aktif. Selamat ngobrol bareng ASKA! 🎉 {% endif %} </p>
                     <p class="mb-0" id="quotaNoticeReason">
-                        {{ quota.limitedReason or "Login Gmail ASKA dibatasi 3 chat per 24 jam supaya kapasitas tetap
+                        {{ quota.limitedReason or "Login Gmail ASKA dibatasi sejumlah chat per 24 jam supaya kapasitas
+                        tetap
                         optimal. Pakai akun belajar.id atau Telegram buat ngobrol tanpa batas ya!" }}
                     </p>
         </div>
@@ -802,7 +802,7 @@
                     <div class="content">
                         <span>Knowledge base ASKA isinya antara lain:</span>
                         <ul>
-                            <li>Profil SDN Semper Barat 01 🏫</li>
+                            <li>Profil SUDINDIK JU 2 🏫</li>
                             <li>Info SPMB, KJP, dan administrasi 📄</li>
                             <li>Kalendar sekolah 🗓️</li>
                             <li>FAQ random seputar sekolah 🤙</li>
@@ -880,7 +880,7 @@
         }
         const limitedReasonFallback = (quotaState && quotaState.limitedReason)
             ? quotaState.limitedReason
-            : "Login Gmail ASKA dibatasi 3 chat per 24 jam supaya kapasitas tetap optimal. Pakai akun belajar.id atau Telegram @tanyaaska_bot buat ngobrol tanpa batas ya!";
+            : "Login Gmail ASKA dibatasi sejumlah chat per 24 jam supaya kapasitas tetap optimal. Pakai akun belajar.id atau Telegram @tanyaaska_bot buat ngobrol tanpa batas ya!";
         let quotaCountdownInterval = null;
 
         let chatOffset = 10;
@@ -1030,7 +1030,7 @@
             }
 
             const accessTier = quotaState.accessTier || 'full';
-            const limit = typeof quotaState.quotaLimit === 'number' ? quotaState.quotaLimit : 3;
+            const limit = typeof quotaState.quotaLimit === 'number' ? quotaState.quotaLimit : 20;
             const remainingRaw = typeof quotaState.quotaRemaining === 'number' ? quotaState.quotaRemaining : limit;
             const remaining = Math.max(0, remainingRaw);
             const cooldownActive = accessTier === 'limited' && remaining === 0 && Boolean(quotaState.quotaResetAt);

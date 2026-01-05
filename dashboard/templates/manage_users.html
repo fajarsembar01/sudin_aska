@@ -2,6 +2,7 @@
 {% block title %}Manajemen User - ASKA Insights{% endblock %}
 
 {% block content %}
+
 <section class="page-header">
     <div class="page-title-group">
         <span class="icon-badge feature-icon text-primary">
@@ -15,90 +16,307 @@
 </section>
 
 <div class="row g-4">
+    <!-- Left Column: Form (Sticky) -->
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm">
+        <div class="card border-0 shadow-sm" style="position: sticky; top: 20px; z-index: 100;">
             <div class="card-body">
-                <div class="d-flex align-items-center gap-3 mb-3">
-                    <span class="icon-badge section-icon text-primary">
-                        <i class="bi bi-person-plus"></i>
-                    </span>
-                    <h2 class="h5 fw-bold mb-0">Tambah User Dashboard</h2>
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="icon-badge section-icon text-primary">
+                            <i class="bi bi-person-plus"></i>
+                        </span>
+                        <h2 class="h5 fw-bold mb-0" id="formTitle">Tambah User</h2>
+                    </div>
                 </div>
-                <form method="post">
+
+                <form method="post" id="userForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="action" id="formAction" value="create">
+                    <input type="hidden" name="user_id" id="userId">
+
                     <div class="mb-3">
                         <label class="form-label">Nama Lengkap</label>
-                        <input type="text" class="form-control" name="full_name" required>
+                        <input type="text" class="form-control" name="full_name" id="fullName" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Email</label>
-                        <input type="email" class="form-control" name="email" required>
+                        <input type="email" class="form-control" name="email" id="email" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Password</label>
-                        <input type="password" class="form-control" name="password" minlength="8" required>
-                        <small class="text-muted">Minimal 8 karakter.</small>
+                        <input type="password" class="form-control" name="password" id="password" minlength="8">
+                        <small class="text-muted" id="passwordHelp">Minimal 8 karakter. (Kosongkan jika tidak ingin
+                            mengubah)</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Role</label>
-                        <select class="form-select" name="role" required>
+                        <select class="form-select" name="role" id="role" required>
                             <option value="viewer">Viewer</option>
                             <option value="editor">Editor</option>
                             <option value="staff">Staff</option>
                             <option value="admin">Admin</option>
+                            <option value="coordinator">Coordinator</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-save me-2"></i>Simpan
-                    </button>
+                    <div class="mb-3" id="statusField" style="display:none;">
+                        <label class="form-label">Status Akun</label>
+                        <select class="form-select" name="account_status" id="accountStatus">
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="suspended">Suspended</option>
+                        </select>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="bi bi-save me-2"></i>Simpan User
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="cancelBtn" onclick="resetForm()"
+                            style="display:none;">
+                            Batal Edit
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
+
+    <!-- Right Column: List -->
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
-                <div class="d-flex align-items-center gap-3 mb-3">
-                    <span class="icon-badge section-icon text-secondary">
+                <div class="d-flex align-items-center mb-3">
+                    <span class="icon-badge section-icon text-secondary me-3">
                         <i class="bi bi-card-list"></i>
                     </span>
-                    <h2 class="h5 fw-bold mb-0">Daftar User</h2>
+                    <ul class="nav nav-pills flex-grow-1" id="userTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="list-tab" data-bs-toggle="tab"
+                                data-bs-target="#list-pane" type="button" role="tab" aria-controls="list-pane"
+                                aria-selected="true">
+                                Daftar User
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            {% set pending_count = users | selectattr('account_status', 'equalto', 'pending') | list |
+                            length %}
+                            <button class="nav-link position-relative" id="verify-tab" data-bs-toggle="tab"
+                                data-bs-target="#verify-pane" type="button" role="tab" aria-controls="verify-pane"
+                                aria-selected="false">
+                                Verifikasi User
+                                {% if pending_count > 0 %}
+                                <span
+                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    {{ pending_count }}
+                                </span>
+                                {% endif %}
+                            </button>
+                        </li>
+                    </ul>
                 </div>
-                <div class="table-responsive">
-                    <table class="table align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th><i class="bi bi-person"></i>Nama</th>
-                                <th><i class="bi bi-envelope"></i>Email</th>
-                                <th><i class="bi bi-shield-check"></i>Role</th>
-                                <th><i class="bi bi-briefcase"></i>Jabatan</th>
-                                <th><i class="bi bi-card-text"></i>NIP</th>
-                                <th><i class="bi bi-hash"></i>NRK</th>
-                                <th><i class="bi bi-calendar-event"></i>Dibuat</th>
-                                <th><i class="bi bi-clock-history"></i>Login Terakhir</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for user in users %}
-                            <tr>
-                                <td>{{ user.full_name }}</td>
-                                <td>{{ user.email }}</td>
-                                <td><span class="badge text-bg-secondary text-uppercase">{{ user.role }}</span></td>
-                                <td>{{ user.jabatan or '-' }}</td>
-                                <td>{{ user.nip or '-' }}</td>
-                                <td>{{ user.nrk or '-' }}</td>
-                                <td>{{ user.created_at|jakarta('%d %b %Y %H:%M') if user.created_at }}</td>
-                                <td>{{ user.last_login_at|jakarta('%d %b %Y %H:%M') if user.last_login_at else '-' }}</td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="8" class="text-center text-muted">Belum ada user.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+
+                <div class="tab-content" id="userTabsContent">
+                    <!-- Tab Daftar User (Non-Pending) -->
+                    <div class="tab-pane fade show active" id="list-pane" role="tabpanel" aria-labelledby="list-tab"
+                        tabindex="0">
+                        <div class="table-responsive">
+                            <table class="table align-middle table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Info</th>
+                                        <th class="text-end">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% set active_users = users | selectattr('account_status', 'ne', 'pending') | list
+                                    %}
+                                    {% for user in active_users %}
+                                    <tr style="cursor: pointer;" onclick='editUser({{ user|tojson }})'>
+                                        <td>
+                                            <div class="fw-bold">{{ user.full_name }}</div>
+                                            <div class="small text-muted">{{ user.email }}</div>
+                                        </td>
+                                        <td><span class="badge text-bg-secondary text-uppercase">{{ user.role }}</span>
+                                        </td>
+                                        <td>
+                                            {% if user.account_status == 'approved' %}
+                                            <span class="badge bg-success"><i
+                                                    class="bi bi-check-circle me-1"></i>Active</span>
+                                            {% elif user.account_status == 'rejected' %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">{{ user.account_status or 'Unknown'
+                                                }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="small">
+                                                {% if user.kecamatan_name %}
+                                                <div><i class="bi bi-geo-alt me-1"></i>{{ user.kecamatan_name }}</div>
+                                                {% endif %}
+                                                {% if user.jabatan %}
+                                                <div><i class="bi bi-briefcase me-1"></i>{{ user.jabatan }}</div>
+                                                {% endif %}
+                                                {% if user.whatsapp_number %}
+                                                <div><i class="bi bi-whatsapp me-1"></i>{{ user.whatsapp_number }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td class="text-end" onclick="event.stopPropagation()">
+                                            <button class="btn btn-sm btn-outline-primary"
+                                                onclick='editUser({{ user|tojson }})'>
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">Tidak ada user aktif.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab Verifikasi User (Pending) -->
+                    <div class="tab-pane fade" id="verify-pane" role="tabpanel" aria-labelledby="verify-tab"
+                        tabindex="0">
+                        <div class="table-responsive">
+                            <table class="table align-middle table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Role</th>
+                                        <th>Request Area</th>
+                                        <th>Kontak</th>
+                                        <th>Tanggal Pengajuan</th>
+                                        <th class="text-end" style="min-width: 100px;">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% set pending_users = users | selectattr('account_status', 'equalto', 'pending') |
+                                    list %}
+                                    {% for user in pending_users %}
+                                    <tr style="cursor: pointer;" onclick='editUser({{ user|tojson }})'>
+                                        <td>
+                                            <div class="fw-bold">{{ user.full_name }}</div>
+                                            <div class="small text-muted">{{ user.email }}</div>
+                                        </td>
+                                        <td><span class="badge text-bg-warning text-uppercase">{{ user.role }}</span>
+                                        </td>
+                                        <td>
+                                            {% if user.kecamatan_name %}
+                                            <span class="badge bg-info text-dark"><i class="bi bi-geo-alt me-1"></i>{{
+                                                user.kecamatan_name }}</span>
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if user.whatsapp_number %}
+                                            <a href="https://wa.me/{{ user.whatsapp_number.replace('+', '').replace(' ', '') }}"
+                                                target="_blank" class="text-decoration-none text-success"
+                                                onclick="event.stopPropagation()">
+                                                <i class="bi bi-whatsapp me-1"></i>{{ user.whatsapp_number }}
+                                            </a>
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ user.created_at.strftime('%d %b %Y, %H:%M') if user.created_at else
+                                                '-' }}
+                                            </small>
+                                        </td>
+                                        <td class="text-end" onclick="event.stopPropagation()">
+                                            <div class="btn-group btn-group-sm">
+                                                <form method="post" style="display:inline;">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                                    <input type="hidden" name="action" value="verify">
+                                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                                    <input type="hidden" name="account_status" value="approved">
+                                                    <input type="hidden" name="full_name" value="{{ user.full_name }}">
+                                                    <input type="hidden" name="role" value="{{ user.role }}">
+                                                    <button type="submit" class="btn btn-success" title="Setujui">
+                                                        <i class="bi bi-check-lg"></i>
+                                                    </button>
+                                                </form>
+                                                <form method="post" style="display:inline;">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                                    <input type="hidden" name="action" value="verify">
+                                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                                    <input type="hidden" name="account_status" value="rejected">
+                                                    <input type="hidden" name="full_name" value="{{ user.full_name }}">
+                                                    <input type="hidden" name="role" value="{{ user.role }}">
+                                                    <button type="submit" class="btn btn-danger" title="Tolak">
+                                                        <i class="bi bi-x-lg"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">Tidak ada user menunggu
+                                            verifikasi.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    function editUser(user) {
+        // Populate form
+        document.getElementById('formAction').value = 'update';
+        document.getElementById('userId').value = user.id;
+        document.getElementById('fullName').value = user.full_name || '';
+        document.getElementById('email').value = user.email || '';
+        document.getElementById('role').value = user.role || 'viewer';
+        if (user.account_status) {
+            document.getElementById('accountStatus').value = user.account_status;
+            document.getElementById('statusField').style.display = 'block';
+        } else {
+            document.getElementById('statusField').style.display = 'none';
+        }
+
+        // UI changes
+        document.getElementById('formTitle').innerText = 'Edit User';
+        document.getElementById('submitBtn').innerHTML = '<i class="bi bi-save me-2"></i>Update User';
+        document.getElementById('submitBtn').className = 'btn btn-warning w-100'; // distinct color
+        document.getElementById('cancelBtn').style.display = 'inline-block';
+        document.getElementById('password').removeAttribute('required'); // Password optional for update
+        document.getElementById('passwordHelp').innerText = "Kosongkan jika tidak ingin mengubah password.";
+
+        // Scroll to top mobile friendly
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetForm() {
+        document.getElementById('userForm').reset();
+        document.getElementById('formAction').value = 'create';
+        document.getElementById('userId').value = '';
+        document.getElementById('statusField').style.display = 'none';
+
+        // UI reset
+        document.getElementById('formTitle').innerText = 'Tambah User';
+        document.getElementById('submitBtn').innerHTML = '<i class="bi bi-save me-2"></i>Simpan User';
+        document.getElementById('submitBtn').className = 'btn btn-primary w-100';
+        document.getElementById('cancelBtn').style.display = 'none';
+        document.getElementById('password').setAttribute('required', 'required'); // Password required for create
+        document.getElementById('passwordHelp').innerText = "Minimal 8 karakter.";
+    }
+</script>
 {% endblock %}

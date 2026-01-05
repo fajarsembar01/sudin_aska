@@ -1,0 +1,1457 @@
+{# Shared stats content component - expects stats_role variable ('admin' or 'coordinator') #}
+{# Set defaults if not provided #}
+{% set is_admin = (stats_role == 'admin') %}
+{% set title = stats_title or ('Statistik Portal PANBERSS' if is_admin else 'Statistik Tim ' ~ (team.name or
+team.kecamatan_name or 'Koordinator')) %}
+{% set subtitle = stats_subtitle or ('Ringkasan data penilaian sekolah' if is_admin else 'Data penilaian oleh anggota
+tim Anda') %}
+{% set map_data_endpoint = 'portal.admin_map_data' if is_admin else 'portal.coordinator_map_data' %}
+{% set stats_endpoint = 'portal.admin_stats' if is_admin else 'portal.coordinator_stats' %}
+{% set photos_endpoint = 'portal.admin_photos_partial' if is_admin else 'portal.coordinator_photos_partial' %}
+{% set related_photos_endpoint = 'portal.admin_related_photos' if is_admin else 'portal.coordinator_related_photos' %}
+{% set ranking_endpoint = 'portal.api_rankings' if is_admin else 'portal.coordinator_api_rankings' %}
+{% set current_team_id = selected_team_id if selected_team_id is not none else (team.id if team else None) %}
+{% set teams = monev_teams|default([]) %}
+
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-4">
+                <div class="d-flex align-items-start gap-3 flex-wrap">
+                    <span class="icon-badge feature-icon text-primary">
+                        <i class="bi bi-bar-chart"></i>
+                    </span>
+                    <div>
+                        <h1 class="h3 fw-bold page-title mb-1">{{ title }}</h1>
+                        <p class="page-subtitle mb-0">{{ subtitle }}</p>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap align-items-center">
+                    {% if is_admin %}
+                    <a href="{{ url_for('portal.admin_setup') }}"
+                        class="btn btn-outline-primary d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-tools"></i>
+                        <span>Setup Data</span>
+                    </a>
+                    <a href="{{ url_for('portal.export_excel', period_id=current_period_id) }}"
+                        class="btn btn-outline-success d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-excel"></i>
+                        <span>Export Excel</span>
+                    </a>
+                    <a href="{{ url_for('portal.sidak_planner') }}{% if current_period_id %}?period_id={{ current_period_id }}{% endif %}"
+                        class="btn btn-outline-danger d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-map"></i>
+                        <span>Sidak Planner</span>
+                    </a>
+                    {% endif %}
+                    <form method="get" class="d-inline-flex align-items-center gap-2">
+                        <select name="period_id" class="form-select border-primary text-primary fw-medium"
+                            onchange="this.form.submit()" style="min-width: 150px;">
+                            <option value="">Semua Periode</option>
+                            {% for p in periods %}
+                            <option value="{{ p.id }}" {% if current_period_id==p.id %}selected{% endif %}>{{ p.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if is_admin %}
+                        <select name="team_id" class="form-select border-primary text-primary fw-medium"
+                            onchange="this.form.submit()" style="min-width: 190px;">
+                            <option value="">Semua Tim</option>
+                            {% for t in teams %}
+                            <option value="{{ t.id }}" {% if current_team_id and current_team_id==t.id %}selected{% endif %}>
+                                {{ t.name }}{% if t.coordinator_name %} ({{ t.coordinator_name }}){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% endif %}
+                    </form>
+                    <a href="{{ url_for('portal.home') }}"
+                        class="btn btn-primary d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                        <span>Buka Portal</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="icon-badge stat-icon text-primary">
+                        <i class="bi bi-building"></i>
+                    </span>
+                    <span class="text-secondary text-uppercase small fw-semibold">Total Sekolah</span>
+                </div>
+                <h2 class="display-6 fw-bold mb-1">{{ stats.schools.total_schools or 0 }}</h2>
+                <p class="text-muted small mb-0">{{ stats.schools.active_schools or 0 }} aktif</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="icon-badge stat-icon text-warning">
+                        <i class="bi bi-pencil"></i>
+                    </span>
+                    <span class="text-secondary text-uppercase small fw-semibold">Draft</span>
+                </div>
+                <h2 class="display-6 fw-bold mb-1">{{ stats.assessments.drafts or 0 }}</h2>
+                <p class="text-muted small mb-0">Belum disubmit</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="icon-badge stat-icon text-success">
+                        <i class="bi bi-geo-alt"></i>
+                    </span>
+                    <span class="text-secondary text-uppercase small fw-semibold">Rata-rata Kecamatan</span>
+                </div>
+
+                {% if kecamatan_stats %}
+                <div class="d-flex justify-content-between align-items-end mt-2">
+                    {% for k in kecamatan_stats[:3] %}
+                    {# Set badge class based on score threshold #}
+                    {% set badge_class = 'bg-success text-white' if k.avg_score_pct >= 85 else ('bg-warning text-dark'
+                    if k.avg_score_pct >= 70 else ('bg-danger text-white' if k.avg_score_pct >= 55 else 'bg-dark
+                    text-white')) %}
+                    <div class="text-center flex-fill">
+                        <span class="badge {{ badge_class }} rounded-pill mb-1" style="font-size: 1.4rem;">
+                            {{ "%.1f"|format(k.avg_score_pct) }}
+                        </span>
+                        <div class="text-muted small" style="white-space: nowrap;">
+                            {{ k.name|replace('KELAPA GADING', 'GADING') }}
+                        </div>
+                    </div>
+                    {% if not loop.last %}
+                    <div class="vr bg-light mx-1" style="height: 35px;"></div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0 text-center py-2">Belum ada data</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="icon-badge stat-icon text-info">
+                        <i class="bi bi-graph-up"></i>
+                    </span>
+                    <span class="text-secondary text-uppercase small fw-semibold">Rata-rata Skor</span>
+                </div>
+                <h2 class="display-6 fw-bold mb-1">
+                    {% if stats.assessments.avg_score %}
+                    {{ "%.1f"|format(stats.assessments.avg_score / 3 * 100) }}%
+                    {% else %}
+                    -
+                    {% endif %}
+                </h2>
+                <p class="text-muted small mb-0">
+                    {% if stats.assessments.avg_score %}
+                    {{ "%.2f"|format(stats.assessments.avg_score) }}/3 dari {{ stats.assessments.submitted or 0 }}
+                    penilaian
+                    {% else %}
+                    dari {{ stats.assessments.submitted or 0 }} penilaian
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div id="map"></div>
+        </div>
+        <!-- Legend Warna Interaktif dengan Filter -->
+        <div class="card-footer bg-transparent border-0 py-2 px-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="d-flex flex-wrap align-items-center gap-2 small">
+                    <span class="text-muted fw-semibold me-1">Filter:</span>
+
+                    <!-- Legend Items - Clickable -->
+                    <span class="legend-filter-item active" data-level="excellent" role="button" tabindex="0"
+                        title="Klik untuk filter Sangat Baik">
+                        <span class="legend-dot" style="background:#198754"></span>
+                        <span class="legend-label">Sangat Baik</span>
+                        <span class="legend-count" id="countExcellent">0</span>
+                    </span>
+
+                    <span class="legend-filter-item active" data-level="good" role="button" tabindex="0"
+                        title="Klik untuk filter Baik">
+                        <span class="legend-dot" style="background:#ffc107"></span>
+                        <span class="legend-label">Baik</span>
+                        <span class="legend-count" id="countGood">0</span>
+                    </span>
+
+                    <span class="legend-filter-item active" data-level="poor" role="button" tabindex="0"
+                        title="Klik untuk filter Kurang">
+                        <span class="legend-dot" style="background:#fd7e14"></span>
+                        <span class="legend-label">Kurang</span>
+                        <span class="legend-count" id="countPoor">0</span>
+                    </span>
+
+                    <span class="legend-filter-item active" data-level="critical" role="button" tabindex="0"
+                        title="Klik untuk filter Kritis">
+                        <span class="legend-dot" style="background:#b02a37"></span>
+                        <span class="legend-label">Kritis</span>
+                        <span class="legend-count" id="countCritical">0</span>
+                    </span>
+
+                    <!-- Reset Filter Button -->
+                    <button type="button" class="btn btn-link btn-sm p-0 ms-2 text-decoration-none" id="resetFilter"
+                        title="Tampilkan Semua" style="font-size:0.75rem;">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reset
+                    </button>
+                </div>
+
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
+                    data-bs-target="#editThresholdModal" title="Edit Rumus Skoring">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-3 mb-4">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3">Sebaran Nilai Sekolah</h6>
+                <div style="height: 300px;">
+                    <canvas id="scoreDistChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3">Status Penilaian</h6>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="statusPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <!-- Top Schools Card -->
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="icon-badge section-icon text-warning">
+                        <i class="bi bi-trophy"></i>
+                    </span>
+                    <h6 class="fw-bold mb-0">Perankingan Sekolah</h6>
+                </div>
+                <ul class="nav nav-pills nav-fill mb-3" id="rankTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="best-tab" data-bs-toggle="pill" data-bs-target="#best-pane"
+                            type="button" role="tab">Terbaik</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="worst-tab" data-bs-toggle="pill" data-bs-target="#worst-pane"
+                            type="button" role="tab">Terendah</button>
+                    </li>
+                </ul>
+                <div class="tab-content" style="max-height: 220px; overflow-y: auto;">
+                    <div class="tab-pane fade show active" id="best-pane" role="tabpanel">
+                        {% if top_schools %}
+                        <div class="list-group list-group-flush">
+                            {% for s in top_schools %}
+                            <div
+                                class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-bottom-0">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-muted small" style="width: 20px">{{ loop.index }}</span>
+                                    <div>
+                                        <div class="fw-semibold small">{{
+                                            s['name'] }}
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.7rem">{{ s['jenjang'] }}</div>
+                                    </div>
+                                </div>
+                                {% set pct = ((s['total_score'] or 0) / 3 * 100) %}
+                                <span class="badge bg-primary text-white rounded-pill">{{ "%.1f"|format(pct) }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="text-center mt-2">
+                            <button id="loadMoreBest" class="btn btn-sm btn-link text-decoration-none"
+                                onclick="loadMoreRankings('best')">
+                                Lihat lagi <i class="bi bi-chevron-down"></i>
+                            </button>
+                        </div>
+                        {% else %}
+                        <p class="text-muted small text-center my-3">Belum ada data</p>
+                        {% endif %}
+                    </div>
+                    <div class="tab-pane fade" id="worst-pane" role="tabpanel">
+                        {% if bottom_schools %}
+                        <div class="list-group list-group-flush">
+                            {% for s in bottom_schools %}
+                            <div
+                                class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-bottom-0">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-muted small" style="width: 20px">{{ loop.index }}</span>
+                                    <div>
+                                        <div class="fw-semibold small">{{
+                                            s['name'] }}
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.7rem">{{ s['jenjang'] }}</div>
+                                    </div>
+                                </div>
+                                {% set pct = ((s['total_score'] or 0) / 3 * 100) %}
+                                <span class="badge bg-danger text-white rounded-pill">{{ "%.1f"|format(pct) }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="text-center mt-2">
+                            <button id="loadMoreWorst" class="btn btn-sm btn-link text-decoration-none"
+                                onclick="loadMoreRankings('worst')">
+                                Lihat lagi <i class="bi bi-chevron-down"></i>
+                            </button>
+                        </div>
+                        {% else %}
+                        <p class="text-muted small text-center my-3">Belum ada data</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-3">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div
+                class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 pb-0">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="icon-badge section-icon text-info"
+                        style="width: 32px; height: 32px; font-size: 0.9rem;">
+                        <i class="bi bi-images"></i>
+                    </span>
+                        <h6 class="fw-bold mb-0" id="galleryTitle">Galeri Foto {{ 'Acak' if photo_order=='random' else
+                        ('Terbaru' if photo_order=='newest' else 'Terendah') }}</h6>
+                </div>
+                <div class="btn-group btn-group-sm" role="group" aria-label="Urutkan galeri">
+                    <a class="btn btn-outline-primary {% if photo_order=='random' %}active{% endif %}"
+                        href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='random') }}#galleryTitle">
+                        Random
+                    </a>
+                    <a class="btn btn-outline-primary {% if photo_order=='newest' %}active{% endif %}"
+                        href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='newest') }}#galleryTitle">
+                        Terbaru
+                    </a>
+                    <a class="btn btn-outline-primary {% if photo_order=='lowest' %}active{% endif %}"
+                        href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='lowest') }}#galleryTitle">
+                        Terendah
+                    </a>
+                </div>
+            </div>
+                <div class="card-body">
+                    <div class="row g-2" id="galleryGrid">
+                    {% include 'portal/shared/_gallery_grid.html' %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <div class="col-lg-8" id="recent-assessments">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <span class="icon-badge section-icon text-primary">
+                        <i class="bi bi-list-check"></i>
+                    </span>
+                    <div>
+                        <h2 class="h6 fw-bold mb-0">Daftar Penilaian Terbaru</h2>
+                        <p class="text-muted mb-0 small">Klik nama sekolah untuk melihat detail skor</p>
+                    </div>
+                </div>
+
+                <form method="get" class="row g-2 mb-3" id="recentFilterForm">
+                    <input type="hidden" name="period_id" value="{{ current_period_id or '' }}">
+                    {% if current_team_id %}
+                    <input type="hidden" name="team_id" value="{{ current_team_id }}">
+                    {% endif %}
+                    <div class="col-md-4">
+                        <select name="jenjang" class="form-select">
+                            <option value="">Semua Jenjang</option>
+                            {% for j in ['SD','MI','SMP','MTS','SMA','MA','SMK','TK'] %}
+                            <option value="{{ j }}" {% if jenjang_filter==j %}selected{% endif %}>{{ j }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-fill">Terapkan</button>
+                        <a class="btn btn-light"
+                            href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, _anchor='recent-assessments') }}">Reset</a>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                {% set base_period = current_period_id or '' %}
+                                {% set base_jenjang = jenjang_filter or '' %}
+                                {% set base_team = current_team_id %}
+                                {% set anchor = 'recent-assessments' %}
+                                {% set name_order = 'name_desc' if order == 'name_asc' else 'name_asc' %}
+                                {% set staff_order = 'staff_asc' if order == 'staff_desc' else 'staff_desc' %}
+                                {% set avg_order = 'score_asc' if order == 'score_desc' else 'score_desc' %}
+                                {% set date_order = 'date_asc' if order == 'date_desc' else 'date_desc' %}
+                                <th class="border-0 ps-3">
+                                    <a href="{{ url_for(stats_endpoint, period_id=base_period, jenjang=base_jenjang, order=name_order, team_id=base_team, _anchor=anchor) }}"
+                                        class="text-decoration-none d-flex align-items-center gap-1">
+                                        Sekolah
+                                        <i class="bi bi-arrow-{{ 'down' if 'desc' in name_order else 'up' }}"></i>
+                                    </a>
+                                </th>
+                                <th class="border-0">
+                                    <a href="{{ url_for(stats_endpoint, period_id=base_period, jenjang=base_jenjang, order=staff_order, team_id=base_team, _anchor=anchor) }}"
+                                        class="text-decoration-none d-flex align-items-center gap-1">
+                                        Staff
+                                        <i class="bi bi-arrow-{{ 'down' if 'desc' in staff_order else 'up' }}"></i>
+                                    </a>
+                                </th>
+                                <th class="border-0">
+                                    <a href="{{ url_for(stats_endpoint, period_id=base_period, jenjang=base_jenjang, order=avg_order, team_id=base_team, _anchor=anchor) }}"
+                                        class="text-decoration-none d-flex align-items-center gap-1">
+                                        Average
+                                        <i class="bi bi-arrow-{{ 'down' if 'desc' in avg_order else 'up' }}"></i>
+                                    </a>
+                                </th>
+                                <th class="border-0">
+                                    <a href="{{ url_for(stats_endpoint, period_id=base_period, jenjang=base_jenjang, order=date_order, team_id=base_team, _anchor=anchor) }}"
+                                        class="text-decoration-none d-flex align-items-center gap-1">
+                                        Tanggal
+                                        <i class="bi bi-arrow-{{ 'down' if 'desc' in date_order else 'up' }}"></i>
+                                    </a>
+                                </th>
+                                <th class="border-0 text-end pe-3">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in recent_assessments %}
+                            <tr>
+                                <td class="ps-3">
+                                    <a href="{{ url_for('portal.view_assessment', assessment_id=a['id']) }}"
+                                        class="fw-semibold text-decoration-none">
+                                        {{ a['school_name'] }}
+                                    </a>
+                                    <div class="small text-muted">{{ a['npsn'] }} • {{ a['jenjang'] }}</div>
+                                </td>
+                                {% set staff_total = a['total_staff'] or 0 %}
+                                {% set avg_raw = (school_avg_map.get(a['school_id'], 0) or 0) / 3 * 100 %}
+                                <td class="fw-bold text-primary">
+                                    {{ staff_total }}
+                                </td>
+                                <td class="fw-bold text-primary">
+                                    {{ "%.1f"|format(avg_raw) }}
+                                </td>
+                                <td class="small text-muted">{{ a['submitted_at'].strftime('%d %b %Y') if
+                                    a['submitted_at'] else '-' }}</td>
+                                <td class="text-end pe-3">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="{{ url_for('portal.view_assessment', assessment_id=a['id']) }}"
+                                            class="btn btn-sm btn-light rounded-circle" title="Lihat Detail">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                        <form method="post"
+                                            action="{{ url_for('portal.delete_assessment_route', assessment_id=a['id']) }}"
+                                            onsubmit="return confirm('Hapus penilaian ini?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle"
+                                                title="Hapus">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">Belum ada data penilaian yang
+                                    disubmit</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <span class="icon-badge section-icon text-success">
+                        <i class="bi bi-lightning-charge"></i>
+                    </span>
+                    <h2 class="h6 fw-bold mb-0">Aksi Cepat</h2>
+                </div>
+                <div class="d-grid gap-2">
+                    {% if is_admin %}
+                    <a href="{{ url_for('portal.admin_setup') }}"
+                        class="btn btn-outline-primary d-flex align-items-center gap-2 justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>Tambah Sekolah</span>
+                        </div>
+                        <i class="bi bi-chevron-right small"></i>
+                    </a>
+                    <a href="{{ url_for('portal.admin_setup') }}"
+                        class="btn btn-outline-primary d-flex align-items-center gap-2 justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-door-open"></i>
+                            <span>Tambah Ruangan</span>
+                        </div>
+                        <i class="bi bi-chevron-right small"></i>
+                    </a>
+                    <a href="{{ url_for('main.dashboard') }}"
+                        class="btn btn-outline-secondary d-flex align-items-center gap-2 justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Dashboard Utama</span>
+                        </div>
+                        <i class="bi bi-chevron-right small"></i>
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('portal.coordinator_dashboard') }}"
+                        class="btn btn-outline-primary d-flex align-items-center gap-2 justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-people"></i>
+                            <span>Dashboard Tim</span>
+                        </div>
+                        <i class="bi bi-chevron-right small"></i>
+                    </a>
+                    <a href="{{ url_for('portal.coordinator_team') }}"
+                        class="btn btn-outline-primary d-flex align-items-center gap-2 justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-person-lines-fill"></i>
+                            <span>Kelola Tim</span>
+                        </div>
+                        <i class="bi bi-chevron-right small"></i>
+                    </a>
+                    <a href="{{ url_for('portal.home') }}"
+                        class="btn btn-outline-secondary d-flex align-items-center gap-2 justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-house"></i>
+                            <span>Portal Home</span>
+                        </div>
+                        <i class="bi bi-chevron-right small"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script src="{{ url_for('static', filename='js/color-config.js') }}"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const CURRENT_PERIOD_ID = "{{ current_period_id or '' }}";
+    const CURRENT_TEAM_ID = "{{ current_team_id if current_team_id is not none else (team.id if team else '') }}";
+    // Legend text is now static in the HTML, no dynamic update needed
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // --- MAP LOGIC ---
+        var map = L.map('map').setView([-6.2088, 106.8456], 11);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Fetch Data
+        const periodId = CURRENT_PERIOD_ID;
+        const teamId = CURRENT_TEAM_ID;
+        const mapParams = new URLSearchParams();
+        if (periodId) mapParams.set('period_id', periodId);
+        if (teamId) mapParams.set('team_id', teamId);
+        fetch(`{{ url_for(map_data_endpoint) }}?${mapParams.toString()}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length === 0) return;
+
+                const group = L.featureGroup();
+                const heatPoints = [];
+
+                // Marker tracking untuk filter
+                const markersByLevel = {
+                    excellent: [],
+                    good: [],
+                    poor: [],
+                    critical: []
+                };
+                const markerCounts = { excellent: 0, good: 0, poor: 0, critical: 0 };
+
+                data.forEach(school => {
+                    let rawScore = school.total_score ? parseFloat(school.total_score) : 0;
+                    let score = (rawScore / 3.0) * 100;
+
+                    // Use centralized color config
+                    const colorInfo = getScoreColor(score);
+                    let color = colorInfo.color;
+                    let level = colorInfo.level;
+                    let intensity = getHeatmapIntensity(score);
+
+                    if (intensity > 0) {
+                        heatPoints.push([school.latitude, school.longitude, intensity]);
+                    }
+
+                    const marker = L.circleMarker([school.latitude, school.longitude], {
+                        radius: 8,
+                        fillColor: color,
+                        color: '#fff',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.9
+                    }).addTo(map);
+
+                    // Store marker level
+                    marker._markerLevel = level;
+
+                    marker.bindTooltip(`${school.name} (${score.toFixed(0)})`, {
+                        permanent: false, direction: 'top', className: 'fw-bold'
+                    });
+
+                    marker.on('dblclick', function () {
+                        window.location.href = '/portal/assess/' + school.id;
+                    });
+
+                    marker.bindPopup(`
+                        <strong class="d-block mb-1">${school.name}</strong>
+                        <div class="small mb-1">${school.jenjang} - ${school.kecamatan || '-'}</div>
+                        <div class="fw-bold" style="color:${color}">Nilai: ${score.toFixed(0)}</div>
+                    `);
+
+                    group.addLayer(marker);
+
+                    // Track markers by level
+                    if (markersByLevel[level]) {
+                        markersByLevel[level].push(marker);
+                        markerCounts[level]++;
+                    }
+                });
+
+                // Update legend counts
+                document.getElementById('countExcellent').textContent = markerCounts.excellent;
+                document.getElementById('countGood').textContent = markerCounts.good;
+                document.getElementById('countPoor').textContent = markerCounts.poor;
+                document.getElementById('countCritical').textContent = markerCounts.critical;
+
+                // Store globally for filter access
+                window.mapMarkersByLevel = markersByLevel;
+                window.mapInstance = map;
+
+                // Add Heatmap Layer
+                let heatLayer = null;
+                if (heatPoints.length > 0 && L.heatLayer) {
+                    heatLayer = L.heatLayer(heatPoints, {
+                        radius: 13,
+                        blur: 9,
+                        maxZoom: 15,
+                        max: 1.2,
+                        minOpacity: 0.3,
+                        gradient: {
+                            0.4: 'rgba(255, 0, 0, 0.3)',
+                            0.7: 'rgba(139, 0, 0, 0.5)',
+                            1.0: 'rgba(0, 0, 0, 0.65)'
+                        }
+                    });
+
+                    map.on('zoomend', function () {
+                        if (!heatLayer) return;
+                        const zoom = map.getZoom();
+                        let factor = Math.pow(2, zoom - 11);
+                        let newRadius = 13 * factor;
+                        let newBlur = 9 * factor;
+                        if (newRadius < 5) newRadius = 5;
+                        if (newBlur < 3) newBlur = 3;
+                        heatLayer.setOptions({ radius: newRadius, blur: newBlur });
+                    });
+
+                    // Toggle Control
+                    const ToggleControl = L.Control.extend({
+                        options: { position: 'topright' },
+                        onAdd: function (map) {
+                            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                            container.style.backgroundColor = 'white';
+                            container.style.padding = '6px 10px';
+                            container.style.cursor = 'pointer';
+                            container.style.fontSize = '12px';
+                            container.style.fontWeight = 'bold';
+                            container.innerHTML = '<i class="bi bi-fire text-danger me-1"></i> Radius';
+                            container.title = 'Tampilkan/Sembunyikan Radius Rawan';
+
+                            container.onclick = function (e) {
+                                L.DomEvent.stopPropagation(e);
+                                if (map.hasLayer(heatLayer)) {
+                                    map.removeLayer(heatLayer);
+                                    container.style.backgroundColor = 'white';
+                                    container.style.color = 'black';
+                                } else {
+                                    map.addLayer(heatLayer);
+                                    container.style.backgroundColor = '#b02a37';
+                                    container.style.color = 'white';
+                                }
+                            };
+                            return container;
+                        }
+                    });
+                    map.addControl(new ToggleControl());
+                }
+
+                if (group.getLayers().length > 0) {
+                    map.fitBounds(group.getBounds(), { padding: [50, 50] });
+                }
+            })
+            .catch(err => console.error('Error loading map data:', err));
+
+        // --- Score Distribution Chart ---
+        const distEl = document.getElementById('scoreDistChart');
+        if (distEl) {
+            new Chart(distEl.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['<60', '60-65', '65-70', '70-75', '75-80', '80-85', '85-90', '90-95', '95-100'],
+                    datasets: [{
+                        label: 'Jumlah Sekolah',
+                        data: {{ score_dist | tojson }},
+                        backgroundColor: PANBERSS_COLORS.CHART_GRADIENT,
+                        borderRadius: 4,
+                        barPercentage: 0.7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 }, grid: { borderDash: [2, 4] } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+    // --- Status Pie Chart ---
+    const pieEl = document.getElementById('statusPieChart');
+    if (pieEl) {
+        new Chart(pieEl.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Draft', 'Submitted'],
+                datasets: [{
+                    data: [{{ stats.assessments.drafts or 0 }}, {{ stats.assessments.submitted or 0 }}],
+                    backgroundColor: ['#ffc107', '#198754'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } }
+            }
+        });
+    }
+});
+
+    // ========================================
+    // RANKING LOAD MORE LOGIC
+    // ========================================
+    let rankingOffset = { best: 10, worst: 10 };
+    const rankingLimit = 10;
+    const periodId = CURRENT_PERIOD_ID;
+    const teamId = CURRENT_TEAM_ID;
+
+    function loadMoreRankings(type) {
+        const btnId = type === 'best' ? 'loadMoreBest' : 'loadMoreWorst';
+        const containerId = type === 'best' ? 'best-pane' : 'worst-pane';
+        const btn = document.getElementById(btnId);
+
+        if (!btn) return;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...';
+
+        const offset = rankingOffset[type];
+
+        const rankingsEndpoint = "{{ url_for(ranking_endpoint) }}";
+        const params = new URLSearchParams({
+            type,
+            limit: rankingLimit,
+            offset,
+        });
+        if (periodId) params.set('period_id', periodId);
+        if (teamId) params.set('team_id', teamId);
+
+        fetch(`${rankingsEndpoint}?${params.toString()}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length > 0) {
+                    const listGroup = document.querySelector(`#${containerId} .list-group`);
+
+                    data.forEach((school, index) => {
+                        const score = school.total_score ? parseFloat(school.total_score) : 0;
+                        const pct = (score / 3 * 100).toFixed(1);
+                        const badgeClass = type === 'best' ? 'bg-primary' : 'bg-danger';
+
+                        const itemHtml = `
+                            <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-bottom-0 fade-in">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-muted small" style="width: 20px">${offset + index + 1}</span>
+                                    <div>
+                                        <div class="fw-semibold small">${school.name}</div>
+                                        <div class="text-muted" style="font-size: 0.7rem">${school.jenjang}</div>
+                                    </div>
+                                </div>
+                                <span class="badge ${badgeClass} text-white rounded-pill">${pct}</span>
+                            </div>
+                        `;
+                        listGroup.insertAdjacentHTML('beforeend', itemHtml);
+                    });
+
+                    rankingOffset[type] += data.length;
+
+                    // Hide button if fewer items returned than limit (end of list)
+                    if (data.length < rankingLimit) {
+                        btn.style.display = 'none';
+                    } else {
+                        btn.innerHTML = 'Lihat lagi <i class="bi bi-chevron-down"></i>';
+                        btn.disabled = false;
+                    }
+                } else {
+                    btn.style.display = 'none';
+                }
+            })
+            .catch(err => {
+                console.error('Error loading rankings:', err);
+                btn.innerHTML = 'Error';
+            });
+    }
+
+    // Add simple fade-in animation style
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    `;
+    document.head.appendChild(style);
+
+    // ========================================
+    // LEGEND FILTER INTERAKTIF
+    // ========================================
+    (function () {
+        const legendItems = document.querySelectorAll('.legend-filter-item');
+        const resetBtn = document.getElementById('resetFilter');
+
+        // Fungsi untuk update visibility marker
+        function updateMarkerVisibility() {
+            if (!window.mapMarkersByLevel || !window.mapInstance) return;
+
+            const activeLevels = new Set();
+            legendItems.forEach(item => {
+                if (item.classList.contains('active')) {
+                    activeLevels.add(item.dataset.level);
+                }
+            });
+
+            // Show/hide markers berdasarkan active levels
+            ['excellent', 'good', 'poor', 'critical'].forEach(level => {
+                const markers = window.mapMarkersByLevel[level] || [];
+                markers.forEach(marker => {
+                    if (activeLevels.has(level)) {
+                        marker.setStyle({ opacity: 1, fillOpacity: 0.9 });
+                        marker.setRadius(8);
+                    } else {
+                        marker.setStyle({ opacity: 0.15, fillOpacity: 0.15 });
+                        marker.setRadius(4);
+                    }
+                });
+            });
+        }
+
+        // Click handler untuk legend items - TOGGLE MODE
+        // Klik biasa = toggle on/off (bisa multi-select)
+        // Shift+Click = solo mode (hanya tampilkan yang diklik)
+        legendItems.forEach(item => {
+            item.addEventListener('click', function (e) {
+                if (e.shiftKey) {
+                    // Shift + Click: Solo mode - hanya tampilkan ini saja
+                    legendItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active', 'solo-active');
+                    setTimeout(() => this.classList.remove('solo-active'), 300);
+                } else {
+                    // Normal Click: Toggle on/off
+                    this.classList.toggle('active');
+
+                    // Jika semua mati, aktifkan semua kembali
+                    const newActiveCount = Array.from(legendItems).filter(i => i.classList.contains('active')).length;
+                    if (newActiveCount === 0) {
+                        legendItems.forEach(i => i.classList.add('active'));
+                    }
+                }
+
+                updateMarkerVisibility();
+            });
+
+            // Keyboard accessibility
+            item.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.click();
+                }
+            });
+        });
+
+        // Reset button handler
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function () {
+                legendItems.forEach(i => i.classList.add('active'));
+                updateMarkerVisibility();
+            });
+        }
+
+        console.log('[Legend Filter] Initialized');
+    })();
+</script>
+
+<style>
+    .gallery-thumb img {
+        display: block;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        filter: none !important;
+        mix-blend-mode: normal !important;
+    }
+
+    .gallery-top {
+        background: transparent;
+    }
+
+    .gallery-title {
+        font-weight: 700;
+        max-width: 70%;
+        font-size: 0.85rem;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 8px;
+        padding: 4px 8px;
+    }
+
+    .gallery-thumb:hover img,
+    .gallery-thumb:focus-visible img {
+        transform: scale(1.03);
+        box-shadow: var(--shadow-soft);
+    }
+
+    .gallery-badge-score {
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        font-weight: 700;
+        font-size: 0.85rem;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .badge-score-red {
+        background: #b02a37;
+    }
+
+    .badge-score-orange {
+        background: #fd7e14;
+    }
+
+    .badge-score-yellow {
+        background: #ffc107;
+        color: #212529;
+    }
+
+    .badge-score-green {
+        background: #198754;
+    }
+
+    .gallery-meta {
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+        pointer-events: none;
+        align-items: flex-end;
+    }
+
+    .gallery-chip {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 8px;
+        padding: 4px 8px;
+        height: auto;
+    }
+
+    /* Gallery Carousel Animation Styles */
+    .gallery-row {
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .gallery-track {
+        display: flex;
+        gap: 0.5rem;
+        width: max-content;
+    }
+
+    .gallery-track.scroll-left {
+        animation: scroll-left 30s linear infinite;
+    }
+
+    .gallery-track.scroll-right {
+        animation: scroll-right 30s linear infinite;
+    }
+
+    .gallery-item {
+        flex-shrink: 0;
+        width: calc(100vw / 6 - 1rem);
+        max-width: 200px;
+        min-width: 140px;
+    }
+
+    @keyframes scroll-left {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(-50%);
+        }
+    }
+
+    @keyframes scroll-right {
+        0% {
+            transform: translateX(-50%);
+        }
+
+        100% {
+            transform: translateX(0);
+        }
+    }
+
+    .gallery-row:hover .gallery-track {
+        animation-play-state: paused;
+    }
+
+    .modal-photo {
+        position: relative;
+    }
+
+    .modal-photo img {
+        width: 100%;
+        max-height: 80vh;
+        object-fit: contain;
+        background: var(--bg-body);
+    }
+
+    .photo-nav-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .photo-nav-left {
+        left: 12px;
+    }
+
+    .photo-nav-right {
+        right: 12px;
+    }
+</style>
+
+<div class="modal fade" id="photoModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex flex-column">
+                    <h5 class="modal-title" id="photoModalTitle">Foto</h5>
+                    <small id="photoModalSubtitle"></small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary" id="photoModalScore">-</span>
+                    <span class="badge bg-secondary" id="photoModalMeta"></span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="photoPrevBtnTop">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="photoNextBtnTop">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body modal-photo p-0 d-flex align-items-center justify-content-center"
+                style="min-height: 60vh; background: var(--bg-body); position: relative;">
+                <button type="button" class="btn btn-outline-secondary photo-nav-btn photo-nav-left" id="photoPrevBtn"
+                    aria-label="Foto sebelumnya">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <img src="" alt="Foto penilaian" id="photoModalImg">
+                <button type="button" class="btn btn-outline-secondary photo-nav-btn photo-nav-right" id="photoNextBtn"
+                    aria-label="Foto selanjutnya">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+            <div class="modal-footer flex-column align-items-stretch p-2" id="relatedPhotosSection"
+                style="display: none;">
+                <small class="text-muted mb-1">Foto lain di ruangan ini:</small>
+                <div class="d-flex gap-2 overflow-auto" id="relatedPhotosThumbs" style="max-width: 100%;">
+                    <!-- Related photos thumbnails loaded via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Galeri foto: klik -> modal + navigasi panah
+document.addEventListener('DOMContentLoaded', function () {
+    var modalEl = document.getElementById('photoModal');
+    var modalImg = document.getElementById('photoModalImg');
+    var modalTitle = document.getElementById('photoModalTitle');
+    var modalSubtitle = document.getElementById('photoModalSubtitle');
+    var modalScore = document.getElementById('photoModalScore');
+    var modalMeta = document.getElementById('photoModalMeta');
+    var prevBtn = document.getElementById('photoPrevBtn');
+    var nextBtn = document.getElementById('photoNextBtn');
+    var prevBtnTop = document.getElementById('photoPrevBtnTop');
+    var nextBtnTop = document.getElementById('photoNextBtnTop');
+    var galleryGrid = document.getElementById('galleryGrid');
+
+    if (!modalEl || !modalImg || !galleryGrid) return;
+    var modal = new bootstrap.Modal(modalEl);
+    var thumbs = [];
+    var currentIndex = 0;
+
+    function collectThumbs() {
+        var seen = new Set();
+        thumbs = [];
+        document.querySelectorAll('.gallery-thumb').forEach(function (el) {
+            var url = el.dataset.photoUrl;
+            if (!url || seen.has(url)) return;
+            seen.add(url);
+            thumbs.push(el);
+        });
+    }
+
+    function fillModal(el) {
+        modalImg.src = el.dataset.photoUrl || '';
+        var school = el.dataset.school || '';
+        var room = el.dataset.room || '';
+        var score = el.dataset.score || '-';
+        var date = el.dataset.date || '';
+        var lat = el.dataset.lat;
+        var lon = el.dataset.lon;
+        var assessmentId = el.dataset.assessmentId;
+
+        modalTitle.textContent = room || 'Foto';
+        modalSubtitle.innerHTML = assessmentId
+            ? `<a href="/portal/assessment/${assessmentId}" class="link-light text-decoration-underline">${school || 'Sekolah'}</a>`
+            : (school || '');
+
+        var badge = el.querySelector('.gallery-badge-score');
+        modalScore.className = 'badge ' + (badge ? badge.classList.value.replace('gallery-badge-score', '').trim() : 'bg-primary');
+        modalScore.textContent = score;
+
+        var metaText = '';
+        if (date) {
+            var d = new Date(date);
+            metaText += d.toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+        }
+        if (lat && lon) {
+            if (metaText) metaText += ' • ';
+            metaText += Number(lat).toFixed(4) + ', ' + Number(lon).toFixed(4);
+        }
+        modalMeta.textContent = metaText || '-';
+    }
+
+    function show(index) {
+        if (!thumbs.length) return;
+        if (index < 0) index = thumbs.length - 1;
+        if (index >= thumbs.length) index = 0;
+        currentIndex = index;
+        fillModal(thumbs[currentIndex]);
+        modal.show();
+    }
+
+    function openThumb(el) {
+        collectThumbs();
+        currentIndex = thumbs.findIndex(function (t) { return t.dataset.photoUrl === el.dataset.photoUrl; });
+        if (currentIndex < 0) currentIndex = 0;
+        show(currentIndex);
+    }
+
+    galleryGrid.addEventListener('click', function (e) {
+        var thumb = e.target.closest('.gallery-thumb');
+        if (!thumb) return;
+        openThumb(thumb);
+    });
+    galleryGrid.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        var thumb = e.target.closest('.gallery-thumb');
+        if (!thumb) return;
+        e.preventDefault();
+        openThumb(thumb);
+    });
+
+    var triggerPrev = function () { show(currentIndex - 1); };
+    var triggerNext = function () { show(currentIndex + 1); };
+    if (prevBtn) prevBtn.addEventListener('click', function (e) { e.stopPropagation(); triggerPrev(); });
+    if (nextBtn) nextBtn.addEventListener('click', function (e) { e.stopPropagation(); triggerNext(); });
+    if (prevBtnTop) prevBtnTop.addEventListener('click', function (e) { e.stopPropagation(); triggerPrev(); });
+    if (nextBtnTop) nextBtnTop.addEventListener('click', function (e) { e.stopPropagation(); triggerNext(); });
+
+    document.addEventListener('keydown', function (e) {
+        if (!modalEl.classList.contains('show')) return;
+        if (e.key === 'ArrowLeft') { e.preventDefault(); triggerPrev(); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); triggerNext(); }
+        if (e.key === 'Escape') { modal.hide(); }
+    });
+
+    // Inline handler fallback
+    window.PANBERSS_OPEN_GALLERY = openThumb;
+});
+</script>
+
+<!-- Modals -->
+<div class="modal fade" id="createPeriodModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" action="{{ url_for('portal.create_period_route') }}" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Buat Periode Penilaian</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Nama Periode</label>
+                    <input type="text" name="name" class="form-control" required
+                        placeholder="Contoh: Semester Ganjil 2024">
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col">
+                        <label class="form-label">Mulai</label>
+                        <input type="date" name="start_date" class="form-control" required>
+                    </div>
+                    <div class="col">
+                        <label class="form-label">Selesai</label>
+                        <input type="date" name="end_date" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-check form-switch">
+                    <input type="checkbox" name="is_active" class="form-check-input" id="isActiveCheck" checked>
+                    <label class="form-check-label" for="isActiveCheck">Set sebagai periode aktif</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="assignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" action="{{ url_for('portal.assign_assessment_route') }}" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Berikan Draft Penilaian</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info small mb-3">
+                    Draft akan dibuat untuk staff yang dipilih. Staff dapat melanjutkan penilaian di dashboard mereka.
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Pilih Pegawai (Staff)</label>
+                    <select name="staff_id" class="form-select" required>
+                        <option value="">-- Pilih Staff --</option>
+                        {% for s in all_staff %}
+                        <option value="{{ s.id }}">{{ s.full_name }} ({{ s.email }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Pilih Sekolah</label>
+                    <select name="school_id" class="form-select" required>
+                        <option value="">-- Pilih Sekolah --</option>
+                        {% for s in all_schools %}
+                        <option value="{{ s.id }}">{{ s.name }} ({{ s.npsn }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Periode (Opsional)</label>
+                    <select name="period_id" class="form-select">
+                        <option value="">Periode Aktif Saat Ini</option>
+                        {% for p in periods %}
+                        <option value="{{ p.id }}">{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary">Buat Draft</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Threshold Modal -->
+<div class="modal fade" id="editThresholdModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-sliders me-2"></i>Edit Rumus Skoring Warna
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted mb-3">Ubah batas nilai untuk masing-masing kategori warna. Perubahan akan
+                    disimpan di browser Anda.</p>
+                <div class="mb-3">
+                    <label class="form-label d-flex align-items-center gap-2">
+                        <span class="d-inline-block rounded-circle"
+                            style="width:16px;height:16px;background:#198754"></span>
+                        Sangat Baik (Hijau)
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text">≥</span>
+                        <input type="number" class="form-control" id="thresholdExcellent" min="0" max="100" value="85">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label d-flex align-items-center gap-2">
+                        <span class="d-inline-block rounded-circle"
+                            style="width:16px;height:16px;background:#ffc107"></span>
+                        Baik (Kuning)
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text">≥</span>
+                        <input type="number" class="form-control" id="thresholdGood" min="0" max="100" value="70">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label d-flex align-items-center gap-2">
+                        <span class="d-inline-block rounded-circle"
+                            style="width:16px;height:16px;background:#fd7e14"></span>
+                        Kurang (Oranye)
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text">≥</span>
+                        <input type="number" class="form-control" id="thresholdPoor" min="0" max="100" value="55">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label d-flex align-items-center gap-2">
+                        <span class="d-inline-block rounded-circle"
+                            style="width:16px;height:16px;background:#b02a37"></span>
+                        Kritis (Merah)
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text">&lt;</span>
+                        <input type="text" class="form-control bg-light" id="thresholdCritical" value="55" readonly
+                            disabled>
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <small class="text-muted">Otomatis mengikuti nilai "Kurang"</small>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" onclick="resetThresholdsAndRefresh()">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Default
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" onclick="saveThresholdsAndRefresh()">
+                        <i class="bi bi-check-lg me-1"></i>Simpan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize threshold modal with current values
+    document.getElementById('editThresholdModal').addEventListener('show.bs.modal', function () {
+        const T = PANBERSS_COLORS.THRESHOLDS;
+        document.getElementById('thresholdExcellent').value = T.EXCELLENT;
+        document.getElementById('thresholdGood').value = T.GOOD;
+        document.getElementById('thresholdPoor').value = T.POOR;
+        document.getElementById('thresholdCritical').value = T.POOR;
+    });
+
+    // Update critical field when poor changes
+    document.getElementById('thresholdPoor').addEventListener('input', function () {
+        document.getElementById('thresholdCritical').value = this.value;
+    });
+
+    function saveThresholdsAndRefresh() {
+        const excellent = parseInt(document.getElementById('thresholdExcellent').value) || 85;
+        const good = parseInt(document.getElementById('thresholdGood').value) || 70;
+        const poor = parseInt(document.getElementById('thresholdPoor').value) || 55;
+
+        // Validate values
+        if (excellent <= good || good <= poor) {
+            alert('Nilai harus berurutan: Sangat Baik > Baik > Kurang');
+            return;
+        }
+
+        if (saveThresholds(excellent, good, poor)) {
+            bootstrap.Modal.getInstance(document.getElementById('editThresholdModal')).hide();
+            location.reload();
+        }
+    }
+
+    function resetThresholdsAndRefresh() {
+        if (confirm('Reset ke nilai default (85, 70, 55)?')) {
+            resetThresholds();
+            bootstrap.Modal.getInstance(document.getElementById('editThresholdModal')).hide();
+            location.reload();
+        }
+    }
+</script>

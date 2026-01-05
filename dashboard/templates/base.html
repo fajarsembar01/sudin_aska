@@ -46,22 +46,35 @@
                 {% set current_role = current_user.role if current_user else None %}
                 {% set is_admin = current_role == 'admin' %}
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint in ['main.chats', 'main.chat_thread'] %}active{% endif %}"
-                            href="{{ url_for('main.chats') }}"><i class="bi bi-chat-square-text nav-icon"></i>Chat
-                            Logs</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'main.feedback' %}active{% endif %}"
-                            href="{{ url_for('main.feedback') }}">
-                            <i class="bi bi-hand-thumbs-up nav-icon"></i>Feedback
+                    {% set bot_endpoints = ['main.chats', 'main.chat_thread', 'main.feedback', 'main.twitter_logs'] %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in bot_endpoints %}active{% endif %}"
+                            href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-robot nav-icon"></i>ASKA Bot
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'main.twitter_logs' %}active{% endif %}"
-                            href="{{ url_for('main.twitter_logs') }}">
-                            <i class="bi bi-twitter nav-icon"></i>Twitter Ops
-                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint in ['main.chats', 'main.chat_thread'] %}active{% endif %}"
+                                    href="{{ url_for('main.chats') }}">
+                                    <i class="bi bi-chat-square-text me-2 text-primary"></i>Chat Logs
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'main.feedback' %}active{% endif %}"
+                                    href="{{ url_for('main.feedback') }}">
+                                    <i class="bi bi-hand-thumbs-up me-2 text-primary"></i>Feedback
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'main.twitter_logs' %}active{% endif %}"
+                                    href="{{ url_for('main.twitter_logs') }}">
+                                    <i class="bi bi-twitter me-2 text-primary"></i>Twitter Ops
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     {% set report_endpoints = ['main.psych_reports', 'main.bullying_reports', 'main.corruption_reports']
                     %}
@@ -105,9 +118,9 @@
                             </li>
                         </ul>
                     </li>
-                    {% if is_admin %}
+                    {% if is_admin %}>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['auth.manage_users', 'auth.manage_aska_users'] %}active{% endif %}"
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['auth.manage_users', 'auth.manage_aska_users', 'auth.manage_monev_teams'] %}active{% endif %}"
                             href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-gear nav-icon"></i>Manajemen
                         </a>
@@ -115,13 +128,19 @@
                             <li>
                                 <a class="dropdown-item {% if request.endpoint == 'auth.manage_users' %}active{% endif %}"
                                     href="{{ url_for('auth.manage_users') }}">
-                                    Admin Dashboard
+                                    <i class="bi bi-people me-2"></i>Admin Dashboard
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.endpoint == 'auth.manage_aska_users' %}active{% endif %}"
                                     href="{{ url_for('auth.manage_aska_users') }}">
-                                    User ASKA
+                                    <i class="bi bi-person-check me-2"></i>User ASKA
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'auth.manage_monev_teams' %}active{% endif %}"
+                                    href="{{ url_for('auth.manage_monev_teams') }}">
+                                    <i class="bi bi-people-fill me-2"></i>Tim Monev
                                 </a>
                             </li>
                         </ul>
@@ -151,6 +170,14 @@
                                 </a>
                             </li>
                         </ul>
+                    </li>
+                    {% endif %}
+                    {% if current_role in ['coordinator', 'staff'] %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'auth.view_my_team' %}active{% endif %}"
+                            href="{{ url_for('auth.view_my_team') }}">
+                            <i class="bi bi-people nav-icon"></i>Tim Saya
+                        </a>
                     </li>
                     {% endif %}
                 </ul>

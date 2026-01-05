@@ -26,6 +26,33 @@ def get_connection():
 def format_value(value):
     if value is None:
         return "NULL"
+    # Handle dict and list types directly (for JSONB columns)
+    if isinstance(value, (dict, list)):
+        import json as _json
+        # Convert Python dict/list to proper JSON format
+        serialized = _json.dumps(value, ensure_ascii=False)
+        # Escape single quotes for SQL string
+        serialized = serialized.replace("'", "''")
+        return f"'{serialized}'"
+    # Attempt to normalize JSON-like strings that use single quotes/True/False into proper JSON
+    if isinstance(value, str):
+        trimmed = value.strip()
+        if trimmed.startswith("{") or trimmed.startswith("["):
+            import ast, json as _json
+            # Try to parse as Python literal and convert to proper JSON
+            try:
+                parsed = ast.literal_eval(trimmed)
+                if isinstance(parsed, (dict, list)):
+                    # Convert to proper JSON format
+                    serialized = _json.dumps(parsed, ensure_ascii=False)
+                    # Escape single quotes for SQL string
+                    serialized = serialized.replace("'", "''")
+                    return f"'{serialized}'"
+            except Exception:
+                pass
+        # Basic escaping for plain strings
+        escaped = value.replace("'", "''")
+        return f"'{escaped}'"
     if isinstance(value, (int, float)):
         return str(value)
     if isinstance(value, bool):
@@ -35,7 +62,6 @@ def format_value(value):
     if isinstance(value, datetime.date):
         return f"'{value.strftime('%Y-%m-%d')}'"
     # Basic escaping for strings: replace single quotes with two single quotes
-    # Also handle backslashes if standard_conforming_strings is off, but standard SQL escapes ' with ''
     escaped = str(value).replace("'", "''")
     return f"'{escaped}'"
 
@@ -46,30 +72,48 @@ def export_data(output_file="data_export.sql"):
     # Define table priority (parents first, children last)
     # Higher priority (lower index) tables are exported first.
     # Tables not listed here will be sorted alphabetically after these.
+    # Urutan prioritas agar parent di-insert dulu (hindari FK error saat import)
     PRIORITY_TABLES = [
-        # Users & Core
-        "web_users",
-        "telegram_users",
-        "dashboard_users",
-        
-        # Portal Master Data
+        # Portal master (wilayah dan sekolah)
+        "portal_kecamatan",
+        "portal_kelurahan",
         "portal_schools",
         "portal_rooms",
         "portal_aspects",
         "portal_school_rooms",
+        # Kelas & seksi
+        "school_classes",
+        "sections",
+        # Pengguna (butuh sekolah/kelas/seksi sudah ada)
+        "dashboard_users",
+        "web_users",
+        "telegram_users",
+        # Portal periode & assessment
         "portal_assessment_periods",
-        
-        # Portal Transaction Data
         "portal_assessments",
         "portal_assessment_room_details",
         "portal_assessment_scores",
         "portal_assessment_photos",
-        
-        # Other Reports
-        "bullying_reports",
-        "bullying_report_events",
+        # Aktivitas & akses
+        "portal_activity_logs",
+        "user_kecamatan",
+        "staff_school_assignments",
+        "school_classrooms",
+        # Monev
+        "monev_teams",
+        "monev_team_members",
+        "monev_team_member_requests",
+        # Laporan & chat
         "chat_logs",
         "chat_feedback",
+        "bullying_reports",
+        "bullying_report_events",
+        "psych_reports",
+        "corruption_reports",
+        "notifications",
+        # Lain-lain
+        "students",
+        "twitter_worker_logs",
     ]
 
     # Get all tables

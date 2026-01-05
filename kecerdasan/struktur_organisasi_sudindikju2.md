@@ -3,13 +3,13 @@
 
 ---
 
-### 1. Kepala Suku Dinas Pendidikan
+### 1. Kepala Suku Dinas Pendidikan (KASUDIN)
 #### **Ibu Heni Nurhayani**  
 *Kepala Suku Dinas Pendidikan Wilayah II Kota Administrasi Jakarta Utara*
 
 ---
 
-### 2. Kepala Subbagian Tata Usaha
+### 2. Kepala Subbagian Tata Usaha (KASUBAG)
 #### **Bapak Mukheri**  
 *Kepala Subbagian Tata Usaha Suku Dinas Pendidikan Wilayah II Kota Administrasi Jakarta Utara*
 
