@@ -2749,14 +2749,25 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
     Uses the base room for the matching grade (e.g., "Ruang Kelas 1") as a template and
     copies its aspects to generated rooms (e.g., "Ruang Kelas 1A").
     """
+    import re  # Import at function level for regex operations
+    
     classrooms = list_school_classrooms(school_id, active_only=True)
     if not classrooms:
+        # No classrooms configured - remove all variant classroom rooms for this school
+        with get_cursor(commit=True) as cur:
+            cur.execute("""
+                DELETE FROM portal_school_rooms
+                WHERE school_id = %s
+                AND room_id IN (
+                    SELECT id FROM portal_rooms
+                    WHERE name ~ E'Kelas\\\\s+-?\\\\d+[A-Z]+'
+                )
+            """, (school_id,))
         return
 
     all_rooms = list_portal_rooms(active_only=True)
 
     def _room_grade(room_name: str) -> Optional[int]:
-        import re
         m = re.search(r"\bKelas\s+(\d+)", room_name or "", flags=re.IGNORECASE)
         if not m:
             return None
@@ -2765,8 +2776,9 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
         except (TypeError, ValueError):
             return None
 
-    # Map grade -> base room
+    # Map grade -> base room, plus fallback template for missing grades
     template_by_grade: Dict[int, Dict[str, Any]] = {}
+    fallback_template: Optional[Dict[str, Any]] = None
     for room in all_rooms:
         name_val = room.get("name") or ""
         # Skip variant names like "Ruang Kelas 1A" when choosing template
@@ -2775,6 +2787,8 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
         grade = _room_grade(name_val)
         if grade is not None and grade not in template_by_grade:
             template_by_grade[grade] = room
+        if not fallback_template and "kelas" in name_val.lower():
+            fallback_template = room
 
     # Quick lookup by name (case-insensitive)
     room_by_name = {r["name"].lower(): r for r in all_rooms if r.get("name")}
@@ -2791,15 +2805,62 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
 
             base_room = template_by_grade.get(grade_int)
             if not base_room:
-                continue
+                # Create a base template for this grade using fallback styling (aspects/category/etc).
+                template_source = fallback_template
+                base_name = f"Ruang Kelas {grade_int}"
+                base_cat = (template_source or {}).get("category") or "akademik"
+                base_desc = (template_source or {}).get("description")
+                base_sort = (template_source or {}).get("sort_order") or 0
+                base_required = (template_source or {}).get("is_required") or False
+
+                cur.execute(
+                    """
+                    INSERT INTO portal_rooms (name, description, category, sort_order, active, is_required)
+                    VALUES (%s, %s, %s, %s, TRUE, %s)
+                    RETURNING id, name, description, category, sort_order, is_required
+                    """,
+                    (base_name, base_desc, base_cat, base_sort, base_required),
+                )
+                new_base = dict(cur.fetchone())
+                template_by_grade[grade_int] = new_base
+                room_by_name[base_name.lower()] = new_base
+                base_room = new_base
+
+                # Copy aspects from the fallback template (if any) to the new base
+                base_aspects = (template_source or {}).get("aspects") or []
+                for idx, asp in enumerate(base_aspects):
+                    cur.execute(
+                        """
+                        INSERT INTO portal_aspects (room_id, name, description, sort_order, active, is_required)
+                        VALUES (%s, %s, %s, %s, TRUE, %s)
+                        """,
+                        (
+                            new_base["id"],
+                            asp.get("name"),
+                            asp.get("description"),
+                            asp.get("sort_order") if asp.get("sort_order") is not None else idx,
+                            asp.get("is_required") or False,
+                        ),
+                    )
 
             variant = (cls.get("variant") or "").strip().upper()
             base_name = base_room.get("name") or f"Kelas {grade_int}"
             target_name = f"{base_name}{variant}" if variant else base_name
 
+            # Debug logging to track variant room creation
+            from flask import current_app
+            current_app.logger.info(
+                "[ensure_classroom_rooms] Processing classroom: school_id=%s, grade=%s, variant='%s', target_name='%s'",
+                school_id, grade_int, variant, target_name
+            )
+
             existing_room = room_by_name.get(target_name.lower())
             if existing_room:
                 target_room_id = existing_room["id"]
+                current_app.logger.info(
+                    "[ensure_classroom_rooms] Room '%s' already exists in portal_rooms (room_id=%s)",
+                    target_name, target_room_id
+                )
             else:
                 cur.execute(
                     """
@@ -2818,6 +2879,11 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                 new_room = dict(cur.fetchone())
                 room_by_name[target_name.lower()] = new_room
                 target_room_id = new_room["id"]
+                
+                current_app.logger.info(
+                    "[ensure_classroom_rooms] Created NEW room '%s' in portal_rooms (room_id=%s, category=%s)",
+                    target_name, target_room_id, new_room.get("category")
+                )
 
                 # Copy aspects from base room if target has none
                 base_aspects = base_room.get("aspects") or []
@@ -2835,6 +2901,7 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                             asp.get("is_required") or False,
                         ),
                     )
+
 
             # Attach room to school with quantity = capacity (fallback 1)
             quantity_val = cls.get("capacity") or 1
@@ -2863,6 +2930,52 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                 (school_id, target_room_id),
             )
 
+    # CLEANUP: Remove variant rooms that are no longer configured
+    # Build set of expected variant room names based on current classroom config
+    configured_room_names = set()
+    for cls in classrooms:
+        grade = cls.get("grade_level")
+        variant = (cls.get("variant") or "").strip().upper()
+        if grade is not None and variant:
+            try:
+                grade_int = int(grade)
+                base_name = f"Ruang Kelas {grade_int}"
+                configured_room_names.add(f"{base_name}{variant}")
+            except (TypeError, ValueError):
+                continue
+    
+    # Get all variant rooms currently assigned to this school
+    with get_cursor() as cur:
+        cur.execute("""
+            SELECT sr.room_id, r.name
+            FROM portal_school_rooms sr
+            JOIN portal_rooms r ON r.id = sr.room_id
+            WHERE sr.school_id = %s
+            AND r.name ~ E'Kelas\\\\s+-?\\\\d+[A-Z]+'
+        """, (school_id,))
+        
+        assigned_variant_rooms = cur.fetchall()
+    
+    # Find orphaned room IDs (assigned but not configured anymore)
+    orphaned_room_ids = [
+        row[0] for row in assigned_variant_rooms
+        if row[1] not in configured_room_names
+    ]
+    
+    if orphaned_room_ids:
+        with get_cursor(commit=True) as cur:
+            cur.execute("""
+                DELETE FROM portal_school_rooms
+                WHERE school_id = %s
+                AND room_id = ANY(%s)
+            """, (school_id, orphaned_room_ids))
+            
+        orphaned_names = [row[1] for row in assigned_variant_rooms if row[0] in orphaned_room_ids]
+        current_app.logger.info(
+            "[ensure_classroom_rooms] Removed %d orphaned variant rooms for school_id=%s: %s",
+            len(orphaned_room_ids), school_id, orphaned_names
+        )
+
 def get_section_by_coordinator(coordinator_id: int):
     """Get section managed by coordinator."""
     from dashboard.db_access import get_cursor
@@ -2872,6 +2985,95 @@ def get_section_by_coordinator(coordinator_id: int):
             WHERE coordinator_id = %s
         """, (coordinator_id,))
         return cur.fetchone()
+
+
+def get_optional_rooms_for_schools(school_ids: list[int]) -> dict:
+    """
+    Get optional rooms (not required) and which assigned schools have selected them.
+    
+    Returns dict with format:
+        {'SD': [{'room_id': 1, 'room_name': 'Perpustakaan', 'selection_count': 3, 'total_schools': 5}, ...]}
+    """
+    from dashboard.db_access import get_cursor
+    
+    if not school_ids:
+        return {}
+    
+    with get_cursor() as cur:
+        cur.execute("""
+            SELECT 
+                r.id as room_id,
+                r.name as room_name,
+                s.id as school_id,
+                s.jenjang,
+                sr.id as is_selected
+            FROM portal_rooms r
+            CROSS JOIN (
+                SELECT id, jenjang 
+                FROM portal_schools 
+                WHERE id = ANY(%s) AND active = TRUE
+            ) s
+            LEFT JOIN portal_school_rooms sr ON sr.room_id = r.id AND sr.school_id = s.id
+            WHERE r.active = TRUE AND r.is_required = FALSE
+            ORDER BY s.jenjang, r.name
+        """, (school_ids,))
+        rows = cur.fetchall()
+    
+    result = {}
+    for row in rows:
+        jenjang, room_id, room_name = row['jenjang'], row['room_id'], row['room_name']
+        is_selected = row['is_selected'] is not None
+        
+        if jenjang not in result:
+            result[jenjang] = {}
+        if room_id not in result[jenjang]:
+            result[jenjang][room_id] = {
+                'room_name': room_name,
+                'selected_by_schools': [],
+                'total_schools': 0,
+            }
+        result[jenjang][room_id]['total_schools'] += 1
+        if is_selected:
+            result[jenjang][room_id]['selected_by_schools'].append(row['school_id'])
+    
+    formatted = {}
+    for jenjang, rooms in result.items():
+        formatted[jenjang] = [
+            {'room_id': rid, **data, 'selection_count': len(data['selected_by_schools'])}
+            for rid, data in rooms.items()
+        ]
+    return formatted
+
+
+def get_room_with_aspects(room_id: int) -> dict:
+    """Get room details with all its aspects."""
+    from dashboard.db_access import get_cursor
+    
+    with get_cursor() as cur:
+        # Get room
+        cur.execute("""
+            SELECT id, name, description, category, is_required
+            FROM portal_rooms
+            WHERE id = %s AND active = TRUE
+        """, (room_id,))
+        
+        room = cur.fetchone()
+        if not room:
+            return None
+        
+        room_dict = dict(room)
+        
+        # Get aspects
+        cur.execute("""
+            SELECT id, name, description, sort_order, is_required
+            FROM portal_aspects
+            WHERE room_id = %s AND active = TRUE
+            ORDER BY sort_order, name
+        """, (room_id,))
+        
+        room_dict['aspects'] = [dict(row) for row in cur.fetchall()]
+        
+    return room_dict
 
 
 def get_section_by_id(section_id: int):

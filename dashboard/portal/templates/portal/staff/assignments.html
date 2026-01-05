@@ -8,118 +8,124 @@
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">
-                    <i class="bi bi-building"></i> Sekolah yang Ditugaskan
-                </h4>
-            </div>
-            <div class="card-body">
-                <div class="alert alert-info d-flex align-items-center gap-3">
-                    <i class="bi bi-calendar-event fs-4 text-primary"></i>
-                    <div class="flex-grow-1">
-                        <div class="fw-semibold">Pilih periode untuk penilaian baru</div>
-                        <div class="small text-muted">
-                            {% if active_period_id %}
-                            Periode ini akan dipakai saat membuat draft baru. Draft yang sudah ada tetap menggunakan periode awalnya.
-                            {% else %}
-                            Tidak ada periode aktif, pilih periode sebelum mulai penilaian.
-                            {% endif %}
+                    <h4 class="mb-0">
+                        <i class="bi bi-building"></i> Sekolah yang Ditugaskan
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info d-flex align-items-center gap-3">
+                        <i class="bi bi-calendar-event fs-4 text-primary"></i>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Pilih periode untuk penilaian baru</div>
+                            <div class="small text-muted">
+                                {% if active_period_id %}
+                                Periode ini akan dipakai saat membuat draft baru. Draft yang sudah ada tetap menggunakan
+                                periode awalnya.
+                                {% else %}
+                                Tidak ada periode aktif, pilih periode sebelum mulai penilaian.
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div style="min-width: 240px;">
+                            <select id="periodSelect" class="form-select form-select-sm">
+                                <option value="">{% if active_period_id %}Periode aktif (default){% else %}-- Pilih
+                                    periode (boleh periode mendatang) --{% endif %}</option>
+                                {% for p in periods %}
+                                <option value="{{ p.id }}" {% if active_period_id and active_period_id==p.id
+                                    %}selected{% endif %}>{{ p.name }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
-                    <div style="min-width: 240px;">
-                        <select id="periodSelect" class="form-select form-select-sm">
-                            <option value="">{% if active_period_id %}Periode aktif (default){% else %}-- Pilih periode (boleh periode mendatang) --{% endif %}</option>
-                            {% for p in periods %}
-                            <option value="{{ p.id }}" {% if active_period_id and active_period_id==p.id %}selected{% endif %}>{{ p.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                {% if assigned_schools %}
-                <p class="text-muted">
-                    Anda memiliki <strong>{{ assigned_schools|length }}</strong> sekolah yang ditugaskan oleh admin.
-                </p>
+                    {% if assigned_schools %}
+                    <p class="text-muted">
+                        Anda memiliki <strong>{{ assigned_schools|length }}</strong> sekolah yang ditugaskan oleh admin.
+                    </p>
 
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>No</th>
-                                <th>NPSN</th>
-                                <th>Nama Sekolah</th>
-                                <th>Jenjang</th>
-                                <th>Alamat</th>
-                                <th>Kecamatan</th>
-                                <th>Periode</th>
-                                <th>Status</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for school in assigned_schools %}
-                            {% set period_label = school.draft_period_name or school.last_period_name or 'Periode aktif' %}
-                            <tr>
-                                <td>{{ loop.index }}</td>
-                                <td>{{ school.npsn }}</td>
-                                <td>{{ school.school_name }}</td>
-                                <td>
-                                    <span class="badge bg-info">{{ school.jenjang }}</span>
-                                </td>
-                                <td>{{ school.alamat or '-' }}</td>
-                                <td>{{ school.kecamatan_name or '-' }}</td>
-                                <td>
-                                    <span class="badge bg-secondary">{{ period_label }}</span>
-                                    {% if not (school.draft_period_name or school.last_period_name) %}
-                                    <div class="small text-muted">Mengikuti periode aktif saat dibuat</div>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if school.draft_assessment_id %}
-                                    <span class="badge bg-warning text-dark">
-                                        <i class="bi bi-pencil"></i> Draft
-                                    </span>
-                                    {% elif school.last_assessment_status == 'verified' %}
-                                    <span class="badge bg-primary">
-                                        <i class="bi bi-patch-check"></i> Terverifikasi
-                                    </span>
-                                    {% elif school.last_assessment_status == 'submitted' %}
-                                    <span class="badge bg-success">
-                                        <i class="bi bi-check-circle"></i> Selesai
-                                    </span>
-                                    {% else %}
-                                    <span class="badge bg-secondary">
-                                        <i class="bi bi-circle"></i> Belum Dinilai
-                                    </span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if school.draft_assessment_id %}
-                                    <a href="{{ url_for('portal.assess', school_id=school.school_id) }}"
-                                        class="btn btn-sm btn-warning start-assessment-btn" data-has-draft="true">
-                                        <i class="bi bi-pencil-square"></i> Lanjutkan
-                                    </a>
-                                    {% elif school.last_assessment_status in ['submitted', 'verified'] and school.last_assessment_id %}
-                                    <div class="d-flex gap-2">
-                                        <a href="{{ url_for('portal.view_assessment', assessment_id=school.last_assessment_id) }}"
-                                            class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-box-arrow-up-right"></i> Lihat
-                                        </a>
-                                        {% if school.last_assessment_status == 'submitted' %}
-                                        <form method="POST" action="{{ url_for('portal.request_reopen', assessment_id=school.last_assessment_id) }}">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="btn btn-sm btn-warning text-dark">
-                                                <i class="bi bi-arrow-repeat"></i> Ajukan Reopen
-                                            </button>
-                                        </form>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>No</th>
+                                    <th>NPSN</th>
+                                    <th>Nama Sekolah</th>
+                                    <th>Jenjang</th>
+                                    <th>Alamat</th>
+                                    <th>Kecamatan</th>
+                                    <th>Periode</th>
+                                    <th>Status</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for school in assigned_schools %}
+                                {% set period_label = school.draft_period_name or school.last_period_name or 'Periode
+                                aktif' %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ school.npsn }}</td>
+                                    <td>{{ school.school_name }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ school.jenjang }}</span>
+                                    </td>
+                                    <td>{{ school.alamat or '-' }}</td>
+                                    <td>{{ school.kecamatan_name or '-' }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ period_label }}</span>
+                                        {% if not (school.draft_period_name or school.last_period_name) %}
+                                        <div class="small text-muted">Mengikuti periode aktif saat dibuat</div>
                                         {% endif %}
-                                    </div>
-                                    {% else %}
-                                    <a href="{{ url_for('portal.assess', school_id=school.school_id) }}"
-                                        class="btn btn-sm btn-primary start-assessment-btn" data-has-draft="false">
-                                        <i class="bi bi-clipboard-check"></i> Mulai Penilaian
-                                    </a>
-                                    {% endif %}
-                                </td>
-                            </tr>
+                                    </td>
+                                    <td>
+                                        {% if school.draft_assessment_id %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-pencil"></i> Draft
+                                        </span>
+                                        {% elif school.last_assessment_status == 'verified' %}
+                                        <span class="badge bg-primary">
+                                            <i class="bi bi-patch-check"></i> Terverifikasi
+                                        </span>
+                                        {% elif school.last_assessment_status == 'submitted' %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Selesai
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-circle"></i> Belum Dinilai
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if school.draft_assessment_id %}
+                                        <a href="{{ url_for('portal.assess', school_id=school.school_id) }}"
+                                            class="btn btn-sm btn-warning start-assessment-btn" data-has-draft="true">
+                                            <i class="bi bi-pencil-square"></i> Lanjutkan
+                                        </a>
+                                        {% elif school.last_assessment_status in ['submitted', 'verified'] and
+                                        school.last_assessment_id %}
+                                        <div class="d-flex gap-2">
+                                            <a href="{{ url_for('portal.view_assessment', assessment_id=school.last_assessment_id) }}"
+                                                class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-box-arrow-up-right"></i> Lihat
+                                            </a>
+                                            {% if school.last_assessment_status == 'submitted' %}
+                                            <form method="POST"
+                                                action="{{ url_for('portal.request_reopen', assessment_id=school.last_assessment_id) }}">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-sm btn-warning text-dark">
+                                                    <i class="bi bi-arrow-repeat"></i> Ajukan Reopen
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                        {% else %}
+                                        <a href="{{ url_for('portal.assess', school_id=school.school_id) }}"
+                                            class="btn btn-sm btn-primary start-assessment-btn" data-has-draft="false">
+                                            <i class="bi bi-clipboard-check"></i> Mulai Penilaian
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>

@@ -533,8 +533,9 @@
             </button>
             <div class="collapse navbar-collapse" id="portalNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    {% set home_active_endpoints = ['portal.home', 'portal.coordinator_dashboard'] %}
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'portal.home' %}active{% endif %}"
+                        <a class="nav-link {% if request.endpoint in home_active_endpoints %}active{% endif %}"
                             href="{{ url_for('portal.home') }}">
                             <i class="bi bi-house nav-icon"></i>Beranda
                         </a>
@@ -542,11 +543,12 @@
 
                     {% if current_user and current_user.role == 'coordinator' %}
                     {% set coordinator_menu_endpoints = [
-                    'portal.coordinator_dashboard',
                     'portal.coordinator_stats',
                     'portal.coordinator_assignment_requests',
                     'portal.view_my_team',
-                    'portal.coordinator_assessments'
+                    'portal.coordinator_assessments',
+                    'portal.coordinator_team',
+                    'portal.coordinator_request_member'
                     ] %}
                     <!-- Coordinator: Kelola Tim dropdown -->
                     <li class="nav-item dropdown">

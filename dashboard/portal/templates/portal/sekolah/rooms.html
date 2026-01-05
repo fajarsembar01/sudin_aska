@@ -86,37 +86,67 @@
                         </div>
 
                         {% set jenjang = selected_school.jenjang if selected_school else None %}
+                        {% set show_paud = (jenjang is none) or jenjang == 'PAUD' %}
+                        {% set show_tk = (jenjang is none) or jenjang == 'TK' %}
                         {% set show_sd = (jenjang is none) or jenjang == 'SD' %}
                         {% set show_smp = (jenjang is none) or jenjang == 'SMP' %}
                         {% set show_sma = (jenjang is none) or jenjang in ['SMA','SMK'] %}
+                        {% set active_tab = 'umum' %}
+                        {% if jenjang == 'PAUD' %}
+                        {% set active_tab = 'paud' %}
+                        {% elif jenjang == 'TK' %}
+                        {% set active_tab = 'tk' %}
+                        {% elif jenjang == 'SD' %}
+                        {% set active_tab = 'sd' %}
+                        {% elif jenjang == 'SMP' %}
+                        {% set active_tab = 'smp' %}
+                        {% elif jenjang in ['SMA','SMK'] %}
+                        {% set active_tab = 'sma' %}
+                        {% endif %}
                         <!-- Jenjang Tabs -->
                         <ul class="nav nav-pills nav-fill mb-3" id="roomJenjangTab" role="tablist">
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="umum-room-tab" data-bs-toggle="tab"
-                                    data-bs-target="#umum-rooms" type="button">
+                                <button class="nav-link {% if active_tab == 'umum' %}active{% endif %}"
+                                    id="umum-room-tab" data-bs-toggle="tab" data-bs-target="#umum-rooms" type="button">
                                     <i class="bi bi-grid me-1 d-none d-sm-inline"></i>Umum
                                 </button>
                             </li>
+                            {% if show_paud %}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link {% if active_tab == 'paud' %}active{% endif %}"
+                                    id="paud-room-tab" data-bs-toggle="tab" data-bs-target="#paud-rooms" type="button">
+                                    <i class="bi bi-star me-1 d-none d-sm-inline"></i>PAUD
+                                </button>
+                            </li>
+                            {% endif %}
+                            {% if show_tk %}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link {% if active_tab == 'tk' %}active{% endif %}" id="tk-room-tab"
+                                    data-bs-toggle="tab" data-bs-target="#tk-rooms" type="button">
+                                    <i class="bi bi-balloon me-1 d-none d-sm-inline"></i>TK
+                                </button>
+                            </li>
+                            {% endif %}
                             {% if show_sd %}
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="sd-room-tab" data-bs-toggle="tab"
-                                    data-bs-target="#sd-rooms" type="button">
+                                <button class="nav-link {% if active_tab == 'sd' %}active{% endif %}" id="sd-room-tab"
+                                    data-bs-toggle="tab" data-bs-target="#sd-rooms" type="button">
                                     <i class="bi bi-mortarboard-fill me-1 d-none d-sm-inline"></i>SD
                                 </button>
                             </li>
                             {% endif %}
                             {% if show_smp %}
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="smp-room-tab" data-bs-toggle="tab"
-                                    data-bs-target="#smp-rooms" type="button">
+                                <button class="nav-link {% if active_tab == 'smp' %}active{% endif %}" id="smp-room-tab"
+                                    data-bs-toggle="tab" data-bs-target="#smp-rooms" type="button">
                                     <i class="bi bi-book me-1 d-none d-sm-inline"></i>SMP
                                 </button>
                             </li>
                             {% endif %}
                             {% if show_sma %}
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="sma-room-tab" data-bs-toggle="tab"
-                                    data-bs-target="#sma-rooms" type="button">
+                                <button class="nav-link {% if active_tab == 'sma' %}active{% endif %}" id="sma-room-tab"
+                                    data-bs-toggle="tab" data-bs-target="#sma-rooms" type="button">
                                     <i class="bi bi-building me-1 d-none d-sm-inline"></i>SMA/SMK
                                 </button>
                             </li>
@@ -148,9 +178,206 @@
                         </div>
 
                         <div class="tab-content" id="roomJenjangTabContent">
+                            {% if show_paud %}
+                            <!-- PAUD Rooms -->
+                            <div class="tab-pane fade {% if active_tab == 'paud' %}show active{% endif %}"
+                                id="paud-rooms" role="tabpanel">
+                                <div class="alert alert-info py-2 mb-3 small">
+                                    <i class="bi bi-info-circle me-1"></i>Ruangan kelas untuk jenjang
+                                    <strong>PAUD</strong>
+                                </div>
+                                <div class="list-group list-group-flush">
+                                    {% for room in paud_rooms %}
+                                    {% set display_name = room.name %}
+                                    <label class="list-group-item d-flex align-items-start gap-3 py-2 clickable-row"
+                                        data-toggle-scope="room">
+                                        <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
+                                            name="room_ids" value="{{ room.id }}"
+                                            data-required="{{ 'true' if room.is_required else 'false' }}" {% if
+                                            room.is_required %}checked disabled{% elif room.id in saved_room_ids
+                                            %}checked{% endif %}>
+                                        {% if room.is_required %}
+                                        <input type="hidden" name="room_ids" value="{{ room.id }}">
+                                        {% endif %}
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <span class="fw-semibold">{{ display_name }}</span>
+                                                {% if room.is_required %}
+                                                <span class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                {% endif %}
+                                                {% if room.aspects %}
+                                                <button class="btn btn-link btn-sm p-0 text-muted" type="button"
+                                                    data-bs-toggle="collapse" data-bs-target="#aspects-{{ room.id }}"
+                                                    title="Pilih Aspek">
+                                                    <i class="bi bi-list-check"></i> Aspek
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                            {% if room.description %}
+                                            <small class="text-muted">{{ room.description }}</small>
+                                            {% endif %}
+                                            {% if room.aspects %}
+                                            <div class="collapse mt-2 room-aspects" id="aspects-{{ room.id }}">
+                                                <ul class="list-unstyled mb-0 small">
+                                                    {% for asp in room.aspects %}
+                                                    <li class="mb-2 aspect-item clickable-row"
+                                                        data-toggle-scope="aspect">
+                                                        <div
+                                                            class="d-flex align-items-start justify-content-between gap-2">
+                                                            <div class="flex-grow-1">
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    {% if asp.is_required %}
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        checked disabled>
+                                                                    <input type="hidden" name="aspects_{{ room.id }}[]"
+                                                                        value="{{ asp.id }}">
+                                                                    {% else %}
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        name="aspects_{{ room.id }}[]"
+                                                                        value="{{ asp.id }}" {% if asp.is_selected
+                                                                        %}checked{% endif %}>
+                                                                    {% endif %}
+                                                                    <span class="text-muted">{{ asp.name }}</span>
+                                                                    {% if asp.is_required %}
+                                                                    <span
+                                                                        class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                                    {% endif %}
+                                                                    <button class="btn btn-link btn-sm p-0 text-muted"
+                                                                        type="button" data-bs-toggle="collapse"
+                                                                        data-bs-target="#room-{{ room.id }}-asp-{{ asp.id }}-desc"
+                                                                        title="Lihat deskripsi">
+                                                                        <i class="bi bi-info-circle"></i>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="collapse mt-1"
+                                                                    id="room-{{ room.id }}-asp-{{ asp.id }}-desc">
+                                                                    <div
+                                                                        class="ps-3 border-start border-2 border-primary">
+                                                                        {% if asp.description %}
+                                                                        <small class="text-muted fst-italic">{{
+                                                                            asp.description }}</small>
+                                                                        {% else %}
+                                                                        <small class="text-muted fst-italic">Tidak ada
+                                                                            deskripsi untuk aspek ini.</small>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if show_tk %}
+                            <!-- TK Rooms -->
+                            <div class="tab-pane fade {% if active_tab == 'tk' %}show active{% endif %}" id="tk-rooms"
+                                role="tabpanel">
+                                <div class="alert alert-info py-2 mb-3 small">
+                                    <i class="bi bi-info-circle me-1"></i>Ruangan kelas untuk jenjang
+                                    <strong>TK</strong>
+                                </div>
+                                <div class="list-group list-group-flush">
+                                    {% for room in tk_rooms %}
+                                    {% set display_name = room.name %}
+                                    <label class="list-group-item d-flex align-items-start gap-3 py-2 clickable-row"
+                                        data-toggle-scope="room">
+                                        <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
+                                            name="room_ids" value="{{ room.id }}"
+                                            data-required="{{ 'true' if room.is_required else 'false' }}" {% if
+                                            room.is_required %}checked disabled{% elif room.id in saved_room_ids
+                                            %}checked{% endif %}>
+                                        {% if room.is_required %}
+                                        <input type="hidden" name="room_ids" value="{{ room.id }}">
+                                        {% endif %}
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <span class="fw-semibold">{{ display_name }}</span>
+                                                {% if room.is_required %}
+                                                <span class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                {% endif %}
+                                                {% if room.aspects %}
+                                                <button class="btn btn-link btn-sm p-0 text-muted" type="button"
+                                                    data-bs-toggle="collapse" data-bs-target="#aspects-{{ room.id }}"
+                                                    title="Pilih Aspek">
+                                                    <i class="bi bi-list-check"></i> Aspek
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                            {% if room.description %}
+                                            <small class="text-muted">{{ room.description }}</small>
+                                            {% endif %}
+                                            {% if room.aspects %}
+                                            <div class="collapse mt-2 room-aspects" id="aspects-{{ room.id }}">
+                                                <ul class="list-unstyled mb-0 small">
+                                                    {% for asp in room.aspects %}
+                                                    <li class="mb-2 aspect-item clickable-row"
+                                                        data-toggle-scope="aspect">
+                                                        <div
+                                                            class="d-flex align-items-start justify-content-between gap-2">
+                                                            <div class="flex-grow-1">
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    {% if asp.is_required %}
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        checked disabled>
+                                                                    <input type="hidden" name="aspects_{{ room.id }}[]"
+                                                                        value="{{ asp.id }}">
+                                                                    {% else %}
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        name="aspects_{{ room.id }}[]"
+                                                                        value="{{ asp.id }}" {% if asp.is_selected
+                                                                        %}checked{% endif %}>
+                                                                    {% endif %}
+                                                                    <span class="text-muted">{{ asp.name }}</span>
+                                                                    {% if asp.is_required %}
+                                                                    <span
+                                                                        class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                                    {% endif %}
+                                                                    <button class="btn btn-link btn-sm p-0 text-muted"
+                                                                        type="button" data-bs-toggle="collapse"
+                                                                        data-bs-target="#room-{{ room.id }}-asp-{{ asp.id }}-desc"
+                                                                        title="Lihat deskripsi">
+                                                                        <i class="bi bi-info-circle"></i>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="collapse mt-1"
+                                                                    id="room-{{ room.id }}-asp-{{ asp.id }}-desc">
+                                                                    <div
+                                                                        class="ps-3 border-start border-2 border-primary">
+                                                                        {% if asp.description %}
+                                                                        <small class="text-muted fst-italic">{{
+                                                                            asp.description }}</small>
+                                                                        {% else %}
+                                                                        <small class="text-muted fst-italic">Tidak ada
+                                                                            deskripsi untuk aspek ini.</small>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
                             {% if show_sd %}
                             <!-- SD Rooms -->
-                            <div class="tab-pane fade" id="sd-rooms" role="tabpanel">
+                            <div class="tab-pane fade {% if active_tab == 'sd' %}show active{% endif %}" id="sd-rooms"
+                                role="tabpanel">
                                 <div class="alert alert-info py-2 mb-3 small">
                                     <i class="bi bi-info-circle me-1"></i>Ruangan kelas untuk jenjang <strong>SD (Kelas
                                         1-6)</strong>
@@ -158,7 +385,8 @@
                                 <div class="list-group list-group-flush">
                                     {% for room in sd_rooms %}
                                     {% set display_name = room.name %}
-                                    <label class="list-group-item d-flex align-items-start gap-3 py-2 clickable-row" data-toggle-scope="room">
+                                    <label class="list-group-item d-flex align-items-start gap-3 py-2 clickable-row"
+                                        data-toggle-scope="room">
                                         <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
                                             name="room_ids" value="{{ room.id }}"
                                             data-required="{{ 'true' if room.is_required else 'false' }}" {% if
@@ -190,37 +418,45 @@
                                             <div class="collapse mt-2 room-aspects" id="aspects-{{ room.id }}">
                                                 <ul class="list-unstyled mb-0 small">
                                                     {% for asp in room.aspects %}
-                                                    <li class="mb-2 aspect-item clickable-row" data-toggle-scope="aspect">
+                                                    <li class="mb-2 aspect-item clickable-row"
+                                                        data-toggle-scope="aspect">
                                                         <div
                                                             class="d-flex align-items-start justify-content-between gap-2">
                                                             <div class="flex-grow-1">
                                                                 <div class="d-flex align-items-center gap-2">
                                                                     {% if asp.is_required %}
-                                                                    <input class="form-check-input" type="checkbox" checked disabled>
-                                                                    <input type="hidden" name="aspects_{{ room.id }}[]" value="{{ asp.id }}">
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        checked disabled>
+                                                                    <input type="hidden" name="aspects_{{ room.id }}[]"
+                                                                        value="{{ asp.id }}">
                                                                     {% else %}
                                                                     <input class="form-check-input" type="checkbox"
                                                                         name="aspects_{{ room.id }}[]"
-                                                                        value="{{ asp.id }}"
-                                                                        {% if asp.is_selected %}checked{% endif %}>
+                                                                        value="{{ asp.id }}" {% if asp.is_selected
+                                                                        %}checked{% endif %}>
                                                                     {% endif %}
                                                                     <span class="text-muted">{{ asp.name }}</span>
                                                                     {% if asp.is_required %}
-                                                                    <span class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                                    <span
+                                                                        class="badge bg-warning-subtle text-warning">Wajib</span>
                                                                     {% endif %}
-                                                                    <button class="btn btn-link btn-sm p-0 text-muted" type="button"
-                                                                        data-bs-toggle="collapse"
+                                                                    <button class="btn btn-link btn-sm p-0 text-muted"
+                                                                        type="button" data-bs-toggle="collapse"
                                                                         data-bs-target="#room-{{ room.id }}-asp-{{ asp.id }}-desc"
                                                                         title="Lihat deskripsi">
                                                                         <i class="bi bi-info-circle"></i>
                                                                     </button>
                                                                 </div>
-                                                                <div class="collapse mt-1" id="room-{{ room.id }}-asp-{{ asp.id }}-desc">
-                                                                    <div class="ps-3 border-start border-2 border-primary">
+                                                                <div class="collapse mt-1"
+                                                                    id="room-{{ room.id }}-asp-{{ asp.id }}-desc">
+                                                                    <div
+                                                                        class="ps-3 border-start border-2 border-primary">
                                                                         {% if asp.description %}
-                                                                        <small class="text-muted fst-italic">{{ asp.description }}</small>
+                                                                        <small class="text-muted fst-italic">{{
+                                                                            asp.description }}</small>
                                                                         {% else %}
-                                                                        <small class="text-muted fst-italic">Tidak ada deskripsi untuk aspek ini.</small>
+                                                                        <small class="text-muted fst-italic">Tidak ada
+                                                                            deskripsi untuk aspek ini.</small>
                                                                         {% endif %}
                                                                     </div>
                                                                 </div>
@@ -240,14 +476,16 @@
 
                             {% if show_smp %}
                             <!-- SMP Rooms -->
-                            <div class="tab-pane fade" id="smp-rooms" role="tabpanel">
+                            <div class="tab-pane fade {% if active_tab == 'smp' %}show active{% endif %}" id="smp-rooms"
+                                role="tabpanel">
                                 <div class="alert alert-success py-2 mb-3 small">
                                     <i class="bi bi-info-circle me-1"></i>Ruangan kelas untuk jenjang <strong>SMP (Kelas
                                         7-9)</strong>
                                 </div>
                                 <div class="list-group list-group-flush">
                                     {% for room in smp_rooms %}
-                                    <label class="list-group-item d-flex align-items-start gap-3 py-2 clickable-row" data-toggle-scope="room">
+                                    <label class="list-group-item d-flex align-items-start gap-3 py-2 clickable-row"
+                                        data-toggle-scope="room">
                                         <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
                                             name="room_ids" value="{{ room.id }}"
                                             data-required="{{ 'true' if room.is_required else 'false' }}" {% if
@@ -279,36 +517,45 @@
                                             <div class="collapse mt-2 room-aspects" id="aspects-{{ room.id }}">
                                                 <ul class="list-unstyled mb-0 small">
                                                     {% for asp in room.aspects %}
-                                                    <li class="mb-2 aspect-item clickable-row" data-toggle-scope="aspect">
-                                                        <div class="d-flex align-items-start justify-content-between gap-2">
+                                                    <li class="mb-2 aspect-item clickable-row"
+                                                        data-toggle-scope="aspect">
+                                                        <div
+                                                            class="d-flex align-items-start justify-content-between gap-2">
                                                             <div class="flex-grow-1">
                                                                 <div class="d-flex align-items-center gap-2">
                                                                     {% if asp.is_required %}
-                                                                    <input class="form-check-input" type="checkbox" checked disabled>
-                                                                    <input type="hidden" name="aspects_{{ room.id }}[]" value="{{ asp.id }}">
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        checked disabled>
+                                                                    <input type="hidden" name="aspects_{{ room.id }}[]"
+                                                                        value="{{ asp.id }}">
                                                                     {% else %}
                                                                     <input class="form-check-input" type="checkbox"
                                                                         name="aspects_{{ room.id }}[]"
-                                                                        value="{{ asp.id }}"
-                                                                        {% if asp.is_selected %}checked{% endif %}>
+                                                                        value="{{ asp.id }}" {% if asp.is_selected
+                                                                        %}checked{% endif %}>
                                                                     {% endif %}
                                                                     <span class="text-muted">{{ asp.name }}</span>
                                                                     {% if asp.is_required %}
-                                                                    <span class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                                    <span
+                                                                        class="badge bg-warning-subtle text-warning">Wajib</span>
                                                                     {% endif %}
-                                                                    <button class="btn btn-link btn-sm p-0 text-muted" type="button"
-                                                                        data-bs-toggle="collapse"
+                                                                    <button class="btn btn-link btn-sm p-0 text-muted"
+                                                                        type="button" data-bs-toggle="collapse"
                                                                         data-bs-target="#room-{{ room.id }}-asp-{{ asp.id }}-desc"
                                                                         title="Lihat deskripsi">
                                                                         <i class="bi bi-info-circle"></i>
                                                                     </button>
                                                                 </div>
-                                                                <div class="collapse mt-1" id="room-{{ room.id }}-asp-{{ asp.id }}-desc">
-                                                                    <div class="ps-3 border-start border-2 border-primary">
+                                                                <div class="collapse mt-1"
+                                                                    id="room-{{ room.id }}-asp-{{ asp.id }}-desc">
+                                                                    <div
+                                                                        class="ps-3 border-start border-2 border-primary">
                                                                         {% if asp.description %}
-                                                                        <small class="text-muted fst-italic">{{ asp.description }}</small>
+                                                                        <small class="text-muted fst-italic">{{
+                                                                            asp.description }}</small>
                                                                         {% else %}
-                                                                        <small class="text-muted fst-italic">Tidak ada deskripsi untuk aspek ini.</small>
+                                                                        <small class="text-muted fst-italic">Tidak ada
+                                                                            deskripsi untuk aspek ini.</small>
                                                                         {% endif %}
                                                                     </div>
                                                                 </div>
@@ -328,14 +575,16 @@
 
                             {% if show_sma %}
                             <!-- SMA/SMK Rooms -->
-                            <div class="tab-pane fade" id="sma-rooms" role="tabpanel">
+                            <div class="tab-pane fade {% if active_tab == 'sma' %}show active{% endif %}" id="sma-rooms"
+                                role="tabpanel">
                                 <div class="alert alert-warning py-2 mb-3 small">
                                     <i class="bi bi-info-circle me-1"></i>Ruangan kelas untuk jenjang <strong>SMA/SMK
                                         (Kelas 10-12)</strong>
                                 </div>
                                 <div class="list-group list-group-flush">
                                     {% for room in sma_rooms %}
-                                    <label class="list-group-item d-flex align-items-start gap-3 py-2 clickable-row" data-toggle-scope="room">
+                                    <label class="list-group-item d-flex align-items-start gap-3 py-2 clickable-row"
+                                        data-toggle-scope="room">
                                         <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
                                             name="room_ids" value="{{ room.id }}"
                                             data-required="{{ 'true' if room.is_required else 'false' }}" {% if
@@ -365,36 +614,45 @@
                                             <div class="collapse mt-2 room-aspects" id="aspects-{{ room.id }}">
                                                 <ul class="list-unstyled mb-0 small">
                                                     {% for asp in room.aspects %}
-                                                    <li class="mb-2 aspect-item clickable-row" data-toggle-scope="aspect">
-                                                        <div class="d-flex align-items-start justify-content-between gap-2">
+                                                    <li class="mb-2 aspect-item clickable-row"
+                                                        data-toggle-scope="aspect">
+                                                        <div
+                                                            class="d-flex align-items-start justify-content-between gap-2">
                                                             <div class="flex-grow-1">
                                                                 <div class="d-flex align-items-center gap-2">
                                                                     {% if asp.is_required %}
-                                                                    <input class="form-check-input" type="checkbox" checked disabled>
-                                                                    <input type="hidden" name="aspects_{{ room.id }}[]" value="{{ asp.id }}">
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        checked disabled>
+                                                                    <input type="hidden" name="aspects_{{ room.id }}[]"
+                                                                        value="{{ asp.id }}">
                                                                     {% else %}
                                                                     <input class="form-check-input" type="checkbox"
                                                                         name="aspects_{{ room.id }}[]"
-                                                                        value="{{ asp.id }}"
-                                                                        {% if asp.is_selected %}checked{% endif %}>
+                                                                        value="{{ asp.id }}" {% if asp.is_selected
+                                                                        %}checked{% endif %}>
                                                                     {% endif %}
                                                                     <span class="text-muted">{{ asp.name }}</span>
                                                                     {% if asp.is_required %}
-                                                                    <span class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                                    <span
+                                                                        class="badge bg-warning-subtle text-warning">Wajib</span>
                                                                     {% endif %}
-                                                                    <button class="btn btn-link btn-sm p-0 text-muted" type="button"
-                                                                        data-bs-toggle="collapse"
+                                                                    <button class="btn btn-link btn-sm p-0 text-muted"
+                                                                        type="button" data-bs-toggle="collapse"
                                                                         data-bs-target="#room-{{ room.id }}-asp-{{ asp.id }}-desc"
                                                                         title="Lihat deskripsi">
                                                                         <i class="bi bi-info-circle"></i>
                                                                     </button>
                                                                 </div>
-                                                                <div class="collapse mt-1" id="room-{{ room.id }}-asp-{{ asp.id }}-desc">
-                                                                    <div class="ps-3 border-start border-2 border-primary">
+                                                                <div class="collapse mt-1"
+                                                                    id="room-{{ room.id }}-asp-{{ asp.id }}-desc">
+                                                                    <div
+                                                                        class="ps-3 border-start border-2 border-primary">
                                                                         {% if asp.description %}
-                                                                        <small class="text-muted fst-italic">{{ asp.description }}</small>
+                                                                        <small class="text-muted fst-italic">{{
+                                                                            asp.description }}</small>
                                                                         {% else %}
-                                                                        <small class="text-muted fst-italic">Tidak ada deskripsi untuk aspek ini.</small>
+                                                                        <small class="text-muted fst-italic">Tidak ada
+                                                                            deskripsi untuk aspek ini.</small>
                                                                         {% endif %}
                                                                     </div>
                                                                 </div>
@@ -413,18 +671,20 @@
                             {% endif %}
 
                             <!-- Umum Rooms (non-classroom) -->
-                            <div class="tab-pane fade show active" id="umum-rooms" role="tabpanel">
+                            <div class="tab-pane fade {% if active_tab == 'umum' %}show active{% endif %}"
+                                id="umum-rooms" role="tabpanel">
                                 <div class="alert alert-secondary py-2 mb-3 small">
                                     <i class="bi bi-info-circle me-1"></i>Ruangan umum yang tersedia untuk <strong>semua
                                         jenjang</strong>
                                 </div>
                                 <div class="list-group list-group-flush">
                                     {% for room in umum_rooms %}
-                                    <label class="list-group-item d-flex align-items-start gap-3 py-2 clickable-row" data-toggle-scope="room">
+                                    <label class="list-group-item d-flex align-items-start gap-3 py-2 clickable-row"
+                                        data-toggle-scope="room">
                                         <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
                                             name="room_ids" value="{{ room.id }}"
-                                            data-required="{{ 'true' if room.is_required else 'false' }}"
-                                            {% if room.is_required %}checked disabled{% elif room.id in saved_room_ids
+                                            data-required="{{ 'true' if room.is_required else 'false' }}" {% if
+                                            room.is_required %}checked disabled{% elif room.id in saved_room_ids
                                             %}checked{% endif %}>
                                         {% if room.is_required %}
                                         <input type="hidden" name="room_ids" value="{{ room.id }}">
@@ -455,36 +715,45 @@
                                             <div class="collapse mt-2 room-aspects" id="aspects-{{ room.id }}">
                                                 <ul class="list-unstyled mb-0 small">
                                                     {% for asp in room.aspects %}
-                                                    <li class="mb-2 aspect-item clickable-row" data-toggle-scope="aspect">
-                                                        <div class="d-flex align-items-start justify-content-between gap-2">
+                                                    <li class="mb-2 aspect-item clickable-row"
+                                                        data-toggle-scope="aspect">
+                                                        <div
+                                                            class="d-flex align-items-start justify-content-between gap-2">
                                                             <div class="flex-grow-1">
                                                                 <div class="d-flex align-items-center gap-2">
                                                                     {% if asp.is_required %}
-                                                                    <input class="form-check-input" type="checkbox" checked disabled>
-                                                                    <input type="hidden" name="aspects_{{ room.id }}[]" value="{{ asp.id }}">
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        checked disabled>
+                                                                    <input type="hidden" name="aspects_{{ room.id }}[]"
+                                                                        value="{{ asp.id }}">
                                                                     {% else %}
                                                                     <input class="form-check-input" type="checkbox"
                                                                         name="aspects_{{ room.id }}[]"
-                                                                        value="{{ asp.id }}"
-                                                                        {% if asp.is_selected %}checked{% endif %}>
+                                                                        value="{{ asp.id }}" {% if asp.is_selected
+                                                                        %}checked{% endif %}>
                                                                     {% endif %}
                                                                     <span class="text-muted">{{ asp.name }}</span>
                                                                     {% if asp.is_required %}
-                                                                    <span class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                                    <span
+                                                                        class="badge bg-warning-subtle text-warning">Wajib</span>
                                                                     {% endif %}
-                                                                    <button class="btn btn-link btn-sm p-0 text-muted" type="button"
-                                                                        data-bs-toggle="collapse"
+                                                                    <button class="btn btn-link btn-sm p-0 text-muted"
+                                                                        type="button" data-bs-toggle="collapse"
                                                                         data-bs-target="#room-{{ room.id }}-asp-{{ asp.id }}-desc"
                                                                         title="Lihat deskripsi">
                                                                         <i class="bi bi-info-circle"></i>
                                                                     </button>
                                                                 </div>
-                                                                <div class="collapse mt-1" id="room-{{ room.id }}-asp-{{ asp.id }}-desc">
-                                                                    <div class="ps-3 border-start border-2 border-primary">
+                                                                <div class="collapse mt-1"
+                                                                    id="room-{{ room.id }}-asp-{{ asp.id }}-desc">
+                                                                    <div
+                                                                        class="ps-3 border-start border-2 border-primary">
                                                                         {% if asp.description %}
-                                                                        <small class="text-muted fst-italic">{{ asp.description }}</small>
+                                                                        <small class="text-muted fst-italic">{{
+                                                                            asp.description }}</small>
                                                                         {% else %}
-                                                                        <small class="text-muted fst-italic">Tidak ada deskripsi untuk aspek ini.</small>
+                                                                        <small class="text-muted fst-italic">Tidak ada
+                                                                            deskripsi untuk aspek ini.</small>
                                                                         {% endif %}
                                                                     </div>
                                                                 </div>
@@ -700,8 +969,16 @@
             <div class="modal-body">
                 {% set school_jenjang = selected_school.jenjang if selected_school else (user_school.jenjang if
                 user_school else None) %}
-                {% set grade_map = {'SD':[1,2,3,4,5,6],'SMP':[7,8,9],'SMA':[10,11,12],'SMK':[10,11,12]} %}
-                {% set grade_levels = grade_map.get(school_jenjang, []) %}
+                {% set school_jenjang_upper = school_jenjang.upper() if school_jenjang else None %}
+                {% set grade_map = {
+                'PAUD': [-2, -1, 0],
+                'TK': [-1, 0],
+                'SD': [1, 2, 3, 4, 5, 6],
+                'SMP': [7, 8, 9],
+                'SMA': [10, 11, 12],
+                'SMK': [10, 11, 12],
+                } %}
+                {% set grade_levels = grade_map.get(school_jenjang_upper, []) %}
                 {% set empty_by_grade = (school_profile.metadata.empty_seats_by_grade if school_profile else {}) or {}
                 %}
                 <div class="stepper mb-3" id="profileStepper">
@@ -857,10 +1134,19 @@
                                         {% for g in grade_levels %}
                                         <div class="col-md-4">
                                             <div class="input-group input-group-sm">
-                                                <span class="input-group-text">Kelas {{ g }}</span>
-                                                <input type="number" min="0" class="form-control empty-seat-input"
-                                                    data-grade="{{ g }}"
-                                                    value="{{ empty_by_grade.get(g|string) or '' }}" placeholder="0">
+                                                <span class="input-group-text">
+                                                    {% if g < 0 %} {% if g==-2 %}KB{% elif g==-1 %} {% if
+                                                        selected_school and selected_school.jenjang and
+                                                        selected_school.jenjang.upper()=='TK' %}TK A{% else %}Kelompok
+                                                        A{% endif %} {% endif %} {% elif g==0 and selected_school and
+                                                        selected_school.jenjang and selected_school.jenjang.upper() in
+                                                        ['TK', 'PAUD' ] %} {% if selected_school.jenjang.upper()=='TK'
+                                                        %}TK B{% else %}Kelompok B{% endif %} {% else %}Kelas {{ g }}{%
+                                                        endif %} </span>
+                                                        <input type="number" min="0"
+                                                            class="form-control empty-seat-input" data-grade="{{ g }}"
+                                                            value="{{ empty_by_grade.get(g|string) if empty_by_grade.get(g|string) is not none else 0 }}"
+                                                            placeholder="0">
                                             </div>
                                         </div>
                                         {% endfor %}
@@ -872,7 +1158,7 @@
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Jumlah Bangku Kosong *</label>
                                     <input type="number" min="0" class="form-control" id="modalEmpty"
-                                        value="{{ (school_profile.metadata.empty_seats if school_profile else '') or '' }}">
+                                        value="{{ (school_profile.metadata.empty_seats if school_profile else 0) or 0 }}">
                                     <div class="invalid-feedback" id="modalEmpty-error"></div>
                                 </div>
                                 {% endif %}
@@ -1022,10 +1308,22 @@
     document.addEventListener('DOMContentLoaded', function () {
         var shouldShow = {{ 'true' if show_profile_modal else 'false' }};
         var gradeLevels = {{ grade_levels| tojson }};
+        var schoolJenjang = "{{ school_jenjang_upper or '' }}";
 
-        var profileModalEl = document.getElementById('profileModal');
-        if (shouldShow && profileModalEl && window.bootstrap) {
-            var modal = new bootstrap.Modal(profileModalEl, { backdrop: 'static', keyboard: false });
+        function formatGradeLabel(grade) {
+            if (grade < 0) {
+                if (grade === -2) return 'KB';
+                if (grade === -1) return schoolJenjang === 'TK' ? 'TK A' : 'Kelompok A';
+        }
+        if (grade === 0 && (schoolJenjang === 'TK' || schoolJenjang === 'PAUD')) {
+            return schoolJenjang === 'TK' ? 'TK B' : 'Kelompok B';
+        }
+        return 'Kelas ' + grade;
+    }
+
+    var profileModalEl = document.getElementById('profileModal');
+    if (shouldShow && profileModalEl && window.bootstrap) {
+        var modal = new bootstrap.Modal(profileModalEl, { backdrop: 'static', keyboard: false });
         // Hide prev button on first step when modal opens
         profileModalEl.addEventListener('shown.bs.modal', function () {
             var prevBtnInit = document.getElementById('modalPrev');
@@ -1308,8 +1606,9 @@
                 for (var i = 0; i < gradeLevels.length; i++) {
                     var g = gradeLevels[i];
                     var val = map[String(g)];
-                    if (val === undefined || val === null || val === '') return "Bangku kosong kelas " + g + " wajib diisi.";
-                    if (isNaN(val) || parseInt(val) < 0) return "Bangku kosong kelas " + g + " harus angka >= 0.";
+                    var label = formatGradeLabel(g);
+                    if (val === undefined || val === null || val === '') return "Bangku kosong " + label + " wajib diisi.";
+                    if (isNaN(val) || parseInt(val) < 0) return "Bangku kosong " + label + " harus angka >= 0.";
                 }
             } else {
                 if (data.empty_seats === '' || isNaN(data.empty_seats) || parseInt(data.empty_seats) < 0) return "Jumlah bangku kosong harus angka >= 0.";
@@ -1408,6 +1707,10 @@
                 });
                 if (res.redirected) {
                     window.location.href = res.url;
+                    return;
+                }
+                if (res.ok) {
+                    window.location.href = "{{ url_for('portal.sekolah_rooms') }}";
                     return;
                 }
                 showError("Gagal menyimpan, coba lagi.");

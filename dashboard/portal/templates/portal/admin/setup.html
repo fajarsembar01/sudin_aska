@@ -29,7 +29,14 @@
     </div>
 
     <div class="row g-4">
-        <div class="col-lg-4" style="position: sticky; top: 80px; align-self: flex-start;">
+        <div class="col-12 d-lg-none">
+            <button class="btn btn-outline-primary w-100" type="button" data-bs-toggle="collapse"
+                data-bs-target="#setupFormPane" aria-expanded="false" aria-controls="setupFormPane">
+                <i class="bi bi-gear me-1"></i> Tampilkan Form Setup
+            </button>
+        </div>
+        <div class="col-lg-4 collapse d-lg-block" id="setupFormPane"
+            style="position: sticky; top: 80px; align-self: flex-start;">
             <!-- Add School -->
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-body">
@@ -213,10 +220,6 @@
                         </span>
                         <div>
                             <h2 class="h6 fw-bold mb-0">Preview: Konfigurasi Ruangan per Jenjang</h2>
-                            <p class="text-muted mb-0 small">Contoh tampilan halaman konfigurasi sekolah</p>
-                            <p class="text-muted mb-0 small">Tip: Untuk ruang kelas, cukup set aspek di satu template
-                                jenjang (mis. "Ruang Kelas 1" untuk SD); sistem otomatis menerapkannya ke Kelas 1–6 dan
-                                paralel A/B/C milik sekolah.</p>
                         </div>
                     </div>
                     <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
@@ -1042,6 +1045,140 @@
                                         justify-content: center;
                                         font-size: 0.9rem;
                                     }
+
+                                    @media (min-width: 992px) {
+                                        #setupFormPane.collapse {
+                                            display: block !important;
+                                        }
+                                    }
+
+                                    @media (max-width: 768px) {
+                                        /* Layout tweaks for mobile */
+                                        .row.g-4 {
+                                            gap: 1rem !important;
+                                        }
+
+                                        .col-lg-4[style*="position: sticky"] {
+                                            position: static !important;
+                                            top: auto !important;
+                                            align-self: auto !important;
+                                        }
+
+                                        .col-lg-8[style*="max-height"] {
+                                            max-height: none !important;
+                                            overflow: visible !important;
+                                        }
+
+                                        .card {
+                                            border-radius: 14px;
+                                        }
+
+                                        .card-header .btn {
+                                            font-size: 0.85rem;
+                                        }
+
+                                        .icon-badge.section-icon {
+                                            width: 36px;
+                                            height: 36px;
+                                        }
+
+                                        /* Compact tables become cards */
+                                        #roomsTable,
+                                        #roomsTable thead,
+                                        #roomsTable tbody,
+                                        #roomsTable th,
+                                        #roomsTable td,
+                                        #roomsTable tr {
+                                            display: block;
+                                            width: 100%;
+                                        }
+
+                                        #roomsTable thead {
+                                            display: none;
+                                        }
+
+                                        #roomsTable tbody tr.room-row {
+                                            border: 1px solid var(--border-soft);
+                                            border-radius: 12px;
+                                            padding: 10px;
+                                            margin-bottom: 12px;
+                                            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.04);
+                                            background: var(--bg-surface);
+                                        }
+
+                                        #roomsTable tbody tr.room-row td {
+                                            display: flex;
+                                            align-items: center;
+                                            gap: 10px;
+                                            width: 100%;
+                                            padding: 6px 0;
+                                            border: 0 !important;
+                                        }
+
+                                        #roomsTable tbody tr.room-row td[data-label]::before {
+                                            content: attr(data-label);
+                                            flex-shrink: 0;
+                                            min-width: 78px;
+                                            font-size: 0.75rem;
+                                            font-weight: 700;
+                                            color: var(--text-muted);
+                                            text-transform: uppercase;
+                                            letter-spacing: 0.03em;
+                                        }
+
+                                        #roomsTable tbody tr.room-row td[data-label="Aksi"] {
+                                            justify-content: flex-start;
+                                        }
+
+                                        #roomsTable tbody tr.room-row .btn-group {
+                                            width: 100%;
+                                        }
+
+                                        #roomsTable tbody tr.room-row .btn-group .btn {
+                                            flex: 1 1 0;
+                                            display: inline-flex;
+                                            justify-content: center;
+                                        }
+
+                                        #roomsTableBody.drag-saving {
+                                            opacity: 0.75;
+                                        }
+
+                                        /* Keep collapse rows tidy on mobile */
+                                        #roomsTable tbody tr.collapse > td {
+                                            padding: 0 !important;
+                                        }
+
+                                        #roomsTable tbody tr.collapse {
+                                            display: none;
+                                        }
+
+                                        #roomsTable tbody tr.collapse.show {
+                                            display: block;
+                                        }
+
+                                        #roomsTable tbody tr.collapse .p-3 {
+                                            padding: 12px !important;
+                                        }
+
+                                        .inline-aspect-preview {
+                                            padding-bottom: 6px;
+                                        }
+
+                                        .inline-aspect-preview .badge {
+                                            font-size: 0.75rem;
+                                        }
+
+                                        /* Mobile spacing for headers/text */
+                                        h1.h4 {
+                                            font-size: 1.15rem;
+                                        }
+
+                                        .nav-pills .nav-link,
+                                        .nav-tabs .nav-link {
+                                            padding: 0.5rem 0.75rem;
+                                        }
+                                    }
                                 </style>
                                 <table class="table table-hover align-middle mb-0" id="roomsTable">
                                     <thead>
@@ -1061,7 +1198,7 @@
                                             data-room-id="{{ r.id }}" data-room-name="{{ r.name|lower }}"
                                             data-room-category="{{ r.category|lower }}"
                                             data-room-active="{{ 'true' if r.active else 'false' }}">
-                                            <td>
+                                            <td data-label="Ruangan">
                                                 <div class="d-flex align-items-center gap-2">
                                                     <span class="icon-badge text-success room-drag-handle"
                                                         draggable="true" title="Tarik untuk ubah urutan">
@@ -1075,10 +1212,11 @@
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td><span class="badge bg-secondary text-uppercase">{{ r.category }}</span>
+                                            <td data-label="Kategori"><span
+                                                    class="badge bg-secondary text-uppercase">{{ r.category }}</span>
                                             </td>
-                                            <td><span class="badge bg-primary">{{ r.aspects|length }}</span></td>
-                                            <td>
+                                            <td data-label="Aspek"><span class="badge bg-primary">{{ r.aspects|length }}</span></td>
+                                            <td data-label="Status">
                                                 <form method="POST"
                                                     action="{{ url_for('portal.toggle_room_status', room_id=r.id) }}"
                                                     class="d-inline">
@@ -1091,7 +1229,7 @@
                                                     </button>
                                                 </form>
                                             </td>
-                                            <td>
+                                            <td data-label="Wajib">
                                                 <form method="POST"
                                                     action="{{ url_for('portal.toggle_room_required', room_id=r.id) }}"
                                                     class="d-inline">
@@ -1104,7 +1242,7 @@
                                                     </button>
                                                 </form>
                                             </td>
-                                            <td class="text-end">
+                                            <td class="text-end" data-label="Aksi">
                                                 <div class="btn-group btn-group-sm">
                                                     <button type="button" class="btn btn-outline-primary"
                                                         data-bs-toggle="collapse" data-bs-target="#roomDetail{{ r.id }}"
