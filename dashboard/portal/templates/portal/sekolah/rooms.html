@@ -678,7 +678,9 @@
                                         jenjang</strong>
                                 </div>
                                 <div class="list-group list-group-flush">
+                                    {% set umum_skip_rooms = ['Ruang Kelas PAUD', 'Ruang Kelas TK'] %}
                                     {% for room in umum_rooms %}
+                                    {% if room.name not in umum_skip_rooms %}
                                     <label class="list-group-item d-flex align-items-start gap-3 py-2 clickable-row"
                                         data-toggle-scope="room">
                                         <input class="form-check-input flex-shrink-0 mt-1" type="checkbox"
@@ -766,6 +768,7 @@
                                             {% endif %}
                                         </div>
                                     </label>
+                                    {% endif %}
                                     {% endfor %}
                                 </div>
                             </div>
