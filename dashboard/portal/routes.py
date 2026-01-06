@@ -3906,8 +3906,15 @@ def coordinator_assignment_requests() -> Response:
         flash("Anda belum memiliki tim.", "warning")
         return redirect(url_for("portal.view_my_team"))
 
-    # Build staff options (team members only)
-    staff_options = team_members
+    # Build staff options (team members + coordinator themself)
+    staff_options = list(team_members)
+    team_staff_ids = {member.get("staff_id") for member in staff_options}
+    if user.get("id") not in team_staff_ids:
+        staff_options.append({
+            "staff_id": user.get("id"),
+            "full_name": user.get("full_name") or my_team.get("coordinator_name") or "Saya (Koordinator)",
+            "role": user.get("role") or my_team.get("coordinator_role") or "coordinator",
+        })
     schools = list_portal_schools()
     periods = list_periods()
     active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
