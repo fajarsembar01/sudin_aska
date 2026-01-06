@@ -2765,7 +2765,8 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
             """, (school_id,))
         return
 
-    all_rooms = list_portal_rooms(active_only=True)
+    # Include inactive rooms so we can revive old variants instead of colliding on insert
+    all_rooms = list_portal_rooms(active_only=False)
 
     def _room_grade(room_name: str) -> Optional[int]:
         m = re.search(r"\bKelas\s+(\d+)", room_name or "", flags=re.IGNORECASE)
@@ -2804,6 +2805,11 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                 continue
 
             base_room = template_by_grade.get(grade_int)
+            # Reactivate base template if it was deactivated in the past
+            if base_room and not base_room.get("active"):
+                cur.execute("UPDATE portal_rooms SET active = TRUE WHERE id = %s", (base_room["id"],))
+                base_room["active"] = True
+                room_by_name[(base_room.get("name") or "").lower()] = base_room
             if not base_room:
                 # Create a base template for this grade using fallback styling (aspects/category/etc).
                 template_source = fallback_template
@@ -2857,6 +2863,11 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
             existing_room = room_by_name.get(target_name.lower())
             if existing_room:
                 target_room_id = existing_room["id"]
+                # Ensure existing room is active so it appears in room lists
+                if not existing_room.get("active"):
+                    cur.execute("UPDATE portal_rooms SET active = TRUE WHERE id = %s", (target_room_id,))
+                    existing_room["active"] = True
+                    room_by_name[target_name.lower()] = existing_room
                 current_app.logger.info(
                     "[ensure_classroom_rooms] Room '%s' already exists in portal_rooms (room_id=%s)",
                     target_name, target_room_id
