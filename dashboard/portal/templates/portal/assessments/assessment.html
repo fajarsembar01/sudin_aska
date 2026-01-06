@@ -38,9 +38,21 @@
     {% if rooms %}
     <div class="row g-4">
         <div class="col-lg-8">
-            <div class="alert alert-info d-flex align-items-center gap-2 mb-3">
-                <i class="bi bi-info-circle"></i>
+            <div class="alert alert-info mb-3 d-flex flex-wrap align-items-center gap-3">
+                <button class="btn btn-sm btn-outline-secondary" type="button" id="scoreLegendToggle"
+                    data-bs-toggle="collapse" data-bs-target="#scoreLegendDetails" aria-expanded="false"
+                    aria-controls="scoreLegendDetails">
+                    Show
+                </button>
                 <span>Tap skor 0-3 untuk setiap aspek. Default skor: 3 (baik). Perubahan tersimpan otomatis.</span>
+                <div class="collapse mt-2" id="scoreLegendDetails">
+                    <div class="small text-muted">
+                        <div><strong>0</strong> apabila rusak</div>
+                        <div><strong>1</strong> apabila ada tetapi kondisi kurang baik</div>
+                        <div><strong>2</strong> apabila ada kondisi baik</div>
+                        <div><strong>3</strong> apabila ada kondisi sangat baik</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Room Search -->
@@ -483,6 +495,19 @@
                     }
                 });
             });
+        }
+
+        // Toggle label for skor detail
+        var legendToggleBtn = document.getElementById('scoreLegendToggle');
+        var legendCollapseEl = document.getElementById('scoreLegendDetails');
+        if (legendToggleBtn && legendCollapseEl) {
+            var updateLegendLabel = function () {
+                var isShown = legendCollapseEl.classList.contains('show');
+                legendToggleBtn.textContent = isShown ? 'Hide' : 'Show';
+            };
+            legendCollapseEl.addEventListener('shown.bs.collapse', updateLegendLabel);
+            legendCollapseEl.addEventListener('hidden.bs.collapse', updateLegendLabel);
+            updateLegendLabel();
         }
     });
 

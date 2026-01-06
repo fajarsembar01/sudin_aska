@@ -1,6 +1,19 @@
 {% extends "portal/base_portal.html" %}
 {% set page_title = "Konfigurasi Ruangan" %}
 
+{% block head_extra %}
+{% if current_user and current_user.role == 'sekolah' %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var homeLink = document.querySelector('#portalNavbar a.nav-link[href="{{ url_for('portal.home') }}"]');
+        if (homeLink && homeLink.closest('.nav-item')) {
+            homeLink.closest('.nav-item').remove();
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}
+
 {% block portal_content %}
 <section class="mb-4">
     <div class="card portal-hero border-0 shadow-sm mb-4">
