@@ -841,6 +841,7 @@
         // Jangan toggle checkbox ruangan ketika klik area aspek (inside collapse)
         document.querySelectorAll('.room-aspects').forEach(el => {
             el.addEventListener('click', function (e) {
+                if (e.target.closest('input[type="checkbox"]')) return; // allow direct aspect checkbox clicks
                 // Prevent default label toggle on parent room checkbox
                 e.preventDefault();
             }, true); // capture to cancel label default early
