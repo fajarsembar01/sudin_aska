@@ -222,6 +222,24 @@ def _fetch_user_school(user_id: int) -> dict | None:
         return dict(row) if row else None
 
 
+def _fetch_user_kecamatan_name(user_id: int) -> str | None:
+    """Return the kecamatan name linked to the given user_id (requested_kecamatan)."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT k.name
+            FROM dashboard_users u
+            LEFT JOIN portal_kecamatan k ON u.requested_kecamatan = k.id
+            WHERE u.id = %s
+            """,
+            (user_id,),
+        )
+        row = cur.fetchone()
+        if row and row["name"]:
+            return row["name"]
+    return None
+
+
 def _compute_missing_profile_fields(school: dict | None) -> list[str]:
     """Check required fields for sekolah profile completeness."""
     if not school:
@@ -494,22 +512,29 @@ def _sanitize_phone(phone: str) -> str:
     return digits_only
 
 
-def _build_coordinator_contacts(school: dict | None = None) -> list[dict]:
-    """Return area contact list with wa links, optionally personalized with school info."""
+def _build_coordinator_contacts(school: dict | None = None, *, area_name: str | None = None) -> list[dict]:
+    """Return area contact list with wa links, optionally personalized with school or user area info."""
     contacts = []
-    message = "Halo, kami ingin mengganti email akun portal sekolah."
-    if school:
+    message = "Halo, kami ingin menghubungi admin wilayah."
+    if school and school.get("name") and school.get("npsn"):
         message = (
             f"Halo, kami dari {school.get('name')} (NPSN {school.get('npsn')}) "
-            "ingin mengganti email akun portal sekolah."
+            "ingin menghubungi admin wilayah."
         )
+    elif school and school.get("name"):
+        message = f"Halo, kami dari {school.get('name')} ingin menghubungi admin wilayah."
+    elif area_name:
+        message = f"Halo, kami dari wilayah {area_name} ingin menghubungi admin wilayah."
 
     for c in AREA_CONTACTS:
         phone_for_link = _sanitize_phone(c["phone"])
         is_user_area = False
-        if school:
-            # Simple match: check if school.kecamatan_name contains area name
-            kec_name = (school.get("kecamatan_name") or "").lower()
+        area_match_source = area_name
+        if not area_match_source and school:
+            area_match_source = school.get("kecamatan_name")
+        if area_match_source:
+            # Simple match: check if area name contains the contact area keyword
+            kec_name = area_match_source.lower()
             is_user_area = c["area"].lower() in kec_name
         contacts.append(
             {
@@ -3426,10 +3451,19 @@ def inject_permissions():
         return {}
     
     from .permissions import get_permission_summary
+    user_school = None
+    user_area_name = None
+    if user.get("role") == "sekolah":
+        user_school = _fetch_user_school(user.get("id"))
+    else:
+        user_area_name = _fetch_user_kecamatan_name(user.get("id"))
+    area_contacts = _build_coordinator_contacts(user_school, area_name=user_area_name)
     return {
         'permissions': get_permission_summary(user),
         'is_superadmin': is_superadmin(user),
         'can_access_aska': can_access_aska(user),
+        'user_school': user_school,
+        'area_contacts': area_contacts,
     }
 
 
@@ -3638,6 +3672,7 @@ def user_profile_settings() -> Response:
 def manage_users() -> Response:
     """Manage dashboard users from Portal app."""
     from dashboard.queries import list_dashboard_users, create_dashboard_user, update_dashboard_user
+    from dashboard.portal.queries import list_kecamatan
     from werkzeug.security import generate_password_hash
     
     if request.method == "POST":
@@ -3649,6 +3684,12 @@ def manage_users() -> Response:
         password = request.form.get("password") or ""
         role = (request.form.get("role") or "viewer").strip()
         account_status = request.form.get("account_status")
+        school_id_raw = (request.form.get("school_id") or "").strip()
+        school_id = int(school_id_raw) if school_id_raw.isdigit() else None
+        if role != "sekolah":
+            school_id = None
+        requested_kecamatan_raw = (request.form.get("requested_kecamatan") or "").strip()
+        requested_kecamatan = int(requested_kecamatan_raw) if requested_kecamatan_raw.isdigit() else None
 
         try:
             if action == "create":
@@ -3656,7 +3697,14 @@ def manage_users() -> Response:
                     flash("Semua field wajib diisi.", "warning")
                 else:
                     password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=12)
-                    create_dashboard_user(email=email, full_name=full_name, password_hash=password_hash, role=role)
+                    create_dashboard_user(
+                        email=email,
+                        full_name=full_name,
+                        password_hash=password_hash,
+                        role=role,
+                        school_id=school_id,
+                        requested_kecamatan=requested_kecamatan,
+                    )
                     flash(f"User {full_name} berhasil dibuat.", "success")
                     
             elif action == "update":
@@ -3670,7 +3718,9 @@ def manage_users() -> Response:
                         role=role, 
                         email=email, 
                         password_hash=pw_hash,
-                        account_status=account_status
+                        account_status=account_status,
+                        school_id=school_id,
+                        requested_kecamatan=requested_kecamatan,
                     )
                     flash(f"Data user {full_name} berhasil diperbarui.", "success")
                     
@@ -3686,7 +3736,8 @@ def manage_users() -> Response:
             flash(f"Gagal memproses data: {exc}", "danger")
 
     users = list_dashboard_users()
-    return render_template("portal/admin/manage_users.html", users=users)
+    kecamatan_list = list_kecamatan()
+    return render_template("portal/admin/manage_users.html", users=users, kecamatan_list=kecamatan_list)
 
 
 @portal_bp.route("/settings/monev-teams", methods=["GET", "POST"])

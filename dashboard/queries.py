@@ -14,6 +14,8 @@ from psycopg2.extras import DictRow, Json
 from .db_access import get_cursor
 from account_status import ACCOUNT_STATUS_CHOICES
 
+_UNSET = object()
+
 TOKEN_PATTERN = re.compile(r"[a-z0-9]+", re.IGNORECASE)
 STOPWORDS = {
     "dan",
@@ -1718,15 +1720,23 @@ def list_dashboard_users() -> List[Dict[str, Any]]:
                 u.degree_suffix,
                 u.no_tester_enabled,
                 u.assigned_class_id,
+                u.school_id,
                 u.created_at,
                 u.last_login_at,
                 u.account_status,
                 u.whatsapp_number,
                 u.requested_kecamatan,
                 u.verification_notes,
-                k.name as kecamatan_name
+                k.name as kecamatan_name,
+                s.npsn as school_npsn,
+                s.name as school_name,
+                s.jenjang as school_jenjang,
+                sk.name as school_kecamatan_name
             FROM dashboard_users u
             LEFT JOIN portal_kecamatan k ON u.requested_kecamatan = k.id
+            LEFT JOIN portal_schools s ON u.school_id = s.id
+            LEFT JOIN portal_kelurahan sl ON s.kelurahan_id = sl.id
+            LEFT JOIN portal_kecamatan sk ON sl.kecamatan_id = sk.id
             ORDER BY u.created_at DESC
             """
         )
@@ -1740,7 +1750,9 @@ def update_dashboard_user(
     role: str,
     email: Optional[str] = None,
     password_hash: Optional[str] = None,
-    account_status: Optional[str] = None
+    account_status: Optional[str] = None,
+    school_id: Optional[int] = None,
+    requested_kecamatan: object = _UNSET,
 ) -> bool:
     """Update an existing dashboard user."""
     updates = [
@@ -1761,6 +1773,14 @@ def update_dashboard_user(
     if account_status:
         updates.append("account_status = %s")
         params.append(account_status)
+
+    if school_id is not None:
+        updates.append("school_id = %s")
+        params.append(school_id)
+
+    if requested_kecamatan is not _UNSET:
+        updates.append("requested_kecamatan = %s")
+        params.append(requested_kecamatan)
         
     # check for updated_at column or just ignore it for now if unsure
     # Safer to check schema first? Or just try basic updates
@@ -1780,6 +1800,8 @@ def create_dashboard_user(
     full_name: str,
     password_hash: str,
     role: str = "viewer",
+    school_id: Optional[int] = None,
+    requested_kecamatan: Optional[int] = None,
     *,
     nrk: Optional[str] = None,
     nip: Optional[str] = None,
@@ -1790,11 +1812,11 @@ def create_dashboard_user(
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
-            INSERT INTO dashboard_users (email, full_name, password_hash, role, nrk, nip, jabatan, degree_prefix, degree_suffix)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO dashboard_users (email, full_name, password_hash, role, school_id, requested_kecamatan, nrk, nip, jabatan, degree_prefix, degree_suffix)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
-            (email, full_name, password_hash, role, nrk, nip, jabatan, degree_prefix, degree_suffix),
+            (email, full_name, password_hash, role, school_id, requested_kecamatan, nrk, nip, jabatan, degree_prefix, degree_suffix),
         )
         new_id = cur.fetchone()[0]
     return int(new_id)

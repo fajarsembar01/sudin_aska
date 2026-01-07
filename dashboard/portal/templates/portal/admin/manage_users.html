@@ -44,7 +44,8 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Password</label>
-                        <input type="password" class="form-control" name="password" id="password" minlength="8">
+                        <input type="password" class="form-control" name="password" id="password" minlength="8"
+                            autocomplete="new-password">
                         <small class="text-muted" id="passwordHelp">Minimal 8 karakter. (Kosongkan jika tidak ingin
                             mengubah)</small>
                     </div>
@@ -58,6 +59,45 @@
                             <option value="coordinator">Coordinator</option>
                             <option value="sekolah">Sekolah</option>
                         </select>
+                    </div>
+                    <div class="mb-3 d-none" id="schoolField">
+                        <label class="form-label">Sekolah (NPSN / Nama)</label>
+                        <div class="position-relative">
+                            <input type="text" class="form-control" id="schoolSearchInput"
+                                placeholder="Ketik NPSN atau nama sekolah..." autocomplete="off">
+                            <input type="hidden" name="school_id" id="schoolIdInput">
+                            <div id="schoolSuggestions" class="position-absolute w-100 rounded-3 shadow-lg d-none"
+                                style="top: 100%; left: 0; z-index: 1000; max-height: 240px; overflow-y: auto; background-color: var(--bg-surface); border: 1px solid var(--border-soft);">
+                            </div>
+                        </div>
+                        <div id="selectedSchoolCard" class="mt-2 p-2 rounded-3 d-none"
+                            style="background-color: var(--bg-subtle);">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong id="schoolNameText"></strong>
+                                    <br><small class="text-muted"><span id="schoolNpsnText"></span> • <span
+                                            id="schoolJenjangText"></span> • <span id="schoolKecamatanText"></span></small>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" id="clearSchoolBtn">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="schoolNullToggle">
+                            <label class="form-check-label" for="schoolNullToggle">Tidak ada sekolah (null)</label>
+                        </div>
+                        <small class="text-muted">Pilih sekolah untuk role Sekolah.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Kecamatan</label>
+                        <select class="form-select" name="requested_kecamatan" id="requestedKecamatan">
+                            <option value="">-- Pilih Kecamatan --</option>
+                            {% for k in kecamatan_list %}
+                            <option value="{{ k.id }}">{{ k.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Opsional untuk akun staff/coordinator.</small>
                     </div>
                     <div class="mb-3" id="statusField" style="display:none;">
                         <label class="form-label">Status Akun</label>
@@ -121,6 +161,13 @@
                     <!-- Tab Daftar User (Non-Pending) -->
                     <div class="tab-pane fade show active" id="list-pane" role="tabpanel" aria-labelledby="list-tab"
                         tabindex="0">
+                        <div class="mb-3">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" id="userSearch"
+                                    placeholder="Cari nama, email, role, NPSN..." autocomplete="off">
+                            </div>
+                        </div>
                         <div class="table-responsive">
                             <table class="table align-middle table-hover">
                                 <thead class="table-light">
@@ -132,11 +179,13 @@
                                         <th class="text-end">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="userTableBody">
                                     {% set active_users = users | selectattr('account_status', 'ne', 'pending') | list
                                     %}
                                     {% for user in active_users %}
-                                    <tr style="cursor: pointer;" onclick='editUser({{ user|tojson }})'>
+                                    <tr style="cursor: pointer;" data-user-row="true"
+                                        data-search="{{ (user.full_name or '') ~ ' ' ~ (user.email or '') ~ ' ' ~ (user.role or '') ~ ' ' ~ (user.account_status or '') ~ ' ' ~ (user.kecamatan_name or '') ~ ' ' ~ (user.jabatan or '') ~ ' ' ~ (user.whatsapp_number or '') ~ ' ' ~ (user.get('school_npsn') or '') ~ ' ' ~ (user.get('school_name') or '') }}"
+                                        onclick='editUser({{ user|tojson }})'>
                                         <td>
                                             <div class="fw-bold">{{ user.full_name }}</div>
                                             <div class="small text-muted">{{ user.email }}</div>
@@ -165,6 +214,10 @@
                                                 {% if user.whatsapp_number %}
                                                 <div><i class="bi bi-whatsapp me-1"></i>{{ user.whatsapp_number }}</div>
                                                 {% endif %}
+                                                {% if user.role == 'sekolah' %}
+                                                <div><i class="bi bi-hash me-1"></i>NPSN: {{ user.get('school_npsn') or '-' }}
+                                                </div>
+                                                {% endif %}
                                             </div>
                                         </td>
                                         <td class="text-end" onclick="event.stopPropagation()">
@@ -179,6 +232,9 @@
                                         <td colspan="5" class="text-center text-muted">Tidak ada user aktif.</td>
                                     </tr>
                                     {% endfor %}
+                                    <tr id="noUserResults" style="display:none;">
+                                        <td colspan="5" class="text-center text-muted">Tidak ada user sesuai pencarian.</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -279,6 +335,77 @@
 </div>
 
 <script>
+    let schoolField;
+    let schoolSearchInput;
+    let schoolIdInput;
+    let schoolSuggestions;
+    let selectedSchoolCard;
+    let schoolNameText;
+    let schoolNpsnText;
+    let schoolJenjangText;
+    let schoolKecamatanText;
+    let clearSchoolBtn;
+    let schoolNullToggle;
+    let schoolDebounce;
+    let roleSelect;
+
+    function toggleSchoolField(forceShow) {
+        if (!schoolField) return;
+        const shouldShow = typeof forceShow === 'boolean'
+            ? forceShow
+            : (roleSelect && roleSelect.value === 'sekolah');
+        if (shouldShow) {
+            schoolField.classList.remove('d-none');
+        } else {
+            schoolField.classList.add('d-none');
+            clearSchoolSelection();
+            if (schoolNullToggle) schoolNullToggle.checked = false;
+        }
+    }
+
+    function setSchoolSelection(data) {
+        if (!schoolIdInput || !schoolSearchInput) return;
+        const npsn = data.npsn || '';
+        const name = data.name || '';
+        const jenjang = data.jenjang || '-';
+        const kecamatan = data.kecamatan || '-';
+
+        schoolIdInput.value = data.id || data.school_id || '';
+        schoolSearchInput.value = npsn || name;
+        schoolSearchInput.disabled = true;
+        if (schoolNullToggle) schoolNullToggle.checked = false;
+
+        if (schoolNameText) schoolNameText.textContent = name || '-';
+        if (schoolNpsnText) schoolNpsnText.textContent = npsn || '-';
+        if (schoolJenjangText) schoolJenjangText.textContent = jenjang || '-';
+        if (schoolKecamatanText) schoolKecamatanText.textContent = kecamatan || '-';
+
+        if (selectedSchoolCard) selectedSchoolCard.classList.remove('d-none');
+        if (schoolSuggestions) schoolSuggestions.classList.add('d-none');
+    }
+
+    function clearSchoolSelection(keepDisabled = false) {
+        if (!schoolIdInput || !schoolSearchInput) return;
+        schoolIdInput.value = '';
+        schoolSearchInput.value = '';
+        if (!keepDisabled) {
+            schoolSearchInput.disabled = false;
+        }
+        if (selectedSchoolCard) selectedSchoolCard.classList.add('d-none');
+        if (schoolSuggestions) schoolSuggestions.classList.add('d-none');
+    }
+
+    function setSchoolNullMode(isNull) {
+        if (!schoolNullToggle || !schoolSearchInput) return;
+        schoolNullToggle.checked = Boolean(isNull);
+        if (schoolNullToggle.checked) {
+            clearSchoolSelection(true);
+            schoolSearchInput.disabled = true;
+        } else {
+            schoolSearchInput.disabled = false;
+        }
+    }
+
     function editUser(user) {
         // Populate form
         document.getElementById('formAction').value = 'update';
@@ -286,6 +413,24 @@
         document.getElementById('fullName').value = user.full_name || '';
         document.getElementById('email').value = user.email || '';
         document.getElementById('role').value = user.role || 'viewer';
+        document.getElementById('password').value = '';
+        document.getElementById('requestedKecamatan').value = user.requested_kecamatan || '';
+        clearSchoolSelection();
+        toggleSchoolField(user.role === 'sekolah');
+        if (user.role === 'sekolah') {
+            if (user.school_id) {
+                setSchoolNullMode(false);
+                setSchoolSelection({
+                    id: user.school_id,
+                    npsn: user.school_npsn || '',
+                    name: user.school_name || '',
+                    jenjang: user.school_jenjang || '-',
+                    kecamatan: user.school_kecamatan_name || '-'
+                });
+            } else {
+                setSchoolNullMode(true);
+            }
+        }
         if (user.account_status) {
             document.getElementById('accountStatus').value = user.account_status;
             document.getElementById('statusField').style.display = 'block';
@@ -310,6 +455,7 @@
         document.getElementById('formAction').value = 'create';
         document.getElementById('userId').value = '';
         document.getElementById('statusField').style.display = 'none';
+        document.getElementById('requestedKecamatan').value = '';
 
         // UI reset
         document.getElementById('formTitle').innerText = 'Tambah User';
@@ -318,6 +464,139 @@
         document.getElementById('cancelBtn').style.display = 'none';
         document.getElementById('password').setAttribute('required', 'required'); // Password required for create
         document.getElementById('passwordHelp').innerText = "Minimal 8 karakter.";
+        clearSchoolSelection();
+        toggleSchoolField(false);
+        setSchoolNullMode(false);
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const userSearch = document.getElementById('userSearch');
+        if (!userSearch) return;
+
+        const userRows = Array.from(document.querySelectorAll('#userTableBody tr[data-user-row="true"]'));
+        const noUserResults = document.getElementById('noUserResults');
+
+        function updateUserFilter() {
+            const query = userSearch.value.trim().toLowerCase();
+            let visibleCount = 0;
+
+            userRows.forEach(row => {
+                const haystack = (row.dataset.search || '').toLowerCase();
+                const matches = !query || haystack.includes(query);
+                row.style.display = matches ? '' : 'none';
+                if (matches) {
+                    visibleCount += 1;
+                }
+            });
+
+            if (noUserResults) {
+                if (query && visibleCount === 0 && userRows.length > 0) {
+                    noUserResults.style.display = '';
+                } else {
+                    noUserResults.style.display = 'none';
+                }
+            }
+        }
+
+        userSearch.addEventListener('input', updateUserFilter);
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        roleSelect = document.getElementById('role');
+        schoolField = document.getElementById('schoolField');
+        schoolSearchInput = document.getElementById('schoolSearchInput');
+        schoolIdInput = document.getElementById('schoolIdInput');
+        schoolSuggestions = document.getElementById('schoolSuggestions');
+        selectedSchoolCard = document.getElementById('selectedSchoolCard');
+        schoolNameText = document.getElementById('schoolNameText');
+        schoolNpsnText = document.getElementById('schoolNpsnText');
+        schoolJenjangText = document.getElementById('schoolJenjangText');
+        schoolKecamatanText = document.getElementById('schoolKecamatanText');
+        clearSchoolBtn = document.getElementById('clearSchoolBtn');
+        schoolNullToggle = document.getElementById('schoolNullToggle');
+
+        if (roleSelect) {
+            roleSelect.addEventListener('change', function () {
+                toggleSchoolField();
+            });
+        }
+
+        if (clearSchoolBtn) {
+            clearSchoolBtn.addEventListener('click', function () {
+                clearSchoolSelection();
+                if (schoolSearchInput) schoolSearchInput.focus();
+            });
+        }
+
+        if (schoolNullToggle) {
+            schoolNullToggle.addEventListener('change', function () {
+                setSchoolNullMode(this.checked);
+                if (!this.checked && schoolSearchInput) {
+                    schoolSearchInput.focus();
+                }
+            });
+        }
+
+        if (schoolSearchInput && schoolSuggestions) {
+            const searchUrl = "{{ url_for('portal.search_schools_api') }}";
+            schoolSearchInput.addEventListener('input', function () {
+                if (schoolSearchInput.disabled) return;
+                clearTimeout(schoolDebounce);
+                const query = this.value.trim();
+
+                if (query.length < 3) {
+                    schoolSuggestions.classList.add('d-none');
+                    return;
+                }
+
+                schoolDebounce = setTimeout(async () => {
+                    try {
+                        const response = await fetch(`${searchUrl}?q=${encodeURIComponent(query)}`);
+                        const schools = await response.json();
+
+                        if (schools.length === 0) {
+                            schoolSuggestions.innerHTML = '<div class="p-3 text-muted">Tidak ditemukan sekolah dengan NPSN tersebut</div>';
+                        } else {
+                            schoolSuggestions.innerHTML = schools.map(s => `
+                                <div class="p-3 border-bottom school-item"
+                                     style="cursor: pointer;"
+                                     data-id="${s.id}"
+                                     data-npsn="${s.npsn}"
+                                     data-name="${s.name}"
+                                     data-jenjang="${s.jenjang}"
+                                     data-kecamatan="${s.kecamatan}">
+                                    <strong>${s.name}</strong>
+                                    <br><small class="text-muted">${s.npsn} • ${s.jenjang}${s.kecamatan ? ' • ' + s.kecamatan : ''}</small>
+                                </div>
+                            `).join('');
+
+                            schoolSuggestions.querySelectorAll('.school-item').forEach(item => {
+                                item.addEventListener('click', function () {
+                                    setSchoolSelection({
+                                        id: this.dataset.id,
+                                        npsn: this.dataset.npsn,
+                                        name: this.dataset.name,
+                                        jenjang: this.dataset.jenjang,
+                                        kecamatan: this.dataset.kecamatan
+                                    });
+                                });
+                            });
+                        }
+                        schoolSuggestions.classList.remove('d-none');
+                    } catch (err) {
+                        console.error('Error searching schools:', err);
+                    }
+                }, 300);
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!schoolSearchInput.contains(e.target) && !schoolSuggestions.contains(e.target)) {
+                    schoolSuggestions.classList.add('d-none');
+                }
+            });
+        }
+
+        toggleSchoolField();
+    });
 </script>
 {% endblock %}

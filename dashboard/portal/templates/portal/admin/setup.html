@@ -46,11 +46,11 @@
                         </span>
                         <h2 class="h6 fw-bold mb-0">Tambah Sekolah</h2>
                     </div>
-                    <form method="POST" action="{{ url_for('portal.add_school') }}">
+                    <form method="POST" action="{{ url_for('portal.add_school') }}" id="addSchoolForm">
                         <div class="row g-2">
                             <div class="col-6">
-                                <input type="text" name="npsn" class="form-control form-control-sm" placeholder="NPSN"
-                                    required>
+                                <input type="text" name="npsn" class="form-control form-control-sm"
+                                    placeholder="NPSN" id="addSchoolNpsn" required>
                             </div>
                             <div class="col-6">
                                 <select name="jenjang" class="form-select form-select-sm">
@@ -62,7 +62,17 @@
                                     <option value="MA">MA</option>
                                     <option value="SMK">SMK</option>
                                     <option value="TK">TK</option>
+                                    <option value="KB">KB</option>
+                                    <option value="TPA">TPA</option>
+                                    <option value="SPS">SPS</option>
+                                    <option value="PKBM">PKBM</option>
+                                    <option value="SKB">SKB</option>
+                                    <option value="SLB">SLB</option>
                                 </select>
+                            </div>
+                            <div class="col-12">
+                                <small class="text-danger d-none" id="npsnExistsHelp">NPSN sudah terdaftar dan tidak
+                                    bisa ditambahkan.</small>
                             </div>
                             <div class="col-12">
                                 <input type="text" name="name" class="form-control form-control-sm"
@@ -87,7 +97,7 @@
                                 </select>
                             </div>
                             <div class="col-6">
-                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                <button type="submit" class="btn btn-primary btn-sm w-100" id="addSchoolBtn">
                                     <i class="bi bi-plus-lg me-1"></i>Tambah
                                 </button>
                             </div>
@@ -706,6 +716,18 @@
                                                                 data-filter-value="smk">SMK</a></li>
                                                         <li><a class="dropdown-item" href="#"
                                                                 data-filter-value="tk">TK</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="kb">KB</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="tpa">TPA</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="sps">SPS</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="pkbm">PKBM</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="skb">SKB</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="slb">SLB</a></li>
                                                     </ul>
                                                 </div>
                                             </th>
@@ -773,11 +795,20 @@
                                                     s.status or '-' }}</span></td>
                                             <td class="text-muted small">{{ s.kecamatan_name or '-' }}</td>
                                             <td class="text-end">
-                                                <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2"
-                                                    data-bs-toggle="modal" data-bs-target="#deleteSchoolModal{{ s.id }}"
-                                                    title="Hapus">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button type="button"
+                                                        class="btn btn-outline-primary py-0 px-2"
+                                                        data-bs-toggle="collapse"
+                                                        data-bs-target="#schoolEdit{{ s.id }}" aria-expanded="false"
+                                                        aria-controls="schoolEdit{{ s.id }}" title="Edit">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-danger py-0 px-2"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#deleteSchoolModal{{ s.id }}" title="Hapus">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
 
                                                 <!-- Delete Modal -->
                                                 <div class="modal fade" id="deleteSchoolModal{{ s.id }}" tabindex="-1"
@@ -812,6 +843,96 @@
                                                             </div>
                                                         </div>
                                                     </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr class="collapse school-edit-row" id="schoolEdit{{ s.id }}"
+                                            data-school-id="{{ s.id }}">
+                                            <td colspan="6" class="p-0">
+                                                <div class="p-3" style="background: var(--bg-subtle);">
+                                                    <form method="POST" action="{{ url_for('portal.add_school') }}"
+                                                        class="row g-2 align-items-end">
+                                                        <div class="col-md-3">
+                                                            <label class="form-label small mb-1">NPSN</label>
+                                                            <input type="text" name="npsn"
+                                                                class="form-control form-control-sm"
+                                                                value="{{ s.npsn }}" readonly>
+                                                        </div>
+                                                        <div class="col-md-5">
+                                                            <label class="form-label small mb-1">Nama Sekolah</label>
+                                                            <input type="text" name="name"
+                                                                class="form-control form-control-sm"
+                                                                value="{{ s.name }}" required>
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <label class="form-label small mb-1">Jenjang</label>
+                                                            <select name="jenjang" class="form-select form-select-sm">
+                                                                <option value="SD" {% if s.jenjang=='SD'
+                                                                    %}selected{% endif %}>SD</option>
+                                                                <option value="MI" {% if s.jenjang=='MI'
+                                                                    %}selected{% endif %}>MI</option>
+                                                                <option value="SMP" {% if s.jenjang=='SMP'
+                                                                    %}selected{% endif %}>SMP</option>
+                                                                <option value="MTS" {% if s.jenjang=='MTS'
+                                                                    %}selected{% endif %}>MTS</option>
+                                                                <option value="SMA" {% if s.jenjang=='SMA'
+                                                                    %}selected{% endif %}>SMA</option>
+                                                                <option value="MA" {% if s.jenjang=='MA'
+                                                                    %}selected{% endif %}>MA</option>
+                                                                <option value="SMK" {% if s.jenjang=='SMK'
+                                                                    %}selected{% endif %}>SMK</option>
+                                                                <option value="TK" {% if s.jenjang=='TK'
+                                                                    %}selected{% endif %}>TK</option>
+                                                                <option value="KB" {% if s.jenjang=='KB'
+                                                                    %}selected{% endif %}>KB</option>
+                                                                <option value="TPA" {% if s.jenjang=='TPA'
+                                                                    %}selected{% endif %}>TPA</option>
+                                                                <option value="SPS" {% if s.jenjang=='SPS'
+                                                                    %}selected{% endif %}>SPS</option>
+                                                                <option value="PKBM" {% if s.jenjang=='PKBM'
+                                                                    %}selected{% endif %}>PKBM</option>
+                                                                <option value="SKB" {% if s.jenjang=='SKB'
+                                                                    %}selected{% endif %}>SKB</option>
+                                                                <option value="SLB" {% if s.jenjang=='SLB'
+                                                                    %}selected{% endif %}>SLB</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <label class="form-label small mb-1">Status</label>
+                                                            <select name="status" class="form-select form-select-sm">
+                                                                <option value="NEGERI" {% if s.status=='NEGERI'
+                                                                    %}selected{% endif %}>NEGERI</option>
+                                                                <option value="SWASTA" {% if s.status=='SWASTA'
+                                                                    %}selected{% endif %}>SWASTA</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label small mb-1">Alamat</label>
+                                                            <input type="text" name="alamat"
+                                                                class="form-control form-control-sm"
+                                                                value="{{ s.alamat or '' }}">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label small mb-1">Kelurahan</label>
+                                                            <select name="kelurahan_id"
+                                                                class="form-select form-select-sm" required>
+                                                                <option value="">-- Kelurahan --</option>
+                                                                {% for l in kelurahan_list %}
+                                                                <option value="{{ l.id }}" {% if s.kelurahan_id==l.id
+                                                                    %}selected{% endif %}>{{ l.kecamatan_name }} > {{
+                                                                    l.name }}</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-12 d-flex justify-content-end gap-2">
+                                                            <button type="button" class="btn btn-light btn-sm"
+                                                                data-bs-toggle="collapse"
+                                                                data-bs-target="#schoolEdit{{ s.id }}">Batal</button>
+                                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                                <i class="bi bi-check-lg me-1"></i>Simpan
+                                                            </button>
+                                                        </div>
+                                                    </form>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1615,20 +1736,61 @@
         // ===== School Search & Pagination =====
         const schoolSearch = document.getElementById('schoolSearch');
         const schoolRows = document.querySelectorAll('.school-row');
+        const schoolEditRows = document.querySelectorAll('.school-edit-row');
         const schoolPrevBtn = document.getElementById('schoolPrevBtn');
         const schoolNextBtn = document.getElementById('schoolNextBtn');
         const schoolShowingStart = document.getElementById('schoolShowingStart');
         const schoolShowingEnd = document.getElementById('schoolShowingEnd');
         const schoolTotalFiltered = document.getElementById('schoolTotalFiltered');
+        const addSchoolForm = document.getElementById('addSchoolForm');
+        const addSchoolNpsn = document.getElementById('addSchoolNpsn');
+        const addSchoolBtn = document.getElementById('addSchoolBtn');
+        const npsnExistsHelp = document.getElementById('npsnExistsHelp');
 
         const PAGE_SIZE = 20;
         let currentPage = 0;
         let filteredSchools = Array.from(schoolRows);
         let activeFilters = { jenjang: '', status: '', kecamatan: '', search: '' };
+        let npsnExists = false;
+
+        function normalizeNpsn(value) {
+            return (value || '').toString().trim().toLowerCase().replace(/\s+/g, '');
+        }
+
+        const existingNpsn = new Set(
+            Array.from(schoolRows)
+                .map(row => normalizeNpsn(row.dataset.npsn))
+                .filter(Boolean)
+        );
+
+        function updateNpsnStatus() {
+            if (!addSchoolNpsn) return;
+            const value = normalizeNpsn(addSchoolNpsn.value);
+            npsnExists = Boolean(value) && existingNpsn.has(value);
+
+            if (npsnExists) {
+                addSchoolNpsn.classList.add('is-invalid');
+                if (npsnExistsHelp) npsnExistsHelp.classList.remove('d-none');
+            } else {
+                addSchoolNpsn.classList.remove('is-invalid');
+                if (npsnExistsHelp) npsnExistsHelp.classList.add('d-none');
+            }
+
+            if (addSchoolBtn) {
+                addSchoolBtn.disabled = npsnExists;
+            }
+        }
 
         function updateSchoolTable() {
             const start = currentPage * PAGE_SIZE;
             const end = Math.min(start + PAGE_SIZE, filteredSchools.length);
+
+            if (schoolEditRows.length) {
+                schoolEditRows.forEach(row => {
+                    row.classList.remove('show', 'collapsing');
+                    row.style.height = '';
+                });
+            }
 
             // Hide all rows first
             schoolRows.forEach(row => row.style.display = 'none');
@@ -1708,6 +1870,20 @@
         setupColumnFilter('jenjangFilterMenu', 'jenjangFilterBadge', 'jenjang');
         setupColumnFilter('statusFilterMenu', 'statusFilterBadge', 'status');
         setupColumnFilter('kecamatanFilterMenu', 'kecamatanFilterBadge', 'kecamatan');
+
+        if (addSchoolNpsn) {
+            addSchoolNpsn.addEventListener('input', updateNpsnStatus);
+            updateNpsnStatus();
+        }
+
+        if (addSchoolForm) {
+            addSchoolForm.addEventListener('submit', function (e) {
+                if (npsnExists) {
+                    e.preventDefault();
+                    updateNpsnStatus();
+                }
+            });
+        }
 
         if (schoolSearch) {
             schoolSearch.addEventListener('input', function () {
