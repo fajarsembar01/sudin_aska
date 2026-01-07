@@ -2,38 +2,67 @@
 {% if user_school %}
 <section class="mt-4">
     <div class="card border-0 shadow-sm">
-        <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            <div class="d-flex align-items-center gap-3 text-white">
-                <span class="icon-badge text-white" style="background: rgba(255,255,255,0.2);">
+        <div class="card-header bg-light border-bottom">
+            <div class="d-flex align-items-center gap-3">
+                <span class="icon-badge text-primary" style="background: rgba(0, 123, 255, 0.12);">
                     <i class="bi bi-diagram-3"></i>
                 </span>
                 <div>
-                    <h5 class="mb-0 fw-bold">Konfigurasi Kelas</h5>
-                    <small>Atur varian kelas yang ada di sekolah (contoh: Kelas 1A, Kelas 1B, dst)</small>
+                    <h5 class="mb-0 fw-bold text-dark">Konfigurasi Kelas</h5>
+                    <small class="text-muted">Atur varian kelas yang ada di sekolah (contoh: Kelas 1A, Kelas 1B,
+                        dst)</small>
                 </div>
             </div>
         </div>
         <div class="card-body">
-            {% if user_school.jenjang == 'SD' %}
+            {% set jenjang = user_school.jenjang %}
+            {% if jenjang == 'PAUD' %}
+            {% set grade_levels = [-2, -1, 0] %}
+            {% elif jenjang == 'TK' %}
+            {% set grade_levels = [-1, 0] %}
+            {% elif jenjang == 'SD' %}
+            {% set grade_levels = range(1, 7) %}
+            {% elif jenjang == 'SMP' %}
+            {% set grade_levels = range(7, 10) %}
+            {% elif jenjang in ['SMA', 'SMK'] %}
+            {% set grade_levels = range(10, 13) %}
+            {% else %}
+            {% set grade_levels = range(1, 13) %}
+            {% endif %}
+
+            {% if grade_levels %}
             <div class="alert alert-light border d-flex align-items-center gap-2 mb-3">
                 <i class="bi bi-magic text-primary"></i>
                 <div>
-                    <div class="fw-semibold">Pengaturan paralel kelas SD</div>
-                    <div class="text-muted small">Tentukan jumlah kelas per tingkat (1-6). Sistem otomatis membuat Kelas
-                        1A, 1B, dst sesuai kebutuhan.</div>
+                    <div class="fw-semibold">Pengaturan paralel kelas {{ jenjang }}</div>
+                    <div class="text-muted small">
+                        {% if jenjang in ['PAUD', 'TK'] %}
+                        Tentukan jumlah paralel untuk setiap tingkat.
+                        {% else %}
+                        Tentukan jumlah kelas per tingkat ({{ grade_levels|first }}-{{ grade_levels|last }}).
+                        Sistem otomatis membuat Kelas {{ grade_levels|first }}A, {{ grade_levels|first }}B, dst sesuai
+                        kebutuhan.
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-            <div class="row g-3 mb-3" id="sdParallelControls">
-                {% for i in range(1, 7) %}
+            <div class="row g-3 mb-3" id="parallelControls">
+                {% for i in grade_levels %}
                 <div class="col-sm-6 col-lg-4">
-                    <label class="form-label small mb-1">Kelas {{ i }}</label>
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text">Jumlah</span>
-                        <input type="number" class="form-control" min="0" max="26" value="0"
-                            data-grade-parallel="{{ i }}">
-                        <span class="input-group-text bg-light text-muted">paralel</span>
-                    </div>
-                    <small class="text-muted">Otomatis jadi Kelas {{ i }}A, {{ i }}B, dst</small>
+                    <label class="form-label small mb-1">
+                        {% if i < 0 %} {% if i==-2 %}KB {% elif i==-1 %} {% if jenjang=='TK' %}TK A{% else %}Kelompok
+                            A{% endif %} {% endif %} {% elif i==0 and jenjang in ['TK', 'PAUD' ] %} {% if jenjang=='TK'
+                            %}TK B{% else %}Kelompok B{% endif %} {% else %}Kelas {{ i }}{% endif %} </label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">Jumlah</span>
+                                <input type="number" class="form-control" min="0" max="26" value="0"
+                                    data-grade-parallel="{{ i }}">
+                                <span class="input-group-text bg-light text-muted">paralel</span>
+                            </div>
+                            <small class="text-muted">
+                                {% if i < 0 or (i==0 and jenjang in ['TK', 'PAUD' ]) %} Otomatis membuat varian paralel
+                                    untuk tingkat ini {% else %} Otomatis jadi Kelas {{ i }}A, {{ i }}B, dst {% endif %}
+                                    </small>
                 </div>
                 {% endfor %}
             </div>
@@ -74,71 +103,6 @@
                 </div>
                 {% endif %}
             </div>
-
-            <!-- Add New Classroom Form -->
-            {% if user_school.jenjang != 'SD' %}
-            <div class="border-top pt-3">
-                <h6 class="fw-bold mb-3">
-                    <i class="bi bi-plus-circle text-primary"></i> Tambah Kelas Baru
-                </h6>
-
-                <form id="addClassroomForm">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Nama Kelas *</label>
-                            <input type="text" class="form-control" id="classroomName" placeholder="Misal: Kelas 1A"
-                                required>
-                            <small class="text-muted">Contoh: Kelas 1A, Kelas 2B</small>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Tingkat *</label>
-                            <select class="form-select" id="classroomGrade" required>
-                                <option value="">--</option>
-                                {% if user_school.jenjang == 'SD' %}
-                                {% for i in range(1, 7) %}
-                                <option value="{{ i }}">{{ i }}</option>
-                                {% endfor %}
-                                {% elif user_school.jenjang == 'SMP' %}
-                                {% for i in range(7, 10) %}
-                                <option value="{{ i }}">{{ i }}</option>
-                                {% endfor %}
-                                {% elif user_school.jenjang in ['SMA', 'SMK'] %}
-                                {% for i in range(10, 13) %}
-                                <option value="{{ i }}">{{ i }}</option>
-                                {% endfor %}
-                                {% else %}
-                                {% for i in range(1, 13) %}
-                                <option value="{{ i }}">{{ i }}</option>
-                                {% endfor %}
-                                {% endif %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Varian</label>
-                            <input type="text" class="form-control" id="classroomVariant" placeholder="A" maxlength="5">
-                            <small class="text-muted">A, B, C, dst</small>
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-plus-lg"></i> Tambah
-                            </button>
-                        </div>
-                    </div>
-                    <div class="col-12 mt-2">
-                        <label class="form-label">Catatan (Opsional)</label>
-                        <input type="text" class="form-control form-control-sm" id="classroomNotes"
-                            placeholder="Catatan tambahan...">
-                    </div>
-                </form>
-            </div>
-            {% else %}
-            <div class="border-top pt-3">
-                <div class="alert alert-info mb-0">
-                    <i class="bi bi-info-circle"></i>
-                    Isi jumlah paralel per tingkat di panel atas, lalu klik "Simpan Semua Konfigurasi Kelas".
-                </div>
-            </div>
-            {% endif %}
 
             <!-- Batch Save -->
             <div class="border-top pt-3 mt-3">
@@ -259,38 +223,6 @@
             applyParallelCount(grade, isNaN(val) ? 0 : val);
         });
     });
-
-    // Add classroom form
-    const addForm = document.getElementById('addClassroomForm');
-    if (addForm) {
-        addForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            const name = document.getElementById('classroomName').value.trim();
-            const grade = document.getElementById('classroomGrade').value;
-            const variant = document.getElementById('classroomVariant').value.trim();
-            const notes = document.getElementById('classroomNotes').value.trim();
-
-            if (!name || !grade) {
-                alert('Nama kelas dan tingkat wajib diisi!');
-                return;
-            }
-
-            const newClassroom = {
-                name: name,
-                grade_level: parseInt(grade),
-                variant: variant || null,
-                notes: notes || null,
-                id: 'temp_' + Date.now()
-            };
-
-            classrooms.push(newClassroom);
-            updateClassroomTable();
-
-            addForm.reset();
-            alert('Kelas ditambahkan! Jangan lupa klik "Simpan Semua Konfigurasi Kelas"');
-        });
-    }
 
     // Delete classroom
     document.addEventListener('click', function (e) {

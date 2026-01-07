@@ -29,7 +29,14 @@
     </div>
 
     <div class="row g-4">
-        <div class="col-lg-4" style="position: sticky; top: 80px; align-self: flex-start;">
+        <div class="col-12 d-lg-none">
+            <button class="btn btn-outline-primary w-100" type="button" data-bs-toggle="collapse"
+                data-bs-target="#setupFormPane" aria-expanded="false" aria-controls="setupFormPane">
+                <i class="bi bi-gear me-1"></i> Tampilkan Form Setup
+            </button>
+        </div>
+        <div class="col-lg-4 collapse d-lg-block" id="setupFormPane"
+            style="position: sticky; top: 80px; align-self: flex-start;">
             <!-- Add School -->
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-body">
@@ -39,11 +46,11 @@
                         </span>
                         <h2 class="h6 fw-bold mb-0">Tambah Sekolah</h2>
                     </div>
-                    <form method="POST" action="{{ url_for('portal.add_school') }}">
+                    <form method="POST" action="{{ url_for('portal.add_school') }}" id="addSchoolForm">
                         <div class="row g-2">
                             <div class="col-6">
-                                <input type="text" name="npsn" class="form-control form-control-sm" placeholder="NPSN"
-                                    required>
+                                <input type="text" name="npsn" class="form-control form-control-sm"
+                                    placeholder="NPSN" id="addSchoolNpsn" required>
                             </div>
                             <div class="col-6">
                                 <select name="jenjang" class="form-select form-select-sm">
@@ -55,7 +62,17 @@
                                     <option value="MA">MA</option>
                                     <option value="SMK">SMK</option>
                                     <option value="TK">TK</option>
+                                    <option value="KB">KB</option>
+                                    <option value="TPA">TPA</option>
+                                    <option value="SPS">SPS</option>
+                                    <option value="PKBM">PKBM</option>
+                                    <option value="SKB">SKB</option>
+                                    <option value="SLB">SLB</option>
                                 </select>
+                            </div>
+                            <div class="col-12">
+                                <small class="text-danger d-none" id="npsnExistsHelp">NPSN sudah terdaftar dan tidak
+                                    bisa ditambahkan.</small>
                             </div>
                             <div class="col-12">
                                 <input type="text" name="name" class="form-control form-control-sm"
@@ -80,7 +97,7 @@
                                 </select>
                             </div>
                             <div class="col-6">
-                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                <button type="submit" class="btn btn-primary btn-sm w-100" id="addSchoolBtn">
                                     <i class="bi bi-plus-lg me-1"></i>Tambah
                                 </button>
                             </div>
@@ -213,10 +230,6 @@
                         </span>
                         <div>
                             <h2 class="h6 fw-bold mb-0">Preview: Konfigurasi Ruangan per Jenjang</h2>
-                            <p class="text-muted mb-0 small">Contoh tampilan halaman konfigurasi sekolah</p>
-                            <p class="text-muted mb-0 small">Tip: Untuk ruang kelas, cukup set aspek di satu template
-                                jenjang (mis. "Ruang Kelas 1" untuk SD); sistem otomatis menerapkannya ke Kelas 1–6 dan
-                                paralel A/B/C milik sekolah.</p>
                         </div>
                     </div>
                     <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
@@ -228,6 +241,18 @@
                     <div class="card-body pt-0">
                         <!-- Jenjang Tabs -->
                         <ul class="nav nav-pills nav-fill mb-3" id="jenjangTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="paud-tab" data-bs-toggle="tab"
+                                    data-bs-target="#paud-pane" type="button">
+                                    <i class="bi bi-stars me-1"></i>PAUD
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="tk-tab" data-bs-toggle="tab"
+                                    data-bs-target="#tk-pane" type="button">
+                                    <i class="bi bi-flower1 me-1"></i>TK
+                                </button>
+                            </li>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link active" id="sd-tab" data-bs-toggle="tab"
                                     data-bs-target="#sd-pane" type="button">
@@ -249,6 +274,86 @@
                         </ul>
 
                         <div class="tab-content" id="jenjangTabContent">
+                            <!-- PAUD Tab -->
+                            <div class="tab-pane fade" id="paud-pane" role="tabpanel">
+                                <div class="border rounded-3 p-3"
+                                    style="background: linear-gradient(135deg, #f3e8ff 0%, #e0c3fc 100%);">
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                                <div class="small fw-semibold text-primary mb-2"><i
+                                                        class="bi bi-door-open me-1"></i>Ruang Kelas PAUD</div>
+                                                <div class="list-group list-group-flush" style="font-size: 0.75rem;">
+                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                        <span>Ruang Kelas PAUD (dasar)</span>
+                                                    </label>
+                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                        <span>Kelompok A</span>
+                                                    </label>
+                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                        <span>Kelompok B</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                                <div class="small fw-semibold text-primary mb-2"><i
+                                                        class="bi bi-journal-text me-1"></i>Aspek Penilaian PAUD</div>
+                                                <ul class="list-unstyled small mb-0">
+                                                    <li class="mb-1">• Kebersihan</li>
+                                                    <li class="mb-1">• Keamanan</li>
+                                                    <li class="mb-1">• Kenyamanan</li>
+                                                    <li class="mb-1">• Ventilasi</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- TK Tab -->
+                            <div class="tab-pane fade" id="tk-pane" role="tabpanel">
+                                <div class="border rounded-3 p-3"
+                                    style="background: linear-gradient(135deg, #e8f0fe 0%, #d2e3fc 100%);">
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                                <div class="small fw-semibold text-primary mb-2"><i
+                                                        class="bi bi-door-open me-1"></i>Ruang Kelas TK</div>
+                                                <div class="list-group list-group-flush" style="font-size: 0.75rem;">
+                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                        <span>Ruang Kelas TK (dasar)</span>
+                                                    </label>
+                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                        <span>Kelompok A</span>
+                                                    </label>
+                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                        <span>Kelompok B</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="bg-white rounded-3 p-2 shadow-sm h-100">
+                                                <div class="small fw-semibold text-primary mb-2"><i
+                                                        class="bi bi-journal-text me-1"></i>Aspek Penilaian TK</div>
+                                                <ul class="list-unstyled small mb-0">
+                                                    <li class="mb-1">• Kebersihan</li>
+                                                    <li class="mb-1">• Keamanan</li>
+                                                    <li class="mb-1">• Kerapian</li>
+                                                    <li class="mb-1">• Pencahayaan</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <!-- SD Tab -->
                             <div class="tab-pane fade show active" id="sd-pane" role="tabpanel">
                                 <div class="border rounded-3 p-3"
@@ -611,6 +716,18 @@
                                                                 data-filter-value="smk">SMK</a></li>
                                                         <li><a class="dropdown-item" href="#"
                                                                 data-filter-value="tk">TK</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="kb">KB</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="tpa">TPA</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="sps">SPS</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="pkbm">PKBM</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="skb">SKB</a></li>
+                                                        <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="slb">SLB</a></li>
                                                     </ul>
                                                 </div>
                                             </th>
@@ -678,11 +795,20 @@
                                                     s.status or '-' }}</span></td>
                                             <td class="text-muted small">{{ s.kecamatan_name or '-' }}</td>
                                             <td class="text-end">
-                                                <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2"
-                                                    data-bs-toggle="modal" data-bs-target="#deleteSchoolModal{{ s.id }}"
-                                                    title="Hapus">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button type="button"
+                                                        class="btn btn-outline-primary py-0 px-2"
+                                                        data-bs-toggle="collapse"
+                                                        data-bs-target="#schoolEdit{{ s.id }}" aria-expanded="false"
+                                                        aria-controls="schoolEdit{{ s.id }}" title="Edit">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-danger py-0 px-2"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#deleteSchoolModal{{ s.id }}" title="Hapus">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
 
                                                 <!-- Delete Modal -->
                                                 <div class="modal fade" id="deleteSchoolModal{{ s.id }}" tabindex="-1"
@@ -717,6 +843,96 @@
                                                             </div>
                                                         </div>
                                                     </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr class="collapse school-edit-row" id="schoolEdit{{ s.id }}"
+                                            data-school-id="{{ s.id }}">
+                                            <td colspan="6" class="p-0">
+                                                <div class="p-3" style="background: var(--bg-subtle);">
+                                                    <form method="POST" action="{{ url_for('portal.add_school') }}"
+                                                        class="row g-2 align-items-end">
+                                                        <div class="col-md-3">
+                                                            <label class="form-label small mb-1">NPSN</label>
+                                                            <input type="text" name="npsn"
+                                                                class="form-control form-control-sm"
+                                                                value="{{ s.npsn }}" readonly>
+                                                        </div>
+                                                        <div class="col-md-5">
+                                                            <label class="form-label small mb-1">Nama Sekolah</label>
+                                                            <input type="text" name="name"
+                                                                class="form-control form-control-sm"
+                                                                value="{{ s.name }}" required>
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <label class="form-label small mb-1">Jenjang</label>
+                                                            <select name="jenjang" class="form-select form-select-sm">
+                                                                <option value="SD" {% if s.jenjang=='SD'
+                                                                    %}selected{% endif %}>SD</option>
+                                                                <option value="MI" {% if s.jenjang=='MI'
+                                                                    %}selected{% endif %}>MI</option>
+                                                                <option value="SMP" {% if s.jenjang=='SMP'
+                                                                    %}selected{% endif %}>SMP</option>
+                                                                <option value="MTS" {% if s.jenjang=='MTS'
+                                                                    %}selected{% endif %}>MTS</option>
+                                                                <option value="SMA" {% if s.jenjang=='SMA'
+                                                                    %}selected{% endif %}>SMA</option>
+                                                                <option value="MA" {% if s.jenjang=='MA'
+                                                                    %}selected{% endif %}>MA</option>
+                                                                <option value="SMK" {% if s.jenjang=='SMK'
+                                                                    %}selected{% endif %}>SMK</option>
+                                                                <option value="TK" {% if s.jenjang=='TK'
+                                                                    %}selected{% endif %}>TK</option>
+                                                                <option value="KB" {% if s.jenjang=='KB'
+                                                                    %}selected{% endif %}>KB</option>
+                                                                <option value="TPA" {% if s.jenjang=='TPA'
+                                                                    %}selected{% endif %}>TPA</option>
+                                                                <option value="SPS" {% if s.jenjang=='SPS'
+                                                                    %}selected{% endif %}>SPS</option>
+                                                                <option value="PKBM" {% if s.jenjang=='PKBM'
+                                                                    %}selected{% endif %}>PKBM</option>
+                                                                <option value="SKB" {% if s.jenjang=='SKB'
+                                                                    %}selected{% endif %}>SKB</option>
+                                                                <option value="SLB" {% if s.jenjang=='SLB'
+                                                                    %}selected{% endif %}>SLB</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <label class="form-label small mb-1">Status</label>
+                                                            <select name="status" class="form-select form-select-sm">
+                                                                <option value="NEGERI" {% if s.status=='NEGERI'
+                                                                    %}selected{% endif %}>NEGERI</option>
+                                                                <option value="SWASTA" {% if s.status=='SWASTA'
+                                                                    %}selected{% endif %}>SWASTA</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label small mb-1">Alamat</label>
+                                                            <input type="text" name="alamat"
+                                                                class="form-control form-control-sm"
+                                                                value="{{ s.alamat or '' }}">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label small mb-1">Kelurahan</label>
+                                                            <select name="kelurahan_id"
+                                                                class="form-select form-select-sm" required>
+                                                                <option value="">-- Kelurahan --</option>
+                                                                {% for l in kelurahan_list %}
+                                                                <option value="{{ l.id }}" {% if s.kelurahan_id==l.id
+                                                                    %}selected{% endif %}>{{ l.kecamatan_name }} > {{
+                                                                    l.name }}</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-12 d-flex justify-content-end gap-2">
+                                                            <button type="button" class="btn btn-light btn-sm"
+                                                                data-bs-toggle="collapse"
+                                                                data-bs-target="#schoolEdit{{ s.id }}">Batal</button>
+                                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                                <i class="bi bi-check-lg me-1"></i>Simpan
+                                                            </button>
+                                                        </div>
+                                                    </form>
                                                 </div>
                                             </td>
                                         </tr>
@@ -884,6 +1100,20 @@
                                         color: var(--text-muted);
                                     }
 
+                                    #roomsTableBody.drag-saving {
+                                        opacity: 0.6;
+                                        pointer-events: none;
+                                    }
+
+                                    .room-drag-handle {
+                                        cursor: grab;
+                                    }
+
+                                    .room-row.dragging td {
+                                        opacity: 0.8;
+                                        background: var(--bg-subtle);
+                                    }
+
                                     /* Highlight for recently edited room */
                                     @keyframes roomHighlight {
                                         0% {
@@ -936,6 +1166,140 @@
                                         justify-content: center;
                                         font-size: 0.9rem;
                                     }
+
+                                    @media (min-width: 992px) {
+                                        #setupFormPane.collapse {
+                                            display: block !important;
+                                        }
+                                    }
+
+                                    @media (max-width: 768px) {
+                                        /* Layout tweaks for mobile */
+                                        .row.g-4 {
+                                            gap: 1rem !important;
+                                        }
+
+                                        .col-lg-4[style*="position: sticky"] {
+                                            position: static !important;
+                                            top: auto !important;
+                                            align-self: auto !important;
+                                        }
+
+                                        .col-lg-8[style*="max-height"] {
+                                            max-height: none !important;
+                                            overflow: visible !important;
+                                        }
+
+                                        .card {
+                                            border-radius: 14px;
+                                        }
+
+                                        .card-header .btn {
+                                            font-size: 0.85rem;
+                                        }
+
+                                        .icon-badge.section-icon {
+                                            width: 36px;
+                                            height: 36px;
+                                        }
+
+                                        /* Compact tables become cards */
+                                        #roomsTable,
+                                        #roomsTable thead,
+                                        #roomsTable tbody,
+                                        #roomsTable th,
+                                        #roomsTable td,
+                                        #roomsTable tr {
+                                            display: block;
+                                            width: 100%;
+                                        }
+
+                                        #roomsTable thead {
+                                            display: none;
+                                        }
+
+                                        #roomsTable tbody tr.room-row {
+                                            border: 1px solid var(--border-soft);
+                                            border-radius: 12px;
+                                            padding: 10px;
+                                            margin-bottom: 12px;
+                                            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.04);
+                                            background: var(--bg-surface);
+                                        }
+
+                                        #roomsTable tbody tr.room-row td {
+                                            display: flex;
+                                            align-items: center;
+                                            gap: 10px;
+                                            width: 100%;
+                                            padding: 6px 0;
+                                            border: 0 !important;
+                                        }
+
+                                        #roomsTable tbody tr.room-row td[data-label]::before {
+                                            content: attr(data-label);
+                                            flex-shrink: 0;
+                                            min-width: 78px;
+                                            font-size: 0.75rem;
+                                            font-weight: 700;
+                                            color: var(--text-muted);
+                                            text-transform: uppercase;
+                                            letter-spacing: 0.03em;
+                                        }
+
+                                        #roomsTable tbody tr.room-row td[data-label="Aksi"] {
+                                            justify-content: flex-start;
+                                        }
+
+                                        #roomsTable tbody tr.room-row .btn-group {
+                                            width: 100%;
+                                        }
+
+                                        #roomsTable tbody tr.room-row .btn-group .btn {
+                                            flex: 1 1 0;
+                                            display: inline-flex;
+                                            justify-content: center;
+                                        }
+
+                                        #roomsTableBody.drag-saving {
+                                            opacity: 0.75;
+                                        }
+
+                                        /* Keep collapse rows tidy on mobile */
+                                        #roomsTable tbody tr.collapse > td {
+                                            padding: 0 !important;
+                                        }
+
+                                        #roomsTable tbody tr.collapse {
+                                            display: none;
+                                        }
+
+                                        #roomsTable tbody tr.collapse.show {
+                                            display: block;
+                                        }
+
+                                        #roomsTable tbody tr.collapse .p-3 {
+                                            padding: 12px !important;
+                                        }
+
+                                        .inline-aspect-preview {
+                                            padding-bottom: 6px;
+                                        }
+
+                                        .inline-aspect-preview .badge {
+                                            font-size: 0.75rem;
+                                        }
+
+                                        /* Mobile spacing for headers/text */
+                                        h1.h4 {
+                                            font-size: 1.15rem;
+                                        }
+
+                                        .nav-pills .nav-link,
+                                        .nav-tabs .nav-link {
+                                            padding: 0.5rem 0.75rem;
+                                        }
+                                    }
                                 </style>
                                 <table class="table table-hover align-middle mb-0" id="roomsTable">
                                     <thead>
@@ -955,10 +1319,12 @@
                                             data-room-id="{{ r.id }}" data-room-name="{{ r.name|lower }}"
                                             data-room-category="{{ r.category|lower }}"
                                             data-room-active="{{ 'true' if r.active else 'false' }}">
-                                            <td>
+                                            <td data-label="Ruangan">
                                                 <div class="d-flex align-items-center gap-2">
-                                                    <span class="icon-badge text-success"><i
-                                                            class="bi bi-door-open-fill"></i></span>
+                                                    <span class="icon-badge text-success room-drag-handle"
+                                                        draggable="true" title="Tarik untuk ubah urutan">
+                                                        <i class="bi bi-door-open-fill"></i>
+                                                    </span>
                                                     <div>
                                                         <div class="fw-semibold">{{ r.name }}</div>
                                                         {% if r.description %}
@@ -967,10 +1333,11 @@
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td><span class="badge bg-secondary text-uppercase">{{ r.category }}</span>
+                                            <td data-label="Kategori"><span
+                                                    class="badge bg-secondary text-uppercase">{{ r.category }}</span>
                                             </td>
-                                            <td><span class="badge bg-primary">{{ r.aspects|length }}</span></td>
-                                            <td>
+                                            <td data-label="Aspek"><span class="badge bg-primary">{{ r.aspects|length }}</span></td>
+                                            <td data-label="Status">
                                                 <form method="POST"
                                                     action="{{ url_for('portal.toggle_room_status', room_id=r.id) }}"
                                                     class="d-inline">
@@ -983,7 +1350,7 @@
                                                     </button>
                                                 </form>
                                             </td>
-                                            <td>
+                                            <td data-label="Wajib">
                                                 <form method="POST"
                                                     action="{{ url_for('portal.toggle_room_required', room_id=r.id) }}"
                                                     class="d-inline">
@@ -996,7 +1363,7 @@
                                                     </button>
                                                 </form>
                                             </td>
-                                            <td class="text-end">
+                                            <td class="text-end" data-label="Aksi">
                                                 <div class="btn-group btn-group-sm">
                                                     <button type="button" class="btn btn-outline-primary"
                                                         data-bs-toggle="collapse" data-bs-target="#roomDetail{{ r.id }}"
@@ -1369,20 +1736,61 @@
         // ===== School Search & Pagination =====
         const schoolSearch = document.getElementById('schoolSearch');
         const schoolRows = document.querySelectorAll('.school-row');
+        const schoolEditRows = document.querySelectorAll('.school-edit-row');
         const schoolPrevBtn = document.getElementById('schoolPrevBtn');
         const schoolNextBtn = document.getElementById('schoolNextBtn');
         const schoolShowingStart = document.getElementById('schoolShowingStart');
         const schoolShowingEnd = document.getElementById('schoolShowingEnd');
         const schoolTotalFiltered = document.getElementById('schoolTotalFiltered');
+        const addSchoolForm = document.getElementById('addSchoolForm');
+        const addSchoolNpsn = document.getElementById('addSchoolNpsn');
+        const addSchoolBtn = document.getElementById('addSchoolBtn');
+        const npsnExistsHelp = document.getElementById('npsnExistsHelp');
 
         const PAGE_SIZE = 20;
         let currentPage = 0;
         let filteredSchools = Array.from(schoolRows);
         let activeFilters = { jenjang: '', status: '', kecamatan: '', search: '' };
+        let npsnExists = false;
+
+        function normalizeNpsn(value) {
+            return (value || '').toString().trim().toLowerCase().replace(/\s+/g, '');
+        }
+
+        const existingNpsn = new Set(
+            Array.from(schoolRows)
+                .map(row => normalizeNpsn(row.dataset.npsn))
+                .filter(Boolean)
+        );
+
+        function updateNpsnStatus() {
+            if (!addSchoolNpsn) return;
+            const value = normalizeNpsn(addSchoolNpsn.value);
+            npsnExists = Boolean(value) && existingNpsn.has(value);
+
+            if (npsnExists) {
+                addSchoolNpsn.classList.add('is-invalid');
+                if (npsnExistsHelp) npsnExistsHelp.classList.remove('d-none');
+            } else {
+                addSchoolNpsn.classList.remove('is-invalid');
+                if (npsnExistsHelp) npsnExistsHelp.classList.add('d-none');
+            }
+
+            if (addSchoolBtn) {
+                addSchoolBtn.disabled = npsnExists;
+            }
+        }
 
         function updateSchoolTable() {
             const start = currentPage * PAGE_SIZE;
             const end = Math.min(start + PAGE_SIZE, filteredSchools.length);
+
+            if (schoolEditRows.length) {
+                schoolEditRows.forEach(row => {
+                    row.classList.remove('show', 'collapsing');
+                    row.style.height = '';
+                });
+            }
 
             // Hide all rows first
             schoolRows.forEach(row => row.style.display = 'none');
@@ -1463,6 +1871,20 @@
         setupColumnFilter('statusFilterMenu', 'statusFilterBadge', 'status');
         setupColumnFilter('kecamatanFilterMenu', 'kecamatanFilterBadge', 'kecamatan');
 
+        if (addSchoolNpsn) {
+            addSchoolNpsn.addEventListener('input', updateNpsnStatus);
+            updateNpsnStatus();
+        }
+
+        if (addSchoolForm) {
+            addSchoolForm.addEventListener('submit', function (e) {
+                if (npsnExists) {
+                    e.preventDefault();
+                    updateNpsnStatus();
+                }
+            });
+        }
+
         if (schoolSearch) {
             schoolSearch.addEventListener('input', function () {
                 activeFilters.search = this.value;
@@ -1520,6 +1942,116 @@
                 if (roomCount) {
                     roomCount.textContent = visibleCount;
                 }
+            });
+        }
+
+        // ===== Room Drag & Drop Reorder =====
+        const roomsTableBody = document.getElementById('roomsTableBody');
+        let draggingRoomRow = null;
+        let draggingDetailRow = null;
+        let isSavingRoomOrder = false;
+
+        function getRoomDetailRow(roomId) {
+            return document.getElementById(`roomDetail${roomId}`);
+        }
+
+        function refreshSortOrderInputs() {
+            if (!roomsTableBody) return;
+            const rows = Array.from(roomsTableBody.querySelectorAll('tr.room-row'));
+            rows.forEach((row, idx) => {
+                const detailRow = getRoomDetailRow(row.dataset.roomId);
+                const sortInput = detailRow?.querySelector('input[name="sort_order"]');
+                if (sortInput) sortInput.value = idx;
+            });
+        }
+
+        async function persistRoomOrder() {
+            if (!roomsTableBody) return;
+            const orderedIds = Array.from(roomsTableBody.querySelectorAll('tr.room-row'))
+                .map(r => parseInt(r.dataset.roomId || "", 10))
+                .filter(Boolean);
+            if (!orderedIds.length) return;
+
+            roomsTableBody.classList.add('drag-saving');
+            try {
+                const res = await fetch('/portal/admin/setup/rooms/reorder', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken || ''
+                    },
+                    body: JSON.stringify({ room_ids: orderedIds })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    throw new Error(data.message || 'Gagal menyimpan urutan ruangan');
+                }
+                showToast('Urutan ruangan disimpan.');
+            } catch (err) {
+                showToast(err.message || 'Gagal menyimpan urutan ruangan', true);
+            } finally {
+                roomsTableBody.classList.remove('drag-saving');
+            }
+        }
+
+        function moveDraggedRow(targetRow, placeAfter = false) {
+            if (!roomsTableBody || !draggingRoomRow || !targetRow) return;
+            const targetDetail = getRoomDetailRow(targetRow.dataset.roomId);
+            const anchor = placeAfter ? (targetDetail || targetRow).nextSibling : targetRow;
+
+            roomsTableBody.insertBefore(draggingRoomRow, anchor);
+            if (draggingDetailRow) {
+                roomsTableBody.insertBefore(draggingDetailRow, anchor);
+            }
+        }
+
+        async function finalizeRoomDrag() {
+            if (!draggingRoomRow || isSavingRoomOrder) return;
+            isSavingRoomOrder = true;
+            refreshSortOrderInputs();
+            await persistRoomOrder();
+            draggingRoomRow.classList.remove('dragging');
+            draggingDetailRow?.classList.remove('dragging');
+            draggingRoomRow = null;
+            draggingDetailRow = null;
+            isSavingRoomOrder = false;
+        }
+
+        if (roomsTableBody) {
+            roomsTableBody.addEventListener('dragstart', function (e) {
+                const handle = e.target.closest('.room-drag-handle');
+                if (!handle) {
+                    e.preventDefault();
+                    return;
+                }
+                draggingRoomRow = handle.closest('tr.room-row');
+                if (!draggingRoomRow) return;
+                draggingDetailRow = getRoomDetailRow(draggingRoomRow.dataset.roomId);
+                draggingRoomRow.classList.add('dragging');
+                draggingDetailRow?.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', draggingRoomRow.dataset.roomId || '');
+            });
+
+            roomsTableBody.addEventListener('dragover', function (e) {
+                if (!draggingRoomRow) return;
+                const targetRow = e.target.closest('tr.room-row');
+                if (!targetRow || targetRow === draggingRoomRow) return;
+
+                e.preventDefault();
+                const rect = targetRow.getBoundingClientRect();
+                const shouldPlaceAfter = (e.clientY - rect.top) > rect.height / 2;
+                moveDraggedRow(targetRow, shouldPlaceAfter);
+            });
+
+            roomsTableBody.addEventListener('drop', function (e) {
+                if (!draggingRoomRow) return;
+                e.preventDefault();
+                finalizeRoomDrag();
+            });
+
+            roomsTableBody.addEventListener('dragend', function () {
+                finalizeRoomDrag();
             });
         }
 

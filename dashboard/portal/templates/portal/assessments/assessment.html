@@ -38,9 +38,21 @@
     {% if rooms %}
     <div class="row g-4">
         <div class="col-lg-8">
-            <div class="alert alert-info d-flex align-items-center gap-2 mb-3">
-                <i class="bi bi-info-circle"></i>
+            <div class="alert alert-info mb-3 d-flex flex-wrap align-items-center gap-3">
+                <button class="btn btn-sm btn-outline-secondary" type="button" id="scoreLegendToggle"
+                    data-bs-toggle="collapse" data-bs-target="#scoreLegendDetails" aria-expanded="false"
+                    aria-controls="scoreLegendDetails">
+                    Show
+                </button>
                 <span>Tap skor 0-3 untuk setiap aspek. Default skor: 3 (baik). Perubahan tersimpan otomatis.</span>
+                <div class="collapse mt-2" id="scoreLegendDetails">
+                    <div class="small text-muted">
+                        <div><strong>0</strong> apabila rusak</div>
+                        <div><strong>1</strong> apabila ada tetapi kondisi kurang baik</div>
+                        <div><strong>2</strong> apabila ada kondisi baik</div>
+                        <div><strong>3</strong> apabila ada kondisi sangat baik</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Room Search -->
@@ -212,6 +224,46 @@
         </div>
     </div>
     {% endif %}
+
+    <!-- Optional Rooms Info -->
+    {% if optional_rooms_data %}
+    {% for jenjang, rooms_list in optional_rooms_data.items() %}
+    {% if rooms_list %}
+    {% set unselected_rooms = [] %}
+    {% for room in rooms_list %}
+    {% if room.selection_count == 0 %}
+    {% set _ = unselected_rooms.append(room) %}
+    {% endif %}
+    {% endfor %}
+
+    {% if unselected_rooms %}
+    <div class="alert alert-info mt-4 mb-0">
+        <div class="d-flex align-items-start gap-2">
+            <i class="bi bi-info-circle fs-5"></i>
+            <div class="flex-grow-1">
+                <strong>Ruangan yang Belum Dipilih</strong>
+                <p class="mb-2 small">Sekolah ini belum memilih ruangan berikut:</p>
+                <div class="list-group list-group-flush">
+                    {% for room in unselected_rooms %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span>{{ room.room_name }}</span>
+                        <button class="btn btn-sm btn-outline-primary"
+                            onclick="showAddRoomModal({{ room.room_id }}, '{{ room.room_name }}')">
+                            <i class="bi bi-plus-circle"></i> Tambahkan
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                <p class="mb-0 mt-2 small text-muted">
+                    <em>Ruangan ini tidak wajib, namun dapat melengkapi fasilitas sekolah.</em>
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+    {% endfor %}
+    {% endif %}
 </section>
 
 <!-- Camera Modal -->
@@ -247,6 +299,39 @@
 </div>
 <canvas id="photoCanvas" style="display: none;"></canvas>
 <input type="file" accept="image/*" capture="environment" id="filePhotoInput" class="d-none">
+
+<!-- Add Room Modal -->
+<div class="modal fade" id="addRoomModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Tambahkan Ruangan
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">
+                    <strong id="addRoomName"></strong>
+                </p>
+                <p class="small text-muted mb-3">
+                    Pilih aspek yang ingin diaktifkan untuk ruangan ini:
+                </p>
+                <div id="aspectsList">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" onclick="addRoomToSchool()">
+                    <i class="bi bi-check-circle"></i> Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Floating Score Summary -->
 <div class="floating-score shadow-sm">
     <div class="d-flex justify-content-between align-items-center mb-1">
@@ -410,6 +495,19 @@
                     }
                 });
             });
+        }
+
+        // Toggle label for skor detail
+        var legendToggleBtn = document.getElementById('scoreLegendToggle');
+        var legendCollapseEl = document.getElementById('scoreLegendDetails');
+        if (legendToggleBtn && legendCollapseEl) {
+            var updateLegendLabel = function () {
+                var isShown = legendCollapseEl.classList.contains('show');
+                legendToggleBtn.textContent = isShown ? 'Hide' : 'Show';
+            };
+            legendCollapseEl.addEventListener('shown.bs.collapse', updateLegendLabel);
+            legendCollapseEl.addEventListener('hidden.bs.collapse', updateLegendLabel);
+            updateLegendLabel();
         }
     });
 
@@ -809,5 +907,74 @@
             });
         }
     })();
+
+    // Add Room Functions
+    var selectedRoomId = null;
+
+    function showAddRoomModal(roomId, roomName) {
+        selectedRoomId = roomId;
+        document.getElementById('addRoomName').textContent = roomName;
+
+        // Fetch room aspects
+        fetch('/portal/room/' + roomId + '/aspects')
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    renderAspects(data.aspects);
+                    new bootstrap.Modal(document.getElementById('addRoomModal')).show();
+                } else {
+                    showToast('Gagal memuat aspek ruangan');
+                }
+            })
+            .catch(function (err) {
+                showToast('Error: ' + err.message);
+            });
+    }
+
+    function renderAspects(aspects) {
+        var html = '';
+        if (!aspects || aspects.length === 0) {
+            html = '<p class="text-muted small">Ruangan ini tidak memiliki aspek.</p>';
+        } else {
+            html = '<div class="list-group list-group-flush">';
+            aspects.forEach(function (asp) {
+                var checked = asp.is_required ? 'checked disabled' : '';
+                var badge = asp.is_required ? '<span class="badge bg-warning text-dark ms-2">Wajib</span>' : '';
+                var desc = asp.description ? '<br><small class="text-muted">' + asp.description + '</small>' : '';
+                html += '<label class="list-group-item">';
+                html += '<input type="checkbox" class="form-check-input me-2" value="' + asp.id + '" ' + checked + '>';
+                html += asp.name + ' ' + badge + desc;
+                html += '</label>';
+            });
+            html += '</div>';
+        }
+        document.getElementById('aspectsList').innerHTML = html;
+    }
+
+    function addRoomToSchool() {
+        var checkboxes = document.querySelectorAll('#aspectsList input[type="checkbox"]:checked');
+        var aspectIds = Array.from(checkboxes).map(function (cb) { return parseInt(cb.value); });
+
+        fetch('/portal/assess/' + schoolId + '/add-room', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                room_id: selectedRoomId,
+                aspect_ids: aspectIds
+            })
+        })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    showToast('Ruangan berhasil ditambahkan!');
+                    setTimeout(function () { window.location.reload(); }, 1000);
+                } else {
+                    showToast('Gagal: ' + data.message);
+                }
+            })
+            .catch(function (err) {
+                showToast('Error: ' + err.message);
+            });
+    }
 </script>
 {% endblock %}

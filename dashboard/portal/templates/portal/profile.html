@@ -19,6 +19,7 @@
                 <div class="card-body">
                     <h6 class="fw-semibold mb-3"><i class="bi bi-person-lines-fill me-2"></i>Data Profil</h6>
                     <form method="post">
+                        <input type="hidden" name="form_type" value="profile">
                         <div class="mb-3">
                             <label class="form-label">Nama Lengkap</label>
                             <input type="text" name="full_name" class="form-control" required
@@ -68,17 +69,39 @@
                         Isi bagian ini hanya jika ingin mengganti password.
                     </div>
                     <form method="post">
+                        <input type="hidden" name="form_type" value="password">
                         <div class="mb-3">
                             <label class="form-label">Password Saat Ini</label>
-                            <input type="password" name="current_password" class="form-control" autocomplete="current-password">
+                            <div class="input-group">
+                                <input type="password" name="current_password" id="currentPassword" class="form-control"
+                                    autocomplete="current-password">
+                                <button class="btn btn-outline-secondary toggle-password" type="button"
+                                    data-target="currentPassword" aria-label="Tampilkan password saat ini">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Password Baru</label>
-                            <input type="password" name="new_password" class="form-control" autocomplete="new-password">
+                            <div class="input-group">
+                                <input type="password" name="new_password" id="newPassword" class="form-control"
+                                    autocomplete="new-password">
+                                <button class="btn btn-outline-secondary toggle-password" type="button"
+                                    data-target="newPassword" aria-label="Tampilkan password baru">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Konfirmasi Password Baru</label>
-                            <input type="password" name="confirm_password" class="form-control" autocomplete="new-password">
+                            <div class="input-group">
+                                <input type="password" name="confirm_password" id="confirmPassword"
+                                    class="form-control" autocomplete="new-password">
+                                <button class="btn btn-outline-secondary toggle-password" type="button"
+                                    data-target="confirmPassword" aria-label="Tampilkan konfirmasi password">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="d-flex gap-2">
                             <button type="reset" class="btn btn-light w-50">Reset</button>
@@ -93,4 +116,26 @@
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.toggle-password').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const targetId = this.dataset.target;
+                const input = document.getElementById(targetId);
+                if (!input) return;
+                const isHidden = input.type === 'password';
+                input.type = isHidden ? 'text' : 'password';
+                const icon = this.querySelector('i');
+                if (icon) {
+                    icon.classList.toggle('bi-eye', !isHidden);
+                    icon.classList.toggle('bi-eye-slash', isHidden);
+                }
+                this.setAttribute('aria-label', isHidden ? 'Sembunyikan password' : 'Tampilkan password');
+            });
+        });
+    });
+</script>
 {% endblock %}

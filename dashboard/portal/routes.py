@@ -111,6 +111,8 @@ from .queries import (
     get_latest_reopen_request,
     update_reopen_request_status,
     list_reopen_requests,
+    get_optional_rooms_for_schools,
+    get_room_with_aspects,
 )
 from dashboard.queries import (
     create_team_member_request,
@@ -220,6 +222,24 @@ def _fetch_user_school(user_id: int) -> dict | None:
         return dict(row) if row else None
 
 
+def _fetch_user_kecamatan_name(user_id: int) -> str | None:
+    """Return the kecamatan name linked to the given user_id (requested_kecamatan)."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT k.name
+            FROM dashboard_users u
+            LEFT JOIN portal_kecamatan k ON u.requested_kecamatan = k.id
+            WHERE u.id = %s
+            """,
+            (user_id,),
+        )
+        row = cur.fetchone()
+        if row and row["name"]:
+            return row["name"]
+    return None
+
+
 def _compute_missing_profile_fields(school: dict | None) -> list[str]:
     """Check required fields for sekolah profile completeness."""
     if not school:
@@ -247,18 +267,19 @@ def _compute_missing_profile_fields(school: dict | None) -> list[str]:
         missing.append("Alamat dan wilayah")
     for key, label in required_keys.items():
         value = meta.get(key)
-        if value in (None, "", 0, "0"):
+        # Anggap 0 sebagai nilai valid; hanya kosong yang dianggap belum diisi
+        if value is None or value == "":
             missing.append(label)
     # Bangku kosong per jenjang
     if expected_grades:
         empty_map = meta.get("empty_seats_by_grade") or {}
         for g in expected_grades:
             val = empty_map.get(str(g))
-            if val in (None, "", "0", 0):
+            if val is None or val == "":
                 missing.append("Jumlah bangku kosong per kelas")
                 break
     else:
-        if meta.get("empty_seats") in (None, "", 0, "0"):
+        if meta.get("empty_seats") is None or meta.get("empty_seats") == "":
             missing.append("Jumlah bangku kosong")
     return missing
 
@@ -274,6 +295,10 @@ def _expected_grade_levels(jenjang: str | None) -> list[int]:
         return list(range(7, 10))
     if upper in {"SMA", "SMK"}:
         return list(range(10, 13))
+    if upper == "TK":
+        return [-1, 0]  # TK A, TK B
+    if upper == "PAUD":
+        return [-2, -1, 0]  # KB, Kelompok A, Kelompok B
     return []
 
 
@@ -487,22 +512,29 @@ def _sanitize_phone(phone: str) -> str:
     return digits_only
 
 
-def _build_coordinator_contacts(school: dict | None = None) -> list[dict]:
-    """Return area contact list with wa links, optionally personalized with school info."""
+def _build_coordinator_contacts(school: dict | None = None, *, area_name: str | None = None) -> list[dict]:
+    """Return area contact list with wa links, optionally personalized with school or user area info."""
     contacts = []
-    message = "Halo, kami ingin mengganti email akun portal sekolah."
-    if school:
+    message = "Halo, kami ingin menghubungi admin wilayah."
+    if school and school.get("name") and school.get("npsn"):
         message = (
             f"Halo, kami dari {school.get('name')} (NPSN {school.get('npsn')}) "
-            "ingin mengganti email akun portal sekolah."
+            "ingin menghubungi admin wilayah."
         )
+    elif school and school.get("name"):
+        message = f"Halo, kami dari {school.get('name')} ingin menghubungi admin wilayah."
+    elif area_name:
+        message = f"Halo, kami dari wilayah {area_name} ingin menghubungi admin wilayah."
 
     for c in AREA_CONTACTS:
         phone_for_link = _sanitize_phone(c["phone"])
         is_user_area = False
-        if school:
-            # Simple match: check if school.kecamatan_name contains area name
-            kec_name = (school.get("kecamatan_name") or "").lower()
+        area_match_source = area_name
+        if not area_match_source and school:
+            area_match_source = school.get("kecamatan_name")
+        if area_match_source:
+            # Simple match: check if area name contains the contact area keyword
+            kec_name = area_match_source.lower()
             is_user_area = c["area"].lower() in kec_name
         contacts.append(
             {
@@ -706,6 +738,9 @@ def assess(school_id: int) -> Response:
     # Get room notes
     room_notes = get_assessment_room_details(assessment_id)
     
+    # Get optional rooms for this school
+    optional_rooms_data = get_optional_rooms_for_schools([school_id])
+    
     return render_template(
         "portal/assessments/assessment.html",
         school=school,
@@ -716,6 +751,7 @@ def assess(school_id: int) -> Response:
         room_notes=room_notes,
         total_aspects=total_aspects,
         assessment_period=assessment_period,
+        optional_rooms_data=optional_rooms_data,
     )
 
 
@@ -1219,6 +1255,76 @@ def delete_photo_route(school_id: int, photo_id: int) -> Response:
         return jsonify({"success": False, "message": str(e)}), 500
 
 
+@portal_bp.route("/room/<int:room_id>/aspects")
+@_portal_access_required
+def get_room_aspects_api(room_id: int) -> Response:
+    """Get room aspects for AJAX call."""
+    room = get_room_with_aspects(room_id)
+    if not room:
+        return jsonify({"success": False, "message": "Room not found"}), 404
+    
+    return jsonify({
+        "success": True,
+        "aspects": room.get('aspects', [])
+    })
+
+
+@portal_bp.route("/assess/<int:school_id>/add-room", methods=["POST"])
+@_portal_access_required
+def add_room_to_school(school_id: int) -> Response:
+    """Add an optional room to school during assessment."""
+    user = current_user()
+    if user.get("role") not in ("admin", "staff", "coordinator"):
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    
+    data = request.get_json()
+    room_id = data.get("room_id")
+    aspect_ids = data.get("aspect_ids", [])
+    
+    if not room_id:
+        return jsonify({"success": False, "message": "room_id required"}), 400
+    
+    try:
+        with get_cursor(commit=True) as cur:
+            # Check if already exists
+            cur.execute("""
+                SELECT id FROM portal_school_rooms
+                WHERE school_id = %s AND room_id = %s
+            """, (school_id, room_id))
+            
+            existing = cur.fetchone()
+            if existing:
+                return jsonify({"success": False, "message": "Ruangan sudah ada di sekolah"}), 400
+            
+            # Insert school room
+            cur.execute("""
+                INSERT INTO portal_school_rooms (school_id, room_id)
+                VALUES (%s, %s)
+                RETURNING id
+            """, (school_id, room_id))
+            
+            school_room_id = cur.fetchone()['id']
+            
+            # Insert selected aspects
+            if aspect_ids:
+                for aspect_id in aspect_ids:
+                    cur.execute("""
+                        INSERT INTO portal_school_room_aspects (school_room_id, aspect_id)
+                        VALUES (%s, %s)
+                        ON CONFLICT DO NOTHING
+                    """, (school_room_id, aspect_id))
+        
+        current_app.logger.info(
+            f"[add_room_to_school] Added room {room_id} to school {school_id} with aspects {aspect_ids}"
+        )
+        
+        return jsonify({"success": True, "message": "Ruangan berhasil ditambahkan"})
+    
+    except Exception as e:
+        current_app.logger.exception("Error adding room to school")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
 @portal_bp.route("/assessment/<int:assessment_id>/delete", methods=["POST"])
 @role_required("admin")
 def delete_assessment_route(assessment_id: int) -> Response:
@@ -1338,6 +1444,11 @@ def sekolah_rooms() -> Response:
                 [k for k in request.form.keys() if k.startswith("aspects_")],
             )
             try:
+                # Pastikan paralel kelas sudah tersinkron sebelum simpan konfigurasi ruangan
+                try:
+                    ensure_classroom_rooms_for_school(current_school_id)
+                except Exception:
+                    current_app.logger.exception("Failed to sync classroom rooms before update_school_rooms")
                 count = update_school_rooms(current_school_id, room_ids, aspect_map)
                 # Log what is stored after save
                 saved_after = list_school_rooms(current_school_id, include_all_aspects=True)
@@ -1368,8 +1479,32 @@ def sekolah_rooms() -> Response:
 
     saved_rooms = []
     if current_school_id:
+        try:
+            ensure_classroom_rooms_for_school(current_school_id)
+        except Exception:
+            current_app.logger.exception("Failed to sync classroom rooms before rendering sekolah_rooms")
         saved_rooms = list_school_rooms(current_school_id, include_all_aspects=True)
         saved_room_ids = {r["room_id"] for r in saved_rooms}
+
+    # Get classroom configurations for current school (used to hint variants per jenjang)
+    classrooms = []
+    if current_school_id:
+        classrooms = list_school_classrooms(current_school_id)
+    
+    # Build set of (grade, variant) pairs for exact matching
+    # e.g., {(1, 'A'), (2, 'A'), (3, 'A')} means only show Kelas 1A, 2A, 3A
+    classroom_variants: set[tuple[int, str]] = set()
+    classroom_grades: set[int] = set()
+    
+    for cls in classrooms:
+        try:
+            g = int(cls.get("grade_level"))
+            variant = (cls.get("variant") or "").strip().upper()
+            if variant:  # Only add if there's a variant
+                classroom_variants.add((g, variant))
+            classroom_grades.add(g)
+        except (TypeError, ValueError):
+            continue
 
     all_rooms = list_portal_rooms()
     # Tag aspek yang sudah dipilih agar checkbox tercentang saat render
@@ -1390,8 +1525,9 @@ def sekolah_rooms() -> Response:
             ]
 
     # Categorize rooms by grade number (so SD tab doesn't show kelas 10-12)
-    variant_pattern = re.compile(r"^\s*Ruang\s+Kelas\s+(\d+)\s*([A-Za-z]+)\s*$", re.IGNORECASE)
-    base_pattern = re.compile(r"\bKelas\s+(\d+)", re.IGNORECASE)
+    # Regex patterns to match classroom names (support negative grades for PAUD/TK)
+    variant_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+(-?\d+)\s*([A-Za-z]+)\s*$", re.IGNORECASE)
+    base_pattern = re.compile(r"\bKelas\s+(-?\d+)\b", re.IGNORECASE)
 
     def _room_grade(room: dict) -> int | None:
         name_val = room.get("name") or ""
@@ -1405,6 +1541,14 @@ def sekolah_rooms() -> Response:
 
     def _is_variant_class(name: str) -> bool:
         return bool(variant_pattern.match(name or ""))
+    
+    def _room_variant(room: dict) -> str | None:
+        """Extract variant letter from room name (e.g., 'A' from 'Ruang Kelas 1A')."""
+        name_val = room.get("name") or ""
+        m = variant_pattern.match(name_val)
+        if not m or not m.group(2):
+            return None
+        return m.group(2).strip().upper()
 
     # Identifikasi jenjang yang sudah punya kelas paralel (mis. 1A, 1B) untuk menyembunyikan base "Ruang Kelas 1"
     variant_grades: set[int] = set()
@@ -1421,27 +1565,79 @@ def sekolah_rooms() -> Response:
             g = _room_grade(sr)
             if g is not None:
                 variant_grades.add(g)
+    # Include classroom config grades so base kelas disembunyikan ketika paralel sudah diatur
+    variant_grades.update(classroom_grades)
+
+    # Debug logging to diagnose filtering issues
+    current_app.logger.info(
+        "[sekolah_rooms] Starting room filtering for school_id=%s, classroom_grades=%s, classroom_variants=%s, variant_grades=%s, saved_room_ids count=%d",
+        current_school_id, classroom_grades, classroom_variants, variant_grades, len(saved_room_ids)
+    )
+    current_app.logger.info(
+        "[sekolah_rooms] Total rooms before filtering: %d (SD candidates: %d)",
+        len(all_rooms),
+        len([r for r in all_rooms if _room_grade(r) in range(1, 7)])
+    )
 
     filtered_rooms = []
+    skipped_variant_rooms = []
+    skipped_base_rooms = []
+    
     for r in all_rooms:
         name_val = r.get("name") or ""
-        # Only show variant classrooms if this school already memilikinya
-        if _is_variant_class(name_val) and r.get("id") not in saved_room_ids:
-            continue
+        # Only show variant classrooms if exact (grade, variant) match OR already saved
+        if _is_variant_class(name_val):
+            g = _room_grade(r)
+            variant = _room_variant(r)
+            
+            # Check if this exact (grade, variant) pair is configured
+            is_exact_match = (g, variant) in classroom_variants if (g and variant) else False
+            is_saved = r.get("id") in saved_room_ids
+            should_skip = not is_exact_match and not is_saved
+            
+            # Log each variant room decision
+            current_app.logger.info(
+                "[sekolah_rooms] Variant room '%s': room_id=%s, grade=%s, variant='%s', exact_match=%s, is_saved=%s, SKIP=%s",
+                name_val, r.get("id"), g, variant, is_exact_match, is_saved, should_skip
+            )
+            
+            if should_skip:
+                skipped_variant_rooms.append(name_val)
+                continue
         # Jika ada paralel untuk jenjang yang sama, sembunyikan base class (mis. "Ruang Kelas 1")
         g = _room_grade(r)
         if not _is_variant_class(name_val) and g is not None and g in variant_grades:
+            current_app.logger.info(
+                "[sekolah_rooms] Skipping base room '%s' (grade=%s) because variants exist",
+                name_val, g
+            )
+            skipped_base_rooms.append(name_val)
             continue
         filtered_rooms.append(r)
-
+    
+    # Summary logging
+    current_app.logger.info(
+        "[sekolah_rooms] Filtering complete: kept %d rooms, skipped %d variant rooms, skipped %d base rooms",
+        len(filtered_rooms), len(skipped_variant_rooms), len(skipped_base_rooms)
+    )
+    if skipped_variant_rooms:
+        current_app.logger.info("[sekolah_rooms] Skipped variant rooms: %s", skipped_variant_rooms)
+    if skipped_base_rooms:
+        current_app.logger.info("[sekolah_rooms] Skipped base rooms: %s", skipped_base_rooms)
     sd_rooms = []
     smp_rooms = []
     sma_rooms = []
+    paud_rooms = []
+    tk_rooms = []
     umum_rooms = []
     for r in filtered_rooms:
         grade = _room_grade(r)
         if grade is None:
             umum_rooms.append(r)
+        elif -2 <= grade <= 0:  # PAUD/TK levels
+            # Add to both, template will show correct tab based on jenjang
+            paud_rooms.append(r)
+            tk_rooms.append(r)
         elif 1 <= grade <= 6:
             sd_rooms.append(r)
         elif 7 <= grade <= 9:
@@ -1456,11 +1652,6 @@ def sekolah_rooms() -> Response:
     kecamatan_list = list_kecamatan()
     kelurahan_list = list_kelurahan()  # full list to allow sekolah update
     
-    # Get classroom configurations for current school
-    classrooms = []
-    if current_school_id:
-        classrooms = list_school_classrooms(current_school_id)
-
     # Determine selected school for jenjang-aware UI
     selected_school = user_school
     if not selected_school and current_school_id:
@@ -1481,6 +1672,8 @@ def sekolah_rooms() -> Response:
         kelurahan_list=kelurahan_list,
         classrooms=classrooms,
         selected_school=selected_school,
+        paud_rooms=paud_rooms,
+        tk_rooms=tk_rooms,
         sd_rooms=sd_rooms,
         smp_rooms=smp_rooms,
         sma_rooms=sma_rooms,
@@ -2432,6 +2625,45 @@ def toggle_room_required(room_id: int) -> Response:
     return redirect(url_for("portal.admin_setup") + f"#room-{room_id}")
 
 
+@portal_bp.route("/admin/setup/rooms/reorder", methods=["POST"])
+@role_required("admin")
+def reorder_rooms() -> Response:
+    """Persist new room order based on a drag-and-drop list."""
+    data = request.get_json(silent=True) or {}
+    room_ids_raw = data.get("room_ids") or []
+
+    try:
+        room_ids = [int(rid) for rid in room_ids_raw if rid is not None]
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "message": "Data ruangan tidak valid"}), 400
+
+    if not room_ids:
+        return jsonify({"success": False, "message": "Tidak ada ruangan untuk diurutkan"}), 400
+
+    try:
+        with get_cursor(commit=True) as cur:
+            for idx, rid in enumerate(room_ids):
+                cur.execute(
+                    "UPDATE portal_rooms SET sort_order = %s WHERE id = %s",
+                    (idx, rid),
+                )
+
+        from .queries import log_activity
+
+        log_activity(
+            current_user().get("id"),
+            "UPDATE",
+            "ROOM",
+            None,
+            "Reorder Rooms",
+            {"count": len(room_ids)},
+        )
+        return jsonify({"success": True, "room_ids": room_ids})
+    except Exception as exc:  # pragma: no cover - defensive
+        current_app.logger.exception("Failed to reorder rooms")
+        return jsonify({"success": False, "message": str(exc)}), 500
+
+
 @portal_bp.route("/admin/setup/room/<int:room_id>/toggle-api", methods=["POST"])
 @role_required("admin")
 def toggle_room_status_api(room_id: int) -> Response:
@@ -3219,10 +3451,19 @@ def inject_permissions():
         return {}
     
     from .permissions import get_permission_summary
+    user_school = None
+    user_area_name = None
+    if user.get("role") == "sekolah":
+        user_school = _fetch_user_school(user.get("id"))
+    else:
+        user_area_name = _fetch_user_kecamatan_name(user.get("id"))
+    area_contacts = _build_coordinator_contacts(user_school, area_name=user_area_name)
     return {
         'permissions': get_permission_summary(user),
         'is_superadmin': is_superadmin(user),
         'can_access_aska': can_access_aska(user),
+        'user_school': user_school,
+        'area_contacts': area_contacts,
     }
 
 
@@ -3344,30 +3585,45 @@ def user_profile_settings() -> Response:
     profile_view = {k: v for k, v in profile.items() if k != "password_hash"}
 
     if request.method == "POST":
-        full_name = (request.form.get("full_name") or "").strip()
-        email = (request.form.get("email") or "").strip().lower()
-        whatsapp = (request.form.get("whatsapp_number") or "").strip() or None
-        nip = (request.form.get("nip") or "").strip() or None
-        nrk = (request.form.get("nrk") or "").strip() or None
-        jabatan = (request.form.get("jabatan") or "").strip() or None
+        form_type = (request.form.get("form_type") or "profile").strip().lower()
+        # Default to existing profile data so password-only form doesn't blank fields.
+        full_name = (request.form.get("full_name") or profile.get("full_name") or "").strip()
+        email = (request.form.get("email") or profile.get("email") or "").strip().lower()
+        whatsapp = (request.form.get("whatsapp_number") or profile.get("whatsapp_number") or "").strip() or None
+        nip = (request.form.get("nip") or profile.get("nip") or "").strip() or None
+        nrk = (request.form.get("nrk") or profile.get("nrk") or "").strip() or None
+        jabatan = (request.form.get("jabatan") or profile.get("jabatan") or "").strip() or None
 
         current_password = request.form.get("current_password") or ""
         new_password = request.form.get("new_password") or ""
         confirm_password = request.form.get("confirm_password") or ""
 
         errors = []
-        if not full_name:
-            errors.append("Nama wajib diisi.")
-        if not email:
-            errors.append("Email wajib diisi.")
-        if new_password or confirm_password or current_password:
+        if form_type == "profile":
+            if not full_name:
+                errors.append("Nama wajib diisi.")
+            if not email:
+                errors.append("Email wajib diisi.")
+        else:
+            # Still ensure existing essential data is present
+            if not full_name:
+                errors.append("Profil tidak valid: nama kosong.")
+            if not email:
+                errors.append("Profil tidak valid: email kosong.")
+
+        # Password validation only when changing password
+        if form_type == "password" or new_password or confirm_password or current_password:
             if not profile.get("password_hash"):
                 errors.append("Akun ini belum memiliki password, hubungi admin.")
             elif not current_password:
                 errors.append("Masukkan password saat ini.")
             elif not check_password_hash(profile["password_hash"], current_password):
                 errors.append("Password saat ini salah.")
-            if new_password != confirm_password:
+            if not new_password:
+                errors.append("Password baru wajib diisi.")
+            if not confirm_password:
+                errors.append("Konfirmasi password baru wajib diisi.")
+            if new_password and confirm_password and new_password != confirm_password:
                 errors.append("Password baru dan konfirmasi tidak sama.")
             if new_password and len(new_password) < 8:
                 errors.append("Password baru minimal 8 karakter.")
@@ -3416,6 +3672,7 @@ def user_profile_settings() -> Response:
 def manage_users() -> Response:
     """Manage dashboard users from Portal app."""
     from dashboard.queries import list_dashboard_users, create_dashboard_user, update_dashboard_user
+    from dashboard.portal.queries import list_kecamatan
     from werkzeug.security import generate_password_hash
     
     if request.method == "POST":
@@ -3427,6 +3684,12 @@ def manage_users() -> Response:
         password = request.form.get("password") or ""
         role = (request.form.get("role") or "viewer").strip()
         account_status = request.form.get("account_status")
+        school_id_raw = (request.form.get("school_id") or "").strip()
+        school_id = int(school_id_raw) if school_id_raw.isdigit() else None
+        if role != "sekolah":
+            school_id = None
+        requested_kecamatan_raw = (request.form.get("requested_kecamatan") or "").strip()
+        requested_kecamatan = int(requested_kecamatan_raw) if requested_kecamatan_raw.isdigit() else None
 
         try:
             if action == "create":
@@ -3434,7 +3697,14 @@ def manage_users() -> Response:
                     flash("Semua field wajib diisi.", "warning")
                 else:
                     password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=12)
-                    create_dashboard_user(email=email, full_name=full_name, password_hash=password_hash, role=role)
+                    create_dashboard_user(
+                        email=email,
+                        full_name=full_name,
+                        password_hash=password_hash,
+                        role=role,
+                        school_id=school_id,
+                        requested_kecamatan=requested_kecamatan,
+                    )
                     flash(f"User {full_name} berhasil dibuat.", "success")
                     
             elif action == "update":
@@ -3448,7 +3718,9 @@ def manage_users() -> Response:
                         role=role, 
                         email=email, 
                         password_hash=pw_hash,
-                        account_status=account_status
+                        account_status=account_status,
+                        school_id=school_id,
+                        requested_kecamatan=requested_kecamatan,
                     )
                     flash(f"Data user {full_name} berhasil diperbarui.", "success")
                     
@@ -3464,7 +3736,8 @@ def manage_users() -> Response:
             flash(f"Gagal memproses data: {exc}", "danger")
 
     users = list_dashboard_users()
-    return render_template("portal/admin/manage_users.html", users=users)
+    kecamatan_list = list_kecamatan()
+    return render_template("portal/admin/manage_users.html", users=users, kecamatan_list=kecamatan_list)
 
 
 @portal_bp.route("/settings/monev-teams", methods=["GET", "POST"])
@@ -3684,8 +3957,15 @@ def coordinator_assignment_requests() -> Response:
         flash("Anda belum memiliki tim.", "warning")
         return redirect(url_for("portal.view_my_team"))
 
-    # Build staff options (team members only)
-    staff_options = team_members
+    # Build staff options (team members + coordinator themself)
+    staff_options = list(team_members)
+    team_staff_ids = {member.get("staff_id") for member in staff_options}
+    if user.get("id") not in team_staff_ids:
+        staff_options.append({
+            "staff_id": user.get("id"),
+            "full_name": user.get("full_name") or my_team.get("coordinator_name") or "Saya (Koordinator)",
+            "role": user.get("role") or my_team.get("coordinator_role") or "coordinator",
+        })
     schools = list_portal_schools()
     periods = list_periods()
     active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
