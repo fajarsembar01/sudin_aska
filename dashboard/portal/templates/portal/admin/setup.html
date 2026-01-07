@@ -642,6 +642,15 @@
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="schoolsCheckTab" data-bs-toggle="tab"
+                                data-bs-target="#schoolsCheckPane" type="button" role="tab">
+                                <i class="bi bi-shield-check me-1"></i>Cek Sekolah
+                                {% if school_monitor_attention_count %}
+                                <span class="badge bg-warning text-dark ms-1">{{ school_monitor_attention_count }}</span>
+                                {% endif %}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
                             <button class="nav-link" id="historyTab" data-bs-toggle="tab" data-bs-target="#historyPane"
                                 type="button" role="tab">
                                 <i class="bi bi-clock-history me-1"></i>History
@@ -940,15 +949,148 @@
                                     </tbody>
                                 </table>
                             </div>
-                            {% else %}
-                            <p class="text-muted mb-0">Belum ada sekolah</p>
-                            {% endif %}
-                        </div>
+                        {% else %}
+                        <p class="text-muted mb-0">Belum ada sekolah</p>
+                        {% endif %}
+                    </div>
 
-                        <!-- History Pane -->
-                        <div class="tab-pane fade" id="historyPane" role="tabpanel">
-                            <h6 class="text-muted mb-3 small">Aktivitas CRUD Terakhir ({{ activity_logs|length }})</h6>
-                            <div class="table-responsive">
+                    <!-- School Check Tab -->
+                    <div class="tab-pane fade" id="schoolsCheckPane" role="tabpanel">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                            <div class="position-relative" style="min-width: 240px;">
+                                <input type="text" id="schoolCheckSearch" class="form-control form-control-sm"
+                                    placeholder="Cari sekolah (NPSN, nama, kecamatan)..." autocomplete="off">
+                                <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-2 text-muted"
+                                    style="pointer-events: none;"></i>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <small class="text-muted">
+                                    Menampilkan <span id="schoolCheckCount">0</span> dari <span
+                                        id="schoolCheckTotal">{{ school_monitor_items|length }}</span>
+                                </small>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="schoolCheckReset">
+                                    Reset Filter
+                                </button>
+                            </div>
+                        </div>
+                            <div class="d-flex flex-wrap gap-3 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="schoolCheckFilterUnclaimed">
+                                <label class="form-check-label small" for="schoolCheckFilterUnclaimed">No user</label>
+                                </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="schoolCheckFilterNoRooms">
+                                <label class="form-check-label small" for="schoolCheckFilterNoRooms">No set
+                                    ruangan</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="schoolCheckFilterIncomplete">
+                                <label class="form-check-label small" for="schoolCheckFilterIncomplete">Kurang
+                                    lengkap</label>
+                            </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="schoolCheckFilterSuspicious">
+                                    <label class="form-check-label small" for="schoolCheckFilterSuspicious">Janggal</label>
+                                </div>
+                                <div style="min-width: 200px;">
+                                    <select class="form-select form-select-sm" id="schoolCheckKecamatan">
+                                        <option value="">All Kecamatan</option>
+                                        {% for k in kecamatan_list %}
+                                        <option value="{{ k.name|lower }}">{{ k.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="ms-auto" style="min-width: 160px;">
+                                    <select class="form-select form-select-sm" id="schoolCheckStatus">
+                                       
+                                        <option value="negeri" selected>NEGERI</option>
+                                        <option value="swasta">SWASTA</option>
+                                    </select>
+                                </div>
+                        </div>
+                        {% if school_monitor_items %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle mb-0" id="schoolsCheckTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Sekolah</th>
+                                        <th>Kecamatan</th>
+                                        <th>Status</th>
+                                        <th>Temuan</th>
+                                        <th class="text-end">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="schoolsCheckTableBody">
+                                    {% for s in school_monitor_items %}
+                                    <tr class="monitor-row"
+                                        data-search="{{ (s.name or '')|lower }} {{ (s.npsn or '')|lower }} {{ (s.kecamatan_name or '')|lower }} {{ (s.jenjang or '')|lower }}"
+                                        data-kecamatan="{{ (s.kecamatan_name or '')|lower }}"
+                                        data-status="{{ (s.status or '')|lower }}"
+                                        data-claimed="{{ 'true' if s.is_claimed else 'false' }}"
+                                        data-rooms="{{ 'true' if s.has_rooms else 'false' }}"
+                                        data-incomplete="{{ 'true' if s.is_incomplete else 'false' }}"
+                                        data-suspicious="{{ 'true' if s.is_suspicious else 'false' }}">
+                                        <td>
+                                            <div class="fw-semibold">{{ s.name }}</div>
+                                            <div class="small text-muted">{{ s.npsn }} • {{ s.jenjang }}</div>
+                                        </td>
+                                        <td class="text-muted small">{{ s.kecamatan_name or '-' }}</td>
+                                        <td>
+                                            <span
+                                                class="badge {% if s.status == 'NEGERI' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{
+                                                s.status or '-' }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex flex-wrap gap-1">
+                                                {% if not s.is_claimed %}
+                                                <span class="badge bg-danger">no user</span>
+                                                {% endif %}
+                                                {% if not s.has_rooms %}
+                                                <span class="badge bg-warning text-dark">Belum set ruangan</span>
+                                                {% endif %}
+                                                {% if s.is_incomplete %}
+                                                <span class="badge bg-secondary">Data kurang lengkap</span>
+                                                {% endif %}
+                                                {% if s.is_suspicious %}
+                                                <span class="badge bg-info text-dark">Data janggal</span>
+                                                {% endif %}
+                                            </div>
+                                            {% if s.missing_preview %}
+                                            <div class="text-muted small mt-1" title="{{ s.missing_fields|join(', ') }}">
+                                                Kurang: {{ s.missing_preview }}
+                                            </div>
+                                            {% endif %}
+                                            {% if s.suspicious_preview %}
+                                            <div class="text-muted small mt-1"
+                                                title="{{ s.suspicious_reasons|join(', ') }}">
+                                                Janggal: {{ s.suspicious_preview }}
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            {% if s.operator_wa %}
+                                            <a class="btn btn-success btn-sm"
+                                                href="{{ s.operator_wa }}" target="_blank" rel="noopener">
+                                                <i class="bi bi-whatsapp me-1"></i>Hubungi
+                                            </a>
+                                            {% else %}
+                                            <button class="btn btn-outline-secondary btn-sm" disabled>Hubungi</button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-muted mb-0">Belum ada data sekolah.</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- History Pane -->
+                    <div class="tab-pane fade" id="historyPane" role="tabpanel">
+                        <h6 class="text-muted mb-3 small">Aktivitas CRUD Terakhir ({{ activity_logs|length }})</h6>
+                        <div class="table-responsive">
                                 <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
                                     <thead class="table-light">
                                         <tr>
@@ -1912,6 +2054,102 @@
 
         // Initialize
         updateSchoolTable();
+
+        // ===== School Check Filters =====
+        const schoolCheckRows = Array.from(document.querySelectorAll('#schoolsCheckTableBody .monitor-row'));
+        const schoolCheckSearch = document.getElementById('schoolCheckSearch');
+        const schoolCheckStatus = document.getElementById('schoolCheckStatus');
+        const schoolCheckFilterUnclaimed = document.getElementById('schoolCheckFilterUnclaimed');
+        const schoolCheckFilterNoRooms = document.getElementById('schoolCheckFilterNoRooms');
+        const schoolCheckFilterIncomplete = document.getElementById('schoolCheckFilterIncomplete');
+        const schoolCheckFilterSuspicious = document.getElementById('schoolCheckFilterSuspicious');
+        const schoolCheckKecamatan = document.getElementById('schoolCheckKecamatan');
+        const schoolCheckCount = document.getElementById('schoolCheckCount');
+        const schoolCheckTotal = document.getElementById('schoolCheckTotal');
+        const schoolCheckReset = document.getElementById('schoolCheckReset');
+
+        function applySchoolCheckFilters() {
+            if (!schoolCheckRows.length) {
+                if (schoolCheckCount) schoolCheckCount.textContent = '0';
+                return;
+            }
+
+            const query = (schoolCheckSearch?.value || '').toLowerCase().trim();
+            const status = (schoolCheckStatus?.value || '').toLowerCase();
+            const wantUnclaimed = Boolean(schoolCheckFilterUnclaimed?.checked);
+            const wantNoRooms = Boolean(schoolCheckFilterNoRooms?.checked);
+            const wantIncomplete = Boolean(schoolCheckFilterIncomplete?.checked);
+            const wantSuspicious = Boolean(schoolCheckFilterSuspicious?.checked);
+            const kecamatan = (schoolCheckKecamatan?.value || '').toLowerCase();
+            let visible = 0;
+
+            schoolCheckRows.forEach(row => {
+                const searchText = (row.dataset.search || '');
+                const rowStatus = (row.dataset.status || '');
+                const rowKecamatan = (row.dataset.kecamatan || '');
+                const isClaimed = row.dataset.claimed === 'true';
+                const hasRooms = row.dataset.rooms === 'true';
+                const isIncomplete = row.dataset.incomplete === 'true';
+                const isSuspicious = row.dataset.suspicious === 'true';
+
+                if (query && !searchText.includes(query)) {
+                    row.style.display = 'none';
+                    return;
+                }
+                if (status && rowStatus !== status) {
+                    row.style.display = 'none';
+                    return;
+                }
+                if (wantUnclaimed && isClaimed) {
+                    row.style.display = 'none';
+                    return;
+                }
+                if (wantNoRooms && hasRooms) {
+                    row.style.display = 'none';
+                    return;
+                }
+                if (wantIncomplete && !isIncomplete) {
+                    row.style.display = 'none';
+                    return;
+                }
+                if (wantSuspicious && !isSuspicious) {
+                    row.style.display = 'none';
+                    return;
+                }
+                if (kecamatan && rowKecamatan !== kecamatan) {
+                    row.style.display = 'none';
+                    return;
+                }
+
+                row.style.display = '';
+                visible += 1;
+            });
+
+            if (schoolCheckCount) schoolCheckCount.textContent = String(visible);
+            if (schoolCheckTotal) schoolCheckTotal.textContent = String(schoolCheckRows.length);
+        }
+
+        if (schoolCheckSearch) schoolCheckSearch.addEventListener('input', applySchoolCheckFilters);
+        if (schoolCheckStatus) schoolCheckStatus.addEventListener('change', applySchoolCheckFilters);
+        if (schoolCheckFilterUnclaimed) schoolCheckFilterUnclaimed.addEventListener('change', applySchoolCheckFilters);
+        if (schoolCheckFilterNoRooms) schoolCheckFilterNoRooms.addEventListener('change', applySchoolCheckFilters);
+        if (schoolCheckFilterIncomplete) schoolCheckFilterIncomplete.addEventListener('change', applySchoolCheckFilters);
+        if (schoolCheckFilterSuspicious) schoolCheckFilterSuspicious.addEventListener('change', applySchoolCheckFilters);
+        if (schoolCheckKecamatan) schoolCheckKecamatan.addEventListener('change', applySchoolCheckFilters);
+        if (schoolCheckReset) {
+            schoolCheckReset.addEventListener('click', function () {
+                if (schoolCheckSearch) schoolCheckSearch.value = '';
+                if (schoolCheckStatus) schoolCheckStatus.value = 'negeri';
+                if (schoolCheckFilterUnclaimed) schoolCheckFilterUnclaimed.checked = false;
+                if (schoolCheckFilterNoRooms) schoolCheckFilterNoRooms.checked = false;
+                if (schoolCheckFilterIncomplete) schoolCheckFilterIncomplete.checked = false;
+                if (schoolCheckFilterSuspicious) schoolCheckFilterSuspicious.checked = false;
+                if (schoolCheckKecamatan) schoolCheckKecamatan.value = '';
+                applySchoolCheckFilters();
+            });
+        }
+
+        applySchoolCheckFilters();
 
         // ===== Room Search Filter =====
         const searchInput = document.getElementById('roomSearch');
