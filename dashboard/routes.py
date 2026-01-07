@@ -19,6 +19,8 @@ from flask import (
     url_for,
     session,
     current_app,
+    abort,
+    send_from_directory,
 )
 from werkzeug.datastructures import MultiDict
 
@@ -1086,3 +1088,39 @@ def doc_email_setup() -> Response:
 @main_bp.route("/documentation/tutorial-portal")
 def doc_tutorial_portal() -> Response:
     return render_template("documentation/tutorial_ppt.html")
+
+
+GUIDE_BOOK_FILES = {
+    "Role Admin.pdf",
+    "Role Sekolah.pdf",
+    "Role Koordinator.pdf",
+    "Role Tim Penilai.pdf",
+}
+
+
+@main_bp.route("/documentation/guide-book/<path:filename>")
+def doc_guide_book(filename: str) -> Response:
+    if filename not in GUIDE_BOOK_FILES:
+        abort(404)
+    guide_book_dir = Path(__file__).resolve().parent / "templates" / "documentation" / "Guide_Book"
+    return send_from_directory(guide_book_dir, filename)
+
+
+@main_bp.route("/documentation/tutorial-portal/admin")
+def doc_tutorial_role_admin() -> Response:
+    return render_template("documentation/tutorial_role_admin.html")
+
+
+@main_bp.route("/documentation/tutorial-portal/sekolah")
+def doc_tutorial_role_sekolah() -> Response:
+    return render_template("documentation/tutorial_role_sekolah.html")
+
+
+@main_bp.route("/documentation/tutorial-portal/koordinator")
+def doc_tutorial_role_koordinator() -> Response:
+    return render_template("documentation/tutorial_role_koordinator.html")
+
+
+@main_bp.route("/documentation/tutorial-portal/tim-penilai")
+def doc_tutorial_role_tim_penilai() -> Response:
+    return render_template("documentation/tutorial_role_tim_penilai.html")

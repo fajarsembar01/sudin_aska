@@ -74,6 +74,24 @@
             box-shadow: var(--shadow-small);
         }
 
+        .docs-submenu-row {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.35rem;
+            margin-top: 0.35rem;
+        }
+
+        .docs-submenu-row .nav-link {
+            font-size: 0.92rem;
+            padding: 0.4rem 0.75rem;
+            margin-bottom: 0;
+        }
+
+        .docs-submenu-title {
+            cursor: default;
+        }
+
         /* Mobile Adjustments */
         @media (max-width: 991.98px) {
             .docs-sidebar {
@@ -96,6 +114,14 @@
 <body>
     <!-- Reusable Macros for Sidebar Content -->
     {% macro sidebar_nav() %}
+    {% set tutorial_endpoints = [
+        'main.doc_tutorial_portal',
+        'main.doc_tutorial_role_admin',
+        'main.doc_tutorial_role_sekolah',
+        'main.doc_tutorial_role_koordinator',
+        'main.doc_tutorial_role_tim_penilai'
+    ] %}
+    {% set tutorial_active = request.endpoint in tutorial_endpoints %}
     <li class="nav-item">
         <a href="{{ url_for('main.doc_email_setup') }}"
             class="nav-link {% if request.endpoint == 'main.doc_email_setup' %}active{% endif %}">
@@ -104,11 +130,28 @@
         </a>
     </li>
     <li class="nav-item">
-        <a href="{{ url_for('main.doc_tutorial_portal') }}"
-            class="nav-link {% if request.endpoint == 'main.doc_tutorial_portal' %}active{% endif %}">
-            <i class="bi bi-book me-2"></i>
-            Tutorial Portal ASKA
-        </a>
+        <div class="docs-submenu-row">
+            <span class="nav-link docs-submenu-title {% if tutorial_active %}active{% endif %}">
+                <i class="bi bi-book me-2"></i>
+                Tutorial Portal ASKA
+            </span>
+            <a href="{{ url_for('main.doc_tutorial_role_admin') }}"
+                class="nav-link {% if request.endpoint == 'main.doc_tutorial_role_admin' %}active{% endif %}">
+                Role Admin
+            </a>
+            <a href="{{ url_for('main.doc_tutorial_role_sekolah') }}"
+                class="nav-link {% if request.endpoint == 'main.doc_tutorial_role_sekolah' %}active{% endif %}">
+                Role Sekolah
+            </a>
+            <a href="{{ url_for('main.doc_tutorial_role_koordinator') }}"
+                class="nav-link {% if request.endpoint == 'main.doc_tutorial_role_koordinator' %}active{% endif %}">
+                Role Koordinator
+            </a>
+            <a href="{{ url_for('main.doc_tutorial_role_tim_penilai') }}"
+                class="nav-link {% if request.endpoint == 'main.doc_tutorial_role_tim_penilai' %}active{% endif %}">
+                Role Tim Penilai
+            </a>
+        </div>
     </li>
     {% endmacro %}
 

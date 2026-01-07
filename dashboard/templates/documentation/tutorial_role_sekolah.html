@@ -1,0 +1,28 @@
+{% extends "documentation/layout.html" %}
+
+{% block title %}Tutorial Portal ASKA - Role Sekolah{% endblock %}
+
+{% block doc_content %}
+<article class="docs-article">
+    <header class="mb-5 border-bottom pb-4" style="border-color: var(--border-soft) !important;">
+        <h1 class="fw-bold mb-3" style="color: var(--text-primary);">Tutorial Portal ASKA - Role Sekolah</h1>
+        <p class="lead mb-0" style="color: var(--text-secondary);">Panduan khusus untuk akun Sekolah.</p>
+    </header>
+
+    <div class="doc-body" style="color: var(--text-secondary);">
+        <div class="card border-0 shadow-sm" style="background-color: var(--bg-subtle);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-folder2-open fs-4 me-2 text-warning"></i>
+                    <h2 class="h5 mb-0" style="color: var(--text-primary);">Manual User Guide</h2>
+                </div>
+                <a class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener"
+                    href="{{ url_for('main.doc_guide_book', filename='Role Sekolah.pdf') }}">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>Role Sekolah.pdf
+                </a>
+                <p class="small text-muted mt-2 mb-0">Klik file untuk membuka panduan PDF.</p>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}
