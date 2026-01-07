@@ -136,6 +136,19 @@ a {
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.3);
 }
 
+.user-avatar--image {
+    padding: 0.15rem;
+    background: var(--bg-subtle);
+}
+
+.user-avatar--image img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
 html[data-theme="dark"] .user-avatar {
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.15);
 }
@@ -273,6 +286,151 @@ html[data-theme="dark"] .user-dropdown-logout:hover {
 .dropdown-menu.user-dropdown .dropdown-divider {
     margin: 0.75rem 0;
     border-color: var(--border-soft);
+}
+
+@media (max-width: 576px) {
+    .navbar .navbar-collapse {
+        margin-top: 0.75rem;
+    }
+
+    .navbar .navbar-collapse.show,
+    .navbar .navbar-collapse.collapsing {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-soft);
+        border-radius: 1rem;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .navbar .navbar-collapse .navbar-nav {
+        order: 2;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        margin-bottom: 0;
+    }
+
+    .navbar .user-menu {
+        width: 100%;
+    }
+
+    .navbar .user-nav-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+        order: 1;
+    }
+
+    .navbar .user-nav-actions .form-check {
+        width: auto;
+        align-self: flex-end;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 0;
+        border-radius: 999px;
+        background-color: transparent;
+        border: 0;
+    }
+
+    .navbar .user-menu .user-menu-toggle {
+        width: 100%;
+        padding: 0.45rem 0.65rem;
+        border-radius: 0.85rem;
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-soft);
+    }
+
+    .navbar .user-menu .user-menu-arrow {
+        display: none;
+    }
+
+    .navbar .user-menu .user-menu-toggle .user-name {
+        max-width: 60vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.9rem;
+    }
+
+    .navbar .user-menu .dropdown-menu {
+        position: static !important;
+        inset: auto !important;
+        transform: none !important;
+        width: 100%;
+        min-width: 100%;
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 0.85rem;
+        box-shadow: none;
+    }
+
+    .navbar .navbar-nav .nav-link {
+        width: 100%;
+        padding: 0.55rem 0.75rem;
+        border-radius: 0.75rem;
+        background-color: var(--bg-subtle);
+    }
+
+    .navbar .navbar-nav .nav-link.active {
+        background-color: rgba(13, 110, 253, 0.12);
+    }
+
+    html[data-theme="dark"] .navbar .navbar-nav .nav-link.active {
+        background-color: rgba(79, 139, 255, 0.18);
+    }
+
+    .navbar .navbar-nav .dropdown-menu {
+        position: static !important;
+        inset: auto !important;
+        transform: none !important;
+        width: 100%;
+        min-width: 100%;
+        margin: 0.35rem 0 0;
+        padding: 0.4rem;
+        border-radius: 0.75rem;
+        box-shadow: none;
+    }
+
+    .navbar .user-menu .dropdown-item,
+    .navbar .user-menu .user-dropdown-option {
+        padding: 0.6rem 0.75rem;
+    }
+
+    .navbar .navbar-nav .dropdown-item {
+        padding: 0.5rem 0.6rem;
+        border-radius: 0.6rem;
+    }
+
+    .navbar .user-menu .dropdown-divider {
+        margin: 0.4rem 0;
+    }
+
+    .navbar .navbar-nav .dropdown-divider {
+        margin: 0.35rem 0;
+    }
+
+    .navbar .user-menu .user-dropdown-header {
+        margin-bottom: 0.5rem;
+        gap: 0.5rem;
+    }
+
+    .navbar .user-menu .user-dropdown-icon,
+    .navbar .user-menu .option-icon {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.6rem;
+        font-size: 1rem;
+    }
+
+    .navbar .user-menu .user-dropdown-meta .user-dropdown-subtitle,
+    .navbar .user-menu .option-description {
+        font-size: 0.75rem;
+    }
 }
 
 .theme-toggle-label {
