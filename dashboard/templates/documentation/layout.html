@@ -89,7 +89,13 @@
         }
 
         .docs-submenu-title {
-            cursor: default;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .docs-submenu-title:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-subtle);
         }
 
         /* Mobile Adjustments */
@@ -131,10 +137,11 @@
     </li>
     <li class="nav-item">
         <div class="docs-submenu-row">
-            <span class="nav-link docs-submenu-title {% if tutorial_active %}active{% endif %}">
+            <a href="{{ url_for('main.doc_tutorial_portal') }}"
+                class="nav-link docs-submenu-title {% if request.endpoint == 'main.doc_tutorial_portal' %}active{% endif %}">
                 <i class="bi bi-book me-2"></i>
                 Tutorial Portal ASKA
-            </span>
+            </a>
             <a href="{{ url_for('main.doc_tutorial_role_admin') }}"
                 class="nav-link {% if request.endpoint == 'main.doc_tutorial_role_admin' %}active{% endif %}">
                 Role Admin
