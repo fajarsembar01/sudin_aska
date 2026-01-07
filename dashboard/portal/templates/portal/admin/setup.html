@@ -1068,19 +1068,131 @@
                                             {% endif %}
                                         </td>
                                         <td class="text-end">
-                                            {% if s.operator_wa %}
-                                            <a class="btn btn-success btn-sm"
-                                                href="{{ s.operator_wa }}" target="_blank" rel="noopener">
-                                                <i class="bi bi-whatsapp me-1"></i>Hubungi
-                                            </a>
-                                            {% else %}
-                                            <button class="btn btn-outline-secondary btn-sm" disabled>Hubungi</button>
-                                            {% endif %}
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button type="button" class="btn btn-outline-primary school-check-detail-btn"
+                                                    data-bs-toggle="modal" data-bs-target="#schoolCheckDetailModal"
+                                                    data-school='{{ s | tojson | e }}' title="Lihat data sekolah"
+                                                    aria-label="Lihat data sekolah">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                {% if s.operator_wa %}
+                                                <a class="btn btn-success" href="{{ s.operator_wa }}"
+                                                    target="_blank" rel="noopener" title="Hubungi via WhatsApp"
+                                                    aria-label="Hubungi via WhatsApp">
+                                                    <i class="bi bi-whatsapp"></i>
+                                                </a>
+                                                {% else %}
+                                                <button class="btn btn-outline-secondary" disabled
+                                                    title="Nomor WhatsApp belum tersedia"
+                                                    aria-label="Nomor WhatsApp belum tersedia">
+                                                    <i class="bi bi-whatsapp"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
                                         </td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
+                        </div>
+                        <div class="modal fade" id="schoolCheckDetailModal" tabindex="-1"
+                            aria-labelledby="schoolCheckDetailLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <div>
+                                            <h5 class="modal-title" id="schoolCheckDetailLabel">Detail Sekolah</h5>
+                                            <div class="small text-muted" id="schoolDetailSubtitle">-</div>
+                                        </div>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row g-3">
+                                            <div class="col-lg-6">
+                                                <h6 class="text-muted mb-2">Info Sekolah</h6>
+                                                <dl class="row small mb-0">
+                                                    <dt class="col-5">Nama</dt>
+                                                    <dd class="col-7" id="schoolDetailName">-</dd>
+                                                    <dt class="col-5">NPSN</dt>
+                                                    <dd class="col-7" id="schoolDetailNpsn">-</dd>
+                                                    <dt class="col-5">Jenjang</dt>
+                                                    <dd class="col-7" id="schoolDetailJenjang">-</dd>
+                                                    <dt class="col-5">Status</dt>
+                                                    <dd class="col-7" id="schoolDetailStatus">-</dd>
+                                                    <dt class="col-5">User</dt>
+                                                    <dd class="col-7" id="schoolDetailClaimed">-</dd>
+                                                    <dt class="col-5">Ruangan</dt>
+                                                    <dd class="col-7" id="schoolDetailRooms">-</dd>
+                                                    <dt class="col-5">Logo</dt>
+                                                    <dd class="col-7">
+                                                        <a href="#" target="_blank" rel="noopener"
+                                                            id="schoolDetailLogo">-</a>
+                                                    </dd>
+                                                </dl>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <h6 class="text-muted mb-2">Lokasi</h6>
+                                                <dl class="row small mb-0">
+                                                    <dt class="col-5">Alamat</dt>
+                                                    <dd class="col-7" id="schoolDetailAlamat">-</dd>
+                                                    <dt class="col-5">Kelurahan</dt>
+                                                    <dd class="col-7" id="schoolDetailKelurahan">-</dd>
+                                                    <dt class="col-5">Kecamatan</dt>
+                                                    <dd class="col-7" id="schoolDetailKecamatan">-</dd>
+                                                    <dt class="col-5">RT/RW</dt>
+                                                    <dd class="col-7" id="schoolDetailRtRw">-</dd>
+                                                    <dt class="col-5">Kode Pos</dt>
+                                                    <dd class="col-7" id="schoolDetailPostalCode">-</dd>
+                                                </dl>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <h6 class="text-muted mb-2">Kontak</h6>
+                                                <dl class="row small mb-0">
+                                                    <dt class="col-5">Operator</dt>
+                                                    <dd class="col-7" id="schoolDetailOperatorPhone">-</dd>
+                                                    <dt class="col-5">Telepon</dt>
+                                                    <dd class="col-7" id="schoolDetailSchoolPhone">-</dd>
+                                                    <dt class="col-5">Email CS</dt>
+                                                    <dd class="col-7" id="schoolDetailCsEmail">-</dd>
+                                                    <dt class="col-5">GMaps</dt>
+                                                    <dd class="col-7">
+                                                        <a href="#" target="_blank" rel="noopener"
+                                                            id="schoolDetailGmaps">-</a>
+                                                    </dd>
+                                                </dl>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <h6 class="text-muted mb-2">Data Statistik</h6>
+                                                <dl class="row small mb-0">
+                                                    <dt class="col-5">Siswa</dt>
+                                                    <dd class="col-7" id="schoolDetailStudentCount">-</dd>
+                                                    <dt class="col-5">Siswa Inklusi</dt>
+                                                    <dd class="col-7" id="schoolDetailInclusionCount">-</dd>
+                                                    <dt class="col-5">Rombel</dt>
+                                                    <dd class="col-7" id="schoolDetailRombelCount">-</dd>
+                                                    <dt class="col-5">Guru</dt>
+                                                    <dd class="col-7" id="schoolDetailTeacherCount">-</dd>
+                                                    <dt class="col-5">Staff</dt>
+                                                    <dd class="col-7" id="schoolDetailStaffCount">-</dd>
+                                                    <dt class="col-5">Bangku Kosong</dt>
+                                                    <dd class="col-7" id="schoolDetailEmptySeats">-</dd>
+                                                    <dt class="col-5">Bangku/Kelas</dt>
+                                                    <dd class="col-7" id="schoolDetailEmptySeatsByGrade">-</dd>
+                                                    <dt class="col-5">Jumlah User</dt>
+                                                    <dd class="col-7" id="schoolDetailUserCount">-</dd>
+                                                    <dt class="col-5">Jumlah Ruang</dt>
+                                                    <dd class="col-7" id="schoolDetailRoomCount">-</dd>
+                                                </dl>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary btn-sm"
+                                            data-bs-dismiss="modal">Tutup</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         {% else %}
                         <p class="text-muted mb-0">Belum ada data sekolah.</p>
@@ -2150,6 +2262,103 @@
         }
 
         applySchoolCheckFilters();
+
+        const schoolDetailModal = document.getElementById('schoolCheckDetailModal');
+        if (schoolDetailModal) {
+            const setText = (id, value) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (value === null || value === undefined || value === '') {
+                    el.textContent = '-';
+                } else {
+                    el.textContent = value;
+                }
+            };
+            const setLink = (id, url, label) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (!url) {
+                    el.textContent = '-';
+                    el.removeAttribute('href');
+                    el.setAttribute('aria-disabled', 'true');
+                    el.classList.add('text-muted');
+                    return;
+                }
+                el.textContent = label || url;
+                el.href = url;
+                el.removeAttribute('aria-disabled');
+                el.classList.remove('text-muted');
+            };
+            const formatEmptyByGrade = (raw) => {
+                if (!raw) return '-';
+                let data = raw;
+                if (typeof data === 'string') {
+                    try {
+                        data = JSON.parse(data);
+                    } catch (err) {
+                        return '-';
+                    }
+                }
+                if (!data || typeof data !== 'object') return '-';
+                const entries = Object.entries(data).filter(([_, val]) => val !== null && val !== undefined && val !== '');
+                if (!entries.length) return '-';
+                entries.sort((a, b) => parseInt(a[0], 10) - parseInt(b[0], 10));
+                return entries.map(([grade, val]) => `Kelas ${grade}: ${val}`).join(', ');
+            };
+
+            schoolDetailModal.addEventListener('show.bs.modal', function (event) {
+                const trigger = event.relatedTarget;
+                if (!trigger) return;
+                const raw = trigger.getAttribute('data-school');
+                let school = {};
+                if (raw) {
+                    try {
+                        school = JSON.parse(raw);
+                    } catch (err) {
+                        school = {};
+                    }
+                }
+                const meta = school.meta || {};
+                const subtitle = [];
+                if (school.npsn) subtitle.push(school.npsn);
+                if (school.jenjang) subtitle.push(school.jenjang);
+                document.getElementById('schoolDetailSubtitle').textContent = subtitle.join(' • ') || '-';
+
+                setText('schoolDetailName', school.name);
+                setText('schoolDetailNpsn', school.npsn);
+                setText('schoolDetailJenjang', school.jenjang);
+                setText('schoolDetailStatus', school.status);
+                setText('schoolDetailClaimed', school.is_claimed ? 'Ada user' : 'No user');
+                setText('schoolDetailRooms', school.has_rooms ? 'Sudah set' : 'Belum set');
+
+                setLink('schoolDetailLogo', school.logo_url, 'Lihat logo');
+
+                setText('schoolDetailAlamat', school.alamat);
+                setText('schoolDetailKelurahan', school.kelurahan_name);
+                setText('schoolDetailKecamatan', school.kecamatan_name);
+
+                const rt = meta.rt || '';
+                const rw = meta.rw || '';
+                const rtRw = rt || rw ? `RT ${rt || '-'} / RW ${rw || '-'}` : '';
+                setText('schoolDetailRtRw', rtRw);
+                setText('schoolDetailPostalCode', meta.postal_code);
+
+                setText('schoolDetailOperatorPhone', meta.coordinator_phone);
+                setText('schoolDetailSchoolPhone', meta.school_phone);
+                setText('schoolDetailCsEmail', meta.cs_email);
+                setLink('schoolDetailGmaps', meta.gmaps_url, 'Buka Maps');
+
+                setText('schoolDetailStudentCount', meta.student_count);
+                setText('schoolDetailInclusionCount', meta.inclusion_student_count);
+                setText('schoolDetailRombelCount', meta.rombel_count);
+                setText('schoolDetailTeacherCount', meta.teacher_count);
+                setText('schoolDetailStaffCount', meta.staff_count);
+                setText('schoolDetailEmptySeats', meta.empty_seats);
+                setText('schoolDetailEmptySeatsByGrade', formatEmptyByGrade(meta.empty_seats_by_grade));
+                setText('schoolDetailUserCount', school.school_user_count);
+                setText('schoolDetailRoomCount', school.room_count);
+            });
+        }
 
         // ===== Room Search Filter =====
         const searchInput = document.getElementById('roomSearch');
