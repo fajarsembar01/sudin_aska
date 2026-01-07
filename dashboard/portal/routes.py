@@ -245,6 +245,13 @@ def _compute_missing_profile_fields(school: dict | None) -> list[str]:
     if not school:
         return ["school"]
     meta = school.get("metadata") or {}
+    if isinstance(meta, str):
+        try:
+            meta = json.loads(meta)
+        except Exception:
+            meta = {}
+    if not isinstance(meta, dict):
+        meta = {}
     expected_grades = _expected_grade_levels(school.get("jenjang") if school else None)
     required_keys = {
         "gmaps_url": "Link Google Maps",
