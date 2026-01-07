@@ -240,11 +240,26 @@ def _fetch_user_kecamatan_name(user_id: int) -> str | None:
     return None
 
 
+def _normalize_metadata(meta: object | None) -> dict:
+    """Coerce metadata to a dict, falling back to empty dict on bad data."""
+    if not meta:
+        return {}
+    if isinstance(meta, dict):
+        return meta
+    if isinstance(meta, str):
+        try:
+            parsed = json.loads(meta)
+        except Exception:
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
+    return {}
+
+
 def _compute_missing_profile_fields(school: dict | None) -> list[str]:
     """Check required fields for sekolah profile completeness."""
     if not school:
         return ["school"]
-    meta = school.get("metadata") or {}
+    meta = _normalize_metadata(school.get("metadata"))
     expected_grades = _expected_grade_levels(school.get("jenjang") if school else None)
     required_keys = {
         "gmaps_url": "Link Google Maps",
@@ -282,6 +297,58 @@ def _compute_missing_profile_fields(school: dict | None) -> list[str]:
         if meta.get("empty_seats") is None or meta.get("empty_seats") == "":
             missing.append("Jumlah bangku kosong")
     return missing
+
+
+def _detect_suspicious_profile_data(school: dict | None) -> list[str]:
+    """Return reasons when school profile data looks inconsistent."""
+    if not school:
+        return []
+    meta = _normalize_metadata(school.get("metadata"))
+
+    def _to_int(val):
+        try:
+            return int(val)
+        except (TypeError, ValueError):
+            return None
+
+    reasons = []
+    student_count = _to_int(meta.get("student_count"))
+    inclusion_count = _to_int(meta.get("inclusion_student_count"))
+    rombel_count = _to_int(meta.get("rombel_count"))
+    teacher_count = _to_int(meta.get("teacher_count"))
+    staff_count = _to_int(meta.get("staff_count"))
+    empty_seats = _to_int(meta.get("empty_seats"))
+
+    empty_by_grade = meta.get("empty_seats_by_grade") or {}
+    if isinstance(empty_by_grade, str):
+        try:
+            empty_by_grade = json.loads(empty_by_grade)
+        except Exception:
+            empty_by_grade = {}
+    empty_by_grade_sum = None
+    if isinstance(empty_by_grade, dict) and empty_by_grade:
+        total = 0
+        for v in empty_by_grade.values():
+            val = _to_int(v)
+            if val is not None:
+                total += val
+        empty_by_grade_sum = total
+
+    if student_count is not None and inclusion_count is not None and inclusion_count > student_count:
+        reasons.append("Siswa inklusi > total siswa")
+    if student_count is not None and rombel_count is not None and rombel_count > student_count:
+        reasons.append("Rombel > total siswa")
+    if student_count is not None and empty_seats is not None and empty_seats > student_count:
+        reasons.append("Bangku kosong > total siswa")
+    if student_count is not None and empty_by_grade_sum is not None and empty_by_grade_sum > student_count:
+        reasons.append("Bangku kosong per kelas > total siswa")
+    if student_count is not None and student_count > 0:
+        if teacher_count == 0:
+            reasons.append("Jumlah guru 0")
+        if staff_count == 0:
+            reasons.append("Jumlah tendik 0")
+
+    return reasons
 
 
 def _expected_grade_levels(jenjang: str | None) -> list[int]:
@@ -2069,7 +2136,10 @@ def sekolah_profile() -> Response:
             flash("Profil sekolah berhasil diperbarui.", "success")
             return redirect(url_for("portal.sekolah_profile"))
 
-    meta = {**(school.get("metadata") or {}), **(_build_profile_payload(request.form) if request.method == "POST" else {})}
+    meta = {
+        **_normalize_metadata(school.get("metadata")),
+        **(_build_profile_payload(request.form) if request.method == "POST" else {}),
+    }
     kecamatan_list = list_kecamatan()
     kelurahan_list = list_kelurahan()
     return render_template(
@@ -2340,6 +2410,113 @@ def admin_setup() -> Response:
     schools = list_portal_schools(active_only=False)
     kecamatan_list = list_kecamatan()
     kelurahan_list = list_kelurahan()
+    school_monitor_items = []
+    school_monitor_attention_count = 0
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                s.id,
+                s.npsn,
+                s.name,
+                s.jenjang,
+                s.alamat,
+                s.status,
+                s.kelurahan_id,
+                s.user_id,
+                s.logo_url,
+                s.metadata,
+                s.active,
+                s.created_at,
+                l.name as kelurahan_name,
+                k.name as kecamatan_name,
+                COALESCE(uc.user_count, 0) as school_user_count,
+                COALESCE(rc.room_count, 0) as room_count
+            FROM portal_schools s
+            LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            LEFT JOIN (
+                SELECT school_id, COUNT(*) as user_count
+                FROM dashboard_users
+                WHERE school_id IS NOT NULL AND role = 'sekolah'
+                GROUP BY school_id
+            ) uc ON uc.school_id = s.id
+            LEFT JOIN (
+                SELECT school_id, COUNT(*) as room_count
+                FROM portal_school_rooms
+                GROUP BY school_id
+            ) rc ON rc.school_id = s.id
+            ORDER BY s.name
+            """
+        )
+        monitor_rows = cur.fetchall()
+
+    for row in monitor_rows:
+        school = dict(row)
+        meta = _normalize_metadata(school.get("metadata"))
+        school["metadata"] = meta
+
+        missing_fields = _compute_missing_profile_fields(school)
+        suspicious_reasons = _detect_suspicious_profile_data(school)
+        is_claimed = (school.get("school_user_count") or 0) > 0
+        has_rooms = (school.get("room_count") or 0) > 0
+
+        operator_phone_raw = meta.get("coordinator_phone") or meta.get("school_phone") or ""
+        operator_phone_display = str(operator_phone_raw).strip()
+        operator_phone = _sanitize_phone(operator_phone_display)
+        wa_link = None
+        if operator_phone:
+            msg = (
+                f"Halo, kami dari admin ingin menindaklanjuti data sekolah "
+                f"{school.get('name')} (NPSN {school.get('npsn')})."
+            )
+            wa_link = f"https://api.whatsapp.com/send?phone={operator_phone}&text={quote_plus(msg)}"
+
+        missing_preview = ""
+        if missing_fields:
+            preview_items = missing_fields[:3]
+            missing_preview = ", ".join(preview_items)
+            if len(missing_fields) > 3:
+                missing_preview = f"{missing_preview} +{len(missing_fields) - 3} lainnya"
+
+        suspicious_preview = ""
+        if suspicious_reasons:
+            preview_items = suspicious_reasons[:2]
+            suspicious_preview = ", ".join(preview_items)
+            if len(suspicious_reasons) > 2:
+                suspicious_preview = f"{suspicious_preview} +{len(suspicious_reasons) - 2} lainnya"
+
+        needs_attention = (not is_claimed) or (not has_rooms) or bool(missing_fields) or bool(suspicious_reasons)
+        if needs_attention:
+            school_monitor_attention_count += 1
+
+        school_monitor_items.append(
+            {
+                "id": school.get("id"),
+                "npsn": school.get("npsn"),
+                "name": school.get("name"),
+                "jenjang": school.get("jenjang"),
+                "status": school.get("status"),
+                "alamat": school.get("alamat"),
+                "kelurahan_name": school.get("kelurahan_name"),
+                "kecamatan_name": school.get("kecamatan_name"),
+                "logo_url": school.get("logo_url"),
+                "school_user_count": school.get("school_user_count", 0),
+                "room_count": school.get("room_count", 0),
+                "meta": meta,
+                "is_claimed": is_claimed,
+                "has_rooms": has_rooms,
+                "is_incomplete": bool(missing_fields),
+                "is_suspicious": bool(suspicious_reasons),
+                "missing_preview": missing_preview,
+                "missing_fields": missing_fields,
+                "suspicious_preview": suspicious_preview,
+                "suspicious_reasons": suspicious_reasons,
+                "operator_phone": operator_phone_display,
+                "operator_wa": wa_link,
+            }
+        )
 
     def _room_grade(name: str) -> int | None:
         m = re.search(r"\bKelas\s+(\d+)", name or "", flags=re.IGNORECASE)
@@ -2388,6 +2565,8 @@ def admin_setup() -> Response:
         rooms=rooms,
         base_rooms=base_rooms,
         schools=schools,
+        school_monitor_items=school_monitor_items,
+        school_monitor_attention_count=school_monitor_attention_count,
         kecamatan_list=kecamatan_list,
         kelurahan_list=kelurahan_list,
         activity_logs=activity_logs,
