@@ -240,18 +240,26 @@ def _fetch_user_kecamatan_name(user_id: int) -> str | None:
     return None
 
 
+def _normalize_metadata(meta: object | None) -> dict:
+    """Coerce metadata to a dict, falling back to empty dict on bad data."""
+    if not meta:
+        return {}
+    if isinstance(meta, dict):
+        return meta
+    if isinstance(meta, str):
+        try:
+            parsed = json.loads(meta)
+        except Exception:
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
+    return {}
+
+
 def _compute_missing_profile_fields(school: dict | None) -> list[str]:
     """Check required fields for sekolah profile completeness."""
     if not school:
         return ["school"]
-    meta = school.get("metadata") or {}
-    if isinstance(meta, str):
-        try:
-            meta = json.loads(meta)
-        except Exception:
-            meta = {}
-    if not isinstance(meta, dict):
-        meta = {}
+    meta = _normalize_metadata(school.get("metadata"))
     expected_grades = _expected_grade_levels(school.get("jenjang") if school else None)
     required_keys = {
         "gmaps_url": "Link Google Maps",
@@ -295,12 +303,7 @@ def _detect_suspicious_profile_data(school: dict | None) -> list[str]:
     """Return reasons when school profile data looks inconsistent."""
     if not school:
         return []
-    meta = school.get("metadata") or {}
-    if isinstance(meta, str):
-        try:
-            meta = json.loads(meta)
-        except Exception:
-            meta = {}
+    meta = _normalize_metadata(school.get("metadata"))
 
     def _to_int(val):
         try:
@@ -2133,7 +2136,10 @@ def sekolah_profile() -> Response:
             flash("Profil sekolah berhasil diperbarui.", "success")
             return redirect(url_for("portal.sekolah_profile"))
 
-    meta = {**(school.get("metadata") or {}), **(_build_profile_payload(request.form) if request.method == "POST" else {})}
+    meta = {
+        **_normalize_metadata(school.get("metadata")),
+        **(_build_profile_payload(request.form) if request.method == "POST" else {}),
+    }
     kecamatan_list = list_kecamatan()
     kelurahan_list = list_kelurahan()
     return render_template(
@@ -2448,12 +2454,7 @@ def admin_setup() -> Response:
 
     for row in monitor_rows:
         school = dict(row)
-        meta = school.get("metadata") or {}
-        if isinstance(meta, str):
-            try:
-                meta = json.loads(meta)
-            except Exception:
-                meta = {}
+        meta = _normalize_metadata(school.get("metadata"))
         school["metadata"] = meta
 
         missing_fields = _compute_missing_profile_fields(school)
