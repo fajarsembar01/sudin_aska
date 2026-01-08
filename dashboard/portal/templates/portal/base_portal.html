@@ -706,7 +706,8 @@
                         <button class="user-menu-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown">
                             {% if current_user.role == 'sekolah' and user_school and user_school.logo_url %}
                             <span class="user-avatar user-avatar--image">
-                                <img src="{{ user_school.logo_url }}" alt="Logo sekolah">
+                                <img src="{{ user_school.logo_url }}" alt="Logo sekolah" width="38" height="38"
+                                    style="border-radius: 50%; object-fit: cover;">
                             </span>
                             {% else %}
                             <span class="user-avatar">{{
