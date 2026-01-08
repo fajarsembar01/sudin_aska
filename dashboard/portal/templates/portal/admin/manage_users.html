@@ -154,6 +154,13 @@
                                 {% endif %}
                             </button>
                         </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="history-tab" data-bs-toggle="tab"
+                                data-bs-target="#history-pane" type="button" role="tab" aria-controls="history-pane"
+                                aria-selected="false">
+                                History
+                            </button>
+                        </li>
                     </ul>
                 </div>
 
@@ -327,6 +334,13 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="history-pane" role="tabpanel" aria-labelledby="history-tab"
+                        tabindex="0">
+                        <h6 class="text-muted mb-3 small">Aktivitas User Terakhir ({{ activity_logs|length }})</h6>
+                        {% set empty_text = "Belum ada aktivitas user." %}
+                        {% include 'portal/admin/_activity_log_table.html' %}
                     </div>
                 </div>
             </div>

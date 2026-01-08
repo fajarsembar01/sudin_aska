@@ -222,6 +222,18 @@
     </div>
 </div>
 
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="fw-semibold">
+                <i class="bi bi-clock-history me-2"></i>Aktivitas Tim Monev Terakhir ({{ activity_logs|length }})
+            </div>
+        </div>
+        {% set empty_text = "Belum ada aktivitas tim monev." %}
+        {% include 'portal/admin/_activity_log_table.html' %}
+    </div>
+</div>
+
 <!-- Create Team Modal -->
 <div class="modal fade" id="createTeamModal" tabindex="-1" aria-labelledby="createTeamModalLabel" aria-hidden="true">
     <div class="modal-dialog">

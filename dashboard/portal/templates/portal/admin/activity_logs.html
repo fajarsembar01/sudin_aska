@@ -1,0 +1,152 @@
+{% extends 'portal/base_portal.html' %}
+{% set page_title = "Log Aktivitas" %}
+
+{% block portal_content %}
+<section class="page-header">
+    <div class="page-title-group">
+        <span class="icon-badge feature-icon text-primary">
+            <i class="bi bi-clock-history"></i>
+        </span>
+        <div>
+            <h1 class="h4 fw-bold page-title mb-0">Log Aktivitas</h1>
+            <p class="page-subtitle">Rekap aktivitas CRUD admin di seluruh modul portal.</p>
+        </div>
+    </div>
+</section>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+            <div class="input-group" style="max-width: 360px;">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" id="logSearch" placeholder="Cari user, target, detail..."
+                    autocomplete="off">
+            </div>
+            <div class="text-muted small">Menampilkan {{ activity_logs|length }} log terbaru</div>
+        </div>
+        {% set table_id = "activityLogTable" %}
+        {% set include_no_results_row = true %}
+        {% set show_filters = true %}
+        {% include 'portal/admin/_activity_log_table.html' %}
+    </div>
+</div>
+
+<script>
+    (function () {
+        var searchInput = document.getElementById('logSearch');
+        var table = document.getElementById('activityLogTable');
+        var emptyRow = document.getElementById('noLogResults');
+        if (!searchInput || !table) return;
+        var rows = Array.from(table.querySelectorAll('tbody tr[data-search]'));
+        var filters = {
+            user: '',
+            action: '',
+            target: '',
+            name: ''
+        };
+
+        function sortValues(values, order) {
+            if (!order || !order.length) {
+                return values.sort(function (a, b) {
+                    return a.localeCompare(b, 'id');
+                });
+            }
+            return values.sort(function (a, b) {
+                var ai = order.indexOf(a);
+                var bi = order.indexOf(b);
+                if (ai === -1 && bi === -1) {
+                    return a.localeCompare(b, 'id');
+                }
+                if (ai === -1) return 1;
+                if (bi === -1) return -1;
+                return ai - bi;
+            });
+        }
+
+        function buildMenu(menuId, badgeId, datasetKey, labelAll, order) {
+            var menu = document.getElementById(menuId);
+            var badge = document.getElementById(badgeId);
+            if (!menu) return;
+
+            var values = new Set();
+            rows.forEach(function (row) {
+                var value = row.dataset[datasetKey] || '';
+                if (value) values.add(value);
+            });
+
+            var options = sortValues(Array.from(values), order);
+            menu.innerHTML = '';
+
+            var allItem = document.createElement('a');
+            allItem.className = 'dropdown-item active';
+            allItem.dataset.filterValue = '';
+            allItem.href = '#';
+            allItem.textContent = labelAll || 'Semua';
+            menu.appendChild(allItem);
+
+            options.forEach(function (value) {
+                var item = document.createElement('a');
+                item.className = 'dropdown-item';
+                item.dataset.filterValue = value;
+                item.href = '#';
+                item.textContent = value;
+                menu.appendChild(item);
+            });
+
+            menu.querySelectorAll('.dropdown-item').forEach(function (item) {
+                item.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    var value = this.dataset.filterValue || '';
+                    filters[datasetKey] = value;
+
+                    menu.querySelectorAll('.dropdown-item').forEach(function (el) {
+                        el.classList.remove('active');
+                    });
+                    this.classList.add('active');
+
+                    if (badge) {
+                        if (value) {
+                            badge.textContent = value;
+                            badge.classList.remove('d-none');
+                        } else {
+                            badge.classList.add('d-none');
+                        }
+                    }
+
+                    applyFilters();
+                });
+            });
+        }
+
+        function applyFilter() {
+            var query = (searchInput.value || '').trim().toLowerCase();
+            var visible = 0;
+            rows.forEach(function (row) {
+                var haystack = (row.getAttribute('data-search') || '').toLowerCase();
+                var matchSearch = !query || haystack.indexOf(query) !== -1;
+                var matchUser = !filters.user || row.dataset.user === filters.user;
+                var matchAction = !filters.action || row.dataset.action === filters.action;
+                var matchTarget = !filters.target || row.dataset.target === filters.target;
+                var matchName = !filters.name || row.dataset.name === filters.name;
+                var match = matchSearch && matchUser && matchAction && matchTarget && matchName;
+                row.style.display = match ? '' : 'none';
+                if (match) visible += 1;
+            });
+            if (emptyRow) {
+                emptyRow.style.display = visible ? 'none' : '';
+            }
+        }
+
+        function applyFilters() {
+            applyFilter();
+        }
+
+        buildMenu('logUserFilterMenu', 'logUserFilterBadge', 'user', 'Semua User');
+        buildMenu('logActionFilterMenu', 'logActionFilterBadge', 'action', 'Semua Aksi', ['CREATE', 'UPDATE', 'DELETE']);
+        buildMenu('logTargetFilterMenu', 'logTargetFilterBadge', 'target', 'Semua Target');
+        buildMenu('logNameFilterMenu', 'logNameFilterBadge', 'name', 'Semua Nama');
+
+        searchInput.addEventListener('input', applyFilters);
+    })();
+</script>
+{% endblock %}

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 from datetime import datetime
 
 from ..db_access import get_cursor
@@ -1088,10 +1088,19 @@ def log_activity(
             (user_id, action, target_type, target_id, target_name, json.dumps(details) if details else None),
         )
 
-def fetch_activity_logs(limit: int = 50) -> List[Dict[str, Any]]:
+def fetch_activity_logs(
+    limit: int = 50,
+    target_types: Optional[Sequence[str]] = None,
+) -> List[Dict[str, Any]]:
     """Fetch recent activity logs."""
     import json
-    query = """
+    conditions: List[str] = []
+    params: List[Any] = []
+    if target_types:
+        conditions.append("l.target_type = ANY(%s)")
+        params.append(list(target_types))
+    where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+    query = f"""
         SELECT 
             l.id, l.user_id, l.action, l.target_type, l.target_id, l.target_name, 
             l.details, l.created_at,
@@ -1101,11 +1110,13 @@ def fetch_activity_logs(limit: int = 50) -> List[Dict[str, Any]]:
         LEFT JOIN dashboard_users u ON l.user_id = u.id
         LEFT JOIN portal_aspects pa ON l.target_type = 'ASPECT' AND l.target_id = pa.id
         LEFT JOIN portal_rooms r ON pa.room_id = r.id
+        {where_clause}
         ORDER BY l.created_at DESC
         LIMIT %s
     """
     with get_cursor() as cur:
-        cur.execute(query, (limit,))
+        params.append(limit)
+        cur.execute(query, params)
         rows = []
         for row in cur.fetchall():
             d = dict(row)

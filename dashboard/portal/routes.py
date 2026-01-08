@@ -240,6 +240,84 @@ def _fetch_user_kecamatan_name(user_id: int) -> str | None:
     return None
 
 
+def _fetch_dashboard_user_summary(user_id: int) -> dict | None:
+    """Return a minimal dashboard user record for logging context."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, full_name, email, role
+            FROM dashboard_users
+            WHERE id = %s
+            """,
+            (user_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def _fetch_monev_team(team_id: int) -> dict | None:
+    """Return a minimal monev team record for logging context."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT mt.id, mt.name, mt.team_type, mt.kecamatan_id, k.name AS kecamatan_name
+            FROM monev_teams mt
+            LEFT JOIN portal_kecamatan k ON mt.kecamatan_id = k.id
+            WHERE mt.id = %s
+            """,
+            (team_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def _fetch_monev_member(member_id: int) -> dict | None:
+    """Return a minimal monev team member record for logging context."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, team_id, staff_id
+            FROM monev_team_members
+            WHERE id = %s
+            """,
+            (member_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def _fetch_monev_member_by_pair(team_id: int, staff_id: int) -> dict | None:
+    """Return a minimal monev team member record for a team/staff pair."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, team_id, staff_id
+            FROM monev_team_members
+            WHERE team_id = %s AND staff_id = %s
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (team_id, staff_id),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def _fetch_reopen_request(request_id: int) -> dict | None:
+    """Return a minimal reopen request record for logging context."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, assessment_id, staff_id, reason, status, reviewer_note
+            FROM portal_assessment_reopen_requests
+            WHERE id = %s
+            """,
+            (request_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
 def _normalize_metadata(meta: object | None) -> dict:
     """Coerce metadata to a dict, falling back to empty dict on bad data."""
     if not meta:
@@ -1104,6 +1182,7 @@ def save_draft(school_id: int) -> Response:
 def request_reopen(assessment_id: int) -> Response:
     """Staff requests admin approval to reopen a submitted assessment."""
     user = current_user()
+    from .queries import log_activity
     if user.get("role") not in ("admin", "staff"):
         flash("Unauthorized", "danger")
         return redirect(url_for("portal.home"))
@@ -1135,7 +1214,33 @@ def request_reopen(assessment_id: int) -> Response:
 
     reason = request.form.get("reason", "").strip() or None
     try:
-        create_reopen_request(assessment_id, user["id"], reason)
+        request_row = create_reopen_request(assessment_id, user["id"], reason)
+        details = {
+            "assessment_id": assessment_id,
+            "status": "pending",
+        }
+        if assessment.get("school_name"):
+            details["school_name"] = assessment.get("school_name")
+        if assessment.get("npsn"):
+            details["npsn"] = assessment.get("npsn")
+        if assessment.get("assessor_name"):
+            details["staff_name"] = assessment.get("assessor_name")
+        if assessment.get("assessor_email"):
+            details["staff_email"] = assessment.get("assessor_email")
+        if assessment.get("period_id") is not None:
+            details["period_id"] = assessment.get("period_id")
+        if assessment.get("period_name"):
+            details["period_name"] = assessment.get("period_name")
+        if reason:
+            details["reason"] = reason
+        log_activity(
+            user.get("id"),
+            "CREATE",
+            "REOPEN_REQUEST",
+            request_row.get("id") if request_row else None,
+            assessment.get("school_name") or f"Assessment {assessment_id}",
+            details,
+        )
         flash("Permintaan reopen dikirim. Menunggu persetujuan admin.", "success")
     except Exception as e:
         current_app.logger.exception("Error creating reopen request")
@@ -1148,6 +1253,7 @@ def request_reopen(assessment_id: int) -> Response:
 @role_required("admin")
 def approve_reopen(assessment_id: int) -> Response:
     """Admin approves reopen request and reopens assessment."""
+    from .queries import log_activity
     request_id = request.form.get("request_id", type=int)
     note = request.form.get("reviewer_note", "").strip() or None
     if not request_id:
@@ -1162,6 +1268,33 @@ def approve_reopen(assessment_id: int) -> Response:
             reviewer_note=note,
         )
         if ok and reopen_assessment(assessment_id):
+            assessment = get_assessment_by_id(assessment_id)
+            req = _fetch_reopen_request(request_id)
+            details = {
+                "assessment_id": assessment_id,
+                "status": "approved",
+            }
+            if assessment:
+                details["school_name"] = assessment.get("school_name")
+                details["npsn"] = assessment.get("npsn")
+                details["staff_name"] = assessment.get("assessor_name")
+                details["staff_email"] = assessment.get("assessor_email")
+                if assessment.get("period_id") is not None:
+                    details["period_id"] = assessment.get("period_id")
+                if assessment.get("period_name"):
+                    details["period_name"] = assessment.get("period_name")
+            if req and req.get("reason"):
+                details["reason"] = req.get("reason")
+            if note:
+                details["reviewer_note"] = note
+            log_activity(
+                current_user().get("id"),
+                "UPDATE",
+                "REOPEN_REQUEST",
+                request_id,
+                assessment.get("school_name") if assessment else f"Assessment {assessment_id}",
+                details,
+            )
             flash("Reopen disetujui dan penilaian dibuka kembali.", "success")
         else:
             flash("Gagal menyetujui reopen.", "danger")
@@ -1175,6 +1308,7 @@ def approve_reopen(assessment_id: int) -> Response:
 @role_required("admin")
 def reject_reopen(assessment_id: int) -> Response:
     """Admin rejects reopen request."""
+    from .queries import log_activity
     request_id = request.form.get("request_id", type=int)
     note = request.form.get("reviewer_note", "").strip() or None
     if not request_id:
@@ -1189,6 +1323,33 @@ def reject_reopen(assessment_id: int) -> Response:
             reviewer_note=note,
         )
         if ok:
+            assessment = get_assessment_by_id(assessment_id)
+            req = _fetch_reopen_request(request_id)
+            details = {
+                "assessment_id": assessment_id,
+                "status": "rejected",
+            }
+            if assessment:
+                details["school_name"] = assessment.get("school_name")
+                details["npsn"] = assessment.get("npsn")
+                details["staff_name"] = assessment.get("assessor_name")
+                details["staff_email"] = assessment.get("assessor_email")
+                if assessment.get("period_id") is not None:
+                    details["period_id"] = assessment.get("period_id")
+                if assessment.get("period_name"):
+                    details["period_name"] = assessment.get("period_name")
+            if req and req.get("reason"):
+                details["reason"] = req.get("reason")
+            if note:
+                details["reviewer_note"] = note
+            log_activity(
+                current_user().get("id"),
+                "UPDATE",
+                "REOPEN_REQUEST",
+                request_id,
+                assessment.get("school_name") if assessment else f"Assessment {assessment_id}",
+                details,
+            )
             flash("Permintaan reopen ditolak.", "info")
         else:
             flash("Gagal menolak reopen.", "danger")
@@ -2239,6 +2400,7 @@ def coordinator_related_photos() -> Response:
 def create_period_route() -> Response:
     """Create a new period."""
     user = current_user()
+    from .queries import log_activity
     if not can_manage_periods(user):
         flash("Anda tidak memiliki izin mengelola periode.", "warning")
         return redirect(url_for("portal.admin_stats"))
@@ -2251,7 +2413,19 @@ def create_period_route() -> Response:
         flash("Mohon lengkapi data periode.", "warning")
     else:
         try:
-            create_period(name, start_date, end_date, is_active)
+            period = create_period(name, start_date, end_date, is_active)
+            log_activity(
+                user.get("id"),
+                "CREATE",
+                "PERIOD",
+                period.get("id"),
+                period.get("name") or name,
+                {
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "active": bool(is_active),
+                },
+            )
             flash("Periode berhasil dibuat.", "success")
         except Exception as e:
             flash(f"Error: {e}", "danger")
@@ -2264,11 +2438,14 @@ def create_period_route() -> Response:
 def admin_reopen_requests() -> Response:
     """Admin page to view reopen requests."""
     status = request.args.get("status") or None
+    from .queries import fetch_activity_logs
     requests = list_reopen_requests(status=status)
+    activity_logs = fetch_activity_logs(limit=50, target_types=("REOPEN_REQUEST",))
     return render_template(
         "portal/admin/reopen_requests.html",
         requests=requests,
         status_filter=status,
+        activity_logs=activity_logs,
     )
 
 
@@ -2277,6 +2454,7 @@ def admin_reopen_requests() -> Response:
 def admin_periods() -> Response:
     """Admin page to manage assessment periods."""
     user = current_user()
+    from .queries import log_activity, fetch_activity_logs
     if not can_manage_periods(user):
         flash("Anda tidak memiliki izin mengelola periode.", "warning")
         return redirect(url_for("portal.admin_stats"))
@@ -2290,7 +2468,19 @@ def admin_periods() -> Response:
             flash("Nama, tanggal mulai, dan selesai wajib diisi.", "warning")
         else:
             try:
-                create_period(name, start_date, end_date, is_active)
+                period = create_period(name, start_date, end_date, is_active)
+                log_activity(
+                    user.get("id"),
+                    "CREATE",
+                    "PERIOD",
+                    period.get("id"),
+                    period.get("name") or name,
+                    {
+                        "start_date": start_date,
+                        "end_date": end_date,
+                        "active": bool(is_active),
+                    },
+                )
                 flash("Periode baru berhasil dibuat.", "success")
             except Exception as exc:
                 flash(f"Gagal membuat periode: {exc}", "danger")
@@ -2298,11 +2488,13 @@ def admin_periods() -> Response:
 
     periods = list_periods()
     has_active = any(p.get("is_active") for p in periods)
+    activity_logs = fetch_activity_logs(limit=50, target_types=("PERIOD",))
     return render_template(
         "portal/admin/periods.html",
         periods=periods,
         user=user,
         has_active=has_active,
+        activity_logs=activity_logs,
     )
 
 
@@ -2311,11 +2503,21 @@ def admin_periods() -> Response:
 def admin_activate_period(period_id: int) -> Response:
     """Set a period as the active period."""
     user = current_user()
+    from .queries import log_activity
     if not can_manage_periods(user):
         flash("Anda tidak memiliki izin mengelola periode.", "warning")
         return redirect(url_for("portal.admin_stats"))
 
     if set_active_period(period_id):
+        period = get_period_by_id(period_id)
+        log_activity(
+            user.get("id"),
+            "UPDATE",
+            "PERIOD",
+            period_id,
+            period.get("name") if period else f"Period {period_id}",
+            {"active": True},
+        )
         flash("Periode berhasil diaktifkan.", "success")
     else:
         flash("Periode tidak ditemukan.", "danger")
@@ -2327,6 +2529,7 @@ def admin_activate_period(period_id: int) -> Response:
 def admin_edit_period(period_id: int) -> Response:
     """Edit an existing period."""
     user = current_user()
+    from .queries import log_activity
     if not can_manage_periods(user):
         flash("Anda tidak memiliki izin mengelola periode.", "warning")
         return redirect(url_for("portal.admin_stats"))
@@ -2341,6 +2544,18 @@ def admin_edit_period(period_id: int) -> Response:
         try:
             ok = update_period(period_id, name, start_date, end_date, is_active)
             if ok:
+                log_activity(
+                    user.get("id"),
+                    "UPDATE",
+                    "PERIOD",
+                    period_id,
+                    name or f"Period {period_id}",
+                    {
+                        "start_date": start_date,
+                        "end_date": end_date,
+                        "active": bool(is_active),
+                    },
+                )
                 flash("Periode berhasil diperbarui.", "success")
             else:
                 flash("Periode tidak ditemukan.", "danger")
@@ -2355,13 +2570,30 @@ def admin_edit_period(period_id: int) -> Response:
 def admin_delete_period(period_id: int) -> Response:
     """Delete a non-active period."""
     user = current_user()
+    from .queries import log_activity
     if not can_manage_periods(user):
         flash("Anda tidak memiliki izin mengelola periode.", "warning")
         return redirect(url_for("portal.admin_stats"))
 
     try:
+        period = get_period_by_id(period_id)
         ok = delete_period(period_id)
         if ok:
+            details = None
+            if period:
+                details = {
+                    "start_date": str(period.get("start_date")) if period.get("start_date") else None,
+                    "end_date": str(period.get("end_date")) if period.get("end_date") else None,
+                    "active": bool(period.get("is_active")),
+                }
+            log_activity(
+                user.get("id"),
+                "DELETE",
+                "PERIOD",
+                period_id,
+                period.get("name") if period else f"Period {period_id}",
+                details,
+            )
             flash("Periode berhasil dihapus.", "success")
         else:
             flash("Tidak bisa menghapus periode aktif atau tidak ditemukan.", "warning")
@@ -2559,7 +2791,7 @@ def admin_setup() -> Response:
             seen_names.add(name)
     
     from .queries import fetch_activity_logs
-    activity_logs = fetch_activity_logs(limit=50)
+    activity_logs = fetch_activity_logs(limit=50, target_types=("ROOM", "ASPECT"))
     
     return render_template(
         "portal/admin/setup.html",
@@ -2571,6 +2803,23 @@ def admin_setup() -> Response:
         kecamatan_list=kecamatan_list,
         kelurahan_list=kelurahan_list,
         activity_logs=activity_logs,
+    )
+
+
+@portal_bp.route("/admin/activity-logs")
+@role_required("admin")
+def admin_activity_logs() -> Response:
+    """Admin view for consolidated activity logs."""
+    from .queries import fetch_activity_logs
+
+    limit = request.args.get("limit", type=int) or 200
+    limit = max(1, min(limit, 500))
+    activity_logs = fetch_activity_logs(limit=limit)
+
+    return render_template(
+        "portal/admin/activity_logs.html",
+        activity_logs=activity_logs,
+        limit=limit,
     )
 
 
@@ -3446,6 +3695,7 @@ def delete_classroom_route(classroom_id: int) -> Response:
 def admin_manage_staff() -> Response:
     """Admin interface to manage staff-school assignments."""
     user = current_user()
+    from .queries import fetch_activity_logs
     
     # Admin only
     if not can_assign_staff(user):
@@ -3460,6 +3710,10 @@ def admin_manage_staff() -> Response:
     pending_requests = list_assignment_requests(status="pending")
     periods = list_periods()
     active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
+    activity_logs = fetch_activity_logs(
+        limit=50,
+        target_types=("STAFF_ASSIGNMENT", "ASSIGNMENT_REQUEST"),
+    )
     
     return render_template(
         "portal/admin/manage_staff.html",
@@ -3469,6 +3723,7 @@ def admin_manage_staff() -> Response:
         periods=periods,
         active_period_id=active_period_id,
         user=user,
+        activity_logs=activity_logs,
     )
 
 
@@ -3477,6 +3732,7 @@ def admin_manage_staff() -> Response:
 def admin_assign_school() -> Response:
     """Admin assigns a school to a staff member."""
     user = current_user()
+    from .queries import log_activity, fetch_activity_logs
     
     # Admin only
     if not can_assign_staff(user):
@@ -3491,8 +3747,32 @@ def admin_assign_school() -> Response:
         return jsonify({"success": False, "message": "Data tidak lengkap"}), 400
     
     try:
-        assign_staff_to_school(staff_id, school_id, user["id"], notes)
+        assignment = assign_staff_to_school(staff_id, school_id, user["id"], notes)
         assign_assessment(school_id, staff_id, period_id)
+        staff_info = _fetch_dashboard_user_summary(staff_id)
+        school = get_school_by_id(school_id)
+        details = {
+            "staff_id": staff_id,
+            "school_id": school_id,
+        }
+        if period_id:
+            details["period_id"] = period_id
+        if notes:
+            details["notes"] = notes
+        if staff_info:
+            details["staff_name"] = staff_info.get("full_name")
+            details["staff_email"] = staff_info.get("email")
+        if school:
+            details["school_name"] = school.get("name")
+            details["npsn"] = school.get("npsn")
+        log_activity(
+            user.get("id"),
+            "CREATE",
+            "STAFF_ASSIGNMENT",
+            assignment.get("id") if assignment else None,
+            school.get("name") if school else f"School {school_id}",
+            details,
+        )
         flash(f"Sekolah berhasil ditugaskan ke staf.", "success")
         return jsonify({"success": True})
     except Exception as e:
@@ -3505,6 +3785,7 @@ def admin_assign_school() -> Response:
 def admin_assign_school_batch() -> Response:
     """Admin assigns multiple schools to a staff member in one request."""
     user = current_user()
+    from .queries import log_activity
     if not can_assign_staff(user):
         return jsonify({"success": False, "message": "Tidak memiliki izin"}), 403
 
@@ -3539,6 +3820,31 @@ def admin_assign_school_batch() -> Response:
         total_assignments = len(get_staff_assigned_schools(staff_id_int))
     except Exception:
         total_assignments = None
+    
+    if assigned > 0:
+        staff_info = _fetch_dashboard_user_summary(staff_id_int)
+        details = {
+            "staff_id": staff_id_int,
+            "school_ids": sorted(str(sid) for sid in school_ids_int),
+            "count": assigned,
+        }
+        if period_id_int is not None:
+            details["period_id"] = period_id_int
+        if notes:
+            details["notes"] = notes
+        if staff_info:
+            details["staff_name"] = staff_info.get("full_name")
+            details["staff_email"] = staff_info.get("email")
+        if errors:
+            details["errors"] = errors
+        log_activity(
+            user.get("id"),
+            "CREATE",
+            "STAFF_ASSIGNMENT",
+            None,
+            staff_info.get("full_name") if staff_info else f"Staff {staff_id_int}",
+            details,
+        )
 
     return jsonify({
         "success": assigned > 0,
@@ -3553,12 +3859,57 @@ def admin_assign_school_batch() -> Response:
 def admin_approve_assignment_request(request_id: int) -> Response:
     """Admin approves a coordinator-submitted assignment request."""
     user = current_user()
+    from .queries import log_activity
     req = update_assignment_request_status(request_id, "approved", reviewer_id=user["id"])
     if not req:
         return jsonify({"success": False, "message": "Request tidak ditemukan"}), 404
     try:
-        assign_staff_to_school(req["staff_id"], req["school_id"], user["id"], req.get("note"))
+        assignment = assign_staff_to_school(req["staff_id"], req["school_id"], user["id"], req.get("note"))
         assign_assessment(req["school_id"], req["staff_id"], req.get("period_id"))
+        staff_info = _fetch_dashboard_user_summary(req["staff_id"])
+        school = get_school_by_id(req["school_id"])
+        request_details = {
+            "status": "approved",
+            "staff_id": req.get("staff_id"),
+            "school_id": req.get("school_id"),
+            "period_id": req.get("period_id"),
+        }
+        if staff_info:
+            request_details["staff_name"] = staff_info.get("full_name")
+            request_details["staff_email"] = staff_info.get("email")
+        if school:
+            request_details["school_name"] = school.get("name")
+            request_details["npsn"] = school.get("npsn")
+        log_activity(
+            user.get("id"),
+            "UPDATE",
+            "ASSIGNMENT_REQUEST",
+            request_id,
+            staff_info.get("full_name") if staff_info else f"Request {request_id}",
+            request_details,
+        )
+        assignment_details = {
+            "staff_id": req.get("staff_id"),
+            "school_id": req.get("school_id"),
+            "period_id": req.get("period_id"),
+            "request_id": request_id,
+        }
+        if staff_info:
+            assignment_details["staff_name"] = staff_info.get("full_name")
+            assignment_details["staff_email"] = staff_info.get("email")
+        if school:
+            assignment_details["school_name"] = school.get("name")
+            assignment_details["npsn"] = school.get("npsn")
+        if req.get("note"):
+            assignment_details["notes"] = req.get("note")
+        log_activity(
+            user.get("id"),
+            "CREATE",
+            "STAFF_ASSIGNMENT",
+            assignment.get("id") if assignment else None,
+            school.get("name") if school else f"School {req.get('school_id')}",
+            assignment_details,
+        )
     except Exception as exc:
         current_app.logger.exception("Error assigning after approval")
         return jsonify({"success": False, "message": str(exc)}), 500
@@ -3570,9 +3921,34 @@ def admin_approve_assignment_request(request_id: int) -> Response:
 def admin_reject_assignment_request(request_id: int) -> Response:
     """Admin rejects a coordinator-submitted assignment request."""
     user = current_user()
+    from .queries import log_activity
     req = update_assignment_request_status(request_id, "rejected", reviewer_id=user["id"])
     if not req:
         return jsonify({"success": False, "message": "Request tidak ditemukan"}), 404
+    staff_info = _fetch_dashboard_user_summary(req["staff_id"])
+    school = get_school_by_id(req["school_id"])
+    details = {
+        "status": "rejected",
+        "staff_id": req.get("staff_id"),
+        "school_id": req.get("school_id"),
+        "period_id": req.get("period_id"),
+    }
+    if staff_info:
+        details["staff_name"] = staff_info.get("full_name")
+        details["staff_email"] = staff_info.get("email")
+    if school:
+        details["school_name"] = school.get("name")
+        details["npsn"] = school.get("npsn")
+    if req.get("note"):
+        details["notes"] = req.get("note")
+    log_activity(
+        user.get("id"),
+        "UPDATE",
+        "ASSIGNMENT_REQUEST",
+        request_id,
+        staff_info.get("full_name") if staff_info else f"Request {request_id}",
+        details,
+    )
     return jsonify({"success": True, "request": req})
 
 
@@ -3581,6 +3957,7 @@ def admin_reject_assignment_request(request_id: int) -> Response:
 def admin_remove_assignment() -> Response:
     """Admin removes a school assignment from a staff member."""
     user = current_user()
+    from .queries import log_activity
     
     # Superadmin only
     if not can_assign_staff(user):
@@ -3594,6 +3971,26 @@ def admin_remove_assignment() -> Response:
     
     try:
         if remove_staff_school_assignment(staff_id, school_id):
+            staff_info = _fetch_dashboard_user_summary(staff_id)
+            school = get_school_by_id(school_id)
+            details = {
+                "staff_id": staff_id,
+                "school_id": school_id,
+            }
+            if staff_info:
+                details["staff_name"] = staff_info.get("full_name")
+                details["staff_email"] = staff_info.get("email")
+            if school:
+                details["school_name"] = school.get("name")
+                details["npsn"] = school.get("npsn")
+            log_activity(
+                user.get("id"),
+                "DELETE",
+                "STAFF_ASSIGNMENT",
+                None,
+                school.get("name") if school else f"School {school_id}",
+                details,
+            )
             flash("Penugasan berhasil dihapus.", "success")
             return jsonify({"success": True})
         return jsonify({"success": False, "message": "Gagal menghapus penugasan"}), 400
@@ -3854,6 +4251,7 @@ def manage_users() -> Response:
     from dashboard.queries import list_dashboard_users, create_dashboard_user, update_dashboard_user
     from dashboard.portal.queries import list_kecamatan
     from werkzeug.security import generate_password_hash
+    from .queries import log_activity, fetch_activity_logs
     
     if request.method == "POST":
         action = request.form.get("action", "create")
@@ -3877,13 +4275,33 @@ def manage_users() -> Response:
                     flash("Semua field wajib diisi.", "warning")
                 else:
                     password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=12)
-                    create_dashboard_user(
+                    new_user_id = create_dashboard_user(
                         email=email,
                         full_name=full_name,
                         password_hash=password_hash,
                         role=role,
                         school_id=school_id,
                         requested_kecamatan=requested_kecamatan,
+                    )
+                    details = {
+                        "email": email,
+                        "role": role,
+                    }
+                    if requested_kecamatan is not None:
+                        details["kecamatan_id"] = requested_kecamatan
+                    if school_id is not None:
+                        details["school_id"] = school_id
+                        school = get_school_by_id(school_id)
+                        if school:
+                            details["school_name"] = school.get("name")
+                            details["npsn"] = school.get("npsn")
+                    log_activity(
+                        current_user().get("id") if current_user() else None,
+                        "CREATE",
+                        "USER",
+                        new_user_id,
+                        full_name or email,
+                        details,
                     )
                     flash(f"User {full_name} berhasil dibuat.", "success")
                     
@@ -3892,7 +4310,7 @@ def manage_users() -> Response:
                     flash("ID User tidak valid.", "danger")
                 else:
                     pw_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=12) if password else None
-                    update_dashboard_user(
+                    updated = update_dashboard_user(
                         user_id=int(user_id), 
                         full_name=full_name, 
                         role=role, 
@@ -3902,13 +4320,45 @@ def manage_users() -> Response:
                         school_id=school_id,
                         requested_kecamatan=requested_kecamatan,
                     )
+                    if updated:
+                        details = {
+                            "email": email,
+                            "role": role,
+                        }
+                        if account_status:
+                            details["account_status"] = account_status
+                        if requested_kecamatan is not None:
+                            details["kecamatan_id"] = requested_kecamatan
+                        if school_id is not None:
+                            details["school_id"] = school_id
+                            school = get_school_by_id(school_id)
+                            if school:
+                                details["school_name"] = school.get("name")
+                                details["npsn"] = school.get("npsn")
+                        log_activity(
+                            current_user().get("id") if current_user() else None,
+                            "UPDATE",
+                            "USER",
+                            int(user_id),
+                            full_name or email,
+                            details,
+                        )
                     flash(f"Data user {full_name} berhasil diperbarui.", "success")
                     
             elif action == "verify":
                 if not user_id or not account_status:
                      flash("Data tidak lengkap.", "warning")
                 else:
-                     update_dashboard_user(user_id=int(user_id), full_name=full_name, role=role, account_status=account_status)
+                     updated = update_dashboard_user(user_id=int(user_id), full_name=full_name, role=role, account_status=account_status)
+                     if updated:
+                         log_activity(
+                             current_user().get("id") if current_user() else None,
+                             "UPDATE",
+                             "USER",
+                             int(user_id),
+                             full_name or email,
+                             {"account_status": account_status, "info": "verify"},
+                         )
                      flash(f"Status user berhasil diubah menjadi {account_status}.", "success")
 
         except Exception as exc: 
@@ -3917,7 +4367,13 @@ def manage_users() -> Response:
 
     users = list_dashboard_users()
     kecamatan_list = list_kecamatan()
-    return render_template("portal/admin/manage_users.html", users=users, kecamatan_list=kecamatan_list)
+    activity_logs = fetch_activity_logs(limit=50, target_types=("USER",))
+    return render_template(
+        "portal/admin/manage_users.html",
+        users=users,
+        kecamatan_list=kecamatan_list,
+        activity_logs=activity_logs,
+    )
 
 
 @portal_bp.route("/settings/monev-teams", methods=["GET", "POST"])
@@ -3938,9 +4394,11 @@ def manage_monev_teams() -> Response:
         get_team_member_request,
     )
     from dashboard.portal.queries import list_kecamatan
+    from .queries import log_activity, fetch_activity_logs
     
     if request.method == "POST":
         action = request.form.get("action")
+        actor_id = current_user().get("id") if current_user() else None
         
         try:
             if action == "create_team":
@@ -3954,6 +4412,20 @@ def manage_monev_teams() -> Response:
                 else:
                     team_id = create_monev_team(name, team_type, kecamatan_id)
                     if team_id:
+                        team_info = _fetch_monev_team(team_id)
+                        details = {"team_type": team_type}
+                        if kecamatan_id is not None:
+                            details["kecamatan_id"] = kecamatan_id
+                        if team_info and team_info.get("kecamatan_name"):
+                            details["kecamatan_name"] = team_info.get("kecamatan_name")
+                        log_activity(
+                            actor_id,
+                            "CREATE",
+                            "MONEV_TEAM",
+                            team_id,
+                            team_info.get("name") if team_info else name,
+                            details,
+                        )
                         flash(f"Tim '{name}' berhasil dibuat.", "success")
                     else:
                         flash("Gagal membuat tim.", "danger")
@@ -3961,8 +4433,23 @@ def manage_monev_teams() -> Response:
             elif action == "delete_team":
                 team_id = int(request.form.get("team_id"))
                 team_name = request.form.get("team_name", "")
+                team_info = _fetch_monev_team(team_id)
                 
                 if delete_monev_team(team_id):
+                    details = {}
+                    if team_info:
+                        if team_info.get("team_type"):
+                            details["team_type"] = team_info.get("team_type")
+                        if team_info.get("kecamatan_name"):
+                            details["kecamatan_name"] = team_info.get("kecamatan_name")
+                    log_activity(
+                        actor_id,
+                        "DELETE",
+                        "MONEV_TEAM",
+                        team_id,
+                        team_info.get("name") if team_info else team_name,
+                        details or None,
+                    )
                     flash(f"Tim '{team_name}' berhasil dihapus.", "success")
                 else:
                     flash("Gagal menghapus tim.", "danger")
@@ -3973,6 +4460,28 @@ def manage_monev_teams() -> Response:
                 coordinator_id = int(coordinator_id) if coordinator_id else None
                 
                 if update_team_coordinator(team_id, coordinator_id):
+                    team_info = _fetch_monev_team(team_id)
+                    coord_info = (
+                        _fetch_dashboard_user_summary(coordinator_id) if coordinator_id else None
+                    )
+                    details = {}
+                    if coordinator_id is not None:
+                        details["coordinator_id"] = coordinator_id
+                    if coord_info:
+                        details["coordinator_name"] = coord_info.get("full_name")
+                        details["coordinator_email"] = coord_info.get("email")
+                    if team_info:
+                        details["team_type"] = team_info.get("team_type")
+                        if team_info.get("kecamatan_name"):
+                            details["kecamatan_name"] = team_info.get("kecamatan_name")
+                    log_activity(
+                        actor_id,
+                        "UPDATE",
+                        "MONEV_TEAM",
+                        team_id,
+                        team_info.get("name") if team_info else f"Team {team_id}",
+                        details or None,
+                    )
                     flash("Koordinator berhasil diperbarui.", "success")
                 else:
                     flash("Gagal memperbarui koordinator.", "danger")
@@ -3983,14 +4492,57 @@ def manage_monev_teams() -> Response:
                 admin_id = current_user().get("id") if current_user() else None
                 
                 if add_team_member(team_id, staff_id, admin_id):
+                    team_info = _fetch_monev_team(team_id)
+                    staff_info = _fetch_dashboard_user_summary(staff_id)
+                    member_info = _fetch_monev_member_by_pair(team_id, staff_id)
+                    member_id = member_info.get("id") if member_info else None
+                    details = {"team_id": team_id, "staff_id": staff_id}
+                    if member_id is not None:
+                        details["member_id"] = member_id
+                    if team_info and team_info.get("name"):
+                        details["team_name"] = team_info.get("name")
+                    if staff_info:
+                        details["staff_name"] = staff_info.get("full_name")
+                        details["staff_email"] = staff_info.get("email")
+                    log_activity(
+                        actor_id,
+                        "CREATE",
+                        "MONEV_TEAM_MEMBER",
+                        member_id,
+                        staff_info.get("full_name") if staff_info else f"Staff {staff_id}",
+                        details,
+                    )
                     flash("Anggota berhasil ditambahkan.", "success")
                 else:
                     flash("Anggota sudah ada dalam tim atau gagal ditambahkan.", "warning")
                     
             elif action == "remove_member":
                 member_id = int(request.form.get("member_id"))
+                member_info = _fetch_monev_member(member_id)
+                team_info = _fetch_monev_team(member_info["team_id"]) if member_info else None
+                staff_info = (
+                    _fetch_dashboard_user_summary(member_info["staff_id"]) if member_info else None
+                )
                 
                 if remove_team_member(member_id):
+                    details = {}
+                    details["member_id"] = member_id
+                    if member_info:
+                        details["team_id"] = member_info.get("team_id")
+                        details["staff_id"] = member_info.get("staff_id")
+                    if team_info and team_info.get("name"):
+                        details["team_name"] = team_info.get("name")
+                    if staff_info:
+                        details["staff_name"] = staff_info.get("full_name")
+                        details["staff_email"] = staff_info.get("email")
+                    log_activity(
+                        actor_id,
+                        "DELETE",
+                        "MONEV_TEAM_MEMBER",
+                        member_id,
+                        staff_info.get("full_name") if staff_info else f"Member {member_id}",
+                        details or None,
+                    )
                     flash("Anggota berhasil dihapus dari tim.", "success")
                 else:
                     flash("Gagal menghapus anggota.", "danger")
@@ -4002,8 +4554,41 @@ def manage_monev_teams() -> Response:
                 if not req:
                     flash("Permintaan tidak ditemukan.", "danger")
                 else:
-                    update_team_member_request_status(request_id, "approved", admin_id)
-                    add_team_member(req["team_id"], req["staff_id"], admin_id)
+                    updated_req = update_team_member_request_status(request_id, "approved", admin_id)
+                    if updated_req:
+                        log_activity(
+                            actor_id,
+                            "UPDATE",
+                            "MONEV_MEMBER_REQUEST",
+                            request_id,
+                            req.get("staff_name") or req.get("team_name"),
+                            {
+                                "status": "approved",
+                                "team_id": req.get("team_id"),
+                                "team_name": req.get("team_name"),
+                                "staff_id": req.get("staff_id"),
+                                "staff_name": req.get("staff_name"),
+                                "requested_by": req.get("requested_by_name"),
+                            },
+                        )
+                    added = add_team_member(req["team_id"], req["staff_id"], admin_id)
+                    if added:
+                        member_info = _fetch_monev_member_by_pair(req["team_id"], req["staff_id"])
+                        member_id = member_info.get("id") if member_info else None
+                        log_activity(
+                            actor_id,
+                            "CREATE",
+                            "MONEV_TEAM_MEMBER",
+                            member_id,
+                            req.get("staff_name"),
+                            {
+                                "team_id": req.get("team_id"),
+                                "team_name": req.get("team_name"),
+                                "staff_id": req.get("staff_id"),
+                                "staff_name": req.get("staff_name"),
+                                "member_id": member_id,
+                            },
+                        )
                     flash(f"Permintaan anggota untuk {req.get('staff_name') or 'staff'} disetujui.", "success")
             
             elif action == "reject_request":
@@ -4013,7 +4598,23 @@ def manage_monev_teams() -> Response:
                 if not req:
                     flash("Permintaan tidak ditemukan.", "danger")
                 else:
-                    update_team_member_request_status(request_id, "rejected", admin_id)
+                    updated_req = update_team_member_request_status(request_id, "rejected", admin_id)
+                    if updated_req:
+                        log_activity(
+                            actor_id,
+                            "UPDATE",
+                            "MONEV_MEMBER_REQUEST",
+                            request_id,
+                            req.get("staff_name") or req.get("team_name"),
+                            {
+                                "status": "rejected",
+                                "team_id": req.get("team_id"),
+                                "team_name": req.get("team_name"),
+                                "staff_id": req.get("staff_id"),
+                                "staff_name": req.get("staff_name"),
+                                "requested_by": req.get("requested_by_name"),
+                            },
+                        )
                     flash(f"Permintaan anggota untuk {req.get('staff_name') or 'staff'} ditolak.", "info")
                     
         except Exception as exc:
@@ -4067,13 +4668,21 @@ def manage_monev_teams() -> Response:
     pending_requests = list_team_member_requests(status="pending")
     kecamatan_list = list_kecamatan()
 
-    return render_template("portal/admin/monev_teams.html", 
-                           kasi_teams=kasi_teams, 
-                           kecamatan_teams=kecamatan_teams, 
-                           custom_teams=custom_teams,
-                           available_staff=available_staff,
-                           pending_requests=pending_requests,
-                           kecamatan_list=kecamatan_list)
+    activity_logs = fetch_activity_logs(
+        limit=50,
+        target_types=("MONEV_TEAM", "MONEV_TEAM_MEMBER", "MONEV_MEMBER_REQUEST"),
+    )
+
+    return render_template(
+        "portal/admin/monev_teams.html",
+        kasi_teams=kasi_teams,
+        kecamatan_teams=kecamatan_teams,
+        custom_teams=custom_teams,
+        available_staff=available_staff,
+        pending_requests=pending_requests,
+        kecamatan_list=kecamatan_list,
+        activity_logs=activity_logs,
+    )
 
 
 @portal_bp.route("/my-team")

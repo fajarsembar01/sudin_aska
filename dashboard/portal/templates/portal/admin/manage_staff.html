@@ -30,6 +30,10 @@
                 <span class="badge bg-warning text-dark ms-1">{{ pending_requests|length if pending_requests else 0 }}</span>
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-history" data-bs-toggle="tab" data-bs-target="#pane-history" type="button"
+                role="tab">History</button>
+        </li>
     </ul>
 
     <div class="tab-content">
@@ -209,6 +213,20 @@
                     {% else %}
                     <p class="text-muted mb-0">Tidak ada permintaan pending.</p>
                     {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="pane-history" role="tabpanel">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <div class="fw-semibold">
+                        <i class="bi bi-clock-history me-2"></i>Aktivitas Penugasan Terakhir ({{ activity_logs|length }})
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% set empty_text = "Belum ada aktivitas penugasan." %}
+                    {% include 'portal/admin/_activity_log_table.html' %}
                 </div>
             </div>
         </div>

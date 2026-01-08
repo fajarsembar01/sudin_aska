@@ -92,6 +92,16 @@
                 {% endif %}
             </div>
         </div>
+
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-body">
+                <div class="fw-semibold mb-3">
+                    <i class="bi bi-clock-history me-2"></i>Aktivitas Reopen Terakhir ({{ activity_logs|length }})
+                </div>
+                {% set empty_text = "Belum ada aktivitas reopen." %}
+                {% include 'portal/admin/_activity_log_table.html' %}
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

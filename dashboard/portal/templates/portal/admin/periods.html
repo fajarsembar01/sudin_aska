@@ -134,6 +134,18 @@
             </div>
         </div>
     </div>
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-light">
+            <div class="fw-semibold">
+                <i class="bi bi-clock-history me-2"></i>Aktivitas Periode Terakhir ({{ activity_logs|length }})
+            </div>
+        </div>
+        <div class="card-body">
+            {% set empty_text = "Belum ada aktivitas periode." %}
+            {% include 'portal/admin/_activity_log_table.html' %}
+        </div>
+    </div>
 </div>
 
 <!-- Edit Period Modal -->
