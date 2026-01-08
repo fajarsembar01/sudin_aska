@@ -1,0 +1,28 @@
+{% set logo_prefix = logo_prefix|default('logo') %}
+{% set logo_label = logo_label|default('Logo Sekolah') %}
+{% set logo_help = logo_help|default('Max 100KB, akan di-crop') %}
+{% set logo_url = logo_url|default('') %}
+{% set logo_wrapper_class = logo_wrapper_class|default('col-12') %}
+
+<div class="{{ logo_wrapper_class }}">
+    <label class="form-label fw-semibold">{{ logo_label }} *</label>
+    <div class="d-flex align-items-center gap-3">
+        <div class="logo-preview-wrapper"
+            style="width: 80px; height: 80px; border: 2px dashed #dee2e6; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f8f9fa;">
+            <img id="{{ logo_prefix }}LogoPreview" src="{{ logo_url }}" alt="Logo"
+                style="width: 100%; height: 100%; object-fit: cover; display: {{ 'block' if logo_url else 'none' }};">
+            <i class="bi bi-image text-muted" id="{{ logo_prefix }}LogoPlaceholder"
+                style="font-size: 2rem; display: {{ 'none' if logo_url else 'block' }};"></i>
+        </div>
+        <div>
+            <input type="file" id="{{ logo_prefix }}LogoFile" accept="image/*" class="d-none">
+            <input type="hidden" id="{{ logo_prefix }}LogoData" name="logo_data" value="">
+            <button type="button" class="btn btn-outline-primary btn-sm"
+                onclick="document.getElementById('{{ logo_prefix }}LogoFile').click();">
+                <i class="bi bi-upload me-1"></i>Pilih Logo
+            </button>
+            <div class="text-muted small mt-1">{{ logo_help }}</div>
+        </div>
+    </div>
+    <div class="invalid-feedback" id="{{ logo_prefix }}LogoData-error"></div>
+</div>

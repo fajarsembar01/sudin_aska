@@ -32,6 +32,33 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('portal.sekolah_profile') }}" class="row g-3">
+                        {% with logo_prefix='profile', logo_url=(school.logo_url or ''), logo_wrapper_class='col-lg-6' %}
+                            {% include "portal/shared/_logo_upload_field.html" %}
+                        {% endwith %}
+                        <div class="col-lg-6">
+                            <label class="form-label fw-semibold">NPSN</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="profileNpsn"
+                                    value="{{ school.npsn or '-' }}" readonly>
+                                <button class="btn btn-outline-secondary" type="button" id="copyNpsnBtn"
+                                    aria-label="Copy NPSN">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted d-none" id="copyNpsnStatus">NPSN tersalin.</small>
+                        </div>
+                        {% if form_errors %}
+                        <div class="col-12">
+                            <div class="alert alert-warning">
+                                <div class="fw-semibold mb-1">Data belum bisa disimpan:</div>
+                                <ul class="mb-0 ps-3">
+                                    {% for err in form_errors %}
+                                    <li>{{ err }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endif %}
                         <div class="col-12">
                             <label class="form-label fw-semibold">Alamat Sekolah *</label>
                             <textarea name="alamat" class="form-control" rows="2"
@@ -85,12 +112,12 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Jumlah Siswa *</label>
                             <input type="number" min="0" name="student_count" class="form-control" required
-                                value="{{ meta.student_count or '' }}">
+                                value="{{ meta.get('student_count') if meta.get('student_count') is not none else '' }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Jumlah Siswa Inklusi *</label>
                             <input type="number" min="0" name="inclusion_student_count" class="form-control" required
-                                value="{{ meta.inclusion_student_count or '' }}">
+                                value="{{ meta.get('inclusion_student_count') if meta.get('inclusion_student_count') is not none else '' }}">
                         </div>
                         {% if grade_levels %}
                         <div class="col-12">
@@ -112,9 +139,10 @@
                                 <div class="col-md-4">
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text">{{ grade_label }}</span>
+                                        {% set grade_value = empty_by_grade.get(g|string) %}
                                         <input type="number" min="0" class="form-control empty-seat-input-profile"
                                             data-grade="{{ g }}" required
-                                            value="{{ empty_by_grade.get(g|string) or '' }}"
+                                            value="{{ grade_value if grade_value is not none else '' }}"
                                             placeholder="0">
                                     </div>
                                 </div>
@@ -126,23 +154,23 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Jumlah Bangku Kosong *</label>
                             <input type="number" min="0" name="empty_seats" class="form-control" required
-                                value="{{ meta.empty_seats or '' }}">
+                                value="{{ meta.get('empty_seats') if meta.get('empty_seats') is not none else '' }}">
                         </div>
                         {% endif %}
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Jumlah Guru *</label>
                             <input type="number" min="0" name="teacher_count" class="form-control" required
-                                value="{{ meta.teacher_count or '' }}">
+                                value="{{ meta.get('teacher_count') if meta.get('teacher_count') is not none else '' }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Jumlah Tenaga Kependidikan *</label>
                             <input type="number" min="0" name="staff_count" class="form-control" required
-                                value="{{ meta.staff_count or '' }}">
+                                value="{{ meta.get('staff_count') if meta.get('staff_count') is not none else '' }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Jumlah Rombel *</label>
                             <input type="number" min="0" name="rombel_count" class="form-control" required
-                                value="{{ meta.rombel_count or '' }}">
+                                value="{{ meta.get('rombel_count') if meta.get('rombel_count') is not none else '' }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Nomor Telepon Sekolah *</label>
@@ -242,6 +270,9 @@
         </div>
     </div>
 </section>
+{% with logo_prefix='profile' %}
+    {% include "portal/shared/_logo_cropper_modal.html" %}
+{% endwith %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var kelurahans = {{ kelurahan_list | tojson
@@ -266,6 +297,33 @@
     if (kecSel && kelSel) {
         kecSel.addEventListener('change', populateKel);
         populateKel();
+    }
+
+    var copyBtn = document.getElementById('copyNpsnBtn');
+    var npsnInput = document.getElementById('profileNpsn');
+    var copyStatus = document.getElementById('copyNpsnStatus');
+    if (copyBtn && npsnInput) {
+        copyBtn.addEventListener('click', function () {
+            var value = (npsnInput.value || '').trim();
+            if (!value || value === '-') {
+                return;
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(value).then(function () {
+                    if (copyStatus) {
+                        copyStatus.classList.remove('d-none');
+                        setTimeout(function () { copyStatus.classList.add('d-none'); }, 1500);
+                    }
+                });
+            } else {
+                npsnInput.select();
+                document.execCommand('copy');
+                if (copyStatus) {
+                    copyStatus.classList.remove('d-none');
+                    setTimeout(function () { copyStatus.classList.add('d-none'); }, 1500);
+                }
+            }
+        });
     }
 
     // Serialize bangku kosong per kelas sebelum submit

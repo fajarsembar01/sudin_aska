@@ -2125,12 +2125,12 @@ def sekolah_profile() -> Response:
         flash("Akun belum terhubung dengan sekolah. Hubungi admin.", "warning")
         return redirect(url_for("portal.home"))
 
+    form_errors = []
     if request.method == "POST":
         payload = _build_profile_payload(request.form)
-        errors = _validate_profile_data(payload, jenjang=school.get("jenjang"))
-        if errors:
-            for err in errors:
-                flash(err, "warning")
+        form_errors = _validate_profile_data(payload, jenjang=school.get("jenjang"))
+        if form_errors:
+            flash("Data belum tersimpan. Periksa detail di bawah.", "warning")
         else:
             _save_school_profile(school["id"], payload)
             flash("Profil sekolah berhasil diperbarui.", "success")
@@ -2147,6 +2147,7 @@ def sekolah_profile() -> Response:
         school=school,
         meta=meta,
         missing_fields=_compute_missing_profile_fields(school),
+        form_errors=form_errors,
         kecamatan_list=kecamatan_list,
         kelurahan_list=kelurahan_list,
     )
