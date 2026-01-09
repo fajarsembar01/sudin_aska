@@ -61,6 +61,7 @@
                                     <option value="SMA">SMA</option>
                                     <option value="MA">MA</option>
                                     <option value="SMK">SMK</option>
+                                    <option value="PAUD">PAUD</option>
                                     <option value="TK">TK</option>
                                     <option value="KB">KB</option>
                                     <option value="TPA">TPA</option>
@@ -724,6 +725,8 @@
                                                         <li><a class="dropdown-item" href="#"
                                                                 data-filter-value="smk">SMK</a></li>
                                                         <li><a class="dropdown-item" href="#"
+                                                                data-filter-value="paud">PAUD</a></li>
+                                                        <li><a class="dropdown-item" href="#"
                                                                 data-filter-value="tk">TK</a></li>
                                                         <li><a class="dropdown-item" href="#"
                                                                 data-filter-value="kb">KB</a></li>
@@ -890,6 +893,8 @@
                                                                     %}selected{% endif %}>MA</option>
                                                                 <option value="SMK" {% if s.jenjang=='SMK'
                                                                     %}selected{% endif %}>SMK</option>
+                                                                <option value="PAUD" {% if s.jenjang=='PAUD'
+                                                                    %}selected{% endif %}>PAUD</option>
                                                                 <option value="TK" {% if s.jenjang=='TK'
                                                                     %}selected{% endif %}>TK</option>
                                                                 <option value="KB" {% if s.jenjang=='KB'
@@ -1201,93 +1206,18 @@
 
                     <!-- History Pane -->
                     <div class="tab-pane fade" id="historyPane" role="tabpanel">
-                        <h6 class="text-muted mb-3 small">Aktivitas CRUD Terakhir ({{ activity_logs|length }})</h6>
-                        <div class="table-responsive">
-                                <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th style="width: 15%;">Waktu</th>
-                                            <th style="width: 20%;">User</th>
-                                            <th style="width: 10%;">Aksi</th>
-                                            <th style="width: 15%;">Target</th>
-                                            <th style="width: 20%;">Nama</th>
-                                            <th style="width: 20%;">Detail</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for log in activity_logs %}
-                                        <tr>
-                                            <td class="text-muted">{{ log.created_at|jakarta }}</td>
-                                            <td>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <div class="avatar avatar-xs bg-primary-subtle text-primary rounded-circle"
-                                                        style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">
-                                                        {{ (log.user_name or 'S')[0]|upper }}
-                                                    </div>
-                                                    <span class="text-truncate" style="max-width: 120px;"
-                                                        title="{{ log.user_email }}">
-                                                        {{ log.user_name or 'System' }}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                {% if log.action == 'CREATE' %}
-                                                <span
-                                                    class="badge bg-success-subtle text-success border border-success-subtle">CREATE</span>
-                                                {% elif log.action == 'UPDATE' %}
-                                                <span
-                                                    class="badge bg-warning-subtle text-warning border border-warning-subtle">UPDATE</span>
-                                                {% elif log.action == 'DELETE' %}
-                                                <span
-                                                    class="badge bg-danger-subtle text-danger border border-danger-subtle">DELETE</span>
-                                                {% else %}
-                                                <span class="badge bg-secondary">{{ log.action }}</span>
-                                                {% endif %}
-                                            </td>
-                                            <td class="fw-semibold text-muted small">{{ log.target_type }}</td>
-                                            <td class="fw-bold text-dark">{{ log.target_name or '-' }}</td>
-                                            <td>
-                                                {% if log.details %}
-                                                {% set det = log.details if log.details is mapping else
-                                                (log.details|safe) %}
-                                                {% if det is mapping %}
-                                                <div class="text-muted small">
-                                                    {% if det.room_name %}
-                                                    <div><strong>Ruang:</strong> {{ det.room_name }}</div>
-                                                    {% endif %}
-                                                    {% if det.npsn %}
-                                                    <div><strong>NPSN:</strong> {{ det.npsn }}</div>
-                                                    {% endif %}
-                                                    {% if det.category %}
-                                                    <div><strong>Kategori:</strong> {{ det.category }}</div>
-                                                    {% endif %}
-                                                    {% if det.status %}
-                                                    <div><strong>Status:</strong> {{ det.status }}</div>
-                                                    {% endif %}
-                                                    {% if det.info %}
-                                                    <div>{{ det.info }}</div>
-                                                    {% endif %}
-                                                </div>
-                                                {% else %}
-                                                <code class="text-muted small">{{ det }}</code>
-                                                {% endif %}
-                                                {% else %}
-                                                <span class="text-muted">-</span>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                        {% else %}
-                                        <tr>
-                                            <td colspan="6" class="text-center py-4 text-muted">
-                                                <i class="bi bi-clock-history fs-4 d-block mb-2"></i>
-                                                Belum ada aktivitas tercatat
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                            <h6 class="text-muted mb-0 small">
+                                Aktivitas CRUD Terakhir (<span id="setupHistoryCount">{{ activity_logs|length }}</span>)
+                            </h6>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="setupHistoryRefreshBtn">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                            </button>
                         </div>
+                        {% set table_id = "setupHistoryTable" %}
+                        {% set tbody_id = "setupHistoryBody" %}
+                        {% include 'portal/admin/_activity_log_table.html' %}
+                    </div>
 
                         <!-- Rooms List Tab -->
                         <div class="tab-pane fade show active" id="roomsListPane" role="tabpanel">
@@ -1934,6 +1864,51 @@
             setTimeout(() => existing.classList.contains('show') && bootstrap.Alert.getOrCreateInstance(existing).close(), 3000);
         }
 
+        const setupHistoryBody = document.getElementById('setupHistoryBody');
+        const setupHistoryCount = document.getElementById('setupHistoryCount');
+        const setupHistoryRefreshBtn = document.getElementById('setupHistoryRefreshBtn');
+        const setupHistoryRefreshLabel = setupHistoryRefreshBtn ? setupHistoryRefreshBtn.innerHTML : '';
+        const setupHistoryRowsUrl = {{ url_for('portal.admin_activity_log_rows')|tojson }} +
+            '?limit=50&target_type=ROOM&target_type=ASPECT&target_type=SCHOOL';
+
+        async function refreshSetupHistory() {
+            if (!setupHistoryBody) return;
+            if (setupHistoryRefreshBtn) {
+                setupHistoryRefreshBtn.disabled = true;
+                setupHistoryRefreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            }
+            try {
+                const res = await fetch(setupHistoryRowsUrl, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!res.ok) {
+                    throw new Error('Gagal mengambil history');
+                }
+                const html = await res.text();
+                setupHistoryBody.innerHTML = html;
+                if (setupHistoryCount) {
+                    const rowCount = setupHistoryBody.querySelectorAll('tr[data-search]').length;
+                    setupHistoryCount.textContent = String(rowCount);
+                }
+            } catch (err) {
+                showToast('Gagal memperbarui history.', true);
+            } finally {
+                if (setupHistoryRefreshBtn) {
+                    setupHistoryRefreshBtn.disabled = false;
+                    setupHistoryRefreshBtn.innerHTML = setupHistoryRefreshLabel ||
+                        '<i class="bi bi-arrow-clockwise me-1"></i>Refresh';
+                }
+            }
+        }
+
+        if (setupHistoryRefreshBtn) {
+            setupHistoryRefreshBtn.addEventListener('click', refreshSetupHistory);
+        }
+        const historyTab = document.getElementById('historyTab');
+        if (historyTab) {
+            historyTab.addEventListener('shown.bs.tab', refreshSetupHistory);
+        }
+
         function renderAspects(roomId, aspects) {
             const container = document.getElementById(`room-aspects-${roomId}`);
             const countEl = document.getElementById(`room-aspects-count-${roomId}`);
@@ -2434,6 +2409,7 @@
                     throw new Error(data.message || 'Gagal menyimpan urutan ruangan');
                 }
                 showToast('Urutan ruangan disimpan.');
+                refreshSetupHistory();
             } catch (err) {
                 showToast(err.message || 'Gagal menyimpan urutan ruangan', true);
             } finally {
@@ -2636,6 +2612,7 @@
                         aspectList = [];
                         updateAspectPreview();
                         showToast('Aspek berhasil disimpan.');
+                        refreshSetupHistory();
                     } else {
                         alert('Gagal menyimpan: ' + (data.error || 'Unknown error'));
                         this.disabled = false;
@@ -2812,6 +2789,7 @@
                 if (data.success) {
                     renderAspects(roomId, data.aspects);
                     showToast('Aspek diperbarui.');
+                    refreshSetupHistory();
                     editModal.hide();
                 } else {
                     alert(data.message || 'Gagal memperbarui aspek');
@@ -2844,6 +2822,7 @@
                 if (data.success) {
                     renderAspects(roomId, data.aspects);
                     showToast(`${aspectName} dihapus.`);
+                    refreshSetupHistory();
                     deleteModal.hide();
                 } else {
                     alert(data.message || 'Gagal menghapus aspek');
@@ -2965,6 +2944,7 @@
 
                         showToast(`✓ Status berhasil diubah menjadi ${isReq ? 'Wajib' : 'Opsional'}`);
                     }
+                    refreshSetupHistory();
                 } else {
                     console.error('Toggle failed:', data.message);
                     showToast(data.message || 'Gagal mengubah status wajib.', true);
@@ -3016,6 +2996,7 @@
                         inlineAspectLists[roomId] = [];
                         updateInlinePreview(roomId);
                         showToast('Aspek berhasil disimpan.');
+                        refreshSetupHistory();
                         document.getElementById(`room-${roomId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         this.disabled = false;
                         this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan 0';

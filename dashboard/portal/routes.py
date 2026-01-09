@@ -2791,7 +2791,7 @@ def admin_setup() -> Response:
             seen_names.add(name)
     
     from .queries import fetch_activity_logs
-    activity_logs = fetch_activity_logs(limit=50, target_types=("ROOM", "ASPECT"))
+    activity_logs = fetch_activity_logs(limit=50, target_types=("ROOM", "ASPECT", "SCHOOL"))
     
     return render_template(
         "portal/admin/setup.html",
@@ -2820,6 +2820,28 @@ def admin_activity_logs() -> Response:
         "portal/admin/activity_logs.html",
         activity_logs=activity_logs,
         limit=limit,
+    )
+
+
+@portal_bp.route("/admin/activity-logs/rows")
+@role_required("admin")
+def admin_activity_log_rows() -> Response:
+    """Return activity log rows for incremental refresh."""
+    from .queries import fetch_activity_logs
+
+    limit = request.args.get("limit", type=int) or 50
+    limit = max(1, min(limit, 500))
+    target_types = request.args.getlist("target_type")
+    if not target_types:
+        target_types_raw = request.args.get("target_types", "")
+        if target_types_raw:
+            target_types = [item.strip() for item in target_types_raw.split(",") if item.strip()]
+
+    activity_logs = fetch_activity_logs(limit=limit, target_types=target_types or None)
+
+    return render_template(
+        "portal/admin/_activity_log_rows.html",
+        activity_logs=activity_logs,
     )
 
 

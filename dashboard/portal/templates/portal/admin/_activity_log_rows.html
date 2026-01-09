@@ -1,0 +1,176 @@
+{% set empty_text = empty_text|default('Belum ada aktivitas tercatat') %}
+{% set include_no_results_row = include_no_results_row|default(false) %}
+
+{% for log in activity_logs %}
+{% set user_label = log.user_name or log.user_email or 'System' %}
+{% if log.user_name and log.user_email %}
+    {% set user_label = log.user_name ~ ' (' ~ log.user_email ~ ')' %}
+{% endif %}
+{% set log_payload = {
+    "time": log.created_at|jakarta,
+    "user_name": log.user_name,
+    "user_email": log.user_email,
+    "action": log.action,
+    "target_type": log.target_type,
+    "target_id": log.target_id,
+    "target_name": log.target_name,
+    "details": log.details
+} %}
+<tr data-search="{{ (log.user_name or '') ~ ' ' ~ (log.user_email or '') ~ ' ' ~ (log.action or '') ~ ' ' ~ (log.target_type or '') ~ ' ' ~ (log.target_name or '') ~ ' ' ~ (log.details or '') }}"
+    data-user="{{ user_label }}" data-action="{{ log.action or '' }}"
+    data-target="{{ log.target_type or '' }}" data-name="{{ log.target_name or '' }}">
+    <td class="text-muted">{{ log.created_at|jakarta }}</td>
+    <td>
+        <div class="d-flex align-items-center gap-2">
+            <div class="avatar avatar-xs bg-primary-subtle text-primary rounded-circle"
+                style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">
+                {{ (log.user_name or 'S')[0]|upper }}
+            </div>
+            <span class="text-truncate" style="max-width: 140px;" title="{{ log.user_email }}">
+                {{ log.user_name or 'System' }}
+            </span>
+        </div>
+    </td>
+    <td>
+        {% if log.action == 'CREATE' %}
+        <span class="badge bg-success-subtle text-success border border-success-subtle">CREATE</span>
+        {% elif log.action == 'UPDATE' %}
+        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">UPDATE</span>
+        {% elif log.action == 'DELETE' %}
+        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">DELETE</span>
+        {% else %}
+        <span class="badge bg-secondary">{{ log.action }}</span>
+        {% endif %}
+    </td>
+    <td class="fw-semibold text-muted small">{{ log.target_type }}</td>
+    <td class="fw-bold text-dark">{{ log.target_name or '-' }}</td>
+    <td>
+        {% if log.details %}
+        {% set det = log.details if log.details is mapping else (log.details|safe) %}
+        {% if det is mapping %}
+        <div class="text-muted small">
+            {% if det.room_name %}
+            <div><strong>Ruang:</strong> {{ det.room_name }}</div>
+            {% endif %}
+            {% if det.category %}
+            <div><strong>Kategori:</strong> {{ det.category }}</div>
+            {% endif %}
+            {% if det.is_required is defined %}
+            <div><strong>Wajib:</strong> {{ 'Ya' if det.is_required else 'Tidak' }}</div>
+            {% elif det.required is defined %}
+            <div><strong>Wajib:</strong> {{ 'Ya' if det.required else 'Tidak' }}</div>
+            {% endif %}
+            {% if det.active is defined %}
+            <div><strong>Aktif:</strong> {{ 'Ya' if det.active else 'Tidak' }}</div>
+            {% endif %}
+            {% if det.team_name %}
+            <div><strong>Tim:</strong> {{ det.team_name }}</div>
+            {% endif %}
+            {% if det.team_type %}
+            <div><strong>Tipe Tim:</strong> {{ det.team_type }}</div>
+            {% endif %}
+            {% if det.staff_name %}
+            <div><strong>Staff:</strong> {{ det.staff_name }}{% if det.staff_email %} ({{ det.staff_email }}){% endif %}</div>
+            {% endif %}
+            {% if det.coordinator_name %}
+            <div><strong>Koordinator:</strong> {{ det.coordinator_name }}</div>
+            {% endif %}
+            {% if det.requested_by or det.requested_by_name %}
+            <div><strong>Diajukan Oleh:</strong> {{ det.requested_by or det.requested_by_name }}</div>
+            {% endif %}
+            {% if det.school_name %}
+            <div><strong>Sekolah:</strong> {{ det.school_name }}{% if det.npsn %} ({{ det.npsn }}){% elif det.school_npsn %} ({{ det.school_npsn }}){% endif %}</div>
+            {% elif det.npsn %}
+            <div><strong>NPSN:</strong> {{ det.npsn }}</div>
+            {% endif %}
+            {% if det.school_id %}
+            <div><strong>ID Sekolah:</strong> {{ det.school_id }}</div>
+            {% endif %}
+            {% if det.member_id %}
+            <div><strong>ID Anggota:</strong> {{ det.member_id }}</div>
+            {% endif %}
+            {% if det.email %}
+            <div><strong>Email:</strong> {{ det.email }}</div>
+            {% endif %}
+            {% if det.role %}
+            <div><strong>Role:</strong> {{ det.role }}</div>
+            {% endif %}
+            {% if det.account_status %}
+            <div><strong>Status Akun:</strong> {{ det.account_status }}</div>
+            {% endif %}
+            {% if det.kecamatan_name %}
+            <div><strong>Kecamatan:</strong> {{ det.kecamatan_name }}</div>
+            {% endif %}
+            {% if det.kecamatan_id %}
+            <div><strong>ID Kecamatan:</strong> {{ det.kecamatan_id }}</div>
+            {% endif %}
+            {% if det.period_id %}
+            <div><strong>Periode:</strong> {{ det.period_id }}</div>
+            {% endif %}
+            {% if det.period_name %}
+            <div><strong>Nama Periode:</strong> {{ det.period_name }}</div>
+            {% endif %}
+            {% if det.start_date or det.end_date %}
+            <div><strong>Rentang:</strong> {{ det.start_date or '-' }} — {{ det.end_date or '-' }}</div>
+            {% endif %}
+            {% if det.count %}
+            <div><strong>Jumlah:</strong> {{ det.count }}</div>
+            {% endif %}
+            {% if det.school_ids %}
+            <div><strong>ID Sekolah:</strong> {{ det.school_ids | join(', ') }}</div>
+            {% endif %}
+            {% if det.assessment_id %}
+            <div><strong>ID Penilaian:</strong> {{ det.assessment_id }}</div>
+            {% endif %}
+            {% if det.reason %}
+            <div><strong>Alasan:</strong> {{ det.reason }}</div>
+            {% endif %}
+            {% if det.reviewer_note %}
+            <div><strong>Catatan Admin:</strong> {{ det.reviewer_note }}</div>
+            {% endif %}
+            {% if det.notes %}
+            <div><strong>Catatan:</strong> {{ det.notes }}</div>
+            {% endif %}
+            {% if det.status %}
+            <div><strong>Status:</strong> {{ det.status }}</div>
+            {% endif %}
+            {% if det.info %}
+            <div>{{ det.info }}</div>
+            {% endif %}
+            {% if det.errors %}
+            <div><strong>Error:</strong> {{ det.errors | join('; ') }}</div>
+            {% endif %}
+        </div>
+        {% else %}
+        <code class="text-muted small">{{ det }}</code>
+        {% endif %}
+        {% else %}
+        <span class="text-muted">-</span>
+        {% endif %}
+    </td>
+    <td class="text-end">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Aksi log">
+            <button type="button" class="btn btn-outline-primary js-log-detail"
+                data-log='{{ log_payload|tojson }}' title="Lihat detail">
+                <i class="bi bi-eye"></i>
+            </button>
+            <button type="button" class="btn btn-outline-secondary js-log-link"
+                data-log='{{ log_payload|tojson }}' title="Buka link cepat">
+                <i class="bi bi-link-45deg"></i>
+            </button>
+        </div>
+    </td>
+</tr>
+{% else %}
+<tr>
+    <td colspan="7" class="text-center py-4 text-muted">
+        <i class="bi bi-clock-history fs-4 d-block mb-2"></i>
+        {{ empty_text }}
+    </td>
+</tr>
+{% endfor %}
+{% if include_no_results_row %}
+<tr id="noLogResults" style="display:none;">
+    <td colspan="7" class="text-center py-4 text-muted">Tidak ada log sesuai pencarian.</td>
+</tr>
+{% endif %}
