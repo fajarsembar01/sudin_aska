@@ -2804,37 +2804,62 @@
             }
         });
 
-        deleteAspectBtn?.addEventListener('click', async function () {
+        deleteAspectBtn?.addEventListener('click', function () {
             if (!pendingDelete) return;
             const { aspectId, roomId, aspectName, trigger } = pendingDelete;
-            deleteAspectBtn.disabled = true;
-            deleteAspectBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-            try {
-                const res = await fetch(`/portal/admin/setup/aspect/${aspectId}/delete`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken || ''
-                    },
-                    body: JSON.stringify({})
-                });
-                const data = await res.json();
-                if (data.success) {
+            const action = {
+                confirmTitle: 'Hapus Aspek',
+                confirmText: `Hapus aspek ${aspectName}?`,
+                label: 'Hapus',
+                buttonClass: 'btn-danger',
+                allowNote: false,
+                undoLabel: 'Penghapusan aspek dijadwalkan',
+                execute: function () {
+                    return fetch(`/portal/admin/setup/aspect/${aspectId}/delete`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken || ''
+                        },
+                        body: JSON.stringify({})
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (!data || !data.success) {
+                                throw new Error(data.message || 'Gagal menghapus aspek');
+                            }
+                            return data;
+                        });
+                },
+                onSchedule: function () {
+                    deleteAspectBtn.disabled = true;
+                    deleteAspectBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                    if (trigger) trigger.disabled = true;
+                    deleteModal.hide();
+                },
+                onUndo: function () {
+                    deleteAspectBtn.disabled = false;
+                    deleteAspectBtn.innerHTML = '<i class="bi bi-trash"></i> Hapus';
+                    if (trigger) trigger.disabled = false;
+                    showToast('Penghapusan aspek dibatalkan.');
+                },
+                onSuccess: function (data) {
                     renderAspects(roomId, data.aspects);
                     showToast(`${aspectName} dihapus.`);
                     refreshSetupHistory();
-                    deleteModal.hide();
-                } else {
-                    alert(data.message || 'Gagal menghapus aspek');
+                },
+                onFailure: function (err) {
+                    deleteAspectBtn.disabled = false;
+                    deleteAspectBtn.innerHTML = '<i class="bi bi-trash"></i> Hapus';
+                    if (trigger) trigger.disabled = false;
+                    alert(err.message || 'Gagal menghapus aspek');
                 }
-            } catch (err) {
-                alert('Gagal menghapus aspek');
-                console.error(err);
-            } finally {
-                deleteAspectBtn.disabled = false;
-                deleteAspectBtn.innerHTML = '<i class="bi bi-trash"></i> Hapus';
-                if (trigger) trigger.disabled = false;
-                pendingDelete = null;
+            };
+            pendingDelete = null;
+            if (window.scheduleAdminAction) {
+                window.scheduleAdminAction(action);
+            } else {
+                action.execute().then(action.onSuccess).catch(action.onFailure);
             }
         });
 

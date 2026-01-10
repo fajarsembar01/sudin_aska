@@ -2127,6 +2127,7 @@ def update_team_member_request_status(
     request_id: int,
     status: str,
     reviewed_by: int,
+    reviewer_note: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     """Update request status and return updated row."""
     with get_cursor(commit=True) as cur:
@@ -2135,11 +2136,12 @@ def update_team_member_request_status(
             UPDATE monev_team_member_requests
             SET status = %s,
                 reviewed_by = %s,
+                reviewer_note = %s,
                 reviewed_at = NOW()
             WHERE id = %s
             RETURNING *
             """,
-            (status, reviewed_by, request_id),
+            (status, reviewed_by, reviewer_note, request_id),
         )
         row = cur.fetchone()
         return dict(row) if row else None

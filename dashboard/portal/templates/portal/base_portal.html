@@ -514,6 +514,184 @@
         html[data-theme="dark"] .school-item:hover {
             background-color: var(--bg-subtle) !important;
         }
+
+        .notification-toggle {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 999px;
+            border: 0;
+            background: transparent;
+            color: var(--text-primary);
+            transition: background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+        }
+
+        .notification-toggle:hover,
+        .notification-menu.show .notification-toggle {
+            background-color: var(--bg-muted);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -0.2rem;
+            right: -0.1rem;
+            min-width: 1.2rem;
+            height: 1.2rem;
+            padding: 0 0.3rem;
+            border-radius: 999px;
+            background: #dc3545;
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 0 2px var(--bg-surface);
+        }
+
+        .notification-dropdown {
+            min-width: 22rem;
+            border: 0;
+            border-radius: 1rem;
+            padding: 1rem;
+            background-color: var(--bg-surface);
+            box-shadow: var(--shadow-soft);
+            max-height: min(70vh, 34rem);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
+        .notification-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .notification-header .notification-controls {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .notification-refresh {
+            border-radius: 999px;
+            padding: 0.2rem 0.55rem;
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.65rem 0.75rem;
+            border-radius: 0.75rem;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .notification-item:hover {
+            background-color: var(--bg-subtle);
+            transform: translateX(2px);
+        }
+
+        .notification-item small {
+            color: var(--text-muted);
+        }
+
+        .notification-empty {
+            padding: 0.5rem 0.75rem;
+        }
+
+        .notification-divider {
+            border-top: 1px solid var(--border-soft);
+            margin: 0.75rem 0;
+        }
+
+        .notification-group-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin: 0.75rem 0 0.5rem;
+        }
+
+        .notification-quick-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: 0.75rem;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-soft);
+            margin-bottom: 0.5rem;
+        }
+
+        .notification-quick-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .notification-quick-meta {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notification-quick-meta .fw-semibold {
+            font-size: 0.9rem;
+        }
+
+        .notification-quick-meta small {
+            color: var(--text-muted);
+        }
+
+        .notification-quick-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+        }
+
+        .admin-undo-toast {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0.9rem;
+            border-radius: 999px;
+            background: rgba(20, 20, 20, 0.92);
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            margin-top: 0.5rem;
+            pointer-events: auto;
+        }
+
+        .admin-undo-toast small {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .admin-undo-toast .btn {
+            border-radius: 999px;
+        }
+
+        .admin-undo-container {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+        }
     </style>
     {% block head_extra %}{% endblock %}
 </head>
@@ -706,6 +884,88 @@
                         </label>
                     </div>
 
+                    {% if current_user and current_user.role == 'admin' %}
+                    {% set pending_total = admin_pending.total if admin_pending else 0 %}
+                    {% set pending_users = admin_pending.pending_users if admin_pending else 0 %}
+                    {% set pending_assignments = admin_pending.pending_assignment_requests if admin_pending else 0 %}
+                    {% set pending_team = admin_pending.pending_team_member_requests if admin_pending else 0 %}
+                    {% set pending_reopen = admin_pending.pending_reopen_requests if admin_pending else 0 %}
+                    <div class="dropdown notification-menu">
+                        <button class="notification-toggle" type="button" data-bs-toggle="dropdown"
+                            id="adminNotificationToggle"
+                            aria-expanded="false" aria-label="Notifikasi admin">
+                            <i class="bi bi-bell"></i>
+                            <span class="notification-badge{% if pending_total == 0 %} d-none{% endif %}"
+                                id="adminPendingTotalBadge" data-count="{{ pending_total }}">{{ pending_total }}</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end notification-dropdown">
+                            <div class="notification-header">
+                                <span class="fw-semibold">Butuh Konfirmasi</span>
+                                <div class="notification-controls">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm notification-refresh"
+                                        id="adminPendingRefresh" title="Perbarui">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                    <span class="badge bg-danger-subtle text-danger{% if pending_total == 0 %} d-none{% endif %}"
+                                        id="adminPendingTotalLabel" data-count="{{ pending_total }}">{{ pending_total }}</span>
+                                </div>
+                            </div>
+                            <div id="adminPendingEmpty"
+                                class="notification-empty text-muted small{% if pending_total > 0 %} d-none{% endif %}">
+                                Tidak ada permintaan yang menunggu.
+                            </div>
+                            <a class="notification-item{% if pending_users == 0 %} d-none{% endif %}"
+                                id="adminPendingUsersItem" href="{{ url_for('portal.manage_users') }}">
+                                <div>
+                                    <div class="fw-semibold">User baru</div>
+                                    <small>Menunggu verifikasi akun</small>
+                                </div>
+                                <span class="badge bg-warning text-dark" id="adminPendingUsersCount"
+                                    data-count="{{ pending_users }}">{{ pending_users }}</span>
+                            </a>
+                            <a class="notification-item{% if pending_assignments == 0 %} d-none{% endif %}"
+                                id="adminPendingAssignmentItem" href="{{ url_for('portal.admin_manage_staff') }}">
+                                <div>
+                                    <div class="fw-semibold">Permintaan penugasan</div>
+                                    <small>Koordinator ajukan penugasan staff</small>
+                                </div>
+                                <span class="badge bg-info text-dark" id="adminPendingAssignmentCount"
+                                    data-count="{{ pending_assignments }}">{{ pending_assignments }}</span>
+                            </a>
+                            <a class="notification-item{% if pending_team == 0 %} d-none{% endif %}"
+                                id="adminPendingTeamItem" href="{{ url_for('portal.manage_monev_teams') }}">
+                                <div>
+                                    <div class="fw-semibold">Permintaan anggota tim</div>
+                                    <small>Persetujuan anggota monev</small>
+                                </div>
+                                <span class="badge bg-primary" id="adminPendingTeamCount"
+                                    data-count="{{ pending_team }}">{{ pending_team }}</span>
+                            </a>
+                            <a class="notification-item{% if pending_reopen == 0 %} d-none{% endif %}"
+                                id="adminPendingReopenItem" href="{{ url_for('portal.admin_reopen_requests') }}">
+                                <div>
+                                    <div class="fw-semibold">Permintaan reopen</div>
+                                    <small>Penilaian diajukan untuk dibuka</small>
+                                </div>
+                                <span class="badge bg-danger" id="adminPendingReopenCount"
+                                    data-count="{{ pending_reopen }}">{{ pending_reopen }}</span>
+                            </a>
+                            <div class="notification-divider" id="adminPendingQuickDivider"></div>
+                            <div class="notification-quick" id="adminPendingQuickList"
+                                data-users-url="{{ url_for('portal.manage_users') }}"
+                                data-assignment-url="{{ url_for('portal.admin_manage_staff') }}"
+                                data-team-url="{{ url_for('portal.manage_monev_teams') }}"
+                                data-reopen-url="{{ url_for('portal.admin_reopen_requests') }}"
+                                data-approve-assignment="{{ url_for('portal.admin_approve_assignment_request', request_id=0) }}"
+                                data-reject-assignment="{{ url_for('portal.admin_reject_assignment_request', request_id=0) }}"
+                                data-approve-reopen="{{ url_for('portal.approve_reopen', assessment_id=0) }}"
+                                data-reject-reopen="{{ url_for('portal.reject_reopen', assessment_id=0) }}"
+                                data-preview-url="{{ url_for('portal.admin_pending_preview') }}">
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     {% if current_user %}
                     <div class="dropdown user-menu">
                         <button class="user-menu-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -789,6 +1049,32 @@
         {% block portal_content %}{% endblock %}
     </main>
 
+    <div class="modal fade" id="adminQuickConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="adminQuickConfirmTitle">Konfirmasi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0" id="adminQuickConfirmText"></p>
+                    <div class="mt-3" id="adminQuickConfirmNoteWrap">
+                        <label for="adminQuickConfirmNote" class="form-label small text-muted">Catatan (opsional)</label>
+                        <textarea class="form-control" id="adminQuickConfirmNote" rows="3"
+                            placeholder="Tulis catatan singkat untuk audit."></textarea>
+                        <div class="form-text" id="adminQuickConfirmNoteHelp">
+                            Catatan ini akan tersimpan di log aktivitas admin.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="adminQuickConfirmBtn">Lanjutkan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {% include "portal/components/_area_contact_modal.html" %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -867,6 +1153,809 @@
                 }
             });
         });
+    </script>
+    <script>
+        (function () {
+            var isAdmin = {{ 'true' if current_user and current_user.role == 'admin' else 'false' }};
+            if (!isAdmin) return;
+
+            var elements = {
+                totalBadge: document.getElementById('adminPendingTotalBadge'),
+                totalLabel: document.getElementById('adminPendingTotalLabel'),
+                emptyState: document.getElementById('adminPendingEmpty'),
+                quickDivider: document.getElementById('adminPendingQuickDivider'),
+                quickList: document.getElementById('adminPendingQuickList'),
+                users: {
+                    item: document.getElementById('adminPendingUsersItem'),
+                    count: document.getElementById('adminPendingUsersCount')
+                },
+                assignment: {
+                    item: document.getElementById('adminPendingAssignmentItem'),
+                    count: document.getElementById('adminPendingAssignmentCount')
+                },
+                team: {
+                    item: document.getElementById('adminPendingTeamItem'),
+                    count: document.getElementById('adminPendingTeamCount')
+                },
+                reopen: {
+                    item: document.getElementById('adminPendingReopenItem'),
+                    count: document.getElementById('adminPendingReopenCount')
+                }
+            };
+            var quickConfig = elements.quickList ? {
+                previewUrl: elements.quickList.dataset.previewUrl,
+                usersUrl: elements.quickList.dataset.usersUrl,
+                assignmentUrl: elements.quickList.dataset.assignmentUrl,
+                teamUrl: elements.quickList.dataset.teamUrl,
+                reopenUrl: elements.quickList.dataset.reopenUrl,
+                approveAssignmentUrl: elements.quickList.dataset.approveAssignment,
+                rejectAssignmentUrl: elements.quickList.dataset.rejectAssignment,
+                approveReopenUrl: elements.quickList.dataset.approveReopen,
+                rejectReopenUrl: elements.quickList.dataset.rejectReopen
+            } : {};
+            var confirmModalEl = document.getElementById('adminQuickConfirmModal');
+            var confirmTitleEl = document.getElementById('adminQuickConfirmTitle');
+            var confirmTextEl = document.getElementById('adminQuickConfirmText');
+            var confirmNoteEl = document.getElementById('adminQuickConfirmNote');
+            var confirmNoteWrapEl = document.getElementById('adminQuickConfirmNoteWrap');
+            var confirmBtnEl = document.getElementById('adminQuickConfirmBtn');
+            var confirmModal = confirmModalEl ? new bootstrap.Modal(confirmModalEl) : null;
+            var pendingAction = null;
+            var pendingActions = new Map();
+            var pendingOrder = [];
+            var undoContainer = document.getElementById('adminUndoToastContainer');
+            if (!undoContainer) {
+                undoContainer = document.createElement('div');
+                undoContainer.id = 'adminUndoToastContainer';
+                undoContainer.className = 'admin-undo-container';
+                document.body.appendChild(undoContainer);
+            }
+
+            function isEditableTarget(target) {
+                if (!target) return false;
+                var tag = target.tagName ? target.tagName.toLowerCase() : '';
+                return (
+                    tag === 'input'
+                    || tag === 'textarea'
+                    || tag === 'select'
+                    || target.isContentEditable
+                );
+            }
+
+            function cleanupUndoToast(toast) {
+                if (!toast) return;
+                if (toast._countdownTimer) {
+                    clearInterval(toast._countdownTimer);
+                }
+                toast.remove();
+            }
+
+            function createUndoToast(action, expiresAt, onUndo) {
+                if (!undoContainer) return null;
+                var toast = document.createElement('div');
+                toast.className = 'admin-undo-toast';
+
+                var textWrap = document.createElement('div');
+                var title = document.createElement('div');
+                title.className = 'fw-semibold';
+                title.textContent = action.undoLabel || action.confirmTitle || 'Aksi dijadwalkan';
+
+                var subtitle = document.createElement('small');
+                subtitle.innerHTML = 'Undo dalam <span class="admin-undo-countdown"></span> detik';
+                var countdownEl = subtitle.querySelector('.admin-undo-countdown');
+
+                function updateCountdown() {
+                    var remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+                    countdownEl.textContent = remaining.toString();
+                }
+
+                updateCountdown();
+                toast._countdownTimer = setInterval(updateCountdown, 1000);
+
+                textWrap.appendChild(title);
+                textWrap.appendChild(subtitle);
+
+                var undoBtn = document.createElement('button');
+                undoBtn.type = 'button';
+                undoBtn.className = 'btn btn-sm btn-outline-light';
+                undoBtn.textContent = 'Undo';
+                undoBtn.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (typeof onUndo === 'function') {
+                        onUndo();
+                    }
+                });
+
+                toast.appendChild(textWrap);
+                toast.appendChild(undoBtn);
+                undoContainer.appendChild(toast);
+                return toast;
+            }
+
+            function removePendingId(actionId) {
+                pendingOrder = pendingOrder.filter(function (id) { return id !== actionId; });
+            }
+
+            function scheduleAdminAction(action) {
+                if (!action) return null;
+                var delayMs = typeof action.delayMs === 'number' ? action.delayMs : 7000;
+                var actionId = action.id || ('admin-action-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+                if (!action.execute) {
+                    action.execute = function () {
+                        return executeAction(action);
+                    };
+                }
+
+                if (typeof action.onSchedule === 'function') {
+                    action.onSchedule();
+                }
+
+                var expiresAt = Date.now() + delayMs;
+                var toast = createUndoToast(action, expiresAt, function () {
+                    undoAdminAction(actionId);
+                });
+
+                var timer = setTimeout(function () {
+                    commitAdminAction(actionId);
+                }, delayMs);
+
+                pendingActions.set(actionId, {
+                    id: actionId,
+                    action: action,
+                    timer: timer,
+                    toast: toast,
+                });
+                pendingOrder.push(actionId);
+                return actionId;
+            }
+
+            function commitAdminAction(actionId) {
+                var entry = pendingActions.get(actionId);
+                if (!entry) return;
+                pendingActions.delete(actionId);
+                removePendingId(actionId);
+                cleanupUndoToast(entry.toast);
+
+                entry.action.execute()
+                    .then(function (data) {
+                        if (typeof entry.action.onSuccess === 'function') {
+                            entry.action.onSuccess(data);
+                        }
+                        if (entry.action.toastMessage && typeof showToast === 'function') {
+                            showToast(entry.action.toastMessage);
+                        }
+                    })
+                    .catch(function (err) {
+                        if (typeof entry.action.onFailure === 'function') {
+                            entry.action.onFailure(err);
+                            return;
+                        }
+                        if (typeof entry.action.onUndo === 'function') {
+                            entry.action.onUndo();
+                        }
+                        alert(err.message || 'Gagal memproses permintaan.');
+                    });
+            }
+
+            function undoAdminAction(actionId) {
+                var entry = pendingActions.get(actionId);
+                if (!entry) return;
+                pendingActions.delete(actionId);
+                removePendingId(actionId);
+                clearTimeout(entry.timer);
+                cleanupUndoToast(entry.toast);
+                if (typeof entry.action.onUndo === 'function') {
+                    entry.action.onUndo();
+                }
+            }
+
+            function undoLastAdminAction() {
+                var lastId = pendingOrder[pendingOrder.length - 1];
+                if (!lastId) return;
+                undoAdminAction(lastId);
+            }
+
+            document.addEventListener('keydown', function (event) {
+                if (!event.ctrlKey || event.key.toLowerCase() !== 'z') return;
+                if (isEditableTarget(event.target)) return;
+                event.preventDefault();
+                undoLastAdminAction();
+            });
+
+            function getCount(el) {
+                if (!el) return 0;
+                var raw = el.dataset.count || el.textContent || '0';
+                var value = parseInt(raw, 10);
+                return Number.isNaN(value) ? 0 : value;
+            }
+
+            function setCount(el, value) {
+                if (!el) return;
+                el.dataset.count = value;
+                el.textContent = value;
+            }
+
+            function toggle(el, show) {
+                if (!el) return;
+                if (show) {
+                    el.classList.remove('d-none');
+                } else {
+                    el.classList.add('d-none');
+                }
+            }
+
+            function setItem(key, value) {
+                var cfg = elements[key];
+                if (!cfg || !cfg.count || !cfg.item) return;
+                setCount(cfg.count, value);
+                toggle(cfg.item, value > 0);
+            }
+
+            function updateTotals() {
+                var total = getCount(elements.users.count)
+                    + getCount(elements.assignment.count)
+                    + getCount(elements.team.count)
+                    + getCount(elements.reopen.count);
+
+                setCount(elements.totalBadge, total);
+                setCount(elements.totalLabel, total);
+                toggle(elements.totalBadge, total > 0);
+                toggle(elements.totalLabel, total > 0);
+                toggle(elements.emptyState, total === 0);
+            }
+
+            window.updateAdminPendingCounts = function (delta) {
+                if (!delta) return;
+                Object.keys(delta).forEach(function (key) {
+                    if (!elements[key] || !elements[key].count) return;
+                    var next = Math.max(0, getCount(elements[key].count) + delta[key]);
+                    setItem(key, next);
+                });
+                updateTotals();
+            };
+
+            window.setAdminPendingSummary = function (summary) {
+                if (!summary) return;
+                setItem('users', summary.pending_users || 0);
+                setItem('assignment', summary.pending_assignment_requests || 0);
+                setItem('team', summary.pending_team_member_requests || 0);
+                setItem('reopen', summary.pending_reopen_requests || 0);
+                updateTotals();
+            };
+
+            function replaceId(url, id) {
+                if (!url) return '';
+                return url.replace('/0/', '/' + id + '/');
+            }
+
+            function buildQuickItem(title, subtitle, actions) {
+                var row = document.createElement('div');
+                row.className = 'notification-quick-item';
+
+                var meta = document.createElement('div');
+                meta.className = 'notification-quick-meta';
+
+                var titleEl = document.createElement('div');
+                titleEl.className = 'fw-semibold';
+                titleEl.textContent = title || '-';
+
+                var subtitleEl = document.createElement('small');
+                subtitleEl.textContent = subtitle || '';
+
+                meta.appendChild(titleEl);
+                if (subtitle) {
+                    meta.appendChild(subtitleEl);
+                }
+
+                var actionWrap = document.createElement('div');
+                actionWrap.className = 'notification-quick-actions';
+
+                actions.forEach(function (action) {
+                    action.contextRow = row;
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'btn btn-sm ' + action.buttonClass;
+                    btn.textContent = action.label;
+                    btn.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openConfirm(action);
+                    });
+                    actionWrap.appendChild(btn);
+                });
+
+                row.appendChild(meta);
+                row.appendChild(actionWrap);
+                return row;
+            }
+
+            function renderQuickList(preview) {
+                if (!elements.quickList) return;
+                elements.quickList.innerHTML = '';
+                var hasAny = false;
+
+                function addGroup(label, viewUrl, items, renderItem) {
+                    if (!items || items.length === 0) return;
+                    hasAny = true;
+                    var title = document.createElement('div');
+                    title.className = 'notification-group-title';
+
+                    var labelEl = document.createElement('span');
+                    labelEl.textContent = label;
+
+                    var linkEl = document.createElement('a');
+                    linkEl.href = viewUrl || '#';
+                    linkEl.className = 'small text-decoration-none';
+                    linkEl.textContent = 'Lihat semua';
+
+                    title.appendChild(labelEl);
+                    title.appendChild(linkEl);
+                    elements.quickList.appendChild(title);
+
+                    items.forEach(function (item) {
+                        elements.quickList.appendChild(renderItem(item));
+                    });
+                }
+
+                addGroup('User baru', quickConfig.usersUrl, preview.users, function (item) {
+                    var title = item.full_name || item.email || 'User';
+                    var subtitle = [item.email, item.role].filter(Boolean).join(' • ');
+                    return buildQuickItem(title, subtitle, [
+                        {
+                            label: 'Setujui',
+                            buttonClass: 'btn-success',
+                            confirmTitle: 'Setujui User',
+                            confirmText: 'Setujui user ' + title + '?',
+                            url: quickConfig.usersUrl,
+                            noteKey: 'reviewer_note',
+                            payload: {
+                                action: 'verify',
+                                user_id: item.id,
+                                account_status: 'approved',
+                                full_name: item.full_name || '',
+                                role: item.role || ''
+                            },
+                            deltaKey: 'users',
+                            toastMessage: 'User disetujui.'
+                        },
+                        {
+                            label: 'Tolak',
+                            buttonClass: 'btn-outline-danger',
+                            confirmTitle: 'Tolak User',
+                            confirmText: 'Tolak user ' + title + '?',
+                            url: quickConfig.usersUrl,
+                            noteKey: 'reviewer_note',
+                            payload: {
+                                action: 'verify',
+                                user_id: item.id,
+                                account_status: 'rejected',
+                                full_name: item.full_name || '',
+                                role: item.role || ''
+                            },
+                            deltaKey: 'users',
+                            toastMessage: 'User ditolak.'
+                        }
+                    ]);
+                });
+
+                addGroup('Permintaan penugasan', quickConfig.assignmentUrl, preview.assignment_requests, function (item) {
+                    var title = (item.staff_name || 'Staff') + ' • ' + (item.school_name || 'Sekolah');
+                    var subtitle = [item.coordinator_name, item.school_npsn].filter(Boolean).join(' • ');
+                    return buildQuickItem(title, subtitle, [
+                        {
+                            label: 'Setujui',
+                            buttonClass: 'btn-success',
+                            confirmTitle: 'Setujui Penugasan',
+                            confirmText: 'Setujui penugasan ' + (item.staff_name || 'staff') + ' ke ' + (item.school_name || 'sekolah') + '?',
+                            url: replaceId(quickConfig.approveAssignmentUrl, item.id),
+                            noteKey: 'reviewer_note',
+                            payload: null,
+                            deltaKey: 'assignment',
+                            toastMessage: 'Penugasan disetujui.'
+                        },
+                        {
+                            label: 'Tolak',
+                            buttonClass: 'btn-outline-danger',
+                            confirmTitle: 'Tolak Penugasan',
+                            confirmText: 'Tolak penugasan ' + (item.staff_name || 'staff') + ' ke ' + (item.school_name || 'sekolah') + '?',
+                            url: replaceId(quickConfig.rejectAssignmentUrl, item.id),
+                            noteKey: 'reviewer_note',
+                            payload: null,
+                            deltaKey: 'assignment',
+                            toastMessage: 'Penugasan ditolak.'
+                        }
+                    ]);
+                });
+
+                addGroup('Permintaan anggota tim', quickConfig.teamUrl, preview.team_member_requests, function (item) {
+                    var title = (item.staff_name || 'Staff') + ' • ' + (item.team_name || 'Tim');
+                    var subtitle = item.requested_by_name ? 'Diajukan oleh ' + item.requested_by_name : '';
+                    return buildQuickItem(title, subtitle, [
+                        {
+                            label: 'Setujui',
+                            buttonClass: 'btn-success',
+                            confirmTitle: 'Setujui Anggota',
+                            confirmText: 'Setujui ' + (item.staff_name || 'staff') + ' untuk tim ' + (item.team_name || 'ini') + '?',
+                            url: quickConfig.teamUrl,
+                            noteKey: 'reviewer_note',
+                            payload: {
+                                action: 'approve_request',
+                                request_id: item.id
+                            },
+                            deltaKey: 'team',
+                            toastMessage: 'Permintaan anggota disetujui.'
+                        },
+                        {
+                            label: 'Tolak',
+                            buttonClass: 'btn-outline-danger',
+                            confirmTitle: 'Tolak Anggota',
+                            confirmText: 'Tolak ' + (item.staff_name || 'staff') + ' untuk tim ' + (item.team_name || 'ini') + '?',
+                            url: quickConfig.teamUrl,
+                            noteKey: 'reviewer_note',
+                            payload: {
+                                action: 'reject_request',
+                                request_id: item.id
+                            },
+                            deltaKey: 'team',
+                            toastMessage: 'Permintaan anggota ditolak.'
+                        }
+                    ]);
+                });
+
+                addGroup('Permintaan reopen', quickConfig.reopenUrl, preview.reopen_requests, function (item) {
+                    var title = (item.school_name || 'Sekolah') + ' • ' + (item.staff_name || 'Staff');
+                    var subtitle = item.npsn ? 'NPSN ' + item.npsn : '';
+                    return buildQuickItem(title, subtitle, [
+                        {
+                            label: 'Setujui',
+                            buttonClass: 'btn-success',
+                            confirmTitle: 'Setujui Reopen',
+                            confirmText: 'Setujui reopen untuk ' + (item.school_name || 'sekolah') + '?',
+                            url: replaceId(quickConfig.approveReopenUrl, item.assessment_id),
+                            noteKey: 'reviewer_note',
+                            payload: { request_id: item.id },
+                            deltaKey: 'reopen',
+                            toastMessage: 'Reopen disetujui.'
+                        },
+                        {
+                            label: 'Tolak',
+                            buttonClass: 'btn-outline-danger',
+                            confirmTitle: 'Tolak Reopen',
+                            confirmText: 'Tolak reopen untuk ' + (item.school_name || 'sekolah') + '?',
+                            url: replaceId(quickConfig.rejectReopenUrl, item.assessment_id),
+                            noteKey: 'reviewer_note',
+                            payload: { request_id: item.id },
+                            deltaKey: 'reopen',
+                            toastMessage: 'Reopen ditolak.'
+                        }
+                    ]);
+                });
+
+                if (!hasAny) {
+                    var empty = document.createElement('div');
+                    empty.className = 'text-muted small';
+                    empty.textContent = 'Tidak ada aksi cepat.';
+                    elements.quickList.appendChild(empty);
+                }
+
+                toggle(elements.quickDivider, hasAny);
+            }
+
+            function hideQuickRow(row) {
+                if (!row) return;
+                row.classList.add('d-none');
+                row.dataset.pendingHidden = 'true';
+            }
+
+            function showQuickRow(row) {
+                if (!row) return;
+                row.classList.remove('d-none');
+                delete row.dataset.pendingHidden;
+            }
+
+            function applyNoteToAction(action, note) {
+                if (!action || !note) return;
+                if (action.noteKey) {
+                    if (action.payload instanceof FormData) {
+                        action.payload.set(action.noteKey, note);
+                    } else if (action.payload && typeof action.payload === 'object') {
+                        action.payload[action.noteKey] = note;
+                    } else {
+                        action.payload = {};
+                        action.payload[action.noteKey] = note;
+                    }
+                }
+                action.note = note;
+            }
+
+            function prepareActionDefaults(action) {
+                if (!action) return;
+                var deltaKey = action.deltaKey;
+                if (!action.onSchedule) {
+                    action.onSchedule = function () {
+                        if (action.contextRow) {
+                            hideQuickRow(action.contextRow);
+                        }
+                        if (deltaKey && window.updateAdminPendingCounts) {
+                            var delta = {};
+                            delta[deltaKey] = -1;
+                            window.updateAdminPendingCounts(delta);
+                        }
+                    };
+                }
+                if (!action.onUndo) {
+                    action.onUndo = function () {
+                        if (action.contextRow) {
+                            showQuickRow(action.contextRow);
+                        }
+                        if (deltaKey && window.updateAdminPendingCounts) {
+                            var delta = {};
+                            delta[deltaKey] = 1;
+                            window.updateAdminPendingCounts(delta);
+                        }
+                        if (window.refreshAdminPendingSummary) {
+                            window.refreshAdminPendingSummary();
+                        }
+                    };
+                }
+                if (!action.onSuccess) {
+                    action.onSuccess = function () {
+                        if (action.contextRow) {
+                            action.contextRow.remove();
+                        }
+                        if (window.refreshAdminPendingSummary) {
+                            window.refreshAdminPendingSummary();
+                        }
+                    };
+                }
+                if (!action.onFailure && action.onUndo) {
+                    action.onFailure = function (err) {
+                        action.onUndo();
+                        alert((err && err.message) || 'Gagal memproses permintaan.');
+                    };
+                }
+            }
+
+            function openConfirm(action) {
+                if (!confirmModal || !confirmBtnEl) return;
+                pendingAction = action;
+                prepareActionDefaults(pendingAction);
+                if (confirmTitleEl) {
+                    confirmTitleEl.textContent = action.confirmTitle || 'Konfirmasi';
+                }
+                if (confirmTextEl) {
+                    confirmTextEl.textContent = action.confirmText || 'Lanjutkan tindakan ini?';
+                }
+                if (confirmNoteWrapEl) {
+                    var showNote = !!(action.noteKey || action.allowNote);
+                    toggle(confirmNoteWrapEl, showNote);
+                }
+                if (confirmNoteEl) {
+                    confirmNoteEl.value = '';
+                    confirmNoteEl.placeholder = action.notePlaceholder || 'Tulis catatan singkat untuk audit.';
+                }
+                confirmBtnEl.textContent = action.label || 'Lanjutkan';
+                confirmBtnEl.className = 'btn ' + (action.buttonClass || 'btn-primary');
+                confirmModal.show();
+            }
+
+            function executeAction(action) {
+                if (!action || !action.url) return Promise.resolve();
+                var options = {
+                    method: action.method || 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                };
+                if (action.headers) {
+                    Object.keys(action.headers).forEach(function (key) {
+                        options.headers[key] = action.headers[key];
+                    });
+                }
+                if (action.payload) {
+                    if (action.payload instanceof FormData) {
+                        options.body = action.payload;
+                    } else if (action.payloadType === 'json') {
+                        options.headers['Content-Type'] = 'application/json';
+                        options.body = JSON.stringify(action.payload);
+                    } else {
+                        var formData = new FormData();
+                        Object.keys(action.payload).forEach(function (key) {
+                            if (action.payload[key] !== undefined && action.payload[key] !== null) {
+                                formData.append(key, action.payload[key]);
+                            }
+                        });
+                        options.body = formData;
+                    }
+                }
+                return fetch(action.url, options)
+                    .then(function (response) {
+                        return response.json().catch(function () { return null; }).then(function (data) {
+                            if (!response.ok || !data || !data.success) {
+                                var message = (data && data.message) ? data.message : 'Gagal memproses permintaan.';
+                                throw new Error(message);
+                            }
+                            return data;
+                        });
+                    });
+            }
+
+            if (confirmBtnEl) {
+                confirmBtnEl.addEventListener('click', function () {
+                    if (!pendingAction) return;
+                    confirmBtnEl.disabled = true;
+                    var action = pendingAction;
+                    pendingAction = null;
+                    var note = confirmNoteEl ? confirmNoteEl.value.trim() : '';
+                    if (confirmNoteEl) {
+                        confirmNoteEl.value = '';
+                    }
+                    if (note) {
+                        applyNoteToAction(action, note);
+                    }
+                    if (!action.execute) {
+                        action.execute = function () {
+                            return executeAction(action);
+                        };
+                    }
+                    if (confirmModal) {
+                        confirmModal.hide();
+                    }
+                    scheduleAdminAction(action);
+                    confirmBtnEl.disabled = false;
+                });
+            }
+
+            window.confirmAdminAction = openConfirm;
+            window.scheduleAdminAction = scheduleAdminAction;
+            window.executeAdminAction = executeAction;
+            window.undoLastAdminAction = undoLastAdminAction;
+
+            function isDeleteLikeForm(form) {
+                if (!form) return false;
+                if (form.dataset.undoSkip === 'true') return false;
+                if ((form.getAttribute('method') || '').toUpperCase() !== 'POST') return false;
+                var actionUrl = (form.getAttribute('action') || '').toLowerCase();
+                var actionInput = form.querySelector('input[name="action"]');
+                var actionValue = actionInput ? (actionInput.value || '').toLowerCase() : '';
+                if (form.dataset.undoDelete === 'true') return true;
+                return actionUrl.includes('delete')
+                    || actionUrl.includes('remove')
+                    || actionValue.includes('delete')
+                    || actionValue.includes('remove');
+            }
+
+            function extractInlineConfirmText(form) {
+                if (!form) return '';
+                if (form.dataset.confirmText) return form.dataset.confirmText;
+                var inline = form.getAttribute('onsubmit') || '';
+                var match = inline.match(/confirm\\((['"])(.*?)\\1\\)/);
+                return match ? match[2] : '';
+            }
+
+            function resolveSubmitLabel(form) {
+                var btn = form.querySelector('button[type="submit"]');
+                if (btn) {
+                    var text = (btn.textContent || '').trim();
+                    if (text) return text;
+                }
+                return 'Hapus';
+            }
+
+            function toggleFormButtons(form, disabled) {
+                if (!form) return;
+                form.querySelectorAll('button[type="submit"]').forEach(function (btn) {
+                    btn.disabled = disabled;
+                });
+            }
+
+            document.addEventListener('submit', function (event) {
+                if (!isAdmin) return;
+                var form = event.target;
+                if (!(form instanceof HTMLFormElement)) return;
+                if (!isDeleteLikeForm(form)) return;
+                if (form.dataset.undoReady === 'true') {
+                    delete form.dataset.undoReady;
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                var confirmText = extractInlineConfirmText(form) || 'Hapus item ini?';
+                var confirmTitle = form.dataset.confirmTitle || 'Konfirmasi Hapus';
+                var label = form.dataset.confirmLabel || resolveSubmitLabel(form);
+                var modalEl = form.closest('.modal');
+                var action = {
+                    confirmTitle: confirmTitle,
+                    confirmText: confirmText,
+                    label: label,
+                    buttonClass: 'btn-danger',
+                    allowNote: false,
+                    undoLabel: 'Penghapusan dijadwalkan',
+                    execute: function () {
+                        form.dataset.undoReady = 'true';
+                        form.submit();
+                        return Promise.resolve({ success: true });
+                    },
+                    onSchedule: function () {
+                        toggleFormButtons(form, true);
+                        if (modalEl && window.bootstrap) {
+                            var modalInstance = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl);
+                            modalInstance.hide();
+                        }
+                    },
+                    onUndo: function () {
+                        toggleFormButtons(form, false);
+                    }
+                };
+
+                if (modalEl) {
+                    scheduleAdminAction(action);
+                } else if (window.confirmAdminAction) {
+                    window.confirmAdminAction(action);
+                } else {
+                    scheduleAdminAction(action);
+                }
+            }, true);
+
+            function fetchSummary() {
+                var previewUrl = quickConfig.previewUrl || "{{ url_for('portal.admin_pending_preview') }}";
+                var requestUrl = previewUrl + '?limit=3';
+                return fetch(requestUrl, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(function (response) {
+                        if (!response.ok) return null;
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (data && data.summary) {
+                            window.setAdminPendingSummary(data.summary);
+                            renderQuickList(data);
+                        }
+                    })
+                    .catch(function () { });
+            }
+
+            window.refreshAdminPendingSummary = function () {
+                return fetchSummary();
+            };
+
+            var refreshBtn = document.getElementById('adminPendingRefresh');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    fetchSummary();
+                });
+            }
+
+            var dropdownToggle = document.getElementById('adminNotificationToggle');
+            if (dropdownToggle) {
+                dropdownToggle.addEventListener('shown.bs.dropdown', function () {
+                    fetchSummary();
+                });
+            }
+
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) {
+                    fetchSummary();
+                }
+            });
+
+            fetchSummary();
+
+            setInterval(function () {
+                if (document.hidden) return;
+                fetchSummary();
+            }, 600000);
+        })();
     </script>
     {% block portal_scripts %}{% endblock %}
 </body>

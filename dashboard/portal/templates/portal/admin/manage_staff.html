@@ -27,7 +27,10 @@
             <button class="nav-link" id="tab-requests" data-bs-toggle="tab" data-bs-target="#pane-requests"
                 type="button" role="tab">
                 Konfirmasi
-                <span class="badge bg-warning text-dark ms-1">{{ pending_requests|length if pending_requests else 0 }}</span>
+                <span class="badge bg-warning text-dark ms-1{% if not pending_requests %} d-none{% endif %}" id="pendingRequestBadge"
+                    data-count="{{ pending_requests|length if pending_requests else 0 }}">
+                    {{ pending_requests|length if pending_requests else 0 }}
+                </span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -166,11 +169,33 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    {% if pending_requests %}
-                    <div class="table-responsive">
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-2" id="pendingRequestsBulkBar">
+                        <div class="text-muted small">
+                            Terpilih: <span class="fw-semibold" id="pendingRequestsSelectedCount">0</span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-success" id="pendingRequestsBulkApprove" disabled>
+                            <i class="bi bi-check-lg me-1"></i>Setujui terpilih
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="pendingRequestsBulkReject"
+                            disabled>
+                            <i class="bi bi-x-lg me-1"></i>Tolak terpilih
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="pendingRequestsBulkClear"
+                            disabled>
+                            Reset
+                        </button>
+                        <div class="text-muted small ms-auto">
+                            Shortcut: Shift+A setujui, Shift+R tolak, Ctrl+Z undo.
+                        </div>
+                    </div>
+                    <div class="table-responsive{% if not pending_requests %} d-none{% endif %}" id="pendingRequestsTable">
                         <table class="table table-sm align-middle">
                             <thead class="table-light">
                                 <tr>
+                                    <th style="width: 36px;">
+                                        <input class="form-check-input" type="checkbox" id="pendingRequestsSelectAll"
+                                            aria-label="Pilih semua">
+                                    </th>
                                     <th>Koordinator</th>
                                     <th>Staff</th>
                                     <th>Sekolah</th>
@@ -182,7 +207,14 @@
                             </thead>
                             <tbody>
                                 {% for req in pending_requests %}
-                                <tr id="req-{{ req.id }}">
+                                <tr id="req-{{ req.id }}" data-request-id="{{ req.id }}"
+                                    data-staff-name="{{ req.staff_name or '' }}"
+                                    data-school-name="{{ req.school_name or '' }}"
+                                    data-coordinator-name="{{ req.coordinator_name or '' }}">
+                                    <td onclick="event.stopPropagation()">
+                                        <input class="form-check-input pending-request-select" type="checkbox"
+                                            data-request-id="{{ req.id }}" aria-label="Pilih permintaan">
+                                    </td>
                                     <td>{{ req.coordinator_name }}</td>
                                     <td>
                                         <div class="fw-semibold">{{ req.staff_name }}</div>
@@ -210,9 +242,9 @@
                             </tbody>
                         </table>
                     </div>
-                    {% else %}
-                    <p class="text-muted mb-0">Tidak ada permintaan pending.</p>
-                    {% endif %}
+                    <p class="text-muted mb-0{% if pending_requests %} d-none{% endif %}" id="pendingRequestsEmpty">
+                        Tidak ada permintaan pending.
+                    </p>
                 </div>
             </div>
         </div>
@@ -275,8 +307,116 @@
         const periodSelect = document.getElementById('periodSelect');
         const approveButtons = document.querySelectorAll('.approve-btn');
         const rejectButtons = document.querySelectorAll('.reject-btn');
+        const pendingRequestBadge = document.getElementById('pendingRequestBadge');
+        const pendingRequestsTable = document.getElementById('pendingRequestsTable');
+        const pendingRequestsEmpty = document.getElementById('pendingRequestsEmpty');
+        const selectAll = document.getElementById('pendingRequestsSelectAll');
+        const bulkApproveBtn = document.getElementById('pendingRequestsBulkApprove');
+        const bulkRejectBtn = document.getElementById('pendingRequestsBulkReject');
+        const bulkClearBtn = document.getElementById('pendingRequestsBulkClear');
+        const selectedCountEl = document.getElementById('pendingRequestsSelectedCount');
+        const requestsPane = document.getElementById('pane-requests');
         const availableSchools = {{ available_schools | tojson | safe }};
         let queue = [];
+        let lastFocusedRow = null;
+
+        function isEditableTarget(target) {
+            if (!target) return false;
+            const tag = target.tagName ? target.tagName.toLowerCase() : '';
+            return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable;
+        }
+
+        function getCount(el) {
+            if (!el) return 0;
+            const raw = el.dataset.count || el.textContent || '0';
+            const value = parseInt(raw, 10);
+            return Number.isNaN(value) ? 0 : value;
+        }
+
+        function setCount(el, value) {
+            if (!el) return;
+            el.dataset.count = value;
+            el.textContent = value;
+            if (value > 0) {
+                el.classList.remove('d-none');
+            } else {
+                el.classList.add('d-none');
+            }
+        }
+
+        function updatePendingRequestsUi() {
+            if (!pendingRequestsTable || !pendingRequestsEmpty) return;
+            const remaining = Array.from(pendingRequestsTable.querySelectorAll('tbody tr'))
+                .filter(row => !row.classList.contains('d-none')).length;
+            if (remaining === 0) {
+                pendingRequestsTable.classList.add('d-none');
+                pendingRequestsEmpty.classList.remove('d-none');
+            } else {
+                pendingRequestsTable.classList.remove('d-none');
+                pendingRequestsEmpty.classList.add('d-none');
+            }
+        }
+
+        function applyPendingRequestDelta(delta) {
+            if (!pendingRequestBadge) return;
+            const next = Math.max(0, getCount(pendingRequestBadge) + delta);
+            setCount(pendingRequestBadge, next);
+            if (window.updateAdminPendingCounts) {
+                window.updateAdminPendingCounts({ assignment: delta });
+            }
+        }
+
+        function getVisibleRequestRows() {
+            if (!pendingRequestsTable) return [];
+            return Array.from(pendingRequestsTable.querySelectorAll('tbody tr'))
+                .filter(row => !row.classList.contains('d-none'));
+        }
+
+        function getSelectedRequestRows() {
+            return getVisibleRequestRows().filter(row => {
+                const checkbox = row.querySelector('.pending-request-select');
+                return checkbox && checkbox.checked;
+            });
+        }
+
+        function updateBulkState() {
+            const selectedRows = getSelectedRequestRows();
+            const visibleRows = getVisibleRequestRows();
+            const selectedCount = selectedRows.length;
+            if (selectedCountEl) {
+                selectedCountEl.textContent = selectedCount.toString();
+            }
+            const hasSelection = selectedCount > 0;
+            if (bulkApproveBtn) bulkApproveBtn.disabled = !hasSelection;
+            if (bulkRejectBtn) bulkRejectBtn.disabled = !hasSelection;
+            if (bulkClearBtn) bulkClearBtn.disabled = !hasSelection;
+            if (selectAll) {
+                selectAll.checked = hasSelection && selectedCount === visibleRows.length;
+                selectAll.indeterminate = hasSelection && selectedCount !== visibleRows.length;
+            }
+        }
+
+        function clearSelection() {
+            getVisibleRequestRows().forEach(row => {
+                const checkbox = row.querySelector('.pending-request-select');
+                if (checkbox) checkbox.checked = false;
+            });
+            updateBulkState();
+        }
+
+        function hideRow(row) {
+            if (!row) return;
+            row.classList.add('d-none');
+            row.dataset.pendingHidden = 'true';
+            const checkbox = row.querySelector('.pending-request-select');
+            if (checkbox) checkbox.checked = false;
+        }
+
+        function showRow(row) {
+            if (!row) return;
+            row.classList.remove('d-none');
+            delete row.dataset.pendingHidden;
+        }
 
         function updateStaffBadge(staffId, count) {
             const badge = document.querySelector(`.staff-item[data-staff-id="${staffId}"] .staff-count`);
@@ -507,60 +647,301 @@
 
         // Remove assignment (global function)
         window.removeAssignment = function (staffId, schoolId) {
-            if (!confirm('Hapus penugasan sekolah ini?')) return;
+            const action = {
+                confirmTitle: 'Hapus Penugasan',
+                confirmText: 'Hapus penugasan sekolah ini?',
+                label: 'Hapus',
+                buttonClass: 'btn-danger',
+                allowNote: false,
+                undoLabel: 'Penghapusan penugasan dijadwalkan',
+                execute: function () {
+                    const formData = new FormData();
+                    formData.append('staff_id', staffId);
+                    formData.append('school_id', schoolId);
+                    return fetch('/portal/admin/remove-assignment', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (!data || !data.success) {
+                                throw new Error(data.message || 'Gagal menghapus penugasan.');
+                            }
+                            return data;
+                        });
+                },
+                onSchedule: function () {
+                    showFeedback('Penghapusan dijadwalkan. Undo tersedia 7 detik.');
+                },
+                onUndo: function () {
+                    showFeedback('Penghapusan dibatalkan.');
+                },
+                onSuccess: function () {
+                    loadAssignments(staffId).then(count => updateStaffBadge(staffId, count));
+                    showFeedback('Penugasan berhasil dihapus.');
+                },
+                onFailure: function (err) {
+                    alert(err.message || 'Gagal menghapus penugasan.');
+                }
+            };
 
-            const formData = new FormData();
-            formData.append('staff_id', staffId);
-            formData.append('school_id', schoolId);
-
-            fetch('/portal/admin/remove-assignment', {
-                method: 'POST',
-                body: formData
-            })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        loadAssignments(staffId).then(count => updateStaffBadge(staffId, count));
-                        showFeedback('Penugasan berhasil dihapus.');
-                    } else {
-                        alert('Error: ' + (data.message || 'Unknown error'));
-                    }
-                })
-                .catch(err => {
-                    alert('Gagal menghapus penugasan');
-                    console.error(err);
-                });
+            if (window.confirmAdminAction) {
+                window.confirmAdminAction(action);
+            } else if (window.scheduleAdminAction) {
+                window.scheduleAdminAction(action);
+            } else {
+                action.execute();
+            }
         };
 
-        // Approve/reject assignment requests
-        function handleRequest(id, action) {
-            const btn = document.querySelector(`.${action}-btn[data-id="${id}"]`);
-            if (!btn) return;
-            btn.disabled = true;
-            fetch(`/portal/admin/assignment-requests/${id}/${action}`, {
+        function sendRequest(action) {
+            if (window.executeAdminAction) {
+                return window.executeAdminAction(action);
+            }
+            return fetch(action.url, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({})
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    const row = document.getElementById(`req-${id}`);
-                    if (row) row.remove();
-                    showFeedback(action === 'approve' ? 'Permintaan disetujui.' : 'Permintaan ditolak.');
-                } else {
-                    alert(data.message || 'Gagal memproses permintaan.');
-                }
-            })
-            .catch(() => alert('Gagal memproses permintaan.'))
-            .finally(() => btn.disabled = false);
+                body: JSON.stringify(action.payload || {})
+            }).then(response => response.json());
         }
 
-        approveButtons.forEach(b => b.addEventListener('click', () => handleRequest(b.dataset.id, 'approve')));
-        rejectButtons.forEach(b => b.addEventListener('click', () => handleRequest(b.dataset.id, 'reject')));
+        function buildRequestAction(row, actionType) {
+            if (!row) return null;
+            const requestId = row.dataset.requestId;
+            const staffName = row.dataset.staffName || 'staff';
+            const schoolName = row.dataset.schoolName || 'sekolah';
+            const label = actionType === 'approve' ? 'Setujui' : 'Tolak';
+            const action = {
+                confirmTitle: actionType === 'approve' ? 'Setujui Penugasan' : 'Tolak Penugasan',
+                confirmText: `${label} penugasan ${staffName} ke ${schoolName}?`,
+                label: label,
+                buttonClass: actionType === 'approve' ? 'btn-success' : 'btn-outline-danger',
+                url: `/portal/admin/assignment-requests/${requestId}/${actionType}`,
+                payload: {},
+                payloadType: 'json',
+                noteKey: 'reviewer_note',
+                toastMessage: actionType === 'approve' ? 'Permintaan disetujui.' : 'Permintaan ditolak.',
+                onSchedule: function () {
+                    hideRow(row);
+                    applyPendingRequestDelta(-1);
+                    updatePendingRequestsUi();
+                    updateBulkState();
+                },
+                onUndo: function () {
+                    showRow(row);
+                    applyPendingRequestDelta(1);
+                    updatePendingRequestsUi();
+                    updateBulkState();
+                },
+                onSuccess: function () {
+                    row.remove();
+                    updatePendingRequestsUi();
+                    if (window.refreshAdminPendingSummary) {
+                        window.refreshAdminPendingSummary();
+                    }
+                },
+                onFailure: function (err) {
+                    showRow(row);
+                    applyPendingRequestDelta(1);
+                    updatePendingRequestsUi();
+                    updateBulkState();
+                    alert(err.message || 'Gagal memproses permintaan.');
+                }
+            };
+            return action;
+        }
+
+        function buildBulkAction(rows, actionType) {
+            const selectedRows = rows || [];
+            const label = actionType === 'approve' ? 'Setujui' : 'Tolak';
+            const bulkAction = {
+                confirmTitle: `${label} ${selectedRows.length} permintaan`,
+                confirmText: `${label} ${selectedRows.length} permintaan terpilih?`,
+                label: `${label} semua`,
+                buttonClass: actionType === 'approve' ? 'btn-success' : 'btn-outline-danger',
+                noteKey: 'reviewer_note',
+                toastMessage: `${selectedRows.length} permintaan berhasil diproses.`,
+            };
+
+            bulkAction.execute = function () {
+                const note = bulkAction.note || '';
+                const requests = selectedRows.map(row => {
+                    const requestId = row.dataset.requestId;
+                    const payload = {};
+                    if (note) payload.reviewer_note = note;
+                    return {
+                        row: row,
+                        url: `/portal/admin/assignment-requests/${requestId}/${actionType}`,
+                        payload: payload,
+                        payloadType: 'json'
+                    };
+                });
+
+                return Promise.allSettled(requests.map(item => sendRequest(item)))
+                    .then(results => {
+                        const failures = [];
+                        results.forEach((result, index) => {
+                            if (result.status === 'rejected') {
+                                failures.push({ row: requests[index].row, error: result.reason });
+                            }
+                        });
+                        if (failures.length) {
+                            bulkAction.failedRows = failures.map(item => item.row);
+                            throw new Error(`${failures.length} permintaan gagal diproses.`);
+                        }
+                        return results;
+                    });
+            };
+
+            bulkAction.onSchedule = function () {
+                selectedRows.forEach(row => hideRow(row));
+                applyPendingRequestDelta(-selectedRows.length);
+                updatePendingRequestsUi();
+                clearSelection();
+            };
+
+            bulkAction.onUndo = function () {
+                selectedRows.forEach(row => showRow(row));
+                applyPendingRequestDelta(selectedRows.length);
+                updatePendingRequestsUi();
+            };
+
+            bulkAction.onSuccess = function () {
+                selectedRows.forEach(row => {
+                    if (row && row.dataset.pendingHidden) {
+                        row.remove();
+                    }
+                });
+                updatePendingRequestsUi();
+                if (window.refreshAdminPendingSummary) {
+                    window.refreshAdminPendingSummary();
+                }
+            };
+
+            bulkAction.onFailure = function (err) {
+                const failedRows = bulkAction.failedRows || [];
+                const failedSet = new Set(failedRows);
+                selectedRows.forEach(row => {
+                    if (!failedSet.has(row) && row && row.dataset.pendingHidden) {
+                        row.remove();
+                    }
+                });
+                failedRows.forEach(row => showRow(row));
+                if (failedRows.length) {
+                    applyPendingRequestDelta(failedRows.length);
+                }
+                updatePendingRequestsUi();
+                updateBulkState();
+                alert(err.message || 'Gagal memproses sebagian permintaan.');
+            };
+
+            return bulkAction;
+        }
+
+        function confirmAction(action) {
+            if (!action) return;
+            if (window.confirmAdminAction) {
+                window.confirmAdminAction(action);
+            } else if (action.execute) {
+                action.execute();
+            }
+        }
+
+        approveButtons.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const row = btn.closest('tr');
+                if (row) {
+                    confirmAction(buildRequestAction(row, 'approve'));
+                }
+            });
+        });
+
+        rejectButtons.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const row = btn.closest('tr');
+                if (row) {
+                    confirmAction(buildRequestAction(row, 'reject'));
+                }
+            });
+        });
+
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                const checked = selectAll.checked;
+                getVisibleRequestRows().forEach(row => {
+                    const checkbox = row.querySelector('.pending-request-select');
+                    if (checkbox) checkbox.checked = checked;
+                });
+                updateBulkState();
+            });
+        }
+
+        if (pendingRequestsTable) {
+            pendingRequestsTable.addEventListener('change', function (event) {
+                if (event.target && event.target.classList.contains('pending-request-select')) {
+                    updateBulkState();
+                }
+            });
+            pendingRequestsTable.addEventListener('click', function (event) {
+                const row = event.target.closest('tr[data-request-id]');
+                if (row) {
+                    lastFocusedRow = row;
+                }
+            });
+        }
+
+        if (bulkApproveBtn) {
+            bulkApproveBtn.addEventListener('click', function () {
+                const rows = getSelectedRequestRows();
+                if (!rows.length) return;
+                confirmAction(buildBulkAction(rows, 'approve'));
+            });
+        }
+
+        if (bulkRejectBtn) {
+            bulkRejectBtn.addEventListener('click', function () {
+                const rows = getSelectedRequestRows();
+                if (!rows.length) return;
+                confirmAction(buildBulkAction(rows, 'reject'));
+            });
+        }
+
+        if (bulkClearBtn) {
+            bulkClearBtn.addEventListener('click', function () {
+                clearSelection();
+            });
+        }
+
+        document.addEventListener('keydown', function (event) {
+            if (!requestsPane || !requestsPane.classList.contains('show')) return;
+            if (isEditableTarget(event.target)) return;
+            const key = event.key.toLowerCase();
+            if (event.shiftKey && key === 'a') {
+                event.preventDefault();
+                if (getSelectedRequestRows().length) {
+                    if (bulkApproveBtn) bulkApproveBtn.click();
+                } else if (lastFocusedRow) {
+                    confirmAction(buildRequestAction(lastFocusedRow, 'approve'));
+                }
+            }
+            if (event.shiftKey && key === 'r') {
+                event.preventDefault();
+                if (getSelectedRequestRows().length) {
+                    if (bulkRejectBtn) bulkRejectBtn.click();
+                } else if (lastFocusedRow) {
+                    confirmAction(buildRequestAction(lastFocusedRow, 'reject'));
+                }
+            }
+            if (key === 'escape') {
+                clearSelection();
+            }
+        });
+
+        updateBulkState();
     });
 </script>
 {% endblock %}

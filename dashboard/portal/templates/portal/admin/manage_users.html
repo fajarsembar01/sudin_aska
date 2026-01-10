@@ -146,12 +146,11 @@
                                 data-bs-target="#verify-pane" type="button" role="tab" aria-controls="verify-pane"
                                 aria-selected="false">
                                 Verifikasi User
-                                {% if pending_count > 0 %}
                                 <span
-                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger{% if pending_count == 0 %} d-none{% endif %}"
+                                    id="pendingUserBadge" data-count="{{ pending_count }}">
                                     {{ pending_count }}
                                 </span>
-                                {% endif %}
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
@@ -250,10 +249,33 @@
                     <!-- Tab Verifikasi User (Pending) -->
                     <div class="tab-pane fade" id="verify-pane" role="tabpanel" aria-labelledby="verify-tab"
                         tabindex="0">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-2" id="pendingUsersBulkBar">
+                            <div class="text-muted small">
+                                Terpilih: <span class="fw-semibold" id="pendingUsersSelectedCount">0</span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-success" id="pendingUsersBulkApprove" disabled>
+                                <i class="bi bi-check-lg me-1"></i>Setujui terpilih
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" id="pendingUsersBulkReject"
+                                disabled>
+                                <i class="bi bi-x-lg me-1"></i>Tolak terpilih
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="pendingUsersBulkClear"
+                                disabled>
+                                Reset
+                            </button>
+                            <div class="text-muted small ms-auto">
+                                Shortcut: Shift+A setujui, Shift+R tolak, Ctrl+Z undo.
+                            </div>
+                        </div>
                         <div class="table-responsive">
                             <table class="table align-middle table-hover">
                                 <thead class="table-light">
                                     <tr>
+                                        <th style="width: 36px;">
+                                            <input class="form-check-input" type="checkbox" id="pendingUsersSelectAll"
+                                                aria-label="Pilih semua">
+                                        </th>
                                         <th>User</th>
                                         <th>Role</th>
                                         <th>Request Area</th>
@@ -262,11 +284,19 @@
                                         <th class="text-end" style="min-width: 100px;">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="pendingUsersBody">
                                     {% set pending_users = users | selectattr('account_status', 'equalto', 'pending') |
                                     list %}
                                     {% for user in pending_users %}
-                                    <tr style="cursor: pointer;" onclick='editUser({{ user|tojson }})'>
+                                    <tr id="pending-user-{{ user.id }}" data-user-id="{{ user.id }}"
+                                        data-user-name="{{ user.full_name or '' }}"
+                                        data-user-email="{{ user.email or '' }}"
+                                        data-user-role="{{ user.role or '' }}"
+                                        style="cursor: pointer;" onclick='editUser({{ user|tojson }})'>
+                                        <td onclick="event.stopPropagation()">
+                                            <input class="form-check-input pending-user-select" type="checkbox"
+                                                data-user-id="{{ user.id }}" aria-label="Pilih user">
+                                        </td>
                                         <td>
                                             <div class="fw-bold">{{ user.full_name }}</div>
                                             <div class="small text-muted">{{ user.email }}</div>
@@ -300,7 +330,8 @@
                                         </td>
                                         <td class="text-end" onclick="event.stopPropagation()">
                                             <div class="btn-group btn-group-sm">
-                                                <form method="post" style="display:inline;">
+                                                <form method="post" class="verify-user-form" data-account-status="approved"
+                                                    style="display:inline;">
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                                     <input type="hidden" name="action" value="verify">
                                                     <input type="hidden" name="user_id" value="{{ user.id }}">
@@ -311,7 +342,8 @@
                                                         <i class="bi bi-check-lg"></i>
                                                     </button>
                                                 </form>
-                                                <form method="post" style="display:inline;">
+                                                <form method="post" class="verify-user-form" data-account-status="rejected"
+                                                    style="display:inline;">
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                                     <input type="hidden" name="action" value="verify">
                                                     <input type="hidden" name="user_id" value="{{ user.id }}">
@@ -325,12 +357,11 @@
                                             </div>
                                         </td>
                                     </tr>
-                                    {% else %}
-                                    <tr>
-                                        <td colspan="5" class="text-center text-muted">Tidak ada user menunggu
+                                    {% endfor %}
+                                    <tr id="pendingUsersEmpty"{% if pending_users %} class="d-none"{% endif %}>
+                                        <td colspan="7" class="text-center text-muted">Tidak ada user menunggu
                                             verifikasi.</td>
                                     </tr>
-                                    {% endfor %}
                                 </tbody>
                             </table>
                         </div>
@@ -611,6 +642,354 @@
         }
 
         toggleSchoolField();
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const verifyForms = document.querySelectorAll('.verify-user-form');
+        if (!verifyForms.length) return;
+
+        const pendingBadge = document.getElementById('pendingUserBadge');
+        const pendingBody = document.getElementById('pendingUsersBody');
+        const pendingEmpty = document.getElementById('pendingUsersEmpty');
+        const selectAll = document.getElementById('pendingUsersSelectAll');
+        const bulkApproveBtn = document.getElementById('pendingUsersBulkApprove');
+        const bulkRejectBtn = document.getElementById('pendingUsersBulkReject');
+        const bulkClearBtn = document.getElementById('pendingUsersBulkClear');
+        const selectedCountEl = document.getElementById('pendingUsersSelectedCount');
+        const verifyPane = document.getElementById('verify-pane');
+        let lastFocusedRow = null;
+
+        function isEditableTarget(target) {
+            if (!target) return false;
+            const tag = target.tagName ? target.tagName.toLowerCase() : '';
+            return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable;
+        }
+
+        function getCount(el) {
+            if (!el) return 0;
+            const raw = el.dataset.count || el.textContent || '0';
+            const value = parseInt(raw, 10);
+            return Number.isNaN(value) ? 0 : value;
+        }
+
+        function setCount(el, value) {
+            if (!el) return;
+            el.dataset.count = value;
+            el.textContent = value;
+            if (value > 0) {
+                el.classList.remove('d-none');
+            } else {
+                el.classList.add('d-none');
+            }
+        }
+
+        function updateEmptyState() {
+            if (!pendingBody || !pendingEmpty) return;
+            const remaining = Array.from(pendingBody.querySelectorAll('tr[data-user-id]'))
+                .filter(row => !row.classList.contains('d-none')).length;
+            if (remaining === 0) {
+                pendingEmpty.classList.remove('d-none');
+            } else {
+                pendingEmpty.classList.add('d-none');
+            }
+        }
+
+        function getVisibleRows() {
+            if (!pendingBody) return [];
+            return Array.from(pendingBody.querySelectorAll('tr[data-user-id]'))
+                .filter(row => !row.classList.contains('d-none'));
+        }
+
+        function getSelectedRows() {
+            return getVisibleRows().filter(row => {
+                const checkbox = row.querySelector('.pending-user-select');
+                return checkbox && checkbox.checked;
+            });
+        }
+
+        function updateBulkState() {
+            const selectedRows = getSelectedRows();
+            const visibleRows = getVisibleRows();
+            const selectedCount = selectedRows.length;
+            if (selectedCountEl) {
+                selectedCountEl.textContent = selectedCount.toString();
+            }
+            const hasSelection = selectedCount > 0;
+            if (bulkApproveBtn) bulkApproveBtn.disabled = !hasSelection;
+            if (bulkRejectBtn) bulkRejectBtn.disabled = !hasSelection;
+            if (bulkClearBtn) bulkClearBtn.disabled = !hasSelection;
+            if (selectAll) {
+                selectAll.checked = hasSelection && selectedCount === visibleRows.length;
+                selectAll.indeterminate = hasSelection && selectedCount !== visibleRows.length;
+            }
+        }
+
+        function clearSelection() {
+            getVisibleRows().forEach(row => {
+                const checkbox = row.querySelector('.pending-user-select');
+                if (checkbox) checkbox.checked = false;
+            });
+            updateBulkState();
+        }
+
+        function hideRow(row) {
+            if (!row) return;
+            row.classList.add('d-none');
+            row.dataset.pendingHidden = 'true';
+            const checkbox = row.querySelector('.pending-user-select');
+            if (checkbox) checkbox.checked = false;
+        }
+
+        function showRow(row) {
+            if (!row) return;
+            row.classList.remove('d-none');
+            delete row.dataset.pendingHidden;
+        }
+
+        function applyDelta(delta) {
+            if (!pendingBadge) return;
+            const next = Math.max(0, getCount(pendingBadge) + delta);
+            setCount(pendingBadge, next);
+            if (window.updateAdminPendingCounts) {
+                window.updateAdminPendingCounts({ users: delta });
+            }
+        }
+
+        function sendRequest(action) {
+            if (window.executeAdminAction) {
+                return window.executeAdminAction(action);
+            }
+            return fetch(action.url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: action.payload
+            }).then(response => response.json());
+        }
+
+        function buildRowAction(row, status) {
+            if (!row) return null;
+            const form = row.querySelector(`.verify-user-form[data-account-status="${status}"]`);
+            if (!form) return null;
+            const name = row.dataset.userName || row.dataset.userEmail || 'user';
+            const label = status === 'approved' ? 'Setujui' : 'Tolak';
+            const formData = new FormData(form);
+            const action = {
+                confirmTitle: `${label} User`,
+                confirmText: `${label} user ${name}?`,
+                label: label,
+                buttonClass: status === 'approved' ? 'btn-success' : 'btn-outline-danger',
+                url: form.getAttribute('action') || window.location.href,
+                payload: formData,
+                noteKey: 'reviewer_note',
+                toastMessage: status === 'approved' ? 'User disetujui.' : 'User ditolak.',
+                onSchedule: function () {
+                    hideRow(row);
+                    applyDelta(-1);
+                    updateEmptyState();
+                    updateBulkState();
+                },
+                onUndo: function () {
+                    showRow(row);
+                    applyDelta(1);
+                    updateEmptyState();
+                    updateBulkState();
+                },
+                onSuccess: function () {
+                    row.remove();
+                    updateEmptyState();
+                    if (window.refreshAdminPendingSummary) {
+                        window.refreshAdminPendingSummary();
+                    }
+                },
+                onFailure: function (err) {
+                    showRow(row);
+                    applyDelta(1);
+                    updateEmptyState();
+                    updateBulkState();
+                    alert(err.message || 'Gagal memproses verifikasi.');
+                }
+            };
+            return action;
+        }
+
+        function buildBulkAction(rows, status) {
+            const selectedRows = rows || [];
+            const label = status === 'approved' ? 'Setujui' : 'Tolak';
+            const bulkAction = {
+                confirmTitle: `${label} ${selectedRows.length} user`,
+                confirmText: `${label} ${selectedRows.length} user terpilih?`,
+                label: `${label} semua`,
+                buttonClass: status === 'approved' ? 'btn-success' : 'btn-outline-danger',
+                noteKey: 'reviewer_note',
+                toastMessage: `${selectedRows.length} user berhasil diproses.`,
+            };
+
+            bulkAction.execute = function () {
+                const note = bulkAction.note || '';
+                const requests = selectedRows.map(row => {
+                    const form = row.querySelector(`.verify-user-form[data-account-status="${status}"]`);
+                    const payload = form ? new FormData(form) : new FormData();
+                    if (note) payload.set('reviewer_note', note);
+                    return { row: row, url: form ? (form.getAttribute('action') || window.location.href) : window.location.href, payload: payload };
+                });
+
+                return Promise.allSettled(requests.map(item => sendRequest({ url: item.url, payload: item.payload })))
+                    .then(results => {
+                        const failures = [];
+                        results.forEach((result, index) => {
+                            if (result.status === 'rejected') {
+                                failures.push({ row: requests[index].row, error: result.reason });
+                            }
+                        });
+                        if (failures.length) {
+                            bulkAction.failedRows = failures.map(item => item.row);
+                            throw new Error(`${failures.length} user gagal diproses.`);
+                        }
+                        return results;
+                    });
+            };
+
+            bulkAction.onSchedule = function () {
+                selectedRows.forEach(row => hideRow(row));
+                applyDelta(-selectedRows.length);
+                updateEmptyState();
+                clearSelection();
+            };
+
+            bulkAction.onUndo = function () {
+                selectedRows.forEach(row => showRow(row));
+                applyDelta(selectedRows.length);
+                updateEmptyState();
+            };
+
+            bulkAction.onSuccess = function () {
+                selectedRows.forEach(row => {
+                    if (row && row.dataset.pendingHidden) {
+                        row.remove();
+                    }
+                });
+                updateEmptyState();
+                if (window.refreshAdminPendingSummary) {
+                    window.refreshAdminPendingSummary();
+                }
+            };
+
+            bulkAction.onFailure = function (err) {
+                const failedRows = bulkAction.failedRows || [];
+                const failedSet = new Set(failedRows);
+                selectedRows.forEach(row => {
+                    if (!failedSet.has(row) && row && row.dataset.pendingHidden) {
+                        row.remove();
+                    }
+                });
+                failedRows.forEach(row => showRow(row));
+                if (failedRows.length) {
+                    applyDelta(failedRows.length);
+                }
+                updateEmptyState();
+                updateBulkState();
+                alert(err.message || 'Gagal memproses sebagian user.');
+            };
+
+            return bulkAction;
+        }
+
+        function confirmAction(action) {
+            if (!action) return;
+            if (window.confirmAdminAction) {
+                window.confirmAdminAction(action);
+            } else if (action.execute) {
+                action.execute();
+            }
+        }
+
+        verifyForms.forEach(form => {
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const row = form.closest('tr');
+                if (!row) return;
+                const status = form.dataset.accountStatus || form.querySelector('input[name="account_status"]').value;
+                confirmAction(buildRowAction(row, status));
+            });
+        });
+
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                const checked = selectAll.checked;
+                getVisibleRows().forEach(row => {
+                    const checkbox = row.querySelector('.pending-user-select');
+                    if (checkbox) checkbox.checked = checked;
+                });
+                updateBulkState();
+            });
+        }
+
+        if (pendingBody) {
+            pendingBody.addEventListener('change', function (event) {
+                if (event.target && event.target.classList.contains('pending-user-select')) {
+                    updateBulkState();
+                }
+            });
+            pendingBody.addEventListener('click', function (event) {
+                const row = event.target.closest('tr[data-user-id]');
+                if (row) {
+                    lastFocusedRow = row;
+                }
+            });
+        }
+
+        if (bulkApproveBtn) {
+            bulkApproveBtn.addEventListener('click', function () {
+                const rows = getSelectedRows();
+                if (!rows.length) return;
+                confirmAction(buildBulkAction(rows, 'approved'));
+            });
+        }
+
+        if (bulkRejectBtn) {
+            bulkRejectBtn.addEventListener('click', function () {
+                const rows = getSelectedRows();
+                if (!rows.length) return;
+                confirmAction(buildBulkAction(rows, 'rejected'));
+            });
+        }
+
+        if (bulkClearBtn) {
+            bulkClearBtn.addEventListener('click', function () {
+                clearSelection();
+            });
+        }
+
+        document.addEventListener('keydown', function (event) {
+            if (!verifyPane || !verifyPane.classList.contains('show')) return;
+            if (isEditableTarget(event.target)) return;
+            const key = event.key.toLowerCase();
+            if (event.shiftKey && key === 'a') {
+                event.preventDefault();
+                if (getSelectedRows().length) {
+                    if (bulkApproveBtn) bulkApproveBtn.click();
+                } else if (lastFocusedRow) {
+                    confirmAction(buildRowAction(lastFocusedRow, 'approved'));
+                }
+            }
+            if (event.shiftKey && key === 'r') {
+                event.preventDefault();
+                if (getSelectedRows().length) {
+                    if (bulkRejectBtn) bulkRejectBtn.click();
+                } else if (lastFocusedRow) {
+                    confirmAction(buildRowAction(lastFocusedRow, 'rejected'));
+                }
+            }
+            if (key === 'escape') {
+                clearSelection();
+            }
+        });
+
+        updateBulkState();
     });
 </script>
 {% endblock %}

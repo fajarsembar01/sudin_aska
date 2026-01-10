@@ -16,19 +16,43 @@
     </button>
 </section>
 
-{% if pending_requests %}
-<div class="card border-0 shadow-sm mb-4">
+{% set pending_request_count = pending_requests|length if pending_requests else 0 %}
+<div class="card border-0 shadow-sm mb-4" id="pendingTeamRequestsCard">
     <div class="card-header bg-warning d-flex justify-content-between align-items-center">
         <div class="text-dark fw-bold">
-            <i class="bi bi-bell-fill me-2"></i>Permintaan Anggota ({{ pending_requests|length }})
+            <i class="bi bi-bell-fill me-2"></i>Permintaan Anggota
+            (<span id="pendingTeamRequestCount" data-count="{{ pending_request_count }}">{{ pending_request_count }}</span>)
         </div>
         <small class="text-dark">Disetujui/Tolak oleh Admin</small>
     </div>
     <div class="card-body p-0">
-        <div class="table-responsive">
+        <div class="d-flex flex-wrap align-items-center gap-2 px-3 py-2 border-bottom"
+            id="pendingTeamRequestsBulkBar">
+            <div class="text-muted small">
+                Terpilih: <span class="fw-semibold" id="pendingTeamRequestsSelectedCount">0</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-success" id="pendingTeamRequestsBulkApprove" disabled>
+                <i class="bi bi-check-lg me-1"></i>Setujui terpilih
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger" id="pendingTeamRequestsBulkReject" disabled>
+                <i class="bi bi-x-lg me-1"></i>Tolak terpilih
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="pendingTeamRequestsBulkClear" disabled>
+                Reset
+            </button>
+            <div class="text-muted small ms-auto">
+                Shortcut: Shift+A setujui, Shift+R tolak, Ctrl+Z undo.
+            </div>
+        </div>
+        <div class="table-responsive{% if pending_request_count == 0 %} d-none{% endif %}"
+            id="pendingTeamRequestsTable">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
+                        <th style="width: 36px;">
+                            <input class="form-check-input" type="checkbox" id="pendingTeamRequestsSelectAll"
+                                aria-label="Pilih semua">
+                        </th>
                         <th>Tim</th>
                         <th>Staff</th>
                         <th>Diajukan Oleh</th>
@@ -36,9 +60,15 @@
                         <th class="text-end">Aksi</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="pendingTeamRequestsBody">
                     {% for req in pending_requests %}
-                    <tr>
+                    <tr id="team-request-{{ req.id }}" data-request-id="{{ req.id }}"
+                        data-team-name="{{ req.team_name or '' }}"
+                        data-staff-name="{{ req.staff_name or '' }}">
+                        <td onclick="event.stopPropagation()">
+                            <input class="form-check-input pending-team-request-select" type="checkbox"
+                                data-request-id="{{ req.id }}" aria-label="Pilih permintaan">
+                        </td>
                         <td>{{ req.team_name }}</td>
                         <td>
                             <div class="fw-semibold">{{ req.staff_name }}</div>
@@ -47,7 +77,7 @@
                         <td>{{ req.requested_by_name }}</td>
                         <td><small>{{ req.created_at.strftime('%d %b %Y %H:%M') if req.created_at else '-' }}</small></td>
                         <td class="text-end">
-                            <form method="post" class="d-inline">
+                            <form method="post" class="team-request-form d-inline" data-next-status="approved">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <input type="hidden" name="action" value="approve_request">
                                 <input type="hidden" name="request_id" value="{{ req.id }}">
@@ -55,7 +85,8 @@
                                     <i class="bi bi-check-lg"></i> Setujui
                                 </button>
                             </form>
-                            <form method="post" class="d-inline ms-1" onsubmit="return confirm('Tolak permintaan ini?')">
+                            <form method="post" class="team-request-form d-inline ms-1"
+                                data-next-status="rejected">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <input type="hidden" name="action" value="reject_request">
                                 <input type="hidden" name="request_id" value="{{ req.id }}">
@@ -69,9 +100,12 @@
                 </tbody>
             </table>
         </div>
+        <div class="p-3 text-muted{% if pending_request_count > 0 %} d-none{% endif %}"
+            id="pendingTeamRequestsEmpty">
+            Tidak ada permintaan anggota pending.
+        </div>
     </div>
 </div>
-{% endif %}
 
 <div class="card border-0 shadow-sm">
     <div class="card-body">
@@ -291,6 +325,346 @@
     document.getElementById('teamTypeSelect').addEventListener('change', function () {
         const kecField = document.getElementById('kecamatanField');
         kecField.style.display = this.value === 'kecamatan' ? 'block' : 'none';
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const requestForms = document.querySelectorAll('.team-request-form');
+        if (!requestForms.length) return;
+
+        const countEl = document.getElementById('pendingTeamRequestCount');
+        const table = document.getElementById('pendingTeamRequestsTable');
+        const empty = document.getElementById('pendingTeamRequestsEmpty');
+        const tbody = document.getElementById('pendingTeamRequestsBody');
+        const selectAll = document.getElementById('pendingTeamRequestsSelectAll');
+        const bulkApproveBtn = document.getElementById('pendingTeamRequestsBulkApprove');
+        const bulkRejectBtn = document.getElementById('pendingTeamRequestsBulkReject');
+        const bulkClearBtn = document.getElementById('pendingTeamRequestsBulkClear');
+        const selectedCountEl = document.getElementById('pendingTeamRequestsSelectedCount');
+        let lastFocusedRow = null;
+
+        function isEditableTarget(target) {
+            if (!target) return false;
+            const tag = target.tagName ? target.tagName.toLowerCase() : '';
+            return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable;
+        }
+
+        function getCount(el) {
+            if (!el) return 0;
+            const raw = el.dataset.count || el.textContent || '0';
+            const value = parseInt(raw, 10);
+            return Number.isNaN(value) ? 0 : value;
+        }
+
+        function setCount(el, value) {
+            if (!el) return;
+            el.dataset.count = value;
+            el.textContent = value;
+        }
+
+        function updateState() {
+            if (!tbody) return;
+            const remaining = Array.from(tbody.querySelectorAll('tr[data-request-id]'))
+                .filter(row => !row.classList.contains('d-none')).length;
+            if (table) table.classList.toggle('d-none', remaining === 0);
+            if (empty) empty.classList.toggle('d-none', remaining !== 0);
+            setCount(countEl, remaining);
+        }
+
+        function getVisibleRows() {
+            if (!tbody) return [];
+            return Array.from(tbody.querySelectorAll('tr[data-request-id]'))
+                .filter(row => !row.classList.contains('d-none'));
+        }
+
+        function getSelectedRows() {
+            return getVisibleRows().filter(row => {
+                const checkbox = row.querySelector('.pending-team-request-select');
+                return checkbox && checkbox.checked;
+            });
+        }
+
+        function updateBulkState() {
+            const selectedRows = getSelectedRows();
+            const visibleRows = getVisibleRows();
+            const selectedCount = selectedRows.length;
+            if (selectedCountEl) {
+                selectedCountEl.textContent = selectedCount.toString();
+            }
+            const hasSelection = selectedCount > 0;
+            if (bulkApproveBtn) bulkApproveBtn.disabled = !hasSelection;
+            if (bulkRejectBtn) bulkRejectBtn.disabled = !hasSelection;
+            if (bulkClearBtn) bulkClearBtn.disabled = !hasSelection;
+            if (selectAll) {
+                selectAll.checked = hasSelection && selectedCount === visibleRows.length;
+                selectAll.indeterminate = hasSelection && selectedCount !== visibleRows.length;
+            }
+        }
+
+        function clearSelection() {
+            getVisibleRows().forEach(row => {
+                const checkbox = row.querySelector('.pending-team-request-select');
+                if (checkbox) checkbox.checked = false;
+            });
+            updateBulkState();
+        }
+
+        function hideRow(row) {
+            if (!row) return;
+            row.classList.add('d-none');
+            row.dataset.pendingHidden = 'true';
+            const checkbox = row.querySelector('.pending-team-request-select');
+            if (checkbox) checkbox.checked = false;
+        }
+
+        function showRow(row) {
+            if (!row) return;
+            row.classList.remove('d-none');
+            delete row.dataset.pendingHidden;
+        }
+
+        function applyDelta(delta) {
+            if (countEl) {
+                const next = Math.max(0, getCount(countEl) + delta);
+                setCount(countEl, next);
+            }
+            if (window.updateAdminPendingCounts) {
+                window.updateAdminPendingCounts({ team: delta });
+            }
+        }
+
+        function sendRequest(action) {
+            if (window.executeAdminAction) {
+                return window.executeAdminAction(action);
+            }
+            return fetch(action.url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: action.payload
+            }).then(response => response.json());
+        }
+
+        function buildRowAction(row, nextStatus) {
+            if (!row) return null;
+            const form = row.querySelector(`.team-request-form[data-next-status="${nextStatus}"]`);
+            if (!form) return null;
+            const staffName = row.dataset.staffName || 'staff';
+            const teamName = row.dataset.teamName || 'tim';
+            const label = nextStatus === 'approved' ? 'Setujui' : 'Tolak';
+            const action = {
+                confirmTitle: nextStatus === 'approved' ? 'Setujui Anggota' : 'Tolak Anggota',
+                confirmText: `${label} ${staffName} untuk tim ${teamName}?`,
+                label: label,
+                buttonClass: nextStatus === 'approved' ? 'btn-success' : 'btn-outline-danger',
+                url: form.getAttribute('action') || window.location.href,
+                payload: new FormData(form),
+                noteKey: 'reviewer_note',
+                toastMessage: nextStatus === 'approved' ? 'Permintaan anggota disetujui.' : 'Permintaan anggota ditolak.',
+                onSchedule: function () {
+                    hideRow(row);
+                    applyDelta(-1);
+                    updateState();
+                    updateBulkState();
+                },
+                onUndo: function () {
+                    showRow(row);
+                    applyDelta(1);
+                    updateState();
+                    updateBulkState();
+                },
+                onSuccess: function () {
+                    row.remove();
+                    updateState();
+                    if (window.refreshAdminPendingSummary) {
+                        window.refreshAdminPendingSummary();
+                    }
+                },
+                onFailure: function (err) {
+                    showRow(row);
+                    applyDelta(1);
+                    updateState();
+                    updateBulkState();
+                    alert(err.message || 'Gagal memproses permintaan.');
+                }
+            };
+            return action;
+        }
+
+        function buildBulkAction(rows, nextStatus) {
+            const selectedRows = rows || [];
+            const label = nextStatus === 'approved' ? 'Setujui' : 'Tolak';
+            const bulkAction = {
+                confirmTitle: `${label} ${selectedRows.length} permintaan`,
+                confirmText: `${label} ${selectedRows.length} permintaan terpilih?`,
+                label: `${label} semua`,
+                buttonClass: nextStatus === 'approved' ? 'btn-success' : 'btn-outline-danger',
+                noteKey: 'reviewer_note',
+                toastMessage: `${selectedRows.length} permintaan berhasil diproses.`,
+            };
+
+            bulkAction.execute = function () {
+                const note = bulkAction.note || '';
+                const requests = selectedRows.map(row => {
+                    const form = row.querySelector(`.team-request-form[data-next-status="${nextStatus}"]`);
+                    const payload = form ? new FormData(form) : new FormData();
+                    if (note) payload.set('reviewer_note', note);
+                    return { row: row, url: form ? (form.getAttribute('action') || window.location.href) : window.location.href, payload: payload };
+                });
+                return Promise.allSettled(requests.map(item => sendRequest({ url: item.url, payload: item.payload })))
+                    .then(results => {
+                        const failures = [];
+                        results.forEach((result, index) => {
+                            if (result.status === 'rejected') {
+                                failures.push({ row: requests[index].row, error: result.reason });
+                            }
+                        });
+                        if (failures.length) {
+                            bulkAction.failedRows = failures.map(item => item.row);
+                            throw new Error(`${failures.length} permintaan gagal diproses.`);
+                        }
+                        return results;
+                    });
+            };
+
+            bulkAction.onSchedule = function () {
+                selectedRows.forEach(row => hideRow(row));
+                applyDelta(-selectedRows.length);
+                updateState();
+                clearSelection();
+            };
+
+            bulkAction.onUndo = function () {
+                selectedRows.forEach(row => showRow(row));
+                applyDelta(selectedRows.length);
+                updateState();
+            };
+
+            bulkAction.onSuccess = function () {
+                selectedRows.forEach(row => {
+                    if (row && row.dataset.pendingHidden) {
+                        row.remove();
+                    }
+                });
+                updateState();
+                if (window.refreshAdminPendingSummary) {
+                    window.refreshAdminPendingSummary();
+                }
+            };
+
+            bulkAction.onFailure = function (err) {
+                const failedRows = bulkAction.failedRows || [];
+                const failedSet = new Set(failedRows);
+                selectedRows.forEach(row => {
+                    if (!failedSet.has(row) && row && row.dataset.pendingHidden) {
+                        row.remove();
+                    }
+                });
+                failedRows.forEach(row => showRow(row));
+                if (failedRows.length) {
+                    applyDelta(failedRows.length);
+                }
+                updateState();
+                updateBulkState();
+                alert(err.message || 'Gagal memproses sebagian permintaan.');
+            };
+
+            return bulkAction;
+        }
+
+        function confirmAction(action) {
+            if (!action) return;
+            if (window.confirmAdminAction) {
+                window.confirmAdminAction(action);
+            } else if (action.execute) {
+                action.execute();
+            }
+        }
+
+        requestForms.forEach(form => {
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const row = form.closest('tr');
+                if (!row) return;
+                const nextStatus = form.dataset.nextStatus || '';
+                confirmAction(buildRowAction(row, nextStatus));
+            });
+        });
+
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                const checked = selectAll.checked;
+                getVisibleRows().forEach(row => {
+                    const checkbox = row.querySelector('.pending-team-request-select');
+                    if (checkbox) checkbox.checked = checked;
+                });
+                updateBulkState();
+            });
+        }
+
+        if (tbody) {
+            tbody.addEventListener('change', function (event) {
+                if (event.target && event.target.classList.contains('pending-team-request-select')) {
+                    updateBulkState();
+                }
+            });
+            tbody.addEventListener('click', function (event) {
+                const row = event.target.closest('tr[data-request-id]');
+                if (row) {
+                    lastFocusedRow = row;
+                }
+            });
+        }
+
+        if (bulkApproveBtn) {
+            bulkApproveBtn.addEventListener('click', function () {
+                const rows = getSelectedRows();
+                if (!rows.length) return;
+                confirmAction(buildBulkAction(rows, 'approved'));
+            });
+        }
+
+        if (bulkRejectBtn) {
+            bulkRejectBtn.addEventListener('click', function () {
+                const rows = getSelectedRows();
+                if (!rows.length) return;
+                confirmAction(buildBulkAction(rows, 'rejected'));
+            });
+        }
+
+        if (bulkClearBtn) {
+            bulkClearBtn.addEventListener('click', function () {
+                clearSelection();
+            });
+        }
+
+        document.addEventListener('keydown', function (event) {
+            if (isEditableTarget(event.target)) return;
+            const key = event.key.toLowerCase();
+            if (event.shiftKey && key === 'a') {
+                event.preventDefault();
+                if (getSelectedRows().length) {
+                    if (bulkApproveBtn) bulkApproveBtn.click();
+                } else if (lastFocusedRow) {
+                    confirmAction(buildRowAction(lastFocusedRow, 'approved'));
+                }
+            }
+            if (event.shiftKey && key === 'r') {
+                event.preventDefault();
+                if (getSelectedRows().length) {
+                    if (bulkRejectBtn) bulkRejectBtn.click();
+                } else if (lastFocusedRow) {
+                    confirmAction(buildRowAction(lastFocusedRow, 'rejected'));
+                }
+            }
+            if (key === 'escape') {
+                clearSelection();
+            }
+        });
+
+        updateBulkState();
     });
 </script>
 {% endblock %}

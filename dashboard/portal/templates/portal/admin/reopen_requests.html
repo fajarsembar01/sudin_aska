@@ -20,10 +20,30 @@
 
         <div class="card border-0 shadow-sm">
             <div class="card-body table-responsive">
-                {% if requests %}
-                <table class="table align-middle">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3" id="reopenRequestsBulkBar">
+                    <div class="text-muted small">
+                        Terpilih: <span class="fw-semibold" id="reopenRequestsSelectedCount">0</span>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-success" id="reopenRequestsBulkApprove" disabled>
+                        <i class="bi bi-check-lg me-1"></i>Setujui terpilih
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" id="reopenRequestsBulkReject" disabled>
+                        <i class="bi bi-x-lg me-1"></i>Tolak terpilih
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="reopenRequestsBulkClear" disabled>
+                        Reset
+                    </button>
+                    <div class="text-muted small ms-auto">
+                        Shortcut: Shift+A setujui, Shift+R tolak, Ctrl+Z undo.
+                    </div>
+                </div>
+                <table class="table align-middle{% if not requests %} d-none{% endif %}" id="reopenRequestsTable">
                     <thead>
                         <tr class="text-muted small">
+                            <th style="width: 36px;">
+                                <input class="form-check-input" type="checkbox" id="reopenRequestsSelectAll"
+                                    aria-label="Pilih semua">
+                            </th>
                             <th>#</th>
                             <th>Sekolah</th>
                             <th>Staf</th>
@@ -34,9 +54,19 @@
                             <th class="text-end">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="reopenRequestsBody">
                         {% for r in requests %}
-                        <tr>
+                        {% set status = r.status or 'pending' %}
+                        <tr id="reopen-request-{{ r.id }}" data-request-id="{{ r.id }}"
+                            data-assessment-id="{{ r.assessment_id }}"
+                            data-school-name="{{ r.school_name or '' }}"
+                            data-staff-name="{{ r.staff_name or '' }}">
+                            <td onclick="event.stopPropagation()">
+                                {% if status == 'pending' %}
+                                <input class="form-check-input reopen-request-select" type="checkbox"
+                                    data-request-id="{{ r.id }}" aria-label="Pilih permintaan">
+                                {% endif %}
+                            </td>
                             <td>{{ loop.index }}</td>
                             <td>
                                 <div class="fw-semibold">{{ r.school_name or 'Sekolah' }}</div>
@@ -47,8 +77,7 @@
                                 <div class="text-muted small">{{ r.staff_id }}</div>
                             </td>
                             <td class="text-muted small">{{ r.created_at }}</td>
-                            <td>
-                                {% set status = r.status or 'pending' %}
+                            <td data-status-cell="true">
                                 {% if status == 'pending' %}
                                 <span class="badge bg-warning text-dark">Pending</span>
                                 {% elif status == 'approved' %}
@@ -61,7 +90,7 @@
                             </td>
                             <td class="small">{{ r.reason or '-' }}</td>
                             <td class="small">{{ r.reviewer_note or '-' }}</td>
-                            <td class="text-end">
+                            <td class="text-end" data-actions-cell="true">
                                 <div class="d-flex justify-content-end gap-2 flex-wrap">
                                     <a class="btn btn-sm btn-outline-primary"
                                         href="{{ url_for('portal.view_assessment', assessment_id=r.assessment_id) }}">
@@ -69,12 +98,12 @@
                                     </a>
                                     {% if status == 'pending' %}
                                     <form method="post" action="{{ url_for('portal.approve_reopen', assessment_id=r.assessment_id) }}"
-                                        class="d-inline">
+                                        class="reopen-action-form d-inline" data-next-status="approved">
                                         <input type="hidden" name="request_id" value="{{ r.id }}">
                                         <button type="submit" class="btn btn-sm btn-success">Setujui</button>
                                     </form>
                                     <form method="post" action="{{ url_for('portal.reject_reopen', assessment_id=r.assessment_id) }}"
-                                        class="d-inline">
+                                        class="reopen-action-form d-inline" data-next-status="rejected">
                                         <input type="hidden" name="request_id" value="{{ r.id }}">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">Tolak</button>
                                     </form>
@@ -85,11 +114,10 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                {% else %}
-                <div class="alert alert-secondary mb-0">
+                <div class="alert alert-secondary mb-0{% if requests %} d-none{% endif %}"
+                    id="reopenRequestsEmpty">
                     Belum ada permintaan reopen.
                 </div>
-                {% endif %}
             </div>
         </div>
 
@@ -104,4 +132,391 @@
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const forms = document.querySelectorAll('.reopen-action-form');
+        const table = document.getElementById('reopenRequestsTable');
+        const empty = document.getElementById('reopenRequestsEmpty');
+        const tbody = document.getElementById('reopenRequestsBody');
+        const statusFilter = "{{ status_filter or '' }}";
+        const selectAll = document.getElementById('reopenRequestsSelectAll');
+        const bulkApproveBtn = document.getElementById('reopenRequestsBulkApprove');
+        const bulkRejectBtn = document.getElementById('reopenRequestsBulkReject');
+        const bulkClearBtn = document.getElementById('reopenRequestsBulkClear');
+        const selectedCountEl = document.getElementById('reopenRequestsSelectedCount');
+        let lastFocusedRow = null;
+
+        function isEditableTarget(target) {
+            if (!target) return false;
+            const tag = target.tagName ? target.tagName.toLowerCase() : '';
+            return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable;
+        }
+
+        function updateEmptyState() {
+            if (!tbody || !table || !empty) return;
+            const remaining = Array.from(tbody.querySelectorAll('tr[data-request-id]'))
+                .filter(row => !row.classList.contains('d-none')).length;
+            table.classList.toggle('d-none', remaining === 0);
+            empty.classList.toggle('d-none', remaining !== 0);
+        }
+
+        function renderStatus(cell, status) {
+            if (!cell) return;
+            if (status === 'approved') {
+                cell.innerHTML = '<span class="badge bg-success-subtle text-success">Disetujui</span>';
+            } else if (status === 'rejected') {
+                cell.innerHTML = '<span class="badge bg-danger-subtle text-danger">Ditolak</span>';
+            } else {
+                cell.innerHTML = '<span class="badge bg-warning text-dark">Pending</span>';
+            }
+        }
+
+        function getVisibleRows() {
+            if (!tbody) return [];
+            return Array.from(tbody.querySelectorAll('tr[data-request-id]'))
+                .filter(row => !row.classList.contains('d-none'));
+        }
+
+        function getSelectableRows() {
+            return getVisibleRows().filter(row => row.querySelector('.reopen-request-select'));
+        }
+
+        function getSelectedRows() {
+            return getSelectableRows().filter(row => {
+                const checkbox = row.querySelector('.reopen-request-select');
+                return checkbox && checkbox.checked;
+            });
+        }
+
+        function updateBulkState() {
+            const selectedRows = getSelectedRows();
+            const selectableRows = getSelectableRows();
+            const selectedCount = selectedRows.length;
+            if (selectedCountEl) {
+                selectedCountEl.textContent = selectedCount.toString();
+            }
+            const hasSelection = selectedCount > 0;
+            if (bulkApproveBtn) bulkApproveBtn.disabled = !hasSelection;
+            if (bulkRejectBtn) bulkRejectBtn.disabled = !hasSelection;
+            if (bulkClearBtn) bulkClearBtn.disabled = !hasSelection;
+            if (selectAll) {
+                selectAll.checked = hasSelection && selectedCount === selectableRows.length;
+                selectAll.indeterminate = hasSelection && selectedCount !== selectableRows.length;
+            }
+        }
+
+        function clearSelection() {
+            getSelectableRows().forEach(row => {
+                const checkbox = row.querySelector('.reopen-request-select');
+                if (checkbox) checkbox.checked = false;
+            });
+            updateBulkState();
+        }
+
+        function hideRow(row) {
+            if (!row) return;
+            row.classList.add('d-none');
+            row.dataset.pendingHidden = 'true';
+            const checkbox = row.querySelector('.reopen-request-select');
+            if (checkbox) checkbox.checked = false;
+        }
+
+        function showRow(row) {
+            if (!row) return;
+            row.classList.remove('d-none');
+            delete row.dataset.pendingHidden;
+        }
+
+        function hideActions(row) {
+            const forms = row.querySelectorAll('.reopen-action-form');
+            forms.forEach(form => form.classList.add('d-none'));
+        }
+
+        function showActions(row) {
+            const forms = row.querySelectorAll('.reopen-action-form');
+            forms.forEach(form => form.classList.remove('d-none'));
+        }
+
+        function stashRowState(row) {
+            const statusCell = row.querySelector('[data-status-cell="true"]');
+            if (statusCell && !row.dataset.originalStatusHtml) {
+                row.dataset.originalStatusHtml = statusCell.innerHTML;
+            }
+        }
+
+        function restoreRowState(row) {
+            const statusCell = row.querySelector('[data-status-cell="true"]');
+            if (statusCell && row.dataset.originalStatusHtml) {
+                statusCell.innerHTML = row.dataset.originalStatusHtml;
+                delete row.dataset.originalStatusHtml;
+            }
+            showActions(row);
+        }
+
+        function applyDelta(delta) {
+            if (window.updateAdminPendingCounts) {
+                window.updateAdminPendingCounts({ reopen: delta });
+            }
+        }
+
+        function sendRequest(action) {
+            if (window.executeAdminAction) {
+                return window.executeAdminAction(action);
+            }
+            return fetch(action.url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: action.payload
+            }).then(response => response.json());
+        }
+
+        function optimisticUpdate(row, nextStatus) {
+            if (statusFilter === 'pending') {
+                hideRow(row);
+            } else {
+                stashRowState(row);
+                const statusCell = row.querySelector('[data-status-cell="true"]');
+                renderStatus(statusCell, nextStatus);
+                hideActions(row);
+            }
+        }
+
+        function revertOptimistic(row) {
+            if (statusFilter === 'pending') {
+                showRow(row);
+            } else {
+                restoreRowState(row);
+            }
+        }
+
+        function buildRowAction(row, nextStatus) {
+            if (!row) return null;
+            const form = row.querySelector(`.reopen-action-form[data-next-status="${nextStatus}"]`);
+            if (!form) return null;
+            const schoolName = row.dataset.schoolName || 'sekolah';
+            const label = nextStatus === 'approved' ? 'Setujui' : 'Tolak';
+            const action = {
+                confirmTitle: nextStatus === 'approved' ? 'Setujui Reopen' : 'Tolak Reopen',
+                confirmText: `${label} reopen untuk ${schoolName}?`,
+                label: label,
+                buttonClass: nextStatus === 'approved' ? 'btn-success' : 'btn-outline-danger',
+                url: form.getAttribute('action') || window.location.href,
+                payload: new FormData(form),
+                noteKey: 'reviewer_note',
+                toastMessage: nextStatus === 'approved' ? 'Reopen disetujui.' : 'Reopen ditolak.',
+                onSchedule: function () {
+                    optimisticUpdate(row, nextStatus);
+                    applyDelta(-1);
+                    updateEmptyState();
+                    updateBulkState();
+                },
+                onUndo: function () {
+                    revertOptimistic(row);
+                    applyDelta(1);
+                    updateEmptyState();
+                    updateBulkState();
+                },
+                onSuccess: function () {
+                    if (statusFilter === 'pending') {
+                        row.remove();
+                    } else {
+                        hideActions(row);
+                    }
+                    updateEmptyState();
+                    if (window.refreshAdminPendingSummary) {
+                        window.refreshAdminPendingSummary();
+                    }
+                },
+                onFailure: function (err) {
+                    revertOptimistic(row);
+                    applyDelta(1);
+                    updateEmptyState();
+                    updateBulkState();
+                    alert(err.message || 'Gagal memproses permintaan.');
+                }
+            };
+            return action;
+        }
+
+        function buildBulkAction(rows, nextStatus) {
+            const selectedRows = rows || [];
+            const label = nextStatus === 'approved' ? 'Setujui' : 'Tolak';
+            const bulkAction = {
+                confirmTitle: `${label} ${selectedRows.length} permintaan`,
+                confirmText: `${label} ${selectedRows.length} permintaan terpilih?`,
+                label: `${label} semua`,
+                buttonClass: nextStatus === 'approved' ? 'btn-success' : 'btn-outline-danger',
+                noteKey: 'reviewer_note',
+                toastMessage: `${selectedRows.length} permintaan berhasil diproses.`,
+            };
+
+            bulkAction.execute = function () {
+                const note = bulkAction.note || '';
+                const requests = selectedRows.map(row => {
+                    const form = row.querySelector(`.reopen-action-form[data-next-status="${nextStatus}"]`);
+                    const payload = form ? new FormData(form) : new FormData();
+                    if (note) payload.set('reviewer_note', note);
+                    return { row: row, url: form ? (form.getAttribute('action') || window.location.href) : window.location.href, payload: payload };
+                });
+                return Promise.allSettled(requests.map(item => sendRequest({ url: item.url, payload: item.payload })))
+                    .then(results => {
+                        const failures = [];
+                        results.forEach((result, index) => {
+                            if (result.status === 'rejected') {
+                                failures.push({ row: requests[index].row, error: result.reason });
+                            }
+                        });
+                        if (failures.length) {
+                            bulkAction.failedRows = failures.map(item => item.row);
+                            throw new Error(`${failures.length} permintaan gagal diproses.`);
+                        }
+                        return results;
+                    });
+            };
+
+            bulkAction.onSchedule = function () {
+                selectedRows.forEach(row => optimisticUpdate(row, nextStatus));
+                applyDelta(-selectedRows.length);
+                updateEmptyState();
+                clearSelection();
+            };
+
+            bulkAction.onUndo = function () {
+                selectedRows.forEach(row => revertOptimistic(row));
+                applyDelta(selectedRows.length);
+                updateEmptyState();
+            };
+
+            bulkAction.onSuccess = function () {
+                if (statusFilter === 'pending') {
+                    selectedRows.forEach(row => {
+                        if (row && row.dataset.pendingHidden) {
+                            row.remove();
+                        }
+                    });
+                } else {
+                    selectedRows.forEach(row => hideActions(row));
+                }
+                updateEmptyState();
+                if (window.refreshAdminPendingSummary) {
+                    window.refreshAdminPendingSummary();
+                }
+            };
+
+            bulkAction.onFailure = function (err) {
+                const failedRows = bulkAction.failedRows || [];
+                const failedSet = new Set(failedRows);
+                selectedRows.forEach(row => {
+                    if (!failedSet.has(row) && row && row.dataset.pendingHidden) {
+                        row.remove();
+                    }
+                });
+                failedRows.forEach(row => revertOptimistic(row));
+                if (failedRows.length) {
+                    applyDelta(failedRows.length);
+                }
+                updateEmptyState();
+                updateBulkState();
+                alert(err.message || 'Gagal memproses sebagian permintaan.');
+            };
+
+            return bulkAction;
+        }
+
+        function confirmAction(action) {
+            if (!action) return;
+            if (window.confirmAdminAction) {
+                window.confirmAdminAction(action);
+            } else if (action.execute) {
+                action.execute();
+            }
+        }
+
+        forms.forEach(form => {
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const row = form.closest('tr');
+                if (!row) return;
+                const nextStatus = form.dataset.nextStatus || '';
+                confirmAction(buildRowAction(row, nextStatus));
+            });
+        });
+
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                const checked = selectAll.checked;
+                getSelectableRows().forEach(row => {
+                    const checkbox = row.querySelector('.reopen-request-select');
+                    if (checkbox) checkbox.checked = checked;
+                });
+                updateBulkState();
+            });
+        }
+
+        if (tbody) {
+            tbody.addEventListener('change', function (event) {
+                if (event.target && event.target.classList.contains('reopen-request-select')) {
+                    updateBulkState();
+                }
+            });
+            tbody.addEventListener('click', function (event) {
+                const row = event.target.closest('tr[data-request-id]');
+                if (row) {
+                    lastFocusedRow = row;
+                }
+            });
+        }
+
+        if (bulkApproveBtn) {
+            bulkApproveBtn.addEventListener('click', function () {
+                const rows = getSelectedRows();
+                if (!rows.length) return;
+                confirmAction(buildBulkAction(rows, 'approved'));
+            });
+        }
+
+        if (bulkRejectBtn) {
+            bulkRejectBtn.addEventListener('click', function () {
+                const rows = getSelectedRows();
+                if (!rows.length) return;
+                confirmAction(buildBulkAction(rows, 'rejected'));
+            });
+        }
+
+        if (bulkClearBtn) {
+            bulkClearBtn.addEventListener('click', function () {
+                clearSelection();
+            });
+        }
+
+        document.addEventListener('keydown', function (event) {
+            if (isEditableTarget(event.target)) return;
+            const key = event.key.toLowerCase();
+            if (event.shiftKey && key === 'a') {
+                event.preventDefault();
+                if (getSelectedRows().length) {
+                    if (bulkApproveBtn) bulkApproveBtn.click();
+                } else if (lastFocusedRow) {
+                    confirmAction(buildRowAction(lastFocusedRow, 'approved'));
+                }
+            }
+            if (event.shiftKey && key === 'r') {
+                event.preventDefault();
+                if (getSelectedRows().length) {
+                    if (bulkRejectBtn) bulkRejectBtn.click();
+                } else if (lastFocusedRow) {
+                    confirmAction(buildRowAction(lastFocusedRow, 'rejected'));
+                }
+            }
+            if (key === 'escape') {
+                clearSelection();
+            }
+        });
+
+        updateBulkState();
+    });
+</script>
 {% endblock %}

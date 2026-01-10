@@ -357,6 +357,133 @@ def list_reopen_requests(status: Optional[str] = None) -> List[Dict[str, Any]]:
         return [dict(row) for row in cur.fetchall()]
 
 
+def fetch_admin_pending_summary() -> Dict[str, int]:
+    """Return counts of pending admin confirmations for Portal."""
+    query = """
+        SELECT
+            (SELECT COUNT(*) FROM dashboard_users WHERE account_status = 'pending') AS pending_users,
+            (SELECT COUNT(*) FROM staff_assignment_requests WHERE status = 'pending') AS pending_assignment_requests,
+            (SELECT COUNT(*) FROM monev_team_member_requests WHERE status = 'pending') AS pending_team_member_requests,
+            (SELECT COUNT(*) FROM portal_assessment_reopen_requests WHERE status = 'pending') AS pending_reopen_requests
+    """
+    with get_cursor() as cur:
+        cur.execute(query)
+        row = cur.fetchone()
+
+    if not row:
+        return {
+            "pending_users": 0,
+            "pending_assignment_requests": 0,
+            "pending_team_member_requests": 0,
+            "pending_reopen_requests": 0,
+            "total": 0,
+        }
+
+    summary = {
+        "pending_users": int(row["pending_users"] or 0),
+        "pending_assignment_requests": int(row["pending_assignment_requests"] or 0),
+        "pending_team_member_requests": int(row["pending_team_member_requests"] or 0),
+        "pending_reopen_requests": int(row["pending_reopen_requests"] or 0),
+    }
+    summary["total"] = (
+        summary["pending_users"]
+        + summary["pending_assignment_requests"]
+        + summary["pending_team_member_requests"]
+        + summary["pending_reopen_requests"]
+    )
+    return summary
+
+
+def fetch_admin_pending_preview(limit_per_type: int = 3) -> Dict[str, Any]:
+    """Return pending summaries and preview items for admin quick actions."""
+    limit = max(1, int(limit_per_type))
+    summary = fetch_admin_pending_summary()
+    preview: Dict[str, Any] = {
+        "summary": summary,
+        "users": [],
+        "assignment_requests": [],
+        "team_member_requests": [],
+        "reopen_requests": [],
+    }
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, full_name, email, role, created_at
+            FROM dashboard_users
+            WHERE account_status = 'pending'
+            ORDER BY created_at DESC
+            LIMIT %s
+            """,
+            (limit,),
+        )
+        preview["users"] = [dict(row) for row in cur.fetchall()]
+
+        cur.execute(
+            """
+            SELECT sar.id,
+                   sar.created_at,
+                   s.full_name AS staff_name,
+                   s.email AS staff_email,
+                   c.full_name AS coordinator_name,
+                   sch.name AS school_name,
+                   sch.npsn AS school_npsn
+            FROM staff_assignment_requests sar
+            JOIN dashboard_users s ON sar.staff_id = s.id
+            JOIN dashboard_users c ON sar.coordinator_id = c.id
+            JOIN portal_schools sch ON sar.school_id = sch.id
+            WHERE sar.status = 'pending'
+            ORDER BY sar.created_at DESC
+            LIMIT %s
+            """,
+            (limit,),
+        )
+        preview["assignment_requests"] = [dict(row) for row in cur.fetchall()]
+
+        cur.execute(
+            """
+            SELECT r.id,
+                   r.created_at,
+                   u.full_name AS staff_name,
+                   u.email AS staff_email,
+                   t.name AS team_name,
+                   rb.full_name AS requested_by_name
+            FROM monev_team_member_requests r
+            JOIN monev_teams t ON r.team_id = t.id
+            JOIN dashboard_users u ON r.staff_id = u.id
+            JOIN dashboard_users rb ON r.requested_by = rb.id
+            WHERE r.status = 'pending'
+            ORDER BY r.created_at DESC
+            LIMIT %s
+            """,
+            (limit,),
+        )
+        preview["team_member_requests"] = [dict(row) for row in cur.fetchall()]
+
+        cur.execute(
+            """
+            SELECT r.id,
+                   r.created_at,
+                   r.assessment_id,
+                   s.name AS school_name,
+                   s.npsn,
+                   u.full_name AS staff_name,
+                   u.email AS staff_email
+            FROM portal_assessment_reopen_requests r
+            JOIN portal_assessments a ON a.id = r.assessment_id
+            JOIN portal_schools s ON s.id = a.school_id
+            JOIN dashboard_users u ON u.id = r.staff_id
+            WHERE r.status = 'pending'
+            ORDER BY r.created_at DESC
+            LIMIT %s
+            """,
+            (limit,),
+        )
+        preview["reopen_requests"] = [dict(row) for row in cur.fetchall()]
+
+    return preview
+
+
 def get_or_create_draft_assessment(school_id: int, staff_id: int) -> Dict[str, Any]:
     """Get existing draft assessment or create a new one."""
     with get_cursor(commit=True) as cur:
@@ -2441,6 +2568,7 @@ def update_assignment_request_status(
     request_id: int,
     status: str,
     reviewer_id: Optional[int] = None,
+    reviewer_note: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     """Approve/reject an assignment request."""
     if status not in ("approved", "rejected"):
@@ -2451,12 +2579,13 @@ def update_assignment_request_status(
             UPDATE staff_assignment_requests
             SET status = %s,
                 reviewed_by = %s,
+                reviewer_note = %s,
                 reviewed_at = NOW(),
                 updated_at = NOW()
             WHERE id = %s
             RETURNING *
             """,
-            (status, reviewer_id, request_id),
+            (status, reviewer_id, reviewer_note, request_id),
         )
         row = cur.fetchone()
         return dict(row) if row else None

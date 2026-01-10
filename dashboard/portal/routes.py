@@ -111,6 +111,8 @@ from .queries import (
     get_latest_reopen_request,
     update_reopen_request_status,
     list_reopen_requests,
+    fetch_admin_pending_summary,
+    fetch_admin_pending_preview,
     get_optional_rooms_for_schools,
     get_room_with_aspects,
 )
@@ -1256,7 +1258,10 @@ def approve_reopen(assessment_id: int) -> Response:
     from .queries import log_activity
     request_id = request.form.get("request_id", type=int)
     note = request.form.get("reviewer_note", "").strip() or None
+    wants_json = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     if not request_id:
+        if wants_json:
+            return jsonify({"success": False, "message": "Permintaan tidak valid."}), 400
         flash("Permintaan tidak valid.", "danger")
         return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
 
@@ -1267,6 +1272,7 @@ def approve_reopen(assessment_id: int) -> Response:
             reviewer_id=current_user()["id"],
             reviewer_note=note,
         )
+        success = False
         if ok and reopen_assessment(assessment_id):
             assessment = get_assessment_by_id(assessment_id)
             req = _fetch_reopen_request(request_id)
@@ -1296,10 +1302,23 @@ def approve_reopen(assessment_id: int) -> Response:
                 details,
             )
             flash("Reopen disetujui dan penilaian dibuka kembali.", "success")
+            success = True
         else:
             flash("Gagal menyetujui reopen.", "danger")
+        if wants_json:
+            status_code = 200 if success else 400
+            return jsonify(
+                {
+                    "success": success,
+                    "request_id": request_id,
+                    "assessment_id": assessment_id,
+                    "status": "approved" if success else "failed",
+                }
+            ), status_code
     except Exception as e:
         current_app.logger.exception("Error approving reopen")
+        if wants_json:
+            return jsonify({"success": False, "message": str(e)}), 500
         flash(f"Gagal menyetujui reopen: {e}", "danger")
     return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
 
@@ -1311,7 +1330,10 @@ def reject_reopen(assessment_id: int) -> Response:
     from .queries import log_activity
     request_id = request.form.get("request_id", type=int)
     note = request.form.get("reviewer_note", "").strip() or None
+    wants_json = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     if not request_id:
+        if wants_json:
+            return jsonify({"success": False, "message": "Permintaan tidak valid."}), 400
         flash("Permintaan tidak valid.", "danger")
         return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
 
@@ -1353,8 +1375,20 @@ def reject_reopen(assessment_id: int) -> Response:
             flash("Permintaan reopen ditolak.", "info")
         else:
             flash("Gagal menolak reopen.", "danger")
+        if wants_json:
+            status_code = 200 if ok else 400
+            return jsonify(
+                {
+                    "success": bool(ok),
+                    "request_id": request_id,
+                    "assessment_id": assessment_id,
+                    "status": "rejected" if ok else "failed",
+                }
+            ), status_code
     except Exception as e:
         current_app.logger.exception("Error rejecting reopen")
+        if wants_json:
+            return jsonify({"success": False, "message": str(e)}), 500
         flash(f"Gagal menolak reopen: {e}", "danger")
     return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
 
@@ -2447,6 +2481,52 @@ def admin_reopen_requests() -> Response:
         status_filter=status,
         activity_logs=activity_logs,
     )
+
+
+@portal_bp.route("/admin/pending-summary")
+@role_required("admin")
+def admin_pending_summary() -> Response:
+    """Return pending confirmation counts for admin notification polling."""
+    try:
+        return jsonify(fetch_admin_pending_summary())
+    except Exception:
+        current_app.logger.exception("Failed to fetch admin pending summary")
+        return jsonify(
+            {
+                "pending_users": 0,
+                "pending_assignment_requests": 0,
+                "pending_team_member_requests": 0,
+                "pending_reopen_requests": 0,
+                "total": 0,
+            }
+        )
+
+
+@portal_bp.route("/admin/pending-preview")
+@role_required("admin")
+def admin_pending_preview() -> Response:
+    """Return pending preview data for admin quick actions."""
+    limit = request.args.get("limit", type=int) or 3
+    limit = max(1, min(limit, 10))
+    try:
+        return jsonify(fetch_admin_pending_preview(limit_per_type=limit))
+    except Exception:
+        current_app.logger.exception("Failed to fetch admin pending preview")
+        return jsonify(
+            {
+                "summary": {
+                    "pending_users": 0,
+                    "pending_assignment_requests": 0,
+                    "pending_team_member_requests": 0,
+                    "pending_reopen_requests": 0,
+                    "total": 0,
+                },
+                "users": [],
+                "assignment_requests": [],
+                "team_member_requests": [],
+                "reopen_requests": [],
+            }
+        )
 
 
 @portal_bp.route("/admin/periods", methods=["GET", "POST"])
@@ -3882,7 +3962,20 @@ def admin_approve_assignment_request(request_id: int) -> Response:
     """Admin approves a coordinator-submitted assignment request."""
     user = current_user()
     from .queries import log_activity
-    req = update_assignment_request_status(request_id, "approved", reviewer_id=user["id"])
+    reviewer_note = None
+    if request.is_json:
+        payload = request.get_json(silent=True) or {}
+        reviewer_note = payload.get("reviewer_note")
+    else:
+        reviewer_note = request.form.get("reviewer_note")
+    reviewer_note = reviewer_note.strip() if isinstance(reviewer_note, str) and reviewer_note.strip() else None
+
+    req = update_assignment_request_status(
+        request_id,
+        "approved",
+        reviewer_id=user["id"],
+        reviewer_note=reviewer_note,
+    )
     if not req:
         return jsonify({"success": False, "message": "Request tidak ditemukan"}), 404
     try:
@@ -3896,6 +3989,8 @@ def admin_approve_assignment_request(request_id: int) -> Response:
             "school_id": req.get("school_id"),
             "period_id": req.get("period_id"),
         }
+        if reviewer_note:
+            request_details["reviewer_note"] = reviewer_note
         if staff_info:
             request_details["staff_name"] = staff_info.get("full_name")
             request_details["staff_email"] = staff_info.get("email")
@@ -3944,7 +4039,20 @@ def admin_reject_assignment_request(request_id: int) -> Response:
     """Admin rejects a coordinator-submitted assignment request."""
     user = current_user()
     from .queries import log_activity
-    req = update_assignment_request_status(request_id, "rejected", reviewer_id=user["id"])
+    reviewer_note = None
+    if request.is_json:
+        payload = request.get_json(silent=True) or {}
+        reviewer_note = payload.get("reviewer_note")
+    else:
+        reviewer_note = request.form.get("reviewer_note")
+    reviewer_note = reviewer_note.strip() if isinstance(reviewer_note, str) and reviewer_note.strip() else None
+
+    req = update_assignment_request_status(
+        request_id,
+        "rejected",
+        reviewer_id=user["id"],
+        reviewer_note=reviewer_note,
+    )
     if not req:
         return jsonify({"success": False, "message": "Request tidak ditemukan"}), 404
     staff_info = _fetch_dashboard_user_summary(req["staff_id"])
@@ -3955,6 +4063,8 @@ def admin_reject_assignment_request(request_id: int) -> Response:
         "school_id": req.get("school_id"),
         "period_id": req.get("period_id"),
     }
+    if reviewer_note:
+        details["reviewer_note"] = reviewer_note
     if staff_info:
         details["staff_name"] = staff_info.get("full_name")
         details["staff_email"] = staff_info.get("email")
@@ -4057,12 +4167,26 @@ def inject_permissions():
     else:
         user_area_name = _fetch_user_kecamatan_name(user.get("id"))
     area_contacts = _build_coordinator_contacts(user_school, area_name=user_area_name)
+    admin_pending = {
+        "pending_users": 0,
+        "pending_assignment_requests": 0,
+        "pending_team_member_requests": 0,
+        "pending_reopen_requests": 0,
+        "total": 0,
+    }
+    if user.get("role") == "admin":
+        try:
+            admin_pending = fetch_admin_pending_summary()
+        except Exception:
+            current_app.logger.exception("Failed to load admin pending summary")
+
     return {
         'permissions': get_permission_summary(user),
         'is_superadmin': is_superadmin(user),
         'can_access_aska': can_access_aska(user),
         'user_school': user_school,
         'area_contacts': area_contacts,
+        'admin_pending': admin_pending,
     }
 
 
@@ -4278,12 +4402,14 @@ def manage_users() -> Response:
     if request.method == "POST":
         action = request.form.get("action", "create")
         user_id = request.form.get("user_id")
+        wants_json = request.headers.get("X-Requested-With") == "XMLHttpRequest"
         
         email = (request.form.get("email") or "").strip().lower()
         full_name = (request.form.get("full_name") or "").strip()
         password = request.form.get("password") or ""
         role = (request.form.get("role") or "viewer").strip()
         account_status = request.form.get("account_status")
+        reviewer_note = (request.form.get("reviewer_note") or "").strip() or None
         school_id_raw = (request.form.get("school_id") or "").strip()
         school_id = int(school_id_raw) if school_id_raw.isdigit() else None
         if role != "sekolah":
@@ -4369,22 +4495,44 @@ def manage_users() -> Response:
                     
             elif action == "verify":
                 if not user_id or not account_status:
-                     flash("Data tidak lengkap.", "warning")
+                    message = "Data tidak lengkap."
+                    if wants_json:
+                        return jsonify({"success": False, "message": message}), 400
+                    flash(message, "warning")
                 else:
-                     updated = update_dashboard_user(user_id=int(user_id), full_name=full_name, role=role, account_status=account_status)
-                     if updated:
-                         log_activity(
-                             current_user().get("id") if current_user() else None,
-                             "UPDATE",
-                             "USER",
-                             int(user_id),
-                             full_name or email,
-                             {"account_status": account_status, "info": "verify"},
-                         )
-                     flash(f"Status user berhasil diubah menjadi {account_status}.", "success")
+                    updated = update_dashboard_user(
+                        user_id=int(user_id),
+                        full_name=full_name,
+                        role=role,
+                        account_status=account_status,
+                    )
+                    if updated:
+                        details = {"account_status": account_status, "info": "verify"}
+                        if reviewer_note:
+                            details["reviewer_note"] = reviewer_note
+                        log_activity(
+                            current_user().get("id") if current_user() else None,
+                            "UPDATE",
+                            "USER",
+                            int(user_id),
+                            full_name or email,
+                            details,
+                        )
+                    if wants_json:
+                        status_code = 200 if updated else 400
+                        return jsonify(
+                            {
+                                "success": bool(updated),
+                                "user_id": int(user_id),
+                                "account_status": account_status,
+                            }
+                        ), status_code
+                    flash(f"Status user berhasil diubah menjadi {account_status}.", "success")
 
         except Exception as exc: 
             current_app.logger.error(f"Error managing user: {exc}")
+            if wants_json:
+                return jsonify({"success": False, "message": str(exc)}), 500
             flash(f"Gagal memproses data: {exc}", "danger")
 
     users = list_dashboard_users()
@@ -4421,6 +4569,7 @@ def manage_monev_teams() -> Response:
     if request.method == "POST":
         action = request.form.get("action")
         actor_id = current_user().get("id") if current_user() else None
+        wants_json = request.headers.get("X-Requested-With") == "XMLHttpRequest"
         
         try:
             if action == "create_team":
@@ -4571,27 +4720,38 @@ def manage_monev_teams() -> Response:
             
             elif action == "approve_request":
                 request_id = int(request.form.get("request_id"))
+                reviewer_note = (request.form.get("reviewer_note") or "").strip() or None
                 admin_id = current_user().get("id") if current_user() else None
                 req = get_team_member_request(request_id)
                 if not req:
+                    if wants_json:
+                        return jsonify({"success": False, "message": "Permintaan tidak ditemukan."}), 404
                     flash("Permintaan tidak ditemukan.", "danger")
                 else:
-                    updated_req = update_team_member_request_status(request_id, "approved", admin_id)
+                    updated_req = update_team_member_request_status(
+                        request_id,
+                        "approved",
+                        admin_id,
+                        reviewer_note=reviewer_note,
+                    )
                     if updated_req:
+                        details = {
+                            "status": "approved",
+                            "team_id": req.get("team_id"),
+                            "team_name": req.get("team_name"),
+                            "staff_id": req.get("staff_id"),
+                            "staff_name": req.get("staff_name"),
+                            "requested_by": req.get("requested_by_name"),
+                        }
+                        if reviewer_note:
+                            details["reviewer_note"] = reviewer_note
                         log_activity(
                             actor_id,
                             "UPDATE",
                             "MONEV_MEMBER_REQUEST",
                             request_id,
                             req.get("staff_name") or req.get("team_name"),
-                            {
-                                "status": "approved",
-                                "team_id": req.get("team_id"),
-                                "team_name": req.get("team_name"),
-                                "staff_id": req.get("staff_id"),
-                                "staff_name": req.get("staff_name"),
-                                "requested_by": req.get("requested_by_name"),
-                            },
+                            details,
                         )
                     added = add_team_member(req["team_id"], req["staff_id"], admin_id)
                     if added:
@@ -4611,36 +4771,67 @@ def manage_monev_teams() -> Response:
                                 "member_id": member_id,
                             },
                         )
+                    if wants_json:
+                        status_code = 200 if updated_req else 400
+                        return jsonify(
+                            {
+                                "success": bool(updated_req),
+                                "request_id": request_id,
+                                "status": "approved",
+                            }
+                        ), status_code
                     flash(f"Permintaan anggota untuk {req.get('staff_name') or 'staff'} disetujui.", "success")
             
             elif action == "reject_request":
                 request_id = int(request.form.get("request_id"))
+                reviewer_note = (request.form.get("reviewer_note") or "").strip() or None
                 admin_id = current_user().get("id") if current_user() else None
                 req = get_team_member_request(request_id)
                 if not req:
+                    if wants_json:
+                        return jsonify({"success": False, "message": "Permintaan tidak ditemukan."}), 404
                     flash("Permintaan tidak ditemukan.", "danger")
                 else:
-                    updated_req = update_team_member_request_status(request_id, "rejected", admin_id)
+                    updated_req = update_team_member_request_status(
+                        request_id,
+                        "rejected",
+                        admin_id,
+                        reviewer_note=reviewer_note,
+                    )
                     if updated_req:
+                        details = {
+                            "status": "rejected",
+                            "team_id": req.get("team_id"),
+                            "team_name": req.get("team_name"),
+                            "staff_id": req.get("staff_id"),
+                            "staff_name": req.get("staff_name"),
+                            "requested_by": req.get("requested_by_name"),
+                        }
+                        if reviewer_note:
+                            details["reviewer_note"] = reviewer_note
                         log_activity(
                             actor_id,
                             "UPDATE",
                             "MONEV_MEMBER_REQUEST",
                             request_id,
                             req.get("staff_name") or req.get("team_name"),
-                            {
-                                "status": "rejected",
-                                "team_id": req.get("team_id"),
-                                "team_name": req.get("team_name"),
-                                "staff_id": req.get("staff_id"),
-                                "staff_name": req.get("staff_name"),
-                                "requested_by": req.get("requested_by_name"),
-                            },
+                            details,
                         )
+                    if wants_json:
+                        status_code = 200 if updated_req else 400
+                        return jsonify(
+                            {
+                                "success": bool(updated_req),
+                                "request_id": request_id,
+                                "status": "rejected",
+                            }
+                        ), status_code
                     flash(f"Permintaan anggota untuk {req.get('staff_name') or 'staff'} ditolak.", "info")
                     
         except Exception as exc:
             current_app.logger.error(f"Error managing monev team: {exc}")
+            if wants_json:
+                return jsonify({"success": False, "message": str(exc)}), 500
             flash(f"Terjadi kesalahan: {exc}", "danger")
     
     # GET: Fetch teams by type and enrich with members
