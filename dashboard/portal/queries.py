@@ -409,10 +409,25 @@ def fetch_admin_pending_preview(limit_per_type: int = 3) -> Dict[str, Any]:
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT id, full_name, email, role, created_at
-            FROM dashboard_users
-            WHERE account_status = 'pending'
-            ORDER BY created_at DESC
+            SELECT
+                u.id,
+                u.full_name,
+                u.email,
+                u.role,
+                u.created_at,
+                u.whatsapp_number,
+                k.name AS kecamatan_name,
+                s.name AS school_name,
+                s.npsn AS school_npsn,
+                s.jenjang AS school_jenjang,
+                sk.name AS school_kecamatan_name
+            FROM dashboard_users u
+            LEFT JOIN portal_kecamatan k ON u.requested_kecamatan = k.id
+            LEFT JOIN portal_schools s ON u.school_id = s.id
+            LEFT JOIN portal_kelurahan sl ON s.kelurahan_id = sl.id
+            LEFT JOIN portal_kecamatan sk ON sl.kecamatan_id = sk.id
+            WHERE u.account_status = 'pending'
+            ORDER BY u.created_at DESC
             LIMIT %s
             """,
             (limit,),
@@ -421,17 +436,24 @@ def fetch_admin_pending_preview(limit_per_type: int = 3) -> Dict[str, Any]:
 
         cur.execute(
             """
-            SELECT sar.id,
-                   sar.created_at,
-                   s.full_name AS staff_name,
-                   s.email AS staff_email,
-                   c.full_name AS coordinator_name,
-                   sch.name AS school_name,
-                   sch.npsn AS school_npsn
+            SELECT
+                sar.id,
+                sar.created_at,
+                sar.note,
+                s.full_name AS staff_name,
+                s.email AS staff_email,
+                c.full_name AS coordinator_name,
+                sch.name AS school_name,
+                sch.npsn AS school_npsn,
+                k.name AS kecamatan_name,
+                p.name AS period_name
             FROM staff_assignment_requests sar
             JOIN dashboard_users s ON sar.staff_id = s.id
             JOIN dashboard_users c ON sar.coordinator_id = c.id
             JOIN portal_schools sch ON sar.school_id = sch.id
+            LEFT JOIN portal_kelurahan l ON sch.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            LEFT JOIN portal_assessment_periods p ON sar.period_id = p.id
             WHERE sar.status = 'pending'
             ORDER BY sar.created_at DESC
             LIMIT %s
@@ -442,14 +464,19 @@ def fetch_admin_pending_preview(limit_per_type: int = 3) -> Dict[str, Any]:
 
         cur.execute(
             """
-            SELECT r.id,
-                   r.created_at,
-                   u.full_name AS staff_name,
-                   u.email AS staff_email,
-                   t.name AS team_name,
-                   rb.full_name AS requested_by_name
+            SELECT
+                r.id,
+                r.created_at,
+                r.note,
+                u.full_name AS staff_name,
+                u.email AS staff_email,
+                t.name AS team_name,
+                t.team_type,
+                k.name AS kecamatan_name,
+                rb.full_name AS requested_by_name
             FROM monev_team_member_requests r
             JOIN monev_teams t ON r.team_id = t.id
+            LEFT JOIN portal_kecamatan k ON t.kecamatan_id = k.id
             JOIN dashboard_users u ON r.staff_id = u.id
             JOIN dashboard_users rb ON r.requested_by = rb.id
             WHERE r.status = 'pending'
@@ -462,13 +489,16 @@ def fetch_admin_pending_preview(limit_per_type: int = 3) -> Dict[str, Any]:
 
         cur.execute(
             """
-            SELECT r.id,
-                   r.created_at,
-                   r.assessment_id,
-                   s.name AS school_name,
-                   s.npsn,
-                   u.full_name AS staff_name,
-                   u.email AS staff_email
+            SELECT
+                r.id,
+                r.created_at,
+                r.assessment_id,
+                r.reason,
+                s.name AS school_name,
+                s.npsn,
+                u.id AS staff_id,
+                u.full_name AS staff_name,
+                u.email AS staff_email
             FROM portal_assessment_reopen_requests r
             JOIN portal_assessments a ON a.id = r.assessment_id
             JOIN portal_schools s ON s.id = a.school_id

@@ -210,7 +210,13 @@
                                 <tr id="req-{{ req.id }}" data-request-id="{{ req.id }}"
                                     data-staff-name="{{ req.staff_name or '' }}"
                                     data-school-name="{{ req.school_name or '' }}"
-                                    data-coordinator-name="{{ req.coordinator_name or '' }}">
+                                    data-coordinator-name="{{ req.coordinator_name or '' }}"
+                                    data-staff-email="{{ req.staff_email or '' }}"
+                                    data-school-npsn="{{ req.school_npsn or '' }}"
+                                    data-kecamatan-name="{{ req.kecamatan_name or '' }}"
+                                    data-period-name="{{ req.period_name or '' }}"
+                                    data-request-note="{{ req.note or '' }}"
+                                    data-request-created="{{ req.created_at.strftime('%d %b %Y %H:%M') if req.created_at else '' }}">
                                     <td onclick="event.stopPropagation()">
                                         <input class="form-check-input pending-request-select" type="checkbox"
                                             data-request-id="{{ req.id }}" aria-label="Pilih permintaan">
@@ -709,17 +715,41 @@
             }).then(response => response.json());
         }
 
+        function buildRequestDetails(row) {
+            if (!row) return [];
+            const periodLabel = (row.dataset.periodName || '').trim() || 'Periode aktif';
+            return [
+                { label: 'Koordinator', value: row.dataset.coordinatorName || '-' },
+                { label: 'Staff', value: row.dataset.staffName || '-' },
+                { label: 'Email Staff', value: row.dataset.staffEmail || '-' },
+                { label: 'Sekolah', value: row.dataset.schoolName || '-' },
+                { label: 'NPSN', value: row.dataset.schoolNpsn || '-' },
+                { label: 'Kecamatan', value: row.dataset.kecamatanName || '-' },
+                { label: 'Periode', value: periodLabel },
+                { label: 'Catatan', value: row.dataset.requestNote || '-' },
+                { label: 'Diajukan', value: row.dataset.requestCreated || '-' }
+            ];
+        }
+
+        function formatBulkRequestLabel(row) {
+            const staff = row.dataset.staffName || 'Staff';
+            const school = row.dataset.schoolName || 'Sekolah';
+            return `${staff} -> ${school}`;
+        }
+
         function buildRequestAction(row, actionType) {
             if (!row) return null;
             const requestId = row.dataset.requestId;
             const staffName = row.dataset.staffName || 'staff';
             const schoolName = row.dataset.schoolName || 'sekolah';
             const label = actionType === 'approve' ? 'Setujui' : 'Tolak';
+            const details = buildRequestDetails(row);
             const action = {
                 confirmTitle: actionType === 'approve' ? 'Setujui Penugasan' : 'Tolak Penugasan',
                 confirmText: `${label} penugasan ${staffName} ke ${schoolName}?`,
                 label: label,
                 buttonClass: actionType === 'approve' ? 'btn-success' : 'btn-outline-danger',
+                details: details,
                 url: `/portal/admin/assignment-requests/${requestId}/${actionType}`,
                 payload: {},
                 payloadType: 'json',
@@ -766,6 +796,10 @@
                 noteKey: 'reviewer_note',
                 toastMessage: `${selectedRows.length} permintaan berhasil diproses.`,
             };
+            bulkAction.details = [
+                { label: 'Jumlah', value: selectedRows.length },
+                { label: 'Permintaan', value: selectedRows.map(formatBulkRequestLabel).join(', ') || '-' }
+            ];
 
             bulkAction.execute = function () {
                 const note = bulkAction.note || '';

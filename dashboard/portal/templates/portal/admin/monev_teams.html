@@ -64,7 +64,12 @@
                     {% for req in pending_requests %}
                     <tr id="team-request-{{ req.id }}" data-request-id="{{ req.id }}"
                         data-team-name="{{ req.team_name or '' }}"
-                        data-staff-name="{{ req.staff_name or '' }}">
+                        data-staff-name="{{ req.staff_name or '' }}"
+                        data-staff-email="{{ req.staff_email or '' }}"
+                        data-requested-by="{{ req.requested_by_name or '' }}"
+                        data-request-created="{{ req.created_at.strftime('%d %b %Y %H:%M') if req.created_at else '' }}"
+                        data-team-type="{{ req.team_type or '' }}"
+                        data-request-note="{{ req.note or '' }}">
                         <td onclick="event.stopPropagation()">
                             <input class="form-check-input pending-team-request-select" type="checkbox"
                                 data-request-id="{{ req.id }}" aria-label="Pilih permintaan">
@@ -447,6 +452,25 @@
             }).then(response => response.json());
         }
 
+        function buildTeamRequestDetails(row) {
+            if (!row) return [];
+            return [
+                { label: 'Tim', value: row.dataset.teamName || '-' },
+                { label: 'Tipe', value: row.dataset.teamType || '-' },
+                { label: 'Staff', value: row.dataset.staffName || '-' },
+                { label: 'Email Staff', value: row.dataset.staffEmail || '-' },
+                { label: 'Diajukan oleh', value: row.dataset.requestedBy || '-' },
+                { label: 'Catatan', value: row.dataset.requestNote || '-' },
+                { label: 'Diajukan', value: row.dataset.requestCreated || '-' }
+            ];
+        }
+
+        function formatBulkTeamLabel(row) {
+            const staff = row.dataset.staffName || 'Staff';
+            const team = row.dataset.teamName || 'Tim';
+            return `${staff} -> ${team}`;
+        }
+
         function buildRowAction(row, nextStatus) {
             if (!row) return null;
             const form = row.querySelector(`.team-request-form[data-next-status="${nextStatus}"]`);
@@ -454,11 +478,13 @@
             const staffName = row.dataset.staffName || 'staff';
             const teamName = row.dataset.teamName || 'tim';
             const label = nextStatus === 'approved' ? 'Setujui' : 'Tolak';
+            const details = buildTeamRequestDetails(row);
             const action = {
                 confirmTitle: nextStatus === 'approved' ? 'Setujui Anggota' : 'Tolak Anggota',
                 confirmText: `${label} ${staffName} untuk tim ${teamName}?`,
                 label: label,
                 buttonClass: nextStatus === 'approved' ? 'btn-success' : 'btn-outline-danger',
+                details: details,
                 url: form.getAttribute('action') || window.location.href,
                 payload: new FormData(form),
                 noteKey: 'reviewer_note',
@@ -504,6 +530,10 @@
                 noteKey: 'reviewer_note',
                 toastMessage: `${selectedRows.length} permintaan berhasil diproses.`,
             };
+            bulkAction.details = [
+                { label: 'Jumlah', value: selectedRows.length },
+                { label: 'Permintaan', value: selectedRows.map(formatBulkTeamLabel).join(', ') || '-' }
+            ];
 
             bulkAction.execute = function () {
                 const note = bulkAction.note || '';

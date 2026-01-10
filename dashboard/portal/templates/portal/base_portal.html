@@ -653,11 +653,55 @@
             color: var(--text-muted);
         }
 
+        .notification-quick-time {
+            display: block;
+            margin-top: 0.2rem;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+        }
+
         .notification-quick-actions {
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
             flex-wrap: wrap;
+        }
+
+        .admin-confirm-details {
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-soft);
+            max-height: 40vh;
+            overflow-y: auto;
+        }
+
+        .admin-confirm-details-title {
+            font-size: 0.7rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .admin-confirm-details-list {
+            display: grid;
+            grid-template-columns: minmax(120px, 1fr) 2fr;
+            gap: 0.35rem 0.75rem;
+            margin: 0;
+        }
+
+        .admin-confirm-details-list dt {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .admin-confirm-details-list dd {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            word-break: break-word;
         }
 
         .admin-undo-toast {
@@ -1058,6 +1102,10 @@
                 </div>
                 <div class="modal-body">
                     <p class="mb-0" id="adminQuickConfirmText"></p>
+                    <div class="admin-confirm-details d-none" id="adminQuickConfirmDetails">
+                        <div class="admin-confirm-details-title">Detail</div>
+                        <dl class="admin-confirm-details-list" id="adminQuickConfirmDetailsList"></dl>
+                    </div>
                     <div class="mt-3" id="adminQuickConfirmNoteWrap">
                         <label for="adminQuickConfirmNote" class="form-label small text-muted">Catatan (opsional)</label>
                         <textarea class="form-control" id="adminQuickConfirmNote" rows="3"
@@ -1196,6 +1244,8 @@
             var confirmModalEl = document.getElementById('adminQuickConfirmModal');
             var confirmTitleEl = document.getElementById('adminQuickConfirmTitle');
             var confirmTextEl = document.getElementById('adminQuickConfirmText');
+            var confirmDetailsWrapEl = document.getElementById('adminQuickConfirmDetails');
+            var confirmDetailsListEl = document.getElementById('adminQuickConfirmDetailsList');
             var confirmNoteEl = document.getElementById('adminQuickConfirmNote');
             var confirmNoteWrapEl = document.getElementById('adminQuickConfirmNoteWrap');
             var confirmBtnEl = document.getElementById('adminQuickConfirmBtn');
@@ -1385,6 +1435,53 @@
                 }
             }
 
+            function normalizeDetails(details) {
+                if (!details) return [];
+                if (Array.isArray(details)) return details;
+                if (typeof details === 'object') {
+                    return Object.keys(details).map(function (key) {
+                        return { label: key, value: details[key] };
+                    });
+                }
+                return [];
+            }
+
+            function formatDetailValue(value) {
+                if (Array.isArray(value)) {
+                    var items = value.filter(function (item) {
+                        return item !== null && item !== undefined && String(item).trim() !== '';
+                    });
+                    return items.length ? items.join(', ') : '-';
+                }
+                if (value === null || value === undefined) return '-';
+                if (typeof value === 'string') {
+                    var trimmed = value.trim();
+                    return trimmed ? trimmed : '-';
+                }
+                return String(value);
+            }
+
+            function renderConfirmDetails(details) {
+                if (!confirmDetailsWrapEl || !confirmDetailsListEl) return;
+                confirmDetailsListEl.innerHTML = '';
+                var items = normalizeDetails(details).filter(function (item) {
+                    return item && item.label;
+                });
+                if (!items.length) {
+                    toggle(confirmDetailsWrapEl, false);
+                    return;
+                }
+                items.forEach(function (item) {
+                    var dt = document.createElement('dt');
+                    dt.textContent = String(item.label);
+                    var dd = document.createElement('dd');
+                    dd.textContent = formatDetailValue(item.value);
+                    confirmDetailsListEl.appendChild(dt);
+                    confirmDetailsListEl.appendChild(dd);
+                });
+                toggle(confirmDetailsWrapEl, true);
+            }
+
             function setItem(key, value) {
                 var cfg = elements[key];
                 if (!cfg || !cfg.count || !cfg.item) return;
@@ -1429,7 +1526,37 @@
                 return url.replace('/0/', '/' + id + '/');
             }
 
-            function buildQuickItem(title, subtitle, actions) {
+            function formatPendingDate(value) {
+                if (!value) return '';
+                var raw = value;
+                if (typeof raw === 'string') {
+                    raw = raw.trim();
+                    if (!raw) return '';
+                    if (raw.indexOf('T') === -1 && raw.indexOf(' ') !== -1) {
+                        raw = raw.replace(' ', 'T');
+                    }
+                    if (/^\\d{4}-\\d{2}-\\d{2}$/.test(raw)) {
+                        raw = raw + 'T00:00:00';
+                    }
+                }
+                var date = raw instanceof Date ? raw : new Date(raw);
+                if (Number.isNaN(date.getTime())) return '';
+                var now = new Date();
+                var options = {
+                    day: '2-digit',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                };
+                if (date.getFullYear() !== now.getFullYear()) {
+                    options.year = 'numeric';
+                }
+                var locale = document.documentElement.lang || 'id-ID';
+                return new Intl.DateTimeFormat(locale, options).format(date);
+            }
+
+            function buildQuickItem(title, subtitle, timeText, actions) {
                 var row = document.createElement('div');
                 row.className = 'notification-quick-item';
 
@@ -1446,6 +1573,12 @@
                 meta.appendChild(titleEl);
                 if (subtitle) {
                     meta.appendChild(subtitleEl);
+                }
+                if (timeText) {
+                    var timeEl = document.createElement('div');
+                    timeEl.className = 'notification-quick-time';
+                    timeEl.textContent = timeText;
+                    meta.appendChild(timeEl);
                 }
 
                 var actionWrap = document.createElement('div');
@@ -1501,12 +1634,23 @@
                 addGroup('User baru', quickConfig.usersUrl, preview.users, function (item) {
                     var title = item.full_name || item.email || 'User';
                     var subtitle = [item.email, item.role].filter(Boolean).join(' • ');
-                    return buildQuickItem(title, subtitle, [
+                    var timeText = formatPendingDate(item.created_at);
+                    var details = [
+                        { label: 'Nama', value: item.full_name || '-' },
+                        { label: 'Email', value: item.email || '-' },
+                        { label: 'Role', value: item.role || '-' },
+                        { label: 'WhatsApp', value: item.whatsapp_number || '-' },
+                        { label: 'Kecamatan', value: item.kecamatan_name || '-' },
+                        { label: 'Sekolah', value: [item.school_name, item.school_npsn && ('NPSN ' + item.school_npsn), item.school_jenjang, item.school_kecamatan_name].filter(Boolean).join(' • ') || '-' },
+                        { label: 'Diajukan', value: timeText || '-' }
+                    ];
+                    return buildQuickItem(title, subtitle, timeText, [
                         {
                             label: 'Setujui',
                             buttonClass: 'btn-success',
                             confirmTitle: 'Setujui User',
                             confirmText: 'Setujui user ' + title + '?',
+                            details: details,
                             url: quickConfig.usersUrl,
                             noteKey: 'reviewer_note',
                             payload: {
@@ -1524,6 +1668,7 @@
                             buttonClass: 'btn-outline-danger',
                             confirmTitle: 'Tolak User',
                             confirmText: 'Tolak user ' + title + '?',
+                            details: details,
                             url: quickConfig.usersUrl,
                             noteKey: 'reviewer_note',
                             payload: {
@@ -1542,12 +1687,26 @@
                 addGroup('Permintaan penugasan', quickConfig.assignmentUrl, preview.assignment_requests, function (item) {
                     var title = (item.staff_name || 'Staff') + ' • ' + (item.school_name || 'Sekolah');
                     var subtitle = [item.coordinator_name, item.school_npsn].filter(Boolean).join(' • ');
-                    return buildQuickItem(title, subtitle, [
+                    var timeText = formatPendingDate(item.created_at);
+                    var periodLabel = item.period_name || 'Periode aktif';
+                    var details = [
+                        { label: 'Koordinator', value: item.coordinator_name || '-' },
+                        { label: 'Staff', value: item.staff_name || '-' },
+                        { label: 'Email Staff', value: item.staff_email || '-' },
+                        { label: 'Sekolah', value: item.school_name || '-' },
+                        { label: 'NPSN', value: item.school_npsn || '-' },
+                        { label: 'Kecamatan', value: item.kecamatan_name || '-' },
+                        { label: 'Periode', value: periodLabel },
+                        { label: 'Catatan', value: item.note || '-' },
+                        { label: 'Diajukan', value: timeText || '-' }
+                    ];
+                    return buildQuickItem(title, subtitle, timeText, [
                         {
                             label: 'Setujui',
                             buttonClass: 'btn-success',
                             confirmTitle: 'Setujui Penugasan',
                             confirmText: 'Setujui penugasan ' + (item.staff_name || 'staff') + ' ke ' + (item.school_name || 'sekolah') + '?',
+                            details: details,
                             url: replaceId(quickConfig.approveAssignmentUrl, item.id),
                             noteKey: 'reviewer_note',
                             payload: null,
@@ -1559,6 +1718,7 @@
                             buttonClass: 'btn-outline-danger',
                             confirmTitle: 'Tolak Penugasan',
                             confirmText: 'Tolak penugasan ' + (item.staff_name || 'staff') + ' ke ' + (item.school_name || 'sekolah') + '?',
+                            details: details,
                             url: replaceId(quickConfig.rejectAssignmentUrl, item.id),
                             noteKey: 'reviewer_note',
                             payload: null,
@@ -1571,12 +1731,24 @@
                 addGroup('Permintaan anggota tim', quickConfig.teamUrl, preview.team_member_requests, function (item) {
                     var title = (item.staff_name || 'Staff') + ' • ' + (item.team_name || 'Tim');
                     var subtitle = item.requested_by_name ? 'Diajukan oleh ' + item.requested_by_name : '';
-                    return buildQuickItem(title, subtitle, [
+                    var timeText = formatPendingDate(item.created_at);
+                    var details = [
+                        { label: 'Tim', value: item.team_name || '-' },
+                        { label: 'Tipe', value: item.team_type || '-' },
+                        { label: 'Kecamatan', value: item.kecamatan_name || '-' },
+                        { label: 'Staff', value: item.staff_name || '-' },
+                        { label: 'Email Staff', value: item.staff_email || '-' },
+                        { label: 'Diajukan oleh', value: item.requested_by_name || '-' },
+                        { label: 'Catatan', value: item.note || '-' },
+                        { label: 'Diajukan', value: timeText || '-' }
+                    ];
+                    return buildQuickItem(title, subtitle, timeText, [
                         {
                             label: 'Setujui',
                             buttonClass: 'btn-success',
                             confirmTitle: 'Setujui Anggota',
                             confirmText: 'Setujui ' + (item.staff_name || 'staff') + ' untuk tim ' + (item.team_name || 'ini') + '?',
+                            details: details,
                             url: quickConfig.teamUrl,
                             noteKey: 'reviewer_note',
                             payload: {
@@ -1591,6 +1763,7 @@
                             buttonClass: 'btn-outline-danger',
                             confirmTitle: 'Tolak Anggota',
                             confirmText: 'Tolak ' + (item.staff_name || 'staff') + ' untuk tim ' + (item.team_name || 'ini') + '?',
+                            details: details,
                             url: quickConfig.teamUrl,
                             noteKey: 'reviewer_note',
                             payload: {
@@ -1606,12 +1779,23 @@
                 addGroup('Permintaan reopen', quickConfig.reopenUrl, preview.reopen_requests, function (item) {
                     var title = (item.school_name || 'Sekolah') + ' • ' + (item.staff_name || 'Staff');
                     var subtitle = item.npsn ? 'NPSN ' + item.npsn : '';
-                    return buildQuickItem(title, subtitle, [
+                    var timeText = formatPendingDate(item.created_at);
+                    var details = [
+                        { label: 'Sekolah', value: item.school_name || '-' },
+                        { label: 'NPSN', value: item.npsn || '-' },
+                        { label: 'Staff', value: item.staff_name || '-' },
+                        { label: 'Email Staff', value: item.staff_email || '-' },
+                        { label: 'Assessment ID', value: item.assessment_id || '-' },
+                        { label: 'Alasan', value: item.reason || '-' },
+                        { label: 'Diajukan', value: timeText || '-' }
+                    ];
+                    return buildQuickItem(title, subtitle, timeText, [
                         {
                             label: 'Setujui',
                             buttonClass: 'btn-success',
                             confirmTitle: 'Setujui Reopen',
                             confirmText: 'Setujui reopen untuk ' + (item.school_name || 'sekolah') + '?',
+                            details: details,
                             url: replaceId(quickConfig.approveReopenUrl, item.assessment_id),
                             noteKey: 'reviewer_note',
                             payload: { request_id: item.id },
@@ -1623,6 +1807,7 @@
                             buttonClass: 'btn-outline-danger',
                             confirmTitle: 'Tolak Reopen',
                             confirmText: 'Tolak reopen untuk ' + (item.school_name || 'sekolah') + '?',
+                            details: details,
                             url: replaceId(quickConfig.rejectReopenUrl, item.assessment_id),
                             noteKey: 'reviewer_note',
                             payload: { request_id: item.id },
@@ -1727,6 +1912,7 @@
                 if (confirmTextEl) {
                     confirmTextEl.textContent = action.confirmText || 'Lanjutkan tindakan ini?';
                 }
+                renderConfirmDetails(action.details);
                 if (confirmNoteWrapEl) {
                     var showNote = !!(action.noteKey || action.allowNote);
                     toggle(confirmNoteWrapEl, showNote);

@@ -60,7 +60,11 @@
                         <tr id="reopen-request-{{ r.id }}" data-request-id="{{ r.id }}"
                             data-assessment-id="{{ r.assessment_id }}"
                             data-school-name="{{ r.school_name or '' }}"
-                            data-staff-name="{{ r.staff_name or '' }}">
+                            data-staff-name="{{ r.staff_name or '' }}"
+                            data-school-npsn="{{ r.npsn or '' }}"
+                            data-staff-id="{{ r.staff_id or '' }}"
+                            data-request-reason="{{ r.reason or '' }}"
+                            data-request-created="{{ r.created_at }}">
                             <td onclick="event.stopPropagation()">
                                 {% if status == 'pending' %}
                                 <input class="form-check-input reopen-request-select" type="checkbox"
@@ -273,6 +277,25 @@
             }).then(response => response.json());
         }
 
+        function buildReopenDetails(row) {
+            if (!row) return [];
+            return [
+                { label: 'Sekolah', value: row.dataset.schoolName || '-' },
+                { label: 'NPSN', value: row.dataset.schoolNpsn || '-' },
+                { label: 'Staff', value: row.dataset.staffName || '-' },
+                { label: 'ID Staff', value: row.dataset.staffId || '-' },
+                { label: 'Assessment ID', value: row.dataset.assessmentId || '-' },
+                { label: 'Alasan', value: row.dataset.requestReason || '-' },
+                { label: 'Diajukan', value: row.dataset.requestCreated || '-' }
+            ];
+        }
+
+        function formatBulkReopenLabel(row) {
+            const school = row.dataset.schoolName || 'Sekolah';
+            const staff = row.dataset.staffName || 'Staff';
+            return `${school} • ${staff}`;
+        }
+
         function optimisticUpdate(row, nextStatus) {
             if (statusFilter === 'pending') {
                 hideRow(row);
@@ -298,11 +321,13 @@
             if (!form) return null;
             const schoolName = row.dataset.schoolName || 'sekolah';
             const label = nextStatus === 'approved' ? 'Setujui' : 'Tolak';
+            const details = buildReopenDetails(row);
             const action = {
                 confirmTitle: nextStatus === 'approved' ? 'Setujui Reopen' : 'Tolak Reopen',
                 confirmText: `${label} reopen untuk ${schoolName}?`,
                 label: label,
                 buttonClass: nextStatus === 'approved' ? 'btn-success' : 'btn-outline-danger',
+                details: details,
                 url: form.getAttribute('action') || window.location.href,
                 payload: new FormData(form),
                 noteKey: 'reviewer_note',
@@ -352,6 +377,10 @@
                 noteKey: 'reviewer_note',
                 toastMessage: `${selectedRows.length} permintaan berhasil diproses.`,
             };
+            bulkAction.details = [
+                { label: 'Jumlah', value: selectedRows.length },
+                { label: 'Permintaan', value: selectedRows.map(formatBulkReopenLabel).join(', ') || '-' }
+            ];
 
             bulkAction.execute = function () {
                 const note = bulkAction.note || '';

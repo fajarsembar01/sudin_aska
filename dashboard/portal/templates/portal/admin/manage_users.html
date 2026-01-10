@@ -292,6 +292,18 @@
                                         data-user-name="{{ user.full_name or '' }}"
                                         data-user-email="{{ user.email or '' }}"
                                         data-user-role="{{ user.role or '' }}"
+                                        data-user-nip="{{ user.nip or '' }}"
+                                        data-user-nrk="{{ user.nrk or '' }}"
+                                        data-user-jabatan="{{ user.jabatan or '' }}"
+                                        data-user-degree-prefix="{{ user.degree_prefix or '' }}"
+                                        data-user-degree-suffix="{{ user.degree_suffix or '' }}"
+                                        data-user-whatsapp="{{ user.whatsapp_number or '' }}"
+                                        data-user-kecamatan="{{ user.kecamatan_name or '' }}"
+                                        data-user-created="{{ user.created_at.strftime('%d %b %Y, %H:%M') if user.created_at else '' }}"
+                                        data-user-school-name="{{ user.school_name or '' }}"
+                                        data-user-school-npsn="{{ user.school_npsn or '' }}"
+                                        data-user-school-jenjang="{{ user.school_jenjang or '' }}"
+                                        data-user-school-kecamatan="{{ user.school_kecamatan_name or '' }}"
                                         style="cursor: pointer;" onclick='editUser({{ user|tojson }})'>
                                         <td onclick="event.stopPropagation()">
                                             <input class="form-check-input pending-user-select" type="checkbox"
@@ -770,18 +782,70 @@
             }).then(response => response.json());
         }
 
+        function formatUserDisplayName(row) {
+            if (!row) return '';
+            const prefix = (row.dataset.userDegreePrefix || '').trim();
+            const name = (row.dataset.userName || '').trim();
+            const suffix = (row.dataset.userDegreeSuffix || '').trim();
+            let full = [prefix, name].filter(Boolean).join(' ');
+            if (suffix) {
+                full = full ? `${full}, ${suffix}` : suffix;
+            }
+            return full || (row.dataset.userEmail || '').trim();
+        }
+
+        function formatSchoolLabel(row) {
+            if (!row) return '-';
+            const parts = [];
+            const name = (row.dataset.userSchoolName || '').trim();
+            const npsn = (row.dataset.userSchoolNpsn || '').trim();
+            const jenjang = (row.dataset.userSchoolJenjang || '').trim();
+            const kecamatan = (row.dataset.userSchoolKecamatan || '').trim();
+            if (name) parts.push(name);
+            if (npsn) parts.push(`NPSN ${npsn}`);
+            if (jenjang) parts.push(jenjang);
+            if (kecamatan) parts.push(kecamatan);
+            return parts.length ? parts.join(' • ') : '-';
+        }
+
+        function buildUserDetails(row) {
+            return [
+                { label: 'Nama', value: formatUserDisplayName(row) || '-' },
+                { label: 'Email', value: row.dataset.userEmail || '-' },
+                { label: 'Role', value: row.dataset.userRole || '-' },
+                { label: 'NIP', value: row.dataset.userNip || '-' },
+                { label: 'NRK', value: row.dataset.userNrk || '-' },
+                { label: 'Jabatan', value: row.dataset.userJabatan || '-' },
+                { label: 'Kecamatan', value: row.dataset.userKecamatan || '-' },
+                { label: 'WhatsApp', value: row.dataset.userWhatsapp || '-' },
+                { label: 'Sekolah', value: formatSchoolLabel(row) },
+                { label: 'Diajukan', value: row.dataset.userCreated || '-' }
+            ];
+        }
+
+        function formatBulkUserLabel(row) {
+            const name = formatUserDisplayName(row);
+            const email = (row.dataset.userEmail || '').trim();
+            if (name && email && name !== email) {
+                return `${name} <${email}>`;
+            }
+            return name || email || 'User';
+        }
+
         function buildRowAction(row, status) {
             if (!row) return null;
             const form = row.querySelector(`.verify-user-form[data-account-status="${status}"]`);
             if (!form) return null;
             const name = row.dataset.userName || row.dataset.userEmail || 'user';
             const label = status === 'approved' ? 'Setujui' : 'Tolak';
+            const details = buildUserDetails(row);
             const formData = new FormData(form);
             const action = {
                 confirmTitle: `${label} User`,
                 confirmText: `${label} user ${name}?`,
                 label: label,
                 buttonClass: status === 'approved' ? 'btn-success' : 'btn-outline-danger',
+                details: details,
                 url: form.getAttribute('action') || window.location.href,
                 payload: formData,
                 noteKey: 'reviewer_note',
@@ -827,6 +891,10 @@
                 noteKey: 'reviewer_note',
                 toastMessage: `${selectedRows.length} user berhasil diproses.`,
             };
+            bulkAction.details = [
+                { label: 'Jumlah', value: selectedRows.length },
+                { label: 'User', value: selectedRows.map(formatBulkUserLabel).join(', ') || '-' }
+            ];
 
             bulkAction.execute = function () {
                 const note = bulkAction.note || '';
