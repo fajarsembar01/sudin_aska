@@ -1864,6 +1864,19 @@
             setTimeout(() => existing.classList.contains('show') && bootstrap.Alert.getOrCreateInstance(existing).close(), 3000);
         }
 
+        function showSetupTab(tabId) {
+            const tab = document.getElementById(tabId);
+            if (!tab || !window.bootstrap?.Tab) return;
+            bootstrap.Tab.getOrCreateInstance(tab).show();
+        }
+
+        const setupTabParam = new URLSearchParams(window.location.search).get('tab');
+        if (setupTabParam === 'aspects') {
+            showSetupTab('addAspectTab');
+        } else if (setupTabParam === 'rooms') {
+            showSetupTab('addRoomTab');
+        }
+
         const setupHistoryBody = document.getElementById('setupHistoryBody');
         const setupHistoryCount = document.getElementById('setupHistoryCount');
         const setupHistoryRefreshBtn = document.getElementById('setupHistoryRefreshBtn');

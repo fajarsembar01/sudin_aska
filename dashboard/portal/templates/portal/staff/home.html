@@ -42,9 +42,29 @@
                 </div>
 
                 {% if assessments %}
+                <div class="row g-2 align-items-center mb-3">
+                    <div class="col-12">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="search" id="assessmentSearch" class="form-control"
+                                placeholder="Cari sekolah, NPSN, jenjang, tanggal..."
+                                aria-label="Cari riwayat penilaian">
+                            <button class="btn btn-outline-secondary" type="button" id="assessmentSearchClear">
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="assessmentEmptySearch" class="alert alert-warning d-none" role="alert">
+                    <i class="bi bi-search me-2"></i>Tidak ada hasil yang cocok dengan pencarian.
+                </div>
                 <div class="list-group list-group-flush">
                     {% for a in assessments %}
-                    <div class="list-group-item d-flex align-items-center gap-3 px-0 py-3">
+                    {% set search_blob = (a.school_name or '') ~ ' ' ~ (a.npsn or '') ~ ' ' ~ (a.jenjang or '') ~ ' ' ~ (a.assessment_date or '') ~ ' ' ~ (a.status or '') %}
+                    <div class="list-group-item d-flex align-items-center gap-3 px-0 py-3 assessment-item"
+                        data-search="{{ search_blob|lower }}">
                         <a href="{% if a.status == 'draft' %}{{ url_for('portal.assess', school_id=a.school_id) }}{% else %}{{ url_for('portal.view_assessment', assessment_id=a.id) }}{% endif %}"
                             class="d-flex align-items-center gap-3 flex-grow-1 text-decoration-none text-reset">
                             <span class="icon-badge timeline-icon text-primary">
@@ -144,4 +164,39 @@
         </div>
     </div>
 </section>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('assessmentSearch');
+        const clearBtn = document.getElementById('assessmentSearchClear');
+        const emptyState = document.getElementById('assessmentEmptySearch');
+        const items = Array.from(document.querySelectorAll('.assessment-item'));
+
+        function applySearch() {
+            if (!searchInput) return;
+            const query = (searchInput.value || '').trim().toLowerCase();
+            let visible = 0;
+            items.forEach(item => {
+                const hay = (item.dataset.search || '').toLowerCase();
+                const show = !query || hay.includes(query);
+                item.classList.toggle('d-none', !show);
+                if (show) visible += 1;
+            });
+            if (emptyState) {
+                emptyState.classList.toggle('d-none', visible !== 0);
+            }
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', applySearch);
+        }
+        if (clearBtn && searchInput) {
+            clearBtn.addEventListener('click', function () {
+                searchInput.value = '';
+                applySearch();
+                searchInput.focus();
+            });
+        }
+        applySearch();
+    });
+</script>
 {% endblock %}

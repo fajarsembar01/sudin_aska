@@ -23,3 +23,10 @@ __pycache__/
 
 # Local sample data
 contoh/
+
+# Local exports & generated reports
+portal_export*.sql
+data_export*.sql
+dashboard.db
+Laporan_Portal_PANBERSS.docx
+Laporan_Portal_PANBERSS.pdf

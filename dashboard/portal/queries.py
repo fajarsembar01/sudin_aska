@@ -2480,6 +2480,84 @@ def get_staff_assigned_schools(staff_id: int) -> List[Dict[str, Any]]:
         return [dict(row) for row in cur.fetchall()]
 
 
+def list_all_staff_assignments_overview() -> List[Dict[str, Any]]:
+    """List all staff-school assignments with latest assessment status."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                ssa.id as assignment_id,
+                ssa.assigned_at,
+                ssa.notes,
+                u.id as staff_id,
+                u.full_name as staff_name,
+                u.email as staff_email,
+                s.id as school_id,
+                s.npsn,
+                s.name as school_name,
+                s.jenjang,
+                k.name as kecamatan_name,
+                l.name as kelurahan_name,
+                last_assessment.id as last_assessment_id,
+                last_assessment.status as last_assessment_status,
+                last_assessment.created_at as last_assessment_created_at,
+                draft_assessment.id as draft_assessment_id
+            FROM staff_school_assignments ssa
+            JOIN dashboard_users u ON u.id = ssa.staff_id
+            JOIN portal_schools s ON ssa.school_id = s.id
+            LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            LEFT JOIN LATERAL (
+                SELECT a.id, a.status, a.created_at
+                FROM portal_assessments a
+                WHERE a.school_id = s.id AND a.staff_id = u.id
+                ORDER BY a.created_at DESC
+                LIMIT 1
+            ) last_assessment ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT a.id
+                FROM portal_assessments a
+                WHERE a.school_id = s.id AND a.staff_id = u.id AND a.status = 'draft'
+                ORDER BY a.created_at DESC
+                LIMIT 1
+            ) draft_assessment ON TRUE
+            WHERE u.role = 'staff'
+              AND u.account_status = 'approved'
+              AND s.active = TRUE
+            ORDER BY ssa.assigned_at DESC NULLS LAST, u.full_name, s.name
+            """
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def update_staff_assignment_notes(assignment_id: int, notes: Optional[str], updated_by: int) -> Optional[Dict[str, Any]]:
+    """Update notes for a staff-school assignment."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE staff_school_assignments
+            SET notes = %s, assigned_by = %s
+            WHERE id = %s
+            RETURNING id, staff_id, school_id, notes
+            """,
+            (notes, updated_by, assignment_id),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def delete_staff_assignments_by_ids(assignment_ids: list[int]) -> int:
+    """Delete staff-school assignments by ids. Returns number of deleted rows."""
+    if not assignment_ids:
+        return 0
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            "DELETE FROM staff_school_assignments WHERE id = ANY(%s) RETURNING id",
+            (assignment_ids,),
+        )
+        return len(cur.fetchall())
+
+
 def get_schools_assigned_to_staff_ids(staff_id: int) -> List[int]:
     """Get list of school IDs assigned to a staff member (for access control)."""
     with get_cursor() as cur:
@@ -2518,7 +2596,7 @@ def list_all_staff_with_assignments() -> List[Dict[str, Any]]:
             FROM dashboard_users u
             LEFT JOIN staff_school_assignments ssa ON u.id = ssa.staff_id
             LEFT JOIN portal_schools s ON ssa.school_id = s.id AND s.active = TRUE
-            WHERE u.role = 'staff'
+            WHERE u.role = 'staff' AND u.account_status = 'approved'
             GROUP BY u.id, u.email, u.full_name, u.nip, u.jabatan, u.created_at, u.last_login_at
             ORDER BY u.full_name
             """

@@ -102,13 +102,32 @@
                     <p class="text-muted">
                         Anda memiliki <strong>{{ assigned_schools|length }}</strong> sekolah yang ditugaskan oleh admin.
                     </p>
+                    <div class="row g-2 align-items-center mb-3">
+                        <div class="col-12 col-md-6">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="search" id="assignmentSearch" class="form-control"
+                                    placeholder="Cari sekolah, NPSN, kecamatan, alamat..."
+                                    aria-label="Cari sekolah yang ditugaskan">
+                                <button class="btn btn-outline-secondary" type="button" id="assignmentSearchClear">
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="assignmentEmptySearch" class="alert alert-warning d-none" role="alert">
+                        <i class="bi bi-search me-2"></i>Tidak ada hasil yang cocok dengan pencarian.
+                    </div>
 
                     <div class="d-block d-md-none">
                         <div class="row g-3">
                             {% for school in assigned_schools %}
                             {% set period_label = school.draft_period_name or school.last_period_name or 'Periode aktif'
                             %}
-                            <div class="col-12">
+                            {% set search_blob = (school.school_name or '') ~ ' ' ~ (school.npsn or '') ~ ' ' ~ (school.jenjang or '') ~ ' ' ~ (school.kecamatan_name or '') ~ ' ' ~ (school.alamat or '') %}
+                            <div class="col-12 assignment-item" data-search="{{ search_blob|lower }}">
                                 <div class="card shadow-sm assignment-card h-100">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-start gap-2">
@@ -199,7 +218,8 @@
                                 {% for school in assigned_schools %}
                                 {% set period_label = school.draft_period_name or school.last_period_name or 'Periode
                                 aktif' %}
-                                <tr>
+                                {% set search_blob = (school.school_name or '') ~ ' ' ~ (school.npsn or '') ~ ' ' ~ (school.jenjang or '') ~ ' ' ~ (school.kecamatan_name or '') ~ ' ' ~ (school.alamat or '') %}
+                                <tr class="assignment-item" data-search="{{ search_blob|lower }}">
                                     <td>{{ loop.index }}</td>
                                     <td>{{ school.npsn }}</td>
                                     <td>{{ school.school_name }}</td>
@@ -297,6 +317,11 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const periodSelect = document.getElementById('periodSelect');
+        const searchInput = document.getElementById('assignmentSearch');
+        const clearBtn = document.getElementById('assignmentSearchClear');
+        const emptyState = document.getElementById('assignmentEmptySearch');
+        const assignmentItems = Array.from(document.querySelectorAll('.assignment-item'));
+
         document.querySelectorAll('.start-assessment-btn').forEach(btn => {
             btn.addEventListener('click', function (e) {
                 if (this.dataset.hasDraft === 'true') {
@@ -315,6 +340,33 @@
                 }
             });
         });
+
+        function applySearch() {
+            if (!searchInput) return;
+            const query = (searchInput.value || '').trim().toLowerCase();
+            let visible = 0;
+            assignmentItems.forEach(item => {
+                const hay = (item.dataset.search || '').toLowerCase();
+                const show = !query || hay.includes(query);
+                item.classList.toggle('d-none', !show);
+                if (show) visible += 1;
+            });
+            if (emptyState) {
+                emptyState.classList.toggle('d-none', visible !== 0);
+            }
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', applySearch);
+        }
+        if (clearBtn && searchInput) {
+            clearBtn.addEventListener('click', function () {
+                searchInput.value = '';
+                applySearch();
+                searchInput.focus();
+            });
+        }
+        applySearch();
     });
 </script>
 {% endblock %}

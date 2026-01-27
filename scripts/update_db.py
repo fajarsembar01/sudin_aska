@@ -4,7 +4,8 @@ import sys
 import traceback
 
 # Add the project root to the path to allow importing from 'dashboard'
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(PROJECT_ROOT)
 
 def update_web_users_table():
     """Updates the web_users table with photo_url and last_login columns."""

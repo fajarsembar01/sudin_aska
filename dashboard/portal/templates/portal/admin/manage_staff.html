@@ -37,6 +37,10 @@
             <button class="nav-link" id="tab-history" data-bs-toggle="tab" data-bs-target="#pane-history" type="button"
                 role="tab">History</button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-assignments" data-bs-toggle="tab" data-bs-target="#pane-assignments"
+                type="button" role="tab">Semua Penugasan</button>
+        </li>
     </ul>
 
     <div class="tab-content">
@@ -104,7 +108,111 @@
                                     <input type="hidden" id="selectedStaffId" name="staff_id">
 
                                     <div class="mb-3">
-                                        <label class="form-label">Cari & Pilih Sekolah (ketik min. 3 huruf)</label>
+                                        <h6 class="fw-semibold mb-2">Filter Massal (Opsional)</h6>
+                                        <div class="row g-2">
+                                            <div class="col-md-4">
+                                                <label class="form-label">Kecamatan</label>
+                                                <select class="form-select form-select-sm" id="massFilterKecamatan">
+                                                    <option value="">Semua kecamatan</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Kelurahan</label>
+                                                <select class="form-select form-select-sm" id="massFilterKelurahan">
+                                                    <option value="">Semua kelurahan</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Kata kunci</label>
+                                                <input type="text" class="form-control form-control-sm"
+                                                    id="massFilterKeyword" placeholder="Nama/NPSN/Alamat">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Jenjang (multi)</label>
+                                                <div class="d-flex gap-2 mb-2">
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                        id="massFilterJenjangAll">Pilih semua</button>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                        id="massFilterJenjangNone">Kosongkan</button>
+                                                </div>
+                                                <div class="vstack gap-1 mass-jenjang-list"
+                                                    id="massFilterJenjangList"></div>
+                                                <small class="text-muted">Centang lebih dari satu jenjang.</small>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Status Sekolah</label>
+                                                <select class="form-select form-select-sm mb-2" id="massFilterStatus">
+                                                    <option value="">Semua status</option>
+                                                    <option value="NEGERI" selected>NEGERI</option>
+                                                    <option value="SWASTA">SWASTA</option>
+                                                </select>
+                                                <label class="form-label">Aturan</label>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox"
+                                                        id="massFilterExcludeMadrasah" checked>
+                                                    <label class="form-check-label" for="massFilterExcludeMadrasah">Exclude
+                                                        madrasah (MI/MTs/MA/MAN/MIN/MTSN)</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox"
+                                                        id="massFilterActive" checked>
+                                                    <label class="form-check-label" for="massFilterActive">Hanya sekolah
+                                                        aktif</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row g-2 align-items-center mt-2">
+                                            <div class="col-12 col-md-auto">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text">Preset</span>
+                                                    <input type="text" class="form-control" id="massFilterPresetName"
+                                                        placeholder="Nama preset">
+                                                    <button type="button" class="btn btn-outline-primary"
+                                                        id="massFilterPresetSave">
+                                                        Simpan
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="col-12 col-md-auto">
+                                                <div class="input-group input-group-sm">
+                                                    <select class="form-select" id="massFilterPresetSelect">
+                                                        <option value="">Pilih preset</option>
+                                                    </select>
+                                                    <button type="button" class="btn btn-outline-secondary"
+                                                        id="massFilterPresetLoad">
+                                                        Pakai
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-danger"
+                                                        id="massFilterPresetDelete">
+                                                        Hapus
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-2 align-items-center mt-2">
+                                            <span class="text-muted small">Hasil: <span
+                                                    id="massFilterCount">0</span></span>
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                id="massFilterAddBtn">
+                                                <i class="bi bi-plus-circle"></i> Tambah semua hasil
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-info"
+                                                id="massFilterPreviewToggle">
+                                                <i class="bi bi-eye"></i> Lihat pratinjau
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                id="massFilterResetBtn">
+                                                Reset filter
+                                            </button>
+                                        </div>
+                                        <div class="mt-3 d-none" id="massFilterPreviewWrap">
+                                            <div class="small text-muted mb-2">Pratinjau hasil (maks 20 sekolah)</div>
+                                            <div class="list-group" id="massFilterPreview"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Cari & Pilih Sekolah Manual (ketik min. 3 huruf)</label>
                                         <input type="text" class="form-control" id="schoolSearchInput"
                                             placeholder="Nama sekolah / NPSN..." autocomplete="off">
                                         <div class="list-group mt-1 d-none" id="schoolSearchResults"
@@ -119,13 +227,13 @@
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Periode Penilaian</label>
-                                        <select class="form-select" id="periodSelect">
+                                        <select class="form-select" id="periodSelect" disabled>
                                             <option value="">{% if active_period_id %}Periode aktif (default){% else %}-- Pilih periode (boleh periode mendatang) --{% endif %}</option>
                                             {% for p in periods %}
                                             <option value="{{ p.id }}" {% if active_period_id and active_period_id==p.id %}selected{% endif %}>{{ p.name }}</option>
                                             {% endfor %}
                                         </select>
-                                        <small class="text-muted">{% if active_period_id %}Draft akan memakai pilihan Anda (default periode aktif).{% else %}Tidak ada periode aktif, pilih periode yang akan dipakai (bisa periode yang belum aktif).{% endif %}</small>
+                                        <small class="text-muted">Penugasan tidak membuat draft. Periode dipilih oleh staff saat mulai penilaian.</small>
                                     </div>
 
                                     <div class="mb-3">
@@ -268,6 +376,167 @@
                 </div>
             </div>
         </div>
+
+        <div class="tab-pane fade" id="pane-assignments" role="tabpanel">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <div class="assignments-toolbar d-flex flex-wrap gap-2 align-items-center justify-content-between">
+                        <div class="fw-semibold">
+                            <i class="bi bi-list-check me-2"></i>Seluruh Penugasan Staff
+                        </div>
+                        <div class="assignments-filters d-flex flex-wrap gap-2">
+                            <div class="input-group input-group-sm assignments-search">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" id="assignmentsSearchInput"
+                                    placeholder="Cari staff/sekolah/NPSN...">
+                            </div>
+                            <select class="form-select form-select-sm" id="assignmentsStatusFilter">
+                                <option value="">Semua status</option>
+                                <option value="draft">Draft</option>
+                                <option value="not_started">Belum dimulai</option>
+                                <option value="submitted">Submitted</option>
+                                <option value="verified">Verified</option>
+                            </select>
+                            <select class="form-select form-select-sm" id="assignmentsJenjangFilter">
+                                <option value="">Semua jenjang</option>
+                            </select>
+                            <select class="form-select form-select-sm" id="assignmentsKecamatanFilter">
+                                <option value="">Semua kecamatan</option>
+                            </select>
+                            <select class="form-select form-select-sm" id="assignmentsKelurahanFilter">
+                                <option value="">Semua kelurahan</option>
+                            </select>
+                            <select class="form-select form-select-sm" id="assignmentsStaffFilter">
+                                <option value="">Semua staff</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="assignments-toolbar d-flex flex-wrap gap-2 align-items-center mt-2">
+                        <small class="text-muted">Menampilkan <span id="assignmentsCount">{{ assignments_overview|length }}</span> penugasan</small>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-danger" id="assignmentsDeleteSelected" disabled>
+                                <i class="bi bi-trash"></i> Hapus Terpilih
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" id="assignmentsDeleteAll">
+                                <i class="bi bi-trash3"></i> Hapus Semua (terfilter)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 36px;">
+                                        <input class="form-check-input" type="checkbox" id="assignmentsSelectAll">
+                                    </th>
+                                    <th>Staff</th>
+                                    <th>Sekolah</th>
+                                    <th>Status</th>
+                                    <th>Catatan</th>
+                                    <th>Ditugaskan</th>
+                                    <th class="text-end">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assignmentsOverviewBody">
+                                {% for item in assignments_overview %}
+                                {% set status_key = 'not_started' %}
+                                {% set status_label = 'Belum dimulai' %}
+                                {% set status_badge = 'secondary' %}
+                                {% if item.draft_assessment_id %}
+                                    {% set status_key = 'draft' %}
+                                    {% set status_label = 'Draft' %}
+                                    {% set status_badge = 'warning' %}
+                                {% elif item.last_assessment_status == 'submitted' %}
+                                    {% set status_key = 'submitted' %}
+                                    {% set status_label = 'Submitted' %}
+                                    {% set status_badge = 'success' %}
+                                {% elif item.last_assessment_status == 'verified' %}
+                                    {% set status_key = 'verified' %}
+                                    {% set status_label = 'Verified' %}
+                                    {% set status_badge = 'primary' %}
+                                {% endif %}
+                                <tr data-search="{{ (item.staff_name or '') ~ ' ' ~ (item.staff_email or '') ~ ' ' ~ (item.school_name or '') ~ ' ' ~ (item.npsn or '') ~ ' ' ~ (item.kecamatan_name or '') ~ ' ' ~ (item.kelurahan_name or '') ~ ' ' ~ (item.notes or '') }}"
+                                    data-status="{{ status_key }}"
+                                    data-jenjang="{{ (item.jenjang or '')|lower }}"
+                                    data-kecamatan="{{ (item.kecamatan_name or '')|lower }}"
+                                    data-kelurahan="{{ (item.kelurahan_name or '')|lower }}"
+                                    data-staff="{{ (item.staff_name or '')|lower }}"
+                                    data-assignment-id="{{ item.assignment_id }}">
+                                    <td>
+                                        <input class="form-check-input assignment-select" type="checkbox"
+                                            value="{{ item.assignment_id }}">
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">{{ item.staff_name }}</div>
+                                        <small class="text-muted">{{ item.staff_email }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">{{ item.school_name }}</div>
+                                        <small class="text-muted">{{ item.npsn }}{% if item.kecamatan_name %} • {{ item.kecamatan_name }}{% endif %}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ status_badge }}">{{ status_label }}</span>
+                                    </td>
+                                    <td class="text-muted small">
+                                        {{ item.notes or '-' }}
+                                    </td>
+                                    <td class="text-muted">
+                                        {{ item.assigned_at.strftime('%d %b %Y %H:%M') if item.assigned_at else '-' }}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary assignment-edit-btn"
+                                                data-assignment-id="{{ item.assignment_id }}"
+                                                data-staff-name="{{ item.staff_name }}"
+                                                data-school-name="{{ item.school_name }}"
+                                                data-notes="{{ item.notes or '' }}">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger assignment-delete-btn"
+                                                data-staff-id="{{ item.staff_id }}"
+                                                data-school-id="{{ item.school_id }}"
+                                                data-staff-name="{{ item.staff_name }}"
+                                                data-school-name="{{ item.school_name }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-muted mb-0 mt-3{% if assignments_overview %} d-none{% endif %}" id="assignmentsOverviewEmpty">
+                        Belum ada penugasan.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="assignmentEditModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Catatan Penugasan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted mb-2" id="assignmentEditTitle">-</p>
+                <textarea class="form-control" id="assignmentEditNotes" rows="4"
+                    placeholder="Tulis catatan penugasan..."></textarea>
+                <input type="hidden" id="assignmentEditId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary btn-sm" id="assignmentEditSaveBtn">
+                    <i class="bi bi-check-lg"></i> Simpan
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -291,6 +560,55 @@
     .assignment-item:hover {
         background: #e9ecef;
     }
+
+    .mass-jenjang-list {
+        max-height: 160px;
+        overflow-y: auto;
+        padding: 0.5rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        background: #fff;
+    }
+
+    .assignments-toolbar {
+        gap: 0.5rem;
+    }
+
+    .assignments-filters {
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .assignments-filters .form-select,
+    .assignments-filters .form-control,
+    .assignments-filters .input-group-text {
+        height: 30px;
+        padding-top: 0.2rem;
+        padding-bottom: 0.2rem;
+        font-size: 0.8rem;
+    }
+
+    .assignments-filters .form-select {
+        min-width: 140px;
+    }
+
+    .assignments-filters .assignments-search {
+        min-width: 220px;
+    }
+
+    #pane-assignments .table {
+        font-size: 0.85rem;
+    }
+
+    #pane-assignments .table td,
+    #pane-assignments .table th {
+        padding-top: 0.4rem;
+        padding-bottom: 0.4rem;
+    }
+
+    #pane-assignments .badge {
+        font-size: 0.7rem;
+    }
 </style>
 
 <script>
@@ -311,6 +629,26 @@
         const searchStaff = document.getElementById('searchStaff');
         const assignFeedback = document.getElementById('assignFeedback');
         const periodSelect = document.getElementById('periodSelect');
+        const massFilterKecamatan = document.getElementById('massFilterKecamatan');
+        const massFilterKelurahan = document.getElementById('massFilterKelurahan');
+        const massFilterKeyword = document.getElementById('massFilterKeyword');
+        const massFilterJenjangList = document.getElementById('massFilterJenjangList');
+        const massFilterStatus = document.getElementById('massFilterStatus');
+        const massFilterExcludeMadrasah = document.getElementById('massFilterExcludeMadrasah');
+        const massFilterActive = document.getElementById('massFilterActive');
+        const massFilterCount = document.getElementById('massFilterCount');
+        const massFilterAddBtn = document.getElementById('massFilterAddBtn');
+        const massFilterResetBtn = document.getElementById('massFilterResetBtn');
+        const massFilterPreviewToggle = document.getElementById('massFilterPreviewToggle');
+        const massFilterPreviewWrap = document.getElementById('massFilterPreviewWrap');
+        const massFilterPreview = document.getElementById('massFilterPreview');
+        const massFilterPresetName = document.getElementById('massFilterPresetName');
+        const massFilterPresetSelect = document.getElementById('massFilterPresetSelect');
+        const massFilterPresetSave = document.getElementById('massFilterPresetSave');
+        const massFilterPresetLoad = document.getElementById('massFilterPresetLoad');
+        const massFilterPresetDelete = document.getElementById('massFilterPresetDelete');
+        const massFilterJenjangAll = document.getElementById('massFilterJenjangAll');
+        const massFilterJenjangNone = document.getElementById('massFilterJenjangNone');
         const approveButtons = document.querySelectorAll('.approve-btn');
         const rejectButtons = document.querySelectorAll('.reject-btn');
         const pendingRequestBadge = document.getElementById('pendingRequestBadge');
@@ -322,9 +660,441 @@
         const bulkClearBtn = document.getElementById('pendingRequestsBulkClear');
         const selectedCountEl = document.getElementById('pendingRequestsSelectedCount');
         const requestsPane = document.getElementById('pane-requests');
+        const assignmentsSearchInput = document.getElementById('assignmentsSearchInput');
+        const assignmentsStatusFilter = document.getElementById('assignmentsStatusFilter');
+        const assignmentsJenjangFilter = document.getElementById('assignmentsJenjangFilter');
+        const assignmentsKecamatanFilter = document.getElementById('assignmentsKecamatanFilter');
+        const assignmentsKelurahanFilter = document.getElementById('assignmentsKelurahanFilter');
+        const assignmentsStaffFilter = document.getElementById('assignmentsStaffFilter');
+        const assignmentsOverviewBody = document.getElementById('assignmentsOverviewBody');
+        const assignmentsOverviewEmpty = document.getElementById('assignmentsOverviewEmpty');
+        const assignmentsCount = document.getElementById('assignmentsCount');
+        const assignmentsSelectAll = document.getElementById('assignmentsSelectAll');
+        const assignmentsDeleteSelected = document.getElementById('assignmentsDeleteSelected');
+        const assignmentsDeleteAll = document.getElementById('assignmentsDeleteAll');
+        const assignmentEditModalEl = document.getElementById('assignmentEditModal');
+        const assignmentEditTitle = document.getElementById('assignmentEditTitle');
+        const assignmentEditNotes = document.getElementById('assignmentEditNotes');
+        const assignmentEditId = document.getElementById('assignmentEditId');
+        const assignmentEditSaveBtn = document.getElementById('assignmentEditSaveBtn');
         const availableSchools = {{ available_schools | tojson | safe }};
         let queue = [];
         let lastFocusedRow = null;
+        const allSchools = Array.isArray(availableSchools) ? availableSchools : [];
+        let refreshKelurahanOptions = null;
+        const PRESET_STORAGE_KEY = 'portalStaffAssignPresets';
+
+        function normalizeText(value) {
+            return (value || '').toString().toLowerCase();
+        }
+
+        function buildSelectOptions(selectEl, values, placeholder) {
+            if (!selectEl) return;
+            const current = selectEl.value;
+            selectEl.innerHTML = '';
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = placeholder || 'Semua';
+            selectEl.appendChild(defaultOpt);
+            values.forEach(value => {
+                const opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = value;
+                selectEl.appendChild(opt);
+            });
+            selectEl.value = current || '';
+        }
+
+        function getAssignmentsRows() {
+            if (!assignmentsOverviewBody) return [];
+            return Array.from(assignmentsOverviewBody.querySelectorAll('tr[data-assignment-id]'));
+        }
+
+        function updateAssignmentsCount(count) {
+            if (assignmentsCount) {
+                assignmentsCount.textContent = String(count);
+            }
+        }
+
+        function updateAssignmentsBulkState() {
+            if (!assignmentsOverviewBody) return;
+            const selected = assignmentsOverviewBody.querySelectorAll('.assignment-select:checked').length;
+            if (assignmentsDeleteSelected) {
+                assignmentsDeleteSelected.disabled = selected === 0;
+            }
+        }
+
+        function filterAssignmentsOverview() {
+            if (!assignmentsOverviewBody) return;
+            const query = normalizeText(assignmentsSearchInput ? assignmentsSearchInput.value : '');
+            const status = assignmentsStatusFilter ? assignmentsStatusFilter.value : '';
+            const jenjang = assignmentsJenjangFilter ? assignmentsJenjangFilter.value : '';
+            const kecamatan = assignmentsKecamatanFilter ? assignmentsKecamatanFilter.value : '';
+            const kelurahan = assignmentsKelurahanFilter ? assignmentsKelurahanFilter.value : '';
+            const staff = assignmentsStaffFilter ? assignmentsStaffFilter.value : '';
+            const rows = Array.from(assignmentsOverviewBody.querySelectorAll('tr[data-search]'));
+            let visible = 0;
+
+            rows.forEach(row => {
+                const haystack = normalizeText(row.dataset.search);
+                const rowStatus = row.dataset.status || '';
+                const rowJenjang = row.dataset.jenjang || '';
+                const rowKecamatan = row.dataset.kecamatan || '';
+                const rowKelurahan = row.dataset.kelurahan || '';
+                const rowStaff = row.dataset.staff || '';
+                const matchesQuery = !query || haystack.includes(query);
+                const matchesStatus = !status || rowStatus === status;
+                const matchesJenjang = !jenjang || rowJenjang === normalizeText(jenjang);
+                const matchesKecamatan = !kecamatan || rowKecamatan === normalizeText(kecamatan);
+                const matchesKelurahan = !kelurahan || rowKelurahan === normalizeText(kelurahan);
+                const matchesStaff = !staff || rowStaff === normalizeText(staff);
+                const show = matchesQuery && matchesStatus && matchesJenjang && matchesKecamatan && matchesKelurahan && matchesStaff;
+                row.classList.toggle('d-none', !show);
+                if (show) visible += 1;
+            });
+
+            updateAssignmentsCount(visible);
+            if (assignmentsOverviewEmpty) {
+                assignmentsOverviewEmpty.classList.toggle('d-none', visible > 0);
+            }
+            updateAssignmentsBulkState();
+        }
+
+        function findAssignmentRow(assignmentId) {
+            if (!assignmentsOverviewBody) return null;
+            return assignmentsOverviewBody.querySelector(`tr[data-assignment-id="${assignmentId}"]`);
+        }
+
+        function updateAssignmentNotesInRow(assignmentId, notes) {
+            const row = findAssignmentRow(assignmentId);
+            if (!row) return;
+            const notesCell = row.querySelector('td:nth-child(5)');
+            if (notesCell) {
+                notesCell.textContent = notes || '-';
+            }
+            row.dataset.search = `${row.dataset.search || ''} ${notes || ''}`.trim();
+        }
+
+        function toTitleCase(value) {
+            return (value || '').toString().toLowerCase().replace(/\b\w/g, ch => ch.toUpperCase());
+        }
+
+        function initAssignmentsFilters() {
+            if (!assignmentsOverviewBody) return;
+            const rows = getAssignmentsRows();
+            const jenjangSet = new Set();
+            const kecamatanSet = new Set();
+            const kelurahanSet = new Set();
+            const staffSet = new Set();
+
+            rows.forEach(row => {
+                const jenjang = row.dataset.jenjang || '';
+                const kecamatan = row.dataset.kecamatan || '';
+                const kelurahan = row.dataset.kelurahan || '';
+                const staff = row.dataset.staff || '';
+                if (jenjang) jenjangSet.add(jenjang);
+                if (kecamatan) kecamatanSet.add(kecamatan);
+                if (kelurahan) kelurahanSet.add(kelurahan);
+                if (staff) staffSet.add(staff);
+            });
+
+            buildSelectOptions(assignmentsJenjangFilter, Array.from(jenjangSet).sort().map(toTitleCase), 'Semua jenjang');
+            buildSelectOptions(assignmentsKecamatanFilter, Array.from(kecamatanSet).sort().map(toTitleCase), 'Semua kecamatan');
+            buildSelectOptions(assignmentsKelurahanFilter, Array.from(kelurahanSet).sort().map(toTitleCase), 'Semua kelurahan');
+            buildSelectOptions(assignmentsStaffFilter, Array.from(staffSet).sort().map(toTitleCase), 'Semua staff');
+        }
+
+        function getVisibleAssignmentRows() {
+            return getAssignmentsRows().filter(row => !row.classList.contains('d-none'));
+        }
+
+        function updateAssignmentsSelectAllState() {
+            if (!assignmentsSelectAll) return;
+            const visibleRows = getVisibleAssignmentRows();
+            if (!visibleRows.length) {
+                assignmentsSelectAll.checked = false;
+                assignmentsSelectAll.indeterminate = false;
+                return;
+            }
+            const checkedCount = visibleRows.filter(row => {
+                const cb = row.querySelector('.assignment-select');
+                return cb && cb.checked;
+            }).length;
+            assignmentsSelectAll.checked = checkedCount === visibleRows.length;
+            assignmentsSelectAll.indeterminate = checkedCount > 0 && checkedCount < visibleRows.length;
+        }
+
+        function collectSelectedAssignmentIds() {
+            if (!assignmentsOverviewBody) return [];
+            return Array.from(assignmentsOverviewBody.querySelectorAll('.assignment-select:checked'))
+                .map(cb => cb.value)
+                .filter(Boolean);
+        }
+
+        function collectVisibleAssignmentIds() {
+            return getVisibleAssignmentRows()
+                .map(row => row.dataset.assignmentId)
+                .filter(Boolean);
+        }
+
+        function bulkDeleteAssignments(ids, label) {
+            if (!ids.length) return;
+            const ok = confirm(`Hapus ${ids.length} penugasan ${label}?`);
+            if (!ok) return;
+
+            const payload = { assignment_ids: ids };
+            fetch('/portal/admin/assignments/delete-batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(res => res.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert(data.message || 'Gagal menghapus penugasan.');
+                        return;
+                    }
+                    ids.forEach(id => {
+                        const row = findAssignmentRow(id);
+                        if (row) row.remove();
+                    });
+                    filterAssignmentsOverview();
+                    updateAssignmentsSelectAllState();
+                })
+                .catch(err => {
+                    alert(err.message || 'Gagal menghapus penugasan.');
+                });
+        }
+
+        function isMadrasah(school) {
+            const jenjang = normalizeText(school.jenjang);
+            if (['mi', 'mts', 'ma'].includes(jenjang)) return true;
+            const name = normalizeText(school.name);
+            return name.startsWith('man ') || name.startsWith('min ') || name.startsWith('mtsn ') || name.includes('madrasah');
+        }
+
+        function buildOptions(selectEl, values, defaultLabel) {
+            if (!selectEl) return;
+            selectEl.innerHTML = '';
+            if (defaultLabel) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = defaultLabel;
+                selectEl.appendChild(opt);
+            }
+            values.forEach(value => {
+                const opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = value;
+                selectEl.appendChild(opt);
+            });
+        }
+
+        function buildJenjangCheckboxes(values) {
+            if (!massFilterJenjangList) return;
+            massFilterJenjangList.innerHTML = '';
+            values.forEach(value => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'form-check';
+                const safe = value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                const id = `jenjang-${safe}`;
+                wrapper.innerHTML = `
+                    <input class="form-check-input mass-jenjang-check" type="checkbox" value="${value}" id="${id}">
+                    <label class="form-check-label" for="${id}">${value}</label>
+                `;
+                massFilterJenjangList.appendChild(wrapper);
+            });
+        }
+
+        function initMassFilters() {
+            if (!massFilterKecamatan || !massFilterKelurahan || !massFilterJenjangList) return;
+            const kecamatanSet = new Set();
+            const kelurahanMap = {};
+            const jenjangSet = new Set();
+            allSchools.forEach(s => {
+                if (s.kecamatan_name) {
+                    kecamatanSet.add(s.kecamatan_name);
+                }
+                if (s.jenjang) {
+                    jenjangSet.add(s.jenjang);
+                }
+                if (s.kecamatan_name && s.kelurahan_name) {
+                    kelurahanMap[s.kecamatan_name] = kelurahanMap[s.kecamatan_name] || new Set();
+                    kelurahanMap[s.kecamatan_name].add(s.kelurahan_name);
+                }
+            });
+
+            const kecamatanValues = Array.from(kecamatanSet).sort();
+            const jenjangValues = Array.from(jenjangSet).sort();
+            buildOptions(massFilterKecamatan, kecamatanValues, 'Semua kecamatan');
+            buildJenjangCheckboxes(jenjangValues);
+
+            function doRefreshKelurahanOptions() {
+                const selectedKecamatan = massFilterKecamatan.value;
+                let kelurahanValues = [];
+                if (selectedKecamatan && kelurahanMap[selectedKecamatan]) {
+                    kelurahanValues = Array.from(kelurahanMap[selectedKecamatan]).sort();
+                } else {
+                    const allKelurahan = new Set();
+                    Object.values(kelurahanMap).forEach(set => {
+                        set.forEach(k => allKelurahan.add(k));
+                    });
+                    kelurahanValues = Array.from(allKelurahan).sort();
+                }
+                buildOptions(massFilterKelurahan, kelurahanValues, 'Semua kelurahan');
+            }
+
+            refreshKelurahanOptions = doRefreshKelurahanOptions;
+            refreshKelurahanOptions();
+            massFilterKecamatan.addEventListener('change', function () {
+                refreshKelurahanOptions();
+                updateMassFilterCount();
+            });
+        }
+
+        function getSelectedJenjangs() {
+            if (!massFilterJenjangList) return [];
+            return Array.from(massFilterJenjangList.querySelectorAll('.mass-jenjang-check:checked'))
+                .map(el => el.value);
+        }
+
+        function getFilterState() {
+            return {
+                kecamatan: massFilterKecamatan ? massFilterKecamatan.value : '',
+                kelurahan: massFilterKelurahan ? massFilterKelurahan.value : '',
+                keyword: massFilterKeyword ? massFilterKeyword.value : '',
+                jenjangs: getSelectedJenjangs(),
+                status: massFilterStatus ? massFilterStatus.value : '',
+                excludeMadrasah: massFilterExcludeMadrasah ? massFilterExcludeMadrasah.checked : true,
+                activeOnly: massFilterActive ? massFilterActive.checked : true
+            };
+        }
+
+        function applyFilterState(state) {
+            if (!state) return;
+            if (massFilterKecamatan) massFilterKecamatan.value = state.kecamatan || '';
+            if (typeof refreshKelurahanOptions === 'function') {
+                refreshKelurahanOptions();
+            }
+            if (massFilterKelurahan) massFilterKelurahan.value = state.kelurahan || '';
+            if (massFilterKeyword) massFilterKeyword.value = state.keyword || '';
+            if (massFilterStatus) massFilterStatus.value = state.status || '';
+            if (massFilterJenjangList) {
+                const selected = new Set(state.jenjangs || []);
+                massFilterJenjangList.querySelectorAll('.mass-jenjang-check').forEach(el => {
+                    el.checked = selected.has(el.value);
+                });
+            }
+            if (massFilterExcludeMadrasah) {
+                massFilterExcludeMadrasah.checked = state.excludeMadrasah !== false;
+            }
+            if (massFilterActive) {
+                massFilterActive.checked = state.activeOnly !== false;
+            }
+            updateMassFilterCount();
+        }
+
+        function loadPresets() {
+            if (!massFilterPresetSelect) return;
+            const raw = localStorage.getItem(PRESET_STORAGE_KEY);
+            const presets = raw ? JSON.parse(raw) : {};
+            massFilterPresetSelect.innerHTML = '<option value="">Pilih preset</option>';
+            Object.keys(presets).sort().forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                massFilterPresetSelect.appendChild(opt);
+            });
+        }
+
+        function savePreset() {
+            if (!massFilterPresetName) return;
+            const name = (massFilterPresetName.value || '').trim();
+            if (!name) {
+                showFeedback('Isi nama preset terlebih dahulu.');
+                return;
+            }
+            const raw = localStorage.getItem(PRESET_STORAGE_KEY);
+            const presets = raw ? JSON.parse(raw) : {};
+            presets[name] = getFilterState();
+            localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets));
+            loadPresets();
+            massFilterPresetSelect.value = name;
+            showFeedback('Preset tersimpan.');
+        }
+
+        function applyPreset() {
+            if (!massFilterPresetSelect) return;
+            const name = massFilterPresetSelect.value;
+            if (!name) return;
+            const raw = localStorage.getItem(PRESET_STORAGE_KEY);
+            const presets = raw ? JSON.parse(raw) : {};
+            if (!presets[name]) return;
+            applyFilterState(presets[name]);
+            showFeedback(`Preset "${name}" diterapkan.`);
+        }
+
+        function deletePreset() {
+            if (!massFilterPresetSelect) return;
+            const name = massFilterPresetSelect.value;
+            if (!name) return;
+            const raw = localStorage.getItem(PRESET_STORAGE_KEY);
+            const presets = raw ? JSON.parse(raw) : {};
+            if (!presets[name]) return;
+            delete presets[name];
+            localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets));
+            loadPresets();
+            massFilterPresetSelect.value = '';
+            showFeedback('Preset dihapus.');
+        }
+
+        function filterSchoolsByMass() {
+            const keyword = normalizeText(massFilterKeyword ? massFilterKeyword.value : '');
+            const kecamatan = massFilterKecamatan ? massFilterKecamatan.value : '';
+            const kelurahan = massFilterKelurahan ? massFilterKelurahan.value : '';
+            const jenjangs = getSelectedJenjangs();
+            const status = massFilterStatus ? normalizeText(massFilterStatus.value) : '';
+            const excludeMadrasah = massFilterExcludeMadrasah ? massFilterExcludeMadrasah.checked : false;
+            const activeOnly = massFilterActive ? massFilterActive.checked : false;
+
+            return allSchools.filter(s => {
+                if (activeOnly && s.active === false) return false;
+                if (kecamatan && normalizeText(s.kecamatan_name) !== normalizeText(kecamatan)) return false;
+                if (kelurahan && normalizeText(s.kelurahan_name) !== normalizeText(kelurahan)) return false;
+                if (jenjangs.length && !jenjangs.includes(s.jenjang)) return false;
+                if (status && normalizeText(s.status) !== status) return false;
+                if (excludeMadrasah && isMadrasah(s)) return false;
+                if (keyword) {
+                    const hay = `${normalizeText(s.name)} ${normalizeText(s.npsn)} ${normalizeText(s.alamat)}`;
+                    if (!hay.includes(keyword)) return false;
+                }
+                return true;
+            });
+        }
+
+        function updateMassFilterCount() {
+            if (!massFilterCount) return;
+            const results = filterSchoolsByMass();
+            massFilterCount.textContent = results.length.toString();
+            updateMassFilterPreview(results);
+        }
+
+        function updateMassFilterPreview(results) {
+            if (!massFilterPreview) return;
+            const list = Array.isArray(results) ? results.slice(0, 20) : [];
+            massFilterPreview.innerHTML = '';
+            if (!list.length) {
+                massFilterPreview.innerHTML = '<div class="list-group-item text-muted">Tidak ada hasil.</div>';
+                return;
+            }
+            list.forEach(s => {
+                const item = document.createElement('div');
+                item.className = 'list-group-item';
+                const meta = [s.npsn, s.jenjang, s.kecamatan_name, s.kelurahan_name].filter(Boolean).join(' • ');
+                item.innerHTML = `<div class="fw-semibold">${s.name || '-'}</div>
+                    <small class="text-muted">${meta || '-'}</small>`;
+                massFilterPreview.appendChild(item);
+            });
+        }
 
         function isEditableTarget(target) {
             if (!target) return false;
@@ -552,6 +1322,99 @@
             showSearchResults(filtered);
         });
 
+        function attachMassFilterEvents() {
+            if (massFilterKeyword) {
+                massFilterKeyword.addEventListener('input', updateMassFilterCount);
+            }
+            if (massFilterKelurahan) {
+                massFilterKelurahan.addEventListener('change', updateMassFilterCount);
+            }
+            if (massFilterJenjangList) {
+                massFilterJenjangList.addEventListener('change', updateMassFilterCount);
+            }
+            if (massFilterJenjangAll && massFilterJenjangList) {
+                massFilterJenjangAll.addEventListener('click', function () {
+                    massFilterJenjangList.querySelectorAll('.mass-jenjang-check').forEach(el => {
+                        el.checked = true;
+                    });
+                    updateMassFilterCount();
+                });
+            }
+            if (massFilterJenjangNone && massFilterJenjangList) {
+                massFilterJenjangNone.addEventListener('click', function () {
+                    massFilterJenjangList.querySelectorAll('.mass-jenjang-check').forEach(el => {
+                        el.checked = false;
+                    });
+                    updateMassFilterCount();
+                });
+            }
+            if (massFilterStatus) {
+                massFilterStatus.addEventListener('change', updateMassFilterCount);
+            }
+            if (massFilterExcludeMadrasah) {
+                massFilterExcludeMadrasah.addEventListener('change', updateMassFilterCount);
+            }
+            if (massFilterActive) {
+                massFilterActive.addEventListener('change', updateMassFilterCount);
+            }
+            if (massFilterAddBtn) {
+                massFilterAddBtn.addEventListener('click', function () {
+                    const results = filterSchoolsByMass();
+                    if (!results.length) {
+                        showFeedback('Tidak ada sekolah yang cocok dengan filter.');
+                        return;
+                    }
+                    let added = 0;
+                    results.forEach(s => {
+                        if (!queue.find(q => q.id === s.id)) {
+                            queue.push({
+                                id: s.id,
+                                name: s.name,
+                                npsn: s.npsn,
+                                kecamatan: s.kecamatan_name
+                            });
+                            added += 1;
+                        }
+                    });
+                    renderQueue();
+                    showFeedback(`${added} sekolah ditambahkan ke daftar.`);
+                });
+            }
+            if (massFilterResetBtn) {
+                massFilterResetBtn.addEventListener('click', function () {
+                    if (massFilterKeyword) massFilterKeyword.value = '';
+                    if (massFilterKecamatan) massFilterKecamatan.value = '';
+                    if (massFilterKelurahan) massFilterKelurahan.value = '';
+                    if (massFilterJenjangList) {
+                        massFilterJenjangList.querySelectorAll('.mass-jenjang-check').forEach(el => {
+                            el.checked = false;
+                        });
+                    }
+                    if (massFilterStatus) massFilterStatus.value = 'NEGERI';
+                    if (massFilterExcludeMadrasah) massFilterExcludeMadrasah.checked = true;
+                    if (massFilterActive) massFilterActive.checked = true;
+                    if (typeof refreshKelurahanOptions === 'function') {
+                        refreshKelurahanOptions();
+                    }
+                    updateMassFilterCount();
+                });
+            }
+            if (massFilterPreviewToggle && massFilterPreviewWrap) {
+                massFilterPreviewToggle.addEventListener('click', function () {
+                    massFilterPreviewWrap.classList.toggle('d-none');
+                });
+            }
+            if (massFilterPresetSave) {
+                massFilterPresetSave.addEventListener('click', savePreset);
+            }
+            if (massFilterPresetLoad) {
+                massFilterPresetLoad.addEventListener('click', applyPreset);
+            }
+            if (massFilterPresetDelete) {
+                massFilterPresetDelete.addEventListener('click', deletePreset);
+            }
+        }
+
         clearQueueBtn.addEventListener('click', function () {
             queue = [];
             renderQueue();
@@ -571,7 +1434,7 @@
                             <div class="assignment-item">
                                 <div>
                                     <strong>${assignment.school_name}</strong><br>
-                                    <small class="text-muted">${assignment.npsn} - ${assignment.kecamatan_name || 'N/A'}</small>
+                                    <small class="text-muted">${assignment.npsn} • ${assignment.kelurahan_name || '-'} • ${assignment.kecamatan_name || 'N/A'}</small>
                                 </div>
                                 <button class="btn btn-sm btn-danger" onclick="removeAssignment(${staffId}, ${assignment.school_id})">
                                     <i class="bi bi-trash"></i>
@@ -604,7 +1467,6 @@
                 alert('Tambahkan minimal satu sekolah.');
                 return;
             }
-            const periodId = periodSelect && periodSelect.value ? parseInt(periodSelect.value, 10) : null;
             saveQueueBtn.disabled = true;
             saveQueueBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menyimpan...';
 
@@ -617,8 +1479,7 @@
                 body: JSON.stringify({
                     staff_id: parseInt(staffId, 10),
                     school_ids: queue.map(q => q.id),
-                    notes: notesInput.value || null,
-                    period_id: isNaN(periodId) ? null : periodId
+                    notes: notesInput.value || null
                 })
                 })
                 .then(r => r.json())
@@ -975,7 +1836,174 @@
             }
         });
 
+        const assignmentEditModal = assignmentEditModalEl && window.bootstrap
+            ? bootstrap.Modal.getOrCreateInstance(assignmentEditModalEl)
+            : null;
+
+        if (assignmentsOverviewBody) {
+            assignmentsOverviewBody.addEventListener('click', function (event) {
+                const editBtn = event.target.closest('.assignment-edit-btn');
+                const deleteBtn = event.target.closest('.assignment-delete-btn');
+
+                if (editBtn) {
+                    const assignmentId = editBtn.dataset.assignmentId;
+                    const staffName = editBtn.dataset.staffName || '';
+                    const schoolName = editBtn.dataset.schoolName || '';
+                    const notes = editBtn.dataset.notes || '';
+
+                    if (assignmentEditTitle) {
+                        assignmentEditTitle.textContent = `${staffName} • ${schoolName}`;
+                    }
+                    if (assignmentEditNotes) {
+                        assignmentEditNotes.value = notes;
+                    }
+                    if (assignmentEditId) {
+                        assignmentEditId.value = assignmentId;
+                    }
+                    if (assignmentEditModal) {
+                        assignmentEditModal.show();
+                    }
+                    return;
+                }
+
+                if (deleteBtn) {
+                    const staffName = deleteBtn.dataset.staffName || 'staff';
+                    const schoolName = deleteBtn.dataset.schoolName || 'sekolah';
+                    const staffId = deleteBtn.dataset.staffId;
+                    const schoolId = deleteBtn.dataset.schoolId;
+                    if (!staffId || !schoolId) return;
+
+                    const ok = confirm(`Hapus penugasan ${staffName} ke ${schoolName}?`);
+                    if (!ok) return;
+
+                    const formData = new URLSearchParams();
+                    formData.set('staff_id', staffId);
+                    formData.set('school_id', schoolId);
+
+                    fetch('/portal/admin/remove-assignment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: formData.toString()
+                    }).then(res => res.json())
+                        .then(data => {
+                            if (!data.success) {
+                                alert(data.message || 'Gagal menghapus penugasan.');
+                                return;
+                            }
+                            const row = deleteBtn.closest('tr[data-assignment-id]');
+                            if (row) row.remove();
+                            filterAssignmentsOverview();
+                        })
+                        .catch(err => {
+                            alert(err.message || 'Gagal menghapus penugasan.');
+                        });
+                }
+            });
+        }
+
+        if (assignmentEditSaveBtn) {
+            assignmentEditSaveBtn.addEventListener('click', function () {
+                const assignmentId = assignmentEditId ? assignmentEditId.value : '';
+                if (!assignmentId) return;
+                const notes = assignmentEditNotes ? assignmentEditNotes.value : '';
+
+                assignmentEditSaveBtn.disabled = true;
+                assignmentEditSaveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+                const formData = new URLSearchParams();
+                formData.set('notes', notes);
+
+                fetch(`/portal/admin/assignment/${assignmentId}/update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                }).then(res => res.json())
+                    .then(data => {
+                        if (!data.success) {
+                            alert(data.message || 'Gagal menyimpan catatan.');
+                            return;
+                        }
+                        updateAssignmentNotesInRow(assignmentId, data.notes || '');
+                        const editBtn = assignmentsOverviewBody
+                            ? assignmentsOverviewBody.querySelector(`.assignment-edit-btn[data-assignment-id="${assignmentId}"]`)
+                            : null;
+                        if (editBtn) {
+                            editBtn.dataset.notes = data.notes || '';
+                        }
+                        filterAssignmentsOverview();
+                        if (assignmentEditModal) {
+                            assignmentEditModal.hide();
+                        }
+                    })
+                    .catch(err => {
+                        alert(err.message || 'Gagal menyimpan catatan.');
+                    })
+                    .finally(() => {
+                        assignmentEditSaveBtn.disabled = false;
+                        assignmentEditSaveBtn.innerHTML = '<i class="bi bi-check-lg"></i> Simpan';
+                    });
+            });
+        }
+
+        if (assignmentsSearchInput) {
+            assignmentsSearchInput.addEventListener('input', filterAssignmentsOverview);
+            assignmentsSearchInput.addEventListener('keyup', filterAssignmentsOverview);
+        }
+        if (assignmentsStatusFilter) {
+            assignmentsStatusFilter.addEventListener('change', filterAssignmentsOverview);
+        }
+        if (assignmentsJenjangFilter) {
+            assignmentsJenjangFilter.addEventListener('change', filterAssignmentsOverview);
+        }
+        if (assignmentsKecamatanFilter) {
+            assignmentsKecamatanFilter.addEventListener('change', filterAssignmentsOverview);
+        }
+        if (assignmentsKelurahanFilter) {
+            assignmentsKelurahanFilter.addEventListener('change', filterAssignmentsOverview);
+        }
+        if (assignmentsStaffFilter) {
+            assignmentsStaffFilter.addEventListener('change', filterAssignmentsOverview);
+        }
+        if (assignmentsSelectAll) {
+            assignmentsSelectAll.addEventListener('change', function () {
+                const visibleRows = getVisibleAssignmentRows();
+                visibleRows.forEach(row => {
+                    const cb = row.querySelector('.assignment-select');
+                    if (cb) cb.checked = assignmentsSelectAll.checked;
+                });
+                updateAssignmentsBulkState();
+                updateAssignmentsSelectAllState();
+            });
+        }
+        if (assignmentsOverviewBody) {
+            assignmentsOverviewBody.addEventListener('change', function (event) {
+                if (event.target && event.target.classList.contains('assignment-select')) {
+                    updateAssignmentsBulkState();
+                    updateAssignmentsSelectAllState();
+                }
+            });
+        }
+        if (assignmentsDeleteSelected) {
+            assignmentsDeleteSelected.addEventListener('click', function () {
+                const ids = collectSelectedAssignmentIds();
+                bulkDeleteAssignments(ids, '(terpilih)');
+            });
+        }
+        if (assignmentsDeleteAll) {
+            assignmentsDeleteAll.addEventListener('click', function () {
+                const ids = collectVisibleAssignmentIds();
+                bulkDeleteAssignments(ids, '(hasil filter)');
+            });
+        }
+
+        initAssignmentsFilters();
+        filterAssignmentsOverview();
+
         updateBulkState();
+        initMassFilters();
+        attachMassFilterEvents();
+        updateMassFilterCount();
+        loadPresets();
     });
 </script>
 {% endblock %}

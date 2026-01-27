@@ -2,8 +2,9 @@
 import os
 import sys
 
-# Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add project root to path
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, PROJECT_ROOT)
 
 from dashboard.db_access import get_cursor
 

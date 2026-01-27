@@ -1,8 +1,9 @@
 import os
 import sys
 
-# Add parent directory to path to allow imports
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Add project root to path to allow imports
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(PROJECT_ROOT)
 
 from dashboard.db_access import get_cursor
 from dashboard.schema import _PORTAL_ASSESSMENT_PERIODS_SQL, _PORTAL_ASSESSMENT_PERIODS_INDEX_SQL

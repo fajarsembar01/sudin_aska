@@ -33,7 +33,7 @@
     <form id="schoolRoomsForm" method="POST" action="{{ url_for('portal.sekolah_rooms') }}">
         <div class="row g-4">
             <div class="col-lg-4">
-                <div class="card border-0 shadow-sm sticky-top" style="top: 80px;">
+                <div class="card border-0 shadow-sm sticky-top" style="top: 80px; z-index: 1000;">
                     <div class="card-body">
                         <div class="mb-3">
                             {% if user_school %}
@@ -60,6 +60,15 @@
                             {% else %}
                             <!-- Admin/Staff: show dropdown -->
                             <label class="form-label fw-semibold">Pilih Sekolah</label>
+                            <div class="input-group input-group-sm mb-2">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" id="schoolSearchInput"
+                                    placeholder="Cari sekolah (nama/NPSN)..." autocomplete="off">
+                                <button class="btn btn-outline-secondary" type="button" id="schoolSearchClear"
+                                    title="Reset pencarian">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
                             <select name="school_id" class="form-select" required id="schoolSelect"
                                 onchange="if(this.value) window.location.href = window.location.pathname + '?school_id=' + this.value">
                                 <option value="">-- Pilih Sekolah --</option>
@@ -69,6 +78,9 @@
                                     s.npsn }})</option>
                                 {% endfor %}
                             </select>
+                            <small class="text-muted" id="schoolSearchMeta">
+                                Menampilkan <span id="schoolSearchCount">{{ schools|length }}</span> sekolah
+                            </small>
                             {% endif %}
                         </div>
 
@@ -247,7 +259,7 @@
                                                                     {% else %}
                                                                     <input class="form-check-input" type="checkbox"
                                                                         name="aspects_{{ room.id }}[]"
-                                                                        value="{{ asp.id }}" {% if asp.is_selected
+                                                                        value="{{ asp.id }}" {% if asp.is_selected or room.default_select_all_aspects
                                                                         %}checked{% endif %}>
                                                                     {% endif %}
                                                                     <span class="text-muted">{{ asp.name }}</span>
@@ -345,7 +357,7 @@
                                                                     {% else %}
                                                                     <input class="form-check-input" type="checkbox"
                                                                         name="aspects_{{ room.id }}[]"
-                                                                        value="{{ asp.id }}" {% if asp.is_selected
+                                                                        value="{{ asp.id }}" {% if asp.is_selected or room.default_select_all_aspects
                                                                         %}checked{% endif %}>
                                                                     {% endif %}
                                                                     <span class="text-muted">{{ asp.name }}</span>
@@ -445,7 +457,7 @@
                                                                     {% else %}
                                                                     <input class="form-check-input" type="checkbox"
                                                                         name="aspects_{{ room.id }}[]"
-                                                                        value="{{ asp.id }}" {% if asp.is_selected
+                                                                        value="{{ asp.id }}" {% if asp.is_selected or room.default_select_all_aspects
                                                                         %}checked{% endif %}>
                                                                     {% endif %}
                                                                     <span class="text-muted">{{ asp.name }}</span>
@@ -544,7 +556,7 @@
                                                                     {% else %}
                                                                     <input class="form-check-input" type="checkbox"
                                                                         name="aspects_{{ room.id }}[]"
-                                                                        value="{{ asp.id }}" {% if asp.is_selected
+                                                                        value="{{ asp.id }}" {% if asp.is_selected or room.default_select_all_aspects
                                                                         %}checked{% endif %}>
                                                                     {% endif %}
                                                                     <span class="text-muted">{{ asp.name }}</span>
@@ -641,7 +653,7 @@
                                                                     {% else %}
                                                                     <input class="form-check-input" type="checkbox"
                                                                         name="aspects_{{ room.id }}[]"
-                                                                        value="{{ asp.id }}" {% if asp.is_selected
+                                                                        value="{{ asp.id }}" {% if asp.is_selected or room.default_select_all_aspects
                                                                         %}checked{% endif %}>
                                                                     {% endif %}
                                                                     <span class="text-muted">{{ asp.name }}</span>
@@ -744,7 +756,7 @@
                                                                     {% else %}
                                                                     <input class="form-check-input" type="checkbox"
                                                                         name="aspects_{{ room.id }}[]"
-                                                                        value="{{ asp.id }}" {% if asp.is_selected
+                                                                        value="{{ asp.id }}" {% if asp.is_selected or room.default_select_all_aspects
                                                                         %}checked{% endif %}>
                                                                     {% endif %}
                                                                     <span class="text-muted">{{ asp.name }}</span>
@@ -834,6 +846,35 @@
     document.addEventListener('DOMContentLoaded', function () {
         const selectAllBtn = document.getElementById('selectAllBtn');
         const resetAllBtn = document.getElementById('resetAllBtn');
+        const schoolSearchInput = document.getElementById('schoolSearchInput');
+        const schoolSearchClear = document.getElementById('schoolSearchClear');
+        const schoolSelect = document.getElementById('schoolSelect');
+        const schoolSearchCount = document.getElementById('schoolSearchCount');
+
+        function refreshSchoolSearchCount(count) {
+            if (schoolSearchCount) {
+                schoolSearchCount.textContent = String(count);
+            }
+        }
+
+        function filterSchoolOptions() {
+            if (!schoolSelect || !schoolSearchInput) return;
+            const query = schoolSearchInput.value.toLowerCase().trim();
+            let visibleCount = 0;
+            const options = Array.from(schoolSelect.options);
+            options.forEach((opt, idx) => {
+                if (idx === 0) {
+                    opt.hidden = false; // keep placeholder
+                    return;
+                }
+                const text = (opt.textContent || '').toLowerCase();
+                const isSelected = opt.selected;
+                const match = !query || text.includes(query);
+                opt.hidden = !(match || isSelected);
+                if (!opt.hidden) visibleCount += 1;
+            });
+            refreshSchoolSearchCount(visibleCount);
+        }
 
         function activePaneId() {
             const activePane = document.querySelector('#roomJenjangTabContent .tab-pane.show.active');
@@ -848,6 +889,19 @@
         if (resetAllBtn) {
             resetAllBtn.addEventListener('click', function () {
                 toggleAll(false, activePaneId());
+            });
+        }
+
+        if (schoolSearchInput && schoolSelect) {
+            schoolSearchInput.addEventListener('input', filterSchoolOptions);
+            schoolSearchInput.addEventListener('keyup', filterSchoolOptions);
+            filterSchoolOptions();
+        }
+        if (schoolSearchClear && schoolSearchInput && schoolSelect) {
+            schoolSearchClear.addEventListener('click', function () {
+                schoolSearchInput.value = '';
+                filterSchoolOptions();
+                schoolSearchInput.focus();
             });
         }
 

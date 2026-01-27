@@ -33,7 +33,7 @@ def seed_photos():
             records = cur.fetchall()
             
             if not records:
-                print("No submitted/verified assessments found. Run seed_dummy.py first.")
+                print("No submitted/verified assessments found. Run `python -m scripts.seed_dummy` first.")
                 return
             
             print(f"Found {len(records)} assessment-room combinations")

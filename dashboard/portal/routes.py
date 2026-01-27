@@ -61,10 +61,12 @@ from .queries import (
     update_school_rooms,
     list_periods,
     reopen_assessment,
-    assign_assessment,
     fetch_random_photos,
     create_period,
     list_all_staff,
+    list_all_staff_assignments_overview,
+    update_staff_assignment_notes,
+    delete_staff_assignments_by_ids,
     get_period_by_id,
     delete_assessment,
     fetch_school_avg_scores,
@@ -447,6 +449,130 @@ def _expected_grade_levels(jenjang: str | None) -> list[int]:
     if upper == "PAUD":
         return [-2, -1, 0]  # KB, Kelompok A, Kelompok B
     return []
+
+
+def _classroom_grade_from_name(name: str) -> int | None:
+    """Extract grade number from classroom name (supports variants like 5A)."""
+    match = re.search(r"\bKelas\s+(-?\d+)", name or "", flags=re.IGNORECASE)
+    if not match:
+        return None
+    try:
+        return int(match.group(1))
+    except (TypeError, ValueError):
+        return None
+
+
+def _is_classroom_variant(name: str) -> bool:
+    """Return True for variant classroom names like 'Ruang Kelas 5A'."""
+    return bool(
+        re.match(
+            r"^\s*(?:Ruang\s+)?Kelas\s+-?\d+\s*[A-Za-z]+\s*$",
+            name or "",
+            flags=re.IGNORECASE,
+        )
+    )
+
+
+def _classroom_band_for_grade(grade: int) -> list[int]:
+    if grade == 1:
+        return list(range(1, 7))
+    if grade == 7:
+        return list(range(7, 10))
+    if grade == 10:
+        return list(range(10, 13))
+    return [grade]
+
+
+def _sync_classroom_required_from_template(room: dict | None, is_required: bool) -> int:
+    if not room:
+        return 0
+    name = (room.get("name") or "").strip()
+    if not name:
+        return 0
+    grade = _classroom_grade_from_name(name)
+    if grade is None or _is_classroom_variant(name):
+        return 0
+    target_grades = set(_classroom_band_for_grade(grade))
+    if not target_grades:
+        return 0
+
+    with get_cursor(commit=True) as cur:
+        cur.execute("SELECT id, name FROM portal_rooms")
+        rows = cur.fetchall()
+        target_ids = []
+        for row in rows:
+            row_grade = _classroom_grade_from_name(row["name"] or "")
+            if row_grade in target_grades:
+                target_ids.append(row["id"])
+        if not target_ids:
+            return 0
+        cur.execute(
+            "UPDATE portal_rooms SET is_required = %s WHERE id = ANY(%s)",
+            (is_required, target_ids),
+        )
+        return cur.rowcount
+
+
+def _sync_classroom_aspect_required_from_template(
+    room_name: str | None,
+    aspect_name: str | None,
+    is_required: bool,
+) -> int:
+    if not room_name or not aspect_name:
+        return 0
+    if _is_classroom_variant(room_name):
+        return 0
+    grade = _classroom_grade_from_name(room_name)
+    if grade is None:
+        return 0
+    target_grades = set(_classroom_band_for_grade(grade))
+    if not target_grades:
+        return 0
+
+    with get_cursor(commit=True) as cur:
+        cur.execute("SELECT id, name FROM portal_rooms")
+        rows = cur.fetchall()
+        target_ids = []
+        for row in rows:
+            row_grade = _classroom_grade_from_name(row["name"] or "")
+            if row_grade in target_grades:
+                target_ids.append(row["id"])
+        if not target_ids:
+            return 0
+        cur.execute(
+            """
+            UPDATE portal_aspects
+            SET is_required = %s
+            WHERE room_id = ANY(%s)
+              AND lower(btrim(name)) = lower(btrim(%s))
+            """,
+            (is_required, target_ids, aspect_name),
+        )
+        return cur.rowcount
+
+
+def _sync_classroom_aspects_from_template_room(room: dict | None) -> int:
+    if not room:
+        return 0
+    room_id = room.get("id")
+    room_name = (room.get("name") or "").strip()
+    if not room_id or not room_name:
+        return 0
+    if _is_classroom_variant(room_name):
+        return 0
+    if _classroom_grade_from_name(room_name) is None:
+        return 0
+    room_detail = get_room_with_aspects(int(room_id))
+    if not room_detail:
+        return 0
+    total = 0
+    for asp in room_detail.get("aspects") or []:
+        total += _sync_classroom_aspect_required_from_template(
+            room_name,
+            asp.get("name"),
+            bool(asp.get("is_required")),
+        )
+    return total
 
 
 def _build_profile_payload(form_data: dict) -> dict:
@@ -1812,6 +1938,13 @@ def sekolah_rooms() -> Response:
             return None
         return m.group(2).strip().upper()
 
+    for r in all_rooms:
+        aspects = r.get("aspects") or []
+        has_optional_selected = any(
+            (not a.get("is_required")) and a.get("is_selected") for a in aspects
+        )
+        r["default_select_all_aspects"] = bool(_room_grade(r) is not None and not has_optional_selected)
+
     # Identifikasi jenjang yang sudah punya kelas paralel (mis. 1A, 1B) untuk menyembunyikan base "Ruang Kelas 1"
     variant_grades: set[int] = set()
     for r in all_rooms:
@@ -2686,18 +2819,16 @@ def admin_delete_period(period_id: int) -> Response:
 @portal_bp.route("/admin/assign", methods=["POST"])
 @role_required("admin")
 def assign_assessment_route() -> Response:
-    """Assign assessment to staff."""
+    """Assign school to staff (without creating draft)."""
     school_id = request.form.get("school_id")
     staff_id = request.form.get("staff_id")
-    period_id = request.form.get("period_id")
     
     if not all([school_id, staff_id]):
         flash("Pilih sekolah dan staff.", "warning")
     else:
         try:
-            pid = int(period_id) if period_id else None
-            assign_assessment(int(school_id), int(staff_id), pid)
-            flash("Draft penilaian berhasil dibuat untuk staff.", "success")
+            assign_staff_to_school(int(staff_id), int(school_id), current_user().get("id"))
+            flash("Sekolah berhasil ditugaskan ke staff.", "success")
         except Exception as e:
             flash(f"Error: {e}", "danger")
         
@@ -3071,6 +3202,8 @@ def edit_room(room_id: int) -> Response:
     try:
         result = update_room(room_id, name, description, category, sort_order, active, is_required)
         if result:
+            _sync_classroom_required_from_template(result, is_required)
+            _sync_classroom_aspects_from_template_room(result)
             from .queries import log_activity
             log_activity(current_user().get("id"), "UPDATE", "ROOM", room_id, name, {"active": active})
             
@@ -3138,6 +3271,8 @@ def toggle_room_required(room_id: int) -> Response:
             new_required,
         )
         if result:
+            _sync_classroom_required_from_template(room, new_required)
+            _sync_classroom_aspects_from_template_room(room)
             from .queries import log_activity
             log_activity(
                 current_user().get("id"),
@@ -3277,6 +3412,12 @@ def edit_aspect(aspect_id: int) -> Response:
         aspect_before = get_aspect_by_id(aspect_id)
         result = update_aspect(aspect_id, name, description, sort_order, active, is_required)
         if result:
+            if aspect_before:
+                _sync_classroom_aspect_required_from_template(
+                    aspect_before.get("room_name"),
+                    aspect_before.get("name"),
+                    is_required,
+                )
             from .queries import log_activity
             log_activity(
                 current_user().get("id"),
@@ -3365,6 +3506,11 @@ def toggle_aspect_required(aspect_id: int) -> Response:
             new_required,
         )
         if updated:
+            _sync_classroom_aspect_required_from_template(
+                aspect.get("room_name"),
+                aspect.get("name"),
+                new_required,
+            )
             from .queries import log_activity
             log_activity(
                 current_user().get("id"),
@@ -3806,6 +3952,7 @@ def admin_manage_staff() -> Response:
     
     # Get all staff with their assignments
     all_staff = list_all_staff_with_assignments()
+    assignments_overview = list_all_staff_assignments_overview()
     
     # Admin dapat melihat semua sekolah
     available_schools = list_portal_schools()
@@ -3820,6 +3967,7 @@ def admin_manage_staff() -> Response:
     return render_template(
         "portal/admin/manage_staff.html",
         staff_list=all_staff,
+        assignments_overview=assignments_overview,
         available_schools=available_schools,
         pending_requests=pending_requests,
         periods=periods,
@@ -3850,7 +3998,6 @@ def admin_assign_school() -> Response:
     
     try:
         assignment = assign_staff_to_school(staff_id, school_id, user["id"], notes)
-        assign_assessment(school_id, staff_id, period_id)
         staff_info = _fetch_dashboard_user_summary(staff_id)
         school = get_school_by_id(school_id)
         details = {
@@ -3913,7 +4060,6 @@ def admin_assign_school_batch() -> Response:
         try:
             assign_staff_to_school(staff_id_int, sid, user["id"], notes)
             assigned += 1
-            assign_assessment(sid, staff_id_int, period_id_int)
         except Exception as exc:
             current_app.logger.exception("Error assigning school %s", sid)
             errors.append(f"{sid}: {exc}")
@@ -3956,6 +4102,89 @@ def admin_assign_school_batch() -> Response:
     })
 
 
+@portal_bp.route("/admin/assignment/<int:assignment_id>/update", methods=["POST"])
+@role_required("admin")
+def admin_update_assignment_notes(assignment_id: int) -> Response:
+    """Admin updates notes for a staff-school assignment."""
+    user = current_user()
+    from .queries import log_activity
+
+    if not can_assign_staff(user):
+        return jsonify({"success": False, "message": "Tidak memiliki izin"}), 403
+
+    notes = (request.form.get("notes") or "").strip() or None
+
+    try:
+        updated = update_staff_assignment_notes(assignment_id, notes, user.get("id"))
+        if not updated:
+            return jsonify({"success": False, "message": "Penugasan tidak ditemukan"}), 404
+
+        staff_info = _fetch_dashboard_user_summary(updated.get("staff_id"))
+        school = get_school_by_id(updated.get("school_id")) if updated.get("school_id") else None
+        details = {
+            "assignment_id": assignment_id,
+            "staff_id": updated.get("staff_id"),
+            "school_id": updated.get("school_id"),
+            "notes": notes,
+        }
+        if staff_info:
+            details["staff_name"] = staff_info.get("full_name")
+            details["staff_email"] = staff_info.get("email")
+        if school:
+            details["school_name"] = school.get("name")
+            details["npsn"] = school.get("npsn")
+
+        log_activity(
+            user.get("id"),
+            "UPDATE",
+            "STAFF_ASSIGNMENT",
+            assignment_id,
+            school.get("name") if school else f"Assignment {assignment_id}",
+            details,
+        )
+
+        return jsonify({"success": True, "notes": notes})
+    except Exception as e:
+        current_app.logger.exception("Error updating assignment notes")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@portal_bp.route("/admin/assignments/delete-batch", methods=["POST"])
+@role_required("admin")
+def admin_delete_assignments_batch() -> Response:
+    """Admin deletes multiple staff-school assignments."""
+    user = current_user()
+    from .queries import log_activity
+
+    if not can_assign_staff(user):
+        return jsonify({"success": False, "message": "Tidak memiliki izin"}), 403
+
+    data = request.get_json(silent=True) or {}
+    ids_raw = data.get("assignment_ids") or []
+    try:
+        assignment_ids = [int(x) for x in ids_raw if x is not None]
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "message": "Format data tidak valid"}), 400
+
+    if not assignment_ids:
+        return jsonify({"success": False, "message": "Tidak ada penugasan dipilih"}), 400
+
+    try:
+        deleted_count = delete_staff_assignments_by_ids(assignment_ids)
+        log_activity(
+            user.get("id"),
+            "DELETE",
+            "STAFF_ASSIGNMENT",
+            None,
+            "Bulk delete assignments",
+            {"count": deleted_count, "assignment_ids": assignment_ids},
+        )
+        return jsonify({"success": True, "deleted": deleted_count})
+    except Exception as e:
+        current_app.logger.exception("Error deleting assignments in batch")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
 @portal_bp.route("/admin/assignment-requests/<int:request_id>/approve", methods=["POST"])
 @role_required("admin")
 def admin_approve_assignment_request(request_id: int) -> Response:
@@ -3980,7 +4209,6 @@ def admin_approve_assignment_request(request_id: int) -> Response:
         return jsonify({"success": False, "message": "Request tidak ditemukan"}), 404
     try:
         assignment = assign_staff_to_school(req["staff_id"], req["school_id"], user["id"], req.get("note"))
-        assign_assessment(req["school_id"], req["staff_id"], req.get("period_id"))
         staff_info = _fetch_dashboard_user_summary(req["staff_id"])
         school = get_school_by_id(req["school_id"])
         request_details = {

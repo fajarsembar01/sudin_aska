@@ -3,7 +3,8 @@ import sys
 import traceback
 
 # Add the project root to the path to allow importing from 'dashboard'
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(PROJECT_ROOT)
 
 def initialize_main_schemas():
     """Initializes schemas from the root db.py module."""

@@ -18,7 +18,7 @@ Repo ini awalnya diproduksi untuk satu sekolah, namun seluruh konfigurasi dipisa
 - **Modular** — tiga kanal (Telegram, Web, Twitter) berbagi _logic_ yang sama di `ai_core.py` + `flows/`.
 - **Pengetahuan mudah diganti** — cukup edit `kecerdasan/profil_sudindikju2.md` & `kecerdasan/umum.md`, lalu jalankan `python knowledge_loader.py`.
 - **Data internal aman** — semua laporan masuk PostgreSQL dan bisa dimonitor via dashboard.
-- **Ops-friendly** — tersedia skrip `init_db.py`, CLI dashboard (`dashboard/cli.py`), serta contoh unit `systemd` dan Nginx.
+- **Ops-friendly** — tersedia skrip `scripts/init_db.py`, CLI dashboard (`dashboard/cli.py`), serta contoh unit `systemd` dan Nginx.
 - **Gratis bila perlu** — dukung embedding lokal HuggingFace dan STT/LLM OpenAI-compatible.
 
 ---
@@ -50,7 +50,8 @@ Direktori penting:
 - `responses/` – template jawaban dan detektor niat.
 - `knowledge_loader.py` + `kecerdasan/` – sumber pengetahuan sekolah.
 - `twitter_bot.py` – worker balas mention & auto-post.
-- `db.py` & `init_db.py` – koneksi dan bootstrap PostgreSQL.
+- `db.py` & `scripts/init_db.py` – koneksi dan bootstrap PostgreSQL.
+- `scripts/` – kumpulan skrip maintenance (migrasi, seed, export).
 
 > Folder `backup/` tidak dipakai di produksi; abaikan saat melakukan penyesuaian.
 
@@ -102,7 +103,7 @@ nano .env                   # isi sesuai sekolah Anda
 python knowledge_loader.py
 
 # 5. Inisialisasi semua tabel
-python init_db.py
+python -m scripts.init_db
 
 # 6. Buat akun admin dashboard
 python -m dashboard.cli create-user admin@sekolah.sch.id "Admin Sekolah"
@@ -214,7 +215,7 @@ TWITTER_SPAM_KEYWORDS=promo,follback
 
 ## 🗄️ Inisialisasi Database & Data Referensi
 
-- Jalankan `python init_db.py` setiap kali mengubah struktur atau saat setup baru. Skrip ini memanggil `db.py` dan `dashboard/schema.py` untuk menyiapkan:
+- Jalankan `python -m scripts.init_db` setiap kali mengubah struktur atau saat setup baru. Skrip ini memanggil `db.py` dan `dashboard/schema.py` untuk menyiapkan:
   - `chat_logs`, `web_users`, `telegram_users`, `corruption_reports`, `bullying_reports`, `psych_reports`, `twitter_worker_logs`.
   - Tabel dashboard (`dashboard_users`, `bullying_report_events`, `notifications`).
 - Buat akun dashboard dengan CLI:
@@ -379,7 +380,7 @@ sudo systemctl restart ai-bot.service aska-dashboard.service aska-webapp.service
 | Bot diam | Pastikan `.env` benar, cek `journalctl -u ai-bot.service -f` |
 | Error `faiss` | `pip install faiss-cpu` (atau pasang dari conda pada CPU lawas) |
 | Google login gagal | Pastikan domain di konsol Google sudah memasukkan URL callback `/authorize` |
-| Dashboard blank | Periksa koneksi DB (`psql`), jalankan ulang `python init_db.py` |
+| Dashboard blank | Periksa koneksi DB (`psql`), jalankan ulang `python -m scripts.init_db` |
 | Embedding lokal error | Install `pip install langchain-huggingface sentence-transformers torch>=1.11` |
 
 ---
