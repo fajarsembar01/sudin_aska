@@ -565,6 +565,21 @@
             overscroll-behavior: contain;
         }
 
+        @media (max-width: 576px) {
+            .notification-dropdown {
+                min-width: 0;
+                width: min(92vw, 26rem);
+                max-width: 92vw;
+                position: fixed !important;
+                left: 50% !important;
+                right: auto !important;
+                top: 4.5rem !important;
+                transform: translateX(-50%) !important;
+                max-height: calc(100vh - 6.5rem);
+                margin: 0;
+            }
+        }
+
         .notification-header {
             display: flex;
             align-items: center;
