@@ -390,13 +390,6 @@
                                 <input type="text" class="form-control" id="assignmentsSearchInput"
                                     placeholder="Cari staff/sekolah/NPSN...">
                             </div>
-                            <select class="form-select form-select-sm" id="assignmentsStatusFilter">
-                                <option value="">Semua status</option>
-                                <option value="draft">Draft</option>
-                                <option value="not_started">Belum dimulai</option>
-                                <option value="submitted">Submitted</option>
-                                <option value="verified">Verified</option>
-                            </select>
                             <select class="form-select form-select-sm" id="assignmentsJenjangFilter">
                                 <option value="">Semua jenjang</option>
                             </select>
@@ -433,7 +426,19 @@
                                     </th>
                                     <th>Staff</th>
                                     <th>Sekolah</th>
-                                    <th>Status</th>
+                                    <th>
+                                        <div class="d-flex flex-column gap-1 assignments-status-header">
+                                            <span>Status</span>
+                                            <select class="form-select form-select-sm assignments-status-filter"
+                                                id="assignmentsStatusFilter">
+                                                <option value="">Semua status</option>
+                                                <option value="draft">Draft</option>
+                                                <option value="not_started">Belum dimulai</option>
+                                                <option value="submitted">Submitted</option>
+                                                <option value="verified">Verified</option>
+                                            </select>
+                                        </div>
+                                    </th>
                                     <th>Catatan</th>
                                     <th>Ditugaskan</th>
                                     <th class="text-end">Aksi</th>
@@ -608,6 +613,17 @@
 
     #pane-assignments .badge {
         font-size: 0.7rem;
+    }
+
+    .assignments-status-header {
+        min-width: 150px;
+    }
+
+    .assignments-status-header .form-select {
+        height: 28px;
+        padding-top: 0.15rem;
+        padding-bottom: 0.15rem;
+        font-size: 0.75rem;
     }
 </style>
 
