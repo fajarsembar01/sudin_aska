@@ -1803,6 +1803,59 @@ def list_kecamatan() -> List[Dict[str, Any]]:
         return [dict(row) for row in cur.fetchall()]
 
 
+# ===== Portal Kontak Wilayah =====
+
+def list_portal_kontak() -> List[Dict[str, Any]]:
+    """List kontak penanggung jawab per wilayah."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, nama, wilayah, kontak
+            FROM portal_kontak
+            ORDER BY wilayah ASC, nama ASC
+            """
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def create_portal_kontak(nama: str, wilayah: str, kontak: str) -> Optional[int]:
+    """Create kontak wilayah and return new id."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO portal_kontak (nama, wilayah, kontak)
+            VALUES (%s, %s, %s)
+            RETURNING id
+            """,
+            (nama, wilayah, kontak),
+        )
+        row = cur.fetchone()
+        return int(row["id"]) if row else None
+
+
+def update_portal_kontak(kontak_id: int, nama: str, wilayah: str, kontak: str) -> bool:
+    """Update kontak wilayah."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE portal_kontak
+            SET nama = %s,
+                wilayah = %s,
+                kontak = %s
+            WHERE id = %s
+            """,
+            (nama, wilayah, kontak, kontak_id),
+        )
+        return cur.rowcount > 0
+
+
+def delete_portal_kontak(kontak_id: int) -> bool:
+    """Delete kontak wilayah."""
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM portal_kontak WHERE id = %s", (kontak_id,))
+        return cur.rowcount > 0
+
+
 def list_kelurahan(kecamatan_id: Optional[int] = None) -> List[Dict[str, Any]]:
     """List kelurahan, optionally filtered by kecamatan."""
     with get_cursor() as cur:
