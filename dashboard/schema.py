@@ -241,6 +241,29 @@ _PORTAL_KELURAHAN_INDEX_SQL = """
 CREATE INDEX IF NOT EXISTS idx_portal_kelurahan_kecamatan ON portal_kelurahan (kecamatan_id);
 """
 
+_PORTAL_KONTAK_WILAYAH_SQL = """
+CREATE TABLE IF NOT EXISTS portal_kontak (
+    id SERIAL PRIMARY KEY,
+    nama TEXT NOT NULL,
+    wilayah TEXT NOT NULL,
+    kontak TEXT NOT NULL
+);
+"""
+
+_PORTAL_KONTAK_WILAYAH_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_portal_kontak_wilayah
+ON portal_kontak (wilayah);
+"""
+
+_PORTAL_KONTAK_WILAYAH_SEED_SQL = """
+INSERT INTO portal_kontak (nama, wilayah, kontak)
+SELECT 'Faris Rani', 'Koja', '081292236799'
+WHERE NOT EXISTS (
+    SELECT 1 FROM portal_kontak
+    WHERE nama = 'Faris Rani' AND wilayah = 'Koja' AND kontak = '081292236799'
+);
+"""
+
 _PORTAL_SCHOOLS_SQL = """
 CREATE TABLE IF NOT EXISTS portal_schools (
     id SERIAL PRIMARY KEY,
@@ -508,6 +531,9 @@ def ensure_dashboard_schema() -> None:
         _PORTAL_KECAMATAN_INDEX_SQL,
         _PORTAL_KELURAHAN_SQL,
         _PORTAL_KELURAHAN_INDEX_SQL,
+        _PORTAL_KONTAK_WILAYAH_SQL,
+        _PORTAL_KONTAK_WILAYAH_INDEX_SQL,
+        _PORTAL_KONTAK_WILAYAH_SEED_SQL,
         _PORTAL_SCHOOLS_SQL,
         _PORTAL_SCHOOLS_INDEX_SQL,
         _PORTAL_ROOMS_SQL,

@@ -852,7 +852,7 @@
 
                     <!-- Admin dropdown with new Kelola Staff -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'admin' in request.endpoint %}active{% endif %}"
+                        <a class="nav-link dropdown-toggle {% if 'admin' in request.endpoint or request.endpoint == 'portal.portal_kontak_wilayah' %}active{% endif %}"
                             href="#" data-bs-toggle="dropdown">
                             <i class="bi bi-gear nav-icon"></i>Admin
                         </a>
@@ -860,6 +860,12 @@
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('portal.admin_stats') }}">
                                     <i class="bi bi-bar-chart me-2"></i>Statistik
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'portal.portal_kontak_wilayah' %}active{% endif %}"
+                                    href="{{ url_for('portal.portal_kontak_wilayah') }}">
+                                    <i class="bi bi-person-lines-fill me-2"></i>Kontak Wilayah
                                 </a>
                             </li>
                             <li>

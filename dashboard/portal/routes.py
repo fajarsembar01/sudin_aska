@@ -117,6 +117,10 @@ from .queries import (
     fetch_admin_pending_preview,
     get_optional_rooms_for_schools,
     get_room_with_aspects,
+    list_portal_kontak,
+    create_portal_kontak,
+    update_portal_kontak,
+    delete_portal_kontak,
 )
 from dashboard.queries import (
     create_team_member_request,
@@ -5124,6 +5128,62 @@ def manage_monev_teams() -> Response:
         kecamatan_list=kecamatan_list,
         activity_logs=activity_logs,
     )
+
+
+@portal_bp.route("/kontak", methods=["GET", "POST"])
+@role_required("admin")
+def portal_kontak_wilayah() -> Response:
+    """Admin page to manage kontak per wilayah."""
+    if request.method == "POST":
+        action = (request.form.get("action") or "create").strip().lower()
+        kontak_id = request.form.get("kontak_id")
+        nama = (request.form.get("nama") or "").strip()
+        wilayah = (request.form.get("wilayah") or "").strip()
+        kontak = (request.form.get("kontak") or "").strip()
+
+        try:
+            if action == "create":
+                if not all([nama, wilayah, kontak]):
+                    flash("Nama, wilayah, dan kontak wajib diisi.", "warning")
+                else:
+                    create_portal_kontak(nama=nama, wilayah=wilayah, kontak=kontak)
+                    flash("Kontak wilayah berhasil ditambahkan.", "success")
+
+            elif action == "update":
+                if not kontak_id:
+                    flash("ID kontak tidak valid.", "danger")
+                elif not all([nama, wilayah, kontak]):
+                    flash("Nama, wilayah, dan kontak wajib diisi.", "warning")
+                else:
+                    updated = update_portal_kontak(
+                        kontak_id=int(kontak_id),
+                        nama=nama,
+                        wilayah=wilayah,
+                        kontak=kontak,
+                    )
+                    if updated:
+                        flash("Kontak wilayah berhasil diperbarui.", "success")
+                    else:
+                        flash("Kontak tidak ditemukan atau tidak ada perubahan.", "info")
+
+            elif action == "delete":
+                if not kontak_id:
+                    flash("ID kontak tidak valid.", "danger")
+                else:
+                    deleted = delete_portal_kontak(int(kontak_id))
+                    if deleted:
+                        flash("Kontak wilayah berhasil dihapus.", "success")
+                    else:
+                        flash("Kontak tidak ditemukan.", "warning")
+            else:
+                flash("Aksi tidak dikenal.", "warning")
+
+        except Exception as exc:
+            current_app.logger.error(f"Error managing portal kontak wilayah: {exc}")
+            flash(f"Gagal memproses data: {exc}", "danger")
+
+    contacts = list_portal_kontak()
+    return render_template("portal/admin/kontak.html", contacts=contacts)
 
 
 @portal_bp.route("/my-team")
