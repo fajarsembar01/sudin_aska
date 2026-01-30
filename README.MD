@@ -1,6 +1,6 @@
 # 🤖 ASKA — Agent AI Sekolah Kita
 
-ASKA adalah _stack_ AI untuk sekolah dasar hingga menengah yang siap digandakan. Satu repositori ini berisi:
+ASKA adalah _stack_ AI untuk SD(sekolah dasar) hingga menengah yang siap digandakan. Satu repositori ini berisi:
 
 - Bot Telegram yang mengenali konteks sekolah, menerima teks, foto, serta suara.
 - Mesin RAG (Retrieval Augmented Generation) berbasis LangChain + Groq Llama 3.1 (bisa diganti OpenAI atau embedding lokal gratis).
