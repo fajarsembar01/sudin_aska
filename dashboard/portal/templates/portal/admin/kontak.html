@@ -1,0 +1,327 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Kontak Wilayah" %}
+
+{% block portal_content %}
+<style>
+    .portal-contact-table tbody tr:hover {
+        background-color: var(--bg-subtle);
+    }
+
+    .portal-contact-actions .btn {
+        min-width: 38px;
+    }
+
+    @media (max-width: 991px) {
+        #portalKontakFormCard {
+            position: static !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .portal-contact-table thead {
+            display: none;
+        }
+
+        .portal-contact-table tbody tr {
+            display: block;
+            padding: 0.85rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-soft);
+            border-radius: 1rem;
+            background-color: var(--bg-surface);
+        }
+
+        .portal-contact-table tbody td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.4rem 0;
+            border: 0;
+        }
+
+        .portal-contact-table tbody td::before {
+            content: attr(data-label);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            flex: 0 0 38%;
+        }
+
+        .portal-contact-actions {
+            justify-content: flex-start !important;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+    }
+</style>
+
+<section class="mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url_for('portal.admin_stats') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="h4 fw-bold mb-0">Kontak Wilayah</h1>
+                <p class="text-muted mb-0 small">Kelola kontak penanggung jawab per wilayah untuk portal.</p>
+            </div>
+        </div>
+        <button type="button" class="btn btn-outline-primary" onclick="scrollToKontakForm()">
+            <i class="bi bi-plus-lg me-2"></i>Tambah Kontak
+        </button>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm" id="portalKontakFormCard" style="position: sticky; top: 80px;">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="icon-badge section-icon text-primary">
+                            <i class="bi bi-person-plus"></i>
+                        </span>
+                        <h2 class="h6 fw-bold mb-0" id="portalKontakFormTitle">Tambah Kontak</h2>
+                    </div>
+
+                    <form method="post" id="portalKontakForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <input type="hidden" name="action" id="portalKontakFormAction" value="create">
+                        <input type="hidden" name="kontak_id" id="portalKontakId">
+
+                        <div class="mb-3">
+                            <label class="form-label">Wilayah</label>
+                            <select class="form-select" name="wilayah" id="portalKontakWilayah" required>
+                                <option value="" disabled selected>Pilih wilayah</option>
+                                <option value="Cilincing">Cilincing</option>
+                                <option value="Kelapa Gading">Kelapa Gading</option>
+                                <option value="Koja">Koja</option>
+                            </select>
+                        </div>
+
+                        <div class="border rounded-3 p-3 mb-3">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <h3 class="h6 fw-semibold mb-0">Kontak 1</h3>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Nama</label>
+                                <input type="text" class="form-control" name="nama_1" id="portalKontakNama1" required>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Nomor</label>
+                                <input type="tel" class="form-control" name="kontak_1" id="portalKontakKontak1"
+                                    inputmode="numeric" required>
+                            </div>
+                            <div>
+                                <label class="form-label">Status</label>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="kontak_1_active"
+                                        id="portalKontak1Aktif" value="1" checked>
+                                    <label class="btn btn-outline-success" for="portalKontak1Aktif">Aktif</label>
+                                    <input type="radio" class="btn-check" name="kontak_1_active"
+                                        id="portalKontak1Inaktif" value="0">
+                                    <label class="btn btn-outline-secondary" for="portalKontak1Inaktif">Inaktif</label>
+                                </div>
+                                <small class="text-muted d-block mt-2">Masukkan nomor aktif (contoh: 0812...).</small>
+                            </div>
+                        </div>
+
+                        <div class="border rounded-3 p-3 mb-3">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <h3 class="h6 fw-semibold mb-0">Kontak 2</h3>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Nama</label>
+                                <input type="text" class="form-control" name="nama_2" id="portalKontakNama2" required>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Nomor</label>
+                                <input type="tel" class="form-control" name="kontak_2" id="portalKontakKontak2"
+                                    inputmode="numeric" required>
+                            </div>
+                            <div>
+                                <label class="form-label">Status</label>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="kontak_2_active"
+                                        id="portalKontak2Aktif" value="1" checked>
+                                    <label class="btn btn-outline-success" for="portalKontak2Aktif">Aktif</label>
+                                    <input type="radio" class="btn-check" name="kontak_2_active"
+                                        id="portalKontak2Inaktif" value="0">
+                                    <label class="btn btn-outline-secondary" for="portalKontak2Inaktif">Inaktif</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary" id="portalKontakSubmit">
+                                <i class="bi bi-save me-2"></i>Simpan Kontak
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="portalKontakCancel"
+                                onclick="resetKontakForm()" style="display:none;">
+                                Batal Edit
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <div>
+                            <h2 class="h6 fw-bold mb-0">Daftar Kontak</h2>
+                            <p class="text-muted mb-0 small">{{ contacts|length }} kontak terdaftar</p>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle portal-contact-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Wilayah</th>
+                                    <th>Kontak 1</th>
+                                    <th>Kontak 2</th>
+                                    <th class="text-end">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for contact in contacts %}
+                                {% set contact_payload = {
+                                    'id': contact.id,
+                                    'wilayah': contact.wilayah,
+                                    'nama_1': contact.nama,
+                                    'kontak_1': contact.kontak,
+                                    'kontak_1_active': contact.kontak_1_active,
+                                    'nama_2': contact.nama_2,
+                                    'kontak_2': contact.kontak_2,
+                                    'kontak_2_active': contact.kontak_2_active
+                                } %}
+                                <tr style="cursor: pointer;" onclick='editKontak({{ contact_payload|tojson }})'>
+                                    <td data-label="Wilayah">
+                                        <span class="badge bg-info text-dark">
+                                            <i class="bi bi-geo-alt me-1"></i>{{ contact.wilayah }}
+                                        </span>
+                                    </td>
+                                    {% set is_active_1 = contact.kontak_1_active if contact.kontak_1_active is not none else True %}
+                                    {% set is_active_2 = contact.kontak_2_active if contact.kontak_2_active is not none else True %}
+                                    <td data-label="Kontak 1">
+                                        <div class="fw-semibold">{{ contact.nama or '-' }}</div>
+                                        <div class="text-muted small">{{ contact.kontak or '-' }}</div>
+                                        <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
+                                            {% if is_active_1 %}
+                                            <span class="badge bg-success-subtle text-success">Aktif</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary-subtle text-secondary">Inaktif</span>
+                                            {% endif %}
+                                            <form method="post" class="d-inline"
+                                                onclick="event.stopPropagation()">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                                <input type="hidden" name="action" value="set_status">
+                                                <input type="hidden" name="kontak_id" value="{{ contact.id }}">
+                                                <input type="hidden" name="contact_index" value="1">
+                                                <input type="hidden" name="is_active"
+                                                    value="{{ '0' if is_active_1 else '1' }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                                    {{ 'Nonaktifkan' if is_active_1 else 'Aktifkan' }}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                    <td data-label="Kontak 2">
+                                        <div class="fw-semibold">{{ contact.nama_2 or '-' }}</div>
+                                        <div class="text-muted small">{{ contact.kontak_2 or '-' }}</div>
+                                        <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
+                                            {% if is_active_2 %}
+                                            <span class="badge bg-success-subtle text-success">Aktif</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary-subtle text-secondary">Inaktif</span>
+                                            {% endif %}
+                                            <form method="post" class="d-inline"
+                                                onclick="event.stopPropagation()">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                                <input type="hidden" name="action" value="set_status">
+                                                <input type="hidden" name="kontak_id" value="{{ contact.id }}">
+                                                <input type="hidden" name="contact_index" value="2">
+                                                <input type="hidden" name="is_active"
+                                                    value="{{ '0' if is_active_2 else '1' }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                                    {{ 'Nonaktifkan' if is_active_2 else 'Aktifkan' }}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                    <td data-label="Aksi" class="text-end" onclick="event.stopPropagation()">
+                                        <div class="d-flex justify-content-end gap-2 portal-contact-actions">
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                onclick='editKontak({{ contact_payload|tojson }})'>
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            <form method="post" onsubmit="return confirm('Hapus kontak ini?');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                                <input type="hidden" name="action" value="delete">
+                                                <input type="hidden" name="kontak_id" value="{{ contact.id }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">Belum ada kontak.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    function editKontak(contact) {
+        document.getElementById('portalKontakFormAction').value = 'update';
+        document.getElementById('portalKontakId').value = contact.id;
+        document.getElementById('portalKontakWilayah').value = contact.wilayah || '';
+        document.getElementById('portalKontakNama1').value = contact.nama_1 || '';
+        document.getElementById('portalKontakKontak1').value = contact.kontak_1 || '';
+        document.getElementById('portalKontakNama2').value = contact.nama_2 || '';
+        document.getElementById('portalKontakKontak2').value = contact.kontak_2 || '';
+        const isActive1 = contact.kontak_1_active !== false;
+        const isActive2 = contact.kontak_2_active !== false;
+        document.getElementById('portalKontak1Aktif').checked = isActive1;
+        document.getElementById('portalKontak1Inaktif').checked = !isActive1;
+        document.getElementById('portalKontak2Aktif').checked = isActive2;
+        document.getElementById('portalKontak2Inaktif').checked = !isActive2;
+
+        document.getElementById('portalKontakFormTitle').innerText = 'Ubah Kontak';
+        document.getElementById('portalKontakSubmit').innerHTML = '<i class="bi bi-save me-2"></i>Update Kontak';
+        document.getElementById('portalKontakSubmit').className = 'btn btn-warning w-100';
+        document.getElementById('portalKontakCancel').style.display = 'inline-block';
+
+        scrollToKontakForm();
+    }
+
+    function resetKontakForm() {
+        document.getElementById('portalKontakForm').reset();
+        document.getElementById('portalKontakFormAction').value = 'create';
+        document.getElementById('portalKontakId').value = '';
+        document.getElementById('portalKontak1Aktif').checked = true;
+        document.getElementById('portalKontak2Aktif').checked = true;
+        document.getElementById('portalKontakFormTitle').innerText = 'Tambah Kontak';
+        document.getElementById('portalKontakSubmit').innerHTML = '<i class="bi bi-save me-2"></i>Simpan Kontak';
+        document.getElementById('portalKontakSubmit').className = 'btn btn-primary w-100';
+        document.getElementById('portalKontakCancel').style.display = 'none';
+    }
+
+    function scrollToKontakForm() {
+        const card = document.getElementById('portalKontakFormCard');
+        if (!card) return;
+        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+</script>
+{% endblock %}
