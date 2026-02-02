@@ -1810,41 +1810,124 @@ def list_portal_kontak() -> List[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT id, nama, wilayah, kontak
+            SELECT id,
+                   wilayah,
+                   nama,
+                   kontak,
+                   kontak_1_active,
+                   nama_2,
+                   kontak_2,
+                   kontak_2_active
             FROM portal_kontak
-            ORDER BY wilayah ASC, nama ASC
+            ORDER BY wilayah ASC, id ASC
             """
         )
         return [dict(row) for row in cur.fetchall()]
 
 
-def create_portal_kontak(nama: str, wilayah: str, kontak: str) -> Optional[int]:
+def get_portal_kontak_by_wilayah(wilayah: str) -> Optional[Dict[str, Any]]:
+    """Fetch kontak wilayah by area (wilayah), latest first."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id,
+                   wilayah,
+                   nama,
+                   kontak,
+                   kontak_1_active,
+                   nama_2,
+                   kontak_2,
+                   kontak_2_active
+            FROM portal_kontak
+            WHERE lower(btrim(wilayah)) = lower(btrim(%s))
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (wilayah,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def create_portal_kontak(
+    wilayah: str,
+    nama_1: str,
+    kontak_1: str,
+    nama_2: str,
+    kontak_2: str,
+    kontak_1_active: bool = True,
+    kontak_2_active: bool = True,
+) -> Optional[int]:
     """Create kontak wilayah and return new id."""
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
-            INSERT INTO portal_kontak (nama, wilayah, kontak)
-            VALUES (%s, %s, %s)
+            INSERT INTO portal_kontak (
+                wilayah,
+                nama,
+                kontak,
+                kontak_1_active,
+                nama_2,
+                kontak_2,
+                kontak_2_active
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
-            (nama, wilayah, kontak),
+            (wilayah, nama_1, kontak_1, kontak_1_active, nama_2, kontak_2, kontak_2_active),
         )
         row = cur.fetchone()
         return int(row["id"]) if row else None
 
 
-def update_portal_kontak(kontak_id: int, nama: str, wilayah: str, kontak: str) -> bool:
+def update_portal_kontak(
+    kontak_id: int,
+    wilayah: str,
+    nama_1: str,
+    kontak_1: str,
+    nama_2: str,
+    kontak_2: str,
+    kontak_1_active: bool = True,
+    kontak_2_active: bool = True,
+) -> bool:
     """Update kontak wilayah."""
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
             UPDATE portal_kontak
-            SET nama = %s,
-                wilayah = %s,
-                kontak = %s
+            SET wilayah = %s,
+                nama = %s,
+                kontak = %s,
+                kontak_1_active = %s,
+                nama_2 = %s,
+                kontak_2 = %s,
+                kontak_2_active = %s
             WHERE id = %s
             """,
-            (nama, wilayah, kontak, kontak_id),
+            (
+                wilayah,
+                nama_1,
+                kontak_1,
+                kontak_1_active,
+                nama_2,
+                kontak_2,
+                kontak_2_active,
+                kontak_id,
+            ),
+        )
+        return cur.rowcount > 0
+
+
+def update_portal_kontak_status(kontak_id: int, contact_index: int, is_active: bool) -> bool:
+    """Update status aktif/inaktif untuk kontak tertentu."""
+    column_map = {1: "kontak_1_active", 2: "kontak_2_active"}
+    column = column_map.get(contact_index)
+    if not column:
+        return False
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            f"UPDATE portal_kontak SET {column} = %s WHERE id = %s",
+            (is_active, kontak_id),
         )
         return cur.rowcount > 0
 

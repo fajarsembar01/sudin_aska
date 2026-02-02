@@ -323,10 +323,14 @@
                                 </div>
                                 <div class="text-muted small">{{ c.name }} • {{ c.phone }}</div>
                             </div>
+                            {% if c.is_active %}
                             <a class="btn btn-success btn-sm d-inline-flex align-items-center gap-2"
                                 href="{{ c.wa_link }}" target="_blank" rel="noopener">
                                 <i class="bi bi-whatsapp"></i><span>WhatsApp</span>
                             </a>
+                            {% else %}
+                            <span class="badge bg-secondary">Inaktif</span>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>
@@ -370,10 +374,14 @@
                                 </div>
                                 <div class="text-muted small">{{ c.name }} • {{ c.phone }}</div>
                             </div>
+                            {% if c.is_active %}
                             <a href="{{ c.wa_link }}" target="_blank" rel="noopener"
                                 class="btn btn-success btn-sm d-inline-flex align-items-center gap-2">
                                 <i class="bi bi-whatsapp"></i><span>WhatsApp</span>
                             </a>
+                            {% else %}
+                            <span class="badge bg-secondary">Inaktif</span>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>

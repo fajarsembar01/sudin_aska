@@ -251,31 +251,57 @@ def registration_status(user_id: int) -> Response:
     return render_template("registration_status.html", user=dict(user))
 
 
+def _build_login_contact_list() -> list[dict]:
+    from urllib.parse import quote_plus
+    from dashboard.portal.queries import list_portal_kontak
+
+    contacts = []
+    message = "Halo, saya butuh bantuan untuk akses portal ASKA."
+    try:
+        rows = list_portal_kontak()
+    except Exception:
+        return contacts
+
+    for row in rows:
+        area = (row.get("wilayah") or "").strip()
+        if not area:
+            continue
+        for name_key, phone_key, active_key in (
+            ("nama", "kontak", "kontak_1_active"),
+            ("nama_2", "kontak_2", "kontak_2_active"),
+        ):
+            name = (row.get(name_key) or "").strip()
+            phone = (row.get(phone_key) or "").strip()
+            if not name or not phone:
+                continue
+            digits = "".join(ch for ch in phone if ch.isdigit())
+            if digits.startswith("0"):
+                digits = "62" + digits[1:]
+            if not digits:
+                continue
+            is_active = row.get(active_key)
+            if is_active is None:
+                is_active = True
+            contacts.append(
+                {
+                    "area": area,
+                    "name": name,
+                    "phone": phone,
+                    "wa_link": f"https://api.whatsapp.com/send?phone={digits}&text={quote_plus(message)}",
+                    "is_user_area": False,
+                    "is_active": bool(is_active),
+                }
+            )
+    return contacts
+
+
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login() -> Response:
     existing = current_user()
     if existing:
         return redirect(_redirect_after_login(existing))
 
-    # Build coordinator contacts for help modal
-    from urllib.parse import quote_plus
-    coordinator_list = [
-        {"area": "Cilincing", "name": "Neni", "phone": "+62 851-1085-1681"},
-        {"area": "Kelapa Gading", "name": "Slamet", "phone": "+62 859-2123-2424"},
-        {"area": "Koja", "name": "Rani", "phone": "+62 878-8032-8670"},
-    ]
-    message = "Halo, saya butuh bantuan untuk akses portal ASKA."
-    coordinator_contacts = []
-    for c in coordinator_list:
-        phone = "".join(ch for ch in c["phone"] if ch.isdigit() or ch == "+")
-        if phone.startswith("0"):
-            phone = "62" + phone[1:]
-        phone = phone.replace("+", "")
-        coordinator_contacts.append({
-            **c,
-            "wa_link": f"https://api.whatsapp.com/send?phone={phone}&text={quote_plus(message)}",
-            "is_user_area": False,
-        })
+    coordinator_contacts = _build_login_contact_list()
 
     if request.method == "POST":
         email = (request.form.get("email") or "").strip().lower()
