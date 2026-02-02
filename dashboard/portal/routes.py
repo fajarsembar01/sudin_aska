@@ -120,6 +120,8 @@ from .queries import (
     list_portal_kontak,
     create_portal_kontak,
     update_portal_kontak,
+    update_portal_kontak_status,
+    get_portal_kontak_by_wilayah,
     delete_portal_kontak,
 )
 from dashboard.queries import (
@@ -199,6 +201,8 @@ def _portal_access_required(view):
 def _sanitize_phone(phone: str) -> str:
     """Normalize phone string to digits only for wa.me/api.whatsapp links."""
     digits_only = "".join(ch for ch in phone if ch.isdigit())
+    if digits_only.startswith("0"):
+        digits_only = "62" + digits_only[1:]
     return digits_only
 
 
@@ -786,6 +790,8 @@ def _save_school_profile(school_id: int, data: dict) -> None:
 def _sanitize_phone(phone: str) -> str:
     """Normalize phone string to digits only for wa.me/api.whatsapp links."""
     digits_only = "".join(ch for ch in phone if ch.isdigit())
+    if digits_only.startswith("0"):
+        digits_only = "62" + digits_only[1:]
     return digits_only
 
 
@@ -802,25 +808,47 @@ def _build_coordinator_contacts(school: dict | None = None, *, area_name: str | 
         message = f"Halo, kami dari {school.get('name')} ingin menghubungi admin wilayah."
     elif area_name:
         message = f"Halo, kami dari wilayah {area_name} ingin menghubungi admin wilayah."
+    area_match_source = area_name
+    if not area_match_source and school:
+        area_match_source = school.get("kecamatan_name")
 
-    for c in AREA_CONTACTS:
-        phone_for_link = _sanitize_phone(c["phone"])
+    for row in list_portal_kontak():
+        area = (row.get("wilayah") or "").strip()
+        if not area:
+            continue
         is_user_area = False
-        area_match_source = area_name
-        if not area_match_source and school:
-            area_match_source = school.get("kecamatan_name")
         if area_match_source:
             # Simple match: check if area name contains the contact area keyword
-            kec_name = area_match_source.lower()
-            is_user_area = c["area"].lower() in kec_name
-        contacts.append(
-            {
-                **c,
-                "wa_link": f"https://api.whatsapp.com/send?phone={phone_for_link}&text={quote_plus(message)}",
-                "normalized_area": c["area"].lower(),
-                "is_user_area": is_user_area,
-            }
-        )
+            is_user_area = area.lower() in area_match_source.lower()
+        for idx, (name_key, phone_key, active_key) in enumerate(
+            (
+                ("nama", "kontak", "kontak_1_active"),
+                ("nama_2", "kontak_2", "kontak_2_active"),
+            ),
+            start=1,
+        ):
+            name = (row.get(name_key) or "").strip()
+            phone = (row.get(phone_key) or "").strip()
+            if not name and not phone:
+                continue
+            phone_for_link = _sanitize_phone(phone)
+            if not phone_for_link:
+                continue
+            is_active = row.get(active_key)
+            if is_active is None:
+                is_active = True
+            contacts.append(
+                {
+                    "area": area,
+                    "name": name,
+                    "phone": phone,
+                    "wa_link": f"https://api.whatsapp.com/send?phone={phone_for_link}&text={quote_plus(message)}",
+                    "normalized_area": area.lower(),
+                    "is_user_area": is_user_area,
+                    "is_active": bool(is_active),
+                    "contact_index": idx,
+                }
+            )
     return contacts
 
 
@@ -5137,34 +5165,89 @@ def portal_kontak_wilayah() -> Response:
     if request.method == "POST":
         action = (request.form.get("action") or "create").strip().lower()
         kontak_id = request.form.get("kontak_id")
-        nama = (request.form.get("nama") or "").strip()
         wilayah = (request.form.get("wilayah") or "").strip()
-        kontak = (request.form.get("kontak") or "").strip()
+        allowed_wilayah = {"Cilincing", "Kelapa Gading", "Koja"}
 
         try:
-            if action == "create":
-                if not all([nama, wilayah, kontak]):
-                    flash("Nama, wilayah, dan kontak wajib diisi.", "warning")
-                else:
-                    create_portal_kontak(nama=nama, wilayah=wilayah, kontak=kontak)
-                    flash("Kontak wilayah berhasil ditambahkan.", "success")
-
-            elif action == "update":
+            if action == "set_status":
                 if not kontak_id:
                     flash("ID kontak tidak valid.", "danger")
-                elif not all([nama, wilayah, kontak]):
-                    flash("Nama, wilayah, dan kontak wajib diisi.", "warning")
                 else:
-                    updated = update_portal_kontak(
+                    contact_index_raw = request.form.get("contact_index")
+                    is_active_raw = request.form.get("is_active")
+                    try:
+                        contact_index = int(contact_index_raw)
+                    except (TypeError, ValueError):
+                        contact_index = 0
+                    is_active = str(is_active_raw or "").strip().lower() in ("1", "true", "on", "yes")
+                    updated = update_portal_kontak_status(
                         kontak_id=int(kontak_id),
-                        nama=nama,
-                        wilayah=wilayah,
-                        kontak=kontak,
+                        contact_index=contact_index,
+                        is_active=is_active,
                     )
                     if updated:
-                        flash("Kontak wilayah berhasil diperbarui.", "success")
+                        flash("Status kontak berhasil diperbarui.", "success")
                     else:
-                        flash("Kontak tidak ditemukan atau tidak ada perubahan.", "info")
+                        flash("Kontak tidak ditemukan atau status gagal diperbarui.", "warning")
+
+            elif action in {"create", "update"}:
+                nama_1 = (request.form.get("nama_1") or "").strip()
+                kontak_1 = (request.form.get("kontak_1") or "").strip()
+                nama_2 = (request.form.get("nama_2") or "").strip()
+                kontak_2 = (request.form.get("kontak_2") or "").strip()
+                kontak_1_active = (request.form.get("kontak_1_active") or "1") == "1"
+                kontak_2_active = (request.form.get("kontak_2_active") or "1") == "1"
+
+                if not wilayah or wilayah not in allowed_wilayah:
+                    flash("Wilayah wajib dipilih dari daftar.", "warning")
+                elif not all([nama_1, kontak_1, nama_2, kontak_2]):
+                    flash("Nama dan kontak untuk dua nomor wajib diisi.", "warning")
+                elif action == "create":
+                    existing = get_portal_kontak_by_wilayah(wilayah)
+                    if existing:
+                        updated = update_portal_kontak(
+                            kontak_id=int(existing["id"]),
+                            wilayah=wilayah,
+                            nama_1=nama_1,
+                            kontak_1=kontak_1,
+                            nama_2=nama_2,
+                            kontak_2=kontak_2,
+                            kontak_1_active=kontak_1_active,
+                            kontak_2_active=kontak_2_active,
+                        )
+                        if updated:
+                            flash("Kontak wilayah berhasil diperbarui.", "success")
+                        else:
+                            flash("Kontak tidak ditemukan atau tidak ada perubahan.", "info")
+                    else:
+                        create_portal_kontak(
+                            wilayah=wilayah,
+                            nama_1=nama_1,
+                            kontak_1=kontak_1,
+                            nama_2=nama_2,
+                            kontak_2=kontak_2,
+                            kontak_1_active=kontak_1_active,
+                            kontak_2_active=kontak_2_active,
+                        )
+                        flash("Kontak wilayah berhasil ditambahkan.", "success")
+                else:
+                    if not kontak_id:
+                        flash("ID kontak tidak valid.", "danger")
+                    else:
+                        updated = update_portal_kontak(
+                            kontak_id=int(kontak_id),
+                            wilayah=wilayah,
+                            nama_1=nama_1,
+                            kontak_1=kontak_1,
+                            nama_2=nama_2,
+                            kontak_2=kontak_2,
+                            kontak_1_active=kontak_1_active,
+                            kontak_2_active=kontak_2_active,
+                        )
+                        if updated:
+                            flash("Kontak wilayah berhasil diperbarui.", "success")
+                        else:
+                            flash("Kontak tidak ditemukan atau tidak ada perubahan.", "info")
 
             elif action == "delete":
                 if not kontak_id:

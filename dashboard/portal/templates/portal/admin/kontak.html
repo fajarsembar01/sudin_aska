@@ -90,18 +90,66 @@
                         <input type="hidden" name="kontak_id" id="portalKontakId">
 
                         <div class="mb-3">
-                            <label class="form-label">Nama</label>
-                            <input type="text" class="form-control" name="nama" id="portalKontakNama" required>
-                        </div>
-                        <div class="mb-3">
                             <label class="form-label">Wilayah</label>
-                            <input type="text" class="form-control" name="wilayah" id="portalKontakWilayah" required>
+                            <select class="form-select" name="wilayah" id="portalKontakWilayah" required>
+                                <option value="" disabled selected>Pilih wilayah</option>
+                                <option value="Cilincing">Cilincing</option>
+                                <option value="Kelapa Gading">Kelapa Gading</option>
+                                <option value="Koja">Koja</option>
+                            </select>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Kontak</label>
-                            <input type="tel" class="form-control" name="kontak" id="portalKontakKontak"
-                                inputmode="numeric" required>
-                            <small class="text-muted">Masukkan nomor aktif (contoh: 0812...).</small>
+
+                        <div class="border rounded-3 p-3 mb-3">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <h3 class="h6 fw-semibold mb-0">Kontak 1</h3>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Nama</label>
+                                <input type="text" class="form-control" name="nama_1" id="portalKontakNama1" required>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Nomor</label>
+                                <input type="tel" class="form-control" name="kontak_1" id="portalKontakKontak1"
+                                    inputmode="numeric" required>
+                            </div>
+                            <div>
+                                <label class="form-label">Status</label>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="kontak_1_active"
+                                        id="portalKontak1Aktif" value="1" checked>
+                                    <label class="btn btn-outline-success" for="portalKontak1Aktif">Aktif</label>
+                                    <input type="radio" class="btn-check" name="kontak_1_active"
+                                        id="portalKontak1Inaktif" value="0">
+                                    <label class="btn btn-outline-secondary" for="portalKontak1Inaktif">Inaktif</label>
+                                </div>
+                                <small class="text-muted d-block mt-2">Masukkan nomor aktif (contoh: 0812...).</small>
+                            </div>
+                        </div>
+
+                        <div class="border rounded-3 p-3 mb-3">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <h3 class="h6 fw-semibold mb-0">Kontak 2</h3>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Nama</label>
+                                <input type="text" class="form-control" name="nama_2" id="portalKontakNama2" required>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Nomor</label>
+                                <input type="tel" class="form-control" name="kontak_2" id="portalKontakKontak2"
+                                    inputmode="numeric" required>
+                            </div>
+                            <div>
+                                <label class="form-label">Status</label>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="kontak_2_active"
+                                        id="portalKontak2Aktif" value="1" checked>
+                                    <label class="btn btn-outline-success" for="portalKontak2Aktif">Aktif</label>
+                                    <input type="radio" class="btn-check" name="kontak_2_active"
+                                        id="portalKontak2Inaktif" value="0">
+                                    <label class="btn btn-outline-secondary" for="portalKontak2Inaktif">Inaktif</label>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="d-grid gap-2">
@@ -131,9 +179,9 @@
                         <table class="table align-middle portal-contact-table">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Nama</th>
                                     <th>Wilayah</th>
-                                    <th>Kontak</th>
+                                    <th>Kontak 1</th>
+                                    <th>Kontak 2</th>
                                     <th class="text-end">Aksi</th>
                                 </tr>
                             </thead>
@@ -141,26 +189,67 @@
                                 {% for contact in contacts %}
                                 {% set contact_payload = {
                                     'id': contact.id,
-                                    'nama': contact.nama,
                                     'wilayah': contact.wilayah,
-                                    'kontak': contact.kontak
+                                    'nama_1': contact.nama,
+                                    'kontak_1': contact.kontak,
+                                    'kontak_1_active': contact.kontak_1_active,
+                                    'nama_2': contact.nama_2,
+                                    'kontak_2': contact.kontak_2,
+                                    'kontak_2_active': contact.kontak_2_active
                                 } %}
                                 <tr style="cursor: pointer;" onclick='editKontak({{ contact_payload|tojson }})'>
-                                    <td data-label="Nama">
-                                        <div class="fw-semibold">{{ contact.nama }}</div>
-                                    </td>
                                     <td data-label="Wilayah">
                                         <span class="badge bg-info text-dark">
                                             <i class="bi bi-geo-alt me-1"></i>{{ contact.wilayah }}
                                         </span>
                                     </td>
-                                    <td data-label="Kontak">
-                                        {% set wa_digits = (contact.kontak or '')|replace('+', '')|replace(' ', '')|replace('-', '') %}
-                                        {% set wa_link = ('62' + wa_digits[1:]) if wa_digits.startswith('0') else wa_digits %}
-                                        <a href="https://wa.me/{{ wa_link }}" target="_blank"
-                                            class="text-decoration-none text-success" onclick="event.stopPropagation()">
-                                            <i class="bi bi-whatsapp me-1"></i>{{ contact.kontak }}
-                                        </a>
+                                    {% set is_active_1 = contact.kontak_1_active if contact.kontak_1_active is not none else True %}
+                                    {% set is_active_2 = contact.kontak_2_active if contact.kontak_2_active is not none else True %}
+                                    <td data-label="Kontak 1">
+                                        <div class="fw-semibold">{{ contact.nama or '-' }}</div>
+                                        <div class="text-muted small">{{ contact.kontak or '-' }}</div>
+                                        <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
+                                            {% if is_active_1 %}
+                                            <span class="badge bg-success-subtle text-success">Aktif</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary-subtle text-secondary">Inaktif</span>
+                                            {% endif %}
+                                            <form method="post" class="d-inline"
+                                                onclick="event.stopPropagation()">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                                <input type="hidden" name="action" value="set_status">
+                                                <input type="hidden" name="kontak_id" value="{{ contact.id }}">
+                                                <input type="hidden" name="contact_index" value="1">
+                                                <input type="hidden" name="is_active"
+                                                    value="{{ '0' if is_active_1 else '1' }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                                    {{ 'Nonaktifkan' if is_active_1 else 'Aktifkan' }}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                    <td data-label="Kontak 2">
+                                        <div class="fw-semibold">{{ contact.nama_2 or '-' }}</div>
+                                        <div class="text-muted small">{{ contact.kontak_2 or '-' }}</div>
+                                        <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
+                                            {% if is_active_2 %}
+                                            <span class="badge bg-success-subtle text-success">Aktif</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary-subtle text-secondary">Inaktif</span>
+                                            {% endif %}
+                                            <form method="post" class="d-inline"
+                                                onclick="event.stopPropagation()">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                                <input type="hidden" name="action" value="set_status">
+                                                <input type="hidden" name="kontak_id" value="{{ contact.id }}">
+                                                <input type="hidden" name="contact_index" value="2">
+                                                <input type="hidden" name="is_active"
+                                                    value="{{ '0' if is_active_2 else '1' }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                                    {{ 'Nonaktifkan' if is_active_2 else 'Aktifkan' }}
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                     <td data-label="Aksi" class="text-end" onclick="event.stopPropagation()">
                                         <div class="d-flex justify-content-end gap-2 portal-contact-actions">
@@ -197,9 +286,17 @@
     function editKontak(contact) {
         document.getElementById('portalKontakFormAction').value = 'update';
         document.getElementById('portalKontakId').value = contact.id;
-        document.getElementById('portalKontakNama').value = contact.nama || '';
         document.getElementById('portalKontakWilayah').value = contact.wilayah || '';
-        document.getElementById('portalKontakKontak').value = contact.kontak || '';
+        document.getElementById('portalKontakNama1').value = contact.nama_1 || '';
+        document.getElementById('portalKontakKontak1').value = contact.kontak_1 || '';
+        document.getElementById('portalKontakNama2').value = contact.nama_2 || '';
+        document.getElementById('portalKontakKontak2').value = contact.kontak_2 || '';
+        const isActive1 = contact.kontak_1_active !== false;
+        const isActive2 = contact.kontak_2_active !== false;
+        document.getElementById('portalKontak1Aktif').checked = isActive1;
+        document.getElementById('portalKontak1Inaktif').checked = !isActive1;
+        document.getElementById('portalKontak2Aktif').checked = isActive2;
+        document.getElementById('portalKontak2Inaktif').checked = !isActive2;
 
         document.getElementById('portalKontakFormTitle').innerText = 'Ubah Kontak';
         document.getElementById('portalKontakSubmit').innerHTML = '<i class="bi bi-save me-2"></i>Update Kontak';
@@ -213,6 +310,8 @@
         document.getElementById('portalKontakForm').reset();
         document.getElementById('portalKontakFormAction').value = 'create';
         document.getElementById('portalKontakId').value = '';
+        document.getElementById('portalKontak1Aktif').checked = true;
+        document.getElementById('portalKontak2Aktif').checked = true;
         document.getElementById('portalKontakFormTitle').innerText = 'Tambah Kontak';
         document.getElementById('portalKontakSubmit').innerHTML = '<i class="bi bi-save me-2"></i>Simpan Kontak';
         document.getElementById('portalKontakSubmit').className = 'btn btn-primary w-100';

@@ -246,7 +246,11 @@ CREATE TABLE IF NOT EXISTS portal_kontak (
     id SERIAL PRIMARY KEY,
     nama TEXT NOT NULL,
     wilayah TEXT NOT NULL,
-    kontak TEXT NOT NULL
+    kontak TEXT NOT NULL,
+    kontak_1_active BOOLEAN NOT NULL DEFAULT TRUE,
+    nama_2 TEXT,
+    kontak_2 TEXT,
+    kontak_2_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 """
 
@@ -534,6 +538,10 @@ def ensure_dashboard_schema() -> None:
         _PORTAL_KONTAK_WILAYAH_SQL,
         _PORTAL_KONTAK_WILAYAH_INDEX_SQL,
         _PORTAL_KONTAK_WILAYAH_SEED_SQL,
+        "ALTER TABLE portal_kontak ADD COLUMN IF NOT EXISTS kontak_1_active BOOLEAN NOT NULL DEFAULT TRUE",
+        "ALTER TABLE portal_kontak ADD COLUMN IF NOT EXISTS nama_2 TEXT",
+        "ALTER TABLE portal_kontak ADD COLUMN IF NOT EXISTS kontak_2 TEXT",
+        "ALTER TABLE portal_kontak ADD COLUMN IF NOT EXISTS kontak_2_active BOOLEAN NOT NULL DEFAULT TRUE",
         _PORTAL_SCHOOLS_SQL,
         _PORTAL_SCHOOLS_INDEX_SQL,
         _PORTAL_ROOMS_SQL,
