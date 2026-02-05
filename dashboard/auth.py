@@ -173,11 +173,11 @@ def register() -> Response:
             kecamatan_id = request.form.get("kecamatan_id")
             whatsapp = request.form.get("whatsapp_number")
             nip = request.form.get("nip")
-            nrk = request.form.get("nrk")
+            nrk = (request.form.get("nrk") or "").strip() or None
             jabatan = request.form.get("jabatan")
             
             # Basic validation
-            if not all([full_name, email, password, whatsapp, nip, nrk]):
+            if not all([full_name, email, password, whatsapp, nip]):
                 flash("Mohon lengkapi semua data wajib.", "warning")
                 # Fallback list if DB fails or query not ready
                 return render_template("register.html", kecamatan_list=[])
@@ -247,16 +247,47 @@ def registration_status(user_id: int) -> Response:
     if not user:
         flash("Data pendaftaran tidak ditemukan.", "danger")
         return redirect(url_for("auth.register"))
-        
-    return render_template("registration_status.html", user=dict(user))
+
+    user_dict = dict(user)
+    if user_dict.get("full_name") and user_dict.get("email") and user_dict.get("kecamatan_name"):
+        message_template = (
+            "Halo {contact_name}, saya "
+            f"{user_dict.get('full_name')} baru mendaftar akun Portal ASKA "
+            f"untuk kecamatan {user_dict.get('kecamatan_name')}."
+            f"\n\nEmail: {user_dict.get('email')}\n\n"
+            "Ditunggu verifikasi akun saya, terima kasih."
+        )
+    elif user_dict.get("full_name"):
+        message_template = (
+            "Halo {contact_name}, saya "
+            f"{user_dict.get('full_name')} ingin menanyakan status pendaftaran Portal ASKA."
+        )
+    else:
+        message_template = "Halo {contact_name}, saya ingin bertanya tentang pendaftaran Portal ASKA."
+    coordinator_contacts = _build_login_contact_list(
+        message_template=message_template,
+        area_name=user_dict.get("kecamatan_name"),
+    )
+
+    return render_template(
+        "registration_status.html",
+        user=user_dict,
+        coordinator_contacts=coordinator_contacts,
+    )
 
 
-def _build_login_contact_list() -> list[dict]:
+def _build_login_contact_list(
+    message: str | None = None,
+    *,
+    area_name: str | None = None,
+    message_template: str | None = None,
+) -> list[dict]:
     from urllib.parse import quote_plus
     from dashboard.portal.queries import list_portal_kontak
 
     contacts = []
-    message = "Halo, saya butuh bantuan untuk akses portal ASKA."
+    default_message = "Halo, saya butuh bantuan untuk akses portal ASKA."
+    message_to_use = (message or default_message).strip() or default_message
     try:
         rows = list_portal_kontak()
     except Exception:
@@ -282,13 +313,22 @@ def _build_login_contact_list() -> list[dict]:
             is_active = row.get(active_key)
             if is_active is None:
                 is_active = True
+            contact_message = message_to_use
+            if message_template:
+                try:
+                    contact_message = message_template.format(contact_name=name)
+                except Exception:
+                    contact_message = message_to_use
+            is_user_area = False
+            if area_name:
+                is_user_area = area.lower() in area_name.lower()
             contacts.append(
                 {
                     "area": area,
                     "name": name,
                     "phone": phone,
-                    "wa_link": f"https://api.whatsapp.com/send?phone={digits}&text={quote_plus(message)}",
-                    "is_user_area": False,
+                    "wa_link": f"https://api.whatsapp.com/send?phone={digits}&text={quote_plus(contact_message)}",
+                    "is_user_area": is_user_area,
                     "is_active": bool(is_active),
                 }
             )
