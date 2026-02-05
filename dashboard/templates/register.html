@@ -209,7 +209,7 @@
                     <!-- Nama Lengkap -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
-                            <i class="bi bi-person me-1"></i>Nama Lengkap
+                            <i class="bi bi-person me-1"></i>Nama Lengkap <span class="text-danger">*</span>
                         </label>
                         <input type="text" class="form-control" name="full_name" required
                             placeholder="Masukkan nama lengkap">
@@ -218,7 +218,7 @@
                     <!-- Email -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
-                            <i class="bi bi-envelope me-1"></i>Email
+                            <i class="bi bi-envelope me-1"></i>Email <span class="text-danger">*</span>
                         </label>
                         <input type="email" class="form-control" name="email" required placeholder="nama@example.com">
                         <small class="text-muted">Email akan digunakan untuk login</small>
@@ -227,7 +227,7 @@
                     <!-- Password -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
-                            <i class="bi bi-lock me-1"></i>Password
+                            <i class="bi bi-lock me-1"></i>Password <span class="text-danger">*</span>
                         </label>
                         <div class="input-group">
                             <input type="password" class="form-control" name="password" id="password" required
@@ -242,7 +242,7 @@
                     <!-- Confirm Password -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
-                            <i class="bi bi-lock-fill me-1"></i>Konfirmasi Password
+                            <i class="bi bi-lock-fill me-1"></i>Konfirmasi Password <span class="text-danger">*</span>
                         </label>
                         <div class="input-group">
                             <input type="password" class="form-control" name="confirm_password" id="confirmPassword"
@@ -257,7 +257,7 @@
                     <!-- Kecamatan only (role defaults to staff) -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
-                            <i class="bi bi-geo-alt me-1"></i>Kecamatan
+                            <i class="bi bi-geo-alt me-1"></i>Kecamatan <span class="text-danger">*</span>
                         </label>
                         <select class="form-select" name="kecamatan_id" required>
                             <option value="">-- Pilih Kecamatan --</option>
@@ -270,26 +270,26 @@
                     <!-- WhatsApp -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
-                            <i class="bi bi-whatsapp me-1"></i>No. WhatsApp
+                            <i class="bi bi-whatsapp me-1"></i>No. WhatsApp <span class="text-danger">*</span>
                         </label>
                         <input type="tel" class="form-control" name="whatsapp_number" required placeholder="08123456789"
                             pattern="[0-9]{10,15}">
                     </div>
 
-                    <!-- NIP, NRK (Required), Jabatan (Optional) -->
+                    <!-- NIP (Required), NRK (Optional), Jabatan (Optional) -->
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold">
-                                <i class="bi bi-person-badge me-1"></i>NIP/NIKKI/PJLP
+                                <i class="bi bi-person-badge me-1"></i>NIP/NIKKI/PJLP <span class="text-danger">*</span>
                             </label>
                             <input type="text" class="form-control" name="nip" required placeholder="NIP/NIKKI/PJLP">
                         </div>
 
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold">
-                                <i class="bi bi-person-vcard me-1"></i>NRK 
+                                <i class="bi bi-person-vcard me-1"></i>NRK <span class="text-muted">(Opsional)</span>
                             </label>
-                            <input type="text" class="form-control" name="nrk" required placeholder="NRK pegawai">
+                            <input type="text" class="form-control" name="nrk" placeholder="NRK pegawai">
                         </div>
                     </div>
 

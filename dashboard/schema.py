@@ -573,6 +573,7 @@ def ensure_dashboard_schema() -> None:
         _SCHOOL_CLASSROOMS_INDEX_SQL,
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS no_tester_enabled BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS nrk TEXT",
+        "ALTER TABLE dashboard_users ALTER COLUMN nrk DROP NOT NULL",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS nip TEXT",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS jabatan TEXT",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS degree_prefix TEXT",
