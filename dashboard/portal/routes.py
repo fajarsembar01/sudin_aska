@@ -158,6 +158,61 @@ portal_bp = Blueprint(
 )
 
 UPLOAD_FOLDER = Path(__file__).parent.parent.parent / "uploads" / "portal"
+PHOTO_REQUIRED_PCT = 90.0
+
+
+def _get_low_score_rooms_missing_photos(
+    assessment_id: int,
+    school_id: int,
+    threshold_pct: float = PHOTO_REQUIRED_PCT,
+) -> list[dict]:
+    """Return rooms with score below threshold that don't have photos yet."""
+    rooms = list_school_rooms(school_id)
+    if not rooms:
+        return []
+
+    scores = get_assessment_scores(assessment_id)
+    score_map = {
+        (s.get("school_room_id"), s.get("aspect_id")): s.get("score")
+        for s in scores
+    }
+    photos = get_assessment_photos(assessment_id)
+    rooms_with_photos = {p.get("school_room_id") for p in photos if p.get("school_room_id") is not None}
+
+    missing: list[dict] = []
+    for room in rooms:
+        aspects = room.get("aspects") or []
+        if not aspects:
+            continue
+
+        total = 0.0
+        count = 0
+        room_id = room.get("school_room_id")
+        for aspect in aspects:
+            aspect_id = aspect.get("id")
+            score_val = score_map.get((room_id, aspect_id))
+            if score_val is None:
+                score_val = 3
+            try:
+                total += float(score_val)
+            except (TypeError, ValueError):
+                total += 3.0
+            count += 1
+
+        if count == 0:
+            continue
+
+        pct = (total / count) / 3 * 100
+        if pct < threshold_pct and room_id not in rooms_with_photos:
+            missing.append(
+                {
+                    "school_room_id": room_id,
+                    "room_name": room.get("room_name") or f"Ruang {room_id}",
+                    "room_pct": round(pct, 1),
+                }
+            )
+
+    return missing
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 AREA_CONTACTS = [
     {"area": "Cilincing", "name": "Neni", "phone": "+62 851-1085-1681"},
@@ -1057,6 +1112,7 @@ def assess(school_id: int) -> Response:
         total_aspects=total_aspects,
         assessment_period=assessment_period,
         optional_rooms_data=optional_rooms_data,
+        photo_required_threshold=PHOTO_REQUIRED_PCT,
     )
 
 
@@ -1267,6 +1323,26 @@ def submit(school_id: int) -> Response:
         if assessment["school_id"] not in assigned_school_ids:
             flash("Penugasan ke sekolah ini sudah tidak aktif. Hubungi admin.", "danger")
             return redirect(url_for("portal.staff_assignments"))
+
+    missing_photos = _get_low_score_rooms_missing_photos(assessment_id_int, school_id, PHOTO_REQUIRED_PCT)
+    if missing_photos:
+        display_rooms = [
+            f"{room['room_name']} ({room['room_pct']:.1f}%)"
+            for room in missing_photos[:5]
+        ]
+        extra_count = len(missing_photos) - 5
+        rooms_text = ", ".join(display_rooms)
+        if extra_count > 0:
+            rooms_text = f"{rooms_text} dan {extra_count} ruangan lainnya"
+        flash(
+            f"Skor ruangan di bawah {PHOTO_REQUIRED_PCT:.0f}% wajib upload foto. "
+            f"Mohon upload foto untuk: {rooms_text}.",
+            "warning",
+        )
+        redirect_kwargs = {"school_id": school_id}
+        if assessment.get("period_id") is not None:
+            redirect_kwargs["period_id"] = assessment.get("period_id")
+        return redirect(url_for("portal.assess", **redirect_kwargs))
     
     try:
         success = submit_assessment(assessment_id_int)

@@ -1069,11 +1069,25 @@ tim Anda') %}
         position: relative;
     }
 
-    .modal-photo img {
+    .photo-viewport {
         width: 100%;
+        height: 80vh;
         max-height: 80vh;
-        object-fit: contain;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         background: var(--bg-body);
+    }
+
+    .modal-photo img {
+        display: block;
+        max-width: none;
+        max-height: none;
+        object-fit: contain;
+        transform-origin: center center;
+        transition: transform 0.15s ease;
+        will-change: transform;
     }
 
     .photo-nav-btn {
@@ -1110,6 +1124,28 @@ tim Anda') %}
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge bg-primary" id="photoModalScore">-</span>
                     <span class="badge bg-secondary" id="photoModalMeta"></span>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Zoom foto">
+                        <button type="button" class="btn btn-outline-secondary" id="photoZoomOutBtn"
+                            title="Perkecil">
+                            <i class="bi bi-zoom-out"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="photoZoomResetBtn"
+                            title="Reset zoom">100%</button>
+                        <button type="button" class="btn btn-outline-secondary" id="photoZoomInBtn"
+                            title="Perbesar">
+                            <i class="bi bi-zoom-in"></i>
+                        </button>
+                    </div>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Rotasi foto">
+                        <button type="button" class="btn btn-outline-secondary" id="photoRotateLeftBtn"
+                            title="Putar kiri">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="photoRotateRightBtn"
+                            title="Putar kanan">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
                     <button type="button" class="btn btn-outline-secondary btn-sm" id="photoPrevBtnTop">
                         <i class="bi bi-chevron-left"></i>
                     </button>
@@ -1125,7 +1161,9 @@ tim Anda') %}
                     aria-label="Foto sebelumnya">
                     <i class="bi bi-chevron-left"></i>
                 </button>
-                <img src="" alt="Foto penilaian" id="photoModalImg">
+                <div class="photo-viewport" id="photoModalViewport">
+                    <img src="" alt="Foto penilaian" id="photoModalImg">
+                </div>
                 <button type="button" class="btn btn-outline-secondary photo-nav-btn photo-nav-right" id="photoNextBtn"
                     aria-label="Foto selanjutnya">
                     <i class="bi bi-chevron-right"></i>
@@ -1151,16 +1189,73 @@ document.addEventListener('DOMContentLoaded', function () {
     var modalSubtitle = document.getElementById('photoModalSubtitle');
     var modalScore = document.getElementById('photoModalScore');
     var modalMeta = document.getElementById('photoModalMeta');
+    var viewportEl = document.getElementById('photoModalViewport');
+    var modalBodyEl = modalEl ? modalEl.querySelector('.modal-photo') : null;
     var prevBtn = document.getElementById('photoPrevBtn');
     var nextBtn = document.getElementById('photoNextBtn');
     var prevBtnTop = document.getElementById('photoPrevBtnTop');
     var nextBtnTop = document.getElementById('photoNextBtnTop');
+    var zoomInBtn = document.getElementById('photoZoomInBtn');
+    var zoomOutBtn = document.getElementById('photoZoomOutBtn');
+    var zoomResetBtn = document.getElementById('photoZoomResetBtn');
+    var rotateLeftBtn = document.getElementById('photoRotateLeftBtn');
+    var rotateRightBtn = document.getElementById('photoRotateRightBtn');
     var galleryGrid = document.getElementById('galleryGrid');
 
     if (!modalEl || !modalImg || !galleryGrid) return;
     var modal = new bootstrap.Modal(modalEl);
     var thumbs = [];
     var currentIndex = 0;
+    var zoomLevel = 1;
+    var rotationDeg = 0;
+    var baseWidth = 0;
+    var baseHeight = 0;
+
+    function clampZoom(value) {
+        return Math.min(3, Math.max(0.5, value));
+    }
+
+    function updateZoomLabel() {
+        if (!zoomResetBtn) return;
+        zoomResetBtn.textContent = Math.round(zoomLevel * 100) + '%';
+    }
+
+    function computeBaseSize() {
+        if (!modalImg || !modalImg.naturalWidth) return;
+        var container = viewportEl || modalBodyEl;
+        if (!container) return;
+        var vw = container.clientWidth;
+        var vh = container.clientHeight;
+        if (!vw || !vh) return;
+        var ratio = modalImg.naturalWidth / modalImg.naturalHeight;
+        var fitWidth = vw;
+        var fitHeight = vw / ratio;
+        if (fitHeight > vh) {
+            fitHeight = vh;
+            fitWidth = vh * ratio;
+        }
+        baseWidth = fitWidth;
+        baseHeight = fitHeight;
+    }
+
+    function applyTransform() {
+        if (!modalImg) return;
+        if (!baseWidth || !baseHeight) computeBaseSize();
+        if (baseWidth && baseHeight) {
+            modalImg.style.width = baseWidth.toFixed(1) + 'px';
+            modalImg.style.height = baseHeight.toFixed(1) + 'px';
+        }
+        modalImg.style.transform = 'scale(' + zoomLevel.toFixed(2) + ') rotate(' + rotationDeg + 'deg)';
+        updateZoomLabel();
+    }
+
+    function resetTransform() {
+        zoomLevel = 1;
+        rotationDeg = 0;
+        baseWidth = 0;
+        baseHeight = 0;
+        applyTransform();
+    }
 
     function collectThumbs() {
         var seen = new Set();
@@ -1174,7 +1269,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function fillModal(el) {
-        modalImg.src = el.dataset.photoUrl || '';
+        resetTransform();
+        var src = el.dataset.photoUrl || '';
+        modalImg.onload = function () {
+            computeBaseSize();
+            applyTransform();
+        };
+        modalImg.src = src;
+        if (modalImg.complete) {
+            computeBaseSize();
+            applyTransform();
+        }
         var school = el.dataset.school || '';
         var room = el.dataset.room || '';
         var score = el.dataset.score || '-';
@@ -1239,12 +1344,48 @@ document.addEventListener('DOMContentLoaded', function () {
     if (nextBtn) nextBtn.addEventListener('click', function (e) { e.stopPropagation(); triggerNext(); });
     if (prevBtnTop) prevBtnTop.addEventListener('click', function (e) { e.stopPropagation(); triggerPrev(); });
     if (nextBtnTop) nextBtnTop.addEventListener('click', function (e) { e.stopPropagation(); triggerNext(); });
+    if (zoomInBtn) zoomInBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        zoomLevel = clampZoom(zoomLevel + 0.2);
+        applyTransform();
+    });
+    if (zoomOutBtn) zoomOutBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        zoomLevel = clampZoom(zoomLevel - 0.2);
+        applyTransform();
+    });
+    if (zoomResetBtn) zoomResetBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        resetTransform();
+    });
+    if (rotateLeftBtn) rotateLeftBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        rotationDeg = (rotationDeg - 90) % 360;
+        if (rotationDeg == (0)) {   
+            rotationDeg = -360;
+        }
+        applyTransform();
+    });
+    if (rotateRightBtn) rotateRightBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        rotationDeg = (rotationDeg + 90) % 360;
+        if (rotationDeg == (0)) {   
+            rotationDeg = 360;
+        }
+        applyTransform();
+    });
 
     document.addEventListener('keydown', function (e) {
         if (!modalEl.classList.contains('show')) return;
         if (e.key === 'ArrowLeft') { e.preventDefault(); triggerPrev(); }
         if (e.key === 'ArrowRight') { e.preventDefault(); triggerNext(); }
         if (e.key === 'Escape') { modal.hide(); }
+    });
+
+    window.addEventListener('resize', function () {
+        if (!modalEl.classList.contains('show')) return;
+        computeBaseSize();
+        applyTransform();
     });
 
     // Inline handler fallback
