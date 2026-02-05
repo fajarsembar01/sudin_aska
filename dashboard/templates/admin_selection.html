@@ -38,7 +38,7 @@
 
         .login-container {
             width: 100%;
-            max-width: 500px;
+            max-width: 860px;
         }
 
         .login-card {
@@ -136,7 +136,7 @@
             </div>
             <div class="login-body">
                 <div class="row g-3">
-                    <div class="col-6">
+                    <div class="col-md-4 col-12">
                         <a href="{{ url_for('main.dashboard') }}" class="selection-card">
                             <div class="icon-wrapper">
                                 <i class="bi bi-graph-up-arrow"></i>
@@ -145,13 +145,22 @@
                             <p>Dashboard analitik dan pemantauan data</p>
                         </a>
                     </div>
-                    <div class="col-6">
+                    <div class="col-md-4 col-12">
                         <a href="{{ url_for('portal.home') }}" class="selection-card">
                             <div class="icon-wrapper">
                                 <i class="bi bi-window-sidebar"></i>
                             </div>
                             <h3>Portal</h3>
                             <p>Akses portal sekolah dan layanan publik</p>
+                        </a>
+                    </div>
+                    <div class="col-md-4 col-12">
+                        <a href="{{ url_for('daftar_tamu.admin_dashboard') }}" class="selection-card">
+                            <div class="icon-wrapper">
+                                <i class="bi bi-person-vcard"></i>
+                            </div>
+                            <h3>Daftar Tamu</h3>
+                            <p>Dashboard pemantauan kunjungan tamu sekolah</p>
                         </a>
                     </div>
                 </div>
