@@ -30,6 +30,7 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- Lordicon -->
     <script src="https://cdn.lordicon.com/lordicon.js"></script>
     <style>
@@ -265,6 +266,14 @@
             font-weight: bold;
         }
 
+        .aska-brand-icon {
+            width: 32px;
+            height: 32px;
+            margin-right: 8px;
+            border-radius: 6px;
+            object-fit: contain;
+        }
+
         .user-dropdown .dropdown-toggle::after {
             display: none;
             /* Hide default caret */
@@ -310,10 +319,10 @@
         }
 
         .chat-message {
-            padding: 10px 15px;
-            border-radius: 18px;
+            padding: 8px 11px;
+            border-radius: 14px;
             max-width: 75%;
-            line-height: 1.5;
+            line-height: 1.4;
             word-wrap: break-word;
             overflow-wrap: anywhere;
             white-space: pre-wrap;
@@ -354,22 +363,164 @@
             padding-left: 1.1rem;
         }
 
+        .social-card-section {
+            margin-top: 0;
+        }
+
+        .social-card-heading {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 4px;
+            color: var(--text-color-dark);
+        }
+
+        .social-card-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .social-card-item {
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            padding: 9px 10px;
+            background: rgba(255, 255, 255, 0.72);
+            display: flex;
+            gap: 8px;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .social-card-main {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+            align-items: center;
+        }
+
+        .social-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            flex-shrink: 0;
+            font-size: 1.05rem;
+        }
+
+        .social-icon.instagram {
+            background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af);
+        }
+
+        .social-icon.tiktok {
+            background: linear-gradient(135deg, #111827, #0ea5e9);
+        }
+
+        .social-icon.youtube {
+            background: linear-gradient(135deg, #ff0000, #d93025);
+        }
+
+        .social-icon.telegram {
+            background: linear-gradient(135deg, #0088cc, #36aeea);
+        }
+
+        .social-icon.wa_channel {
+            background: linear-gradient(135deg, #25d366, #128c7e);
+        }
+
+        .social-icon.default {
+            background: linear-gradient(135deg, #4a90e2, #3a7bc8);
+        }
+
+        .social-content {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .social-platform {
+            font-weight: 700;
+            font-size: 0.98rem;
+            line-height: 1.15;
+        }
+
+        .social-meta {
+            font-size: 0.84rem;
+            color: #5a6578;
+            max-width: 230px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .social-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 4px;
+            flex-shrink: 0;
+        }
+
+        .social-action-btn {
+            border: 1px solid #c9cfda;
+            border-radius: 10px;
+            padding: 5px 10px;
+            background: #fff;
+            color: #2d3748;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.82rem;
+            line-height: 1.2;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: transform 0.15s ease, opacity 0.2s ease, background-color 0.2s ease;
+        }
+
+        .social-action-btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.92;
+        }
+
+        .social-open-btn {
+            border-color: transparent;
+            background: linear-gradient(135deg, #5b9df0, #3a7bc8);
+            color: #fff;
+        }
+
+        .social-copy-btn {
+            background: #f7f8fb;
+        }
+
         .user-message {
             background-color: var(--user-msg-bg);
             color: var(--text-color-light);
             align-self: flex-end;
-            border-bottom-right-radius: 6px;
+            border-bottom-right-radius: 5px;
         }
 
         .bot-message {
             background-color: var(--bot-msg-bg);
             color: var(--text-color-dark);
             align-self: flex-start;
-            border-bottom-left-radius: 6px;
+            border-bottom-left-radius: 5px;
+            line-height: 1.35;
         }
 
         .bot-message ul {
-            padding-left: 20px;
+            margin: 0.15rem 0 0.2rem;
+            padding-left: 16px;
+        }
+
+        .bot-message p {
+            margin: 0 0 0.22rem;
+        }
+
+        .bot-message p:last-child {
+            margin-bottom: 0;
         }
 
         .chat-input {
@@ -580,10 +731,10 @@
         /* Feedback buttons */
         .message-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             align-items: center;
             justify-content: flex-end;
-            margin-top: 0;
+            margin-top: 2px;
             width: 100%;
         }
 
@@ -620,6 +771,31 @@
 
         body.dark-mode .btn-copy {
             background: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .social-card-item {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        body.dark-mode .social-meta {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        body.dark-mode .social-card-heading {
+            color: rgba(255, 255, 255, 0.96);
+        }
+
+        body.dark-mode .social-action-btn {
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        body.dark-mode .social-open-btn {
+            border-color: transparent;
+            background: linear-gradient(135deg, #6aa8f5, #4789e3);
+            color: #fff;
         }
 
         body.dark-mode .quota-toggle-btn {
@@ -666,6 +842,26 @@
         .jump-bottom.show {
             display: inline-flex;
         }
+
+        @media (max-width: 768px) {
+            .social-card-item {
+                padding: 8px;
+            }
+
+            .social-actions {
+                margin-left: 0;
+                width: auto;
+            }
+
+            .social-action-btn {
+                flex: none;
+                text-align: center;
+            }
+
+            .social-meta {
+                max-width: 150px;
+            }
+        }
     </style>
 </head>
 
@@ -689,7 +885,8 @@
             <nav class="navbar navbar-expand w-100">
                 <div class="container-fluid">
                     <div class="d-flex align-items-center">
-                        <span style="font-size: 2rem; margin-right: 8px;">🤖</span>
+                        <img src="{{ url_for('static', filename='favicon.ico') }}" alt="ASKA icon"
+                            class="aska-brand-icon">
                         <div>
                             <a class="navbar-brand text-white" href="#">ASKA</a>
                             <div class="text-white" style="font-size: 0.7rem; margin-top: -8px;">Agen AI Sekolah Kita
@@ -1162,8 +1359,227 @@
             return lines.join('\n');
         }
 
+        const SOCIAL_PLATFORM_META = {
+            instagram: { label: 'Instagram', icon: 'bi bi-instagram', className: 'instagram' },
+            tiktok: { label: 'TikTok', icon: 'bi bi-tiktok', className: 'tiktok' },
+            youtube: { label: 'YouTube', icon: 'bi bi-youtube', className: 'youtube' },
+            telegram: { label: 'Telegram', icon: 'bi bi-telegram', className: 'telegram' },
+            wa_channel: { label: 'WA Channel', icon: 'bi bi-whatsapp', className: 'wa_channel' },
+            default: { label: 'Media Sosial', icon: 'bi bi-globe', className: 'default' },
+        };
+        const SOCIAL_PLATFORM_LABEL_PATTERN = 'Instagram|TikTok|YouTube|Telegram|WA\\s*Channel|WhatsApp\\s*Channel';
+        const SOCIAL_HEADLINE_REGEX = new RegExp(`^\\s*(?:[-*]\\s*)?(?:\\*\\*)?\\s*(?:Sosial\\s+Media|Media\\s+Sosial)(?:\\*\\*)?\\s*:?\\s*(.*)$`, 'i');
+        const SOCIAL_LINE_REGEX = new RegExp(`^\\s*(?:[-*]\\s*)?(?:\\*\\*)?(${SOCIAL_PLATFORM_LABEL_PATTERN})(?:\\*\\*)?\\s*:\\s*(.+)$`, 'i');
+        const SOCIAL_INLINE_START_REGEX = new RegExp(`(${SOCIAL_PLATFORM_LABEL_PATTERN})\\s*:`, 'i');
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function normalizeSocialPlatform(labelRaw) {
+            const value = String(labelRaw || '').trim().toLowerCase();
+            if (value === 'instagram') return 'instagram';
+            if (value === 'tiktok') return 'tiktok';
+            if (value === 'youtube') return 'youtube';
+            if (value === 'telegram') return 'telegram';
+            if (value === 'wa channel' || value === 'whatsapp channel' || value === 'wa') return 'wa_channel';
+            return 'default';
+        }
+
+        function looksLikeUrl(value) {
+            return /^https?:\/\//i.test(value) || /^www\./i.test(value) || /^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(value);
+        }
+
+        function toUrl(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return '';
+            if (/^https?:\/\//i.test(raw)) return raw;
+            if (/^www\./i.test(raw) || /^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(raw)) return `https://${raw}`;
+            return '';
+        }
+
+        function deriveSocialUrl(platform, value) {
+            const raw = String(value || '').trim();
+            if (!raw) return '';
+
+            const direct = toUrl(raw);
+            if (direct) return direct;
+
+            const handle = raw.replace(/^@/, '').trim();
+            if (!handle) return '';
+
+            if (platform === 'instagram') return `https://instagram.com/${handle}`;
+            if (platform === 'tiktok') return `https://www.tiktok.com/@${handle.replace(/^@/, '')}`;
+            if (platform === 'youtube') {
+                if (raw.startsWith('@')) return `https://youtube.com/${raw}`;
+                return `https://youtube.com/${handle}`;
+            }
+            if (platform === 'telegram') return `https://t.me/${handle}`;
+            if (platform === 'wa_channel') return `https://wa.me/${handle.replace(/\D/g, '')}`;
+
+            return '';
+        }
+
+        function summarizeUrl(url, fallbackValue) {
+            if (!url) return String(fallbackValue || '');
+            try {
+                const parsed = new URL(url);
+                return `${parsed.host}${parsed.pathname}`.replace(/\/$/, '');
+            } catch (err) {
+                return String(fallbackValue || url).replace(/^https?:\/\//i, '');
+            }
+        }
+
+        function parseSocialEntries(rawValue) {
+            const raw = String(rawValue || '').trim();
+            if (!raw || raw === '-') return [];
+
+            const normalizedRaw = raw.replace(/\*\*/g, '');
+            const labelScanner = new RegExp(`(${SOCIAL_PLATFORM_LABEL_PATTERN})\\s*:`, 'ig');
+            const matches = [];
+            let cursor;
+            while ((cursor = labelScanner.exec(normalizedRaw)) !== null) {
+                matches.push({
+                    label: cursor[1],
+                    index: cursor.index,
+                    valueStart: labelScanner.lastIndex,
+                });
+            }
+            if (!matches.length) return [];
+
+            const entries = [];
+            const seen = new Set();
+
+            matches.forEach((match, index) => {
+                const valueEnd = index + 1 < matches.length ? matches[index + 1].index : normalizedRaw.length;
+                const platform = normalizeSocialPlatform(match.label);
+                let value = String(normalizedRaw.slice(match.valueStart, valueEnd) || '').trim();
+                value = value.replace(/^[\s\-:;|,]+/, '').replace(/[\s;|,]+$/, '').trim();
+                if (!value || value === '-' || value === '0') return;
+
+                const dedupeKey = `${platform}|${value.toLowerCase()}`;
+                if (seen.has(dedupeKey)) return;
+                seen.add(dedupeKey);
+
+                const meta = SOCIAL_PLATFORM_META[platform] || SOCIAL_PLATFORM_META.default;
+                const url = deriveSocialUrl(platform, value);
+                entries.push({
+                    platform,
+                    label: meta.label,
+                    icon: meta.icon,
+                    className: meta.className,
+                    value,
+                    url,
+                    compact: summarizeUrl(url, value),
+                });
+            });
+
+            return entries;
+        }
+
+        function extractSocialCardPayloads(sourceText) {
+            const payloads = [];
+            const lines = String(sourceText || '').split('\n');
+            const outputLines = [];
+
+            for (let i = 0; i < lines.length; i += 1) {
+                const line = lines[i];
+                const headlineMatch = line.match(SOCIAL_HEADLINE_REGEX);
+                if (!headlineMatch) {
+                    const inlineStart = line.search(SOCIAL_INLINE_START_REGEX);
+                    if (inlineStart !== -1) {
+                        const prefix = line.slice(0, inlineStart).trim();
+                        const inlineRaw = line.slice(inlineStart).trim();
+                        const inlineEntries = parseSocialEntries(inlineRaw);
+                        if (inlineEntries.length) {
+                            if (prefix) outputLines.push(prefix);
+                            while (outputLines.length && !outputLines[outputLines.length - 1].trim()) {
+                                outputLines.pop();
+                            }
+                            const inlineToken = `__ASKA_SOCIAL_CARDS_${payloads.length}__`;
+                            payloads.push(inlineEntries);
+                            outputLines.push(inlineToken);
+                            continue;
+                        }
+                    }
+                    outputLines.push(line);
+                    continue;
+                }
+
+                let socialRaw = String(headlineMatch[1] || '').trim();
+
+                if (!socialRaw || socialRaw === '-') {
+                    const collected = [];
+                    let j = i + 1;
+                    while (j < lines.length) {
+                        const nextLine = lines[j];
+                        const platformLine = nextLine.match(SOCIAL_LINE_REGEX);
+                        if (platformLine) {
+                            collected.push(`${platformLine[1]}: ${platformLine[2]}`);
+                            j += 1;
+                            continue;
+                        }
+                        if (!nextLine.trim()) {
+                            j += 1;
+                            continue;
+                        }
+                        break;
+                    }
+                    if (collected.length > 0) {
+                        socialRaw = collected.join('; ');
+                        i = j - 1;
+                    }
+                }
+
+                const entries = parseSocialEntries(socialRaw);
+                if (!entries.length) {
+                    outputLines.push(line);
+                    continue;
+                }
+
+                while (outputLines.length && !outputLines[outputLines.length - 1].trim()) {
+                    outputLines.pop();
+                }
+                const token = `__ASKA_SOCIAL_CARDS_${payloads.length}__`;
+                payloads.push(entries);
+                outputLines.push(token);
+            }
+
+            return { text: outputLines.join('\n'), payloads };
+        }
+
+        function buildSocialCardsHtml(entries, options = {}) {
+            const showHeading = options.showHeading !== false;
+            if (!entries || entries.length === 0) return '';
+            const cards = entries.map((entry) => {
+                const safeLabel = escapeHtml(entry.label);
+                const safeUrl = escapeHtml(entry.url || '');
+                const copyValue = escapeHtml(entry.url || entry.value);
+                const openButton = entry.url
+                    ? `<a class="social-action-btn social-open-btn" href="${safeUrl}" target="_blank" rel="noopener">Buka<\/a>`
+                    : '';
+
+                return `<div class="social-card-item"><div class="social-card-main"><span class="social-icon ${entry.className}"><i class="${entry.icon}" aria-hidden="true"><\/i><\/span><div class="social-content"><span class="social-platform">${safeLabel}<\/span><\/div><\/div><div class="social-actions">${openButton}<button type="button" class="social-action-btn social-copy-btn" data-copy="${copyValue}">Salin<\/button><\/div><\/div>`;
+            }).join('');
+
+            if (showHeading) {
+                return `<section class="social-card-section" role="group" aria-label="Daftar media sosial"><div class="social-card-heading">Media Sosial<\/div><div class="social-card-group">${cards}<\/div><\/section>`;
+            }
+
+            return `<div class="social-card-section"><div class="social-card-group">${cards}<\/div><\/div>`;
+        }
+
         function renderBotHtml(text) {
-            let html = String(text || '');
+            const extracted = extractSocialCardPayloads(text);
+            let html = extracted.text;
+            html = html.replace(/(?:\n\s*){2,}(__ASKA_SOCIAL_CARDS_\d+__)/g, '\n$1');
+            html = html.replace(/(__ASKA_SOCIAL_CARDS_\d+__)(?:\n\s*){2,}/g, '$1\n');
+            html = html.replace(/\n[ \t]*\n[ \t]*\n+/g, '\n\n');
             // Normalize newlines and remove common leading indentation
             html = html.replace(/\r\n/g, '\n');
             (function () {
@@ -1186,6 +1602,16 @@
                 const url = m.startsWith('http') ? m : `http://${m}`;
                 return `<a href="${url}" target="_blank" rel="noopener">${m}<\/a>`;
             });
+            let socialHeadingRendered = false;
+            extracted.payloads.forEach((entries, idx) => {
+                const token = `__ASKA_SOCIAL_CARDS_${idx}__`;
+                html = html.replace(token, buildSocialCardsHtml(entries, { showHeading: !socialHeadingRendered }));
+                if (entries && entries.length) {
+                    socialHeadingRendered = true;
+                }
+            });
+            html = html.replace(/\s*<section class="social-card-section"/g, '<section class="social-card-section"');
+            html = html.replace(/<\/section>\s*/g, '<\/section>');
             return html;
         }
 
@@ -1569,19 +1995,22 @@
             }
         }
 
+        function copyToClipboard(text) {
+            if (!text) return Promise.reject(new Error('empty'));
+            return navigator.clipboard.writeText(text);
+        }
+
         function copyMessage(messageEl) {
             const text = messageEl.innerText || '';
-            try {
-                navigator.clipboard.writeText(text);
+            copyToClipboard(text).then(() => {
                 const old = messageEl.querySelector('.btn-copy');
                 if (old) {
-                    const prev = old.textContent;
                     old.textContent = 'Tersalin';
                     setTimeout(() => { old.textContent = 'Salin'; }, 1000);
                 }
-            } catch (err) {
+            }).catch(() => {
                 // ignore
-            }
+            });
         }
 
         function normalizeExistingUserMessages() {
@@ -1660,6 +2089,18 @@
         chatBox.addEventListener('dblclick', (e) => {
             const target = e.target.closest('.bot-message');
             if (target) copyMessage(target);
+        });
+
+        chatBox.addEventListener('click', (e) => {
+            const btn = e.target.closest('.social-copy-btn');
+            if (!btn) return;
+            const copyValue = btn.getAttribute('data-copy') || '';
+            copyToClipboard(copyValue).then(() => {
+                btn.textContent = 'Tersalin';
+                setTimeout(() => { btn.textContent = 'Salin'; }, 1000);
+            }).catch(() => {
+                // ignore
+            });
         });
 
         // Scroll to the bottom on initial load

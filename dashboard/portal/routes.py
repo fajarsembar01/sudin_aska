@@ -124,6 +124,7 @@ from .queries import (
     get_portal_kontak_by_wilayah,
     delete_portal_kontak,
 )
+from .school_directory_export import export_detail_sekolah_markdown
 from dashboard.queries import (
     create_team_member_request,
     list_team_member_requests,
@@ -3047,6 +3048,23 @@ def admin_setup() -> Response:
         kelurahan_list=kelurahan_list,
         activity_logs=activity_logs,
     )
+
+
+@portal_bp.route("/admin/setup/export-detail-sekolah", methods=["POST"])
+@role_required("admin")
+def export_detail_sekolah_markdown_route() -> Response:
+    """Export rekap sekolah negeri (non MI/MTS/MAN) ke kecerdasan/Detail_Sekolah.md."""
+    output_path = Path(__file__).resolve().parents[2] / "kecerdasan" / "Detail_Sekolah.md"
+    try:
+        total = export_detail_sekolah_markdown(output_path)
+        flash(
+            f"Rekap berhasil diperbarui: {output_path.name} ({total} sekolah).",
+            "success",
+        )
+    except Exception as exc:
+        current_app.logger.exception("Gagal mengekspor Detail_Sekolah.md: %s", exc)
+        flash(f"Gagal memperbarui Detail_Sekolah.md: {exc}", "danger")
+    return redirect(url_for("portal.admin_setup"))
 
 
 @portal_bp.route("/admin/activity-logs")

@@ -53,6 +53,13 @@ def create_app() -> Flask:
         client_kwargs={"scope": "openid email profile"},
     )
 
+    @app.context_processor
+    def inject_optional_links():
+        register_school_url = None
+        if "portal.register_school" in app.view_functions:
+            register_school_url = url_for("portal.register_school")
+        return {"register_school_url": register_school_url}
+
     def _serialize_quota_payload(quota_state: dict | None) -> dict:
         quota_state = quota_state or {}
         reset_at = quota_state.get("quota_reset_at")
