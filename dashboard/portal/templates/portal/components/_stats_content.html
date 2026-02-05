@@ -1069,6 +1069,22 @@ tim Anda') %}
         position: relative;
     }
 
+    .photo-modal-header {
+        --photo-modal-pad: 1rem;
+        position: relative;
+        padding: var(--photo-modal-pad);
+        padding-right: calc(var(--photo-modal-pad) + 2.5rem);
+    }
+
+    .photo-modal-header .photo-modal-close {
+        position: absolute;
+        top: var(--photo-modal-pad);
+        right: var(--photo-modal-pad);
+        margin: 0;
+        padding: 0.5rem;
+        z-index: 5;
+    }
+
     .photo-viewport {
         width: 100%;
         height: 80vh;
@@ -1078,6 +1094,17 @@ tim Anda') %}
         align-items: center;
         justify-content: center;
         background: var(--bg-body);
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+    }
+
+    .photo-viewport.is-grabbing {
+        cursor: grabbing;
+    }
+
+    .photo-viewport.is-grabbing img {
+        transition: none;
     }
 
     .modal-photo img {
@@ -1111,49 +1138,76 @@ tim Anda') %}
     .photo-nav-right {
         right: 12px;
     }
+
+    .photo-zoom-input {
+        width: 72px;
+        min-width: 72px;
+        text-align: center;
+        padding-left: 0.35rem;
+        padding-right: 0.35rem;
+    }
 </style>
 
 <div class="modal fade" id="photoModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <div class="d-flex flex-column">
+            <div class="modal-header photo-modal-header d-flex flex-column align-items-start row-gap: 20px">
+                <div class="d-flex">
                     <h5 class="modal-title" id="photoModalTitle">Foto</h5>
-                    <small id="photoModalSubtitle"></small>
+                </div>
+                <div>
+                    <span id="photoModalSubtitle" class="text-primary">Sekolah</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge bg-primary" id="photoModalScore">-</span>
                     <span class="badge bg-secondary" id="photoModalMeta"></span>
-                    <div class="btn-group btn-group-sm" role="group" aria-label="Zoom foto">
+                    <div class="input-group input-group-sm" role="group" aria-label="Zoom foto">
                         <button type="button" class="btn btn-outline-secondary" id="photoZoomOutBtn"
                             title="Perkecil">
                             <i class="bi bi-zoom-out"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-secondary" id="photoZoomResetBtn"
-                            title="Reset zoom">100%</button>
+                        <input type="text" class="form-control photo-zoom-input" id="photoZoomInput" value="100%"
+                            list="photoZoomOptions" inputmode="numeric" autocomplete="off"
+                            aria-label="Zoom (%)" title="Ketik zoom (%) lalu tekan Enter">
                         <button type="button" class="btn btn-outline-secondary" id="photoZoomInBtn"
                             title="Perbesar">
                             <i class="bi bi-zoom-in"></i>
                         </button>
                     </div>
+                    <datalist id="photoZoomOptions">
+                        <option value="50%"></option>
+                        <option value="75%"></option>
+                        <option value="100%"></option>
+                        <option value="125%"></option>
+                        <option value="150%"></option>
+                        <option value="175%"></option>
+                        <option value="200%"></option>
+                        <option value="225%"></option>
+                        <option value="250%"></option>
+                        <option value="275%"></option>
+                        <option value="300%"></option>
+                    </datalist>
                     <div class="btn-group btn-group-sm" role="group" aria-label="Rotasi foto">
                         <button type="button" class="btn btn-outline-secondary" id="photoRotateLeftBtn"
-                            title="Putar kiri">
+                            title="Putar ke kiri">
                             <i class="bi bi-arrow-counterclockwise"></i>
                         </button>
                         <button type="button" class="btn btn-outline-secondary" id="photoRotateRightBtn"
-                            title="Putar kanan">
+                            title="Putar ke kanan">
                             <i class="bi bi-arrow-clockwise"></i>
                         </button>
                     </div>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="photoPrevBtnTop">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="photoPrevBtnTop"
+                            title="Foto Sebelumnya">
                         <i class="bi bi-chevron-left"></i>
                     </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="photoNextBtnTop">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="photoNextBtnTop"
+                            title="Foto Selanjutnya">
                         <i class="bi bi-chevron-right"></i>
                     </button>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                <button type="button" class="btn-close photo-modal-close" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
             </div>
             <div class="modal-body modal-photo p-0 d-flex align-items-center justify-content-center"
                 style="min-height: 60vh; background: var(--bg-body); position: relative;">
@@ -1197,7 +1251,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var nextBtnTop = document.getElementById('photoNextBtnTop');
     var zoomInBtn = document.getElementById('photoZoomInBtn');
     var zoomOutBtn = document.getElementById('photoZoomOutBtn');
-    var zoomResetBtn = document.getElementById('photoZoomResetBtn');
+    var zoomInput = document.getElementById('photoZoomInput');
     var rotateLeftBtn = document.getElementById('photoRotateLeftBtn');
     var rotateRightBtn = document.getElementById('photoRotateRightBtn');
     var galleryGrid = document.getElementById('galleryGrid');
@@ -1210,14 +1264,25 @@ document.addEventListener('DOMContentLoaded', function () {
     var rotationDeg = 0;
     var baseWidth = 0;
     var baseHeight = 0;
+    var panX = 0;
+    var panY = 0;
+    var isDragging = false;
+    var dragStartX = 0;
+    var dragStartY = 0;
+    var panStartX = 0;
+    var panStartY = 0;
+
+    modalImg.setAttribute('draggable', 'false');
+    modalImg.addEventListener('dragstart', function (e) { e.preventDefault(); });
 
     function clampZoom(value) {
         return Math.min(3, Math.max(0.5, value));
     }
 
-    function updateZoomLabel() {
-        if (!zoomResetBtn) return;
-        zoomResetBtn.textContent = Math.round(zoomLevel * 100) + '%';
+    function updateZoomLabel(force) {
+        if (!zoomInput) return;
+        if (!force && document.activeElement === zoomInput) return;
+        zoomInput.value = Math.round(zoomLevel * 100) + '%';
     }
 
     function computeBaseSize() {
@@ -1238,6 +1303,19 @@ document.addEventListener('DOMContentLoaded', function () {
         baseHeight = fitHeight;
     }
 
+    function clampPan() {
+        if (!viewportEl || !baseWidth || !baseHeight) return;
+        var vw = viewportEl.clientWidth;
+        var vh = viewportEl.clientHeight;
+        if (!vw || !vh) return;
+        var scaledW = baseWidth * zoomLevel;
+        var scaledH = baseHeight * zoomLevel;
+        var maxX = Math.max(0, (scaledW - vw) / 2);
+        var maxY = Math.max(0, (scaledH - vh) / 2);
+        panX = Math.min(maxX, Math.max(-maxX, panX));
+        panY = Math.min(maxY, Math.max(-maxY, panY));
+    }
+
     function applyTransform() {
         if (!modalImg) return;
         if (!baseWidth || !baseHeight) computeBaseSize();
@@ -1245,7 +1323,9 @@ document.addEventListener('DOMContentLoaded', function () {
             modalImg.style.width = baseWidth.toFixed(1) + 'px';
             modalImg.style.height = baseHeight.toFixed(1) + 'px';
         }
-        modalImg.style.transform = 'scale(' + zoomLevel.toFixed(2) + ') rotate(' + rotationDeg + 'deg)';
+        clampPan();
+        modalImg.style.transform = 'translate(' + panX.toFixed(1) + 'px, ' + panY.toFixed(1) + 'px) scale(' +
+            zoomLevel.toFixed(2) + ') rotate(' + rotationDeg + 'deg)';
         updateZoomLabel();
     }
 
@@ -1254,7 +1334,75 @@ document.addEventListener('DOMContentLoaded', function () {
         rotationDeg = 0;
         baseWidth = 0;
         baseHeight = 0;
+        panX = 0;
+        panY = 0;
         applyTransform();
+    }
+
+    function parseZoomInput(raw) {
+        if (raw === null || raw === undefined) return null;
+        var text = String(raw).trim();
+        if (!text) return null;
+        var cleaned = text.replace(/[^0-9.]/g, '');
+        if (!cleaned) return null;
+        var num = parseFloat(cleaned);
+        if (!isFinite(num)) return null;
+        if (num <= 3.5) {
+            return clampZoom(num);
+        }
+        return clampZoom(num / 100);
+    }
+
+    function applyZoomInput(raw) {
+        var parsed = parseZoomInput(raw);
+        if (parsed === null) {
+            updateZoomLabel(true);
+            return;
+        }
+        zoomLevel = parsed;
+        applyTransform();
+        updateZoomLabel(true);
+    }
+
+    function getPointerPosition(e) {
+        if (e.touches && e.touches.length) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
+    }
+
+    function startDrag(e) {
+        if (!viewportEl) return;
+        if (e.type === 'mousedown' && e.button !== 0) return;
+        var pos = getPointerPosition(e);
+        isDragging = true;
+        dragStartX = pos.x;
+        dragStartY = pos.y;
+        panStartX = panX;
+        panStartY = panY;
+        viewportEl.classList.add('is-grabbing');
+        if (viewportEl.setPointerCapture && e.pointerId !== undefined) {
+            viewportEl.setPointerCapture(e.pointerId);
+        }
+        e.preventDefault();
+    }
+
+    function dragMove(e) {
+        if (!isDragging) return;
+        var pos = getPointerPosition(e);
+        panX = panStartX + (pos.x - dragStartX);
+        panY = panStartY + (pos.y - dragStartY);
+        applyTransform();
+        e.preventDefault();
+    }
+
+    function endDrag(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        if (viewportEl) viewportEl.classList.remove('is-grabbing');
+        if (viewportEl && viewportEl.releasePointerCapture && e && e.pointerId !== undefined) {
+            viewportEl.releasePointerCapture(e.pointerId);
+        }
     }
 
     function collectThumbs() {
@@ -1290,13 +1438,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         modalTitle.textContent = room || 'Foto';
         modalSubtitle.innerHTML = assessmentId
-            ? `<a href="/portal/assessment/${assessmentId}" class="link-light text-decoration-underline">${school || 'Sekolah'}</a>`
+            ? `<a href="/portal/assessment/${assessmentId}" class="link-primary text-decoration-underline">${school || 'Sekolah'}</a>`
             : (school || '');
 
         var badge = el.querySelector('.gallery-badge-score');
         modalScore.className = 'badge ' + (badge ? badge.classList.value.replace('gallery-badge-score', '').trim() : 'bg-primary');
         modalScore.textContent = score;
-
         var metaText = '';
         if (date) {
             var d = new Date(date);
@@ -1324,6 +1471,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (currentIndex < 0) currentIndex = 0;
         show(currentIndex);
     }
+
+    modalEl.addEventListener('shown.bs.modal', function () {
+        computeBaseSize();
+        applyTransform();
+    });
 
     galleryGrid.addEventListener('click', function (e) {
         var thumb = e.target.closest('.gallery-thumb');
@@ -1354,24 +1506,42 @@ document.addEventListener('DOMContentLoaded', function () {
         zoomLevel = clampZoom(zoomLevel - 0.2);
         applyTransform();
     });
-    if (zoomResetBtn) zoomResetBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        resetTransform();
-    });
+    if (zoomInput) {
+        zoomInput.addEventListener('focus', function () {
+            zoomInput.select();
+        });
+        zoomInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                applyZoomInput(zoomInput.value);
+                zoomInput.blur();
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                resetTransform();
+                zoomInput.blur();
+            }
+        });
+        zoomInput.addEventListener('blur', function () {
+            applyZoomInput(zoomInput.value);
+        });
+    }
+
+    if (viewportEl) {
+        viewportEl.addEventListener('pointerdown', startDrag);
+        viewportEl.addEventListener('pointermove', dragMove);
+        viewportEl.addEventListener('pointerup', endDrag);
+        viewportEl.addEventListener('pointercancel', endDrag);
+        viewportEl.addEventListener('pointerleave', endDrag);
+    }
     if (rotateLeftBtn) rotateLeftBtn.addEventListener('click', function (e) {
         e.stopPropagation();
-        rotationDeg = (rotationDeg - 90) % 360;
-        if (rotationDeg == (0)) {   
-            rotationDeg = -360;
-        }
+        rotationDeg -= 90;
         applyTransform();
     });
     if (rotateRightBtn) rotateRightBtn.addEventListener('click', function (e) {
         e.stopPropagation();
-        rotationDeg = (rotationDeg + 90) % 360;
-        if (rotationDeg == (0)) {   
-            rotationDeg = 360;
-        }
+        rotationDeg += 90;
         applyTransform();
     });
 
