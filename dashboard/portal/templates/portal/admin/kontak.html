@@ -93,10 +93,15 @@
                             <label class="form-label">Wilayah</label>
                             <select class="form-select" name="wilayah" id="portalKontakWilayah" required>
                                 <option value="" disabled selected>Pilih wilayah</option>
-                                <option value="Cilincing">Cilincing</option>
-                                <option value="Kelapa Gading">Kelapa Gading</option>
-                                <option value="Koja">Koja</option>
+                                {% for kecamatan in kecamatan_list or [] %}
+                                {% if kecamatan.name %}
+                                <option value="{{ kecamatan.name }}">{{ kecamatan.name }}</option>
+                                {% endif %}
+                                {% endfor %}
                             </select>
+                            {% if not kecamatan_list %}
+                            <small class="text-muted">Data kecamatan belum tersedia.</small>
+                            {% endif %}
                         </div>
 
                         <div class="border rounded-3 p-3 mb-3">
