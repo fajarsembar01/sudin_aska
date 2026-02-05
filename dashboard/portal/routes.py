@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote_plus
+import math
 import json
 import uuid
 import re
@@ -45,6 +46,7 @@ from .queries import (
     create_assessment,
     get_assessment_by_id,
     get_assessment_scores,
+    delete_assessment_scores,
     save_assessment_score,
     save_assessment_photo,
     save_room_details,
@@ -971,6 +973,43 @@ def schools() -> Response:
     )
 
 
+def _filter_assessment_rooms(rooms: list[dict]) -> list[dict]:
+    """Filter rooms to hide base kelas when variant rooms exist."""
+    def _grade_and_variant(name: str) -> tuple[int | None, str | None]:
+        match = re.search(r"\bKelas\s+(\d+)(\s*[A-Za-z]+)?$", name or "", flags=re.IGNORECASE)
+        if not match:
+            return None, None
+        try:
+            grade = int(match.group(1))
+        except (TypeError, ValueError):
+            return None, None
+        variant = (match.group(2) or "").strip().upper() or None
+        return grade, variant
+
+    rooms_by_grade: dict[int, list[dict]] = {}
+    for room in rooms:
+        grade, variant = _grade_and_variant(room.get("room_name") or "")
+        if grade is None:
+            continue
+        rooms_by_grade.setdefault(grade, []).append({"room": room, "variant": variant})
+
+    filtered_rooms: list[dict] = []
+    for rlist in rooms_by_grade.values():
+        has_variant = any(item.get("variant") for item in rlist)
+        for item in rlist:
+            if has_variant and not item.get("variant"):
+                continue
+            filtered_rooms.append(dict(item["room"]))
+
+    # Include non-classroom rooms (no grade match)
+    for room in rooms:
+        grade, _ = _grade_and_variant(room.get("room_name") or "")
+        if grade is None:
+            filtered_rooms.append(room)
+
+    return filtered_rooms
+
+
 @portal_bp.route("/assess/<int:school_id>")
 @_portal_access_required
 def assess(school_id: int) -> Response:
@@ -1019,6 +1058,11 @@ def assess(school_id: int) -> Response:
                 period_id=period_id_arg,
                 creator_email=user["email"],
             )
+            if assessment.get("_is_new"):
+                try:
+                    delete_assessment_scores(assessment["id"])
+                except Exception:
+                    current_app.logger.exception("Failed to clear auto-filled scores")
         except Exception as e:
             current_app.logger.exception("Error creating assessment")
             flash("Gagal membuat penilaian baru.", "danger")
@@ -1038,41 +1082,7 @@ def assess(school_id: int) -> Response:
         flash("Sekolah belum memiliki ruangan yang dikonfigurasi.", "warning")
         return redirect(url_for("portal.schools"))
 
-    def _grade_and_variant(name: str) -> tuple[int | None, str | None]:
-        m = re.search(r"\\bKelas\\s+(\\d+)(\\s*[A-Za-z]+)?$", name or "", flags=re.IGNORECASE)
-        if not m:
-            return None, None
-        try:
-            grade = int(m.group(1))
-        except (TypeError, ValueError):
-            return None, None
-        variant = (m.group(2) or "").strip().upper() or None
-        return grade, variant
-
-    # Jika ada kelas paralel (variant) untuk sebuah jenjang, sembunyikan base class-nya
-    rooms_by_grade: dict[int, list[dict]] = {}
-    for r in rooms:
-        grade, variant = _grade_and_variant(r.get("room_name") or "")
-        if grade is None:
-            continue
-        rooms_by_grade.setdefault(grade, []).append({"room": r, "variant": variant})
-
-    filtered_rooms = []
-    for grade, rlist in rooms_by_grade.items():
-        has_variant = any(item.get("variant") for item in rlist)
-        for item in rlist:
-            if has_variant and not item.get("variant"):
-                continue  # skip base when parallels exist
-            room_copy = dict(item["room"])
-            filtered_rooms.append(room_copy)
-
-    # Include non-classroom rooms (no grade match)
-    for r in rooms:
-        grade, _ = _grade_and_variant(r.get("room_name") or "")
-        if grade is None:
-            filtered_rooms.append(r)
-
-    rooms = filtered_rooms
+    rooms = _filter_assessment_rooms(rooms)
     total_aspects = sum(len(r.get("aspects", [])) for r in rooms)
     
     # Periode penilaian untuk badge UI
@@ -1094,6 +1104,12 @@ def assess(school_id: int) -> Response:
         filename = Path(photo["photo_path"]).name if photo.get("photo_path") else None
         photo["url"] = url_for("portal.uploaded_file", filename=filename) if filename else None
         photos_map[room_id] = photo
+
+    room_ids = {r.get("school_room_id") for r in rooms if r.get("school_room_id")}
+    photo_room_ids = sorted({p.get("school_room_id") for p in photos_list if p.get("school_room_id") in room_ids})
+    photo_uploaded_count = len(photo_room_ids)
+    photo_min_required = math.ceil(len(rooms) * 0.2) if rooms else 0
+    photo_max_allowed = math.ceil(len(rooms) * 0.5) if rooms else 0
     
     # Get room notes
     room_notes = get_assessment_room_details(assessment_id)
@@ -1108,6 +1124,10 @@ def assess(school_id: int) -> Response:
         rooms=rooms,
         scores_map=scores_map,
         photos_map=photos_map,
+        photo_room_ids=photo_room_ids,
+        photo_uploaded_count=photo_uploaded_count,
+        photo_min_required=photo_min_required,
+        photo_max_allowed=photo_max_allowed,
         room_notes=room_notes,
         total_aspects=total_aspects,
         assessment_period=assessment_period,
@@ -1235,6 +1255,30 @@ def upload_photo(school_id: int) -> Response:
 
     if assessment["staff_id"] != user["id"] and user["role"] != "admin":
         return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    try:
+        rooms = list_school_rooms(school_id)
+        rooms = _filter_assessment_rooms(rooms)
+        total_rooms = len(rooms)
+        max_photos = math.ceil(total_rooms * 0.5) if total_rooms else 0
+        if max_photos:
+            room_ids = {r.get("school_room_id") for r in rooms if r.get("school_room_id")}
+            photos_list = get_assessment_photos(assessment_id)
+            photo_room_ids = {
+                p.get("school_room_id")
+                for p in photos_list
+                if p.get("school_room_id") in room_ids
+            }
+            if len(photo_room_ids) >= max_photos and school_room_id not in photo_room_ids:
+                return jsonify(
+                    {
+                        "success": False,
+                        "message": "Jumlah upload foto sudah mencapai maksimal. Jika ingin menambahkan foto lagi, tolong hapus yang lain terlebih dahulu.",
+                    }
+                ), 400
+    except Exception:
+        current_app.logger.exception("Error validating max photo requirement")
+        return jsonify({"success": False, "message": "Gagal memvalidasi batas foto."}), 500
     
     if "photo" not in request.files:
         return jsonify({"success": False, "message": "No photo provided"}), 400
@@ -1324,25 +1368,55 @@ def submit(school_id: int) -> Response:
             flash("Penugasan ke sekolah ini sudah tidak aktif. Hubungi admin.", "danger")
             return redirect(url_for("portal.staff_assignments"))
 
-    missing_photos = _get_low_score_rooms_missing_photos(assessment_id_int, school_id, PHOTO_REQUIRED_PCT)
-    if missing_photos:
-        display_rooms = [
-            f"{room['room_name']} ({room['room_pct']:.1f}%)"
-            for room in missing_photos[:5]
-        ]
-        extra_count = len(missing_photos) - 5
-        rooms_text = ", ".join(display_rooms)
-        if extra_count > 0:
-            rooms_text = f"{rooms_text} dan {extra_count} ruangan lainnya"
-        flash(
-            f"Skor ruangan di bawah {PHOTO_REQUIRED_PCT:.0f}% wajib upload foto. "
-            f"Mohon upload foto untuk: {rooms_text}.",
-            "warning",
-        )
-        redirect_kwargs = {"school_id": school_id}
-        if assessment.get("period_id") is not None:
-            redirect_kwargs["period_id"] = assessment.get("period_id")
-        return redirect(url_for("portal.assess", **redirect_kwargs))
+    try:
+        rooms = list_school_rooms(school_id)
+        rooms = _filter_assessment_rooms(rooms)
+        total_rooms = len(rooms)
+        min_photos = math.ceil(total_rooms * 0.2) if total_rooms else 0
+        missing_messages = []
+        if min_photos:
+            room_ids = {r.get("school_room_id") for r in rooms if r.get("school_room_id")}
+            photos_list = get_assessment_photos(assessment_id_int)
+            photo_room_count = len(
+                {
+                    p.get("school_room_id")
+                    for p in photos_list
+                    if p.get("school_room_id") in room_ids
+                }
+            )
+            if photo_room_count < min_photos:
+                missing_messages.append(
+                    f"Minimal upload foto ruangan {min_photos} dari {total_rooms} ruangan (20%). "
+                    f"Saat ini {photo_room_count}."
+                )
+
+        existing_scores = get_assessment_scores(assessment_id_int)
+        scores_map = {
+            (s["school_room_id"], s["aspect_id"]): s.get("score")
+            for s in existing_scores
+        }
+        for room in rooms:
+            room_id = room.get("school_room_id")
+            aspects = room.get("aspects") or []
+            if not room_id or not aspects:
+                continue
+            has_non_zero = False
+            for aspect in aspects:
+                score_val = scores_map.get((room_id, aspect.get("id"))) or 0
+                if score_val > 0:
+                    has_non_zero = True
+                    break
+            if not has_non_zero:
+                missing_messages.append("Terdapat ruangan yang masih belum dinilai.")
+                break
+
+        if missing_messages:
+            flash(" ".join(missing_messages), "warning")
+            return redirect(url_for("portal.assess", school_id=school_id))
+    except Exception:
+        current_app.logger.exception("Error validating submission requirements")
+        flash("Gagal memvalidasi persyaratan submit. Coba lagi.", "danger")
+        return redirect(url_for("portal.assess", school_id=school_id))
     
     try:
         success = submit_assessment(assessment_id_int)

@@ -863,6 +863,12 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_dashboard' %}active{% endif %}"
+                                    href="{{ url_for('daftar_tamu.admin_dashboard') }}">
+                                    <i class="bi bi-person-vcard me-2"></i>Daftar Tamu
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if request.endpoint == 'portal.portal_kontak_wilayah' %}active{% endif %}"
                                     href="{{ url_for('portal.portal_kontak_wilayah') }}">
                                     <i class="bi bi-person-lines-fill me-2"></i>Kontak Wilayah

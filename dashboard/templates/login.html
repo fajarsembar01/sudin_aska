@@ -237,13 +237,13 @@
                 <form method="post" class="needs-validation" novalidate>
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
-                        <label class="form-label" for="email">Email</label>
+                        <label class="form-label" for="email">Email <span class="text-danger">*</span></label>
                         <input type="email" class="form-control" id="email" name="email" value="{{ email or '' }}"
                             required autofocus>
                         <div class="invalid-feedback">Masukkan email yang valid.</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label" for="password">Password</label>
+                        <label class="form-label" for="password">Password <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="password" name="password" required>
                             <button type="button" class="btn btn-outline-secondary" id="togglePasswordButton"
@@ -321,20 +321,24 @@
                     <p class="mb-3">Butuh bantuan? Silakan hubungi admin wilayah berikut:</p>
                     <div class="list-group">
                         {% if coordinator_contacts %}
-                        {% for c in coordinator_contacts %}
-                        <div class="list-group-item d-flex justify-content-between align-items-start">
-                            <div>
-                                <div class="fw-semibold">{{ c.area }}</div>
-                                <div class="text-muted small">{{ c.name }} • {{ c.phone }}</div>
+                        {% for group in coordinator_contacts|groupby('area') %}
+                        <div class="list-group-item">
+                            <div class="fw-semibold">{{ group.grouper }}</div>
+                            <div class="mt-2 d-flex flex-column gap-2">
+                                {% for c in group.list %}
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="text-muted small">{{ c.name }} • {{ c.phone }}</div>
+                                    {% if c.is_active %}
+                                    <a class="btn btn-success btn-sm d-inline-flex align-items-center gap-2"
+                                        href="{{ c.wa_link }}" target="_blank" rel="noopener">
+                                        <i class="bi bi-whatsapp"></i><span>WhatsApp</span>
+                                    </a>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Inaktif</span>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
                             </div>
-                            {% if c.is_active %}
-                            <a class="btn btn-success btn-sm d-inline-flex align-items-center gap-2"
-                                href="{{ c.wa_link }}" target="_blank" rel="noopener">
-                                <i class="bi bi-whatsapp"></i><span>WhatsApp</span>
-                            </a>
-                            {% else %}
-                            <span class="badge bg-secondary">Inaktif</span>
-                            {% endif %}
                         </div>
                         {% endfor %}
                         {% else %}
