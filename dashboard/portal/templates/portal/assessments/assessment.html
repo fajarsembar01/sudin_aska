@@ -78,7 +78,8 @@
                 {% if room_pct <= 25 %} {% set room_score_class="score-badge-red" %} {% elif room_pct <=50 %} {% set
                     room_score_class="score-badge-orange" %} {% elif room_pct <=75 %} {% set
                     room_score_class="score-badge-yellow" %} {% else %} {% set room_score_class="score-badge-green" %}
-                    {% endif %} <div class="room-item shadow-sm" data-room-name="{{ room.room_name|lower }}">
+                    {% endif %} <div class="room-item shadow-sm" data-room-name="{{ room.room_name|lower }}"
+                    data-school-room-id="{{ room.school_room_id }}">
                     <div class="room-header collapsed" data-bs-toggle="collapse"
                         data-bs-target="#room{{ room.school_room_id }}" aria-expanded="false">
                         <div class="d-flex align-items-center gap-2">
@@ -135,6 +136,9 @@
                                 <div class="photo-capture-btn" onclick="capturePhoto({{ room.school_room_id }})">
                                     <i class="bi bi-camera"></i>
                                     <span>Ambil Foto Ruangan</span>
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    Wajib upload foto jika skor ruangan &lt; {{ photo_required_threshold|default(90) }}%.
                                 </div>
                                 <div id="photoPreview{{ room.school_room_id }}" class="mt-2">
                                     {% if photos_map.get(room.school_room_id) %}
@@ -203,7 +207,8 @@
                         <span>Simpan Draft</span>
                     </button>
                 </form>
-                <form action="{{ url_for('portal.submit', school_id=school.id) }}" method="POST">
+                <form action="{{ url_for('portal.submit', school_id=school.id) }}" method="POST"
+                    id="submitAssessmentForm">
                     <input type="hidden" name="assessment_id" value="{{ assessment.id }}">
                     <button type="submit"
                         class="btn btn-success w-100 d-inline-flex align-items-center justify-content-center gap-2">
@@ -468,6 +473,7 @@
     var cameraStream = null;
     var useFrontCamera = false;
     var noteTimeout = null;
+    var photoRequiredThreshold = {{ photo_required_threshold|default(90) }};
 
     // Initial Score Calculation
     calculateOverallScore();
@@ -657,6 +663,46 @@
         } else {
             scoreDisplay.classList.add('score-badge-green');
         }
+    }
+
+    function getRoomScorePct(roomEl) {
+        var total = 0;
+        var count = 0;
+        roomEl.querySelectorAll('.score-group').forEach(function (g) {
+            var selected = g.querySelector('.score-btn.selected');
+            var val = selected ? parseInt(selected.dataset.score, 10) : 3;
+            if (isNaN(val)) val = 3;
+            total += val;
+            count += 1;
+        });
+        if (count === 0) return null;
+        return (total / count) / 3 * 100;
+    }
+
+    function roomHasPhoto(roomId) {
+        var preview = document.getElementById('photoPreview' + roomId);
+        if (!preview) return false;
+        return !!preview.querySelector('img');
+    }
+
+    function findRoomsMissingRequiredPhotos() {
+        var missing = [];
+        document.querySelectorAll('.room-item').forEach(function (roomEl) {
+            var roomId = roomEl.dataset.schoolRoomId;
+            if (!roomId) return;
+            var pct = getRoomScorePct(roomEl);
+            if (pct === null) return;
+            if (pct < photoRequiredThreshold && !roomHasPhoto(roomId)) {
+                var nameEl = roomEl.querySelector('.room-header h5');
+                var roomName = nameEl ? nameEl.textContent.trim() : (roomEl.dataset.roomName || 'Ruangan');
+                missing.push({
+                    roomId: roomId,
+                    roomName: roomName,
+                    roomPct: pct
+                });
+            }
+        });
+        return missing;
     }
 
     function deletePhoto(photoId, roomId) {
@@ -886,6 +932,36 @@
         // Close modal
         bootstrap.Modal.getInstance(document.getElementById('cameraModal')).hide();
     }
+
+    // Submit validation: require photo if room score < threshold
+    (function () {
+        var submitForm = document.getElementById('submitAssessmentForm');
+        if (!submitForm) return;
+        submitForm.addEventListener('submit', function (e) {
+            var missing = findRoomsMissingRequiredPhotos();
+            if (!missing.length) return;
+
+            e.preventDefault();
+            var display = missing.slice(0, 5).map(function (room) {
+                return room.roomName + ' (' + room.roomPct.toFixed(1) + '%)';
+            }).join(', ');
+            if (missing.length > 5) {
+                display += ' dan ' + (missing.length - 5) + ' ruangan lainnya';
+            }
+            showToast('Skor ruangan di bawah ' + Math.round(photoRequiredThreshold) +
+                '% wajib upload foto. Mohon upload foto untuk: ' + display);
+
+            var first = missing[0];
+            var roomEl = document.querySelector('.room-item[data-school-room-id="' + first.roomId + '"]');
+            if (roomEl) {
+                var collapseEl = document.getElementById('room' + first.roomId);
+                if (collapseEl && !collapseEl.classList.contains('show')) {
+                    new bootstrap.Collapse(collapseEl, { toggle: true });
+                }
+                roomEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    })();
 
     // Floating score toggle
     (function () {
