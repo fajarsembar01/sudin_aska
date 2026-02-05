@@ -173,11 +173,11 @@ def register() -> Response:
             kecamatan_id = request.form.get("kecamatan_id")
             whatsapp = request.form.get("whatsapp_number")
             nip = request.form.get("nip")
-            nrk = request.form.get("nrk")
+            nrk = (request.form.get("nrk") or "").strip() or None
             jabatan = request.form.get("jabatan")
             
             # Basic validation
-            if not all([full_name, email, password, whatsapp, nip, nrk]):
+            if not all([full_name, email, password, whatsapp, nip]):
                 flash("Mohon lengkapi semua data wajib.", "warning")
                 # Fallback list if DB fails or query not ready
                 return render_template("register.html", kecamatan_list=[])
