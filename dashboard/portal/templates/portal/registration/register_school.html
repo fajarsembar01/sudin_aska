@@ -212,7 +212,7 @@
                     <!-- School Search -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
-                            <i class="bi bi-search me-1"></i>Cari Sekolah (NPSN)
+                            <i class="bi bi-search me-1"></i>Cari Sekolah (NPSN) <span class="text-danger">*</span>
                         </label>
                         <div class="position-relative">
                             <input type="text" id="npsnSearch" class="form-control"
@@ -241,7 +241,7 @@
                     <!-- Email -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
-                            <i class="bi bi-envelope me-1"></i>Email
+                            <i class="bi bi-envelope me-1"></i>Email <span class="text-danger">*</span>
                         </label>
                         <input type="email" name="email" id="emailInput" class="form-control"
                             placeholder="email@domain.com" required value="{{ email or '' }}">
@@ -251,7 +251,7 @@
                     <!-- Password -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
-                            <i class="bi bi-lock me-1"></i>Password
+                            <i class="bi bi-lock me-1"></i>Password <span class="text-danger">*</span>
                         </label>
                         <div class="input-group">
                             <input type="password" name="password" id="passwordInput" class="form-control"
@@ -267,7 +267,7 @@
                     <!-- Confirm Password -->
                     <div class="mb-4">
                         <label class="form-label fw-semibold">
-                            <i class="bi bi-lock-fill me-1"></i>Konfirmasi Password
+                            <i class="bi bi-lock-fill me-1"></i>Konfirmasi Password <span class="text-danger">*</span>
                         </label>
                         <div class="input-group">
                             <input type="password" name="confirm_password" id="confirmPasswordInput"
