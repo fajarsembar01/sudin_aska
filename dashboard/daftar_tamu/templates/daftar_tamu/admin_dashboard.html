@@ -1,0 +1,497 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Dashboard Daftar Tamu" %}
+{% set sort_visits = "visits_asc" if sort == "visits_desc" else "visits_desc" %}
+{% set sort_last_visit = "last_visit_asc" if sort == "last_visit_desc" else "last_visit_desc" %}
+{% set sort_name = "name_desc" if sort == "name_asc" else "name_asc" %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<style>
+    #guestMap {
+        height: 420px;
+        border-radius: 14px;
+        border: 1px solid var(--border-soft);
+    }
+
+    .map-legend-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--border-soft);
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 0.78rem;
+        background: var(--bg-surface);
+    }
+
+    .map-legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .table thead a {
+        color: inherit;
+    }
+
+    .status-pill {
+        font-size: 0.72rem;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 2px 10px;
+    }
+
+    @media (max-width: 768px) {
+        #guestMap {
+            height: 320px;
+        }
+    }
+
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+
+        #guestMap {
+            height: 340px;
+        }
+
+        .card {
+            break-inside: avoid;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="icon-badge feature-icon text-primary">
+                        <i class="bi bi-person-vcard"></i>
+                    </span>
+                    <div>
+                        <h1 class="h3 fw-bold page-title mb-1">Dashboard Daftar Tamu</h1>
+                        <p class="page-subtitle mb-0">Monitoring kunjungan tamu sudin/lembaga ke sekolah.</p>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2 no-print">
+                    <a href="{{ url_for('portal.admin_stats') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-bar-chart me-1"></i>Statistik Portal
+                    </a>
+                    <a href="{{ url_for('main.admin_select_role') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-grid me-1"></i>Pilih Menu
+                    </a>
+                    <button type="button" class="btn btn-outline-danger" onclick="window.print();">
+                        <i class="bi bi-filetype-pdf me-1"></i>PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-3 mb-4">
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="small text-uppercase text-muted fw-semibold">Total Sekolah</div>
+                <h2 class="display-6 fw-bold mb-0">{{ summary.total_schools }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="small text-uppercase text-muted fw-semibold">Total Kunjungan</div>
+                <h2 class="display-6 fw-bold mb-0">{{ summary.total_visits }}</h2>
+                <small class="text-muted">{{ summary.visits_this_month }} kunjungan bulan ini</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="small text-uppercase text-muted fw-semibold">Sudah Disambangi</div>
+                <h2 class="display-6 fw-bold mb-0">{{ summary.visited_schools }}</h2>
+                <small class="text-muted">Sekolah dengan kunjungan tercatat</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="small text-uppercase text-muted fw-semibold">Butuh Atensi</div>
+                <h2 class="display-6 fw-bold mb-0">{{ summary.attention_schools }}</h2>
+                <small class="text-muted">{{ summary.unvisited_schools }} sekolah belum tersambangi</small>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-0 pb-0">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <h2 class="h6 fw-bold mb-0">Peta Kunjungan Sekolah</h2>
+                    <small class="text-muted">Titik peta menampilkan sebaran kunjungan per sekolah.</small>
+                </div>
+                <form method="get" class="row g-2 align-items-end no-print">
+                    <input type="hidden" name="sort" value="{{ sort }}">
+                    <input type="hidden" name="q" value="{{ search_query }}">
+                    <input type="hidden" name="per_page" value="{{ per_page }}">
+                    <div class="col-auto">
+                        <label class="form-label small mb-1">Dari</label>
+                        <input type="date" class="form-control form-control-sm" name="date_from" value="{{ date_from_str }}"
+                            max="{{ today_str }}">
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label small mb-1">Sampai</label>
+                        <input type="date" class="form-control form-control-sm" name="date_to" value="{{ date_to_str }}"
+                            max="{{ today_str }}">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-sm btn-primary">Terapkan</button>
+                    </div>
+                    <div class="col-auto">
+                        <a href="{{ url_for('daftar_tamu.admin_dashboard') }}" class="btn btn-sm btn-light">Reset</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="guestMap"></div>
+        </div>
+        <div class="card-footer bg-transparent border-0 pt-0 pb-3">
+            <div class="d-flex flex-wrap gap-2">
+                <span class="map-legend-chip">
+                    <span class="map-legend-dot" style="background:#198754;"></span>
+                    Kunjungan 30 hari
+                    <strong id="mapRecentCount">0</strong>
+                </span>
+                <span class="map-legend-chip">
+                    <span class="map-legend-dot" style="background:#fd7e14;"></span>
+                    Sudah lama
+                    <strong id="mapStaleCount">0</strong>
+                </span>
+                <span class="map-legend-chip">
+                    <span class="map-legend-dot" style="background:#dc3545;"></span>
+                    Belum dikunjungi
+                    <strong id="mapUnvisitedCount">0</strong>
+                </span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-3">
+    <div class="col-xl-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h2 class="h6 fw-bold mb-0">Ranking Sekolah Berdasarkan Kunjungan</h2>
+                        <small class="text-muted">Urutkan berdasarkan total kunjungan atau kunjungan terakhir.</small>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 no-print">
+                        <a href="{{ url_for('daftar_tamu.export_rankings', format='csv', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str) }}"
+                            class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-filetype-csv me-1"></i>CSV
+                        </a>
+                        <a href="{{ url_for('daftar_tamu.export_rankings', format='excel', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str) }}"
+                            class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-file-earmark-excel me-1"></i>Excel
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-2 mb-3 no-print">
+                    <div class="col-md-5">
+                        <input type="text" name="q" class="form-control" value="{{ search_query }}"
+                            placeholder="Cari sekolah, NPSN, kecamatan, kelurahan...">
+                    </div>
+                    <div class="col-md-3">
+                        <select name="sort" class="form-select">
+                            <option value="visits_desc" {% if sort=='visits_desc' %}selected{% endif %}>Kunjungan terbanyak</option>
+                            <option value="visits_asc" {% if sort=='visits_asc' %}selected{% endif %}>Kunjungan tersedikit</option>
+                            <option value="last_visit_desc" {% if sort=='last_visit_desc' %}selected{% endif %}>Kunjungan terbaru</option>
+                            <option value="last_visit_asc" {% if sort=='last_visit_asc' %}selected{% endif %}>Kunjungan terlama</option>
+                            <option value="name_asc" {% if sort=='name_asc' %}selected{% endif %}>Nama A-Z</option>
+                            <option value="name_desc" {% if sort=='name_desc' %}selected{% endif %}>Nama Z-A</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select name="per_page" class="form-select">
+                            {% for option in [10, 25, 50, 100] %}
+                            <option value="{{ option }}" {% if per_page==option %}selected{% endif %}>{{ option }} / halaman</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button type="submit" class="btn btn-primary">Terapkan</button>
+                    </div>
+                    <input type="hidden" name="date_from" value="{{ date_from_str }}">
+                    <input type="hidden" name="date_to" value="{{ date_to_str }}">
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-3">#</th>
+                                <th>
+                                    <a class="text-decoration-none"
+                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_name, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str) }}">
+                                        Sekolah
+                                    </a>
+                                </th>
+                                <th class="text-end">
+                                    <a class="text-decoration-none"
+                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_visits, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str) }}">
+                                        Kunjungan
+                                    </a>
+                                </th>
+                                <th>
+                                    <a class="text-decoration-none"
+                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_last_visit, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str) }}">
+                                        Kunjungan Terakhir
+                                    </a>
+                                </th>
+                                <th>Tamu Terakhir</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in rankings %}
+                            <tr>
+                                <td class="ps-3 fw-semibold">{{ row.rank }}</td>
+                                <td>
+                                    <div class="fw-semibold">{{ row.school_name }}</div>
+                                    <div class="small text-muted">
+                                        {{ row.npsn }} &bull; {{ row.jenjang or '-' }} &bull; {{ row.kecamatan or '-' }}
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <span class="badge bg-primary rounded-pill">{{ row.visit_count }}</span>
+                                </td>
+                                <td>
+                                    {% if row.last_visit_date %}
+                                    <div>{{ row.last_visit_date.strftime('%d %b %Y') }}</div>
+                                    <div class="small text-muted">
+                                        {{ row.days_since_visit }} hari lalu
+                                    </div>
+                                    {% else %}
+                                    <span class="status-pill text-bg-danger">Belum pernah</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if row.last_guest_name %}
+                                    <div>{{ row.last_guest_name }}</div>
+                                    <div class="small text-muted d-flex flex-wrap align-items-center gap-2">
+                                        <span>{{ row.last_guest_institution or "-" }}</span>
+                                        {% if row.last_photo_path %}
+                                        <a href="{{ row.last_photo_path }}" target="_blank"
+                                            class="text-decoration-none no-print" title="Lihat foto kunjungan terakhir">
+                                            <i class="bi bi-camera-fill"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">Belum ada data untuk filter yang dipilih.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% set start_row = ((page - 1) * per_page) + 1 if total_rows else 0 %}
+                {% set end_row = ((page - 1) * per_page) + (rankings|length) if total_rows else 0 %}
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3 no-print">
+                    <small class="text-muted">Menampilkan {{ start_row }}-{{ end_row }} dari {{ total_rows }} sekolah</small>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                            <a class="page-link"
+                                href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort, per_page=per_page, page=page-1, date_from=date_from_str, date_to=date_to_str) }}">Prev</a>
+                        </li>
+                        {% set start_page = 1 if page - 2 < 1 else page - 2 %}
+                        {% set end_page = total_pages if page + 2 > total_pages else page + 2 %}
+                        {% for p in range(start_page, end_page + 1) %}
+                        <li class="page-item {% if p == page %}active{% endif %}">
+                            <a class="page-link"
+                                href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort, per_page=per_page, page=p, date_from=date_from_str, date_to=date_to_str) }}">{{ p }}</a>
+                        </li>
+                        {% endfor %}
+                        <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                            <a class="page-link"
+                                href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort, per_page=per_page, page=page+1, date_from=date_from_str, date_to=date_to_str) }}">Next</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">
+                    <i class="bi bi-exclamation-triangle text-danger me-1"></i>Sekolah Belum Tersambangi
+                </h2>
+                {% if unvisited_schools %}
+                <div class="list-group list-group-flush">
+                    {% for school in unvisited_schools %}
+                    <div class="list-group-item px-0 py-2 border-0 border-bottom">
+                        <div class="fw-semibold small">{{ school.school_name }}</div>
+                        <div class="text-muted small">
+                            {{ school.npsn }} &bull; {{ school.kecamatan or '-' }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0">Semua sekolah pada periode ini sudah memiliki kunjungan.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">
+                    <i class="bi bi-clock-history text-primary me-1"></i>Kunjungan Terbaru
+                </h2>
+                {% if recent_visits %}
+                <div class="list-group list-group-flush">
+                    {% for visit in recent_visits %}
+                    <div class="list-group-item px-0 py-2 border-0 border-bottom">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div>
+                                <div class="fw-semibold small">{{ visit.school_name }}</div>
+                                <div class="text-muted small">{{ visit.guest_name }} &bull; {{ visit.guest_institution }}</div>
+                                <div class="text-muted small d-flex flex-wrap align-items-center gap-2">
+                                    <span>{{ visit.purpose or "-" }}</span>
+                                    {% if visit.photo_path %}
+                                    <a href="{{ visit.photo_path }}" target="_blank" class="text-decoration-none no-print"
+                                        title="Lihat foto kunjungan">
+                                        <i class="bi bi-camera-fill"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <span class="badge text-bg-light">{{ visit.visit_date.strftime('%d %b') }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0">Belum ada data kunjungan.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block portal_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    (function () {
+        const map = L.map('guestMap').setView([-6.151, 106.897], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        const mapUrl = "{{ url_for('daftar_tamu.admin_map_data') }}";
+        const params = new URLSearchParams();
+        const dateFrom = "{{ date_from_str }}";
+        const dateTo = "{{ date_to_str }}";
+        if (dateFrom) params.set('date_from', dateFrom);
+        if (dateTo) params.set('date_to', dateTo);
+
+        const levels = {
+            recent: { color: '#198754' },
+            stale: { color: '#fd7e14' },
+            unvisited: { color: '#dc3545' }
+        };
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        fetch(mapUrl + (params.toString() ? '?' + params.toString() : ''))
+            .then((response) => response.json())
+            .then((rows) => {
+                if (!Array.isArray(rows) || rows.length === 0) {
+                    return;
+                }
+
+                const counts = { recent: 0, stale: 0, unvisited: 0 };
+                const markers = [];
+
+                rows.forEach((row) => {
+                    const level = levels[row.level] ? row.level : 'unvisited';
+                    counts[level] += 1;
+                    const visitCount = Number(row.visit_count || 0);
+                    const radius = Math.max(7, Math.min(18, 7 + visitCount * 0.8));
+                    const marker = L.circleMarker([row.latitude, row.longitude], {
+                        radius: radius,
+                        color: levels[level].color,
+                        fillColor: levels[level].color,
+                        fillOpacity: 0.72,
+                        weight: 1
+                    });
+
+                    const lastVisit = row.last_visit_date
+                        ? new Date(row.last_visit_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : 'Belum pernah';
+                    const popupHtml = `
+                        <div style="min-width:240px;">
+                            <div class="fw-semibold">${escapeHtml(row.school_name)}</div>
+                            <div class="small text-muted">${escapeHtml(row.npsn)} &bull; ${escapeHtml(row.jenjang || '-')}</div>
+                            <hr class="my-2">
+                            <div class="small">Total kunjungan: <strong>${visitCount}</strong></div>
+                            <div class="small">Kunjungan terakhir: <strong>${escapeHtml(lastVisit)}</strong></div>
+                            <div class="small">Tamu terakhir: ${escapeHtml(row.last_guest_name || '-')}</div>
+                            <div class="small">Instansi: ${escapeHtml(row.last_guest_institution || '-')}</div>
+                        </div>
+                    `;
+                    marker.bindPopup(popupHtml);
+                    marker.addTo(map);
+                    markers.push(marker);
+                });
+
+                const recentEl = document.getElementById('mapRecentCount');
+                const staleEl = document.getElementById('mapStaleCount');
+                const unvisitedEl = document.getElementById('mapUnvisitedCount');
+                if (recentEl) recentEl.textContent = String(counts.recent);
+                if (staleEl) staleEl.textContent = String(counts.stale);
+                if (unvisitedEl) unvisitedEl.textContent = String(counts.unvisited);
+
+                if (markers.length > 0) {
+                    const group = L.featureGroup(markers);
+                    map.fitBounds(group.getBounds().pad(0.25));
+                }
+            })
+            .catch(() => {
+                // no-op: keep map visible even when data API fails
+            });
+    })();
+</script>
+{% endblock %}

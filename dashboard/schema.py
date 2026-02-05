@@ -505,6 +505,55 @@ CREATE INDEX IF NOT EXISTS idx_school_classrooms_grade ON school_classrooms (gra
 CREATE INDEX IF NOT EXISTS idx_school_classrooms_active ON school_classrooms (active);
 """
 
+# ===== Daftar Tamu Schema =====
+
+_DAFTAR_TAMU_SCHOOLS_SQL = """
+CREATE TABLE IF NOT EXISTS daftar_tamu_schools (
+    id SERIAL PRIMARY KEY,
+    npsn TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    jenjang TEXT NOT NULL DEFAULT 'SD',
+    alamat TEXT,
+    kecamatan TEXT,
+    kelurahan TEXT,
+    latitude DECIMAL(9,6),
+    longitude DECIMAL(9,6),
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_DAFTAR_TAMU_SCHOOLS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_schools_name ON daftar_tamu_schools (name);
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_schools_kecamatan ON daftar_tamu_schools (kecamatan);
+"""
+
+_DAFTAR_TAMU_VISITS_SQL = """
+CREATE TABLE IF NOT EXISTS daftar_tamu_visits (
+    id SERIAL PRIMARY KEY,
+    school_id INTEGER NOT NULL REFERENCES daftar_tamu_schools(id) ON DELETE CASCADE,
+    visit_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    guest_name TEXT NOT NULL,
+    guest_institution TEXT NOT NULL,
+    purpose TEXT,
+    notes TEXT,
+    photo_path TEXT,
+    latitude DECIMAL(9,6),
+    longitude DECIMAL(9,6),
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_DAFTAR_TAMU_VISITS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_visits_school ON daftar_tamu_visits (school_id);
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_visits_date ON daftar_tamu_visits (visit_date DESC);
+"""
+
 
 def ensure_dashboard_schema() -> None:
     """Create core dashboard tables when they do not yet exist."""
@@ -571,6 +620,11 @@ def ensure_dashboard_schema() -> None:
         # School classroom configuration
         _SCHOOL_CLASSROOMS_SQL,
         _SCHOOL_CLASSROOMS_INDEX_SQL,
+        # Daftar Tamu tables
+        _DAFTAR_TAMU_SCHOOLS_SQL,
+        _DAFTAR_TAMU_SCHOOLS_INDEX_SQL,
+        _DAFTAR_TAMU_VISITS_SQL,
+        _DAFTAR_TAMU_VISITS_INDEX_SQL,
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS no_tester_enabled BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS nrk TEXT",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS nip TEXT",
@@ -631,6 +685,12 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE portal_schools ADD COLUMN IF NOT EXISTS logo_url TEXT",
         # Kecamatan cache column for dashboard_users
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS kecamatan_cache JSONB",
+        # Daftar tamu compatibility columns
+        "ALTER TABLE daftar_tamu_schools ADD COLUMN IF NOT EXISTS metadata JSONB",
+        "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS photo_path TEXT",
+        "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS latitude DECIMAL(9,6)",
+        "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS longitude DECIMAL(9,6)",
+        "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS metadata JSONB",
     )
     
     # Execute statements one by one to ensure partial success and better error reporting
