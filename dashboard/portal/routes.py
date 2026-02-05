@@ -5162,11 +5162,16 @@ def manage_monev_teams() -> Response:
 @role_required("admin")
 def portal_kontak_wilayah() -> Response:
     """Admin page to manage kontak per wilayah."""
+    kecamatan_list = list_kecamatan()
+    allowed_wilayah = {
+        (kec.get("name") or "").strip()
+        for kec in kecamatan_list
+        if (kec.get("name") or "").strip()
+    }
     if request.method == "POST":
         action = (request.form.get("action") or "create").strip().lower()
         kontak_id = request.form.get("kontak_id")
         wilayah = (request.form.get("wilayah") or "").strip()
-        allowed_wilayah = {"Cilincing", "Kelapa Gading", "Koja"}
 
         try:
             if action == "set_status":
@@ -5198,7 +5203,7 @@ def portal_kontak_wilayah() -> Response:
                 kontak_1_active = (request.form.get("kontak_1_active") or "1") == "1"
                 kontak_2_active = (request.form.get("kontak_2_active") or "1") == "1"
 
-                if not wilayah or wilayah not in allowed_wilayah:
+                if not wilayah or (allowed_wilayah and wilayah not in allowed_wilayah):
                     flash("Wilayah wajib dipilih dari daftar.", "warning")
                 elif not all([nama_1, kontak_1, nama_2, kontak_2]):
                     flash("Nama dan kontak untuk dua nomor wajib diisi.", "warning")
@@ -5266,7 +5271,11 @@ def portal_kontak_wilayah() -> Response:
             flash(f"Gagal memproses data: {exc}", "danger")
 
     contacts = list_portal_kontak()
-    return render_template("portal/admin/kontak.html", contacts=contacts)
+    return render_template(
+        "portal/admin/kontak.html",
+        contacts=contacts,
+        kecamatan_list=kecamatan_list,
+    )
 
 
 @portal_bp.route("/my-team")
