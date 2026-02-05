@@ -216,7 +216,9 @@ def create_assessment(
         )
         existing = cur.fetchone()
         if existing:
-            return dict(existing)
+            data = dict(existing)
+            data["_is_new"] = False
+            return data
 
         cur.execute(
             """
@@ -227,7 +229,19 @@ def create_assessment(
             (school_id, staff_id, period_id),
         )
         # creator_email retained for backward compatibility (not stored yet)
-        return dict(cur.fetchone())
+        data = dict(cur.fetchone())
+        data["_is_new"] = True
+        return data
+
+
+def delete_assessment_scores(assessment_id: int) -> int:
+    """Delete all scores for an assessment (used to clear auto-filled defaults)."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            "DELETE FROM portal_assessment_scores WHERE assessment_id = %s",
+            (assessment_id,),
+        )
+        return cur.rowcount
 
 
 def get_latest_final_assessment_for_period(
@@ -847,14 +861,14 @@ def get_assessment_room_details(assessment_id: int) -> Dict[int, str]:
 def submit_assessment(assessment_id: int) -> bool:
     """Submit an assessment and calculate total score.
     
-    If any aspect hasn't been scored, it defaults to 3 (Baik).
+    If any aspect hasn't been scored, it defaults to 0 (Rusak).
     """
     with get_cursor(commit=True) as cur:
-        # 1. Fill missing scores with default 3
+        # 1. Fill missing scores with default 0
         cur.execute(
             """
             INSERT INTO portal_assessment_scores (assessment_id, school_room_id, aspect_id, score, created_at, updated_at)
-            SELECT %s, sr.id, pa.id, 3, NOW(), NOW()
+            SELECT %s, sr.id, pa.id, 0, NOW(), NOW()
             FROM portal_school_rooms sr
             JOIN portal_assessments a ON a.id = %s
             JOIN portal_aspects pa ON pa.room_id = sr.room_id
