@@ -44,7 +44,7 @@
                     aria-controls="scoreLegendDetails">
                     Show
                 </button>
-                <span>Tap skor 0-3 untuk setiap aspek. Default skor: 3 (baik). Perubahan tersimpan otomatis.</span>
+                <span>Tap skor 0-3 untuk setiap aspek. Default skor: 0 (rusak). Perubahan tersimpan otomatis.</span>
                 <div class="collapse mt-2" id="scoreLegendDetails">
                     <div class="small text-muted">
                         <div><strong>0</strong> apabila rusak</div>
@@ -71,7 +71,7 @@
                 {% set sum_scores = 0 %}
                 {% for aspect in room.aspects %}
                 {% set current = scores_map.get((room.school_room_id, aspect.id)) %}
-                {% set sum_scores = sum_scores + (current if current is not none else 3) %}
+                {% set sum_scores = sum_scores + (current if current is not none else 0) %}
                 {% endfor %}
                 {% set room_avg = (sum_scores / total_aspects_room) if total_aspects_room > 0 else 0 %}
                 {% set room_pct = (room_avg / 3 * 100) %}
@@ -121,7 +121,7 @@
                                         data-aspect-id="{{ aspect.id }}">
                                         {% for score in [0, 1, 2, 3] %}
                                         <button type="button"
-                                            class="score-btn {% if scores_map.get((room.school_room_id, aspect.id)) == score %}selected{% elif scores_map.get((room.school_room_id, aspect.id)) is none and score == 3 %}selected{% endif %}"
+                                            class="score-btn {% if scores_map.get((room.school_room_id, aspect.id)) == score %}selected{% elif scores_map.get((room.school_room_id, aspect.id)) is none and score == 0 %}selected{% endif %}"
                                             data-score="{{ score }}" onclick="selectScore(this)">
                                             {{ score }}
                                         </button>
@@ -194,6 +194,19 @@
                     <span>Total Aspek</span>
                     <span class="fw-semibold">{{ total_aspects }}</span>
                 </div>
+                <div class="d-flex justify-content-between small text-muted">
+                    <span>Foto Ruangan</span>
+                    <span class="fw-semibold">
+                        <span id="photoUploadedCount">{{ photo_uploaded_count }}</span>/<span id="photoRequiredCount">{{ photo_min_required }}</span>
+                    </span>
+                </div>
+                <div class="progress my-2" style="height: 6px;">
+                    <div class="progress-bar bg-success" id="photoRequirementBar" role="progressbar"></div>
+                </div>
+                <p class="text-muted small mb-3" id="photoRequirementNote">
+                    Minimal upload foto ruangan {{ photo_min_required }} dari {{ rooms|length }} ruangan (20%).
+                    Maksimal {{ photo_max_allowed }} ruangan (50%).
+                </p>
                 <p class="text-muted small">Pastikan semua aspek sudah dinilai sebelum submit.</p>
                 <form action="{{ url_for('portal.save_draft', school_id=school.id) }}" method="POST" class="mb-2">
                     <input type="hidden" name="assessment_id" value="{{ assessment.id }}">
@@ -203,9 +216,9 @@
                         <span>Simpan Draft</span>
                     </button>
                 </form>
-                <form action="{{ url_for('portal.submit', school_id=school.id) }}" method="POST">
+                <form action="{{ url_for('portal.submit', school_id=school.id) }}" method="POST" id="submitAssessmentForm">
                     <input type="hidden" name="assessment_id" value="{{ assessment.id }}">
-                    <button type="submit"
+                    <button type="submit" id="submitAssessmentBtn"
                         class="btn btn-success w-100 d-inline-flex align-items-center justify-content-center gap-2">
                         <i class="bi bi-check-circle"></i>
                         <span>Submit Penilaian</span>
@@ -265,6 +278,48 @@
     {% endfor %}
     {% endif %}
 </section>
+
+<!-- Photo Warning Modal -->
+<div class="modal fade" id="photoWarningModal" tabindex="-1" aria-labelledby="photoWarningLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="photoWarningLabel">
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Peringatan
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Ambil foto sesuai dengan kondisi yang terburuk
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="photoWarningContinue">Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Photo Max Modal -->
+<div class="modal fade" id="photoMaxModal" tabindex="-1" aria-labelledby="photoMaxLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="photoMaxLabel">
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Peringatan
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Jumlah upload foto sudah mencapai maksimal, jika ingin menambahkan foto lagi, tolong hapus yang lain
+                terlebih dahulu.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Oke</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Camera Modal -->
 <div class="modal fade" id="cameraModal" tabindex="-1">
@@ -352,6 +407,28 @@
 <button type="button" class="btn btn-primary btn-sm floating-score-trigger d-none" id="showScoreCardBtn">
     Lihat Skor
 </button>
+
+<!-- Submit Requirement Modal -->
+<div class="modal fade" id="photoRequirementModal" tabindex="-1" aria-labelledby="photoRequirementModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="photoRequirementModalLabel">
+                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>Peringatan
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Persyaratan submit belum terpenuhi:</p>
+                <ul class="mb-0 ps-3 small" id="submitRequirementList"></ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Oke</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <style>
     .floating-score {
@@ -468,12 +545,114 @@
     var cameraStream = null;
     var useFrontCamera = false;
     var noteTimeout = null;
+    var requiredPhotoCount = {{ photo_min_required }};
+    var maxPhotoCount = {{ photo_max_allowed }};
+    var totalRoomCount = {{ rooms|length }};
+    var photoRoomSet = new Set({{ photo_room_ids|tojson }});
+
+    function showPhotoMaxWarning() {
+        if (window.bootstrap) {
+            var modalEl = document.getElementById('photoMaxModal');
+            if (modalEl) {
+                var modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modalInstance.show();
+                return;
+            }
+        }
+        showToast('Jumlah upload foto sudah mencapai maksimal. Jika ingin menambahkan foto lagi, tolong hapus yang lain terlebih dahulu.');
+    }
+
+    function updatePhotoRequirementUI() {
+        var uploaded = photoRoomSet.size;
+        var required = requiredPhotoCount;
+        var submitBtn = document.getElementById('submitAssessmentBtn');
+        var uploadedEl = document.getElementById('photoUploadedCount');
+        var requiredEl = document.getElementById('photoRequiredCount');
+        var noteEl = document.getElementById('photoRequirementNote');
+        var barEl = document.getElementById('photoRequirementBar');
+
+        if (uploadedEl) uploadedEl.textContent = uploaded;
+        if (requiredEl) requiredEl.textContent = required;
+        if (noteEl) {
+            noteEl.classList.toggle('text-success', uploaded >= required && required > 0);
+            noteEl.classList.toggle('text-muted', uploaded < required);
+        }
+        if (barEl) {
+            var pct = required > 0 ? Math.min(100, Math.round((uploaded / required) * 100)) : 100;
+            barEl.style.width = pct + '%';
+        }
+        if (submitBtn) {
+            submitBtn.classList.toggle('opacity-75', required > 0 && uploaded < required);
+        }
+    }
+
+    function hasUnscoredRoom() {
+        var rooms = document.querySelectorAll('.room-item');
+        for (var i = 0; i < rooms.length; i++) {
+            var groups = rooms[i].querySelectorAll('.score-group');
+            if (!groups.length) continue;
+            var hasNonZero = false;
+            groups.forEach(function (g) {
+                var selected = g.querySelector('.score-btn.selected');
+                if (selected && parseInt(selected.dataset.score, 10) > 0) {
+                    hasNonZero = true;
+                }
+            });
+            if (!hasNonZero) return true;
+        }
+        return false;
+    }
 
     // Initial Score Calculation
     calculateOverallScore();
+    updatePhotoRequirementUI();
     // Force prompt lokasi saat halaman dibuka
     document.addEventListener('DOMContentLoaded', function () {
         ensureLocation();
+
+        var submitForm = document.getElementById('submitAssessmentForm');
+        if (submitForm) {
+            submitForm.addEventListener('submit', function (event) {
+                var missingPhoto = requiredPhotoCount > 0 && photoRoomSet.size < requiredPhotoCount;
+                var missingScore = hasUnscoredRoom();
+                if (missingPhoto || missingScore) {
+                    event.preventDefault();
+                    var listEl = document.getElementById('submitRequirementList');
+                    if (listEl) {
+                        listEl.innerHTML = '';
+                        if (missingPhoto) {
+                            var liPhoto = document.createElement('li');
+                            liPhoto.textContent =
+                                'Minimal upload foto ruangan ' + requiredPhotoCount + ' dari ' + totalRoomCount + ' ruangan (20%).';
+                            listEl.appendChild(liPhoto);
+                        }
+                        if (missingScore) {
+                            var liScore = document.createElement('li');
+                            liScore.textContent = 'Terdapat ruangan yang masih belum dinilai.';
+                            listEl.appendChild(liScore);
+                        }
+                    }
+                    if (window.bootstrap) {
+                        var modalEl = document.getElementById('photoRequirementModal');
+                        if (modalEl) {
+                            var modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+                            modalInstance.show();
+                            return;
+                        }
+                    }
+                    var fallbackMessages = [];
+                    if (missingPhoto) {
+                        fallbackMessages.push(
+                            'Jumlah foto belum terpenuhi. Minimal ' + requiredPhotoCount + ' dari ' + totalRoomCount + ' ruangan (20%).'
+                        );
+                    }
+                    if (missingScore) {
+                        fallbackMessages.push('Terdapat ruangan yang masih belum dinilai.');
+                    }
+                    showToast(fallbackMessages.join(' '));
+                }
+            });
+        }
 
         // Room search functionality
         var searchInput = document.getElementById('roomSearchAssessment');
@@ -673,6 +852,8 @@
                 if (data.success) {
                     var preview = document.getElementById('photoPreview' + roomId);
                     if (preview) preview.innerHTML = '';
+                    photoRoomSet.delete(Number(roomId));
+                    updatePhotoRequirementUI();
                     showToast('Foto dihapus');
                 } else {
                     showToast('Gagal hapus foto: ' + (data.message || ''));
@@ -705,7 +886,7 @@
         });
     }
 
-    function capturePhoto(roomId) {
+    function openCameraModal(roomId) {
         currentRoomId = roomId;
         currentAddress = null; // Reset address
 
@@ -732,6 +913,40 @@
         }
     }
 
+    function capturePhoto(roomId) {
+        currentRoomId = roomId;
+        var roomKey = Number(roomId);
+        var maxReached = maxPhotoCount > 0 && photoRoomSet.size >= maxPhotoCount && !photoRoomSet.has(roomKey);
+        if (maxReached) {
+            showPhotoMaxWarning();
+            return;
+        }
+        var warningEl = document.getElementById('photoWarningModal');
+        if (!warningEl) {
+            openCameraModal(roomId);
+            return;
+        }
+        var warningModal = bootstrap.Modal.getOrCreateInstance(warningEl);
+        warningModal.show();
+    }
+
+    var photoWarningContinue = document.getElementById('photoWarningContinue');
+    if (photoWarningContinue) {
+        photoWarningContinue.addEventListener('click', function () {
+            var warningEl = document.getElementById('photoWarningModal');
+            if (!warningEl) {
+                openCameraModal(currentRoomId || 0);
+                return;
+            }
+            warningEl.addEventListener('hidden.bs.modal', function handler() {
+                warningEl.removeEventListener('hidden.bs.modal', handler);
+                openCameraModal(currentRoomId || 0);
+            });
+            var warningModal = bootstrap.Modal.getInstance(warningEl) || new bootstrap.Modal(warningEl);
+            warningModal.hide();
+        });
+    }
+
     document.getElementById('cameraModal').addEventListener('hidden.bs.modal', function () {
         if (cameraStream) {
             cameraStream.getTracks().forEach(function (track) { track.stop(); });
@@ -745,7 +960,7 @@
             cameraStream.getTracks().forEach(function (t) { t.stop(); });
             cameraStream = null;
         }
-        capturePhoto(currentRoomId || 0);
+        openCameraModal(currentRoomId || 0);
     });
 
     document.getElementById('filePhotoInput').addEventListener('change', function (e) {
@@ -873,6 +1088,8 @@
                     previewInit.innerHTML = '';
                     previewInit.appendChild(wrapper);
                     previewInit.appendChild(meta);
+                    photoRoomSet.add(Number(currentRoomId));
+                    updatePhotoRequirementUI();
                 } else {
                     showToast('Gagal: ' + data.message);
                     previewInit.innerHTML = '<div class="text-danger small">Gagal upload</div>';
