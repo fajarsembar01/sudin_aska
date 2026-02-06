@@ -101,8 +101,62 @@
                 <h2 class="h6 fw-bold mb-3">Input Buku Tamu</h2>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Cari Tamu</label>
-                    <input type="text" id="guestSearchInput" class="form-control" placeholder="Nama, email, NRK...">
-                    <div id="guestSearchResults" class="border rounded-3 mt-2" style="max-height: 220px; overflow: auto;"></div>
+                    <ul class="nav nav-pills gap-2" id="guestTypeTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="guest-tab-sudin" data-bs-toggle="pill"
+                                data-bs-target="#guestTabSudin" type="button" role="tab" aria-controls="guestTabSudin"
+                                aria-selected="true">Sudin</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="guest-tab-umum" data-bs-toggle="pill"
+                                data-bs-target="#guestTabUmum" type="button" role="tab" aria-controls="guestTabUmum"
+                                aria-selected="false">Umum</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content mt-3">
+                        <div class="tab-pane fade show active" id="guestTabSudin" role="tabpanel"
+                            aria-labelledby="guest-tab-sudin">
+                            <input type="text" id="guestSearchInput" class="form-control"
+                                placeholder="Nama, email, NRK...">
+                            <div id="guestSearchResults" class="border rounded-3 mt-2 d-none"
+                                style="max-height: 220px; overflow: auto;"></div>
+                        </div>
+                        <div class="tab-pane fade" id="guestTabUmum" role="tabpanel" aria-labelledby="guest-tab-umum">
+                            <input type="text" id="generalSearchInput" class="form-control"
+                                placeholder="Nama, instansi, telepon...">
+                            <div id="generalSearchResults" class="border rounded-3 mt-2 d-none"
+                                style="max-height: 220px; overflow: auto;"></div>
+                            <div class="mt-3 border rounded-3 p-3 bg-light">
+                                <div class="fw-semibold mb-2">Tambah Tamu Umum</div>
+                                <div class="row g-2">
+                                    <div class="col-12">
+                                        <input type="text" id="generalNameInput" class="form-control"
+                                            placeholder="Nama lengkap *">
+                                    </div>
+                                    <div class="col-12">
+                                        <input type="text" id="generalInstansiInput" class="form-control"
+                                            placeholder="Instansi (opsional)">
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <input type="text" id="generalJabatanInput" class="form-control"
+                                            placeholder="Jabatan (opsional)">
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <input type="text" id="generalPhoneInput" class="form-control"
+                                            placeholder="Telepon (opsional)">
+                                    </div>
+                                    <div class="col-12 d-grid">
+                                        <button type="button" class="btn btn-outline-primary" id="addGeneralGuestBtn">
+                                            <i class="bi bi-person-plus me-1"></i>Tambah Tamu Umum
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="small text-muted mt-2">
+                                    Admin dapat memberi badge verified jika ada nama ganda.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Tamu Terpilih</label>
@@ -111,7 +165,16 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Tujuan Kunjungan (opsional)</label>
-                    <input type="text" id="purposeInput" class="form-control" placeholder="Contoh: Monitoring sarpras">
+                    <input type="text" id="purposeInput" class="form-control" placeholder="Contoh: Monitoring sarpras"
+                        list="purposeKeywordList">
+                    <datalist id="purposeKeywordList">
+                        {% for kw in purpose_keywords|default([]) %}
+                        <option value="{{ kw }}"></option>
+                        {% endfor %}
+                    </datalist>
+                    <div class="small text-muted mt-1">
+                        Jika tidak ada di saran, tulis saja sesuai kebutuhan (tidak harus sama persis).
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Catatan Sekolah (opsional)</label>
@@ -151,6 +214,156 @@
                 <div class="small text-muted mt-2">
                     Setelah disimpan, admin akan memvalidasi kunjungan.
                 </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-3 mb-4">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-2">QR Buku Tamu</h2>
+                <p class="small text-muted mb-3">
+                    Tempel QR di pintu masuk supaya tamu umum langsung menuju buku tamu web_aska.
+                </p>
+                <div class="input-group input-group-sm mb-3">
+                    <input type="text" class="form-control" id="guestbookLinkInput" value="{{ guestbook_public_url }}"
+                        readonly>
+                    <button class="btn btn-outline-secondary" type="button" id="copyGuestbookLinkBtn">Copy Link</button>
+                </div>
+                <div class="d-grid gap-2">
+                    <a class="btn btn-outline-primary btn-sm"
+                        href="{{ url_for('daftar_tamu.sekolah_guestbook_qr', format='png') }}">Download PNG</a>
+                    <a class="btn btn-outline-secondary btn-sm"
+                        href="{{ url_for('daftar_tamu.sekolah_guestbook_qr', format='pdf', paper='a4') }}">Download
+                        PDF A4</a>
+                    <a class="btn btn-outline-secondary btn-sm"
+                        href="{{ url_for('daftar_tamu.sekolah_guestbook_qr', format='pdf', paper='a5') }}">Download
+                        PDF A5</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100" id="publicGuestbook">
+            <div class="card-body">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <div>
+                        <h2 class="h6 fw-bold mb-0">Pengajuan Tamu Umum (web_aska)</h2>
+                        <small class="text-muted">Verifikasi pengajuan tamu umum dari web_aska.</small>
+                    </div>
+                    <form method="get" class="d-flex gap-2">
+                        <select name="public_status" class="form-select form-select-sm">
+                            <option value="" {% if public_status=='' %}selected{% endif %}>Semua status</option>
+                            <option value="pending" {% if public_status=='pending' %}selected{% endif %}>Menunggu</option>
+                            <option value="approved" {% if public_status=='approved' %}selected{% endif %}>Disetujui</option>
+                            <option value="rejected" {% if public_status=='rejected' %}selected{% endif %}>Ditolak</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                    </form>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Waktu</th>
+                                <th>Tamu</th>
+                                <th>Status</th>
+                                <th>Catatan</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if public_rows %}
+                            {% for row in public_rows %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">{{ row.visit_at|jakarta('%d %b %Y') }}</div>
+                                    <div class="small text-muted">{{ row.visit_at|jakarta('%H:%M') }} WIB</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">{{ row.guest_display or '-' }}</div>
+                                    <div class="small text-muted">{{ row.guest_count or 0 }} tamu</div>
+                                    {% if row.purpose %}
+                                    <div class="small text-muted">Tujuan: {{ row.purpose }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if row.status == 'approved' %}
+                                    <span class="badge text-bg-success">Disetujui</span>
+                                    {% elif row.status == 'rejected' %}
+                                    <span class="badge text-bg-danger">Ditolak</span>
+                                    {% else %}
+                                    <span class="badge text-bg-warning">Menunggu</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if row.notes %}
+                                    <div class="small text-muted">Catatan tamu: {{ row.notes }}</div>
+                                    {% endif %}
+                                    {% if row.reviewer_notes %}
+                                    <div class="small text-muted">Catatan verifikator: {{ row.reviewer_notes }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if row.status == 'pending' %}
+                                    <input type="text" class="form-control form-control-sm mb-2"
+                                        id="publicNote{{ row.id }}" placeholder="Catatan verifikasi (opsional)">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <form method="post"
+                                            action="{{ url_for('daftar_tamu.sekolah_approve_public_transaction', transaction_id=row.id) }}"
+                                            onsubmit="document.getElementById('publicApproveNote{{ row.id }}').value = document.getElementById('publicNote{{ row.id }}').value;">
+                                            <input type="hidden" name="reviewer_notes"
+                                                id="publicApproveNote{{ row.id }}">
+                                            <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                        </form>
+                                        <form method="post"
+                                            action="{{ url_for('daftar_tamu.sekolah_reject_public_transaction', transaction_id=row.id) }}"
+                                            onsubmit="document.getElementById('publicRejectNote{{ row.id }}').value = document.getElementById('publicNote{{ row.id }}').value;">
+                                            <input type="hidden" name="reviewer_notes"
+                                                id="publicRejectNote{{ row.id }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                                        </form>
+                                    </div>
+                                    {% else %}
+                                    <div class="small text-muted">Diverifikasi</div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">Belum ada pengajuan tamu umum.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if public_total_pages and public_total_pages > 1 %}
+                <nav class="mt-3">
+                    <ul class="pagination pagination-sm justify-content-end mb-0">
+                        <li class="page-item {% if public_page <= 1 %}disabled{% endif %}">
+                            <a class="page-link"
+                                href="{{ url_for('daftar_tamu.sekolah_guestbook', public_status=public_status, public_page=public_page-1, public_per_page=public_per_page, _anchor='publicGuestbook') }}">Prev</a>
+                        </li>
+                        {% set start_page = 1 if public_page - 2 < 1 else public_page - 2 %}
+                        {% set end_page = public_total_pages if public_page + 2 > public_total_pages else public_page + 2 %}
+                        {% for p in range(start_page, end_page + 1) %}
+                        <li class="page-item {% if p == public_page %}active{% endif %}">
+                            <a class="page-link"
+                                href="{{ url_for('daftar_tamu.sekolah_guestbook', public_status=public_status, public_page=p, public_per_page=public_per_page, _anchor='publicGuestbook') }}">{{ p }}</a>
+                        </li>
+                        {% endfor %}
+                        <li class="page-item {% if public_page >= public_total_pages %}disabled{% endif %}">
+                            <a class="page-link"
+                                href="{{ url_for('daftar_tamu.sekolah_guestbook', public_status=public_status, public_page=public_page+1, public_per_page=public_per_page, _anchor='publicGuestbook') }}">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -266,9 +479,16 @@
     (function () {
         var selectedGuests = new Map();
         var guestResults = document.getElementById('guestSearchResults');
+        var generalResults = document.getElementById('generalSearchResults');
         var selectedContainer = document.getElementById('selectedGuests');
         var selectedEmpty = document.getElementById('selectedGuestsEmpty');
         var searchInput = document.getElementById('guestSearchInput');
+        var generalSearchInput = document.getElementById('generalSearchInput');
+        var addGeneralGuestBtn = document.getElementById('addGeneralGuestBtn');
+        var generalNameInput = document.getElementById('generalNameInput');
+        var generalInstansiInput = document.getElementById('generalInstansiInput');
+        var generalJabatanInput = document.getElementById('generalJabatanInput');
+        var generalPhoneInput = document.getElementById('generalPhoneInput');
 
         var cameraPreview = document.getElementById('cameraPreview');
         var photoResult = document.getElementById('photoResult');
@@ -279,7 +499,7 @@
         var submitBtn = document.getElementById('submitTransactionBtn');
         var gpsStatus = document.getElementById('gpsStatus');
 
-        if (!searchInput || !cameraPreview || !submitBtn) {
+        if (!cameraPreview || !submitBtn) {
             return;
         }
 
@@ -288,11 +508,17 @@
         var currentLatitude = null;
         var currentLongitude = null;
         var currentAccuracy = null;
-        var hasResultsVisible = false;
+        var hasSudinResultsVisible = false;
+        var hasGeneralResultsVisible = false;
 
-        function setResultsVisible(visible) {
-            hasResultsVisible = visible;
-            guestResults.classList.toggle('d-none', !visible);
+        function setSudinResultsVisible(visible) {
+            hasSudinResultsVisible = visible;
+            if (guestResults) guestResults.classList.toggle('d-none', !visible);
+        }
+
+        function setGeneralResultsVisible(visible) {
+            hasGeneralResultsVisible = visible;
+            if (generalResults) generalResults.classList.toggle('d-none', !visible);
         }
 
         function updateSubmitState() {
@@ -300,6 +526,40 @@
             var hasPhoto = !!photoBlob;
             var hasGps = typeof currentLatitude === 'number' && typeof currentLongitude === 'number';
             submitBtn.disabled = !(hasGuests && hasPhoto && hasGps);
+        }
+
+        function normalizeName(value) {
+            return String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
+        }
+
+        function hasNameConflict(name) {
+            var normalized = normalizeName(name);
+            if (!normalized) return false;
+            var found = false;
+            selectedGuests.forEach(function (guest) {
+                if (guest.normalized_name === normalized) {
+                    found = true;
+                }
+            });
+            return found;
+        }
+
+        function addSelectedGuest(payload) {
+            if (!payload || !payload.id) return;
+            var key = payload.type + ':' + payload.id;
+            if (selectedGuests.has(key)) return;
+            if (payload.name && hasNameConflict(payload.name)) {
+                alert('Nama tamu sudah dipilih. Gunakan tamu yang lain.');
+                return;
+            }
+            var label = payload.label || payload.name || 'Tamu';
+            selectedGuests.set(key, {
+                id: payload.id,
+                type: payload.type,
+                label: label,
+                normalized_name: normalizeName(payload.name || label),
+            });
+            renderSelectedGuests();
         }
 
         function renderSelectedGuests() {
@@ -313,7 +573,9 @@
             selectedGuests.forEach(function (guest, id) {
                 var chip = document.createElement('div');
                 chip.className = 'guest-chip';
-                chip.innerHTML = '<span>' + guest.label + '</span>';
+                var labelSpan = document.createElement('span');
+                labelSpan.textContent = guest.label;
+                chip.appendChild(labelSpan);
                 var btn = document.createElement('button');
                 btn.type = 'button';
                 btn.innerHTML = '<i class="bi bi-x"></i><span class="ms-1">Hapus</span>';
@@ -333,31 +595,87 @@
             guestResults.innerHTML = '';
             if (!items || items.length === 0) {
                 guestResults.innerHTML = '<div class="text-muted small px-2 py-2">Tidak ada hasil.</div>';
-                setResultsVisible(true);
+                setSudinResultsVisible(true);
                 return;
             }
             items.forEach(function (item) {
                 var row = document.createElement('div');
                 row.className = 'guest-result';
                 var meta = [];
-                if (item.role) meta.push(item.role);
                 if (item.jabatan) meta.push(item.jabatan);
                 if (item.nrk) meta.push('NRK ' + item.nrk);
-                row.innerHTML = '<div class="fw-semibold">' + (item.full_name || item.email) + '</div>'
-                    + '<div class="small text-muted">' + meta.join(' • ') + '</div>';
+                var title = escapeHtml(item.full_name || item.email || '');
+                var metaText = escapeHtml(meta.join(' • '));
+                row.innerHTML = '<div class="fw-semibold">' + title + '</div>'
+                    + '<div class="small text-muted">' + metaText + '</div>';
                 row.addEventListener('click', function () {
-                    if (selectedGuests.has(item.id)) return;
                     var label = (item.full_name || item.email || 'Tamu') + (meta.length ? ' • ' + meta.join(' • ') : '');
-                    selectedGuests.set(item.id, { id: item.id, label: label });
-                    renderSelectedGuests();
+                    addSelectedGuest({
+                        id: item.id,
+                        type: 'sudin',
+                        name: item.full_name || item.email || 'Tamu',
+                        label: label,
+                    });
                     searchInput.value = '';
                     guestResults.innerHTML = '';
-                    setResultsVisible(false);
+                    setSudinResultsVisible(false);
                 });
                 guestResults.appendChild(row);
             });
-            setResultsVisible(true);
+            setSudinResultsVisible(true);
         }
+
+        function renderGeneralGuestResults(items) {
+            if (!generalResults) return;
+            generalResults.innerHTML = '';
+            if (!items || items.length === 0) {
+                generalResults.innerHTML = '<div class="text-muted small px-2 py-2">Tidak ada hasil.</div>';
+                setGeneralResultsVisible(true);
+                return;
+            }
+            items.forEach(function (item) {
+                var row = document.createElement('div');
+                row.className = 'guest-result';
+                var meta = [];
+                if (item.instansi) meta.push(item.instansi);
+                if (item.jabatan) meta.push(item.jabatan);
+                if (item.phone) meta.push(item.phone);
+                var badges = [];
+                if (item.is_verified) badges.push('<span class="badge text-bg-success ms-2">Verified</span>');
+                if (item.has_duplicate) badges.push('<span class="badge text-bg-warning ms-2">Duplikat</span>');
+                var title = escapeHtml(item.full_name || 'Tamu');
+                var metaText = escapeHtml(meta.join(' • '));
+                row.innerHTML = '<div class="fw-semibold">' + title + (badges.join('')) + '</div>'
+                    + '<div class="small text-muted">' + metaText + '</div>';
+                row.addEventListener('click', function () {
+                    if (item.has_duplicate && !item.is_verified) {
+                        alert('Nama tamu ganda. Pilih yang sudah verified atau minta admin memverifikasi.');
+                        return;
+                    }
+                    var label = (item.full_name || 'Tamu') + (meta.length ? ' • ' + meta.join(' • ') : '');
+                    addSelectedGuest({
+                        id: item.id,
+                        type: 'umum',
+                        name: item.full_name || 'Tamu',
+                        label: label,
+                    });
+                    if (generalSearchInput) generalSearchInput.value = '';
+                    generalResults.innerHTML = '';
+                    setGeneralResultsVisible(false);
+                });
+                generalResults.appendChild(row);
+            });
+            setGeneralResultsVisible(true);
+        }
+
+        document.addEventListener('click', function (event) {
+            if (guestResults && searchInput && !guestResults.contains(event.target) && event.target !== searchInput) {
+                setSudinResultsVisible(false);
+            }
+            if (generalResults && generalSearchInput && !generalResults.contains(event.target) && event.target !== generalSearchInput) {
+                setGeneralResultsVisible(false);
+            }
+        });
 
         function escapeHtml(value) {
             return String(value || '')
@@ -366,6 +684,31 @@
                 .replace(/>/g, '&gt;')
                 .replace(/\"/g, '&quot;')
                 .replace(/'/g, '&#039;');
+        }
+
+        var copyBtn = document.getElementById('copyGuestbookLinkBtn');
+        var linkInput = document.getElementById('guestbookLinkInput');
+        if (copyBtn && linkInput) {
+            copyBtn.addEventListener('click', function () {
+                var value = linkInput.value || '';
+                if (!value) return;
+                function markCopied() {
+                    var original = copyBtn.textContent;
+                    copyBtn.textContent = 'Tersalin';
+                    setTimeout(function () { copyBtn.textContent = original; }, 1500);
+                }
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(value).then(markCopied).catch(function () {
+                        linkInput.select();
+                        document.execCommand('copy');
+                        markCopied();
+                    });
+                } else {
+                    linkInput.select();
+                    document.execCommand('copy');
+                    markCopied();
+                }
+            });
         }
 
         function buildAreaContactsHtml(list) {
@@ -419,8 +762,12 @@
             container.dataset.empty = list && list.length ? '0' : '1';
         }
 
-        function fetchAreaContacts() {
-            return fetch('/daftar-tamu/sekolah/area-contacts')
+        function fetchAreaContacts(transactionId) {
+            var url = '/daftar-tamu/sekolah/area-contacts';
+            if (transactionId) {
+                url += '?transaction_id=' + encodeURIComponent(transactionId);
+            }
+            return fetch(url)
                 .then(function (res) { return res.json(); })
                 .then(function (data) {
                     if (data && data.success && Array.isArray(data.contacts)) {
@@ -434,7 +781,7 @@
             var query = (searchInput.value || '').trim();
             if (!query) {
                 guestResults.innerHTML = '';
-                setResultsVisible(false);
+                setSudinResultsVisible(false);
                 return;
             }
             fetch('/daftar-tamu/sekolah/guest-search?q=' + encodeURIComponent(query))
@@ -445,7 +792,7 @@
                 })
                 .catch(function () {
                     guestResults.innerHTML = '<div class="text-danger small px-2 py-2">Gagal memuat data tamu.</div>';
-                    setResultsVisible(true);
+                    setSudinResultsVisible(true);
                 });
         }
 
@@ -453,6 +800,103 @@
             searchInput.addEventListener('input', function () {
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(searchGuests, 300);
+            });
+        }
+
+        var generalDebounceTimer = null;
+        function searchGeneralGuests() {
+            if (!generalSearchInput || !generalResults) return;
+            var query = (generalSearchInput.value || '').trim();
+            if (!query) {
+                generalResults.innerHTML = '';
+                setGeneralResultsVisible(false);
+                return;
+            }
+            fetch('/daftar-tamu/sekolah/guest-search-umum?q=' + encodeURIComponent(query))
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.success) throw new Error(data.message || 'Gagal memuat data');
+                    renderGeneralGuestResults(data.results || []);
+                })
+                .catch(function () {
+                    generalResults.innerHTML = '<div class="text-danger small px-2 py-2">Gagal memuat data tamu umum.</div>';
+                    setGeneralResultsVisible(true);
+                });
+        }
+
+        if (generalSearchInput) {
+            generalSearchInput.addEventListener('input', function () {
+                clearTimeout(generalDebounceTimer);
+                generalDebounceTimer = setTimeout(searchGeneralGuests, 300);
+            });
+        }
+
+        if (addGeneralGuestBtn) {
+            addGeneralGuestBtn.addEventListener('click', function () {
+                var nameVal = (generalNameInput && generalNameInput.value || '').trim();
+                if (!nameVal) {
+                    alert('Nama tamu wajib diisi.');
+                    return;
+                }
+                var formData = new FormData();
+                formData.append('full_name', nameVal);
+                if (generalInstansiInput && generalInstansiInput.value.trim()) {
+                    formData.append('instansi', generalInstansiInput.value.trim());
+                }
+                if (generalJabatanInput && generalJabatanInput.value.trim()) {
+                    formData.append('jabatan', generalJabatanInput.value.trim());
+                }
+                if (generalPhoneInput && generalPhoneInput.value.trim()) {
+                    formData.append('phone', generalPhoneInput.value.trim());
+                }
+                addGeneralGuestBtn.disabled = true;
+                addGeneralGuestBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
+
+                fetch('/daftar-tamu/umum', { method: 'POST', body: formData })
+                    .then(function (res) {
+                        var contentType = res.headers.get('content-type') || '';
+                        if (!res.ok) {
+                            return res.text().then(function () {
+                                throw new Error('Gagal menambahkan tamu. Silakan refresh atau restart server.');
+                            });
+                        }
+                        if (contentType.indexOf('application/json') === -1) {
+                            return res.text().then(function () {
+                                throw new Error('Respon server tidak valid. Silakan refresh halaman.');
+                            });
+                        }
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (!data.success) throw new Error(data.message || 'Gagal menambahkan tamu');
+                        var guest = data.guest || {};
+                        var meta = [];
+                        if (guest.instansi) meta.push(guest.instansi);
+                        if (guest.jabatan) meta.push(guest.jabatan);
+                        if (guest.phone) meta.push(guest.phone);
+                        var label = (guest.full_name || nameVal) + (meta.length ? ' • ' + meta.join(' • ') : '');
+                        if (guest.has_duplicate && !guest.is_verified) {
+                            alert('Tamu ditambahkan, tetapi nama ganda. Minta admin memberi badge verified sebelum dipilih.');
+                        } else {
+                            addSelectedGuest({
+                                id: guest.id,
+                                type: 'umum',
+                                name: guest.full_name || nameVal,
+                                label: label,
+                            });
+                        }
+                        if (generalNameInput) generalNameInput.value = '';
+                        if (generalInstansiInput) generalInstansiInput.value = '';
+                        if (generalJabatanInput) generalJabatanInput.value = '';
+                        if (generalPhoneInput) generalPhoneInput.value = '';
+                    })
+                    .catch(function (err) {
+                        alert(err.message || 'Gagal menambahkan tamu.');
+                    })
+                    .finally(function () {
+                        addGeneralGuestBtn.disabled = false;
+                        addGeneralGuestBtn.innerHTML = '<i class="bi bi-person-plus me-1"></i>Tambah Tamu Umum';
+                    });
             });
         }
 
@@ -594,9 +1038,12 @@
                     alert('GPS belum tersedia. Aktifkan lokasi.');
                     return;
                 }
-                var guestIds = Array.from(selectedGuests.keys());
+                var guestPayload = [];
+                selectedGuests.forEach(function (guest) {
+                    guestPayload.push({ id: guest.id, type: guest.type });
+                });
                 var formData = new FormData();
-                formData.append('guest_ids', JSON.stringify(guestIds));
+                formData.append('guest_payload', JSON.stringify(guestPayload));
                 formData.append('purpose', document.getElementById('purposeInput').value.trim());
                 formData.append('notes', document.getElementById('notesInput').value.trim());
                 formData.append('latitude', currentLatitude);
@@ -621,7 +1068,7 @@
                             if (listContainer) {
                                 listContainer.innerHTML = '<div class="text-muted small">Memuat kontak admin wilayah...</div>';
                             }
-                            fetchAreaContacts()
+                            fetchAreaContacts(data.transaction_id)
                                 .catch(function () {
                                     if (listContainer) {
                                         listContainer.innerHTML = previousHtml;
@@ -648,7 +1095,8 @@
         }
 
         window.addEventListener('beforeunload', stopCamera);
-        setResultsVisible(false);
+        setSudinResultsVisible(false);
+        setGeneralResultsVisible(false);
         renderSelectedGuests();
     })();
 </script>

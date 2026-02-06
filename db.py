@@ -1,5 +1,6 @@
 import os
 import random
+import re
 from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime, timedelta, timezone
 
@@ -242,45 +243,133 @@ def _ensure_feedback_schema() -> None:
     conn.commit()
 
 
+def _ensure_connection() -> None:
+    global conn
+    try:
+        if conn is None or conn.closed != 0:
+            conn = psycopg2.connect(**conn_args)
+    except Exception:
+        conn = psycopg2.connect(**conn_args)
+
+
 def _column_exists(table: str, column: str) -> bool:
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT 1
-            FROM information_schema.columns
-            WHERE table_schema = current_schema()
-              AND table_name = %s
-              AND column_name = %s
-            LIMIT 1
-            """,
-            (table, column),
-        )
-        return cur.fetchone() is not None
+    _ensure_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND table_name = %s
+                  AND column_name = %s
+                LIMIT 1
+                """,
+                (table, column),
+            )
+            return cur.fetchone() is not None
+    except InterfaceError:
+        _ensure_connection()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND table_name = %s
+                  AND column_name = %s
+                LIMIT 1
+                """,
+                (table, column),
+            )
+            return cur.fetchone() is not None
+
+
+def _normalize_phone(phone: Optional[str]) -> str:
+    digits = re.sub(r"\D", "", phone or "")
+    if digits.startswith("0"):
+        digits = "62" + digits[1:]
+    return digits
+
+
+def _table_exists(table: str) -> bool:
+    _ensure_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema = current_schema()
+                  AND table_name = %s
+                LIMIT 1
+                """,
+                (table,),
+            )
+            return cur.fetchone() is not None
+    except InterfaceError:
+        _ensure_connection()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema = current_schema()
+                  AND table_name = %s
+                LIMIT 1
+                """,
+                (table,),
+            )
+            return cur.fetchone() is not None
 
 
 def _ensure_column(table: str, column: str, ddl: str) -> bool:
     if _column_exists(table, column):
         return False
-    with conn.cursor() as cur:
-        cur.execute(f"ALTER TABLE {table} ADD COLUMN {ddl}")
-    conn.commit()
+    _ensure_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"ALTER TABLE {table} ADD COLUMN {ddl}")
+        conn.commit()
+    except InterfaceError:
+        _ensure_connection()
+        with conn.cursor() as cur:
+            cur.execute(f"ALTER TABLE {table} ADD COLUMN {ddl}")
+        conn.commit()
     return True
 
 
 def _constraint_exists(table: str, constraint: str) -> bool:
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT 1
-            FROM information_schema.table_constraints
-            WHERE table_schema = current_schema()
-              AND table_name = %s
-              AND constraint_name = %s
-            LIMIT 1
-            """,
-            (table, constraint),
-        )
-        return cur.fetchone() is not None
+    _ensure_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT 1
+                FROM information_schema.table_constraints
+                WHERE table_schema = current_schema()
+                  AND table_name = %s
+                  AND constraint_name = %s
+                LIMIT 1
+                """,
+                (table, constraint),
+            )
+            return cur.fetchone() is not None
+    except InterfaceError:
+        _ensure_connection()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT 1
+                FROM information_schema.table_constraints
+                WHERE table_schema = current_schema()
+                  AND table_name = %s
+                  AND constraint_name = %s
+                LIMIT 1
+                """,
+                (table, constraint),
+            )
+            return cur.fetchone() is not None
 
 
 def save_feedback(
@@ -554,6 +643,230 @@ def _ensure_user_schema() -> None:
                 """
             )
         conn.commit()
+
+
+def _ensure_guestbook_general_schema() -> None:
+    """Pastikan tabel buku tamu umum (web) tersedia."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS daftar_tamu_general_transactions (
+                id SERIAL PRIMARY KEY,
+                school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+                visit_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                purpose TEXT,
+                notes TEXT,
+                status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+                reviewed_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                reviewed_at TIMESTAMPTZ,
+                reviewer_notes TEXT,
+                metadata JSONB,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transactions_school
+            ON daftar_tamu_general_transactions (school_id);
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transactions_status
+            ON daftar_tamu_general_transactions (status);
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transactions_visit_at
+            ON daftar_tamu_general_transactions (visit_at DESC);
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS daftar_tamu_general_transaction_guests (
+                id SERIAL PRIMARY KEY,
+                transaction_id INTEGER NOT NULL REFERENCES daftar_tamu_general_transactions(id) ON DELETE CASCADE,
+                general_guest_id INTEGER REFERENCES daftar_tamu_general_guests(id) ON DELETE SET NULL,
+                full_name TEXT NOT NULL,
+                phone TEXT,
+                instansi TEXT,
+                jabatan TEXT,
+                email TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transaction_guests_tx
+            ON daftar_tamu_general_transaction_guests (transaction_id);
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transaction_guests_guest
+            ON daftar_tamu_general_transaction_guests (general_guest_id);
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS daftar_tamu_purpose_keywords (
+                id SERIAL PRIMARY KEY,
+                keyword TEXT NOT NULL UNIQUE,
+                active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_daftar_tamu_purpose_keywords_active
+            ON daftar_tamu_purpose_keywords (active);
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_daftar_tamu_purpose_keywords_keyword
+            ON daftar_tamu_purpose_keywords (lower(keyword));
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS daftar_tamu_contact_priority (
+                id SERIAL PRIMARY KEY,
+                contact_key TEXT NOT NULL UNIQUE,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_daftar_tamu_contact_priority_active
+            ON daftar_tamu_contact_priority (active);
+            """
+        )
+    conn.commit()
+    if _table_exists("daftar_tamu_general_guests"):
+        _ensure_column("daftar_tamu_general_guests", "email", "email TEXT")
+        _ensure_column(
+            "daftar_tamu_general_guests",
+            "is_deleted",
+            "is_deleted BOOLEAN NOT NULL DEFAULT FALSE",
+        )
+        _ensure_column(
+            "daftar_tamu_general_guests",
+            "deleted_by",
+            "deleted_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL",
+        )
+        _ensure_column("daftar_tamu_general_guests", "deleted_at", "deleted_at TIMESTAMPTZ")
+    if _table_exists("daftar_tamu_general_transaction_guests"):
+        _ensure_column(
+            "daftar_tamu_general_transaction_guests",
+            "student_class",
+            "student_class TEXT",
+        )
+        _ensure_column(
+            "daftar_tamu_general_transaction_guests",
+            "student_name",
+            "student_name TEXT",
+        )
+
+
+def list_guestbook_purpose_keywords(*, active_only: bool = True, limit: int = 50) -> List[str]:
+    _ensure_guestbook_general_schema()
+    safe_limit = max(1, min(int(limit or 50), 500))
+
+    where_sql = "WHERE active = TRUE" if active_only else ""
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            f"""
+            SELECT keyword
+            FROM daftar_tamu_purpose_keywords
+            {where_sql}
+            ORDER BY lower(keyword) ASC
+            LIMIT %s
+            """,
+            (safe_limit,),
+        )
+        rows = cur.fetchall() or []
+    keywords = []
+    seen = set()
+    for row in rows:
+        kw = (row.get("keyword") or "").strip()
+        if not kw:
+            continue
+        key = kw.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        keywords.append(kw)
+    return keywords
+
+
+def list_guestbook_contact_priorities(*, active_only: bool = True) -> List[str]:
+    _ensure_guestbook_general_schema()
+    defaults = [
+        ("website", 1),
+        ("email", 2),
+        ("phone", 3),
+        ("instagram", 4),
+        ("wa_channel", 5),
+    ]
+    with conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM daftar_tamu_contact_priority")
+        total = cur.fetchone()[0] or 0
+        if total == 0:
+            for key, order in defaults:
+                cur.execute(
+                    """
+                    INSERT INTO daftar_tamu_contact_priority (contact_key, sort_order, active)
+                    VALUES (%s, %s, TRUE)
+                    ON CONFLICT (contact_key) DO NOTHING
+                    """,
+                    (key, order),
+                )
+    conn.commit()
+
+    where_sql = "WHERE active = TRUE" if active_only else ""
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            f"""
+            SELECT contact_key
+            FROM daftar_tamu_contact_priority
+            {where_sql}
+            ORDER BY sort_order ASC, id ASC
+            """
+        )
+        rows = cur.fetchall() or []
+    return [row.get("contact_key") for row in rows if row.get("contact_key")]
+
+
+def list_school_classroom_options(school_id: int) -> List[str]:
+    _ensure_guestbook_general_schema()
+    if not school_id:
+        return []
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            """
+            SELECT name
+            FROM school_classrooms
+            WHERE school_id = %s
+              AND active = TRUE
+            ORDER BY grade_level NULLS LAST, variant NULLS LAST, name ASC
+            """,
+            (school_id,),
+        )
+        rows = cur.fetchall() or []
+    return [row.get("name") for row in rows if row.get("name")]
 
 
 def _backfill_telegram_users() -> None:
@@ -898,6 +1211,177 @@ def get_chat_history(user_id: int, limit: int, offset: int = 0) -> List[Dict[str
             (user_id, limit, offset),
         )
         return cur.fetchall()
+
+
+def get_portal_school_by_npsn(npsn: str) -> Optional[Dict[str, Any]]:
+    _ensure_guestbook_general_schema()
+    clean_npsn = (npsn or "").strip()
+    if not clean_npsn:
+        return None
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            """
+            SELECT id, npsn, name, jenjang, alamat, active, logo_url, metadata
+            FROM portal_schools
+            WHERE npsn = %s
+            LIMIT 1
+            """,
+            (clean_npsn,),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def find_general_guest_by_phone(phone: str) -> Optional[Dict[str, Any]]:
+    _ensure_guestbook_general_schema()
+    normalized = _normalize_phone(phone)
+    if not normalized:
+        return None
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            """
+            SELECT
+                id,
+                full_name,
+                email,
+                phone,
+                instansi,
+                jabatan,
+                is_verified
+            FROM daftar_tamu_general_guests
+            WHERE is_deleted = FALSE
+              AND regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') = %s
+            ORDER BY is_verified DESC, id DESC
+            LIMIT 1
+            """,
+            (normalized,),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def create_public_guestbook_transaction(
+    *,
+    school_id: int,
+    purpose: Optional[str],
+    notes: Optional[str],
+    guests: List[Dict[str, Any]],
+    metadata: Optional[Dict[str, Any]] = None,
+) -> int:
+    if not guests:
+        raise ValueError("Guests are required")
+    _ensure_guestbook_general_schema()
+
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            """
+            INSERT INTO daftar_tamu_general_transactions (
+                school_id,
+                visit_at,
+                purpose,
+                notes,
+                status,
+                reviewed_by,
+                reviewed_at,
+                reviewer_notes,
+                metadata
+            )
+            VALUES (%s, NOW(), %s, %s, 'pending', NULL, NULL, NULL, %s)
+            RETURNING id
+            """,
+            (
+                school_id,
+                (purpose or None),
+                (notes or None),
+                Json(metadata) if metadata else None,
+            ),
+        )
+        tx_row = cur.fetchone()
+        transaction_id = int(tx_row["id"]) if tx_row else None
+
+        for guest in guests:
+            full_name = (guest.get("full_name") or "").strip()
+            if not full_name:
+                continue
+            phone_raw = (guest.get("phone") or "").strip()
+            phone = _normalize_phone(phone_raw) or None
+            instansi = (guest.get("instansi") or "").strip() or None
+            jabatan = (guest.get("jabatan") or "").strip() or None
+            email = (guest.get("email") or "").strip() or None
+            student_class = (guest.get("student_class") or "").strip() or None
+            student_name = (guest.get("student_name") or "").strip() or None
+
+            if phone:
+                cur.execute(
+                    """
+                    SELECT id
+                    FROM daftar_tamu_general_guests
+                    WHERE is_deleted = FALSE
+                      AND regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') = %s
+                    ORDER BY is_verified DESC, id DESC
+                    LIMIT 1
+                    """,
+                    (phone,),
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT id
+                    FROM daftar_tamu_general_guests
+                    WHERE lower(full_name) = lower(%s)
+                      AND COALESCE(instansi, '') = COALESCE(%s, '')
+                      AND COALESCE(jabatan, '') = COALESCE(%s, '')
+                      AND COALESCE(email, '') = COALESCE(%s, '')
+                      AND is_deleted = FALSE
+                    ORDER BY is_verified DESC, id DESC
+                    LIMIT 1
+                    """,
+                    (full_name, instansi or "", jabatan or "", email or ""),
+                )
+            existing = cur.fetchone()
+            if existing:
+                guest_id = int(existing["id"])
+            else:
+                cur.execute(
+                    """
+                    INSERT INTO daftar_tamu_general_guests (
+                        full_name,
+                        email,
+                        phone,
+                        instansi,
+                        jabatan,
+                        created_by
+                    )
+                    VALUES (%s, %s, %s, %s, %s, NULL)
+                    RETURNING id
+                    """,
+                    (full_name, email, phone, instansi, jabatan),
+                )
+                guest_row = cur.fetchone()
+                guest_id = int(guest_row["id"]) if guest_row else None
+
+            cur.execute(
+                """
+                INSERT INTO daftar_tamu_general_transaction_guests (
+                    transaction_id,
+                    general_guest_id,
+                    full_name,
+                    phone,
+                    instansi,
+                    jabatan,
+                    email,
+                    student_class,
+                    student_name
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (transaction_id, guest_id, full_name, phone, instansi, jabatan, email, student_class, student_name),
+            )
+
+    conn.commit()
+    if not transaction_id:
+        raise ValueError("Failed to create transaction")
+    return transaction_id
 
 def get_or_create_web_user(
     email: str,
@@ -1471,6 +1955,7 @@ _ensure_chat_logs_schema()
 _ensure_bullying_schema()
 _ensure_psych_schema()
 _ensure_user_schema()
+_ensure_guestbook_general_schema()
 _ensure_telegram_user_schema()
 _ensure_corruption_schema()
 _ensure_twitter_log_schema()

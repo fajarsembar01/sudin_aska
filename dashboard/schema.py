@@ -583,19 +583,127 @@ CREATE INDEX IF NOT EXISTS idx_daftar_tamu_transactions_visit_at ON daftar_tamu_
 CREATE INDEX IF NOT EXISTS idx_daftar_tamu_transactions_created_by ON daftar_tamu_transactions (created_by);
 """
 
+_DAFTAR_TAMU_GENERAL_GUESTS_SQL = """
+CREATE TABLE IF NOT EXISTS daftar_tamu_general_guests (
+    id SERIAL PRIMARY KEY,
+    full_name TEXT NOT NULL,
+    email TEXT,
+    phone TEXT,
+    instansi TEXT,
+    jabatan TEXT,
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    deleted_at TIMESTAMPTZ,
+    verified_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    verified_at TIMESTAMPTZ,
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_DAFTAR_TAMU_GENERAL_GUESTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_guests_name ON daftar_tamu_general_guests (lower(full_name));
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_guests_verified ON daftar_tamu_general_guests (is_verified);
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_guests_email ON daftar_tamu_general_guests (lower(email));
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_guests_phone ON daftar_tamu_general_guests (phone);
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_guests_deleted ON daftar_tamu_general_guests (is_deleted);
+"""
+
 _DAFTAR_TAMU_TRANSACTION_GUESTS_SQL = """
 CREATE TABLE IF NOT EXISTS daftar_tamu_transaction_guests (
     id SERIAL PRIMARY KEY,
     transaction_id INTEGER NOT NULL REFERENCES daftar_tamu_transactions(id) ON DELETE CASCADE,
+    guest_type TEXT NOT NULL DEFAULT 'sudin' CHECK (guest_type IN ('sudin', 'umum')),
     user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    general_guest_id INTEGER REFERENCES daftar_tamu_general_guests(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (transaction_id, user_id)
+    UNIQUE (transaction_id, user_id),
+    UNIQUE (transaction_id, general_guest_id)
 );
 """
 
 _DAFTAR_TAMU_TRANSACTION_GUESTS_INDEX_SQL = """
 CREATE INDEX IF NOT EXISTS idx_daftar_tamu_transaction_guests_tx ON daftar_tamu_transaction_guests (transaction_id);
 CREATE INDEX IF NOT EXISTS idx_daftar_tamu_transaction_guests_user ON daftar_tamu_transaction_guests (user_id);
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_transaction_guests_general ON daftar_tamu_transaction_guests (general_guest_id);
+"""
+
+_DAFTAR_TAMU_GENERAL_TRANSACTIONS_SQL = """
+CREATE TABLE IF NOT EXISTS daftar_tamu_general_transactions (
+    id SERIAL PRIMARY KEY,
+    school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+    visit_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    purpose TEXT,
+    notes TEXT,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    reviewed_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    reviewed_at TIMESTAMPTZ,
+    reviewer_notes TEXT,
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_DAFTAR_TAMU_GENERAL_TRANSACTIONS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transactions_school ON daftar_tamu_general_transactions (school_id);
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transactions_status ON daftar_tamu_general_transactions (status);
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transactions_visit_at ON daftar_tamu_general_transactions (visit_at DESC);
+"""
+
+_DAFTAR_TAMU_GENERAL_TRANSACTION_GUESTS_SQL = """
+CREATE TABLE IF NOT EXISTS daftar_tamu_general_transaction_guests (
+    id SERIAL PRIMARY KEY,
+    transaction_id INTEGER NOT NULL REFERENCES daftar_tamu_general_transactions(id) ON DELETE CASCADE,
+    general_guest_id INTEGER REFERENCES daftar_tamu_general_guests(id) ON DELETE SET NULL,
+    full_name TEXT NOT NULL,
+    phone TEXT,
+    instansi TEXT,
+    jabatan TEXT,
+    email TEXT,
+    student_class TEXT,
+    student_name TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_DAFTAR_TAMU_GENERAL_TRANSACTION_GUESTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transaction_guests_tx ON daftar_tamu_general_transaction_guests (transaction_id);
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transaction_guests_guest ON daftar_tamu_general_transaction_guests (general_guest_id);
+"""
+
+_DAFTAR_TAMU_PURPOSE_KEYWORDS_SQL = """
+CREATE TABLE IF NOT EXISTS daftar_tamu_purpose_keywords (
+    id SERIAL PRIMARY KEY,
+    keyword TEXT NOT NULL UNIQUE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_DAFTAR_TAMU_PURPOSE_KEYWORDS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_purpose_keywords_active ON daftar_tamu_purpose_keywords (active);
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_purpose_keywords_keyword ON daftar_tamu_purpose_keywords (lower(keyword));
+"""
+
+_DAFTAR_TAMU_CONTACT_PRIORITY_SQL = """
+CREATE TABLE IF NOT EXISTS daftar_tamu_contact_priority (
+    id SERIAL PRIMARY KEY,
+    contact_key TEXT NOT NULL UNIQUE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_DAFTAR_TAMU_CONTACT_PRIORITY_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_contact_priority_active ON daftar_tamu_contact_priority (active);
 """
 
 
@@ -670,8 +778,27 @@ def ensure_dashboard_schema() -> None:
         _DAFTAR_TAMU_VISITS_INDEX_SQL,
         _DAFTAR_TAMU_TRANSACTIONS_SQL,
         _DAFTAR_TAMU_TRANSACTIONS_INDEX_SQL,
+        _DAFTAR_TAMU_GENERAL_GUESTS_SQL,
+        "ALTER TABLE daftar_tamu_general_guests ADD COLUMN IF NOT EXISTS email TEXT",
+        "ALTER TABLE daftar_tamu_general_guests ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE daftar_tamu_general_guests ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL",
+        "ALTER TABLE daftar_tamu_general_guests ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ",
+        _DAFTAR_TAMU_GENERAL_GUESTS_INDEX_SQL,
+        _DAFTAR_TAMU_GENERAL_TRANSACTIONS_SQL,
+        _DAFTAR_TAMU_GENERAL_TRANSACTIONS_INDEX_SQL,
+        _DAFTAR_TAMU_GENERAL_TRANSACTION_GUESTS_SQL,
+        _DAFTAR_TAMU_GENERAL_TRANSACTION_GUESTS_INDEX_SQL,
+        "ALTER TABLE daftar_tamu_general_transaction_guests ADD COLUMN IF NOT EXISTS student_class TEXT",
+        "ALTER TABLE daftar_tamu_general_transaction_guests ADD COLUMN IF NOT EXISTS student_name TEXT",
+        _DAFTAR_TAMU_PURPOSE_KEYWORDS_SQL,
+        _DAFTAR_TAMU_PURPOSE_KEYWORDS_INDEX_SQL,
+        _DAFTAR_TAMU_CONTACT_PRIORITY_SQL,
+        _DAFTAR_TAMU_CONTACT_PRIORITY_INDEX_SQL,
         _DAFTAR_TAMU_TRANSACTION_GUESTS_SQL,
         _DAFTAR_TAMU_TRANSACTION_GUESTS_INDEX_SQL,
+        "ALTER TABLE daftar_tamu_transaction_guests ADD COLUMN IF NOT EXISTS guest_type TEXT NOT NULL DEFAULT 'sudin'",
+        "ALTER TABLE daftar_tamu_transaction_guests ADD COLUMN IF NOT EXISTS general_guest_id INTEGER REFERENCES daftar_tamu_general_guests(id) ON DELETE SET NULL",
+        "CREATE UNIQUE INDEX IF NOT EXISTS uniq_daftar_tamu_tx_general_guest_full ON daftar_tamu_transaction_guests (transaction_id, general_guest_id)",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS no_tester_enabled BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS nrk TEXT",
         "ALTER TABLE dashboard_users ALTER COLUMN nrk DROP NOT NULL",

@@ -3,6 +3,7 @@
 import asyncio
 import time
 from typing import Optional, Set
+from threading import Lock
 
 from telegram import Message, Update
 from telegram.error import NetworkError
@@ -84,6 +85,14 @@ def _is_rate_limit_error(exc: Exception) -> bool:
 
 load_dotenv()
 qa_chain = build_qa_chain()
+_qa_chain_lock = Lock()
+
+
+def reload_qa_chain() -> None:
+    """Reload QA chain after knowledge updates."""
+    global qa_chain
+    with _qa_chain_lock:
+        qa_chain = build_qa_chain()
 
 TEACHER_TIMEOUT_SECONDS = 600
 PSYCH_TIMEOUT_SECONDS = 600

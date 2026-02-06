@@ -1,0 +1,106 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Beranda Sekolah" %}
+
+{% block head_extra %}
+<style>
+    .service-card {
+        border: 1px solid var(--border-soft);
+        background: var(--bg-surface);
+        border-radius: 18px;
+        padding: 20px;
+        height: 100%;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .service-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .service-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(13, 110, 253, 0.12);
+        color: #0d6efd;
+        font-size: 1.4rem;
+    }
+
+    .service-card .btn {
+        border-radius: 999px;
+        padding: 8px 18px;
+    }
+
+    .service-muted {
+        color: var(--text-muted);
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    <h1 class="h3 fw-bold page-title mb-1">Pilih Layanan Sekolah</h1>
+                    {% if school %}
+                    <p class="page-subtitle mb-0">
+                        {{ school.name }} &bull; NPSN {{ school.npsn }}
+                        {% if school.kecamatan_name %}&bull; {{ school.kecamatan_name }}{% endif %}
+                    </p>
+                    {% else %}
+                    <p class="page-subtitle mb-0">Akun belum terhubung dengan data sekolah.</p>
+                    {% endif %}
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary-subtle text-primary">OSS Sekolah</span>
+                    <span class="badge bg-light text-muted">2 layanan</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-3">
+    <div class="col-lg-6">
+        <div class="service-card d-flex flex-column">
+            <div class="d-flex align-items-start gap-3 mb-3">
+                <span class="service-icon"><i class="bi bi-journal-text"></i></span>
+                <div>
+                    <h2 class="h5 fw-bold mb-1">Buku Tamu</h2>
+                    <p class="service-muted mb-0">Input kunjungan tamu, foto wajib, GPS otomatis, dan pantau status verifikasi.</p>
+                </div>
+            </div>
+            <div class="mt-auto d-flex align-items-center justify-content-between">
+                <div class="text-muted small">Kelola transaksi tamu sekolah.</div>
+                <a class="btn btn-primary" href="{{ url_for('daftar_tamu.sekolah_guestbook') }}">
+                    Masuk
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="service-card d-flex flex-column">
+            <div class="d-flex align-items-start gap-3 mb-3">
+                <span class="service-icon" style="background: rgba(25, 135, 84, 0.12); color: #198754;">
+                    <i class="bi bi-sliders"></i>
+                </span>
+                <div>
+                    <h2 class="h5 fw-bold mb-1">PANBERS</h2>
+                    <p class="service-muted mb-0">Konfigurasi ruangan, lengkapi data, dan siapkan penilaian sekolah.</p>
+                </div>
+            </div>
+            <div class="mt-auto d-flex align-items-center justify-content-between">
+                <div class="text-muted small">Masuk ke konfigurasi PANBERS.</div>
+                <a class="btn btn-success" href="{{ url_for('portal.sekolah_rooms') }}">
+                    Masuk
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

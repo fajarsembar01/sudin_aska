@@ -247,7 +247,39 @@ def admin_select_role() -> Response:
     if role != "admin":
         flash("Halaman ini hanya untuk admin.", "danger")
         return redirect(url_for("portal.home"))
-    return render_template("admin_selection.html")
+    cards = [
+        {
+            "title": "ASKA Insight",
+            "description": "Dashboard analitik dan pemantauan data",
+            "icon": "bi-graph-up-arrow",
+            "href": url_for("main.dashboard"),
+            "col_class": "col-md-4 col-12",
+        },
+        {
+            "title": "Portal",
+            "description": "Akses portal sekolah dan layanan publik",
+            "icon": "bi-window-sidebar",
+            "href": url_for("portal.home"),
+            "col_class": "col-md-4 col-12",
+        },
+        {
+            "title": "Daftar Tamu",
+            "description": "Dashboard pemantauan kunjungan tamu sekolah",
+            "icon": "bi-person-vcard",
+            "href": url_for("daftar_tamu.admin_dashboard"),
+            "col_class": "col-md-4 col-12",
+        },
+    ]
+    return render_template(
+        "role_selection.html",
+        page_title="Pilih Mode Akses - ASKA Portal",
+        page_description="Pilih mode akses untuk Admin",
+        header_title="Selamat Datang, Admin",
+        header_subtitle="Silakan pilih dashboard yang ingin Anda akses",
+        cards=cards,
+        default_col_class="col-md-4 col-12",
+        show_logout=True,
+    )
 
 
 @main_bp.route("/overview")

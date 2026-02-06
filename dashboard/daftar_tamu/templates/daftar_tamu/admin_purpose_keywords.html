@@ -1,0 +1,113 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Suggest Tujuan Kunjungan" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="icon-badge feature-icon text-primary">
+                        <i class="bi bi-lightbulb"></i>
+                    </span>
+                    <div>
+                        <h1 class="h3 fw-bold page-title mb-1">Suggest Tujuan Kunjungan</h1>
+                        <p class="page-subtitle mb-0">
+                            Kata kunci ini muncul sebagai saran di field tujuan. User tetap boleh tulis tujuan apa adanya.
+                        </p>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('daftar_tamu.admin_dashboard') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                    </a>
+                    <a href="{{ url_for('daftar_tamu.admin_validation') }}" class="btn btn-outline-success">
+                        <i class="bi bi-clipboard-check me-1"></i>Validasi
+                    </a>
+                    <a href="{{ url_for('daftar_tamu.admin_public_transactions') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-people me-1"></i>Tamu Umum Web
+                    </a>
+                    <a href="{{ url_for('main.admin_select_role') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-grid me-1"></i>Pilih Menu
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-3">
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-2">Tambah Kata Kunci</h2>
+                <form method="post" class="d-flex gap-2">
+                    <input type="hidden" name="action" value="add">
+                    <input type="text" name="keyword" class="form-control"
+                        placeholder="Contoh: Monitoring sarpras / Konsultasi / Koordinasi" maxlength="80" required>
+                    <button type="submit" class="btn btn-primary">Tambah</button>
+                </form>
+                <div class="small text-muted mt-2">
+                    Jika kata kunci sudah ada, sistem akan mengaktifkan ulang.
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                    <h2 class="h6 fw-bold mb-0">Daftar Kata Kunci</h2>
+                    <div class="small text-muted">{{ rows|length }} item</div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Kata Kunci</th>
+                                <th>Status</th>
+                                <th>Oleh</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in rows %}
+                            <tr>
+                                <td class="fw-semibold">{{ row.keyword }}</td>
+                                <td>
+                                    {% if row.active %}
+                                    <span class="badge text-bg-success">Aktif</span>
+                                    {% else %}
+                                    <span class="badge text-bg-secondary">Nonaktif</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="small text-muted">{{ row.created_by_name or '-' }}</div>
+                                </td>
+                                <td class="text-end">
+                                    <form method="post" class="d-inline">
+                                        <input type="hidden" name="action" value="toggle">
+                                        <input type="hidden" name="keyword_id" value="{{ row.id }}">
+                                        <input type="hidden" name="active" value="{{ 'false' if row.active else 'true' }}">
+                                        {% if row.active %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Nonaktifkan</button>
+                                        {% else %}
+                                        <button type="submit" class="btn btn-sm btn-outline-success">Aktifkan</button>
+                                        {% endif %}
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-muted small">Belum ada kata kunci.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+

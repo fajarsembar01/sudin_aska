@@ -11,6 +11,7 @@ PLACEHOLDER = "<!-- {{ASKA_PROFIL_DAN_JADWAL}} -->"
 
 
 DATA_SEKOLAH_FILE = KECERDASAN_DIR / "Data_Sekolah_Sudin_JU2.md"
+DETAIL_SEKOLAH_FILE = KECERDASAN_DIR / "Detail_Sekolah.md"
 STRUKTUR_ORG_FILE = KECERDASAN_DIR / "struktur_organisasi_sudindikju2.md"
 
 def _read(path: Path) -> str:
@@ -31,6 +32,7 @@ def load_kecerdasan(*, ensure_output_file: bool = False) -> str:
     general_text = _read(GENERAL_FILE)
     specific_text = _read(SPECIFIC_FILE).strip()
     schools_text = _read(DATA_SEKOLAH_FILE).strip()
+    detail_schools_text = _read(DETAIL_SEKOLAH_FILE).strip()
     struktur_org_text = _read(STRUKTUR_ORG_FILE).strip()
 
     # Gabungkan profil ke dalam umum
@@ -47,6 +49,10 @@ def load_kecerdasan(*, ensure_output_file: bool = False) -> str:
     # Tambahkan data sekolah di akhir
     if schools_text:
         combined = f"{combined.rstrip()}\n\n# Data Sekolah\n{schools_text}\n"
+
+    # Tambahkan detail sekolah (rekap lengkap)
+    if detail_schools_text:
+        combined = f"{combined.rstrip()}\n\n# Detail Sekolah\n{detail_schools_text}\n"
 
     combined = combined.strip() + "\n"
     return combined

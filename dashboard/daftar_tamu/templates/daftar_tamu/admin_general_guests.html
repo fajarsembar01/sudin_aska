@@ -1,0 +1,295 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Tamu Umum" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="icon-badge feature-icon text-primary">
+                        <i class="bi bi-people"></i>
+                    </span>
+                    <div>
+                        <h1 class="h3 fw-bold page-title mb-1">Tamu Umum</h1>
+                        <p class="page-subtitle mb-0">Kelola daftar tamu umum dan status verifikasi.</p>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('daftar_tamu.admin_dashboard') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                    </a>
+                    <a href="{{ url_for('daftar_tamu.admin_public_transactions') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-people me-1"></i>Transaksi Umum
+                    </a>
+                    <a href="{{ url_for('main.admin_select_role') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-grid me-1"></i>Pilih Menu
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-lg-7">
+                <form method="get" class="row g-2 align-items-end">
+                    <div class="col-md-6">
+                        <label class="form-label small mb-1">Cari nama/instansi</label>
+                        <input type="text" name="q" class="form-control" value="{{ search_query }}"
+                            placeholder="Nama, instansi, telepon">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small mb-1">Status</label>
+                        <select name="verified" class="form-select">
+                            <option value="" {% if verified_filter=='' %}selected{% endif %}>Semua</option>
+                            <option value="true" {% if verified_filter=='true' %}selected{% endif %}>Verified</option>
+                            <option value="false" {% if verified_filter=='false' %}selected{% endif %}>Belum verified</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small mb-1">Data</label>
+                        <select name="deleted" class="form-select">
+                            <option value="" {% if deleted_filter=='' %}selected{% endif %}>Semua</option>
+                            <option value="false" {% if deleted_filter=='false' %}selected{% endif %}>Aktif</option>
+                            <option value="true" {% if deleted_filter=='true' %}selected{% endif %}>Dihapus</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button type="submit" class="btn btn-primary">Terapkan</button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-lg-5">
+                <form id="generalGuestForm" class="border rounded-3 p-3 bg-light">
+                    <div class="fw-semibold mb-2">Tambah Tamu Umum</div>
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <input type="text" name="full_name" class="form-control" placeholder="Nama lengkap *" required>
+                        </div>
+                        <div class="col-12">
+                            <input type="text" name="instansi" class="form-control" placeholder="Instansi (opsional)">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <input type="text" name="jabatan" class="form-control" placeholder="Jabatan (opsional)">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <input type="text" name="phone" class="form-control" placeholder="Telepon (opsional)">
+                        </div>
+                        <div class="col-12 d-grid">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="bi bi-person-plus me-1"></i>Tambah
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Nama</th>
+                        <th>Instansi</th>
+                        <th>Kontak</th>
+                        <th>Status</th>
+                        <th>Dibuat</th>
+                        <th class="text-end">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr data-guest-id="{{ row.id }}">
+                        <td>
+                            <div class="fw-semibold">{{ row.full_name }}</div>
+                            {% if row.jabatan %}
+                            <div class="small text-muted">{{ row.jabatan }}</div>
+                            {% endif %}
+                            {% if row.has_duplicate %}
+                            <span class="badge text-bg-warning">Duplikat</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ row.instansi or '-' }}</td>
+                        <td>
+                            <div class="small text-muted">{{ row.phone or '-' }}</div>
+                            {% if row.email %}
+                            <div class="small text-muted">{{ row.email }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if row.is_deleted %}
+                            <span class="badge text-bg-danger">Dihapus</span>
+                            {% elif row.is_verified %}
+                            <span class="badge text-bg-success">Verified</span>
+                            {% else %}
+                            <span class="badge text-bg-secondary">Belum</span>
+                            {% endif %}
+                            {% if row.is_deleted %}
+                            <div class="small text-muted mt-1">
+                                {{ row.deleted_by_name or 'Admin' }} &bull; {{ row.deleted_at|jakarta('%d %b %Y') }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="small text-muted">{{ row.created_by_name or '-' }}</div>
+                            <div class="small text-muted">{{ row.created_at|jakarta('%d %b %Y') }}</div>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex justify-content-end gap-2">
+                                <button type="button" class="btn btn-sm {% if row.is_verified %}btn-outline-secondary{% else %}btn-success{% endif %}"
+                                    data-action="toggle-verify" data-verified="{{ '1' if row.is_verified else '0' }}"
+                                    {% if row.is_deleted %}disabled{% endif %}>
+                                    {% if row.is_verified %}Batalkan{% else %}Verifikasi{% endif %}
+                                </button>
+                                <button type="button" class="btn btn-sm {% if row.is_deleted %}btn-outline-primary{% else %}btn-outline-danger{% endif %}"
+                                    data-action="toggle-delete" data-deleted="{{ '1' if row.is_deleted else '0' }}">
+                                    {% if row.is_deleted %}Pulihkan{% else %}Hapus{% endif %}
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">Belum ada tamu umum.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% set start_row = ((page - 1) * per_page) + 1 if total_rows else 0 %}
+        {% set end_row = ((page - 1) * per_page) + (rows|length) if total_rows else 0 %}
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+            <small class="text-muted">Menampilkan {{ start_row }}-{{ end_row }} dari {{ total_rows }} data</small>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_general_guests', q=search_query, verified=verified_filter, deleted=deleted_filter, per_page=per_page, page=page-1) }}">Prev</a>
+                </li>
+                {% set start_page = 1 if page - 2 < 1 else page - 2 %}
+                {% set end_page = total_pages if page + 2 > total_pages else page + 2 %}
+                {% for p in range(start_page, end_page + 1) %}
+                <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_general_guests', q=search_query, verified=verified_filter, deleted=deleted_filter, per_page=per_page, page=p) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_general_guests', q=search_query, verified=verified_filter, deleted=deleted_filter, per_page=per_page, page=page+1) }}">Next</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+    (function () {
+        var form = document.getElementById('generalGuestForm');
+        if (form) {
+            form.addEventListener('submit', function (ev) {
+                ev.preventDefault();
+                var formData = new FormData(form);
+                fetch('/daftar-tamu/umum', { method: 'POST', body: formData })
+                    .then(function (res) {
+                        var contentType = res.headers.get('content-type') || '';
+                        if (!res.ok) {
+                            return res.text().then(function () {
+                                throw new Error('Gagal menambahkan tamu. Silakan refresh atau restart server.');
+                            });
+                        }
+                        if (contentType.indexOf('application/json') === -1) {
+                            return res.text().then(function () {
+                                throw new Error('Respon server tidak valid. Silakan refresh halaman.');
+                            });
+                        }
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (!data.success) throw new Error(data.message || 'Gagal menambahkan');
+                        window.location.reload();
+                    })
+                    .catch(function (err) {
+                        alert(err.message || 'Gagal menambahkan');
+                    });
+            });
+        }
+
+        document.querySelectorAll('[data-action="toggle-verify"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var row = btn.closest('tr');
+                if (!row) return;
+                var guestId = row.getAttribute('data-guest-id');
+                var isVerified = btn.getAttribute('data-verified') === '1';
+                var formData = new FormData();
+                formData.append('is_verified', isVerified ? '0' : '1');
+                fetch('/daftar-tamu/admin/umum/' + guestId + '/verify', { method: 'POST', body: formData })
+                    .then(function (res) {
+                        var contentType = res.headers.get('content-type') || '';
+                        if (!res.ok) {
+                            return res.text().then(function () {
+                                throw new Error('Gagal memperbarui. Silakan refresh atau restart server.');
+                            });
+                        }
+                        if (contentType.indexOf('application/json') === -1) {
+                            return res.text().then(function () {
+                                throw new Error('Respon server tidak valid. Silakan refresh halaman.');
+                            });
+                        }
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (!data.success) throw new Error(data.message || 'Gagal memperbarui');
+                        window.location.reload();
+                    })
+                    .catch(function (err) {
+                        alert(err.message || 'Gagal memperbarui');
+                    });
+            });
+        });
+
+        document.querySelectorAll('[data-action="toggle-delete"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var row = btn.closest('tr');
+                if (!row) return;
+                var guestId = row.getAttribute('data-guest-id');
+                var isDeleted = btn.getAttribute('data-deleted') === '1';
+                if (!isDeleted) {
+                    var ok = confirm('Yakin ingin menghapus tamu ini? Data akan ditandai sebagai dihapus.');
+                    if (!ok) return;
+                }
+                var formData = new FormData();
+                formData.append('is_deleted', isDeleted ? '0' : '1');
+                fetch('/daftar-tamu/admin/umum/' + guestId + '/delete', { method: 'POST', body: formData })
+                    .then(function (res) {
+                        var contentType = res.headers.get('content-type') || '';
+                        if (!res.ok) {
+                            return res.text().then(function () {
+                                throw new Error('Gagal memperbarui. Silakan refresh atau restart server.');
+                            });
+                        }
+                        if (contentType.indexOf('application/json') === -1) {
+                            return res.text().then(function () {
+                                throw new Error('Respon server tidak valid. Silakan refresh halaman.');
+                            });
+                        }
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (!data.success) throw new Error(data.message || 'Gagal memperbarui');
+                        window.location.reload();
+                    })
+                    .catch(function (err) {
+                        alert(err.message || 'Gagal memperbarui');
+                    });
+            });
+        });
+    })();
+</script>
+{% endblock %}
