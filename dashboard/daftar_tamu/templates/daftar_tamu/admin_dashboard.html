@@ -80,6 +80,9 @@
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2 no-print">
+                    <a href="{{ url_for('daftar_tamu.admin_validation') }}" class="btn btn-outline-success">
+                        <i class="bi bi-clipboard-check me-1"></i>Validasi Tamu
+                    </a>
                     <a href="{{ url_for('portal.admin_stats') }}" class="btn btn-outline-primary">
                         <i class="bi bi-bar-chart me-1"></i>Statistik Portal
                     </a>
@@ -109,7 +112,10 @@
             <div class="card-body">
                 <div class="small text-uppercase text-muted fw-semibold">Total Kunjungan</div>
                 <h2 class="display-6 fw-bold mb-0">{{ summary.total_visits }}</h2>
-                <small class="text-muted">{{ summary.visits_this_month }} kunjungan bulan ini</small>
+                <small class="text-muted">{{ summary.visits_this_month }} kunjungan terverifikasi bulan ini</small>
+                <div class="small text-muted mt-1">
+                    {{ summary.pending_visits }} menunggu &bull; {{ summary.rejected_visits }} ditolak
+                </div>
             </div>
         </div>
     </div>
@@ -290,13 +296,14 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if row.last_guest_name %}
-                                    <div>{{ row.last_guest_name }}</div>
+                                    {% if row.last_guest_display %}
+                                    <div>{{ row.last_guest_display }}</div>
                                     <div class="small text-muted d-flex flex-wrap align-items-center gap-2">
-                                        <span>{{ row.last_guest_institution or "-" }}</span>
+                                        <span>{{ row.last_guest_count or 0 }} tamu</span>
                                         {% if row.last_photo_path %}
-                                        <a href="{{ row.last_photo_path }}" target="_blank"
-                                            class="text-decoration-none no-print" title="Lihat foto kunjungan terakhir">
+                                        {% set last_photo_name = row.last_photo_path.split('uploads/portal/')[-1] %}
+                                        <a href="{{ url_for('portal.uploaded_file', filename=last_photo_name) }}"
+                                            target="_blank" class="text-decoration-none no-print" title="Lihat foto kunjungan terakhir">
                                             <i class="bi bi-camera-fill"></i>
                                         </a>
                                         {% endif %}
@@ -377,18 +384,21 @@
                         <div class="d-flex justify-content-between align-items-start gap-2">
                             <div>
                                 <div class="fw-semibold small">{{ visit.school_name }}</div>
-                                <div class="text-muted small">{{ visit.guest_name }} &bull; {{ visit.guest_institution }}</div>
+                                <div class="text-muted small">
+                                    {{ visit.guest_names or '-' }} &bull; {{ visit.guest_count or 0 }} tamu
+                                </div>
                                 <div class="text-muted small d-flex flex-wrap align-items-center gap-2">
                                     <span>{{ visit.purpose or "-" }}</span>
                                     {% if visit.photo_path %}
-                                    <a href="{{ visit.photo_path }}" target="_blank" class="text-decoration-none no-print"
+                                    {% set recent_photo_name = visit.photo_path.split('uploads/portal/')[-1] %}
+                                    <a href="{{ url_for('portal.uploaded_file', filename=recent_photo_name) }}" target="_blank" class="text-decoration-none no-print"
                                         title="Lihat foto kunjungan">
                                         <i class="bi bi-camera-fill"></i>
                                     </a>
                                     {% endif %}
                                 </div>
                             </div>
-                            <span class="badge text-bg-light">{{ visit.visit_date.strftime('%d %b') }}</span>
+                            <span class="badge text-bg-light">{{ visit.visit_at|jakarta('%d %b') }}</span>
                         </div>
                     </div>
                     {% endfor %}
@@ -469,7 +479,7 @@
                             <div class="small">Total kunjungan: <strong>${visitCount}</strong></div>
                             <div class="small">Kunjungan terakhir: <strong>${escapeHtml(lastVisit)}</strong></div>
                             <div class="small">Tamu terakhir: ${escapeHtml(row.last_guest_name || '-')}</div>
-                            <div class="small">Instansi: ${escapeHtml(row.last_guest_institution || '-')}</div>
+                            <div class="small">Jumlah tamu: ${escapeHtml(row.last_guest_count || 0)}</div>
                         </div>
                     `;
                     marker.bindPopup(popupHtml);

@@ -554,6 +554,50 @@ CREATE INDEX IF NOT EXISTS idx_daftar_tamu_visits_school ON daftar_tamu_visits (
 CREATE INDEX IF NOT EXISTS idx_daftar_tamu_visits_date ON daftar_tamu_visits (visit_date DESC);
 """
 
+_DAFTAR_TAMU_TRANSACTIONS_SQL = """
+CREATE TABLE IF NOT EXISTS daftar_tamu_transactions (
+    id SERIAL PRIMARY KEY,
+    school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+    visit_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    purpose TEXT,
+    notes TEXT,
+    photo_path TEXT NOT NULL,
+    photo_raw_path TEXT,
+    latitude DECIMAL(9,6) NOT NULL,
+    longitude DECIMAL(9,6) NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    reviewed_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    reviewed_at TIMESTAMPTZ,
+    reviewer_notes TEXT,
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_DAFTAR_TAMU_TRANSACTIONS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_transactions_school ON daftar_tamu_transactions (school_id);
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_transactions_status ON daftar_tamu_transactions (status);
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_transactions_visit_at ON daftar_tamu_transactions (visit_at DESC);
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_transactions_created_by ON daftar_tamu_transactions (created_by);
+"""
+
+_DAFTAR_TAMU_TRANSACTION_GUESTS_SQL = """
+CREATE TABLE IF NOT EXISTS daftar_tamu_transaction_guests (
+    id SERIAL PRIMARY KEY,
+    transaction_id INTEGER NOT NULL REFERENCES daftar_tamu_transactions(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (transaction_id, user_id)
+);
+"""
+
+_DAFTAR_TAMU_TRANSACTION_GUESTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_transaction_guests_tx ON daftar_tamu_transaction_guests (transaction_id);
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_transaction_guests_user ON daftar_tamu_transaction_guests (user_id);
+"""
+
 
 def ensure_dashboard_schema() -> None:
     """Create core dashboard tables when they do not yet exist."""
@@ -586,7 +630,6 @@ def ensure_dashboard_schema() -> None:
         _PORTAL_KELURAHAN_INDEX_SQL,
         _PORTAL_KONTAK_WILAYAH_SQL,
         _PORTAL_KONTAK_WILAYAH_INDEX_SQL,
-        _PORTAL_KONTAK_WILAYAH_SEED_SQL,
         "ALTER TABLE portal_kontak ADD COLUMN IF NOT EXISTS kontak_1_active BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE portal_kontak ADD COLUMN IF NOT EXISTS nama_2 TEXT",
         "ALTER TABLE portal_kontak ADD COLUMN IF NOT EXISTS kontak_2 TEXT",
@@ -625,6 +668,10 @@ def ensure_dashboard_schema() -> None:
         _DAFTAR_TAMU_SCHOOLS_INDEX_SQL,
         _DAFTAR_TAMU_VISITS_SQL,
         _DAFTAR_TAMU_VISITS_INDEX_SQL,
+        _DAFTAR_TAMU_TRANSACTIONS_SQL,
+        _DAFTAR_TAMU_TRANSACTIONS_INDEX_SQL,
+        _DAFTAR_TAMU_TRANSACTION_GUESTS_SQL,
+        _DAFTAR_TAMU_TRANSACTION_GUESTS_INDEX_SQL,
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS no_tester_enabled BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS nrk TEXT",
         "ALTER TABLE dashboard_users ALTER COLUMN nrk DROP NOT NULL",

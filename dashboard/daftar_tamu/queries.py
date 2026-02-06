@@ -18,13 +18,15 @@ SORT_OPTIONS = {
 }
 
 DEFAULT_SORT = "visits_desc"
+TRANSACTION_STATUSES = {"pending", "approved", "rejected"}
 
 _ROLLUP_CTE = """
-WITH filtered_visits AS (
-    SELECT v.*
-    FROM daftar_tamu_visits v
-    WHERE (%s::date IS NULL OR v.visit_date >= %s::date)
-      AND (%s::date IS NULL OR v.visit_date <= %s::date)
+WITH filtered_transactions AS (
+    SELECT t.*
+    FROM daftar_tamu_transactions t
+    WHERE t.status = 'approved'
+      AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
+      AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
 ),
 school_rollup AS (
     SELECT
@@ -32,28 +34,39 @@ school_rollup AS (
         s.npsn,
         s.name AS school_name,
         s.jenjang,
-        s.kecamatan,
-        s.kelurahan,
+        k.name AS kecamatan,
+        l.name AS kelurahan,
         s.alamat,
-        COALESCE(s.latitude, latest.latitude) AS latitude,
-        COALESCE(s.longitude, latest.longitude) AS longitude,
-        COUNT(fv.id) AS visit_count,
-        MAX(fv.visit_date) AS last_visit_date,
-        latest.guest_name AS last_guest_name,
-        latest.guest_institution AS last_guest_institution,
-        latest.photo_path AS last_photo_path
-    FROM daftar_tamu_schools s
-    LEFT JOIN filtered_visits fv ON fv.school_id = s.id
+        COUNT(ft.id) AS visit_count,
+        MAX(ft.visit_at) AS last_visit_date,
+        latest.guest_names AS last_guest_names,
+        latest.guest_count AS last_guest_count,
+        latest.photo_path AS last_photo_path,
+        latest.latitude AS latitude,
+        latest.longitude AS longitude
+    FROM portal_schools s
+    LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+    LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+    LEFT JOIN filtered_transactions ft ON ft.school_id = s.id
     LEFT JOIN LATERAL (
         SELECT
-            fv2.guest_name,
-            fv2.guest_institution,
-            fv2.photo_path,
-            fv2.latitude,
-            fv2.longitude
-        FROM filtered_visits fv2
-        WHERE fv2.school_id = s.id
-        ORDER BY fv2.visit_date DESC, fv2.id DESC
+            t2.photo_path,
+            t2.latitude,
+            t2.longitude,
+            (
+                SELECT STRING_AGG(u.full_name, ', ' ORDER BY u.full_name)
+                FROM daftar_tamu_transaction_guests g
+                LEFT JOIN dashboard_users u ON u.id = g.user_id
+                WHERE g.transaction_id = t2.id
+            ) AS guest_names,
+            (
+                SELECT COUNT(*)
+                FROM daftar_tamu_transaction_guests g
+                WHERE g.transaction_id = t2.id
+            ) AS guest_count
+        FROM filtered_transactions t2
+        WHERE t2.school_id = s.id
+        ORDER BY t2.visit_at DESC, t2.id DESC
         LIMIT 1
     ) latest ON TRUE
     WHERE s.active = TRUE
@@ -62,13 +75,11 @@ school_rollup AS (
         s.npsn,
         s.name,
         s.jenjang,
-        s.kecamatan,
-        s.kelurahan,
+        k.name,
+        l.name,
         s.alamat,
-        s.latitude,
-        s.longitude,
-        latest.guest_name,
-        latest.guest_institution,
+        latest.guest_names,
+        latest.guest_count,
         latest.photo_path,
         latest.latitude,
         latest.longitude
@@ -82,117 +93,48 @@ def _build_search(search_query: Optional[str]) -> tuple[str, str]:
 
 
 def ensure_daftar_tamu_seed_data() -> None:
-    """Insert dummy schools and visits when daftar tamu tables are empty."""
-    with get_cursor(commit=True) as cur:
-        cur.execute("SELECT COUNT(*) AS total FROM daftar_tamu_schools")
-        total_schools = int(cur.fetchone()["total"] or 0)
-        if total_schools > 0:
-            return
-
-        schools = [
-            ("317102001", "SDN Tugu Utara 01", "SD", "Jl. Sungai Tiram No. 15", "Koja", "Tugu Utara", -6.122195, 106.907911),
-            ("317102002", "SDN Lagoa 05", "SD", "Jl. Laksda Yos Sudarso No. 20", "Koja", "Lagoa", -6.116012, 106.901732),
-            ("317102003", "SMPN 174 Jakarta", "SMP", "Jl. Walang Baru No. 8", "Koja", "Waru", -6.113342, 106.912110),
-            ("317103001", "SDN Rorotan 03", "SD", "Jl. Rorotan V No. 11", "Cilincing", "Rorotan", -6.100791, 106.953943),
-            ("317103002", "SMPN 289 Jakarta", "SMP", "Jl. Cakung Drain No. 45", "Cilincing", "Semper Timur", -6.107951, 106.932455),
-            ("317103003", "SMKN 36 Jakarta", "SMK", "Jl. Semper Barat Raya No. 65", "Cilincing", "Semper Barat", -6.120341, 106.928444),
-            ("317104001", "SDN Pegangsaan Dua 04", "SD", "Jl. Kelapa Nias Raya Blok NA", "Kelapa Gading", "Pegangsaan Dua", -6.162901, 106.905511),
-            ("317104002", "SMPN 123 Jakarta", "SMP", "Jl. Boulevard Raya No. 22", "Kelapa Gading", "Kelapa Gading Timur", -6.156880, 106.903212),
-            ("317104003", "SMAN 13 Jakarta", "SMA", "Jl. Kelapa Cengkir No. 10", "Kelapa Gading", "Kelapa Gading Barat", -6.157221, 106.892845),
-            ("317105001", "SDN Sunter Agung 09", "SD", "Jl. Danau Sunter Utara No. 5", "Tanjung Priok", "Sunter Agung", -6.140891, 106.872332),
-            ("317105002", "SMPN 30 Jakarta", "SMP", "Jl. Warakas VII No. 12", "Tanjung Priok", "Warakas", -6.128341, 106.885299),
-            ("317105003", "SMKN 55 Jakarta", "SMK", "Jl. Yos Sudarso Km 18", "Tanjung Priok", "Kebon Bawang", -6.123500, 106.889377),
-        ]
-
-        for school in schools:
-            cur.execute(
-                """
-                INSERT INTO daftar_tamu_schools
-                    (npsn, name, jenjang, alamat, kecamatan, kelurahan, latitude, longitude)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                """,
-                school,
-            )
-
-        cur.execute("SELECT id, npsn, latitude, longitude FROM daftar_tamu_schools")
-        school_map = {row["npsn"]: dict(row) for row in cur.fetchall()}
-
-        cur.execute("SELECT id FROM dashboard_users WHERE role = 'admin' ORDER BY id LIMIT 1")
-        admin_row = cur.fetchone()
-        created_by = admin_row["id"] if admin_row else None
-
-        visits = [
-            ("317102001", date(2026, 2, 1), "Tim Sudin Pendidikan JU2", "Rahmat Hidayat", "Monitoring kebersihan area kelas", "Kunjungan rutin awal bulan."),
-            ("317102001", date(2025, 12, 19), "Inspektorat Wilayah", "Nisa Purnama", "Verifikasi tindak lanjut aduan", "Perlu follow-up dokumen."),
-            ("317102002", date(2026, 1, 28), "Tim Sudin Pendidikan JU2", "Siti Aisyah", "Pembinaan UKS", "Dokumentasi lengkap."),
-            ("317102003", date(2025, 10, 5), "Lembaga Mitra Pendidikan", "Arif Prabowo", "Sosialisasi program literasi", "Belum ada kunjungan lanjutan."),
-            ("317103001", date(2026, 1, 15), "Tim Sudin Pendidikan JU2", "Dewi Sartika", "Evaluasi kesiapan PPDB", "Perlu cek ruang kelas tambahan."),
-            ("317103002", date(2025, 11, 23), "Dinas Kesehatan", "Yuni Kartika", "Pemeriksaan sanitasi sekolah", "Skor sanitasi cukup baik."),
-            ("317103002", date(2026, 1, 5), "Tim Sudin Pendidikan JU2", "M. Irfan", "Pendampingan administrasi sekolah", "Butuh pelatihan operator."),
-            ("317103003", date(2025, 12, 8), "Tim Sudin Pendidikan JU2", "Nur Aini", "Monitoring fasilitas laboratorium", "Perlu pengadaan alat praktikum."),
-            ("317104001", date(2026, 1, 10), "Lembaga Akreditasi Sekolah", "Herman Saputra", "Validasi kesiapan akreditasi", "Data pendukung sudah lengkap."),
-            ("317104001", date(2025, 9, 30), "Tim Sudin Pendidikan JU2", "Siti Rahma", "Monitoring mutu pembelajaran", "Rencana kunjungan ulang triwulan I."),
-            ("317104002", date(2026, 1, 30), "Tim Sudin Pendidikan JU2", "Budi Santoso", "Pendampingan sarpras", "Perlu catatan plafon ruang guru."),
-            ("317104003", date(2025, 8, 14), "Kejaksaan Negeri", "Lani Kusuma", "Sosialisasi anti korupsi", "Selesai tepat waktu."),
-            ("317105001", date(2026, 2, 3), "Tim Sudin Pendidikan JU2", "Rizki Maulana", "Pemantauan kesiapan ujian", "Kondisi sekolah sangat siap."),
-            ("317105001", date(2025, 11, 1), "Dinas Lingkungan Hidup", "Prita Melati", "Evaluasi bank sampah sekolah", "Diusulkan program lanjutan."),
-            ("317105002", date(2025, 12, 27), "Tim Sudin Pendidikan JU2", "Anita Wulandari", "Pembinaan manajemen sekolah", "Perlu monitoring 60 hari."),
-            ("317105002", date(2026, 1, 18), "BPKD DKI", "Farhan Akbar", "Monitoring administrasi BOS", "Dokumen lengkap."),
-        ]
-
-        for npsn, visit_date, institution, guest_name, purpose, notes in visits:
-            school = school_map.get(npsn)
-            if not school:
-                continue
-            latitude = float(school["latitude"]) if school.get("latitude") is not None else None
-            longitude = float(school["longitude"]) if school.get("longitude") is not None else None
-            cur.execute(
-                """
-                INSERT INTO daftar_tamu_visits (
-                    school_id,
-                    visit_date,
-                    guest_name,
-                    guest_institution,
-                    purpose,
-                    notes,
-                    photo_path,
-                    latitude,
-                    longitude,
-                    created_by
-                )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """,
-                (
-                    school["id"],
-                    visit_date,
-                    guest_name,
-                    institution,
-                    purpose,
-                    notes,
-                    "/static/logo/logo.png",
-                    latitude,
-                    longitude,
-                    created_by,
-                ),
-            )
+    """No-op: daftar tamu now uses portal_schools and real transactions."""
+    return
 
 
 def fetch_dashboard_summary(date_from: Optional[date] = None, date_to: Optional[date] = None) -> Dict[str, Any]:
     """Fetch top-level summary stats for admin dashboard."""
     cutoff = date.today() - timedelta(days=30)
-    params: List[Any] = [date_from, date_from, date_to, date_to, cutoff]
+    params: List[Any] = [
+        date_from,
+        date_from,
+        date_to,
+        date_to,
+        cutoff,
+        date_from,
+        date_from,
+        date_to,
+        date_to,
+        date_from,
+        date_from,
+        date_to,
+        date_to,
+    ]
     query = (
         _ROLLUP_CTE
         + """
     SELECT
-        (SELECT COUNT(*) FROM school_rollup) AS total_schools,
+        (SELECT COUNT(*) FROM portal_schools WHERE active = TRUE) AS total_schools,
         (SELECT COALESCE(SUM(visit_count), 0) FROM school_rollup) AS total_visits,
         (SELECT COUNT(*) FROM school_rollup WHERE visit_count > 0) AS visited_schools,
         (SELECT COUNT(*) FROM school_rollup WHERE visit_count = 0) AS unvisited_schools,
         (SELECT COUNT(*) FROM school_rollup WHERE visit_count = 0 OR last_visit_date < %s::date) AS attention_schools,
         (SELECT MAX(last_visit_date) FROM school_rollup) AS latest_visit_date,
-        (SELECT COUNT(*) FROM filtered_visits
-            WHERE visit_date >= date_trunc('month', CURRENT_DATE)::date) AS visits_this_month
+        (SELECT COUNT(*) FROM filtered_transactions
+            WHERE visit_at >= date_trunc('month', CURRENT_DATE)) AS visits_this_month,
+        (SELECT COUNT(*) FROM daftar_tamu_transactions t
+            WHERE t.status = 'pending'
+              AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
+              AND (%s::date IS NULL OR t.visit_at::date <= %s::date)) AS pending_visits,
+        (SELECT COUNT(*) FROM daftar_tamu_transactions t
+            WHERE t.status = 'rejected'
+              AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
+              AND (%s::date IS NULL OR t.visit_at::date <= %s::date)) AS rejected_visits
     """
     )
 
@@ -208,6 +150,8 @@ def fetch_dashboard_summary(date_from: Optional[date] = None, date_to: Optional[
         "attention_schools": int(row.get("attention_schools") or 0),
         "latest_visit_date": row.get("latest_visit_date"),
         "visits_this_month": int(row.get("visits_this_month") or 0),
+        "pending_visits": int(row.get("pending_visits") or 0),
+        "rejected_visits": int(row.get("rejected_visits") or 0),
     }
 
 
@@ -262,8 +206,8 @@ def fetch_school_rankings(
         longitude,
         visit_count,
         last_visit_date,
-        last_guest_name,
-        last_guest_institution,
+        last_guest_names,
+        last_guest_count,
         last_photo_path
     FROM school_rollup
     WHERE (
@@ -295,7 +239,24 @@ def fetch_school_rankings(
         if row.get("longitude") is not None:
             row["longitude"] = float(row["longitude"])
         last_visit = row.get("last_visit_date")
-        row["days_since_visit"] = (today - last_visit).days if last_visit else None
+        row["days_since_visit"] = (today - last_visit.date()).days if last_visit else None
+
+        names_raw = row.get("last_guest_names") or ""
+        names = [n.strip() for n in names_raw.split(",") if n.strip()]
+        guest_count = int(row.get("last_guest_count") or 0)
+        if not guest_count:
+            guest_count = len(names)
+        if names:
+            if len(names) > 2:
+                display = f"{names[0]} +{len(names) - 1}"
+            elif len(names) == 2:
+                display = f"{names[0]} & {names[1]}"
+            else:
+                display = names[0]
+        else:
+            display = None
+        row["last_guest_display"] = display
+        row["last_guest_count"] = guest_count
 
     return rows, total_rows
 
@@ -320,8 +281,8 @@ def fetch_map_data(
         longitude,
         visit_count,
         last_visit_date,
-        last_guest_name,
-        last_guest_institution
+        last_guest_names,
+        last_guest_count
     FROM school_rollup
     ORDER BY {SORT_OPTIONS[DEFAULT_SORT]}
     """
@@ -343,7 +304,7 @@ def fetch_map_data(
         last_visit = row.get("last_visit_date")
         if visit_count == 0:
             level = "unvisited"
-        elif last_visit and last_visit >= cutoff:
+        elif last_visit and last_visit.date() >= cutoff:
             level = "recent"
         else:
             level = "stale"
@@ -360,8 +321,8 @@ def fetch_map_data(
                 "longitude": float(lng),
                 "visit_count": visit_count,
                 "last_visit_date": last_visit.isoformat() if last_visit else None,
-                "last_guest_name": row.get("last_guest_name"),
-                "last_guest_institution": row.get("last_guest_institution"),
+                "last_guest_name": row.get("last_guest_names"),
+                "last_guest_count": int(row.get("last_guest_count") or 0),
                 "level": level,
             }
         )
@@ -374,7 +335,7 @@ def fetch_unvisited_schools(
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
 ) -> List[Dict[str, Any]]:
-    """Fetch schools with zero visits in the selected period."""
+    """Fetch schools with zero approved visits in the selected period."""
     safe_limit = max(1, min(limit, 100))
     query = (
         _ROLLUP_CTE
@@ -403,28 +364,446 @@ def fetch_recent_visits(
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
 ) -> List[Dict[str, Any]]:
-    """Fetch latest visit records for side panel."""
+    """Fetch latest approved visit records for side panel."""
     safe_limit = max(1, min(limit, 100))
     query = """
     SELECT
-        v.id,
-        v.visit_date,
-        v.guest_name,
-        v.guest_institution,
-        v.purpose,
-        v.photo_path,
+        t.id,
+        t.visit_at,
+        t.purpose,
+        t.photo_path,
         s.id AS school_id,
         s.name AS school_name,
         s.npsn,
-        s.jenjang
-    FROM daftar_tamu_visits v
-    JOIN daftar_tamu_schools s ON s.id = v.school_id
+        s.jenjang,
+        k.name AS kecamatan,
+        (
+            SELECT STRING_AGG(u.full_name, ', ' ORDER BY u.full_name)
+            FROM daftar_tamu_transaction_guests g
+            LEFT JOIN dashboard_users u ON u.id = g.user_id
+            WHERE g.transaction_id = t.id
+        ) AS guest_names,
+        (
+            SELECT COUNT(*)
+            FROM daftar_tamu_transaction_guests g
+            WHERE g.transaction_id = t.id
+        ) AS guest_count
+    FROM daftar_tamu_transactions t
+    JOIN portal_schools s ON s.id = t.school_id
+    LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+    LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
     WHERE s.active = TRUE
-      AND (%s::date IS NULL OR v.visit_date >= %s::date)
-      AND (%s::date IS NULL OR v.visit_date <= %s::date)
-    ORDER BY v.visit_date DESC, v.id DESC
+      AND t.status = 'approved'
+      AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
+      AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
+    ORDER BY t.visit_at DESC, t.id DESC
     LIMIT %s
     """
     with get_cursor() as cur:
         cur.execute(query, [date_from, date_from, date_to, date_to, safe_limit])
+        return [dict(row) for row in cur.fetchall()]
+
+
+def list_guest_candidates(search_query: Optional[str], limit: int = 20) -> List[Dict[str, Any]]:
+    query_text, like_query = _build_search(search_query)
+    safe_limit = max(1, min(limit, 50))
+    query = """
+        SELECT
+            id,
+            full_name,
+            email,
+            role,
+            nrk,
+            jabatan,
+            degree_prefix,
+            degree_suffix
+        FROM dashboard_users
+        WHERE account_status = 'approved'
+          AND (
+            %s = ''
+            OR full_name ILIKE %s
+            OR email ILIKE %s
+            OR COALESCE(nip, '') ILIKE %s
+            OR COALESCE(nrk, '') ILIKE %s
+            OR COALESCE(role, '') ILIKE %s
+        )
+        ORDER BY full_name ASC
+        LIMIT %s
+    """
+    with get_cursor() as cur:
+        cur.execute(
+            query,
+            [query_text, like_query, like_query, like_query, like_query, like_query, safe_limit],
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def list_school_transactions(
+    *,
+    school_id: int,
+    status: Optional[str] = None,
+    page: int = 1,
+    per_page: int = 10,
+) -> Tuple[List[Dict[str, Any]], int]:
+    safe_page = max(1, page)
+    safe_per_page = max(1, min(per_page, 100))
+    offset = (safe_page - 1) * safe_per_page
+    status_value = (status or "").strip().lower()
+    if status_value and status_value not in TRANSACTION_STATUSES:
+        status_value = ""
+
+    count_query = """
+        SELECT COUNT(*) AS total
+        FROM daftar_tamu_transactions t
+        WHERE t.school_id = %s
+          AND (%s = '' OR t.status = %s)
+    """
+    data_query = """
+        SELECT
+            t.id,
+            t.visit_at,
+            t.status,
+            t.purpose,
+            t.notes,
+            t.photo_path,
+            t.photo_raw_path,
+            t.latitude,
+            t.longitude,
+            t.created_at,
+            t.reviewer_notes,
+            t.reviewed_at,
+            reviewer.full_name AS reviewer_name,
+            creator.full_name AS created_by_name,
+            (
+                SELECT STRING_AGG(u.full_name, ', ' ORDER BY u.full_name)
+                FROM daftar_tamu_transaction_guests g
+                LEFT JOIN dashboard_users u ON u.id = g.user_id
+                WHERE g.transaction_id = t.id
+            ) AS guest_names,
+            (
+                SELECT COUNT(*)
+                FROM daftar_tamu_transaction_guests g
+                WHERE g.transaction_id = t.id
+            ) AS guest_count
+        FROM daftar_tamu_transactions t
+        LEFT JOIN dashboard_users reviewer ON reviewer.id = t.reviewed_by
+        LEFT JOIN dashboard_users creator ON creator.id = t.created_by
+        WHERE t.school_id = %s
+          AND (%s = '' OR t.status = %s)
+        ORDER BY t.visit_at DESC, t.id DESC
+        LIMIT %s OFFSET %s
+    """
+
+    with get_cursor() as cur:
+        cur.execute(count_query, [school_id, status_value, status_value])
+        total_rows = int((cur.fetchone() or {}).get("total") or 0)
+
+        cur.execute(
+            data_query,
+            [school_id, status_value, status_value, safe_per_page, offset],
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        names_raw = row.get("guest_names") or ""
+        names = [n.strip() for n in names_raw.split(",") if n.strip()]
+        guest_count = int(row.get("guest_count") or 0)
+        if not guest_count:
+            guest_count = len(names)
+        if names:
+            if len(names) > 2:
+                display = f"{names[0]} +{len(names) - 1}"
+            elif len(names) == 2:
+                display = f"{names[0]} & {names[1]}"
+            else:
+                display = names[0]
+        else:
+            display = None
+        row["guest_display"] = display
+        row["guest_count"] = guest_count
+
+    return rows, total_rows
+
+
+def list_admin_transactions(
+    *,
+    status: Optional[str] = None,
+    search_query: Optional[str] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    page: int = 1,
+    per_page: int = 10,
+) -> Tuple[List[Dict[str, Any]], int]:
+    safe_page = max(1, page)
+    safe_per_page = max(1, min(per_page, 100))
+    offset = (safe_page - 1) * safe_per_page
+
+    status_value = (status or "").strip().lower()
+    if status_value and status_value not in TRANSACTION_STATUSES:
+        status_value = ""
+
+    query_text, like_query = _build_search(search_query)
+
+    count_query = """
+        SELECT COUNT(*) AS total
+        FROM daftar_tamu_transactions t
+        JOIN portal_schools s ON s.id = t.school_id
+        LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+        LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+        WHERE (%s = '' OR t.status = %s)
+          AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
+          AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
+          AND (
+            %s = ''
+            OR s.name ILIKE %s
+            OR s.npsn ILIKE %s
+            OR COALESCE(k.name, '') ILIKE %s
+            OR COALESCE(l.name, '') ILIKE %s
+            OR EXISTS (
+                SELECT 1
+                FROM daftar_tamu_transaction_guests g
+                LEFT JOIN dashboard_users u ON u.id = g.user_id
+                WHERE g.transaction_id = t.id
+                  AND (
+                    u.full_name ILIKE %s
+                    OR u.email ILIKE %s
+                    OR COALESCE(u.nip, '') ILIKE %s
+                    OR COALESCE(u.nrk, '') ILIKE %s
+                    OR COALESCE(u.role, '') ILIKE %s
+                  )
+            )
+          )
+    """
+    data_query = """
+        SELECT
+            t.id,
+            t.visit_at,
+            t.status,
+            t.purpose,
+            t.notes,
+            t.photo_path,
+            t.photo_raw_path,
+            t.latitude,
+            t.longitude,
+            t.created_at,
+            t.reviewer_notes,
+            t.reviewed_at,
+            s.id AS school_id,
+            s.name AS school_name,
+            s.npsn,
+            s.jenjang,
+            k.name AS kecamatan,
+            l.name AS kelurahan,
+            reviewer.full_name AS reviewer_name,
+            creator.full_name AS created_by_name,
+            (
+                SELECT STRING_AGG(u.full_name, ', ' ORDER BY u.full_name)
+                FROM daftar_tamu_transaction_guests g
+                LEFT JOIN dashboard_users u ON u.id = g.user_id
+                WHERE g.transaction_id = t.id
+            ) AS guest_names,
+            (
+                SELECT COUNT(*)
+                FROM daftar_tamu_transaction_guests g
+                WHERE g.transaction_id = t.id
+            ) AS guest_count
+        FROM daftar_tamu_transactions t
+        JOIN portal_schools s ON s.id = t.school_id
+        LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+        LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+        LEFT JOIN dashboard_users reviewer ON reviewer.id = t.reviewed_by
+        LEFT JOIN dashboard_users creator ON creator.id = t.created_by
+        WHERE (%s = '' OR t.status = %s)
+          AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
+          AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
+          AND (
+            %s = ''
+            OR s.name ILIKE %s
+            OR s.npsn ILIKE %s
+            OR COALESCE(k.name, '') ILIKE %s
+            OR COALESCE(l.name, '') ILIKE %s
+            OR EXISTS (
+                SELECT 1
+                FROM daftar_tamu_transaction_guests g
+                LEFT JOIN dashboard_users u ON u.id = g.user_id
+                WHERE g.transaction_id = t.id
+                  AND (
+                    u.full_name ILIKE %s
+                    OR u.email ILIKE %s
+                    OR COALESCE(u.nip, '') ILIKE %s
+                    OR COALESCE(u.nrk, '') ILIKE %s
+                    OR COALESCE(u.role, '') ILIKE %s
+                  )
+            )
+          )
+        ORDER BY t.visit_at DESC, t.id DESC
+        LIMIT %s OFFSET %s
+    """
+
+    params_common = [
+        status_value,
+        status_value,
+        date_from,
+        date_from,
+        date_to,
+        date_to,
+        query_text,
+        like_query,
+        like_query,
+        like_query,
+        like_query,
+        like_query,
+        like_query,
+        like_query,
+        like_query,
+        like_query,
+    ]
+
+    with get_cursor() as cur:
+        cur.execute(count_query, params_common)
+        total_rows = int((cur.fetchone() or {}).get("total") or 0)
+
+        cur.execute(data_query, params_common + [safe_per_page, offset])
+        rows = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        names_raw = row.get("guest_names") or ""
+        names = [n.strip() for n in names_raw.split(",") if n.strip()]
+        guest_count = int(row.get("guest_count") or 0)
+        if not guest_count:
+            guest_count = len(names)
+        if names:
+            if len(names) > 2:
+                display = f"{names[0]} +{len(names) - 1}"
+            elif len(names) == 2:
+                display = f"{names[0]} & {names[1]}"
+            else:
+                display = names[0]
+        else:
+            display = None
+        row["guest_display"] = display
+        row["guest_count"] = guest_count
+
+    return rows, total_rows
+
+
+def get_transaction_detail(transaction_id: int) -> Optional[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                t.id,
+                t.visit_at,
+                t.status,
+                t.purpose,
+                t.notes,
+                t.photo_path,
+                t.photo_raw_path,
+                t.latitude,
+                t.longitude,
+                t.created_at,
+                t.reviewer_notes,
+                t.reviewed_at,
+                s.id AS school_id,
+                s.name AS school_name,
+                s.npsn,
+                s.jenjang,
+                k.name AS kecamatan,
+                l.name AS kelurahan,
+                reviewer.full_name AS reviewer_name,
+                creator.full_name AS created_by_name
+            FROM daftar_tamu_transactions t
+            JOIN portal_schools s ON s.id = t.school_id
+            LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            LEFT JOIN dashboard_users reviewer ON reviewer.id = t.reviewed_by
+            LEFT JOIN dashboard_users creator ON creator.id = t.created_by
+            WHERE t.id = %s
+            """,
+            (transaction_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+        detail = dict(row)
+
+        cur.execute(
+            """
+            SELECT
+                u.id,
+                u.full_name,
+                u.email,
+                u.role,
+                u.nrk,
+                u.jabatan,
+                u.degree_prefix,
+                u.degree_suffix
+            FROM daftar_tamu_transaction_guests g
+            LEFT JOIN dashboard_users u ON u.id = g.user_id
+            WHERE g.transaction_id = %s
+            ORDER BY u.full_name
+            """,
+            (transaction_id,),
+        )
+        detail["guests"] = [dict(row) for row in cur.fetchall()]
+
+    return detail
+
+
+def update_transaction_status(
+    *,
+    transaction_id: int,
+    status: str,
+    reviewer_id: int,
+    reviewer_notes: Optional[str] = None,
+) -> bool:
+    safe_status = (status or "").strip().lower()
+    if safe_status not in TRANSACTION_STATUSES:
+        raise ValueError("Invalid status")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE daftar_tamu_transactions
+            SET status = %s,
+                reviewed_by = %s,
+                reviewed_at = NOW(),
+                reviewer_notes = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            """,
+            (safe_status, reviewer_id, reviewer_notes, transaction_id),
+        )
+        return cur.rowcount > 0
+
+
+def fetch_guest_history(
+    *,
+    user_id: int,
+    limit: int = 20,
+    offset: int = 0,
+) -> List[Dict[str, Any]]:
+    safe_limit = max(1, min(limit, 50))
+    safe_offset = max(0, offset)
+    query = """
+        SELECT
+            t.id,
+            t.visit_at,
+            t.status,
+            s.name AS school_name,
+            s.npsn,
+            s.jenjang,
+            k.name AS kecamatan,
+            l.name AS kelurahan
+        FROM daftar_tamu_transaction_guests g
+        JOIN daftar_tamu_transactions t ON t.id = g.transaction_id
+        JOIN portal_schools s ON s.id = t.school_id
+        LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+        LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+        WHERE g.user_id = %s
+        ORDER BY t.visit_at DESC, t.id DESC
+        LIMIT %s OFFSET %s
+    """
+    with get_cursor() as cur:
+        cur.execute(query, [user_id, safe_limit, safe_offset])
         return [dict(row) for row in cur.fetchall()]

@@ -1011,6 +1011,44 @@ def _filter_assessment_rooms(rooms: list[dict]) -> list[dict]:
     return filtered_rooms
 
 
+def _augment_rooms_with_assessment_data(
+    all_rooms: list[dict],
+    rooms: list[dict],
+    assessment_id: int,
+    existing_scores: list[dict] | None = None,
+    photos_list: list[dict] | None = None,
+    room_notes: dict[int, str] | None = None,
+) -> tuple[list[dict], list[dict], list[dict], dict[int, str]]:
+    """Ensure rooms with existing assessment data are included in the room list."""
+    if existing_scores is None:
+        existing_scores = get_assessment_scores(assessment_id)
+    if photos_list is None:
+        photos_list = get_assessment_photos(assessment_id)
+    if room_notes is None:
+        room_notes = get_assessment_room_details(assessment_id)
+
+    data_room_ids = set()
+    data_room_ids.update(
+        s.get("school_room_id") for s in existing_scores if s.get("school_room_id")
+    )
+    data_room_ids.update(
+        p.get("school_room_id") for p in photos_list if p.get("school_room_id")
+    )
+    data_room_ids.update(room_notes.keys())
+
+    if not data_room_ids:
+        return rooms, existing_scores, photos_list, room_notes
+
+    room_by_id = {r.get("school_room_id"): r for r in rooms if r.get("school_room_id")}
+    all_by_id = {r.get("school_room_id"): r for r in all_rooms if r.get("school_room_id")}
+    for room_id in data_room_ids:
+        if room_id and room_id not in room_by_id and room_id in all_by_id:
+            rooms.append(all_by_id[room_id])
+            room_by_id[room_id] = all_by_id[room_id]
+
+    return rooms, existing_scores, photos_list, room_notes
+
+
 def _sync_assessment_period_to_active(assessment: dict) -> None:
     """Force draft period to match the currently active period."""
     if not assessment or assessment.get("status") != "draft":
@@ -1043,6 +1081,7 @@ def assess(school_id: int) -> Response:
     user = current_user()
     role = user.get("role")
     period_id_arg = request.args.get("period_id", type=int)
+    assessment_id_arg = request.args.get("assessment_id", type=int)
     
     if role not in ("admin", "staff", "coordinator"):
         flash("Hanya staff atau koordinator yang bisa melakukan penilaian.", "danger")
@@ -1060,8 +1099,25 @@ def assess(school_id: int) -> Response:
         flash("Sekolah tidak ditemukan.", "danger")
         return redirect(url_for("portal.schools"))
     
+    # Get draft by explicit assessment_id (keeps existing draft/photos)
+    assessment = None
+    if assessment_id_arg:
+        assessment = get_assessment_by_id(assessment_id_arg)
+        if not assessment:
+            flash("Penilaian tidak ditemukan.", "danger")
+            return redirect(url_for("portal.staff_assignments"))
+        if assessment.get("status") != "draft":
+            return redirect(url_for("portal.view_assessment", assessment_id=assessment_id_arg))
+        if assessment.get("school_id") != school_id:
+            flash("Penilaian tidak sesuai sekolah.", "danger")
+            return redirect(url_for("portal.staff_assignments"))
+        if assessment.get("staff_id") != user["id"] and role != "admin":
+            flash("Anda tidak memiliki akses ke penilaian ini.", "danger")
+            return redirect(url_for("portal.staff_assignments"))
+
     # Get active draft for THIS user
-    assessment = get_active_assessment(school_id, staff_id=user["id"], period_id=period_id_arg)
+    if assessment is None:
+        assessment = get_active_assessment(school_id, staff_id=user["id"], period_id=period_id_arg)
     if not assessment:
         # Prevent new draft if sudah ada penilaian selesai untuk periode yang sama
         target_period_id = period_id_arg
@@ -1104,25 +1160,34 @@ def assess(school_id: int) -> Response:
         current_app.logger.exception("Failed to sync classroom rooms")
 
     # Get school rooms with aspects
-    rooms = list_school_rooms(school_id)
-    if not rooms:
+    all_rooms = list_school_rooms(school_id)
+    if not all_rooms:
         flash("Sekolah belum memiliki ruangan yang dikonfigurasi.", "warning")
         return redirect(url_for("portal.schools"))
 
-    rooms = _filter_assessment_rooms(rooms)
-    total_aspects = sum(len(r.get("aspects", [])) for r in rooms)
+    rooms = _filter_assessment_rooms(all_rooms)
     
     # Periode penilaian untuk badge UI
     assessment_period = get_period_by_id(assessment.get("period_id")) if assessment.get("period_id") else get_active_period()
 
     # Get existing scores
     existing_scores = get_assessment_scores(assessment_id)
+    photos_list = get_assessment_photos(assessment_id)
+    room_notes = get_assessment_room_details(assessment_id)
+    rooms, existing_scores, photos_list, room_notes = _augment_rooms_with_assessment_data(
+        all_rooms,
+        rooms,
+        assessment_id,
+        existing_scores=existing_scores,
+        photos_list=photos_list,
+        room_notes=room_notes,
+    )
+    total_aspects = sum(len(r.get("aspects", [])) for r in rooms)
     scores_map = {
         (s["school_room_id"], s["aspect_id"]): s["score"]
         for s in existing_scores
     }
     
-    photos_list = get_assessment_photos(assessment_id)
     photos_map = {}
     for photo in photos_list:
         room_id = photo["school_room_id"]
@@ -1137,9 +1202,6 @@ def assess(school_id: int) -> Response:
     photo_uploaded_count = len(photo_room_ids)
     photo_min_required = math.ceil(len(rooms) * 0.2) if rooms else 0
     photo_max_allowed = math.ceil(len(rooms) * 0.5) if rooms else 0
-    
-    # Get room notes
-    room_notes = get_assessment_room_details(assessment_id)
     
     # Get optional rooms for this school
     optional_rooms_data = get_optional_rooms_for_schools([school_id])
@@ -1296,13 +1358,20 @@ def upload_photo(school_id: int) -> Response:
                     "message": "Foto hanya boleh untuk ruangan dengan skor 90 atau kurang.",
                 }
             ), 400
-        rooms = list_school_rooms(school_id)
-        rooms = _filter_assessment_rooms(rooms)
+        all_rooms = list_school_rooms(school_id)
+        rooms = _filter_assessment_rooms(all_rooms)
+        photos_list = get_assessment_photos(assessment_id)
+        rooms, _, photos_list, _ = _augment_rooms_with_assessment_data(
+            all_rooms,
+            rooms,
+            assessment_id,
+            photos_list=photos_list,
+            room_notes={},
+        )
         total_rooms = len(rooms)
         max_photos = math.ceil(total_rooms * 0.5) if total_rooms else 0
         if max_photos:
             room_ids = {r.get("school_room_id") for r in rooms if r.get("school_room_id")}
-            photos_list = get_assessment_photos(assessment_id)
             photo_room_ids = {
                 p.get("school_room_id")
                 for p in photos_list
@@ -1416,14 +1485,24 @@ def submit(school_id: int) -> Response:
             return redirect(url_for("portal.staff_assignments"))
 
     try:
-        rooms = list_school_rooms(school_id)
-        rooms = _filter_assessment_rooms(rooms)
+        all_rooms = list_school_rooms(school_id)
+        rooms = _filter_assessment_rooms(all_rooms)
+        existing_scores = get_assessment_scores(assessment_id_int)
+        photos_list = get_assessment_photos(assessment_id_int)
+        rooms, existing_scores, photos_list, _ = _augment_rooms_with_assessment_data(
+            all_rooms,
+            rooms,
+            assessment_id_int,
+            existing_scores=existing_scores,
+            photos_list=photos_list,
+            room_notes={},
+        )
+
         total_rooms = len(rooms)
         min_photos = math.ceil(total_rooms * 0.2) if total_rooms else 0
         missing_messages = []
         if min_photos:
             room_ids = {r.get("school_room_id") for r in rooms if r.get("school_room_id")}
-            photos_list = get_assessment_photos(assessment_id_int)
             photo_room_count = len(
                 {
                     p.get("school_room_id")
@@ -1437,7 +1516,6 @@ def submit(school_id: int) -> Response:
                     f"Saat ini {photo_room_count}."
                 )
 
-        existing_scores = get_assessment_scores(assessment_id_int)
         scores_map = {
             (s["school_room_id"], s["aspect_id"]): s.get("score")
             for s in existing_scores
@@ -4631,6 +4709,7 @@ def inject_permissions():
         "pending_assignment_requests": 0,
         "pending_team_member_requests": 0,
         "pending_reopen_requests": 0,
+        "pending_guestbook": 0,
         "total": 0,
     }
     if user.get("role") == "admin":
