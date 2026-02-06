@@ -48,6 +48,8 @@ def create_app() -> Flask:
         pending_count = 0
         pending_psych = 0
         pending_corruption = 0
+        user_school = None
+        area_contacts = []
 
         if user:
             try:
@@ -63,11 +65,29 @@ def create_app() -> Flask:
             except Exception:
                 pending_corruption = 0
 
+            try:
+                from .portal.routes import (
+                    _fetch_user_school,
+                    _fetch_user_kecamatan_name,
+                    _build_coordinator_contacts,
+                )
+
+                if user.get("role") == "sekolah":
+                    user_school = _fetch_user_school(user.get("id"))
+                    area_contacts = _build_coordinator_contacts(user_school)
+                else:
+                    user_area_name = _fetch_user_kecamatan_name(user.get("id"))
+                    area_contacts = _build_coordinator_contacts(None, area_name=user_area_name)
+            except Exception:
+                area_contacts = []
+
         return {
             "current_user": user,
             "pending_bullying_count": pending_count,
             "pending_psych_count": pending_psych,
             "pending_corruption_count": pending_corruption,
+            "user_school": user_school,
+            "area_contacts": area_contacts,
         }
 
     @app.template_filter("jakarta")

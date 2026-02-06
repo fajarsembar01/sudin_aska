@@ -4575,6 +4575,7 @@ def inject_permissions():
         "pending_assignment_requests": 0,
         "pending_team_member_requests": 0,
         "pending_reopen_requests": 0,
+        "pending_guestbook": 0,
         "total": 0,
     }
     if user.get("role") == "admin":

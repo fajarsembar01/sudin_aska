@@ -869,6 +869,12 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_validation' %}active{% endif %}"
+                                    href="{{ url_for('daftar_tamu.admin_validation') }}">
+                                    <i class="bi bi-clipboard-check me-2"></i>Validasi Tamu
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if request.endpoint == 'portal.portal_kontak_wilayah' %}active{% endif %}"
                                     href="{{ url_for('portal.portal_kontak_wilayah') }}">
                                     <i class="bi bi-person-lines-fill me-2"></i>Kontak Wilayah
@@ -936,6 +942,12 @@
                     {% if current_user and current_user.role == 'sekolah' %}
                     <!-- Sekolah: Konfigurasi menu -->
                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'daftar_tamu.sekolah_guestbook' %}active{% endif %}"
+                            href="{{ url_for('daftar_tamu.sekolah_guestbook') }}">
+                            <i class="bi bi-journal-text nav-icon"></i>Buku Tamu
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'portal.sekolah_rooms' %}active{% endif %}"
                             href="{{ url_for('portal.sekolah_rooms') }}">
                             <i class="bi bi-sliders nav-icon"></i>Konfigurasi
@@ -966,6 +978,7 @@
                     {% set pending_assignments = admin_pending.pending_assignment_requests if admin_pending else 0 %}
                     {% set pending_team = admin_pending.pending_team_member_requests if admin_pending else 0 %}
                     {% set pending_reopen = admin_pending.pending_reopen_requests if admin_pending else 0 %}
+                    {% set pending_guestbook = admin_pending.pending_guestbook if admin_pending else 0 %}
                     <div class="dropdown notification-menu">
                         <button class="notification-toggle" type="button" data-bs-toggle="dropdown"
                             id="adminNotificationToggle"
@@ -1026,16 +1039,28 @@
                                 <span class="badge bg-danger" id="adminPendingReopenCount"
                                     data-count="{{ pending_reopen }}">{{ pending_reopen }}</span>
                             </a>
+                            <a class="notification-item{% if pending_guestbook == 0 %} d-none{% endif %}"
+                                id="adminPendingGuestbookItem" href="{{ url_for('daftar_tamu.admin_validation') }}">
+                                <div>
+                                    <div class="fw-semibold">Verifikasi daftar tamu</div>
+                                    <small>Transaksi buku tamu menunggu validasi</small>
+                                </div>
+                                <span class="badge bg-success" id="adminPendingGuestbookCount"
+                                    data-count="{{ pending_guestbook }}">{{ pending_guestbook }}</span>
+                            </a>
                             <div class="notification-divider" id="adminPendingQuickDivider"></div>
                             <div class="notification-quick" id="adminPendingQuickList"
                                 data-users-url="{{ url_for('portal.manage_users') }}"
                                 data-assignment-url="{{ url_for('portal.admin_manage_staff') }}"
                                 data-team-url="{{ url_for('portal.manage_monev_teams') }}"
                                 data-reopen-url="{{ url_for('portal.admin_reopen_requests') }}"
+                                data-guestbook-url="{{ url_for('daftar_tamu.admin_validation') }}"
                                 data-approve-assignment="{{ url_for('portal.admin_approve_assignment_request', request_id=0) }}"
                                 data-reject-assignment="{{ url_for('portal.admin_reject_assignment_request', request_id=0) }}"
                                 data-approve-reopen="{{ url_for('portal.approve_reopen', assessment_id=0) }}"
                                 data-reject-reopen="{{ url_for('portal.reject_reopen', assessment_id=0) }}"
+                                data-approve-guestbook="{{ url_for('daftar_tamu.admin_transaction_approve', transaction_id=0) }}"
+                                data-reject-guestbook="{{ url_for('daftar_tamu.admin_transaction_reject', transaction_id=0) }}"
                                 data-preview-url="{{ url_for('portal.admin_pending_preview') }}">
                             </div>
                         </div>
@@ -1260,6 +1285,10 @@
                 reopen: {
                     item: document.getElementById('adminPendingReopenItem'),
                     count: document.getElementById('adminPendingReopenCount')
+                },
+                guestbook: {
+                    item: document.getElementById('adminPendingGuestbookItem'),
+                    count: document.getElementById('adminPendingGuestbookCount')
                 }
             };
             var quickConfig = elements.quickList ? {
@@ -1268,10 +1297,13 @@
                 assignmentUrl: elements.quickList.dataset.assignmentUrl,
                 teamUrl: elements.quickList.dataset.teamUrl,
                 reopenUrl: elements.quickList.dataset.reopenUrl,
+                guestbookUrl: elements.quickList.dataset.guestbookUrl,
                 approveAssignmentUrl: elements.quickList.dataset.approveAssignment,
                 rejectAssignmentUrl: elements.quickList.dataset.rejectAssignment,
                 approveReopenUrl: elements.quickList.dataset.approveReopen,
-                rejectReopenUrl: elements.quickList.dataset.rejectReopen
+                rejectReopenUrl: elements.quickList.dataset.rejectReopen,
+                approveGuestbookUrl: elements.quickList.dataset.approveGuestbook,
+                rejectGuestbookUrl: elements.quickList.dataset.rejectGuestbook
             } : {};
             var confirmModalEl = document.getElementById('adminQuickConfirmModal');
             var confirmTitleEl = document.getElementById('adminQuickConfirmTitle');
@@ -1525,7 +1557,8 @@
                 var total = getCount(elements.users.count)
                     + getCount(elements.assignment.count)
                     + getCount(elements.team.count)
-                    + getCount(elements.reopen.count);
+                    + getCount(elements.reopen.count)
+                    + getCount(elements.guestbook.count);
 
                 setCount(elements.totalBadge, total);
                 setCount(elements.totalLabel, total);
@@ -1550,6 +1583,7 @@
                 setItem('assignment', summary.pending_assignment_requests || 0);
                 setItem('team', summary.pending_team_member_requests || 0);
                 setItem('reopen', summary.pending_reopen_requests || 0);
+                setItem('guestbook', summary.pending_guestbook || 0);
                 updateTotals();
             };
 
@@ -1845,6 +1879,53 @@
                             payload: { request_id: item.id },
                             deltaKey: 'reopen',
                             toastMessage: 'Reopen ditolak.'
+                        }
+                    ]);
+                });
+
+                addGroup('Daftar tamu menunggu validasi', quickConfig.guestbookUrl, preview.guestbook_transactions, function (item) {
+                    var guestCount = Number(item.guest_count || 0);
+                    var guestLabel = item.guest_names || '';
+                    var title = (item.school_name || 'Sekolah') + (guestLabel ? ' • ' + guestLabel : '');
+                    var subtitleParts = [];
+                    if (item.npsn) subtitleParts.push('NPSN ' + item.npsn);
+                    if (guestCount) subtitleParts.push(guestCount + ' tamu');
+                    var subtitle = subtitleParts.join(' • ');
+                    var timeText = formatPendingDate(item.visit_at || item.created_at);
+                    var details = [
+                        { label: 'Sekolah', value: item.school_name || '-' },
+                        { label: 'NPSN', value: item.npsn || '-' },
+                        { label: 'Jenjang', value: item.jenjang || '-' },
+                        { label: 'Kecamatan', value: item.kecamatan_name || '-' },
+                        { label: 'Kelurahan', value: item.kelurahan_name || '-' },
+                        { label: 'Tamu', value: guestLabel || '-' },
+                        { label: 'Jumlah tamu', value: guestCount || '-' },
+                        { label: 'Waktu', value: timeText || '-' }
+                    ];
+                    return buildQuickItem(title, subtitle, timeText, [
+                        {
+                            label: 'Setujui',
+                            buttonClass: 'btn-success',
+                            confirmTitle: 'Setujui Daftar Tamu',
+                            confirmText: 'Setujui transaksi daftar tamu untuk ' + (item.school_name || 'sekolah') + '?',
+                            details: details,
+                            url: replaceId(quickConfig.approveGuestbookUrl, item.id),
+                            noteKey: 'reviewer_note',
+                            payload: null,
+                            deltaKey: 'guestbook',
+                            toastMessage: 'Transaksi daftar tamu disetujui.'
+                        },
+                        {
+                            label: 'Tolak',
+                            buttonClass: 'btn-outline-danger',
+                            confirmTitle: 'Tolak Daftar Tamu',
+                            confirmText: 'Tolak transaksi daftar tamu untuk ' + (item.school_name || 'sekolah') + '?',
+                            details: details,
+                            url: replaceId(quickConfig.rejectGuestbookUrl, item.id),
+                            noteKey: 'reviewer_note',
+                            payload: null,
+                            deltaKey: 'guestbook',
+                            toastMessage: 'Transaksi daftar tamu ditolak.'
                         }
                     ]);
                 });

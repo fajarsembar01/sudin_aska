@@ -395,7 +395,8 @@ def fetch_admin_pending_summary() -> Dict[str, int]:
             (SELECT COUNT(*) FROM dashboard_users WHERE account_status = 'pending') AS pending_users,
             (SELECT COUNT(*) FROM staff_assignment_requests WHERE status = 'pending') AS pending_assignment_requests,
             (SELECT COUNT(*) FROM monev_team_member_requests WHERE status = 'pending') AS pending_team_member_requests,
-            (SELECT COUNT(*) FROM portal_assessment_reopen_requests WHERE status = 'pending') AS pending_reopen_requests
+            (SELECT COUNT(*) FROM portal_assessment_reopen_requests WHERE status = 'pending') AS pending_reopen_requests,
+            (SELECT COUNT(*) FROM daftar_tamu_transactions WHERE status = 'pending') AS pending_guestbook
     """
     with get_cursor() as cur:
         cur.execute(query)
@@ -407,6 +408,7 @@ def fetch_admin_pending_summary() -> Dict[str, int]:
             "pending_assignment_requests": 0,
             "pending_team_member_requests": 0,
             "pending_reopen_requests": 0,
+            "pending_guestbook": 0,
             "total": 0,
         }
 
@@ -415,12 +417,14 @@ def fetch_admin_pending_summary() -> Dict[str, int]:
         "pending_assignment_requests": int(row["pending_assignment_requests"] or 0),
         "pending_team_member_requests": int(row["pending_team_member_requests"] or 0),
         "pending_reopen_requests": int(row["pending_reopen_requests"] or 0),
+        "pending_guestbook": int(row["pending_guestbook"] or 0),
     }
     summary["total"] = (
         summary["pending_users"]
         + summary["pending_assignment_requests"]
         + summary["pending_team_member_requests"]
         + summary["pending_reopen_requests"]
+        + summary["pending_guestbook"]
     )
     return summary
 
@@ -435,6 +439,7 @@ def fetch_admin_pending_preview(limit_per_type: int = 3) -> Dict[str, Any]:
         "assignment_requests": [],
         "team_member_requests": [],
         "reopen_requests": [],
+        "guestbook_transactions": [],
     }
 
     with get_cursor() as cur:
@@ -541,6 +546,41 @@ def fetch_admin_pending_preview(limit_per_type: int = 3) -> Dict[str, Any]:
             (limit,),
         )
         preview["reopen_requests"] = [dict(row) for row in cur.fetchall()]
+
+        cur.execute(
+            """
+            SELECT
+                t.id,
+                t.visit_at,
+                t.created_at,
+                t.photo_path,
+                s.name AS school_name,
+                s.npsn,
+                s.jenjang,
+                k.name AS kecamatan_name,
+                l.name AS kelurahan_name,
+                (
+                    SELECT STRING_AGG(u.full_name, ', ' ORDER BY u.full_name)
+                    FROM daftar_tamu_transaction_guests g
+                    LEFT JOIN dashboard_users u ON u.id = g.user_id
+                    WHERE g.transaction_id = t.id
+                ) AS guest_names,
+                (
+                    SELECT COUNT(*)
+                    FROM daftar_tamu_transaction_guests g
+                    WHERE g.transaction_id = t.id
+                ) AS guest_count
+            FROM daftar_tamu_transactions t
+            JOIN portal_schools s ON s.id = t.school_id
+            LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            WHERE t.status = 'pending'
+            ORDER BY t.visit_at DESC, t.id DESC
+            LIMIT %s
+            """,
+            (limit,),
+        )
+        preview["guestbook_transactions"] = [dict(row) for row in cur.fetchall()]
 
     return preview
 
