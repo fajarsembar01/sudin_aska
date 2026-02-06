@@ -394,6 +394,12 @@ def _normalize_metadata(meta: object | None) -> dict:
         return {}
     if isinstance(meta, dict):
         return meta
+    if isinstance(meta, list):
+        merged: dict = {}
+        for item in meta:
+            if isinstance(item, dict):
+                merged.update(item)
+        return merged
     if isinstance(meta, str):
         try:
             parsed = json.loads(meta)
