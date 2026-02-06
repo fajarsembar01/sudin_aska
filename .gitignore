@@ -25,6 +25,7 @@ __pycache__/
 
 # Local reference repos / dot dirs
 .contoh_repo/
+.aska_vectorstore/
 
 # Local sample data
 contoh/
