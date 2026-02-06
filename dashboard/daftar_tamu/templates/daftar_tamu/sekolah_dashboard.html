@@ -1,0 +1,655 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Buku Tamu Sekolah" %}
+
+{% block head_extra %}
+<style>
+    .guest-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border-soft);
+        background: var(--bg-surface);
+        font-size: 0.85rem;
+    }
+
+    .guest-chip button {
+        border: none;
+        background: #f8d7da;
+        color: #b02a37;
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 0.75rem;
+        line-height: 1.2;
+        cursor: pointer;
+    }
+
+    .guest-chip button:hover {
+        background: #f5c2c7;
+    }
+
+    .camera-box {
+        border: 1px dashed var(--border-soft);
+        border-radius: 12px;
+        padding: 12px;
+        background: var(--bg-surface);
+    }
+
+    .camera-preview {
+        width: 100%;
+        border-radius: 12px;
+        background: #000;
+    }
+
+    .gps-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        border: 1px solid var(--border-soft);
+        background: var(--bg-surface);
+    }
+
+    .guest-result {
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border-soft);
+        cursor: pointer;
+    }
+
+    .guest-result:hover {
+        background: rgba(13, 110, 253, 0.06);
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="icon-badge feature-icon text-primary">
+                        <i class="bi bi-journal-text"></i>
+                    </span>
+                    <div>
+                        <h1 class="h3 fw-bold page-title mb-1">Buku Tamu Sekolah</h1>
+                        {% if school %}
+                        <p class="page-subtitle mb-0">
+                            {{ school.name }} &bull; NPSN {{ school.npsn }}
+                            {% if school.kecamatan_name %}&bull; {{ school.kecamatan_name }}{% endif %}
+                        </p>
+                        {% else %}
+                        <p class="page-subtitle mb-0">Akun belum terhubung dengan sekolah.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if error_message %}
+<div class="alert alert-warning">{{ error_message }}</div>
+{% else %}
+<section class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Input Buku Tamu</h2>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Cari Tamu</label>
+                    <input type="text" id="guestSearchInput" class="form-control" placeholder="Nama, email, NRK...">
+                    <div id="guestSearchResults" class="border rounded-3 mt-2" style="max-height: 220px; overflow: auto;"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Tamu Terpilih</label>
+                    <div id="selectedGuests" class="d-flex flex-wrap gap-2"></div>
+                    <div id="selectedGuestsEmpty" class="text-muted small">Belum ada tamu dipilih.</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Tujuan Kunjungan (opsional)</label>
+                    <input type="text" id="purposeInput" class="form-control" placeholder="Contoh: Monitoring sarpras">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Catatan Sekolah (opsional)</label>
+                    <textarea id="notesInput" class="form-control" rows="3" placeholder="Catatan tambahan dari sekolah"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Foto & Lokasi</h2>
+                <div class="camera-box mb-3">
+                    <video id="cameraPreview" class="camera-preview" autoplay playsinline></video>
+                    <canvas id="photoCanvas" class="d-none"></canvas>
+                    <img id="photoResult" class="camera-preview d-none" alt="Foto hasil">
+                </div>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button type="button" class="btn btn-outline-primary" id="startCameraBtn">
+                        <i class="bi bi-camera-video me-1"></i>Aktifkan Kamera
+                    </button>
+                    <button type="button" class="btn btn-primary" id="capturePhotoBtn" disabled>
+                        <i class="bi bi-camera me-1"></i>Ambil Foto
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="retakePhotoBtn" disabled>
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Ulangi
+                    </button>
+                </div>
+                <div class="mb-3">
+                    <span class="gps-pill" id="gpsStatus">GPS belum aktif</span>
+                </div>
+                <div class="d-grid">
+                    <button type="button" class="btn btn-success" id="submitTransactionBtn" disabled>
+                        <i class="bi bi-send-check me-1"></i>Simpan Buku Tamu
+                    </button>
+                </div>
+                <div class="small text-muted mt-2">
+                    Setelah disimpan, admin akan memvalidasi kunjungan.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <h2 class="h6 fw-bold mb-0">Riwayat Transaksi</h2>
+                <small class="text-muted">Status validasi admin akan muncul di sini.</small>
+            </div>
+            <form method="get" class="d-flex gap-2">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="" {% if status=='' %}selected{% endif %}>Semua status</option>
+                    <option value="pending" {% if status=='pending' %}selected{% endif %}>Menunggu</option>
+                    <option value="approved" {% if status=='approved' %}selected{% endif %}>Disetujui</option>
+                    <option value="rejected" {% if status=='rejected' %}selected{% endif %}>Ditolak</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Waktu</th>
+                        <th>Tamu</th>
+                        <th>Status</th>
+                        <th>Catatan Admin</th>
+                        <th class="text-end">Foto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ row.visit_at|jakarta('%d %b %Y') }}</div>
+                            <div class="small text-muted">{{ row.visit_at|jakarta('%H:%M') }} WIB</div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ row.guest_display or '-' }}</div>
+                            <div class="small text-muted">{{ row.guest_count or 0 }} tamu</div>
+                            {% if row.purpose %}
+                            <div class="small text-muted">Tujuan: {{ row.purpose }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if row.status == 'approved' %}
+                            <span class="badge text-bg-success">Disetujui</span>
+                            {% elif row.status == 'rejected' %}
+                            <span class="badge text-bg-danger">Ditolak</span>
+                            {% else %}
+                            <span class="badge text-bg-warning">Menunggu</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="small text-muted">{{ row.reviewer_notes or '-' }}</div>
+                            {% if row.reviewer_name %}
+                            <div class="small text-muted">oleh {{ row.reviewer_name }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if row.photo_path %}
+                            {% set photo_name = row.photo_path.split('uploads/portal/')[-1] %}
+                            <a class="btn btn-sm btn-outline-secondary" target="_blank"
+                                href="{{ url_for('portal.uploaded_file', filename=photo_name) }}">
+                                <i class="bi bi-camera"></i>
+                            </a>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">Belum ada transaksi.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% set start_row = ((page - 1) * per_page) + 1 if total_rows else 0 %}
+        {% set end_row = ((page - 1) * per_page) + (rows|length) if total_rows else 0 %}
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+            <small class="text-muted">Menampilkan {{ start_row }}-{{ end_row }} dari {{ total_rows }} transaksi</small>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.sekolah_guestbook', status=status, per_page=per_page, page=page-1) }}">Prev</a>
+                </li>
+                {% set start_page = 1 if page - 2 < 1 else page - 2 %}
+                {% set end_page = total_pages if page + 2 > total_pages else page + 2 %}
+                {% for p in range(start_page, end_page + 1) %}
+                <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.sekolah_guestbook', status=status, per_page=per_page, page=p) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.sekolah_guestbook', status=status, per_page=per_page, page=page+1) }}">Next</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+    (function () {
+        var selectedGuests = new Map();
+        var guestResults = document.getElementById('guestSearchResults');
+        var selectedContainer = document.getElementById('selectedGuests');
+        var selectedEmpty = document.getElementById('selectedGuestsEmpty');
+        var searchInput = document.getElementById('guestSearchInput');
+
+        var cameraPreview = document.getElementById('cameraPreview');
+        var photoResult = document.getElementById('photoResult');
+        var photoCanvas = document.getElementById('photoCanvas');
+        var startCameraBtn = document.getElementById('startCameraBtn');
+        var capturePhotoBtn = document.getElementById('capturePhotoBtn');
+        var retakePhotoBtn = document.getElementById('retakePhotoBtn');
+        var submitBtn = document.getElementById('submitTransactionBtn');
+        var gpsStatus = document.getElementById('gpsStatus');
+
+        if (!searchInput || !cameraPreview || !submitBtn) {
+            return;
+        }
+
+        var cameraStream = null;
+        var photoBlob = null;
+        var currentLatitude = null;
+        var currentLongitude = null;
+        var currentAccuracy = null;
+        var hasResultsVisible = false;
+
+        function setResultsVisible(visible) {
+            hasResultsVisible = visible;
+            guestResults.classList.toggle('d-none', !visible);
+        }
+
+        function updateSubmitState() {
+            var hasGuests = selectedGuests.size > 0;
+            var hasPhoto = !!photoBlob;
+            var hasGps = typeof currentLatitude === 'number' && typeof currentLongitude === 'number';
+            submitBtn.disabled = !(hasGuests && hasPhoto && hasGps);
+        }
+
+        function renderSelectedGuests() {
+            selectedContainer.innerHTML = '';
+            if (selectedGuests.size === 0) {
+                selectedEmpty.classList.remove('d-none');
+                updateSubmitState();
+                return;
+            }
+            selectedEmpty.classList.add('d-none');
+            selectedGuests.forEach(function (guest, id) {
+                var chip = document.createElement('div');
+                chip.className = 'guest-chip';
+                chip.innerHTML = '<span>' + guest.label + '</span>';
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.innerHTML = '<i class="bi bi-x"></i><span class="ms-1">Hapus</span>';
+                btn.setAttribute('aria-label', 'Hapus tamu');
+                btn.title = 'Hapus tamu';
+                btn.addEventListener('click', function () {
+                    selectedGuests.delete(id);
+                    renderSelectedGuests();
+                });
+                chip.appendChild(btn);
+                selectedContainer.appendChild(chip);
+            });
+            updateSubmitState();
+        }
+
+        function renderGuestResults(items) {
+            guestResults.innerHTML = '';
+            if (!items || items.length === 0) {
+                guestResults.innerHTML = '<div class="text-muted small px-2 py-2">Tidak ada hasil.</div>';
+                setResultsVisible(true);
+                return;
+            }
+            items.forEach(function (item) {
+                var row = document.createElement('div');
+                row.className = 'guest-result';
+                var meta = [];
+                if (item.role) meta.push(item.role);
+                if (item.jabatan) meta.push(item.jabatan);
+                if (item.nrk) meta.push('NRK ' + item.nrk);
+                row.innerHTML = '<div class="fw-semibold">' + (item.full_name || item.email) + '</div>'
+                    + '<div class="small text-muted">' + meta.join(' • ') + '</div>';
+                row.addEventListener('click', function () {
+                    if (selectedGuests.has(item.id)) return;
+                    var label = (item.full_name || item.email || 'Tamu') + (meta.length ? ' • ' + meta.join(' • ') : '');
+                    selectedGuests.set(item.id, { id: item.id, label: label });
+                    renderSelectedGuests();
+                    searchInput.value = '';
+                    guestResults.innerHTML = '';
+                    setResultsVisible(false);
+                });
+                guestResults.appendChild(row);
+            });
+            setResultsVisible(true);
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function buildAreaContactsHtml(list) {
+            if (!list || list.length === 0) {
+                return '<div class="alert alert-warning mb-0">Kontak admin wilayah belum tersedia. Silakan hubungi admin secara langsung.</div>';
+            }
+            var items = list.slice().sort(function (a, b) {
+                var areaA = (a.normalized_area || (a.area || '').toLowerCase());
+                var areaB = (b.normalized_area || (b.area || '').toLowerCase());
+                if (areaA < areaB) return -1;
+                if (areaA > areaB) return 1;
+                return (a.contact_index || 0) - (b.contact_index || 0);
+            });
+            var html = '';
+            var currentAreaKey = null;
+            items.forEach(function (c) {
+                var area = c.area || '';
+                var areaKey = c.normalized_area || (area || '').toLowerCase();
+                if (areaKey !== currentAreaKey) {
+                    if (currentAreaKey !== null) {
+                        html += '</ul></div>';
+                    }
+                    html += '<div class="mb-3">';
+                    html += '<div class="fw-semibold text-uppercase small text-muted">' + escapeHtml(area);
+                    if (c.is_user_area) {
+                        html += ' <span class="badge bg-primary ms-2">wilayah anda</span>';
+                    }
+                    html += '</div><ul class="list-unstyled mb-0">';
+                    currentAreaKey = areaKey;
+                }
+                html += '<li class="d-flex justify-content-between align-items-center py-1">';
+                html += '<div class="text-muted small">' + escapeHtml(c.name || '-') + ' • ' + escapeHtml(c.phone || '-') + '</div>';
+                if (c.is_active === false) {
+                    html += '<span class="badge bg-secondary">Inaktif</span>';
+                } else {
+                    html += '<a class="btn btn-success btn-sm d-inline-flex align-items-center gap-2" href="' + escapeHtml(c.wa_link || '#') + '" target="_blank" rel="noopener">';
+                    html += '<i class="bi bi-whatsapp"></i><span>WhatsApp</span></a>';
+                }
+                html += '</li>';
+            });
+            if (currentAreaKey !== null) {
+                html += '</ul></div>';
+            }
+            return html;
+        }
+
+        function updateAreaContacts(list) {
+            var container = document.getElementById('areaContactList');
+            if (!container) return;
+            container.innerHTML = buildAreaContactsHtml(list || []);
+            container.dataset.empty = list && list.length ? '0' : '1';
+        }
+
+        function fetchAreaContacts() {
+            return fetch('/daftar-tamu/sekolah/area-contacts')
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data && data.success && Array.isArray(data.contacts)) {
+                        updateAreaContacts(data.contacts);
+                    }
+                });
+        }
+
+        var debounceTimer = null;
+        function searchGuests() {
+            var query = (searchInput.value || '').trim();
+            if (!query) {
+                guestResults.innerHTML = '';
+                setResultsVisible(false);
+                return;
+            }
+            fetch('/daftar-tamu/sekolah/guest-search?q=' + encodeURIComponent(query))
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.success) throw new Error(data.message || 'Gagal memuat data');
+                    renderGuestResults(data.results || []);
+                })
+                .catch(function () {
+                    guestResults.innerHTML = '<div class="text-danger small px-2 py-2">Gagal memuat data tamu.</div>';
+                    setResultsVisible(true);
+                });
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(searchGuests, 300);
+            });
+        }
+
+        function ensureLocation() {
+            return new Promise(function (resolve) {
+                if (!navigator.geolocation) {
+                    gpsStatus.textContent = 'GPS tidak tersedia';
+                    gpsStatus.classList.add('text-danger');
+                    return resolve();
+                }
+                gpsStatus.textContent = 'Mencari lokasi...';
+                gpsStatus.classList.remove('text-danger');
+                navigator.geolocation.getCurrentPosition(
+                    function (pos) {
+                        currentLatitude = pos.coords.latitude;
+                        currentLongitude = pos.coords.longitude;
+                        currentAccuracy = pos.coords.accuracy;
+                        gpsStatus.textContent = 'GPS aktif (' + currentAccuracy.toFixed(0) + 'm)';
+                        gpsStatus.classList.remove('text-danger');
+                        updateSubmitState();
+                        resolve();
+                    },
+                    function () {
+                        gpsStatus.textContent = 'GPS ditolak atau tidak tersedia';
+                        gpsStatus.classList.add('text-danger');
+                        updateSubmitState();
+                        resolve();
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            });
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(function (track) { track.stop(); });
+                cameraStream = null;
+            }
+        }
+
+        function startCamera() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('Kamera tidak tersedia di perangkat ini.');
+                return;
+            }
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+                .then(function (stream) {
+                    cameraStream = stream;
+                    cameraPreview.srcObject = stream;
+                    cameraPreview.classList.remove('d-none');
+                    photoResult.classList.add('d-none');
+                    capturePhotoBtn.disabled = false;
+                    retakePhotoBtn.disabled = true;
+                    ensureLocation();
+                })
+                .catch(function () {
+                    alert('Tidak bisa mengakses kamera. Pastikan izin kamera diaktifkan.');
+                });
+        }
+
+        function compressAndStore(canvas, quality) {
+            var MAX_SIZE = 220 * 1024;
+            canvas.toBlob(function (blob) {
+                if (!blob) {
+                    alert('Gagal memproses gambar.');
+                    return;
+                }
+                if (blob.size > MAX_SIZE && quality > 0.3) {
+                    if (blob.size > 500 * 1024) {
+                        var tempCanvas = document.createElement('canvas');
+                        var scale = 0.7;
+                        tempCanvas.width = canvas.width * scale;
+                        tempCanvas.height = canvas.height * scale;
+                        var ctx = tempCanvas.getContext('2d');
+                        ctx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+                        compressAndStore(tempCanvas, quality - 0.1);
+                    } else {
+                        compressAndStore(canvas, quality - 0.1);
+                    }
+                    return;
+                }
+                photoBlob = blob;
+                photoResult.src = URL.createObjectURL(blob);
+                photoResult.classList.remove('d-none');
+                cameraPreview.classList.add('d-none');
+                capturePhotoBtn.disabled = true;
+                retakePhotoBtn.disabled = false;
+                updateSubmitState();
+            }, 'image/jpeg', quality);
+        }
+
+        function capturePhoto() {
+            if (!cameraStream) return;
+            var video = cameraPreview;
+            var size = Math.min(video.videoWidth, video.videoHeight);
+            if (!size) {
+                alert('Preview kamera belum siap.');
+                return;
+            }
+            photoCanvas.width = size;
+            photoCanvas.height = size;
+            var ctx = photoCanvas.getContext('2d');
+            var sx = (video.videoWidth - size) / 2;
+            var sy = (video.videoHeight - size) / 2;
+            ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
+            compressAndStore(photoCanvas, 0.85);
+        }
+
+        if (startCameraBtn) {
+            startCameraBtn.addEventListener('click', startCamera);
+        }
+        if (capturePhotoBtn) {
+            capturePhotoBtn.addEventListener('click', capturePhoto);
+        }
+        if (retakePhotoBtn) {
+            retakePhotoBtn.addEventListener('click', function () {
+                photoBlob = null;
+                photoResult.classList.add('d-none');
+                cameraPreview.classList.remove('d-none');
+                capturePhotoBtn.disabled = false;
+                retakePhotoBtn.disabled = true;
+                updateSubmitState();
+            });
+        }
+
+        if (submitBtn) {
+            submitBtn.addEventListener('click', function () {
+                if (submitBtn.disabled) return;
+                if (!photoBlob) {
+                    alert('Foto wajib diambil.');
+                    return;
+                }
+                if (selectedGuests.size === 0) {
+                    alert('Pilih minimal satu tamu.');
+                    return;
+                }
+                var hasGps = typeof currentLatitude === 'number' && typeof currentLongitude === 'number';
+                if (!hasGps) {
+                    alert('GPS belum tersedia. Aktifkan lokasi.');
+                    return;
+                }
+                var guestIds = Array.from(selectedGuests.keys());
+                var formData = new FormData();
+                formData.append('guest_ids', JSON.stringify(guestIds));
+                formData.append('purpose', document.getElementById('purposeInput').value.trim());
+                formData.append('notes', document.getElementById('notesInput').value.trim());
+                formData.append('latitude', currentLatitude);
+                formData.append('longitude', currentLongitude);
+                formData.append('accuracy', currentAccuracy || '');
+                formData.append('photo', photoBlob, 'guestbook.jpg');
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
+
+                fetch('/daftar-tamu/sekolah/transactions', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (!data.success) throw new Error(data.message || 'Gagal mengirim transaksi');
+                        var modalEl = document.getElementById('areaContactModal');
+                        if (modalEl && window.bootstrap) {
+                            var listContainer = document.getElementById('areaContactList');
+                            var previousHtml = listContainer ? listContainer.innerHTML : '';
+                            if (listContainer) {
+                                listContainer.innerHTML = '<div class="text-muted small">Memuat kontak admin wilayah...</div>';
+                            }
+                            fetchAreaContacts()
+                                .catch(function () {
+                                    if (listContainer) {
+                                        listContainer.innerHTML = previousHtml;
+                                    }
+                                })
+                                .finally(function () {
+                                    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                                    modal.show();
+                                    modalEl.addEventListener('hidden.bs.modal', function handler() {
+                                        modalEl.removeEventListener('hidden.bs.modal', handler);
+                                        window.location.reload();
+                                    });
+                                });
+                        } else {
+                            window.location.reload();
+                        }
+                    })
+                    .catch(function (err) {
+                        alert(err.message || 'Gagal mengirim transaksi.');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="bi bi-send-check me-1"></i>Simpan Buku Tamu';
+                    });
+            });
+        }
+
+        window.addEventListener('beforeunload', stopCamera);
+        setResultsVisible(false);
+        renderSelectedGuests();
+    })();
+</script>
+{% endblock %}

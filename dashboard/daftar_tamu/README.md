@@ -1,7 +1,9 @@
 # Daftar Tamu Module
 
-Folder ini disiapkan sebagai proyek terpisah untuk fitur **Daftar Tamu** (di luar folder `portal`), namun tetap berjalan di aplikasi web yang sama.
+Folder ini berisi fitur **Daftar Tamu** yang berjalan di aplikasi web yang sama (terpisah dari folder `portal`).
 
-- `templates/daftar_tamu/admin_dashboard.html`: dashboard monitoring kunjungan tamu untuk admin.
-- Endpoint utama: `/daftar-tamu/admin/dashboard`.
+Endpoint utama:
 
+- `/daftar-tamu/sekolah`: input buku tamu untuk role sekolah.
+- `/daftar-tamu/admin/dashboard`: dashboard monitoring kunjungan.
+- `/daftar-tamu/admin/validasi`: halaman validasi transaksi buku tamu oleh admin.
