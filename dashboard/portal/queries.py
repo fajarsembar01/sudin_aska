@@ -1000,6 +1000,43 @@ def get_assessment_room_details(assessment_id: int) -> Dict[int, str]:
         cur.execute(query, (assessment_id,))
         return {row["school_room_id"]: row["notes"] for row in cur.fetchall()}
 
+def get_assessment_room_score_pct(assessment_id: int, school_room_id: int) -> float:
+    """Return room score percentage (0-100). Missing scores count as 0."""
+    query = """
+        SELECT
+            COUNT(a.id) AS total_aspects,
+            COALESCE(SUM(COALESCE(s.score, 0)), 0) AS total_score
+        FROM portal_school_rooms sr
+        JOIN portal_rooms r ON r.id = sr.room_id
+        LEFT JOIN portal_aspects a
+            ON a.room_id = r.id
+            AND a.active = TRUE
+            AND (
+                a.is_required = TRUE OR EXISTS (
+                    SELECT 1
+                    FROM portal_school_room_aspects psra
+                    WHERE psra.school_room_id = sr.id
+                      AND psra.aspect_id = a.id
+                )
+            )
+        LEFT JOIN portal_assessment_scores s
+            ON s.assessment_id = %s
+            AND s.school_room_id = sr.id
+            AND s.aspect_id = a.id
+        WHERE sr.id = %s
+    """
+    with get_cursor() as cur:
+        cur.execute(query, (assessment_id, school_room_id))
+        row = cur.fetchone()
+        if not row:
+            return 0.0
+        total_aspects = row.get("total_aspects") or 0
+        total_score = row.get("total_score") or 0
+        if total_aspects <= 0:
+            return 0.0
+        avg = total_score / total_aspects
+        return float((avg / 3) * 100)
+
 
 def submit_assessment(assessment_id: int) -> bool:
     """Submit an assessment and calculate total score.
