@@ -1,0 +1,94 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Prioritas Kontak Buku Tamu" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="icon-badge feature-icon text-primary">
+                        <i class="bi bi-list-ol"></i>
+                    </span>
+                    <div>
+                        <h1 class="h3 fw-bold page-title mb-1">Prioritas Kontak Buku Tamu</h1>
+                        <p class="page-subtitle mb-0">
+                            Urutan ini menentukan tombol kontak yang tampil di buku tamu web (maks 4 tombol).
+                        </p>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('daftar_tamu.admin_dashboard') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                    </a>
+                    <a href="{{ url_for('daftar_tamu.admin_purpose_keywords') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-lightbulb me-1"></i>Suggest Tujuan
+                    </a>
+                    <a href="{{ url_for('main.admin_select_role') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-grid me-1"></i>Pilih Menu
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Kontak</th>
+                        <th style="width: 140px;">Urutan</th>
+                        <th>Status</th>
+                        <th class="text-end">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        <td class="fw-semibold">
+                            {% if row.contact_key == 'website' %}Website sekolah
+                            {% elif row.contact_key == 'email' %}Email sekolah
+                            {% elif row.contact_key == 'phone' %}Nomor sekolah
+                            {% elif row.contact_key == 'instagram' %}Instagram sekolah
+                            {% elif row.contact_key == 'wa_channel' %}WA Channel sekolah
+                            {% else %}{{ row.contact_key }}{% endif %}
+                        </td>
+                        <td>
+                            <input type="number" name="sort_order" class="form-control form-control-sm"
+                                value="{{ row.sort_order }}" min="1" max="99" required
+                                form="priorityForm{{ row.id }}">
+                        </td>
+                        <td>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="active" value="true"
+                                    id="active{{ row.id }}" {% if row.active %}checked{% endif %}
+                                    form="priorityForm{{ row.id }}">
+                                <label class="form-check-label" for="active{{ row.id }}">
+                                    {% if row.active %}Aktif{% else %}Nonaktif{% endif %}
+                                </label>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <form method="post" id="priorityForm{{ row.id }}" class="d-inline">
+                                <input type="hidden" name="keyword_id" value="{{ row.id }}">
+                                <button type="submit" class="btn btn-sm btn-primary">Simpan</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-muted small">Belum ada data prioritas.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="small text-muted mt-2">
+            Hanya 4 kontak teratas yang tampil. Nonaktifkan jika tidak ingin muncul.
+        </div>
+    </div>
+</section>
+{% endblock %}

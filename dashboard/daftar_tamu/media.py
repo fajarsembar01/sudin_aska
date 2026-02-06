@@ -134,10 +134,16 @@ def stamp_guestbook_photo(
         box_right = box_left + text_w + pad * 2
         box_bottom = height - margin
 
-        draw.rectangle(
+        # Draw translucent background via overlay to ensure alpha blending works.
+        bg_alpha = int(255 * 0.5)
+        overlay = Image.new("RGBA", base_rgba.size, (0, 0, 0, 0))
+        overlay_draw = ImageDraw.Draw(overlay)
+        overlay_draw.rectangle(
             [box_left, box_top, box_right, box_bottom],
-            fill=(0, 0, 0, 128),
+            fill=(0, 0, 0, bg_alpha),
         )
+        base_rgba = Image.alpha_composite(base_rgba, overlay)
+        draw = ImageDraw.Draw(base_rgba)
         draw.multiline_text(
             (box_left + pad, box_top + pad),
             text,

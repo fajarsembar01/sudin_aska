@@ -875,6 +875,12 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_general_guests' %}active{% endif %}"
+                                    href="{{ url_for('daftar_tamu.admin_general_guests') }}">
+                                    <i class="bi bi-people me-2"></i>Tamu Umum
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item {% if request.endpoint == 'portal.portal_kontak_wilayah' %}active{% endif %}"
                                     href="{{ url_for('portal.portal_kontak_wilayah') }}">
                                     <i class="bi bi-person-lines-fill me-2"></i>Kontak Wilayah
@@ -942,6 +948,12 @@
                     {% if current_user and current_user.role == 'sekolah' %}
                     <!-- Sekolah: Konfigurasi menu -->
                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'portal.sekolah_home' %}active{% endif %}"
+                            href="{{ url_for('portal.sekolah_home') }}">
+                            <i class="bi bi-grid nav-icon"></i>Beranda
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'daftar_tamu.sekolah_guestbook' %}active{% endif %}"
                             href="{{ url_for('daftar_tamu.sekolah_guestbook') }}">
                             <i class="bi bi-journal-text nav-icon"></i>Buku Tamu
@@ -950,7 +962,7 @@
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'portal.sekolah_rooms' %}active{% endif %}"
                             href="{{ url_for('portal.sekolah_rooms') }}">
-                            <i class="bi bi-sliders nav-icon"></i>Konfigurasi
+                            <i class="bi bi-sliders nav-icon"></i>PANBERS
                         </a>
                     </li>
                     <li class="nav-item">

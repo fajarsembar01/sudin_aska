@@ -1,0 +1,257 @@
+{% extends "chat_shell.html" %}
+
+{% block page_title %}Buku Tamu Terkirim{% endblock %}
+{% block head_meta %}
+<meta name="description" content="Buku tamu terkirim - ASKA">
+{% endblock %}
+
+{% set names = summary.names if summary and summary.names else [] %}
+{% set count = summary.count if summary and summary.count else 0 %}
+
+{% block chat_header %}
+<div class="chat-header">
+    <nav class="navbar navbar-expand w-100">
+        <div class="container-fluid">
+            <div class="d-flex align-items-center">
+                <img src="{{ url_for('static', filename='favicon.ico') }}" alt="ASKA" width="32" height="32"
+                    style="margin-right: 8px;">
+                <div>
+                    <a class="navbar-brand text-white" href="#">ASKA</a>
+                    <div class="text-white" style="font-size: 0.7rem; margin-top: -8px;">Agen AI Sekolah Kita</div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button id="theme-toggle" class="me-2">🌙</button>
+                <span class="badge bg-light text-dark">Sisa {{ remaining }} chat</span>
+                <a href="{{ url_for('login_page') }}" class="btn btn-sm btn-outline-light">Login</a>
+            </div>
+        </div>
+    </nav>
+</div>
+{% endblock %}
+
+{% block chat_banner %}{% endblock %}
+
+{% block chat_box %}
+<div class="chat-box" id="chat-box" role="log" aria-live="polite" aria-relevant="additions">
+    <div class="chat-message bot-message onboarding-message" data-initial="1">
+        <p><strong>Laporan buku tamu:</strong> Data kunjungan kamu sudah tersimpan untuk
+            <strong>{{ school.name if school else 'sekolah' }}</strong>.</p>
+        {% if count %}
+        <div class="onboarding-section">
+            <span class="emoji">✅</span>
+            <div class="content">
+                <span>{{ count }} tamu tercatat:</span>
+                <div class="small text-muted mt-1">
+                    {% if names|length > 3 %}
+                    {{ names[:3]|join(', ') }} dan {{ names|length - 3 }} lainnya.
+                    {% else %}
+                    {{ names|join(', ') }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="onboarding-section">
+            <span class="emoji">💬</span>
+            <div class="content">
+                <span>Berhasil ✅ Kalau masih bingung, drop pertanyaanmu ya—aku jawab yang simpel &amp; jelas ✨</span>
+            </div>
+        </div>
+    </div>
+    {% if can_chat and remaining > 0 %}
+    <div class="suggestions" aria-label="Contoh pertanyaan cepat">
+        <button type="button" class="suggestion-chip">Kapan liburan semester?</button>
+        <button type="button" class="suggestion-chip">Cara daftar siswa baru?</button>
+        <button type="button" class="suggestion-chip">Syarat KJP terbaru?</button>
+        <button type="button" class="suggestion-chip">Lapor bullying gimana?</button>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block chat_input %}
+<form class="chat-input" id="chat-form">
+    <textarea id="message-input" placeholder="Tulis pertanyaanmu..." rows="1" autocomplete="off"
+        aria-label="Ketik pesan" {% if not can_chat or remaining <= 0 %}disabled{% endif %}></textarea>
+    <button type="submit" id="send-button" class="send-button" aria-label="Kirim"
+        {% if not can_chat or remaining <= 0 %}disabled{% endif %}
+        {% if can_chat and remaining <= 0 %}hidden{% endif %}>
+        <lord-icon src="https://cdn.lordicon.com/gqjpawbc.json" trigger="hover" target=".send-button"
+            colors="primary:#ffffff" style="width:24px;height:24px;margin-right:8px;">
+        </lord-icon>
+        Kirim
+    </button>
+    <button type="button" id="login-button" class="send-button" data-login-url="{{ url_for('login_page') }}"
+        {% if not can_chat or remaining > 0 %}hidden{% endif %}>
+        Login
+    </button>
+</form>
+{% if not can_chat %}
+<div class="status-banner mt-3">
+    <div class="status-banner-title">Sesi chat belum tersedia</div>
+    <p class="status-banner-message">Isi buku tamu terlebih dahulu untuk membuka chat.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block chat_scripts %}
+<script>
+    (function () {
+        var canChat = {{ 'true' if can_chat else 'false' }};
+        var remaining = {{ remaining or 0 }};
+        var chatBox = document.getElementById('chat-box');
+        var chatForm = document.getElementById('chat-form');
+        var messageInput = document.getElementById('message-input');
+        var sendButton = document.getElementById('send-button');
+        var loginButton = document.getElementById('login-button');
+        var themeToggle = document.getElementById('theme-toggle');
+        var typingInterval;
+
+        if (!chatForm) return;
+
+        function setTheme(theme) {
+            if (!themeToggle) return;
+            themeToggle.classList.add('rotating');
+            if (theme === 'dark') {
+                document.body.classList.add('dark-mode');
+                themeToggle.textContent = '☀️';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-mode');
+                themeToggle.textContent = '🌙';
+                localStorage.removeItem('theme');
+            }
+            setTimeout(function () {
+                themeToggle.classList.remove('rotating');
+            }, 300);
+        }
+
+        var savedTheme = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+            document.body.classList.add('dark-mode');
+            if (themeToggle) themeToggle.textContent = '☀️';
+        } else {
+            document.body.classList.remove('dark-mode');
+            if (themeToggle) themeToggle.textContent = '🌙';
+        }
+
+        if (themeToggle) {
+            themeToggle.addEventListener('click', function () {
+                var currentTheme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+                var newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                setTheme(newTheme);
+            });
+        }
+
+        function appendMessage(text, sender) {
+            var msg = document.createElement('div');
+            msg.className = 'chat-message ' + (sender === 'user' ? 'user-message' : 'bot-message');
+            msg.textContent = text;
+            chatBox.appendChild(msg);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            var typingElement = document.createElement('div');
+            typingElement.id = 'typing-indicator';
+            typingElement.classList.add('chat-message', 'bot-message', 'typing-indicator');
+            typingElement.innerHTML = '<span class="loader"></span>ASKA lagi mikir 🤔<span id="dots">.</span>';
+            chatBox.appendChild(typingElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            var dots = document.getElementById('dots');
+            var dotCount = 1;
+            typingInterval = setInterval(function () {
+                dotCount = (dotCount % 3) + 1;
+                dots.textContent = '.'.repeat(dotCount);
+            }, 500);
+        }
+
+        function removeTypingIndicator() {
+            clearInterval(typingInterval);
+            var typingElement = document.getElementById('typing-indicator');
+            if (typingElement) {
+                typingElement.remove();
+            }
+        }
+
+        function updateRemaining() {
+            var badge = document.querySelector('.badge.bg-light');
+            if (badge) badge.textContent = 'Sisa ' + remaining + ' chat';
+            if (canChat && remaining <= 0) {
+                messageInput.disabled = true;
+                sendButton.disabled = true;
+                if (loginButton) {
+                    loginButton.hidden = false;
+                }
+                if (sendButton) {
+                    sendButton.hidden = true;
+                }
+            } else {
+                if (loginButton) {
+                    loginButton.hidden = true;
+                }
+                if (sendButton) {
+                    sendButton.hidden = false;
+                }
+            }
+        }
+
+        document.querySelectorAll('.suggestion-chip').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (!messageInput || messageInput.disabled) return;
+                messageInput.value = (btn.textContent || '').trim();
+                messageInput.focus();
+            });
+        });
+
+        chatForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            if (!canChat || remaining <= 0) return;
+            var message = (messageInput.value || '').trim();
+            if (!message) return;
+            appendMessage(message, 'user');
+            messageInput.value = '';
+            sendButton.disabled = true;
+            showTypingIndicator();
+            try {
+                var response = await fetch('/api/guest-chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+                var data = await response.json();
+                if (!response.ok) {
+                    removeTypingIndicator();
+                    appendMessage(data.error || 'Gagal memproses chat.', 'bot');
+                } else {
+                    removeTypingIndicator();
+                    appendMessage(data.response || '-', 'bot');
+                    remaining = data.remaining || 0;
+                }
+            } catch (err) {
+                removeTypingIndicator();
+                appendMessage('Gagal terhubung ke server.', 'bot');
+            } finally {
+                updateRemaining();
+                if (remaining > 0) {
+                    sendButton.disabled = false;
+                    messageInput.disabled = false;
+                    messageInput.focus();
+                }
+            }
+        });
+
+        if (loginButton) {
+            loginButton.addEventListener('click', function () {
+                var url = loginButton.getAttribute('data-login-url');
+                if (url) window.location.href = url;
+            });
+        }
+
+        updateRemaining();
+    })();
+</script>
+{% endblock %}

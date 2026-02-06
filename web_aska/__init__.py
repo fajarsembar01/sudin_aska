@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
+import secrets
+from pathlib import Path
 from datetime import datetime, timezone
-from flask import Flask, request, jsonify, render_template, session, redirect, url_for, flash
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for, flash, send_from_directory, abort
 from authlib.integrations.flask_client import OAuth
 
-from .handlers import process_web_request, web_sessions
+from .handlers import process_web_request, web_sessions, reload_qa_chain
 from .feedback_routes import feedback_bp
 from db import (
     get_or_create_web_user,
@@ -17,6 +20,12 @@ from db import (
     get_web_user_status,
     DEFAULT_LIMITED_QUOTA,
     DEFAULT_LIMITED_REASON,
+    get_portal_school_by_npsn,
+    create_public_guestbook_transaction,
+    find_general_guest_by_phone,
+    list_guestbook_purpose_keywords,
+    list_guestbook_contact_priorities,
+    list_school_classroom_options,
 )
 from account_status import BLOCKING_STATUSES, build_status_notice, ACCOUNT_STATUS_ACTIVE
 from responses import detect_bullying_category, is_corruption_report_intent
@@ -69,6 +78,111 @@ def create_app() -> Flask:
             "quotaResetAt": reset_at,
             "limitedReason": limited_reason,
         }
+
+    def _portal_register_url() -> str | None:
+        raw = (
+            os.getenv("PORTAL_REGISTER_URL")
+            or os.getenv("PORTAL_BASE_URL")
+            or os.getenv("DASHBOARD_BASE_URL")
+        )
+        if not raw:
+            return None
+        raw = raw.strip().rstrip("/")
+        if raw.endswith("/portal/register"):
+            return raw
+        return f"{raw}/portal/register"
+
+    def _normalize_url(value: str) -> str:
+        clean = (value or "").strip()
+        if not clean:
+            return ""
+        if clean.startswith("http://") or clean.startswith("https://"):
+            return clean
+        return f"https://{clean}"
+
+    def _normalize_instagram(value: str) -> str:
+        clean = (value or "").strip()
+        if not clean:
+            return ""
+        if clean.startswith("http://") or clean.startswith("https://"):
+            return clean
+        if "instagram.com" in clean:
+            return _normalize_url(clean)
+        username = clean.lstrip("@")
+        return f"https://instagram.com/{username}"
+
+    def _normalize_wa_channel(value: str) -> str:
+        clean = (value or "").strip()
+        if not clean:
+            return ""
+        if clean.startswith("http://") or clean.startswith("https://"):
+            return clean
+        if clean.startswith("whatsapp.com/") or clean.startswith("wa.me/"):
+            return _normalize_url(clean)
+        return f"https://whatsapp.com/channel/{clean}"
+
+    def _normalize_phone(value: str) -> str:
+        digits = "".join(ch for ch in (value or "") if ch.isdigit())
+        if not digits:
+            return ""
+        if digits.startswith("0"):
+            digits = "62" + digits[1:]
+        return digits
+
+    def _build_contact_buttons(school: dict | None) -> list[dict]:
+        if not school:
+            return []
+        meta = school.get("metadata") or {}
+        if isinstance(meta, str):
+            try:
+                meta = json.loads(meta)
+            except json.JSONDecodeError:
+                meta = {}
+
+        contacts = {
+            "website": _normalize_url(meta.get("website") or ""),
+            "email": (meta.get("cs_email") or meta.get("email") or "").strip(),
+            "phone": _normalize_phone(meta.get("school_phone") or meta.get("phone") or ""),
+            "instagram": _normalize_instagram(meta.get("instagram") or ""),
+            "wa_channel": _normalize_wa_channel(meta.get("wa_channel") or ""),
+        }
+
+        icon_map = {
+            "website": {"icon": "bi-globe2", "label": "Website sekolah", "target": "_blank"},
+            "email": {"icon": "bi-envelope", "label": "Email sekolah", "target": None},
+            "phone": {"icon": "bi-telephone", "label": "Telepon sekolah", "target": None},
+            "instagram": {"icon": "bi-instagram", "label": "Instagram sekolah", "target": "_blank"},
+            "wa_channel": {"icon": "bi-whatsapp", "label": "WhatsApp Channel sekolah", "target": "_blank"},
+        }
+
+        ordered_keys = list_guestbook_contact_priorities(active_only=True)
+        if not ordered_keys:
+            ordered_keys = ["website", "email", "phone", "instagram", "wa_channel"]
+
+        buttons = []
+        for key in ordered_keys:
+            value = contacts.get(key)
+            if not value:
+                continue
+            if key == "email":
+                href = f"mailto:{value}"
+            elif key == "phone":
+                href = f"tel:+{value}"
+            else:
+                href = value
+            meta_info = icon_map.get(key, {})
+            buttons.append(
+                {
+                    "key": key,
+                    "href": href,
+                    "icon": meta_info.get("icon", "bi-link-45deg"),
+                    "label": meta_info.get("label", key.title()),
+                    "target": meta_info.get("target"),
+                }
+            )
+            if len(buttons) >= 4:
+                break
+        return buttons
 
     def _sync_session_quota(quota_state: dict | None) -> None:
         if "user" not in session or not quota_state:
@@ -161,7 +275,7 @@ def create_app() -> Flask:
 
     @app.route("/auth/login")
     def login_page():
-        return render_template("login.html")
+        return render_template("login.html", portal_register_url=_portal_register_url())
 
     @app.route('/login')
     def login_belajar():
@@ -259,6 +373,230 @@ def create_app() -> Flask:
         session.pop('user', None)
         flash("You have been logged out.", "info")
         return redirect(url_for('login_page'))
+
+    @app.route("/portal/uploads/logos/<path:filename>")
+    def portal_school_logo(filename: str):
+        requested_path = Path(filename)
+        if requested_path.is_absolute() or ".." in requested_path.parts:
+            abort(404)
+
+        logos_dir = Path(__file__).resolve().parent.parent / "uploads" / "portal" / "logos"
+        return send_from_directory(logos_dir, str(requested_path))
+
+    @app.route("/buku-tamu/<npsn>", methods=["GET", "POST"])
+    def buku_tamu(npsn: str):
+        school = get_portal_school_by_npsn(npsn)
+        if not school or not school.get("active"):
+            return render_template(
+                "buku_tamu.html",
+                school=None,
+                error="Sekolah tidak ditemukan atau nonaktif.",
+                purpose_keywords=[],
+                contact_buttons=[],
+                class_options=[],
+            ), 404
+
+        class_options = list_school_classroom_options(school.get("id"))
+        error = None
+        def _is_truthy(value: object) -> bool:
+            if isinstance(value, bool):
+                return value
+            if value is None:
+                return False
+            return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+        if request.method == "POST":
+            guest_type = (request.form.get("guest_type") or "umum").strip().lower()
+            if guest_type != "umum":
+                error = "Pengisian tamu Sudin dilakukan oleh pihak sekolah."
+            else:
+                guest_payload_raw = (request.form.get("guests_payload") or "").strip()
+                guests = []
+                if guest_payload_raw:
+                    try:
+                        payload = json.loads(guest_payload_raw)
+                        if isinstance(payload, list):
+                            guests = payload
+                    except json.JSONDecodeError:
+                        guests = []
+                else:
+                    names = request.form.getlist("guest_name[]")
+                    instansi_list = request.form.getlist("guest_instansi[]")
+                    jabatan_list = request.form.getlist("guest_jabatan[]")
+                    phone_list = request.form.getlist("guest_phone[]")
+                    email_list = request.form.getlist("guest_email[]")
+
+                    for idx, name in enumerate(names):
+                        clean_name = (name or "").strip()
+                        if not clean_name:
+                            continue
+                        guests.append(
+                            {
+                                "full_name": clean_name,
+                                "instansi": instansi_list[idx] if idx < len(instansi_list) else "",
+                                "jabatan": jabatan_list[idx] if idx < len(jabatan_list) else "",
+                                "phone": phone_list[idx] if idx < len(phone_list) else "",
+                                "email": email_list[idx] if idx < len(email_list) else "",
+                            }
+                        )
+
+                seen_phones = set()
+                duplicate_found = False
+                cleaned_guests = []
+                for guest in guests:
+                    name = (guest.get("full_name") or "").strip()
+                    phone = (guest.get("phone") or "").strip()
+                    if not name:
+                        continue
+                    if not phone:
+                        error = "Nomor telepon wajib diisi untuk tamu umum."
+                        break
+                    phone_key = "".join(ch for ch in phone if ch.isdigit())
+                    if phone_key.startswith("0"):
+                        phone_key = "62" + phone_key[1:]
+                    if phone_key in seen_phones:
+                        duplicate_found = True
+                    seen_phones.add(phone_key)
+                    is_parent = _is_truthy(guest.get("is_parent"))
+                    instansi = (guest.get("instansi") or "").strip()
+                    jabatan = (guest.get("jabatan") or "").strip()
+                    student_class = (guest.get("student_class") or "").strip()
+                    student_name = (guest.get("student_name") or "").strip()
+                    if is_parent:
+                        instansi = "Wali Murid"
+                        jabatan = "Wali Murid"
+                        if class_options:
+                            if not student_class or student_class not in class_options:
+                                error = "Kelas siswa wajib dipilih dari daftar yang tersedia."
+                                break
+                        if not student_name:
+                            error = "Nama siswa wajib diisi untuk wali murid."
+                            break
+                    cleaned_guests.append(
+                        {
+                            "full_name": name,
+                            "instansi": instansi,
+                            "jabatan": jabatan,
+                            "phone": phone_key,
+                            "email": (guest.get("email") or "").strip(),
+                            "student_class": student_class,
+                            "student_name": student_name,
+                        }
+                    )
+                if error:
+                    pass
+                elif not cleaned_guests:
+                    error = "Minimal isi satu tamu."
+                elif duplicate_found:
+                    error = "Ada nomor telepon yang sama. Mohon periksa kembali."
+                else:
+                    guests = cleaned_guests
+                    purpose = (request.form.get("purpose") or "").strip()
+                    notes = (request.form.get("notes") or "").strip()
+                    metadata = {
+                        "user_agent": request.headers.get("User-Agent"),
+                        "ip": request.headers.get("X-Forwarded-For", request.remote_addr),
+                        "source": "web_aska",
+                    }
+                    try:
+                        transaction_id = create_public_guestbook_transaction(
+                            school_id=school["id"],
+                            purpose=purpose or None,
+                            notes=notes or None,
+                            guests=guests,
+                            metadata=metadata,
+                        )
+                    except Exception as exc:
+                        error = f"Gagal mengirim buku tamu: {exc}"
+                    else:
+                        guest_names = [g.get("full_name") for g in guests if g.get("full_name")]
+                        guest_user_id = session.get("guest_chat_user_id")
+                        if not guest_user_id:
+                            guest_user_id = -1 * (secrets.randbelow(1_000_000_000) + 1)
+                            session["guest_chat_user_id"] = guest_user_id
+                        session["guest_chat_remaining"] = 2
+                        session["guest_chat_tx_id"] = transaction_id
+                        session["guest_chat_npsn"] = school.get("npsn")
+                        session["guest_chat_summary"] = {
+                            "names": guest_names,
+                            "count": len(guest_names),
+                        }
+                        session["guest_chat_name"] = guest_names[0] if guest_names else "Tamu Umum"
+                        session.modified = True
+                        return redirect(url_for("buku_tamu_selesai", npsn=school.get("npsn"), tx=transaction_id))
+
+        return render_template(
+            "buku_tamu.html",
+            school=school,
+            error=error,
+            purpose_keywords=list_guestbook_purpose_keywords(active_only=True),
+            contact_buttons=_build_contact_buttons(school),
+            class_options=class_options,
+        )
+
+    @app.route("/api/guestbook/lookup")
+    def guestbook_lookup():
+        phone = (request.args.get("phone") or "").strip()
+        guest = find_general_guest_by_phone(phone)
+        return jsonify({
+            "success": True,
+            "found": bool(guest),
+            "guest": guest,
+        })
+
+    @app.route("/buku-tamu/<npsn>/selesai")
+    def buku_tamu_selesai(npsn: str):
+        school = get_portal_school_by_npsn(npsn)
+        tx_id = request.args.get("tx")
+        can_chat = False
+        remaining = 0
+        summary = session.get("guest_chat_summary") or {}
+        try:
+            tx_id_int = int(tx_id) if tx_id else None
+        except (TypeError, ValueError):
+            tx_id_int = None
+        if tx_id_int and session.get("guest_chat_tx_id") == tx_id_int:
+            can_chat = True
+            remaining = int(session.get("guest_chat_remaining") or 0)
+        return render_template(
+            "buku_tamu_selesai.html",
+            school=school,
+            can_chat=can_chat,
+            remaining=remaining,
+            summary=summary,
+        )
+
+    @app.route("/api/guest-chat", methods=["POST"])
+    def guest_chat():
+        data = request.json or {}
+        message = data.get("message")
+        if not message:
+            return jsonify({"error": "Message is required"}), 400
+
+        tx_id = session.get("guest_chat_tx_id")
+        remaining = int(session.get("guest_chat_remaining") or 0)
+        if not tx_id:
+            return jsonify({"error": "Session expired", "require_login": True}), 401
+        if remaining <= 0:
+            return jsonify({"error": "Limit reached", "require_login": True}), 401
+
+        guest_user_id = session.get("guest_chat_user_id")
+        if not guest_user_id:
+            guest_user_id = -1 * (secrets.randbelow(1_000_000_000) + 1)
+            session["guest_chat_user_id"] = guest_user_id
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        guest_name = session.get("guest_chat_name") or "Tamu Umum"
+        response, _ = loop.run_until_complete(process_web_request(guest_user_id, message, username=guest_name))
+        remaining -= 1
+        session["guest_chat_remaining"] = remaining
+        session.modified = True
+        return jsonify({"response": response, "remaining": remaining})
 
     @app.route("/api/chat", methods=["POST"])
     def chat():
@@ -363,6 +701,25 @@ def create_app() -> Flask:
             "quota": _serialize_quota_payload(quota_status),
             "serverTime": datetime.now(timezone.utc).isoformat(),
         })
+
+    @app.route("/api/admin/refresh-knowledge", methods=["POST"])
+    def refresh_knowledge_api():
+        token = (
+            request.headers.get("X-ASKA-REFRESH-TOKEN")
+            or request.args.get("token")
+            or request.form.get("token")
+        )
+        expected = os.getenv("ASKA_REFRESH_TOKEN")
+        if not expected:
+            return jsonify({"error": "Refresh token not configured"}), 501
+        if token != expected:
+            return jsonify({"error": "Unauthorized"}), 403
+        try:
+            reload_qa_chain()
+        except Exception as exc:
+            current_app.logger.exception("Failed to reload QA chain")
+            return jsonify({"error": f"Reload failed: {exc}"}), 500
+        return jsonify({"status": "ok"})
 
     @app.route("/cek-laporan", methods=["GET"])
     def cek_laporan():

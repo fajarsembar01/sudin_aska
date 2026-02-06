@@ -99,7 +99,7 @@ def role_required(*roles: str) -> Callable:
                 elif role == "staff":
                     return redirect(url_for("portal.home"))
                 elif role == "sekolah":
-                    return redirect(url_for("portal.sekolah_rooms"))
+                    return redirect(url_for("portal.sekolah_home"))
                 else:
                     return redirect(url_for("auth.logout"))
             
@@ -152,7 +152,7 @@ def _redirect_after_login(user: dict, fallback: Optional[str] = None) -> str:
     elif role == "staff":
         return url_for("portal.home")
     elif role == "sekolah":
-        return url_for("portal.sekolah_rooms")
+        return url_for("portal.sekolah_home")
     else:
         return url_for("auth.login")
 

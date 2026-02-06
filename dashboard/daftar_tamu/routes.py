@@ -5,13 +5,17 @@ from __future__ import annotations
 import csv
 import json
 import math
+import os
+from io import BytesIO, StringIO
+from pathlib import Path
 from datetime import date, datetime
-from io import StringIO
 from typing import Optional
 
-from flask import Blueprint, Response, jsonify, render_template, request
+from flask import Blueprint, Response, jsonify, render_template, request, url_for, send_file, redirect, flash
 from psycopg2.extras import Json
 from urllib.parse import quote_plus
+from PIL import Image, ImageDraw, ImageFont
+import qrcode
 
 from dashboard.auth import current_user, role_required
 from dashboard.db_access import get_cursor
@@ -31,9 +35,20 @@ from .queries import (
     fetch_school_rankings,
     fetch_unvisited_schools,
     get_transaction_detail,
+    list_admin_public_transactions,
     list_admin_transactions,
     list_guest_candidates,
+    list_general_guest_candidates,
+    list_general_guests_admin,
+    list_purpose_keyword_rows,
+    list_purpose_keywords,
+    list_contact_priority_rows,
+    list_school_public_transactions,
     list_school_transactions,
+    update_contact_priority,
+    set_purpose_keyword_active,
+    upsert_purpose_keyword,
+    update_public_transaction_status,
     update_transaction_status,
 )
 
@@ -91,6 +106,118 @@ def _parse_guest_ids(raw: Optional[str]) -> list[int]:
     return unique_ids
 
 
+def _parse_guest_payload(raw: Optional[str]) -> tuple[list[int], list[int]]:
+    """Parse guest payload list into (sudin_ids, umum_ids)."""
+    if not raw:
+        return [], []
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        return [], []
+    if not isinstance(payload, list):
+        return [], []
+    sudin_ids: list[int] = []
+    umum_ids: list[int] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        guest_type = (item.get("type") or "").strip().lower()
+        guest_id = item.get("id")
+        try:
+            guest_id = int(guest_id)
+        except (TypeError, ValueError):
+            continue
+        if guest_type == "umum":
+            umum_ids.append(guest_id)
+        else:
+            sudin_ids.append(guest_id)
+    # Deduplicate while preserving order
+    def _dedupe(values: list[int]) -> list[int]:
+        seen = set()
+        output = []
+        for val in values:
+            if val in seen:
+                continue
+            seen.add(val)
+            output.append(val)
+        return output
+
+    return _dedupe(sudin_ids), _dedupe(umum_ids)
+
+
+def _web_aska_base_url() -> str:
+    base = (
+        os.getenv("WEB_ASKA_BASE_URL")
+        or os.getenv("WEB_ASKA_PUBLIC_URL")
+        or os.getenv("ASKA_PUBLIC_BASE_URL")
+        or "https://web_aska.app"
+    )
+    base = (base or "").strip()
+    if base and not base.startswith(("http://", "https://")):
+        base = f"https://{base}"
+    return base.rstrip("/")
+
+
+def _build_guestbook_qr(target_url: str, size: int = 1024) -> Image.Image:
+    qr = qrcode.QRCode(
+        version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(target_url)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
+    qr_img = qr_img.resize((size, size), Image.LANCZOS)
+
+    base_dir = Path(__file__).resolve().parents[2]
+    logo_candidates = [
+        base_dir / "web_aska" / "static" / "favicon.ico",
+        base_dir / "web_aska" / "static" / "logo.png",
+    ]
+    logo = None
+    for logo_path in logo_candidates:
+        if not logo_path.exists():
+            continue
+        try:
+            logo = Image.open(logo_path)
+            if getattr(logo, "is_animated", False):
+                logo.seek(0)
+            logo = logo.convert("RGBA")
+            break
+        except Exception:
+            logo = None
+            continue
+
+    if logo is not None:
+        # Keep logo small to preserve QR readability (<= ~18% of width).
+        logo_size = int(size * 0.16)
+        logo.thumbnail((logo_size, logo_size), Image.LANCZOS)
+        pos = ((size - logo.width) // 2, (size - logo.height) // 2)
+        padding = int(logo_size * 0.08)
+        bg_box = Image.new(
+            "RGBA",
+            (logo.width + padding * 2, logo.height + padding * 2),
+            (255, 255, 255, 235),
+        )
+        bg_pos = (pos[0] - padding, pos[1] - padding)
+        qr_img.paste(bg_box, bg_pos, bg_box)
+        qr_img.paste(logo, pos, logo)
+    return qr_img
+
+
+def _measure_multiline(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont, spacing: int = 4) -> tuple[int, int]:
+    if hasattr(draw, "multiline_textbbox"):
+        bbox = draw.multiline_textbbox((0, 0), text, font=font, spacing=spacing)
+        return bbox[2] - bbox[0], bbox[3] - bbox[1]
+    if hasattr(draw, "multiline_textsize"):
+        return draw.multiline_textsize(text, font=font, spacing=spacing)
+    # Fallback
+    lines = text.splitlines() or [text]
+    widths = [draw.textlength(line, font=font) if hasattr(draw, "textlength") else len(line) * 6 for line in lines]
+    return int(max(widths) if widths else 0), int(len(lines) * 12)
+
+
 def _fetch_school_for_user(user_id: int) -> Optional[dict]:
     with get_cursor() as cur:
         cur.execute(
@@ -121,14 +248,15 @@ def _sanitize_phone(phone: str) -> str:
     return digits_only
 
 
-def _build_area_contacts(school: Optional[dict]) -> list[dict]:
+def _build_area_contacts(school: Optional[dict], message: Optional[str] = None) -> list[dict]:
     if not school:
         return []
     area_name = (school.get("kecamatan_name") or "").strip()
-    message = (
-        f"Halo, kami dari {school.get('name')} (NPSN {school.get('npsn')}) "
-        "baru mengisi buku tamu dan mohon bantuan percepatan verifikasi."
-    )
+    if not message:
+        message = (
+            f"Halo, kami dari {school.get('name')} (NPSN {school.get('npsn')}) "
+            "baru mengisi buku tamu dan mohon bantuan percepatan verifikasi."
+        )
     contacts: list[dict] = []
     for row in list_portal_kontak():
         area = (row.get("wilayah") or "").strip()
@@ -480,6 +608,250 @@ def admin_guest_history(user_id: int) -> Response:
     return jsonify({"success": True, "history": rows})
 
 
+@daftar_tamu_bp.route("/admin/umum")
+@role_required("admin")
+def admin_general_guests() -> Response:
+    search_query = (request.args.get("q") or "").strip()
+    verified_raw = (request.args.get("verified") or "").strip().lower()
+    deleted_raw = (request.args.get("deleted") or "").strip().lower()
+    verified = None
+    if verified_raw == "true":
+        verified = True
+    elif verified_raw == "false":
+        verified = False
+    deleted = None
+    if deleted_raw == "true":
+        deleted = True
+    elif deleted_raw == "false":
+        deleted = False
+    page = _to_int(request.args.get("page"), 1)
+    per_page = _to_int(request.args.get("per_page"), 20)
+    per_page = max(10, min(per_page, 100))
+    rows, total_rows = list_general_guests_admin(
+        search_query=search_query,
+        verified=verified,
+        deleted=deleted,
+        page=page,
+        per_page=per_page,
+    )
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if page > total_pages:
+        page = total_pages
+        rows, total_rows = list_general_guests_admin(
+            search_query=search_query,
+            verified=verified,
+            deleted=deleted,
+            page=page,
+            per_page=per_page,
+        )
+
+    return render_template(
+        "daftar_tamu/admin_general_guests.html",
+        rows=rows,
+        total_rows=total_rows,
+        total_pages=total_pages,
+        page=page,
+        per_page=per_page,
+        search_query=search_query,
+        verified_filter=verified_raw,
+        deleted_filter=deleted_raw,
+    )
+
+
+@daftar_tamu_bp.route("/admin/umum-transactions")
+@role_required("admin")
+def admin_public_transactions() -> Response:
+    status = (request.args.get("status") or "").strip().lower()
+    search_query = (request.args.get("q") or "").strip()
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    per_page = _to_int(request.args.get("per_page"), 10)
+    per_page = max(5, min(per_page, 100))
+    page = _to_int(request.args.get("page"), 1)
+    page = max(1, page)
+
+    rows, total_rows = list_admin_public_transactions(
+        status=status,
+        search_query=search_query,
+        date_from=date_from,
+        date_to=date_to,
+        page=page,
+        per_page=per_page,
+    )
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if page > total_pages:
+        page = total_pages
+        rows, total_rows = list_admin_public_transactions(
+            status=status,
+            search_query=search_query,
+            date_from=date_from,
+            date_to=date_to,
+            page=page,
+            per_page=per_page,
+        )
+
+    return render_template(
+        "daftar_tamu/admin_public_transactions.html",
+        rows=rows,
+        status=status,
+        search_query=search_query,
+        page=page,
+        per_page=per_page,
+        total_rows=total_rows,
+        total_pages=total_pages,
+        date_from_str=date_from.isoformat() if date_from else "",
+        date_to_str=date_to.isoformat() if date_to else "",
+    )
+
+
+@daftar_tamu_bp.route("/admin/tujuan-kunjungan", methods=["GET", "POST"])
+@role_required("admin")
+def admin_purpose_keywords() -> Response:
+    user = current_user()
+    if request.method == "POST":
+        action = (request.form.get("action") or "").strip().lower()
+        if action == "add":
+            keyword = (request.form.get("keyword") or "").strip()
+            try:
+                upsert_purpose_keyword(keyword=keyword, created_by=user.get("id"))
+            except ValueError as exc:
+                flash(str(exc), "danger")
+            else:
+                flash("Kata kunci tujuan disimpan.", "success")
+        elif action == "toggle":
+            keyword_id = _to_int(request.form.get("keyword_id"), 0)
+            active_raw = (request.form.get("active") or "true").strip().lower()
+            active = active_raw in ("1", "true", "yes", "on")
+            if keyword_id <= 0:
+                flash("Data kata kunci tidak valid.", "danger")
+            else:
+                ok = set_purpose_keyword_active(keyword_id=keyword_id, active=active)
+                if ok:
+                    flash("Status kata kunci diperbarui.", "success")
+                else:
+                    flash("Kata kunci tidak ditemukan.", "danger")
+        else:
+            flash("Aksi tidak dikenali.", "warning")
+        return redirect(url_for("daftar_tamu.admin_purpose_keywords"))
+
+    rows = list_purpose_keyword_rows(limit=400)
+    return render_template(
+        "daftar_tamu/admin_purpose_keywords.html",
+        rows=rows,
+    )
+
+
+@daftar_tamu_bp.route("/admin/kontak-prioritas", methods=["GET", "POST"])
+@role_required("admin")
+def admin_contact_priority() -> Response:
+    if request.method == "POST":
+        keyword_id = _to_int(request.form.get("keyword_id"), 0)
+        sort_order = _to_int(request.form.get("sort_order"), 0)
+        active = (request.form.get("active") or "").strip().lower() == "true"
+        if keyword_id <= 0 or sort_order <= 0:
+            flash("Data prioritas tidak valid.", "danger")
+        else:
+            ok = update_contact_priority(keyword_id=keyword_id, sort_order=sort_order, active=active)
+            if ok:
+                flash("Prioritas kontak diperbarui.", "success")
+            else:
+                flash("Prioritas kontak tidak ditemukan.", "danger")
+        return redirect(url_for("daftar_tamu.admin_contact_priority"))
+
+    rows = list_contact_priority_rows(limit=50)
+    return render_template(
+        "daftar_tamu/admin_contact_priority.html",
+        rows=rows,
+    )
+
+
+@daftar_tamu_bp.route("/admin/umum-transactions/<int:transaction_id>/approve", methods=["POST"])
+@role_required("admin")
+def admin_public_transaction_approve(transaction_id: int) -> Response:
+    user = current_user()
+    note = (request.form.get("reviewer_note") or "").strip()
+    try:
+        ok = update_public_transaction_status(
+            transaction_id=transaction_id,
+            status="approved",
+            reviewer_id=user["id"],
+            reviewer_notes=note or None,
+        )
+    except ValueError:
+        ok = False
+    if not ok:
+        return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
+    return redirect(url_for("daftar_tamu.admin_public_transactions"))
+
+
+@daftar_tamu_bp.route("/admin/umum-transactions/<int:transaction_id>/reject", methods=["POST"])
+@role_required("admin")
+def admin_public_transaction_reject(transaction_id: int) -> Response:
+    user = current_user()
+    note = (request.form.get("reviewer_note") or "").strip()
+    if not note:
+        return jsonify({"success": False, "message": "Catatan penolakan wajib diisi."}), 400
+    try:
+        ok = update_public_transaction_status(
+            transaction_id=transaction_id,
+            status="rejected",
+            reviewer_id=user["id"],
+            reviewer_notes=note,
+        )
+    except ValueError:
+        ok = False
+    if not ok:
+        return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
+    return redirect(url_for("daftar_tamu.admin_public_transactions"))
+
+
+@daftar_tamu_bp.route("/admin/umum/<int:guest_id>/verify", methods=["POST"])
+@role_required("admin")
+def admin_verify_general_guest(guest_id: int) -> Response:
+    user = current_user()
+    is_verified_raw = (request.form.get("is_verified") or "true").strip().lower()
+    is_verified = is_verified_raw in ("1", "true", "yes", "on")
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE daftar_tamu_general_guests
+            SET is_verified = %s,
+                verified_by = %s,
+                verified_at = CASE WHEN %s THEN NOW() ELSE NULL END,
+                updated_at = NOW()
+            WHERE id = %s
+              AND is_deleted = FALSE
+            """,
+            (is_verified, user.get("id"), is_verified, guest_id),
+        )
+        if cur.rowcount == 0:
+            return jsonify({"success": False, "message": "Tamu umum tidak ditemukan atau sudah dihapus."}), 404
+    return jsonify({"success": True, "is_verified": is_verified})
+
+
+@daftar_tamu_bp.route("/admin/umum/<int:guest_id>/delete", methods=["POST"])
+@role_required("admin")
+def admin_delete_general_guest(guest_id: int) -> Response:
+    user = current_user()
+    is_deleted_raw = (request.form.get("is_deleted") or "true").strip().lower()
+    is_deleted = is_deleted_raw in ("1", "true", "yes", "on")
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE daftar_tamu_general_guests
+            SET is_deleted = %s,
+                deleted_by = CASE WHEN %s THEN %s ELSE NULL END,
+                deleted_at = CASE WHEN %s THEN NOW() ELSE NULL END,
+                updated_at = NOW()
+            WHERE id = %s
+            """,
+            (is_deleted, is_deleted, user.get("id"), is_deleted, guest_id),
+        )
+        if cur.rowcount == 0:
+            return jsonify({"success": False, "message": "Tamu umum tidak ditemukan."}), 404
+    return jsonify({"success": True, "is_deleted": is_deleted})
+
+
 # ===============================
 # Sekolah Guestbook
 # ===============================
@@ -513,6 +885,12 @@ def sekolah_guestbook() -> Response:
     page = _to_int(request.args.get("page"), 1)
     page = max(1, page)
 
+    public_status = (request.args.get("public_status") or "").strip().lower()
+    public_per_page = _to_int(request.args.get("public_per_page"), 5)
+    public_per_page = max(3, min(public_per_page, 50))
+    public_page = _to_int(request.args.get("public_page"), 1)
+    public_page = max(1, public_page)
+
     rows, total_rows = list_school_transactions(
         school_id=school["id"],
         status=status,
@@ -529,12 +907,36 @@ def sekolah_guestbook() -> Response:
             per_page=per_page,
         )
 
+    public_rows, public_total_rows = list_school_public_transactions(
+        school_id=school["id"],
+        status=public_status,
+        page=public_page,
+        per_page=public_per_page,
+    )
+    public_total_pages = max(1, math.ceil(public_total_rows / public_per_page)) if public_total_rows else 1
+    if public_page > public_total_pages:
+        public_page = public_total_pages
+        public_rows, public_total_rows = list_school_public_transactions(
+            school_id=school["id"],
+            status=public_status,
+            page=public_page,
+            per_page=public_per_page,
+        )
+
     return render_template(
         "daftar_tamu/sekolah_dashboard.html",
         school=school,
         user_school=school,
+        guestbook_public_url=f"{_web_aska_base_url()}/buku-tamu/{school.get('npsn')}",
         area_contacts=_build_area_contacts(school),
+        purpose_keywords=list_purpose_keywords(active_only=True),
         rows=rows,
+        public_rows=public_rows,
+        public_status=public_status,
+        public_page=public_page,
+        public_per_page=public_per_page,
+        public_total_rows=public_total_rows,
+        public_total_pages=public_total_pages,
         status=status,
         search_query=search_query,
         page=page,
@@ -557,6 +959,56 @@ def sekolah_guest_search() -> Response:
     return jsonify({"success": True, "results": results})
 
 
+@daftar_tamu_bp.route("/sekolah/guest-search-umum")
+@role_required("sekolah")
+def sekolah_general_guest_search() -> Response:
+    query = (request.args.get("q") or "").strip()
+    limit = _to_int(request.args.get("limit"), 20)
+    results = list_general_guest_candidates(query, limit=limit)
+    return jsonify({"success": True, "results": results})
+
+
+@daftar_tamu_bp.route("/umum", methods=["POST"])
+@role_required("sekolah", "admin")
+def create_general_guest() -> Response:
+    user = current_user()
+    full_name = (request.form.get("full_name") or "").strip()
+    phone = (request.form.get("phone") or "").strip()
+    instansi = (request.form.get("instansi") or "").strip()
+    jabatan = (request.form.get("jabatan") or "").strip()
+    if not full_name:
+        return jsonify({"success": False, "message": "Nama tamu wajib diisi."}), 400
+    if phone:
+        phone = _sanitize_phone(phone)
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO daftar_tamu_general_guests (full_name, phone, instansi, jabatan, created_by)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id, full_name, phone, instansi, jabatan, is_verified
+            """,
+            (full_name, phone or None, instansi or None, jabatan or None, user.get("id")),
+        )
+        row = cur.fetchone()
+        guest = dict(row) if row else {}
+
+        cur.execute(
+            """
+            SELECT COUNT(*) AS name_count,
+                   MAX(CASE WHEN is_verified THEN 1 ELSE 0 END) AS has_verified
+            FROM daftar_tamu_general_guests
+            WHERE lower(full_name) = lower(%s)
+            """,
+            (full_name,),
+        )
+        stats = dict(cur.fetchone() or {})
+
+    guest["has_duplicate"] = int(stats.get("name_count") or 0) > 1
+    guest["has_verified"] = bool(stats.get("has_verified"))
+    return jsonify({"success": True, "guest": guest})
+
+
 @daftar_tamu_bp.route("/sekolah/area-contacts")
 @role_required("sekolah")
 def sekolah_area_contacts() -> Response:
@@ -565,8 +1017,144 @@ def sekolah_area_contacts() -> Response:
     school = _fetch_school_for_user(user.get("id"))
     if not school:
         return jsonify({"success": False, "message": "Akun sekolah belum terhubung."}), 400
-    contacts = _build_area_contacts(school)
+    message = None
+    transaction_id_raw = request.args.get("transaction_id")
+    if transaction_id_raw:
+        try:
+            transaction_id = int(transaction_id_raw)
+        except (TypeError, ValueError):
+            transaction_id = None
+        if transaction_id:
+            detail = get_transaction_detail(transaction_id)
+            if detail and detail.get("school_id") == school.get("id"):
+                guest_names = [
+                    (g.get("full_name") or g.get("email") or "").strip()
+                    for g in (detail.get("guests") or [])
+                ]
+                guest_names = [name for name in guest_names if name]
+                guest_text = ", ".join(guest_names) if guest_names else "-"
+                photo_url = None
+                photo_path = detail.get("photo_path")
+                if photo_path:
+                    photo_name = photo_path.split("uploads/portal/")[-1]
+                    photo_url = url_for("portal.uploaded_file", filename=photo_name, _external=True)
+                message_lines = [
+                    f"Halo, kami dari {school.get('name')} (NPSN {school.get('npsn')}) baru mengisi buku tamu.",
+                    f"Tamu: {guest_text}",
+                ]
+                if photo_url:
+                    message_lines.append(f"Foto: {photo_url}")
+                message_lines.append("Mohon bantuan percepatan verifikasi.")
+                message = "\n".join(message_lines)
+    contacts = _build_area_contacts(school, message=message)
     return jsonify({"success": True, "contacts": contacts, "user_school": school})
+
+
+@daftar_tamu_bp.route("/sekolah/umum-transactions/<int:transaction_id>/approve", methods=["POST"])
+@role_required("sekolah")
+def sekolah_approve_public_transaction(transaction_id: int) -> Response:
+    user = current_user()
+    school = _fetch_school_for_user(user.get("id"))
+    if not school:
+        return jsonify({"success": False, "message": "Akun sekolah belum terhubung."}), 400
+    reviewer_notes = (request.form.get("reviewer_notes") or "").strip()
+    success = update_public_transaction_status(
+        transaction_id=transaction_id,
+        status="approved",
+        reviewer_id=user.get("id"),
+        reviewer_notes=reviewer_notes or None,
+        school_id=school.get("id"),
+    )
+    if not success:
+        return jsonify({"success": False, "message": "Transaksi tidak ditemukan."}), 404
+    return redirect(url_for("daftar_tamu.sekolah_guestbook", _anchor="publicGuestbook"))
+
+
+@daftar_tamu_bp.route("/sekolah/umum-transactions/<int:transaction_id>/reject", methods=["POST"])
+@role_required("sekolah")
+def sekolah_reject_public_transaction(transaction_id: int) -> Response:
+    user = current_user()
+    school = _fetch_school_for_user(user.get("id"))
+    if not school:
+        return jsonify({"success": False, "message": "Akun sekolah belum terhubung."}), 400
+    reviewer_notes = (request.form.get("reviewer_notes") or "").strip()
+    success = update_public_transaction_status(
+        transaction_id=transaction_id,
+        status="rejected",
+        reviewer_id=user.get("id"),
+        reviewer_notes=reviewer_notes or None,
+        school_id=school.get("id"),
+    )
+    if not success:
+        return jsonify({"success": False, "message": "Transaksi tidak ditemukan."}), 404
+    return redirect(url_for("daftar_tamu.sekolah_guestbook", _anchor="publicGuestbook"))
+
+
+@daftar_tamu_bp.route("/sekolah/qr")
+@role_required("sekolah")
+def sekolah_guestbook_qr() -> Response:
+    user = current_user()
+    school = _fetch_school_for_user(user.get("id"))
+    if not school:
+        return jsonify({"success": False, "message": "Akun sekolah belum terhubung."}), 400
+
+    fmt = (request.args.get("format") or "png").strip().lower()
+    paper = (request.args.get("paper") or "a4").strip().lower()
+    if fmt not in {"png", "pdf"}:
+        fmt = "png"
+    if paper not in {"a4", "a5"}:
+        paper = "a4"
+
+    target_url = f"{_web_aska_base_url()}/buku-tamu/{school.get('npsn')}"
+    qr_img = _build_guestbook_qr(target_url, size=1024)
+
+    if fmt == "pdf":
+        page_sizes = {
+            "a4": (2480, 3508),
+            "a5": (1748, 2480),
+        }
+        width, height = page_sizes[paper]
+        canvas = Image.new("RGB", (width, height), "white")
+        qr_size = int(min(width, height) * 0.55)
+        qr_resized = qr_img.resize((qr_size, qr_size), Image.LANCZOS).convert("RGB")
+        qr_x = (width - qr_size) // 2
+        qr_y = int(height * 0.18)
+        canvas.paste(qr_resized, (qr_x, qr_y))
+
+        draw = ImageDraw.Draw(canvas)
+        font = ImageFont.load_default()
+        text_lines = [
+            school.get("name") or "Sekolah",
+            f"NPSN {school.get('npsn')}",
+            "Scan untuk buku tamu web_aska",
+        ]
+        text = "\n".join(text_lines)
+        text_w, text_h = _measure_multiline(draw, text, font, spacing=4)
+        text_x = (width - text_w) // 2
+        text_y = qr_y + qr_size + 40
+        draw.multiline_text((text_x, text_y), text, fill=(20, 20, 20), font=font, spacing=4, align="center")
+
+        buf = BytesIO()
+        canvas.save(buf, format="PDF")
+        buf.seek(0)
+        filename = f"qr_buku_tamu_{school.get('npsn')}_{paper}.pdf"
+        return send_file(
+            buf,
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=filename,
+        )
+
+    buf = BytesIO()
+    qr_img.convert("RGB").save(buf, format="PNG")
+    buf.seek(0)
+    filename = f"qr_buku_tamu_{school.get('npsn')}.png"
+    return send_file(
+        buf,
+        mimetype="image/png",
+        as_attachment=True,
+        download_name=filename,
+    )
 
 
 @daftar_tamu_bp.route("/sekolah/transactions", methods=["POST"])
@@ -577,8 +1165,10 @@ def sekolah_create_transaction() -> Response:
     if not school:
         return jsonify({"success": False, "message": "Akun sekolah belum terhubung."}), 400
 
-    guest_ids = _parse_guest_ids(request.form.get("guest_ids"))
-    if not guest_ids:
+    sudin_ids, umum_ids = _parse_guest_payload(request.form.get("guest_payload"))
+    if not sudin_ids and not umum_ids:
+        sudin_ids = _parse_guest_ids(request.form.get("guest_ids"))
+    if not sudin_ids and not umum_ids:
         return jsonify({"success": False, "message": "Pilih minimal satu tamu."}), 400
 
     purpose = (request.form.get("purpose") or "").strip()
@@ -661,12 +1251,21 @@ def sekolah_create_transaction() -> Response:
         tx_row = cur.fetchone()
         transaction_id = int(tx_row["id"]) if tx_row else None
 
-        for guest_id in guest_ids:
+        for guest_id in sudin_ids:
             cur.execute(
                 """
-                INSERT INTO daftar_tamu_transaction_guests (transaction_id, user_id)
-                VALUES (%s, %s)
+                INSERT INTO daftar_tamu_transaction_guests (transaction_id, guest_type, user_id)
+                VALUES (%s, 'sudin', %s)
                 ON CONFLICT (transaction_id, user_id) DO NOTHING
+                """,
+                (transaction_id, guest_id),
+            )
+        for guest_id in umum_ids:
+            cur.execute(
+                """
+                INSERT INTO daftar_tamu_transaction_guests (transaction_id, guest_type, general_guest_id)
+                VALUES (%s, 'umum', %s)
+                ON CONFLICT (transaction_id, general_guest_id) DO NOTHING
                 """,
                 (transaction_id, guest_id),
             )

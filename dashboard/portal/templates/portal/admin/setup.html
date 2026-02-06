@@ -219,6 +219,29 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Refresh Knowledge -->
+            <div class="card border-0 shadow-sm mt-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <span class="icon-badge section-icon text-warning">
+                            <i class="bi bi-cpu"></i>
+                        </span>
+                        <h2 class="h6 fw-bold mb-0">Refresh Kecerdasan ASKA</h2>
+                    </div>
+                    <p class="text-muted small mb-3">
+                        Generate ulang Detail_Sekolah.md dari data sekolah NEGERI (kecuali MI/MTS/MAN/MA).
+                    </p>
+                    <form method="POST" action="{{ url_for('portal.admin_refresh_knowledge') }}">
+                        <button type="submit" class="btn btn-warning btn-sm w-100">
+                            <i class="bi bi-arrow-repeat me-1"></i>Update Detail Sekolah
+                        </button>
+                    </form>
+                    <div class="form-text mt-2">
+                        Setelah update, restart layanan ASKA agar pengetahuan terbaru aktif.
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="col-lg-8" style="max-height: calc(100vh - 120px); overflow-y: auto;">

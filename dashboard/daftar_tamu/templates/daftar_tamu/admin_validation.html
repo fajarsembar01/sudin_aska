@@ -331,10 +331,17 @@
                             btn.type = 'button';
                             btn.className = 'btn btn-sm btn-outline-primary text-start';
                             var metaParts = [];
-                            if (guest.role) metaParts.push(guest.role);
-                            if (guest.jabatan) metaParts.push(guest.jabatan);
-                            if (guest.nrk) metaParts.push('NRK ' + guest.nrk);
-                            btn.innerHTML = '<div class="fw-semibold">' + (guest.full_name || 'Tamu') + '</div>'
+                            var badge = '';
+                            if (guest.guest_type === 'umum') {
+                                if (guest.instansi) metaParts.push(guest.instansi);
+                                if (guest.jabatan) metaParts.push(guest.jabatan);
+                                if (guest.phone) metaParts.push(guest.phone);
+                                badge = guest.is_verified ? '<span class="badge text-bg-success ms-2">Verified</span>' : '<span class="badge text-bg-secondary ms-2">Umum</span>';
+                            } else {
+                                if (guest.jabatan) metaParts.push(guest.jabatan);
+                                if (guest.nrk) metaParts.push('NRK ' + guest.nrk);
+                            }
+                            btn.innerHTML = '<div class="fw-semibold">' + (guest.full_name || 'Tamu') + badge + '</div>'
                                 + '<div class="small text-muted">' + metaParts.join(' • ') + '</div>';
                             if (guest.id) {
                                 btn.addEventListener('click', function () {

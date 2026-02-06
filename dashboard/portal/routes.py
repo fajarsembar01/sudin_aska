@@ -5,10 +5,14 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote_plus
+import subprocess
+import sys
 import math
 import json
 import uuid
 import re
+import os
+import urllib.request as urlrequest
 
 from flask import (
     Blueprint,
@@ -872,7 +876,7 @@ def home() -> Response:
     role = user.get("role")
     
     if role == "sekolah":
-        return redirect(url_for("portal.sekolah_rooms"))
+        return redirect(url_for("portal.sekolah_home"))
     
     if role == "admin":
         return redirect(url_for("portal.admin_stats"))
@@ -897,7 +901,7 @@ def schools() -> Response:
     
     # Sekolah role redirect
     if role == "sekolah":
-        return redirect(url_for("portal.sekolah_rooms"))
+        return redirect(url_for("portal.sekolah_home"))
     
     # Staff can only see assigned schools - redirect to assignments page
     if role == "staff":
@@ -922,6 +926,47 @@ def schools() -> Response:
         pagination=pagination,
         search=search,
         jenjang=jenjang,
+    )
+
+
+# ===== Sekolah Landing =====
+
+@portal_bp.route("/sekolah")
+@role_required("sekolah")
+def sekolah_home() -> Response:
+    """Landing page for sekolah role (choose Buku Tamu or PANBERS)."""
+    user = current_user()
+    school = _fetch_user_school(user.get("id"))
+    if not school:
+        flash("Akun belum terhubung dengan sekolah. Hubungi admin.", "warning")
+    subtitle = "Silakan pilih layanan yang ingin Anda akses"
+    if school and school.get("name") and school.get("npsn"):
+        subtitle = f"{school.get('name')} • NPSN {school.get('npsn')}"
+    cards = [
+        {
+            "title": "Buku Tamu",
+            "description": "Input kunjungan tamu, foto wajib, GPS otomatis, dan pantau status verifikasi.",
+            "icon": "bi-journal-text",
+            "href": url_for("daftar_tamu.sekolah_guestbook"),
+            "col_class": "col-md-6 col-12",
+        },
+        {
+            "title": "PANBERS",
+            "description": "Konfigurasi ruangan dan persiapan penilaian sekolah.",
+            "icon": "bi-sliders",
+            "href": url_for("portal.sekolah_rooms"),
+            "col_class": "col-md-6 col-12",
+        },
+    ]
+    return render_template(
+        "role_selection.html",
+        page_title="Pilih Layanan Sekolah - ASKA Portal",
+        page_description="Pilih layanan untuk sekolah",
+        header_title="Selamat Datang, Sekolah",
+        header_subtitle=subtitle,
+        cards=cards,
+        default_col_class="col-md-6 col-12",
+        show_logout=True,
     )
 
 
@@ -3274,6 +3319,85 @@ def admin_setup() -> Response:
         kelurahan_list=kelurahan_list,
         activity_logs=activity_logs,
     )
+
+
+@portal_bp.route("/admin/knowledge/refresh", methods=["POST"])
+@role_required("admin")
+def admin_refresh_knowledge() -> Response:
+    """Regenerate Detail_Sekolah.md for ASKA knowledge base."""
+    script_path = Path(__file__).resolve().parents[2] / "scripts" / "generate_detail_sekolah_md.py"
+    if not script_path.exists():
+        flash("Script pembaruan Detail_Sekolah.md tidak ditemukan.", "danger")
+        return redirect(url_for("portal.admin_setup"))
+
+    try:
+        result = subprocess.run(
+            [sys.executable, str(script_path)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except Exception:
+        current_app.logger.exception("Gagal menjalankan generator Detail_Sekolah.md")
+        flash("Gagal memperbarui Detail_Sekolah.md. Cek log server.", "danger")
+        return redirect(url_for("portal.admin_setup"))
+
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or "").strip()
+        detail = detail.splitlines()[-1] if detail else ""
+        if detail:
+            flash(f"Gagal memperbarui Detail_Sekolah.md: {detail}", "danger")
+        else:
+            flash("Gagal memperbarui Detail_Sekolah.md. Cek log server.", "danger")
+        return redirect(url_for("portal.admin_setup"))
+
+    refresh_targets = []
+    refresh_url = (os.getenv("ASKA_REFRESH_URL") or "").strip()
+    refresh_token = (os.getenv("ASKA_REFRESH_TOKEN") or "").strip()
+    if refresh_url and refresh_token:
+        refresh_targets.append(("web", refresh_url, refresh_token))
+
+    telegram_url = (os.getenv("ASKA_TELEGRAM_REFRESH_URL") or "").strip()
+    telegram_token = (os.getenv("ASKA_TELEGRAM_REFRESH_TOKEN") or refresh_token or "").strip()
+    if telegram_url and telegram_token:
+        refresh_targets.append(("telegram", telegram_url, telegram_token))
+
+    if refresh_targets:
+        failed = []
+        for name, url, token in refresh_targets:
+            try:
+                req = urlrequest.Request(
+                    url,
+                    method="POST",
+                    headers={"X-ASKA-REFRESH-TOKEN": token},
+                )
+                with urlrequest.urlopen(req, timeout=10) as resp:
+                    if resp.status >= 400:
+                        raise RuntimeError(f"Status {resp.status}")
+            except Exception:
+                current_app.logger.exception("Gagal memanggil refresh %s", name)
+                failed.append(name)
+
+        if failed:
+            if len(failed) == len(refresh_targets):
+                flash(
+                    "Detail_Sekolah.md diperbarui, tapi reload ASKA gagal. Restart manual jika diperlukan.",
+                    "warning",
+                )
+            else:
+                labels = ", ".join(failed)
+                flash(
+                    f"Detail_Sekolah.md diperbarui. Reload gagal untuk: {labels}.",
+                    "warning",
+                )
+        else:
+            flash("Detail_Sekolah.md diperbarui dan ASKA berhasil reload.", "success")
+    else:
+        flash(
+            "Detail_Sekolah.md berhasil diperbarui. Restart layanan ASKA agar pengetahuan terbaru aktif.",
+            "success",
+        )
+    return redirect(url_for("portal.admin_setup"))
 
 
 @portal_bp.route("/admin/activity-logs")

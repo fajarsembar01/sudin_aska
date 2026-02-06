@@ -1,12 +1,21 @@
 # web_aska/handlers.py
 import asyncio
+import os
 import time
 from typing import Optional
+from threading import Lock
 
 from dotenv import load_dotenv
 # from openai import OpenAI  # not used in web handler
 
 from ai_core import build_qa_chain
+from knowledge_loader import (
+    GENERAL_FILE,
+    SPECIFIC_FILE,
+    DATA_SEKOLAH_FILE,
+    DETAIL_SEKOLAH_FILE,
+    STRUKTUR_ORG_FILE,
+)
 from db import save_chat, get_chat_history
 from responses import ASKA_NO_DATA_RESPONSE, ASKA_TECHNICAL_ISSUE_RESPONSE
 from utils import (
@@ -74,6 +83,51 @@ web_sessions = {}
 
 load_dotenv()
 qa_chain = build_qa_chain()
+_qa_chain_lock = Lock()
+_last_kb_mtime: Optional[float] = None
+_last_kb_check_ts: float = 0.0
+_KB_CHECK_INTERVAL = float(os.getenv("ASKA_KB_CHECK_INTERVAL", "5") or 5)
+
+
+def _get_kb_mtime() -> float:
+    mtimes = []
+    for path in (
+        GENERAL_FILE,
+        SPECIFIC_FILE,
+        DATA_SEKOLAH_FILE,
+        DETAIL_SEKOLAH_FILE,
+        STRUKTUR_ORG_FILE,
+    ):
+        try:
+            mtimes.append(path.stat().st_mtime)
+        except FileNotFoundError:
+            continue
+    return max(mtimes) if mtimes else 0.0
+
+
+def _maybe_reload_qa_chain() -> None:
+    global _last_kb_mtime, _last_kb_check_ts
+    if _KB_CHECK_INTERVAL <= 0:
+        return
+    now_ts = time.time()
+    if (now_ts - _last_kb_check_ts) < _KB_CHECK_INTERVAL:
+        return
+    _last_kb_check_ts = now_ts
+    current_mtime = _get_kb_mtime()
+    if _last_kb_mtime is None:
+        _last_kb_mtime = current_mtime
+        return
+    if current_mtime > _last_kb_mtime:
+        reload_qa_chain()
+        _last_kb_mtime = current_mtime
+
+
+def reload_qa_chain() -> None:
+    """Reload QA chain after knowledge updates."""
+    global qa_chain, _last_kb_mtime
+    with _qa_chain_lock:
+        qa_chain = build_qa_chain()
+        _last_kb_mtime = _get_kb_mtime()
 
 TEACHER_CONVERSATION_LIMIT = 10
 TEACHER_TIMEOUT_SECONDS = 600
@@ -100,6 +154,7 @@ async def process_web_request(user_id: int, user_input: str, username: str = "We
     """
     
     session_data = web_sessions.setdefault(user_id, {})
+    _maybe_reload_qa_chain()
 
     user = MockUser(user_id, first_name=username)
     message = MockMessage(user, user_input)
