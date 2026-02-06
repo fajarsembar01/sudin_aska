@@ -1085,6 +1085,11 @@ tim Anda') %}
         z-index: 5;
     }
 
+    html[data-theme="dark"] .photo-modal-close {
+        filter: invert(1) grayscale(100%);
+        opacity: 0.9;
+    }
+
     .photo-viewport {
         width: 100%;
         height: 80vh;
@@ -1146,13 +1151,14 @@ tim Anda') %}
         padding-left: 0.35rem;
         padding-right: 0.35rem;
     }
+
 </style>
 
 <div class="modal fade" id="photoModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header photo-modal-header d-flex flex-column align-items-start row-gap: 20px">
-                <div class="d-flex">
+                <div class="d-flex d-flex flex-column>">
                     <h5 class="modal-title" id="photoModalTitle">Foto</h5>
                 </div>
                 <div>
