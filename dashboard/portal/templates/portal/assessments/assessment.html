@@ -655,7 +655,10 @@
             if (!isNaN(val)) return val;
         }
         var room = document.getElementById('room' + roomId);
-        if (!room) return 0;
+        if (room && typeof room.querySelectorAll !== 'function' && room.length) {
+            room = room[0];
+        }
+        if (!room || typeof room.querySelectorAll !== 'function') return 0;
         var totalScore = 0;
         var totalAspects = 0;
         room.querySelectorAll('.score-group').forEach(function (g) {

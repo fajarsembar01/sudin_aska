@@ -21,18 +21,30 @@
                 {% endif %}
 
                 <p class="mb-3">Butuh bantuan? Silakan hubungi admin wilayah berikut:</p>
-                    <div class="list-group">
-                        {% for c in area_contacts or [] %}
-                        <div class="list-group-item d-flex justify-content-between align-items-start {% if c.is_user_area %}border-primary border-2{% endif %}"
-                            {% if c.is_user_area %}style="border-left: 4px solid var(--bs-primary) !important;" {% endif %}>
-                            <div>
-                                <div class="fw-semibold">{{ c.area }}
+                {% set contact_list = area_contacts or [] %}
+                <div id="areaContactList" data-empty="{{ 1 if not contact_list else 0 }}">
+                    {% if contact_list %}
+                    {% set ns = namespace(area_key=None, first=true) %}
+                    {% for c in contact_list %}
+                        {% set area_key = c.normalized_area or (c.area|lower) %}
+                        {% if ns.area_key != area_key %}
+                            {% if not ns.first %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-uppercase small text-muted">
+                                    {{ c.area }}
                                     {% if c.is_user_area %}
                                     <span class="badge bg-primary ms-2">wilayah anda</span>
                                     {% endif %}
                                 </div>
-                                <div class="text-muted small">{{ c.name }} • {{ c.phone }}</div>
-                            </div>
+                                <ul class="list-unstyled mb-0">
+                            {% set ns.area_key = area_key %}
+                            {% set ns.first = false %}
+                        {% endif %}
+                        <li class="d-flex justify-content-between align-items-center py-1">
+                            <div class="text-muted small">{{ c.name }} • {{ c.phone }}</div>
                             {% if c.is_active %}
                             <a class="btn btn-success btn-sm d-inline-flex align-items-center gap-2"
                                 href="{{ c.wa_link }}" target="_blank" rel="noopener">
@@ -41,9 +53,16 @@
                             {% else %}
                             <span class="badge bg-secondary">Inaktif</span>
                             {% endif %}
-                        </div>
-                        {% endfor %}
+                        </li>
+                    {% endfor %}
+                    {% if not ns.first %}
+                        </ul>
                     </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="alert alert-warning mb-0">Kontak admin wilayah belum tersedia. Silakan hubungi admin secara langsung.</div>
+                    {% endif %}
+                </div>
 
                 <div class="alert alert-info mt-3 mb-0 small">
                     Admin wilayah siap membantu verifikasi data atau pembaruan akun sekolah Anda.

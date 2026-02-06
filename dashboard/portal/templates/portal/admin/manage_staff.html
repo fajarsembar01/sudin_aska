@@ -492,6 +492,18 @@
                                     </td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm">
+                                            {% if item.draft_assessment_id or item.last_assessment_id %}
+                                            <a class="btn btn-outline-secondary"
+                                                href="{{ url_for('portal.assess', school_id=item.school_id, assessment_id=(item.draft_assessment_id or item.last_assessment_id)) }}"
+                                                target="_blank" rel="noopener" title="Lihat penilaian">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            {% else %}
+                                            <button type="button" class="btn btn-outline-secondary" disabled
+                                                title="Belum ada penilaian">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            {% endif %}
                                             <button type="button" class="btn btn-outline-primary assignment-edit-btn"
                                                 data-assignment-id="{{ item.assignment_id }}"
                                                 data-staff-name="{{ item.staff_name }}"

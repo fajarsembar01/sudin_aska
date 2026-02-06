@@ -1,0 +1,451 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Validasi Daftar Tamu" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="icon-badge feature-icon text-primary">
+                        <i class="bi bi-clipboard-check"></i>
+                    </span>
+                    <div>
+                        <h1 class="h3 fw-bold page-title mb-1">Validasi Daftar Tamu</h1>
+                        <p class="page-subtitle mb-0">Verifikasi transaksi buku tamu dari sekolah.</p>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('daftar_tamu.admin_dashboard') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                    </a>
+                    <a href="{{ url_for('main.admin_select_role') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-grid me-1"></i>Pilih Menu
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small mb-1">Status</label>
+                <select name="status" class="form-select">
+                    <option value="pending" {% if status=='pending' %}selected{% endif %}>Menunggu</option>
+                    <option value="approved" {% if status=='approved' %}selected{% endif %}>Disetujui</option>
+                    <option value="rejected" {% if status=='rejected' %}selected{% endif %}>Ditolak</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small mb-1">Cari sekolah/tamu</label>
+                <input type="text" name="q" class="form-control" value="{{ search_query }}"
+                    placeholder="Nama sekolah, NPSN, nama tamu, email, NRK...">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-1">Dari</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from_str }}" max="{{ today_str }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-1">Sampai</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to_str }}" max="{{ today_str }}">
+            </div>
+            <div class="col-md-1 d-grid">
+                <button type="submit" class="btn btn-primary">Terapkan</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Waktu</th>
+                        <th>Sekolah</th>
+                        <th>Tamu</th>
+                        <th>Status</th>
+                        <th class="text-end">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr data-transaction-id="{{ row.id }}">
+                        <td>
+                            <div class="fw-semibold">{{ row.visit_at|jakarta('%d %b %Y') }}</div>
+                            <div class="small text-muted">{{ row.visit_at|jakarta('%H:%M') }} WIB</div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ row.school_name }}</div>
+                            <div class="small text-muted">
+                                {{ row.npsn }} &bull; {{ row.jenjang or '-' }} &bull; {{ row.kecamatan or '-' }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ row.guest_display or '-' }}</div>
+                            <div class="small text-muted">{{ row.guest_count or 0 }} tamu</div>
+                        </td>
+                        <td>
+                            {% if row.status == 'approved' %}
+                            <span class="badge text-bg-success">Disetujui</span>
+                            {% elif row.status == 'rejected' %}
+                            <span class="badge text-bg-danger">Ditolak</span>
+                            {% else %}
+                            <span class="badge text-bg-warning">Menunggu</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                data-action="detail" data-transaction-id="{{ row.id }}">
+                                <i class="bi bi-search"></i> Detail
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">Belum ada transaksi untuk filter ini.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% set start_row = ((page - 1) * per_page) + 1 if total_rows else 0 %}
+        {% set end_row = ((page - 1) * per_page) + (rows|length) if total_rows else 0 %}
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+            <small class="text-muted">Menampilkan {{ start_row }}-{{ end_row }} dari {{ total_rows }} transaksi</small>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_validation', q=search_query, status=status, per_page=per_page, page=page-1, date_from=date_from_str, date_to=date_to_str) }}">Prev</a>
+                </li>
+                {% set start_page = 1 if page - 2 < 1 else page - 2 %}
+                {% set end_page = total_pages if page + 2 > total_pages else page + 2 %}
+                {% for p in range(start_page, end_page + 1) %}
+                <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_validation', q=search_query, status=status, per_page=per_page, page=p, date_from=date_from_str, date_to=date_to_str) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_validation', q=search_query, status=status, per_page=per_page, page=page+1, date_from=date_from_str, date_to=date_to_str) }}">Next</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- Detail Modal -->
+<div class="modal fade" id="transactionDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detail Transaksi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="detailLoading" class="text-center py-4">
+                    <div class="spinner-border"></div>
+                </div>
+                <div id="detailContent" class="d-none">
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <div class="fw-semibold" id="detailSchoolName">-</div>
+                            <div class="small text-muted" id="detailSchoolMeta">-</div>
+                            <div class="mt-3">
+                                <div class="small text-muted">Waktu kunjungan</div>
+                                <div class="fw-semibold" id="detailVisitAt">-</div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="small text-muted">Diajukan oleh</div>
+                                <div class="fw-semibold" id="detailCreatedBy">-</div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="small text-muted">Lokasi GPS</div>
+                                <div class="fw-semibold" id="detailGps">-</div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="small text-muted">Tamu</div>
+                                <div id="detailGuests" class="d-flex flex-column gap-2"></div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="small text-muted">Catatan Sekolah</div>
+                                <div id="detailNotes" class="fw-semibold">-</div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="small text-muted">Tujuan Kunjungan</div>
+                                <div id="detailPurpose" class="fw-semibold">-</div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="small text-muted">Status</div>
+                                <div id="detailStatus" class="fw-semibold">-</div>
+                            </div>
+                            <div class="mt-3" id="detailReviewerWrap">
+                                <div class="small text-muted">Reviewer</div>
+                                <div id="detailReviewer" class="fw-semibold">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="border rounded-3 p-2 bg-light">
+                                <img id="detailPhoto" src="" alt="Foto kunjungan" class="img-fluid rounded-2">
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    <div>
+                        <label class="form-label fw-semibold">Catatan Admin</label>
+                        <textarea id="detailAdminNote" class="form-control" rows="3"
+                            placeholder="Tulis catatan untuk persetujuan/penolakan..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" id="detailRejectBtn">Tolak</button>
+                <button type="button" class="btn btn-success" id="detailApproveBtn">Setujui</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Guest History Modal -->
+<div class="modal fade" id="guestHistoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Riwayat Tamu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="guestHistoryLoading" class="text-center py-4">
+                    <div class="spinner-border"></div>
+                </div>
+                <div id="guestHistoryContent" class="d-none">
+                    <div class="fw-semibold mb-2" id="guestHistoryName">-</div>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Waktu</th>
+                                    <th>Sekolah</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="guestHistoryRows"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+    (function () {
+        var detailModal = new bootstrap.Modal(document.getElementById('transactionDetailModal'));
+        var historyModal = new bootstrap.Modal(document.getElementById('guestHistoryModal'));
+        var activeStatusFilter = '{{ status }}';
+        var currentTransactionId = null;
+        var currentRow = null;
+        var uploadBase = "{{ url_for('portal.uploaded_file', filename='__FILE__') }}";
+
+        function buildPhotoUrl(path) {
+            if (!path) return '';
+            var rel = String(path).split('uploads/portal/').pop();
+            return uploadBase.replace('__FILE__', rel);
+        }
+
+        function setStatusBadge(el, status) {
+            if (!el) return;
+            el.className = 'badge';
+            if (status === 'approved') {
+                el.classList.add('text-bg-success');
+                el.textContent = 'Disetujui';
+            } else if (status === 'rejected') {
+                el.classList.add('text-bg-danger');
+                el.textContent = 'Ditolak';
+            } else {
+                el.classList.add('text-bg-warning');
+                el.textContent = 'Menunggu';
+            }
+        }
+
+        function showDetailLoading(show) {
+            document.getElementById('detailLoading').classList.toggle('d-none', !show);
+            document.getElementById('detailContent').classList.toggle('d-none', show);
+        }
+
+        function resetDetailButtons(isPending) {
+            var approveBtn = document.getElementById('detailApproveBtn');
+            var rejectBtn = document.getElementById('detailRejectBtn');
+            approveBtn.disabled = !isPending;
+            rejectBtn.disabled = !isPending;
+            approveBtn.classList.toggle('d-none', !isPending);
+            rejectBtn.classList.toggle('d-none', !isPending);
+            var noteInput = document.getElementById('detailAdminNote');
+            if (noteInput) {
+                noteInput.disabled = !isPending;
+            }
+        }
+
+        function loadTransactionDetail(transactionId, rowEl) {
+            currentTransactionId = transactionId;
+            currentRow = rowEl;
+            showDetailLoading(true);
+            resetDetailButtons(false);
+            document.getElementById('detailAdminNote').value = '';
+            fetch('/daftar-tamu/admin/transactions/' + transactionId)
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.success) throw new Error(data.message || 'Gagal memuat detail');
+                    var trx = data.transaction;
+                    document.getElementById('detailSchoolName').textContent = trx.school_name || '-';
+                    document.getElementById('detailSchoolMeta').textContent = [trx.npsn, trx.jenjang, trx.kecamatan, trx.kelurahan].filter(Boolean).join(' • ');
+                    var visitAt = trx.visit_at ? new Date(trx.visit_at) : null;
+                    document.getElementById('detailVisitAt').textContent = visitAt ? visitAt.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '-';
+                    document.getElementById('detailCreatedBy').textContent = trx.created_by_name || '-';
+                    var hasLat = typeof trx.latitude === 'number' || typeof trx.latitude === 'string';
+                    var hasLon = typeof trx.longitude === 'number' || typeof trx.longitude === 'string';
+                    document.getElementById('detailGps').textContent = (hasLat && hasLon) ? (Number(trx.latitude).toFixed(5) + ', ' + Number(trx.longitude).toFixed(5)) : '-';
+                    document.getElementById('detailNotes').textContent = trx.notes || '-';
+                    document.getElementById('detailPurpose').textContent = trx.purpose || '-';
+                    var statusMap = { pending: 'Menunggu', approved: 'Disetujui', rejected: 'Ditolak' };
+                    document.getElementById('detailStatus').textContent = statusMap[trx.status] || trx.status || '-';
+                    document.getElementById('detailReviewer').textContent = trx.reviewer_name || '-';
+                    document.getElementById('detailReviewerWrap').classList.toggle('d-none', !trx.reviewer_name);
+                    document.getElementById('detailAdminNote').value = trx.reviewer_notes || '';
+
+                    var guestWrap = document.getElementById('detailGuests');
+                    guestWrap.innerHTML = '';
+                    if (Array.isArray(trx.guests) && trx.guests.length > 0) {
+                        trx.guests.forEach(function (guest) {
+                            var btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = 'btn btn-sm btn-outline-primary text-start';
+                            var metaParts = [];
+                            if (guest.role) metaParts.push(guest.role);
+                            if (guest.jabatan) metaParts.push(guest.jabatan);
+                            if (guest.nrk) metaParts.push('NRK ' + guest.nrk);
+                            btn.innerHTML = '<div class="fw-semibold">' + (guest.full_name || 'Tamu') + '</div>'
+                                + '<div class="small text-muted">' + metaParts.join(' • ') + '</div>';
+                            if (guest.id) {
+                                btn.addEventListener('click', function () {
+                                    loadGuestHistory(guest.id, guest.full_name || 'Tamu');
+                                });
+                            } else {
+                                btn.disabled = true;
+                            }
+                            guestWrap.appendChild(btn);
+                        });
+                    } else {
+                        guestWrap.textContent = 'Tidak ada tamu.';
+                    }
+
+                    var photoEl = document.getElementById('detailPhoto');
+                    photoEl.src = buildPhotoUrl(trx.photo_path);
+                    resetDetailButtons(trx.status === 'pending');
+                    showDetailLoading(false);
+                    detailModal.show();
+                })
+                .catch(function (err) {
+                    alert(err.message || 'Gagal memuat detail transaksi.');
+                    showDetailLoading(false);
+                });
+        }
+
+        function loadGuestHistory(userId, name) {
+            document.getElementById('guestHistoryName').textContent = name || 'Tamu';
+            document.getElementById('guestHistoryLoading').classList.remove('d-none');
+            document.getElementById('guestHistoryContent').classList.add('d-none');
+            fetch('/daftar-tamu/admin/guests/' + userId + '/history?limit=20')
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.success) throw new Error(data.message || 'Gagal memuat riwayat');
+                    var body = document.getElementById('guestHistoryRows');
+                    body.innerHTML = '';
+                    if (Array.isArray(data.history) && data.history.length) {
+                        data.history.forEach(function (row) {
+                            var tr = document.createElement('tr');
+                            var dt = row.visit_at ? new Date(row.visit_at) : null;
+                            var statusLabel = row.status || '-';
+                            tr.innerHTML = '<td>' + (dt ? dt.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '-') + '</td>'
+                                + '<td>' + [row.school_name, row.npsn].filter(Boolean).join(' • ') + '</td>'
+                                + '<td>' + statusLabel + '</td>';
+                            body.appendChild(tr);
+                        });
+                    } else {
+                        var empty = document.createElement('tr');
+                        empty.innerHTML = '<td colspan="3" class="text-center text-muted">Belum ada riwayat.</td>';
+                        body.appendChild(empty);
+                    }
+                    document.getElementById('guestHistoryLoading').classList.add('d-none');
+                    document.getElementById('guestHistoryContent').classList.remove('d-none');
+                    historyModal.show();
+                })
+                .catch(function (err) {
+                    alert(err.message || 'Gagal memuat riwayat tamu.');
+                });
+        }
+
+        function updateRowStatus(rowEl, status) {
+            if (!rowEl) return;
+            var badge = rowEl.querySelector('td:nth-child(4) .badge');
+            setStatusBadge(badge, status);
+            if (activeStatusFilter === 'pending') {
+                rowEl.remove();
+            }
+        }
+
+        function submitDecision(action) {
+            if (!currentTransactionId) return;
+            var note = document.getElementById('detailAdminNote').value.trim();
+            if (action === 'reject' && !note) {
+                alert('Catatan penolakan wajib diisi.');
+                return;
+            }
+            var formData = new FormData();
+            if (note) formData.append('reviewer_note', note);
+            fetch('/daftar-tamu/admin/transactions/' + currentTransactionId + '/' + action, {
+                method: 'POST',
+                body: formData
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.success) throw new Error(data.message || 'Gagal memperbarui status');
+                    detailModal.hide();
+                    updateRowStatus(currentRow, action === 'approve' ? 'approved' : 'rejected');
+                    if (window.updateAdminPendingCounts && activeStatusFilter === 'pending') {
+                        window.updateAdminPendingCounts({ guestbook: -1 });
+                    }
+                })
+                .catch(function (err) {
+                    alert(err.message || 'Gagal memperbarui status transaksi.');
+                });
+        }
+
+        document.querySelectorAll('[data-action="detail"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var transactionId = btn.getAttribute('data-transaction-id');
+                var rowEl = btn.closest('tr');
+                loadTransactionDetail(transactionId, rowEl);
+            });
+        });
+
+        document.getElementById('detailApproveBtn').addEventListener('click', function () {
+            submitDecision('approve');
+        });
+
+        document.getElementById('detailRejectBtn').addEventListener('click', function () {
+            submitDecision('reject');
+        });
+    })();
+</script>
+{% endblock %}
