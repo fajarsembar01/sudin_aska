@@ -610,6 +610,8 @@
     var photoRoomSet = new Set({{ photo_room_ids|tojson }});
     var photoScoreThreshold = 90;
     var pendingUploadBlob = null;
+    var uploadInProgress = false;
+    var locationRequestInFlight = null;
 
     function showPhotoMaxWarning() {
         if (window.bootstrap) {
@@ -1047,26 +1049,36 @@
             });
     }
 
+    function isValidCoord(val) {
+        return typeof val === 'number' && !isNaN(val);
+    }
+
     function ensureLocation() {
-        return new Promise(function (resolve) {
+        if (locationRequestInFlight) return locationRequestInFlight;
+        locationRequestInFlight = new Promise(function (resolve) {
             if (!navigator.geolocation) {
                 document.getElementById('gpsStatus').textContent = 'GPS tidak tersedia';
-                return resolve();
+                locationRequestInFlight = null;
+                return resolve(false);
             }
             document.getElementById('gpsStatus').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mencari lokasi...';
             navigator.geolocation.getCurrentPosition(
                 function (pos) {
                     currentLatitude = pos.coords.latitude;
                     currentLongitude = pos.coords.longitude;
-                    resolve();
+                    document.getElementById('gpsStatus').textContent = 'Lokasi terdeteksi';
+                    locationRequestInFlight = null;
+                    resolve(true);
                 },
                 function () {
                     document.getElementById('gpsStatus').textContent = 'GPS tidak tersedia atau ditolak';
-                    resolve();
+                    locationRequestInFlight = null;
+                    resolve(false);
                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         });
+        return locationRequestInFlight;
     }
 
     function openCameraModal(roomId) {
@@ -1147,7 +1159,7 @@
                     var inst = bootstrap.Modal.getInstance(modalEl);
                     if (inst) inst.hide();
                 }
-                if (pendingUploadBlob && (currentLatitude || currentLongitude)) {
+                if (pendingUploadBlob && (isValidCoord(currentLatitude) || isValidCoord(currentLongitude))) {
                     var blob = pendingUploadBlob;
                     pendingUploadBlob = null;
                     uploadBlob(blob);
@@ -1248,19 +1260,20 @@
     }
 
     async function uploadBlob(blob) {
-        var hasLat = typeof currentLatitude === 'number';
-        var hasLon = typeof currentLongitude === 'number';
-        if (!hasLat || !hasLon) {
+        if (uploadInProgress) return;
+        uploadInProgress = true;
+        var hasAny = isValidCoord(currentLatitude) || isValidCoord(currentLongitude);
+        if (!hasAny) {
             await ensureLocation();
-            hasLat = typeof currentLatitude === 'number';
-            hasLon = typeof currentLongitude === 'number';
+            hasAny = isValidCoord(currentLatitude) || isValidCoord(currentLongitude);
         }
-        if (!hasLat && !hasLon) {
+        if (!hasAny) {
             pendingUploadBlob = blob;
             var locModalEl = document.getElementById('locationRequiredModal');
             if (locModalEl && window.bootstrap) {
                 bootstrap.Modal.getOrCreateInstance(locModalEl).show();
             }
+            uploadInProgress = false;
             return;
         }
         var formData = new FormData();
@@ -1319,6 +1332,9 @@
             .catch(function (err) {
                 showToast('Error: ' + err.message);
                 previewInit.innerHTML = '';
+            })
+            .finally(function () {
+                uploadInProgress = false;
             });
 
         // Close modal
