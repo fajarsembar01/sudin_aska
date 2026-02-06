@@ -3,9 +3,26 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence
-from datetime import datetime
+from datetime import datetime, date
+import calendar
 
 from ..db_access import get_cursor
+
+_AUTO_PERIOD_MONTHS_AHEAD = 36
+_MONTH_NAMES_ID = (
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember",
+)
 
 
 def list_portal_schools(
@@ -625,16 +642,138 @@ def create_period(
         )
         return dict(cur.fetchone())
 
+def _ensure_monthly_periods(cur, months_ahead: int = _AUTO_PERIOD_MONTHS_AHEAD) -> None:
+    """Ensure monthly periods exist from current month up to N months ahead."""
+    if months_ahead < 0:
+        return
+    today = date.today()
+    start = date(today.year, today.month, 1)
+    end_month_offset = start.month - 1 + months_ahead
+    end_year = start.year + end_month_offset // 12
+    end_month = end_month_offset % 12 + 1
+    end_last_day = calendar.monthrange(end_year, end_month)[1]
+    window_end = date(end_year, end_month, end_last_day)
+
+    cur.execute(
+        """
+        SELECT start_date, end_date
+        FROM portal_assessment_periods
+        WHERE end_date >= %s AND start_date <= %s
+        """,
+        (start, window_end),
+    )
+    existing_ranges = [(row["start_date"], row["end_date"]) for row in cur.fetchall()]
+
+    def _overlaps(month_start: date, month_end: date) -> bool:
+        for range_start, range_end in existing_ranges:
+            if range_start <= month_end and range_end >= month_start:
+                return True
+        return False
+
+    for offset in range(months_ahead + 1):
+        year = start.year + (start.month - 1 + offset) // 12
+        month = (start.month - 1 + offset) % 12 + 1
+        month_start = date(year, month, 1)
+        last_day = calendar.monthrange(year, month)[1]
+        month_end = date(year, month, last_day)
+        if _overlaps(month_start, month_end):
+            continue
+        name = f"{_MONTH_NAMES_ID[month - 1]} {year}"
+        cur.execute(
+            """
+            INSERT INTO portal_assessment_periods (name, start_date, end_date, is_active)
+            VALUES (%s, %s, %s, FALSE)
+            """,
+            (name, month_start, month_end),
+        )
+        existing_ranges.append((month_start, month_end))
+
+def _ensure_monthly_period_for_date(cur, target_date: date) -> None:
+    """Ensure a monthly period exists for the month containing target_date."""
+    month_start = date(target_date.year, target_date.month, 1)
+    last_day = calendar.monthrange(target_date.year, target_date.month)[1]
+    month_end = date(target_date.year, target_date.month, last_day)
+    cur.execute(
+        """
+        SELECT 1
+        FROM portal_assessment_periods
+        WHERE start_date <= %s AND end_date >= %s
+        LIMIT 1
+        """,
+        (month_end, month_start),
+    )
+    if cur.fetchone():
+        return
+    name = f"{_MONTH_NAMES_ID[target_date.month - 1]} {target_date.year}"
+    cur.execute(
+        """
+        INSERT INTO portal_assessment_periods (name, start_date, end_date, is_active)
+        VALUES (%s, %s, %s, FALSE)
+        """,
+        (name, month_start, month_end),
+    )
+
+def _auto_activate_period_for_today(cur) -> Optional[Dict[str, Any]]:
+    """Activate the period that contains today's date (if any)."""
+    _ensure_monthly_periods(cur)
+    cur.execute(
+        """
+        SELECT *
+        FROM portal_assessment_periods
+        WHERE start_date <= CURRENT_DATE
+          AND end_date >= CURRENT_DATE
+        ORDER BY start_date DESC, id DESC
+        LIMIT 1
+        """
+    )
+    row = cur.fetchone()
+    if not row:
+        return None
+    period = dict(row)
+    if not period.get("is_active"):
+        cur.execute(
+            "UPDATE portal_assessment_periods SET is_active = FALSE WHERE id <> %s",
+            (period["id"],),
+        )
+        cur.execute(
+            "UPDATE portal_assessment_periods SET is_active = TRUE WHERE id = %s",
+            (period["id"],),
+        )
+        period["is_active"] = True
+    return period
+
+
 def list_periods() -> List[Dict[str, Any]]:
-    """List all assessment periods."""
-    with get_cursor() as cur:
+    """List all assessment periods (auto-activates the current period if needed)."""
+    with get_cursor(commit=True) as cur:
+        _auto_activate_period_for_today(cur)
         cur.execute("SELECT * FROM portal_assessment_periods ORDER BY start_date DESC")
         return [dict(row) for row in cur.fetchall()]
 
 def get_active_period() -> Optional[Dict[str, Any]]:
-    """Get the currently active assessment period."""
-    with get_cursor() as cur:
+    """Get the active period, auto-activating the one that matches today's date."""
+    with get_cursor(commit=True) as cur:
+        today_period = _auto_activate_period_for_today(cur)
+        if today_period:
+            return today_period
         cur.execute("SELECT * FROM portal_assessment_periods WHERE is_active = TRUE LIMIT 1")
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+def get_period_for_date(target_date: date) -> Optional[Dict[str, Any]]:
+    """Get the period that contains the given date (auto-creates monthly if missing)."""
+    with get_cursor(commit=True) as cur:
+        _ensure_monthly_period_for_date(cur, target_date)
+        cur.execute(
+            """
+            SELECT *
+            FROM portal_assessment_periods
+            WHERE start_date <= %s AND end_date >= %s
+            ORDER BY start_date DESC, id DESC
+            LIMIT 1
+            """,
+            (target_date, target_date),
+        )
         row = cur.fetchone()
         return dict(row) if row else None
 
@@ -648,9 +787,13 @@ def assign_assessment(school_id: int, staff_id: int, period_id: Optional[int] = 
     """Admin assigns an assessment to a staff member."""
     with get_cursor(commit=True) as cur:
         if not period_id:
-            cur.execute("SELECT id FROM portal_assessment_periods WHERE is_active = TRUE")
-            row = cur.fetchone()
-            period_id = row["id"] if row else None
+            active = _auto_activate_period_for_today(cur)
+            if not active:
+                cur.execute("SELECT id FROM portal_assessment_periods WHERE is_active = TRUE")
+                row = cur.fetchone()
+                period_id = row["id"] if row else None
+            else:
+                period_id = active["id"]
 
         # Avoid duplicate drafts for the same staff/school/period
         cur.execute(
