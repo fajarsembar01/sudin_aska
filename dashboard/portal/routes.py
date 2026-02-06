@@ -51,6 +51,7 @@ from .queries import (
     save_assessment_photo,
     save_room_details,
     get_assessment_room_details,
+    get_assessment_room_score_pct,
     get_assessment_photos,
     submit_assessment,
     list_staff_assessments,
@@ -1231,6 +1232,14 @@ def upload_photo(school_id: int) -> Response:
 
     try:
         _sync_assessment_period_to_active(assessment)
+        score_pct = get_assessment_room_score_pct(assessment_id, school_room_id)
+        if score_pct > 90:
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "Foto hanya boleh untuk ruangan dengan skor 90 atau kurang.",
+                }
+            ), 400
         rooms = list_school_rooms(school_id)
         rooms = _filter_assessment_rooms(rooms)
         total_rooms = len(rooms)
@@ -1279,6 +1288,14 @@ def upload_photo(school_id: int) -> Response:
         lon_val = float(longitude) if longitude else None
     except (TypeError, ValueError):
         lon_val = None
+
+    if lat_val is None and lon_val is None:
+        return jsonify(
+            {
+                "success": False,
+                "message": "Lokasi belum terbaca. Aktifkan izin lokasi lalu coba lagi.",
+            }
+        ), 400
     
     try:
         file.save(str(filepath))

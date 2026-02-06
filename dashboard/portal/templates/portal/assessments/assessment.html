@@ -132,9 +132,14 @@
                             {% endfor %}
 
                             <div class="mt-3 pt-3 border-top">
-                                <div class="photo-capture-btn" onclick="capturePhoto({{ room.school_room_id }})">
+                                <div class="photo-capture-btn" data-room-id="{{ room.school_room_id }}"
+                                    onclick="capturePhoto({{ room.school_room_id }})">
                                     <i class="bi bi-camera"></i>
                                     <span>Ambil Foto Ruangan</span>
+                                </div>
+                                <div class="small text-muted mt-2 d-none photo-score-warning"
+                                    id="photoScoreWarn{{ room.school_room_id }}">
+                                    Foto hanya untuk ruangan dengan skor 90 atau kurang.
                                 </div>
                                 <div id="photoPreview{{ room.school_room_id }}" class="mt-2">
                                     {% if photos_map.get(room.school_room_id) %}
@@ -321,6 +326,48 @@
     </div>
 </div>
 
+<!-- Location Required Modal -->
+<div class="modal fade" id="locationRequiredModal" tabindex="-1" aria-labelledby="locationRequiredLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="locationRequiredLabel">
+                    <i class="bi bi-geo-alt-fill text-warning me-2"></i>Lokasi Diperlukan
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Lokasi belum terbaca. Aktifkan izin lokasi lalu coba lagi.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-primary" id="retryLocationBtn">Coba Lagi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Photo Score Modal -->
+<div class="modal fade" id="photoScoreModal" tabindex="-1" aria-labelledby="photoScoreLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="photoScoreLabel">
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Peringatan
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Foto hanya boleh untuk ruangan dengan skor 90 atau kurang.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Oke</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Camera Modal -->
 <div class="modal fade" id="cameraModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -497,6 +544,17 @@
         border-color: transparent;
     }
 
+    .photo-capture-btn.photo-disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        border-style: solid;
+    }
+
+    .photo-capture-btn.photo-disabled:hover {
+        background: var(--bg-subtle);
+        border-color: var(--border-soft);
+    }
+
     /* Tighten spacing between room cards */
     #roomAccordion .room-item {
         margin-bottom: 0.35rem;
@@ -549,6 +607,8 @@
     var maxPhotoCount = {{ photo_max_allowed }};
     var totalRoomCount = {{ rooms|length }};
     var photoRoomSet = new Set({{ photo_room_ids|tojson }});
+    var photoScoreThreshold = 90;
+    var pendingUploadBlob = null;
 
     function showPhotoMaxWarning() {
         if (window.bootstrap) {
@@ -583,6 +643,42 @@
         }
         if (submitBtn) {
             submitBtn.classList.toggle('opacity-75', required > 0 && uploaded < required);
+        }
+    }
+
+    function getRoomScorePct(roomId) {
+        var scoreEl = document.getElementById('roomScore' + roomId);
+        if (scoreEl) {
+            var raw = (scoreEl.textContent || '').trim().replace(',', '.');
+            var val = parseFloat(raw);
+            if (!isNaN(val)) return val;
+        }
+        var room = document.getElementById('room' + roomId);
+        if (!room) return 0;
+        var totalScore = 0;
+        var totalAspects = 0;
+        room.querySelectorAll('.score-group').forEach(function (g) {
+            var selected = g.querySelector('.score-btn.selected');
+            if (selected) {
+                totalScore += parseInt(selected.dataset.score, 10);
+                totalAspects += 1;
+            }
+        });
+        if (totalAspects === 0) return 0;
+        return (totalScore / totalAspects) / 3 * 100;
+    }
+
+    function updatePhotoButtonState(roomId, pct) {
+        var btn = document.querySelector('.photo-capture-btn[data-room-id="' + roomId + '"]');
+        if (!btn) return;
+        var score = (typeof pct === 'number') ? pct : getRoomScorePct(roomId);
+        var disabled = score > photoScoreThreshold;
+        btn.classList.toggle('photo-disabled', disabled);
+        btn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+        btn.dataset.photoDisabled = disabled ? '1' : '0';
+        var warn = document.getElementById('photoScoreWarn' + roomId);
+        if (warn) {
+            warn.classList.toggle('d-none', !disabled);
         }
     }
 
@@ -818,6 +914,7 @@
 
         if (totalAspects === 0) {
             scoreDisplay.textContent = '0.0';
+            updatePhotoButtonState(schoolRoomId, 0);
             return;
         }
 
@@ -836,6 +933,8 @@
         } else {
             scoreDisplay.classList.add('score-badge-green');
         }
+
+        updatePhotoButtonState(schoolRoomId, pct);
     }
 
     function deletePhoto(photoId, roomId) {
@@ -915,6 +1014,14 @@
 
     function capturePhoto(roomId) {
         currentRoomId = roomId;
+        var score = getRoomScorePct(roomId);
+        if (score > photoScoreThreshold) {
+            var warnModalEl = document.getElementById('photoScoreModal');
+            if (window.bootstrap && warnModalEl) {
+                bootstrap.Modal.getOrCreateInstance(warnModalEl).show();
+            }
+            return;
+        }
         var roomKey = Number(roomId);
         var maxReached = maxPhotoCount > 0 && photoRoomSet.size >= maxPhotoCount && !photoRoomSet.has(roomKey);
         if (maxReached) {
@@ -944,6 +1051,24 @@
             });
             var warningModal = bootstrap.Modal.getInstance(warningEl) || new bootstrap.Modal(warningEl);
             warningModal.hide();
+        });
+    }
+
+    var retryLocationBtn = document.getElementById('retryLocationBtn');
+    if (retryLocationBtn) {
+        retryLocationBtn.addEventListener('click', function () {
+            ensureLocation().then(function () {
+                var modalEl = document.getElementById('locationRequiredModal');
+                if (modalEl && window.bootstrap) {
+                    var inst = bootstrap.Modal.getInstance(modalEl);
+                    if (inst) inst.hide();
+                }
+                if (pendingUploadBlob && (currentLatitude || currentLongitude)) {
+                    var blob = pendingUploadBlob;
+                    pendingUploadBlob = null;
+                    uploadBlob(blob);
+                }
+            });
         });
     }
 
@@ -1039,15 +1164,27 @@
     }
 
     async function uploadBlob(blob) {
-        if (!currentLatitude || !currentLongitude) {
+        var hasLat = typeof currentLatitude === 'number';
+        var hasLon = typeof currentLongitude === 'number';
+        if (!hasLat || !hasLon) {
             await ensureLocation();
+            hasLat = typeof currentLatitude === 'number';
+            hasLon = typeof currentLongitude === 'number';
+        }
+        if (!hasLat && !hasLon) {
+            pendingUploadBlob = blob;
+            var locModalEl = document.getElementById('locationRequiredModal');
+            if (locModalEl && window.bootstrap) {
+                bootstrap.Modal.getOrCreateInstance(locModalEl).show();
+            }
+            return;
         }
         var formData = new FormData();
         formData.append('photo', blob, 'photo.jpg');
         formData.append('assessment_id', assessmentId);
         formData.append('school_room_id', currentRoomId);
-        formData.append('latitude', currentLatitude || '');
-        formData.append('longitude', currentLongitude || '');
+        formData.append('latitude', (currentLatitude === null || currentLatitude === undefined) ? '' : currentLatitude);
+        formData.append('longitude', (currentLongitude === null || currentLongitude === undefined) ? '' : currentLongitude);
 
         // Show uploading state
         var previewInit = document.getElementById('photoPreview' + currentRoomId);
