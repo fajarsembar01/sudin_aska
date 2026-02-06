@@ -166,7 +166,7 @@
                                         {% endif %}
                                         <div class="assignment-actions d-grid gap-2 mt-3">
                                             {% if school.draft_assessment_id %}
-                                            <a href="{{ url_for('portal.assess', school_id=school.school_id) }}"
+                                            <a href="{{ url_for('portal.assess', school_id=school.school_id, assessment_id=school.draft_assessment_id) }}"
                                                 class="btn btn-warning start-assessment-btn" data-has-draft="true">
                                                 <i class="bi bi-pencil-square"></i> Lanjutkan
                                             </a>
@@ -255,7 +255,7 @@
                                     </td>
                                     <td>
                                         {% if school.draft_assessment_id %}
-                                        <a href="{{ url_for('portal.assess', school_id=school.school_id) }}"
+                                        <a href="{{ url_for('portal.assess', school_id=school.school_id, assessment_id=school.draft_assessment_id) }}"
                                             class="btn btn-sm btn-warning start-assessment-btn" data-has-draft="true">
                                             <i class="bi bi-pencil-square"></i> Lanjutkan
                                         </a>
