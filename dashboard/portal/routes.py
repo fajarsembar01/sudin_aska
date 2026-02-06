@@ -955,6 +955,31 @@ def _filter_assessment_rooms(rooms: list[dict]) -> list[dict]:
     return filtered_rooms
 
 
+def _sync_assessment_period_to_active(assessment: dict) -> None:
+    """Force draft period to match the currently active period."""
+    if not assessment or assessment.get("status") != "draft":
+        return
+    active_period = get_active_period()
+    if not active_period:
+        return
+    period_id = active_period.get("id")
+    if not period_id:
+        return
+    if assessment.get("period_id") == period_id:
+        return
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE portal_assessments
+            SET period_id = %s,
+                updated_at = NOW()
+            WHERE id = %s AND status = 'draft'
+            """,
+            (period_id, assessment.get("id")),
+        )
+    assessment["period_id"] = period_id
+
+
 @portal_bp.route("/assess/<int:school_id>")
 @_portal_access_required
 def assess(school_id: int) -> Response:
@@ -1014,6 +1039,7 @@ def assess(school_id: int) -> Response:
             return redirect(url_for("portal.schools"))
             
     assessment_id = assessment["id"]
+    _sync_assessment_period_to_active(assessment)
     
     # Ensure classroom variants are materialized as rooms for this school
     try:
@@ -1114,6 +1140,8 @@ def save_score(school_id: int) -> Response:
         if not (0 <= score <= 3):
             return jsonify({"success": False, "message": "Invalid score"}), 400
 
+        _sync_assessment_period_to_active(assessment)
+
         success = save_assessment_score(
             assessment_id,
             school_room_id,
@@ -1160,6 +1188,7 @@ def save_note(school_id: int) -> Response:
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     try:
+        _sync_assessment_period_to_active(assessment)
         result = save_room_details(
             assessment_id=assessment_id,
             school_room_id=school_room_id,
@@ -1201,6 +1230,7 @@ def upload_photo(school_id: int) -> Response:
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     try:
+        _sync_assessment_period_to_active(assessment)
         rooms = list_school_rooms(school_id)
         rooms = _filter_assessment_rooms(rooms)
         total_rooms = len(rooms)
@@ -1363,6 +1393,7 @@ def submit(school_id: int) -> Response:
         return redirect(url_for("portal.assess", school_id=school_id))
     
     try:
+        _sync_assessment_period_to_active(assessment)
         success = submit_assessment(assessment_id_int)
         if success:
             flash("Penilaian berhasil disubmit!", "success")
@@ -1414,6 +1445,7 @@ def save_draft(school_id: int) -> Response:
             return redirect(url_for("portal.staff_assignments"))
 
     try:
+        _sync_assessment_period_to_active(assessment)
         with get_cursor(commit=True) as cur:
             cur.execute(
                 """

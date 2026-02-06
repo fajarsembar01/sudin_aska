@@ -1,5 +1,6 @@
 # Virtual environment
 venv/
+venv_py39/
 .env
 .env
 
@@ -17,6 +18,10 @@ __pycache__/
 
 # Log
 *.log
+.pglog
+
+# Local postgres data
+.pgdata/
 
 # Local reference repos / dot dirs
 .contoh_repo/
