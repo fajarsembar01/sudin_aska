@@ -32,15 +32,19 @@
 {% else %}
 <section class="row g-3 mb-4">
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm h-100">
+            <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
                 <h2 class="h6 fw-bold mb-2">QR Buku Tamu</h2>
                 <p class="small text-muted mb-3">
                     Tempel QR di pintu masuk supaya tamu umum langsung menuju buku tamu web_aska.
                 </p>
                 <div class="text-center mb-3">
+                    {% if guestbook_qr_ready %}
                     <img src="{{ url_for('daftar_tamu.sekolah_guestbook_qr', format='png') }}"
                         alt="QR Buku Tamu" class="img-fluid border rounded-3" style="max-width: 220px;">
+                    {% else %}
+                    <div class="border rounded-3 p-4 text-muted">QR belum dibuat.</div>
+                    {% endif %}
                 </div>
                 <div class="input-group input-group-sm mb-3">
                     <input type="text" class="form-control" id="guestbookLinkInput" value="{{ guestbook_public_url }}"
@@ -48,6 +52,7 @@
                     <button class="btn btn-outline-secondary" type="button" id="copyGuestbookLinkBtn">Copy Link</button>
                 </div>
                 <div class="d-grid gap-2">
+                    {% if guestbook_qr_ready %}
                     <a class="btn btn-outline-primary btn-sm"
                         href="{{ url_for('daftar_tamu.sekolah_guestbook_qr', format='png') }}">Download PNG</a>
                     <a class="btn btn-outline-secondary btn-sm"
@@ -56,6 +61,14 @@
                     <a class="btn btn-outline-secondary btn-sm"
                         href="{{ url_for('daftar_tamu.sekolah_guestbook_qr', format='pdf', paper='a5') }}">Download
                         PDF A5</a>
+                    {% else %}
+                    <form method="post" action="{{ url_for('daftar_tamu.sekolah_generate_guestbook_qr') }}">
+                        <button class="btn btn-primary btn-sm w-100" type="submit">Generate QR</button>
+                    </form>
+                    <button class="btn btn-outline-secondary btn-sm" disabled>Download PNG</button>
+                    <button class="btn btn-outline-secondary btn-sm" disabled>Download PDF A4</button>
+                    <button class="btn btn-outline-secondary btn-sm" disabled>Download PDF A5</button>
+                    {% endif %}
                 </div>
             </div>
         </div>
