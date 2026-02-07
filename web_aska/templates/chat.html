@@ -527,6 +527,217 @@ const chatBox = document.getElementById('chat-box');
             return lines.join('\n');
         }
 
+        function normalizeUrl(raw) {
+            if (!raw) return '';
+            let url = String(raw).trim();
+            if (!url) return '';
+            if (!/^https?:\/\//i.test(url)) {
+                if (url.startsWith('www.')) {
+                    url = `https://${url}`;
+                } else if (url.startsWith('t.me/') || url.startsWith('telegram.me/')) {
+                    url = `https://${url}`;
+                } else if (url.startsWith('instagram.com') || url.startsWith('tiktok.com') || url.startsWith('youtube.com') || url.startsWith('youtu.be') || url.startsWith('wa.me') || url.startsWith('whatsapp.com') || url.startsWith('maps.app.goo.gl') || url.startsWith('goo.gl/maps') || url.startsWith('maps.google.com')) {
+                    url = `https://${url}`;
+                } else {
+                    url = `https://${url}`;
+                }
+            }
+            return url;
+        }
+
+        function platformFromUrl(url) {
+            try {
+                const u = new URL(normalizeUrl(url));
+                const host = u.hostname.replace(/^www\./, '');
+                if (host.includes('instagram.com')) return 'instagram';
+                if (host.includes('tiktok.com')) return 'tiktok';
+                if (host.includes('youtube.com') || host.includes('youtu.be')) return 'youtube';
+                if (host.includes('t.me') || host.includes('telegram.me')) return 'telegram';
+                if (host.includes('whatsapp.com') || host.includes('wa.me')) return 'whatsapp';
+                if (host.includes('maps.google.com') || host.includes('goo.gl') || host.includes('maps.app.goo.gl')) return 'maps';
+                return 'website';
+            } catch (err) {
+                return 'link';
+            }
+        }
+
+        function platformMeta(platform, url) {
+            const map = {
+                instagram: { label: 'Instagram', icon: 'bi-instagram' },
+                tiktok: { label: 'TikTok', icon: 'bi-tiktok' },
+                youtube: { label: 'YouTube', icon: 'bi-youtube' },
+                telegram: { label: 'Telegram', icon: 'bi-telegram' },
+                whatsapp: { label: 'WhatsApp', icon: 'bi-whatsapp' },
+                maps: { label: 'Google Maps', icon: 'bi-geo-alt' },
+                website: { label: 'Website', icon: 'bi-globe2' },
+                link: { label: 'Buka Link', icon: 'bi-box-arrow-up-right' }
+            };
+            if (platform === 'website' && url) {
+                try {
+                    const host = new URL(normalizeUrl(url)).hostname.replace(/^www\./, '');
+                    return { label: host || map.website.label, icon: map.website.icon };
+                } catch (err) {
+                    return map.website;
+                }
+            }
+            return map[platform] || map.link;
+        }
+
+        const URL_REGEX = /https?:\/\/[^\s)]+|www\.[^\s)]+/gi;
+        const URL_CHECK = /https?:\/\/[^\s)]+|www\.[^\s)]+/i;
+
+        function extractLinks(text) {
+            const links = [];
+            const seen = new Set();
+            URL_REGEX.lastIndex = 0;
+
+            function addLink(url, platform, labelOverride) {
+                const normalized = normalizeUrl(url);
+                if (!normalized) return;
+                if (seen.has(normalized)) return;
+                const meta = platformMeta(platform, normalized);
+                links.push({
+                    url: normalized,
+                    platform: platform,
+                    label: labelOverride || meta.label,
+                    icon: meta.icon
+                });
+                seen.add(normalized);
+            }
+
+            const lines = String(text || '').split('\n');
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const m = line.match(/^[-*•\s]*([^:]+)\s*:\s*(.*)$/);
+                if (!m) continue;
+                const label = (m[1] || '').trim().toLowerCase();
+                let value = (m[2] || '').trim();
+                if (!value && i + 1 < lines.length) {
+                    const nextLine = lines[i + 1].trim();
+                    if (URL_CHECK.test(nextLine)) {
+                        value = nextLine;
+                    }
+                }
+
+                if (label.includes('instagram')) {
+                    const handle = value.replace(/^@/, '');
+                    if (handle) addLink(`https://instagram.com/${handle}`, 'instagram');
+                    continue;
+                }
+                if (label.includes('tiktok')) {
+                    const handle = value.replace(/^@/, '');
+                    if (handle) addLink(`https://tiktok.com/@${handle}`, 'tiktok');
+                    continue;
+                }
+                if (label.includes('youtube')) {
+                    if (value.startsWith('http') || value.startsWith('www.')) {
+                        addLink(value, 'youtube');
+                    } else if (value) {
+                        const handle = value.startsWith('@') ? value : `@${value}`;
+                        addLink(`https://www.youtube.com/${handle}`, 'youtube');
+                    }
+                    continue;
+                }
+                if (label.includes('telegram')) {
+                    const handle = value.replace(/^@/, '');
+                    if (handle) addLink(`https://t.me/${handle}`, 'telegram');
+                    continue;
+                }
+                if (label.includes('whatsapp')) {
+                    if (value.startsWith('http') || value.startsWith('www.')) {
+                        addLink(value, 'whatsapp');
+                    } else if (value) {
+                        addLink(`https://whatsapp.com/channel/${value}`, 'whatsapp', 'WhatsApp Channel');
+                    }
+                    continue;
+                }
+                if (label.includes('maps') || label.includes('google maps')) {
+                    if (value.startsWith('http') || value.startsWith('www.')) {
+                        addLink(value, 'maps');
+                    }
+                    continue;
+                }
+                if (label.includes('website') || label.includes('situs')) {
+                    if (value) {
+                        addLink(value, 'website');
+                    }
+                    continue;
+                }
+            }
+
+            let match;
+            while ((match = URL_REGEX.exec(text || '')) !== null) {
+                const rawUrl = match[0];
+                const platform = platformFromUrl(rawUrl);
+                addLink(rawUrl, platform);
+            }
+
+            return links;
+        }
+
+        function buildLinkButtons(text) {
+            const links = extractLinks(text);
+            if (!links.length) return null;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'link-buttons';
+            links.forEach((link, idx) => {
+                const btn = document.createElement('a');
+                btn.href = link.url;
+                btn.target = '_blank';
+                btn.rel = 'noopener';
+                btn.className = 'link-button';
+                btn.dataset.platform = link.platform;
+                btn.innerHTML = `<i class="bi ${link.icon}"></i><span>${link.label}</span>`;
+                if (links.length % 2 === 1 && idx === links.length - 1) {
+                    btn.classList.add('full-span');
+                }
+                wrapper.appendChild(btn);
+            });
+            return wrapper;
+        }
+
+        function stripLinkLines(text) {
+            if (!text) return '';
+            const lines = String(text).replace(/\r\n/g, '\n').split('\n');
+            const cleaned = [];
+            let skipNextUrl = false;
+            const labelRegex = /^[-*•\s]*([^:]+)\s*:\s*(.*)$/i;
+            const keywordRegex = /(instagram|tiktok|youtube|telegram|whatsapp|wa channel|website|situs|google maps|maps)/i;
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const trimmed = line.trim();
+                if (!trimmed) {
+                    cleaned.push(line);
+                    continue;
+                }
+                if (skipNextUrl && URL_CHECK.test(trimmed)) {
+                    skipNextUrl = false;
+                    continue;
+                }
+                skipNextUrl = false;
+                const match = trimmed.match(labelRegex);
+                if (match) {
+                    const label = (match[1] || '').toLowerCase();
+                    const value = (match[2] || '').trim();
+                    if (keywordRegex.test(label)) {
+                        if (!value) {
+                            skipNextUrl = true;
+                        }
+                        continue;
+                    }
+                }
+                if (URL_CHECK.test(trimmed)) {
+                    const bulletless = trimmed.replace(/^[-*•\s]+/, '');
+                    if (URL_CHECK.test(bulletless)) {
+                        continue;
+                    }
+                }
+                cleaned.push(line);
+            }
+            return cleaned.join('\n').replace(/\n{3,}/g, '\n\n');
+        }
+
         function renderBotHtml(text) {
             let html = String(text || '');
             // Normalize newlines and remove common leading indentation
@@ -661,8 +872,13 @@ const chatBox = document.getElementById('chat-box');
             }
 
             if (sender !== 'user') { // Treat 'aska' and other non-user roles as bot
-                const html = renderBotHtml(message);
+                const linkButtons = buildLinkButtons(message);
+                const rawText = linkButtons ? stripLinkLines(message) : message;
+                let html = renderBotHtml(rawText);
                 messageElement.innerHTML = html;
+                if (linkButtons) {
+                    messageElement.appendChild(linkButtons);
+                }
 
                 // Create message actions container
                 const actionsDiv = document.createElement('div');
@@ -935,7 +1151,9 @@ const chatBox = document.getElementById('chat-box');
         }
 
         function copyMessage(messageEl) {
-            const text = messageEl.innerText || '';
+            const clone = messageEl.cloneNode(true);
+            clone.querySelectorAll('.message-actions, .link-buttons').forEach((el) => el.remove());
+            const text = clone.innerText || '';
             try {
                 navigator.clipboard.writeText(text);
                 const old = messageEl.querySelector('.btn-copy');
@@ -959,12 +1177,18 @@ const chatBox = document.getElementById('chat-box');
             const messagesToEnhance = [];
             document.querySelectorAll('.chat-message.bot-message').forEach((el) => {
                 // Remove existing buttons BEFORE reading text
-                el.querySelectorAll('.btn-copy, .btn-feedback, .message-actions').forEach(b => b.remove());
+                el.querySelectorAll('.btn-copy, .btn-feedback, .message-actions, .link-buttons').forEach(b => b.remove());
                 const hasStructuredContent = el.children.length > 0; // keep <ul>, <br>, etc.
+                let raw = el.textContent || '';
+                raw = raw.replace(/\r\n/g, '\n');
                 if (!hasStructuredContent) {
-                    let raw = el.textContent || '';
-                    raw = raw.replace(/\r\n/g, '\n');
                     el.innerHTML = renderBotHtml(raw.trim());
+                }
+                const linkButtons = buildLinkButtons(raw);
+                if (linkButtons) {
+                    const stripped = stripLinkLines(raw);
+                    el.innerHTML = renderBotHtml(stripped.trim());
+                    el.appendChild(linkButtons);
                 }
                 // Skip buttons for the very first intro bubble
                 if (!el.dataset.initial) {

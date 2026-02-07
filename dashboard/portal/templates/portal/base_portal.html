@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ page_title|default("Portal PANBERSS") }} - ASKA Portal</title>
+    <title>{{ page_title|default("Portal PANBERSS") }} - {{ app_title|default("ASKA Portal") }}</title>
     <link rel="shortcut icon" href="{{ url_for('static', filename='logo/logo.png') }}" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -756,6 +756,7 @@
 </head>
 
 <body>
+    {% block portal_nav %}
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container-fluid px-lg-4">
             <a class="navbar-brand"
@@ -863,24 +864,6 @@
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_dashboard' %}active{% endif %}"
-                                    href="{{ url_for('daftar_tamu.admin_dashboard') }}">
-                                    <i class="bi bi-person-vcard me-2"></i>Daftar Tamu
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_validation' %}active{% endif %}"
-                                    href="{{ url_for('daftar_tamu.admin_validation') }}">
-                                    <i class="bi bi-clipboard-check me-2"></i>Validasi Tamu
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_general_guests' %}active{% endif %}"
-                                    href="{{ url_for('daftar_tamu.admin_general_guests') }}">
-                                    <i class="bi bi-people me-2"></i>Tamu Umum
-                                </a>
-                            </li>
-                            <li>
                                 <a class="dropdown-item {% if request.endpoint == 'portal.portal_kontak_wilayah' %}active{% endif %}"
                                     href="{{ url_for('portal.portal_kontak_wilayah') }}">
                                     <i class="bi bi-person-lines-fill me-2"></i>Kontak Wilayah
@@ -946,19 +929,7 @@
                     {% endif %}
 
                     {% if current_user and current_user.role == 'sekolah' %}
-                    <!-- Sekolah: Konfigurasi menu -->
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'portal.sekolah_home' %}active{% endif %}"
-                            href="{{ url_for('portal.sekolah_home') }}">
-                            <i class="bi bi-grid nav-icon"></i>Beranda
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'daftar_tamu.sekolah_guestbook' %}active{% endif %}"
-                            href="{{ url_for('daftar_tamu.sekolah_guestbook') }}">
-                            <i class="bi bi-journal-text nav-icon"></i>Buku Tamu
-                        </a>
-                    </li>
+                    <!-- Sekolah: PANBERS menu -->
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'portal.sekolah_rooms' %}active{% endif %}"
                             href="{{ url_for('portal.sekolah_rooms') }}">
@@ -975,6 +946,12 @@
                 </ul>
 
                 <div class="d-flex align-items-center gap-3 user-nav-actions">
+                    {% if current_user and current_user.role in ['admin', 'sekolah'] %}
+                    <a href="{{ url_for('main.admin_select_role') if current_user.role == 'admin' else url_for('portal.sekolah_home') }}"
+                        class="btn btn-outline-secondary btn-sm text-nowrap oss-home-btn">
+                        <i class="bi bi-house me-1"></i><span class="oss-home-label">Home</span>
+                    </a>
+                    {% endif %}
                     <!-- Theme Toggle -->
                     <div class="form-check form-switch mb-0">
                         <input class="form-check-input" type="checkbox" id="themeToggle" role="switch">
@@ -1145,6 +1122,7 @@
             </div>
         </div>
     </nav>
+    {% endblock %}
 
     <main class="container-fluid px-lg-4 py-4">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -1303,6 +1281,7 @@
                     count: document.getElementById('adminPendingGuestbookCount')
                 }
             };
+            var hasPendingUI = !!document.getElementById('adminNotificationToggle');
             var quickConfig = elements.quickList ? {
                 previewUrl: elements.quickList.dataset.previewUrl,
                 usersUrl: elements.quickList.dataset.usersUrl,
@@ -2213,6 +2192,9 @@
             }, true);
 
             function fetchSummary() {
+                if (!hasPendingUI) {
+                    return Promise.resolve();
+                }
                 var previewUrl = quickConfig.previewUrl || "{{ url_for('portal.admin_pending_preview') }}";
                 var requestUrl = previewUrl + '?limit=3';
                 return fetch(requestUrl, {
@@ -2255,7 +2237,7 @@
             }
 
             document.addEventListener('visibilitychange', function () {
-                if (!document.hidden) {
+                if (!document.hidden && hasPendingUI) {
                     fetchSummary();
                 }
             });

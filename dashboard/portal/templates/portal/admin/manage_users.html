@@ -1,7 +1,9 @@
-{% extends 'portal/base_portal.html' %}
+{% set base_template = base_template or 'portal/base_portal.html' %}
+{% extends base_template %}
 {% set page_title = "Manajemen User" %}
+{% block title %}Manajemen User{% endblock %}
 
-{% block portal_content %}
+{% macro render_body() %}
 
 <section class="page-header">
     <div class="page-title-group">
@@ -39,6 +41,11 @@
                         <input type="text" class="form-control" name="full_name" id="fullName" required>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Jabatan</label>
+                        <input type="text" class="form-control" name="jabatan" id="jabatan"
+                            placeholder="Contoh: Staf, Pengawas, Operator">
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Email</label>
                         <input type="email" class="form-control" name="email" id="email" required>
                     </div>
@@ -46,8 +53,12 @@
                         <label class="form-label">Password</label>
                         <input type="password" class="form-control" name="password" id="password" minlength="8"
                             autocomplete="new-password">
-                        <small class="text-muted" id="passwordHelp">Minimal 8 karakter. (Kosongkan jika tidak ingin
-                            mengubah)</small>
+                        <small class="text-muted" id="passwordHelp">Minimal 8 karakter.</small>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="unregisteredToggle" name="is_unregistered"
+                            value="1">
+                        <label class="form-check-label" for="unregisteredToggle">Belum register (tanpa email/password)</label>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Role</label>
@@ -106,6 +117,8 @@
                             <option value="approved">Approved</option>
                             <option value="rejected">Rejected</option>
                             <option value="suspended">Suspended</option>
+                            <option value="not_registered">Not Register</option>
+                            <option value="disabled">Disabled</option>
                         </select>
                     </div>
 
@@ -118,6 +131,93 @@
                             Batal Edit
                         </button>
                     </div>
+                </form>
+
+                <hr class="my-4">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="icon-badge section-icon text-warning">
+                            <i class="bi bi-node-plus"></i>
+                        </span>
+                        <h2 class="h6 fw-bold mb-0">Merge Akun</h2>
+                    </div>
+                    {% set merge_old_users = users | selectattr('account_status', 'equalto', 'not_registered') | list %}
+                    {% set merge_new_users = users | rejectattr('account_status', 'equalto', 'not_registered') | rejectattr('account_status', 'equalto', 'disabled') | list %}
+                    <form method="post" id="mergeForm"
+                        onsubmit="return confirm('Merge akun ini? Semua data akun lama dipindahkan ke akun baru, akun lama dinonaktifkan.');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <input type="hidden" name="action" value="merge">
+                        <div class="mb-2">
+                            <label class="form-label small">Akun lama (Not Register)</label>
+                            <input type="text" class="form-control form-control-sm mb-2" id="mergeOldSearch"
+                                placeholder="Cari akun lama...">
+                            <select class="form-select form-select-sm" name="old_user_id" required>
+                                <option value="">-- pilih akun lama --</option>
+                                {% for user in merge_old_users %}
+                                <option value="{{ user.id }}">{{ user.full_name }} • {{ user.jabatan or '-' }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small">Akun baru (Terdaftar)</label>
+                            <input type="text" class="form-control form-control-sm mb-2" id="mergeNewSearch"
+                                placeholder="Cari akun baru...">
+                            <select class="form-select form-select-sm" name="new_user_id" required>
+                                <option value="">-- pilih akun baru --</option>
+                                {% for user in merge_new_users %}
+                                <option value="{{ user.id }}">{{ user.full_name }} • {{ user.email }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-outline-warning">
+                                <i class="bi bi-arrow-left-right me-2"></i>Merge Akun
+                            </button>
+                        </div>
+                    </form>
+                    <small class="text-muted d-block mt-2">Data akun baru akan dipakai. Akun lama menjadi disabled.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="icon-badge section-icon text-info">
+                        <i class="bi bi-person-badge"></i>
+                    </span>
+                    <h2 class="h6 fw-bold mb-0">Tambah User Not Register</h2>
+                </div>
+                <form method="post" id="unregisteredForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="action" value="create">
+                    <input type="hidden" name="is_unregistered" value="1">
+                    <input type="hidden" name="role" value="staff">
+                    <div class="mb-3">
+                        <label class="form-label small">Nama Lengkap</label>
+                        <input type="text" class="form-control form-control-sm" name="full_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Jabatan</label>
+                        <input type="text" class="form-control form-control-sm" name="jabatan" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Kecamatan</label>
+                        <select class="form-select form-select-sm" name="requested_kecamatan" required>
+                            <option value="">-- Pilih Kecamatan --</option>
+                            {% for k in kecamatan_list %}
+                            <option value="{{ k.id }}">{{ k.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-outline-info">
+                            <i class="bi bi-person-plus me-2"></i>Simpan Not Register
+                        </button>
+                    </div>
+                    <small class="text-muted d-block mt-2">
+                        Status otomatis <strong>Not Register</strong>. Role default: staff.
+                    </small>
                 </form>
             </div>
         </div>
@@ -202,12 +302,16 @@
                                             {% if user.account_status == 'approved' %}
                                             <span class="badge bg-success"><i
                                                     class="bi bi-check-circle me-1"></i>Active</span>
-                                            {% elif user.account_status == 'rejected' %}
+                                        {% elif user.account_status == 'rejected' %}
                                             <span class="badge bg-danger">Rejected</span>
-                                            {% else %}
+                                        {% elif user.account_status == 'not_registered' %}
+                                            <span class="badge bg-info text-dark">Not Register</span>
+                                        {% elif user.account_status == 'disabled' %}
+                                            <span class="badge bg-secondary">Disabled</span>
+                                        {% else %}
                                             <span class="badge bg-secondary">{{ user.account_status or 'Unknown'
                                                 }}</span>
-                                            {% endif %}
+                                        {% endif %}
                                         </td>
                                         <td>
                                             <div class="small">
@@ -391,6 +495,9 @@
     </div>
 </div>
 
+{% endmacro %}
+
+{% macro render_scripts() %}
 <script>
     let schoolField;
     let schoolSearchInput;
@@ -405,6 +512,17 @@
     let schoolNullToggle;
     let schoolDebounce;
     let roleSelect;
+    let jabatanInput;
+    let unregisteredToggle;
+    let emailInput;
+    let passwordInput;
+    let passwordHelp;
+    let formActionInput;
+    let kecamatanSelect;
+    let mergeOldSearch;
+    let mergeNewSearch;
+    let mergeOldSelect;
+    let mergeNewSelect;
 
     function toggleSchoolField(forceShow) {
         if (!schoolField) return;
@@ -417,6 +535,39 @@
             schoolField.classList.add('d-none');
             clearSchoolSelection();
             if (schoolNullToggle) schoolNullToggle.checked = false;
+        }
+    }
+
+    function syncUnregisteredToggle() {
+        if (!unregisteredToggle) return;
+        const isUnregistered = unregisteredToggle.checked;
+        const isCreate = formActionInput && formActionInput.value === 'create';
+        if (emailInput) {
+            emailInput.disabled = isUnregistered;
+            if (isCreate) {
+                emailInput.required = !isUnregistered;
+            }
+        }
+        if (passwordInput) {
+            passwordInput.disabled = isUnregistered;
+            if (isCreate) {
+                passwordInput.required = !isUnregistered;
+            }
+        }
+        if (jabatanInput) {
+            jabatanInput.required = isUnregistered;
+        }
+        if (kecamatanSelect) {
+            kecamatanSelect.required = isUnregistered;
+        }
+        if (passwordHelp) {
+            if (isUnregistered) {
+                passwordHelp.textContent = 'Akun belum register: email & password tidak diperlukan.';
+            } else {
+                passwordHelp.textContent = isCreate
+                    ? 'Minimal 8 karakter.'
+                    : 'Kosongkan jika tidak ingin mengubah password.';
+            }
         }
     }
 
@@ -468,6 +619,7 @@
         document.getElementById('formAction').value = 'update';
         document.getElementById('userId').value = user.id;
         document.getElementById('fullName').value = user.full_name || '';
+        document.getElementById('jabatan').value = user.jabatan || '';
         document.getElementById('email').value = user.email || '';
         document.getElementById('role').value = user.role || 'viewer';
         document.getElementById('password').value = '';
@@ -494,6 +646,9 @@
         } else {
             document.getElementById('statusField').style.display = 'none';
         }
+        if (unregisteredToggle) {
+            unregisteredToggle.checked = user.account_status === 'not_registered';
+        }
 
         // UI changes
         document.getElementById('formTitle').innerText = 'Edit User';
@@ -501,10 +656,28 @@
         document.getElementById('submitBtn').className = 'btn btn-warning w-100'; // distinct color
         document.getElementById('cancelBtn').style.display = 'inline-block';
         document.getElementById('password').removeAttribute('required'); // Password optional for update
-        document.getElementById('passwordHelp').innerText = "Kosongkan jika tidak ingin mengubah password.";
+        syncUnregisteredToggle();
 
         // Scroll to top mobile friendly
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function bindMergeSearch(inputEl, selectEl) {
+        if (!inputEl || !selectEl) return;
+        inputEl.addEventListener('input', function () {
+            const query = (inputEl.value || '').trim().toLowerCase();
+            Array.from(selectEl.options).forEach(option => {
+                if (!option.value) {
+                    option.hidden = false;
+                    return;
+                }
+                const label = (option.textContent || '').toLowerCase();
+                option.hidden = Boolean(query) && !label.includes(query);
+            });
+            if (selectEl.selectedOptions.length && selectEl.selectedOptions[0].hidden) {
+                selectEl.value = '';
+            }
+        });
     }
 
     function resetForm() {
@@ -513,14 +686,18 @@
         document.getElementById('userId').value = '';
         document.getElementById('statusField').style.display = 'none';
         document.getElementById('requestedKecamatan').value = '';
+        document.getElementById('jabatan').value = '';
 
         // UI reset
         document.getElementById('formTitle').innerText = 'Tambah User';
         document.getElementById('submitBtn').innerHTML = '<i class="bi bi-save me-2"></i>Simpan User';
         document.getElementById('submitBtn').className = 'btn btn-primary w-100';
         document.getElementById('cancelBtn').style.display = 'none';
+        if (unregisteredToggle) {
+            unregisteredToggle.checked = false;
+        }
         document.getElementById('password').setAttribute('required', 'required'); // Password required for create
-        document.getElementById('passwordHelp').innerText = "Minimal 8 karakter.";
+        syncUnregisteredToggle();
         clearSchoolSelection();
         toggleSchoolField(false);
         setSchoolNullMode(false);
@@ -571,6 +748,18 @@
         schoolKecamatanText = document.getElementById('schoolKecamatanText');
         clearSchoolBtn = document.getElementById('clearSchoolBtn');
         schoolNullToggle = document.getElementById('schoolNullToggle');
+        jabatanInput = document.getElementById('jabatan');
+        unregisteredToggle = document.getElementById('unregisteredToggle');
+        emailInput = document.getElementById('email');
+        passwordInput = document.getElementById('password');
+        passwordHelp = document.getElementById('passwordHelp');
+        formActionInput = document.getElementById('formAction');
+        kecamatanSelect = document.getElementById('requestedKecamatan');
+        mergeOldSearch = document.getElementById('mergeOldSearch');
+        mergeNewSearch = document.getElementById('mergeNewSearch');
+        mergeOldSelect = document.querySelector('select[name="old_user_id"]');
+        mergeNewSelect = document.querySelector('select[name="new_user_id"]');
+        const statusSelect = document.getElementById('accountStatus');
 
         if (roleSelect) {
             roleSelect.addEventListener('change', function () {
@@ -653,7 +842,25 @@
             });
         }
 
+        if (unregisteredToggle) {
+            unregisteredToggle.addEventListener('change', syncUnregisteredToggle);
+        }
+
+        if (statusSelect && unregisteredToggle) {
+            statusSelect.addEventListener('change', function () {
+                if (this.value === 'not_registered') {
+                    unregisteredToggle.checked = true;
+                } else {
+                    unregisteredToggle.checked = false;
+                }
+                syncUnregisteredToggle();
+            });
+        }
+
+        syncUnregisteredToggle();
         toggleSchoolField();
+        bindMergeSearch(mergeOldSearch, mergeOldSelect);
+        bindMergeSearch(mergeNewSearch, mergeNewSelect);
     });
 </script>
 <script>
@@ -1060,4 +1267,9 @@
         updateBulkState();
     });
 </script>
-{% endblock %}
+{% endmacro %}
+
+{% block portal_content %}{{ render_body() }}{% endblock %}
+{% block content %}{{ render_body() }}{% endblock %}
+{% block portal_scripts %}{{ render_scripts() }}{% endblock %}
+{% block scripts %}{{ render_scripts() }}{% endblock %}

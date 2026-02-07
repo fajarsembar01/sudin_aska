@@ -1,5 +1,5 @@
-{% extends "portal/base_portal.html" %}
-{% set page_title = "Tamu Umum" %}
+{% extends "daftar_tamu/base_daftar_tamu.html" %}
+{% set page_title = "Verifikasi Tamu Umum" %}
 
 {% block portal_content %}
 <section class="mb-4">
@@ -11,7 +11,7 @@
                         <i class="bi bi-people"></i>
                     </span>
                     <div>
-                        <h1 class="h3 fw-bold page-title mb-1">Tamu Umum</h1>
+                        <h1 class="h3 fw-bold page-title mb-1">Verifikasi Tamu Umum</h1>
                         <p class="page-subtitle mb-0">Kelola daftar tamu umum dan status verifikasi.</p>
                     </div>
                 </div>
@@ -35,7 +35,7 @@
     <div class="card-body">
         <div class="row g-3">
             <div class="col-lg-7">
-                <form method="get" class="row g-2 align-items-end">
+                <form method="get" class="row g-2 align-items-end" id="generalGuestFilterForm">
                     <div class="col-md-6">
                         <label class="form-label small mb-1">Cari nama/instansi</label>
                         <input type="text" name="q" class="form-control" value="{{ search_query }}"
@@ -64,10 +64,27 @@
             </div>
             <div class="col-lg-5">
                 <form id="generalGuestForm" class="border rounded-3 p-3 bg-light">
+                    <input type="hidden" name="guest_id" id="generalGuestId">
+                    <input type="hidden" name="action" id="generalGuestAction" value="create">
                     <div class="fw-semibold mb-2">Tambah Tamu Umum</div>
+                    <div class="mb-2">
+                        <label class="form-label small">Cari Tamu</label>
+                        <div class="position-relative">
+                            <input type="text" class="form-control form-control-sm" id="generalGuestSearchInput"
+                                placeholder="Ketik nama, instansi, atau telepon...">
+                            <div id="generalGuestSuggestions"
+                                class="position-absolute w-100 rounded-3 shadow-sm d-none"
+                                style="top: 100%; left: 0; z-index: 1050; max-height: 240px; overflow-y: auto; background-color: var(--bg-surface); border: 1px solid var(--border-soft);">
+                            </div>
+                        </div>
+                        <small class="text-muted">Klik hasil untuk edit data tamu.</small>
+                    </div>
                     <div class="row g-2">
                         <div class="col-12">
                             <input type="text" name="full_name" class="form-control" placeholder="Nama lengkap *" required>
+                        </div>
+                        <div class="col-12">
+                            <input type="email" name="email" class="form-control" placeholder="Email (opsional)">
                         </div>
                         <div class="col-12">
                             <input type="text" name="instansi" class="form-control" placeholder="Instansi (opsional)">
@@ -79,8 +96,11 @@
                             <input type="text" name="phone" class="form-control" placeholder="Telepon (opsional)">
                         </div>
                         <div class="col-12 d-grid">
-                            <button type="submit" class="btn btn-outline-primary">
+                            <button type="submit" class="btn btn-outline-primary" id="generalGuestSubmit">
                                 <i class="bi bi-person-plus me-1"></i>Tambah
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary mt-2 d-none" id="generalGuestCancel">
+                                Batal Edit
                             </button>
                         </div>
                     </div>
@@ -92,21 +112,59 @@
 
 <section class="card border-0 shadow-sm">
     <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th>Nama</th>
-                        <th>Instansi</th>
-                        <th>Kontak</th>
-                        <th>Status</th>
-                        <th>Dibuat</th>
-                        <th class="text-end">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
+                <div class="table-responsive">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                        <div class="input-group input-group-sm" style="max-width: 320px;">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="generalGuestTableSearch"
+                                placeholder="Cari di tabel..." autocomplete="off">
+                        </div>
+                        <small class="text-muted">Pencarian ini hanya untuk data di halaman ini.</small>
+                    </div>
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Nama</th>
+                                <th>Instansi</th>
+                                <th>Kontak</th>
+                                <th>
+                                    {% set status_filter = '' %}
+                                    {% if deleted_filter == 'true' %}
+                                    {% set status_filter = 'deleted' %}
+                                    {% elif verified_filter == 'true' %}
+                                    {% set status_filter = 'verified' %}
+                                    {% elif verified_filter == 'false' %}
+                                    {% set status_filter = 'unverified' %}
+                                    {% endif %}
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span>Status</span>
+                                        <select class="form-select form-select-sm" id="statusColumnFilter"
+                                            style="width: 150px;">
+                                            <option value="" {% if status_filter=='' %}selected{% endif %}>Semua</option>
+                                            <option value="verified" {% if status_filter=='verified' %}selected{% endif %}>
+                                                Verified
+                                            </option>
+                                            <option value="unverified" {% if status_filter=='unverified' %}selected{% endif %}>
+                                                Belum
+                                            </option>
+                                            <option value="deleted" {% if status_filter=='deleted' %}selected{% endif %}>
+                                                Dihapus
+                                            </option>
+                                        </select>
+                                    </div>
+                                </th>
+                                <th>Dibuat</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                     {% for row in rows %}
-                    <tr data-guest-id="{{ row.id }}">
+                    <tr data-guest-id="{{ row.id }}"
+                        data-full-name="{{ row.full_name }}"
+                        data-email="{{ row.email or '' }}"
+                        data-instansi="{{ row.instansi or '' }}"
+                        data-jabatan="{{ row.jabatan or '' }}"
+                        data-phone="{{ row.phone or '' }}">
                         <td>
                             <div class="fw-semibold">{{ row.full_name }}</div>
                             {% if row.jabatan %}
@@ -143,14 +201,19 @@
                         </td>
                         <td class="text-end">
                             <div class="d-flex justify-content-end gap-2">
-                                <button type="button" class="btn btn-sm {% if row.is_verified %}btn-outline-secondary{% else %}btn-success{% endif %}"
-                                    data-action="toggle-verify" data-verified="{{ '1' if row.is_verified else '0' }}"
-                                    {% if row.is_deleted %}disabled{% endif %}>
-                                    {% if row.is_verified %}Batalkan{% else %}Verifikasi{% endif %}
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-action="edit"
+                                    title="Edit" aria-label="Edit">
+                                    <i class="bi bi-pencil-square"></i>
                                 </button>
                                 <button type="button" class="btn btn-sm {% if row.is_deleted %}btn-outline-primary{% else %}btn-outline-danger{% endif %}"
-                                    data-action="toggle-delete" data-deleted="{{ '1' if row.is_deleted else '0' }}">
-                                    {% if row.is_deleted %}Pulihkan{% else %}Hapus{% endif %}
+                                    data-action="toggle-delete" data-deleted="{{ '1' if row.is_deleted else '0' }}"
+                                    title="{% if row.is_deleted %}Pulihkan{% else %}Hapus{% endif %}"
+                                    aria-label="{% if row.is_deleted %}Pulihkan{% else %}Hapus{% endif %}">
+                                    {% if row.is_deleted %}
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                    {% else %}
+                                    <i class="bi bi-trash"></i>
+                                    {% endif %}
                                 </button>
                             </div>
                         </td>
@@ -160,6 +223,9 @@
                         <td colspan="6" class="text-center text-muted py-4">Belum ada tamu umum.</td>
                     </tr>
                     {% endfor %}
+                    <tr id="generalGuestNoResults" class="d-none">
+                        <td colspan="6" class="text-center text-muted py-4">Tidak ada data sesuai pencarian.</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -192,11 +258,112 @@
 <script>
     (function () {
         var form = document.getElementById('generalGuestForm');
+        var submitBtn = document.getElementById('generalGuestSubmit');
+        var cancelBtn = document.getElementById('generalGuestCancel');
+        var actionInput = document.getElementById('generalGuestAction');
+        var guestIdInput = document.getElementById('generalGuestId');
+        var nameInput = form ? form.querySelector('input[name="full_name"]') : null;
+        var emailInput = form ? form.querySelector('input[name="email"]') : null;
+        var instansiInput = form ? form.querySelector('input[name="instansi"]') : null;
+        var jabatanInput = form ? form.querySelector('input[name="jabatan"]') : null;
+        var phoneInput = form ? form.querySelector('input[name="phone"]') : null;
+        var searchInput = document.getElementById('generalGuestSearchInput');
+        var suggestionBox = document.getElementById('generalGuestSuggestions');
+        var searchDebounce;
+
+        function resetGuestForm() {
+            if (!form) return;
+            form.reset();
+            if (actionInput) actionInput.value = 'create';
+            if (guestIdInput) guestIdInput.value = '';
+            if (submitBtn) {
+                submitBtn.innerHTML = '<i class="bi bi-person-plus me-1"></i>Tambah';
+            }
+            if (cancelBtn) cancelBtn.classList.add('d-none');
+        }
+
+        function populateGuestForm(row) {
+            if (!form || !row) return;
+            if (actionInput) actionInput.value = 'update';
+            if (guestIdInput) guestIdInput.value = row.getAttribute('data-guest-id') || '';
+            if (nameInput) nameInput.value = row.getAttribute('data-full-name') || '';
+            if (emailInput) emailInput.value = row.getAttribute('data-email') || '';
+            if (instansiInput) instansiInput.value = row.getAttribute('data-instansi') || '';
+            if (jabatanInput) jabatanInput.value = row.getAttribute('data-jabatan') || '';
+            if (phoneInput) phoneInput.value = row.getAttribute('data-phone') || '';
+            if (submitBtn) {
+                submitBtn.innerHTML = '<i class="bi bi-save me-1"></i>Simpan';
+            }
+            if (cancelBtn) cancelBtn.classList.remove('d-none');
+        }
+
+        function populateGuestFormData(data) {
+            if (!form || !data) return;
+            if (actionInput) actionInput.value = 'update';
+            if (guestIdInput) guestIdInput.value = data.id || '';
+            if (nameInput) nameInput.value = data.full_name || '';
+            if (emailInput) emailInput.value = data.email || '';
+            if (instansiInput) instansiInput.value = data.instansi || '';
+            if (jabatanInput) jabatanInput.value = data.jabatan || '';
+            if (phoneInput) phoneInput.value = data.phone || '';
+            if (submitBtn) {
+                submitBtn.innerHTML = '<i class="bi bi-save me-1"></i>Simpan';
+            }
+            if (cancelBtn) cancelBtn.classList.remove('d-none');
+        }
+
+        function renderSuggestions(items) {
+            if (!suggestionBox) return;
+            if (!items || !items.length) {
+                suggestionBox.classList.add('d-none');
+                suggestionBox.innerHTML = '';
+                return;
+            }
+            suggestionBox.innerHTML = items.map(function (item) {
+                var statusLabel = item.is_verified ? 'Verified' : 'Belum verified';
+                return (
+                    '<div class="px-3 py-2 suggestion-item" role="button" data-id="' + item.id + '"' +
+                    ' data-name="' + (item.full_name || '') + '"' +
+                    ' data-email="' + (item.email || '') + '"' +
+                    ' data-instansi="' + (item.instansi || '') + '"' +
+                    ' data-jabatan="' + (item.jabatan || '') + '"' +
+                    ' data-phone="' + (item.phone || '') + '">' +
+                    '<div class="fw-semibold">' + (item.full_name || 'Tamu') + '</div>' +
+                    '<div class="small text-muted">' +
+                    [item.instansi, item.jabatan, item.phone].filter(Boolean).join(' • ') +
+                    '</div>' +
+                    '<div class="small">' + statusLabel + '</div>' +
+                    '</div>'
+                );
+            }).join('');
+            suggestionBox.querySelectorAll('.suggestion-item').forEach(function (el) {
+                el.addEventListener('click', function () {
+                    var payload = {
+                        id: el.getAttribute('data-id'),
+                        full_name: el.getAttribute('data-name'),
+                        email: el.getAttribute('data-email'),
+                        instansi: el.getAttribute('data-instansi'),
+                        jabatan: el.getAttribute('data-jabatan'),
+                        phone: el.getAttribute('data-phone')
+                    };
+                    populateGuestFormData(payload);
+                    if (searchInput) searchInput.value = payload.full_name || '';
+                    suggestionBox.classList.add('d-none');
+                });
+            });
+            suggestionBox.classList.remove('d-none');
+        }
+
         if (form) {
             form.addEventListener('submit', function (ev) {
                 ev.preventDefault();
                 var formData = new FormData(form);
-                fetch('/daftar-tamu/umum', { method: 'POST', body: formData })
+                var action = actionInput ? actionInput.value : 'create';
+                var url = '/daftar-tamu/umum';
+                if (action === 'update' && guestIdInput && guestIdInput.value) {
+                    url = '/daftar-tamu/admin/umum/' + guestIdInput.value + '/update';
+                }
+                fetch(url, { method: 'POST', body: formData })
                     .then(function (res) {
                         var contentType = res.headers.get('content-type') || '';
                         if (!res.ok) {
@@ -221,38 +388,104 @@
             });
         }
 
-        document.querySelectorAll('[data-action="toggle-verify"]').forEach(function (btn) {
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function () {
+                resetGuestForm();
+            });
+        }
+
+        document.querySelectorAll('[data-action="edit"]').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var row = btn.closest('tr');
                 if (!row) return;
-                var guestId = row.getAttribute('data-guest-id');
-                var isVerified = btn.getAttribute('data-verified') === '1';
-                var formData = new FormData();
-                formData.append('is_verified', isVerified ? '0' : '1');
-                fetch('/daftar-tamu/admin/umum/' + guestId + '/verify', { method: 'POST', body: formData })
-                    .then(function (res) {
-                        var contentType = res.headers.get('content-type') || '';
-                        if (!res.ok) {
-                            return res.text().then(function () {
-                                throw new Error('Gagal memperbarui. Silakan refresh atau restart server.');
-                            });
-                        }
-                        if (contentType.indexOf('application/json') === -1) {
-                            return res.text().then(function () {
-                                throw new Error('Respon server tidak valid. Silakan refresh halaman.');
-                            });
-                        }
-                        return res.json();
-                    })
-                    .then(function (data) {
-                        if (!data.success) throw new Error(data.message || 'Gagal memperbarui');
-                        window.location.reload();
-                    })
-                    .catch(function (err) {
-                        alert(err.message || 'Gagal memperbarui');
-                    });
+                populateGuestForm(row);
             });
         });
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                var query = (searchInput.value || '').trim();
+                clearTimeout(searchDebounce);
+                if (query.length < 2) {
+                    renderSuggestions([]);
+                    return;
+                }
+                searchDebounce = setTimeout(function () {
+                    fetch('/daftar-tamu/admin/umum/search?q=' + encodeURIComponent(query))
+                        .then(function (res) { return res.json(); })
+                        .then(function (data) {
+                            if (!data || !data.success) {
+                                renderSuggestions([]);
+                                return;
+                            }
+                            renderSuggestions(data.results || []);
+                        })
+                        .catch(function () {
+                            renderSuggestions([]);
+                        });
+                }, 250);
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!suggestionBox) return;
+                if (event.target === searchInput || suggestionBox.contains(event.target)) {
+                    return;
+                }
+                suggestionBox.classList.add('d-none');
+            });
+        }
+
+        var tableSearchInput = document.getElementById('generalGuestTableSearch');
+        var noResultsRow = document.getElementById('generalGuestNoResults');
+        var tableRows = Array.prototype.slice.call(document.querySelectorAll('tbody tr[data-guest-id]'));
+
+        function updateTableSearch() {
+            if (!tableSearchInput) return;
+            var query = (tableSearchInput.value || '').trim().toLowerCase();
+            var visibleCount = 0;
+            tableRows.forEach(function (row) {
+                var haystack = (row.textContent || '').toLowerCase();
+                var matches = !query || haystack.indexOf(query) !== -1;
+                row.classList.toggle('d-none', !matches);
+                if (matches) visibleCount += 1;
+            });
+            if (noResultsRow) {
+                if (query && visibleCount === 0 && tableRows.length > 0) {
+                    noResultsRow.classList.remove('d-none');
+                } else {
+                    noResultsRow.classList.add('d-none');
+                }
+            }
+        }
+
+        if (tableSearchInput) {
+            tableSearchInput.addEventListener('input', updateTableSearch);
+        }
+
+        var statusColumnFilter = document.getElementById('statusColumnFilter');
+        var filterForm = document.getElementById('generalGuestFilterForm');
+        var verifiedSelect = filterForm ? filterForm.querySelector('select[name="verified"]') : null;
+        var deletedSelect = filterForm ? filterForm.querySelector('select[name="deleted"]') : null;
+
+        if (statusColumnFilter && filterForm && verifiedSelect && deletedSelect) {
+            statusColumnFilter.addEventListener('change', function () {
+                var value = statusColumnFilter.value || '';
+                if (value === 'deleted') {
+                    deletedSelect.value = 'true';
+                    verifiedSelect.value = '';
+                } else if (value === 'verified') {
+                    verifiedSelect.value = 'true';
+                    deletedSelect.value = '';
+                } else if (value === 'unverified') {
+                    verifiedSelect.value = 'false';
+                    deletedSelect.value = '';
+                } else {
+                    verifiedSelect.value = '';
+                    deletedSelect.value = '';
+                }
+                filterForm.submit();
+            });
+        }
 
         document.querySelectorAll('[data-action="toggle-delete"]').forEach(function (btn) {
             btn.addEventListener('click', function () {

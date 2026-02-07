@@ -55,7 +55,7 @@
         <div class="onboarding-section">
             <span class="emoji">💬</span>
             <div class="content">
-                <span>Berhasil ✅ Kalau masih bingung, drop pertanyaanmu ya—aku jawab yang simpel &amp; jelas ✨</span>
+                <span>Kalau masih bingung 😵‍💫, drop pertanyaanmu disini ya 👇—ASKA akan jawab yang simpel &amp; jelas ✨</span>
             </div>
         </div>
     </div>
@@ -145,10 +145,236 @@
             });
         }
 
+        function normalizeUrl(raw) {
+            if (!raw) return '';
+            var url = String(raw).trim();
+            if (!url) return '';
+            if (!/^https?:\/\//i.test(url)) {
+                if (url.startsWith('www.')) {
+                    url = 'https://' + url;
+                } else {
+                    url = 'https://' + url;
+                }
+            }
+            return url;
+        }
+
+        function platformFromUrl(url) {
+            try {
+                var u = new URL(normalizeUrl(url));
+                var host = u.hostname.replace(/^www\./, '');
+                if (host.indexOf('instagram.com') >= 0) return 'instagram';
+                if (host.indexOf('tiktok.com') >= 0) return 'tiktok';
+                if (host.indexOf('youtube.com') >= 0 || host.indexOf('youtu.be') >= 0) return 'youtube';
+                if (host.indexOf('t.me') >= 0 || host.indexOf('telegram.me') >= 0) return 'telegram';
+                if (host.indexOf('whatsapp.com') >= 0 || host.indexOf('wa.me') >= 0) return 'whatsapp';
+                if (host.indexOf('maps.google.com') >= 0 || host.indexOf('goo.gl') >= 0 || host.indexOf('maps.app.goo.gl') >= 0) return 'maps';
+                return 'website';
+            } catch (err) {
+                return 'link';
+            }
+        }
+
+        function platformMeta(platform, url) {
+            var map = {
+                instagram: { label: 'Instagram', icon: 'bi-instagram' },
+                tiktok: { label: 'TikTok', icon: 'bi-tiktok' },
+                youtube: { label: 'YouTube', icon: 'bi-youtube' },
+                telegram: { label: 'Telegram', icon: 'bi-telegram' },
+                whatsapp: { label: 'WhatsApp', icon: 'bi-whatsapp' },
+                maps: { label: 'Google Maps', icon: 'bi-geo-alt' },
+                website: { label: 'Website', icon: 'bi-globe2' },
+                link: { label: 'Buka Link', icon: 'bi-box-arrow-up-right' }
+            };
+            if (platform === 'website' && url) {
+                try {
+                    var host = new URL(normalizeUrl(url)).hostname.replace(/^www\./, '');
+                    return { label: host || map.website.label, icon: map.website.icon };
+                } catch (err) {
+                    return map.website;
+                }
+            }
+            return map[platform] || map.link;
+        }
+
+        var URL_REGEX = /https?:\/\/[^\s)]+|www\.[^\s)]+/gi;
+        var URL_CHECK = /https?:\/\/[^\s)]+|www\.[^\s)]+/i;
+
+        function extractLinks(text) {
+            var links = [];
+            var seen = {};
+            URL_REGEX.lastIndex = 0;
+
+            function addLink(url, platform, labelOverride) {
+                var normalized = normalizeUrl(url);
+                if (!normalized || seen[normalized]) return;
+                var meta = platformMeta(platform, normalized);
+                links.push({
+                    url: normalized,
+                    platform: platform,
+                    label: labelOverride || meta.label,
+                    icon: meta.icon
+                });
+                seen[normalized] = true;
+            }
+
+            var lines = String(text || '').split('\n');
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i].trim();
+                if (!line) continue;
+                var m = line.match(/^[-*•\s]*([^:]+)\s*:\s*(.*)$/);
+                if (!m) continue;
+                var label = (m[1] || '').trim().toLowerCase();
+                var value = (m[2] || '').trim();
+                if (!value && i + 1 < lines.length) {
+                    var nextLine = lines[i + 1].trim();
+                    if (URL_CHECK.test(nextLine)) {
+                        value = nextLine;
+                    }
+                }
+
+                if (label.indexOf('instagram') >= 0) {
+                    var ig = value.replace(/^@/, '');
+                    if (ig) addLink('https://instagram.com/' + ig, 'instagram');
+                    continue;
+                }
+                if (label.indexOf('tiktok') >= 0) {
+                    var tk = value.replace(/^@/, '');
+                    if (tk) addLink('https://tiktok.com/@' + tk, 'tiktok');
+                    continue;
+                }
+                if (label.indexOf('youtube') >= 0) {
+                    if (value.indexOf('http') === 0 || value.indexOf('www.') === 0) {
+                        addLink(value, 'youtube');
+                    } else if (value) {
+                        var yh = value.indexOf('@') === 0 ? value : '@' + value;
+                        addLink('https://www.youtube.com/' + yh, 'youtube');
+                    }
+                    continue;
+                }
+                if (label.indexOf('telegram') >= 0) {
+                    var tg = value.replace(/^@/, '');
+                    if (tg) addLink('https://t.me/' + tg, 'telegram');
+                    continue;
+                }
+                if (label.indexOf('whatsapp') >= 0) {
+                    if (value.indexOf('http') === 0 || value.indexOf('www.') === 0) {
+                        addLink(value, 'whatsapp');
+                    } else if (value) {
+                        addLink('https://whatsapp.com/channel/' + value, 'whatsapp', 'WhatsApp Channel');
+                    }
+                    continue;
+                }
+                if (label.indexOf('maps') >= 0) {
+                    if (value.indexOf('http') === 0 || value.indexOf('www.') === 0) {
+                        addLink(value, 'maps');
+                    }
+                    continue;
+                }
+                if (label.indexOf('website') >= 0 || label.indexOf('situs') >= 0) {
+                    if (value) addLink(value, 'website');
+                    continue;
+                }
+            }
+
+            var match;
+            while ((match = URL_REGEX.exec(text || '')) !== null) {
+                var rawUrl = match[0];
+                var platform = platformFromUrl(rawUrl);
+                addLink(rawUrl, platform);
+            }
+
+            return links;
+        }
+
+        function buildLinkButtons(text) {
+            var links = extractLinks(text);
+            if (!links.length) return null;
+            var wrapper = document.createElement('div');
+            wrapper.className = 'link-buttons';
+            links.forEach(function (link, idx) {
+                var btn = document.createElement('a');
+                btn.href = link.url;
+                btn.target = '_blank';
+                btn.rel = 'noopener';
+                btn.className = 'link-button';
+                btn.dataset.platform = link.platform;
+                btn.innerHTML = '<i class="bi ' + link.icon + '"></i><span>' + link.label + '</span>';
+                if (links.length % 2 === 1 && idx === links.length - 1) {
+                    btn.classList.add('full-span');
+                }
+                wrapper.appendChild(btn);
+            });
+            return wrapper;
+        }
+
+        function stripLinkLines(text) {
+            if (!text) return '';
+            var lines = String(text).replace(/\r\n/g, '\n').split('\n');
+            var cleaned = [];
+            var skipNextUrl = false;
+            var labelRegex = /^[-*•\s]*([^:]+)\s*:\s*(.*)$/i;
+            var keywordRegex = /(instagram|tiktok|youtube|telegram|whatsapp|wa channel|website|situs|google maps|maps)/i;
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i];
+                var trimmed = line.trim();
+                if (!trimmed) {
+                    cleaned.push(line);
+                    continue;
+                }
+                if (skipNextUrl && URL_CHECK.test(trimmed)) {
+                    skipNextUrl = false;
+                    continue;
+                }
+                skipNextUrl = false;
+                var match = trimmed.match(labelRegex);
+                if (match) {
+                    var label = (match[1] || '').toLowerCase();
+                    var value = (match[2] || '').trim();
+                    if (keywordRegex.test(label)) {
+                        if (!value) {
+                            skipNextUrl = true;
+                        }
+                        continue;
+                    }
+                }
+                if (URL_CHECK.test(trimmed)) {
+                    var bulletless = trimmed.replace(/^[-*•\s]+/, '');
+                    if (URL_CHECK.test(bulletless)) {
+                        continue;
+                    }
+                }
+                cleaned.push(line);
+            }
+            return cleaned.join('\n').replace(/\n{3,}/g, '\n\n');
+        }
+
+        function renderBotHtml(text) {
+            var html = String(text || '');
+            html = html.replace(/\r\n/g, '\n');
+            html = html.replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\*([^\*]+)\*/g, '<em>$1</em>');
+            html = html.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" style="max-width: 100%; border-radius: 10px; margin-top: 10px;">');
+            html = html.replace(/(https?:\/\/[^\s]+)|(www\.[^\s]+)/g, function (m) {
+                var url = m.startsWith('http') ? m : 'http://' + m;
+                return '<a href="' + url + '" target="_blank" rel="noopener">' + m + '</a>';
+            });
+            return html;
+        }
+
         function appendMessage(text, sender) {
             var msg = document.createElement('div');
-            msg.className = 'chat-message ' + (sender === 'user' ? 'user-message' : 'bot-message');
-            msg.textContent = text;
+            var isUser = sender === 'user';
+            msg.className = 'chat-message ' + (isUser ? 'user-message' : 'bot-message');
+            if (isUser) {
+                msg.textContent = text;
+            } else {
+                var linkButtons = buildLinkButtons(text);
+                var rawText = linkButtons ? stripLinkLines(text) : text;
+                var html = renderBotHtml(rawText);
+                msg.innerHTML = html;
+                if (linkButtons) msg.appendChild(linkButtons);
+            }
             chatBox.appendChild(msg);
             chatBox.scrollTop = chatBox.scrollHeight;
         }
