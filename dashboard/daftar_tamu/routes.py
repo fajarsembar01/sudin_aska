@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import csv
 import json
 import math
@@ -160,12 +161,45 @@ def _web_aska_base_url() -> str:
         os.getenv("WEB_ASKA_BASE_URL")
         or os.getenv("WEB_ASKA_PUBLIC_URL")
         or os.getenv("ASKA_PUBLIC_BASE_URL")
-        or "https://web_aska.app"
+        or "https://aska.sudindikju2.com"
     )
     base = (base or "").strip()
     if base and not base.startswith(("http://", "https://")):
         base = f"https://{base}"
     return base.rstrip("/")
+
+
+def _get_guestbook_qr_payload(school_id: int) -> Optional[dict]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT metadata->'guestbook_qr' AS guestbook_qr
+            FROM portal_schools
+            WHERE id = %s
+            """,
+            (school_id,),
+        )
+        row = cur.fetchone()
+    payload = dict(row).get("guestbook_qr") if row else None
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except json.JSONDecodeError:
+            payload = None
+    return payload if isinstance(payload, dict) else None
+
+
+def _store_guestbook_qr_payload(school_id: int, payload: dict) -> None:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE portal_schools
+            SET metadata = jsonb_set(COALESCE(metadata, '{}'::jsonb), '{guestbook_qr}', %s::jsonb, true),
+                updated_at = NOW()
+            WHERE id = %s
+            """,
+            (Json(payload), school_id),
+        )
 
 
 def _build_guestbook_qr(target_url: str, size: int = 1024) -> Image.Image:
@@ -1070,11 +1104,20 @@ def sekolah_public_web() -> Response:
             per_page=public_per_page,
         )
 
+    guestbook_public_url = f"{_web_aska_base_url()}/buku-tamu/{school.get('npsn')}"
+    qr_payload = _get_guestbook_qr_payload(school["id"])
+    qr_ready = bool(
+        qr_payload
+        and qr_payload.get("png_base64")
+        and qr_payload.get("url") == guestbook_public_url
+    )
+
     return render_template(
         "daftar_tamu/sekolah_umum_web.html",
         school=school,
         user_school=school,
-        guestbook_public_url=f"{_web_aska_base_url()}/buku-tamu/{school.get('npsn')}",
+        guestbook_public_url=guestbook_public_url,
+        guestbook_qr_ready=qr_ready,
         public_rows=public_rows,
         public_status=public_status,
         public_page=public_page,
@@ -1388,7 +1431,17 @@ def sekolah_guestbook_qr() -> Response:
         paper = "a4"
 
     target_url = f"{_web_aska_base_url()}/buku-tamu/{school.get('npsn')}"
-    qr_img = _build_guestbook_qr(target_url, size=1024)
+    qr_payload = _get_guestbook_qr_payload(school.get("id"))
+    qr_base64 = None
+    if qr_payload and qr_payload.get("png_base64") and qr_payload.get("url") == target_url:
+        qr_base64 = qr_payload.get("png_base64")
+    if not qr_base64:
+        return jsonify({"success": False, "message": "QR belum dibuat. Silakan generate terlebih dahulu."}), 400
+    try:
+        qr_bytes = base64.b64decode(qr_base64)
+        qr_img = Image.open(BytesIO(qr_bytes)).convert("RGBA")
+    except Exception as exc:
+        return jsonify({"success": False, "message": f"QR tersimpan tidak valid: {exc}"}), 500
 
     if fmt == "pdf":
         page_sizes = {
@@ -1437,6 +1490,31 @@ def sekolah_guestbook_qr() -> Response:
         as_attachment=True,
         download_name=filename,
     )
+
+
+@daftar_tamu_bp.route("/sekolah/qr/generate", methods=["POST"])
+@role_required("sekolah")
+def sekolah_generate_guestbook_qr() -> Response:
+    user = current_user()
+    school = _fetch_school_for_user(user.get("id"))
+    if not school:
+        flash("Akun sekolah belum terhubung.", "danger")
+        return redirect(url_for("daftar_tamu.sekolah_public_web"))
+
+    target_url = f"{_web_aska_base_url()}/buku-tamu/{school.get('npsn')}"
+    qr_img = _build_guestbook_qr(target_url, size=1024)
+    buf = BytesIO()
+    qr_img.convert("RGB").save(buf, format="PNG")
+    qr_base64 = base64.b64encode(buf.getvalue()).decode("ascii")
+
+    payload = {
+        "url": target_url,
+        "png_base64": qr_base64,
+        "generated_at": current_jakarta_time().isoformat(),
+    }
+    _store_guestbook_qr_payload(school.get("id"), payload)
+    flash("QR Buku Tamu berhasil dibuat.", "success")
+    return redirect(url_for("daftar_tamu.sekolah_public_web"))
 
 
 @daftar_tamu_bp.route("/sekolah/transactions", methods=["POST"])
