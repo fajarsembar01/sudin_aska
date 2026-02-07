@@ -320,15 +320,35 @@ html[data-theme="dark"] .user-dropdown-logout:hover {
 
     .navbar .user-nav-actions {
         width: 100%;
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
         gap: 0.5rem;
         order: 1;
     }
 
+    .navbar .user-nav-actions .btn {
+        padding: 0.3rem 0.65rem;
+        font-size: 0.85rem;
+    }
+
+    .navbar .user-nav-actions .oss-home-label {
+        display: none;
+    }
+
+    .navbar .user-nav-actions .oss-home-btn .bi {
+        margin-right: 0 !important;
+    }
+
+    .navbar .user-nav-actions .user-menu {
+        flex: 1 1 100%;
+        order: 2;
+    }
+
     .navbar .user-nav-actions .form-check {
         width: auto;
-        align-self: flex-end;
+        align-self: center;
+        margin-left: auto;
         display: inline-flex;
         align-items: center;
         justify-content: flex-end;

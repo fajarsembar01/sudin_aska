@@ -396,6 +396,73 @@
             margin-left: 20px;
         }
 
+        .link-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .link-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .link-button i {
+            font-size: 1rem;
+        }
+
+        .link-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+        }
+
+        .link-button.full-span {
+            grid-column: 1 / -1;
+        }
+
+        .link-button[data-platform="instagram"] {
+            background: linear-gradient(135deg, #f58529 0%, #dd2a7b 45%, #8134af 75%, #515bd4 100%);
+        }
+
+        .link-button[data-platform="tiktok"] {
+            background: linear-gradient(135deg, #010101 0%, #25f4ee 45%, #fe2c55 100%);
+        }
+
+        .link-button[data-platform="youtube"] {
+            background: linear-gradient(135deg, #ff0033 0%, #c4001d 100%);
+        }
+
+        .link-button[data-platform="telegram"] {
+            background: linear-gradient(135deg, #26a5e4 0%, #1b7cb5 100%);
+        }
+
+        .link-button[data-platform="whatsapp"] {
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+        }
+
+        .link-button[data-platform="maps"] {
+            background: linear-gradient(135deg, #34a853 0%, #0f9d58 100%);
+        }
+
+        .link-button[data-platform="website"] {
+            background: linear-gradient(135deg, #5c6bc0 0%, #3949ab 100%);
+        }
+
+        .link-button[data-platform="link"] {
+            background: linear-gradient(135deg, #607d8b 0%, #455a64 100%);
+        }
+
         #theme-toggle {
             background: none;
             border: none;

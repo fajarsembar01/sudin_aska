@@ -5,7 +5,7 @@ from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime, timedelta, timezone
 
 import psycopg2
-from psycopg2 import extensions, InterfaceError, OperationalError, ProgrammingError
+from psycopg2 import extensions, InterfaceError, OperationalError, ProgrammingError, IntegrityError
 from psycopg2.extras import Json, RealDictCursor
 from dotenv import load_dotenv
 from account_status import ACCOUNT_STATUS_CHOICES, ACCOUNT_STATUS_ACTIVE
@@ -196,6 +196,20 @@ def _ensure_psych_schema() -> None:
             );
             """
         )
+    conn.commit()
+
+
+def _reset_chat_logs_sequence() -> None:
+    """Reset chat_logs id sequence to max(id) to avoid duplicate PK errors."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT pg_get_serial_sequence('chat_logs', 'id')")
+        row = cur.fetchone()
+        seq_name = row[0] if row else None
+        if not seq_name:
+            return
+        cur.execute("SELECT COALESCE(MAX(id), 0) FROM chat_logs")
+        max_id = cur.fetchone()[0] or 0
+        cur.execute("SELECT setval(%s, %s, %s)", (seq_name, max_id, True))
     conn.commit()
 
 
@@ -759,6 +773,21 @@ def _ensure_guestbook_general_schema() -> None:
         _ensure_column("daftar_tamu_general_guests", "email", "email TEXT")
         _ensure_column(
             "daftar_tamu_general_guests",
+            "is_parent",
+            "is_parent BOOLEAN NOT NULL DEFAULT FALSE",
+        )
+        _ensure_column(
+            "daftar_tamu_general_guests",
+            "student_class",
+            "student_class TEXT",
+        )
+        _ensure_column(
+            "daftar_tamu_general_guests",
+            "student_name",
+            "student_name TEXT",
+        )
+        _ensure_column(
+            "daftar_tamu_general_guests",
             "is_deleted",
             "is_deleted BOOLEAN NOT NULL DEFAULT FALSE",
         )
@@ -1103,92 +1132,104 @@ def save_chat(
     channel_value = _resolve_channel(normalized_topic)
     inserted_id: Optional[int] = None
 
-    with conn.cursor() as cur:
-        if use_topic and use_channel:
-            cur.execute(
-                """
-                INSERT INTO chat_logs (
-                    user_id,
-                    username,
-                    text,
-                    role,
-                    topic,
-                    channel,
-                    created_at,
-                    response_time_ms
-                )
-                VALUES (%s, %s, %s, %s, %s, %s, NOW(), %s)
-                RETURNING id
-                """,
-                (
-                    user_id,
-                    username,
-                    message,
-                    role,
-                    normalized_topic,
-                    channel_value,
-                    response_time_ms,
-                ),
-            )
-        elif use_topic:
-            cur.execute(
-                """
-                INSERT INTO chat_logs (user_id, username, text, role, topic, created_at, response_time_ms)
-                VALUES (%s, %s, %s, %s, %s, NOW(), %s)
-                RETURNING id
-                """,
-                (
-                    user_id,
-                    username,
-                    message,
-                    role,
-                    normalized_topic,
-                    response_time_ms,
-                ),
-            )
-        elif use_channel:
-            cur.execute(
-                """
-                INSERT INTO chat_logs (user_id, username, text, role, channel, created_at, response_time_ms)
-                VALUES (%s, %s, %s, %s, %s, NOW(), %s)
-                RETURNING id
-                """,
-                (
-                    user_id,
-                    username,
-                    message,
-                    role,
-                    channel_value,
-                    response_time_ms,
-                ),
-            )
-        else:
-            cur.execute(
-                """
-                INSERT INTO chat_logs (user_id, username, text, role, created_at, response_time_ms)
-                VALUES (%s, %s, %s, %s, NOW(), %s)
-                RETURNING id
-                """,
-                (user_id, username, message, role, response_time_ms),
-            )
-        row = cur.fetchone()
-        if row:
-            inserted_id = int(row[0])
-
-        if normalized_topic and inserted_id and not use_topic:
-            topic_supported = _chat_logs_has_topic_column(force_refresh=True)
-            if not topic_supported:
-                try:
-                    _ensure_chat_logs_schema()
-                except Exception:
-                    topic_supported = False
-                else:
-                    topic_supported = _chat_logs_has_topic_column(force_refresh=True)
-            if topic_supported:
+    def _insert_row() -> Optional[int]:
+        row_id: Optional[int] = None
+        with conn.cursor() as cur:
+            if use_topic and use_channel:
                 cur.execute(
-                    "UPDATE chat_logs SET topic = %s WHERE id = %s",
-                    (normalized_topic, inserted_id),
+                    """
+                    INSERT INTO chat_logs (
+                        user_id,
+                        username,
+                        text,
+                        role,
+                        topic,
+                        channel,
+                        created_at,
+                        response_time_ms
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, NOW(), %s)
+                    RETURNING id
+                    """,
+                    (
+                        user_id,
+                        username,
+                        message,
+                        role,
+                        normalized_topic,
+                        channel_value,
+                        response_time_ms,
+                    ),
                 )
+            elif use_topic:
+                cur.execute(
+                    """
+                    INSERT INTO chat_logs (user_id, username, text, role, topic, created_at, response_time_ms)
+                    VALUES (%s, %s, %s, %s, %s, NOW(), %s)
+                    RETURNING id
+                    """,
+                    (
+                        user_id,
+                        username,
+                        message,
+                        role,
+                        normalized_topic,
+                        response_time_ms,
+                    ),
+                )
+            elif use_channel:
+                cur.execute(
+                    """
+                    INSERT INTO chat_logs (user_id, username, text, role, channel, created_at, response_time_ms)
+                    VALUES (%s, %s, %s, %s, %s, NOW(), %s)
+                    RETURNING id
+                    """,
+                    (
+                        user_id,
+                        username,
+                        message,
+                        role,
+                        channel_value,
+                        response_time_ms,
+                    ),
+                )
+            else:
+                cur.execute(
+                    """
+                    INSERT INTO chat_logs (user_id, username, text, role, created_at, response_time_ms)
+                    VALUES (%s, %s, %s, %s, NOW(), %s)
+                    RETURNING id
+                    """,
+                    (user_id, username, message, role, response_time_ms),
+                )
+            row = cur.fetchone()
+            if row:
+                row_id = int(row[0])
+
+            if normalized_topic and row_id and not use_topic:
+                topic_supported = _chat_logs_has_topic_column(force_refresh=True)
+                if not topic_supported:
+                    try:
+                        _ensure_chat_logs_schema()
+                    except Exception:
+                        topic_supported = False
+                    else:
+                        topic_supported = _chat_logs_has_topic_column(force_refresh=True)
+                if topic_supported:
+                    cur.execute(
+                        "UPDATE chat_logs SET topic = %s WHERE id = %s",
+                        (normalized_topic, row_id),
+                    )
+        return row_id
+
+    try:
+        inserted_id = _insert_row()
+    except IntegrityError as exc:
+        conn.rollback()
+        if "chat_logs_pkey" not in str(exc):
+            raise
+        _reset_chat_logs_sequence()
+        inserted_id = _insert_row()
     if channel_value == "telegram" and role == "user" and user_id is not None:
         _sync_telegram_user_profile(user_id, username, message)
 
@@ -1247,6 +1288,9 @@ def find_general_guest_by_phone(phone: str) -> Optional[Dict[str, Any]]:
                 phone,
                 instansi,
                 jabatan,
+                is_parent,
+                student_class,
+                student_name,
                 is_verified
             FROM daftar_tamu_general_guests
             WHERE is_deleted = FALSE
@@ -1310,6 +1354,14 @@ def create_public_guestbook_transaction(
             email = (guest.get("email") or "").strip() or None
             student_class = (guest.get("student_class") or "").strip() or None
             student_name = (guest.get("student_name") or "").strip() or None
+            is_parent = bool(guest.get("is_parent"))
+
+            if is_parent:
+                instansi = None
+                jabatan = None
+            else:
+                student_class = None
+                student_name = None
 
             if phone:
                 cur.execute(
@@ -1341,6 +1393,32 @@ def create_public_guestbook_transaction(
             existing = cur.fetchone()
             if existing:
                 guest_id = int(existing["id"])
+                cur.execute(
+                    """
+                    UPDATE daftar_tamu_general_guests
+                    SET full_name = %s,
+                        email = %s,
+                        phone = %s,
+                        instansi = %s,
+                        jabatan = %s,
+                        is_parent = %s,
+                        student_class = %s,
+                        student_name = %s,
+                        updated_at = NOW()
+                    WHERE id = %s
+                    """,
+                    (
+                        full_name,
+                        email,
+                        phone,
+                        instansi,
+                        jabatan,
+                        is_parent,
+                        student_class,
+                        student_name,
+                        guest_id,
+                    ),
+                )
             else:
                 cur.execute(
                     """
@@ -1350,12 +1428,15 @@ def create_public_guestbook_transaction(
                         phone,
                         instansi,
                         jabatan,
+                        is_parent,
+                        student_class,
+                        student_name,
                         created_by
                     )
-                    VALUES (%s, %s, %s, %s, %s, NULL)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NULL)
                     RETURNING id
                     """,
-                    (full_name, email, phone, instansi, jabatan),
+                    (full_name, email, phone, instansi, jabatan, is_parent, student_class, student_name),
                 )
                 guest_row = cur.fetchone()
                 guest_id = int(guest_row["id"]) if guest_row else None

@@ -34,6 +34,7 @@ from .queries import (
     fetch_recent_visits,
     fetch_school_rankings,
     fetch_unvisited_schools,
+    fetch_school_pending_counts,
     get_transaction_detail,
     list_admin_public_transactions,
     list_admin_transactions,
@@ -78,6 +79,15 @@ def _to_int(value: Optional[str], default: int) -> int:
         return int(value or default)
     except (TypeError, ValueError):
         return default
+
+
+def _parse_guest_scope(value: Optional[str], default: str = "sudin") -> str:
+    scope = (value or "").strip().lower()
+    if scope == "semua":
+        scope = "all"
+    if scope not in {"sudin", "umum", "all"}:
+        scope = default
+    return scope
 
 
 def _parse_guest_ids(raw: Optional[str]) -> list[int]:
@@ -331,6 +341,12 @@ def inject_daftar_tamu_context() -> dict:
         school = _fetch_school_for_user(user.get("id"))
         context["user_school"] = school
         context["area_contacts"] = _build_area_contacts(school)
+        context["school_pending"] = {"pending_sudin": 0, "pending_public": 0}
+        if school:
+            try:
+                context["school_pending"] = fetch_school_pending_counts(school_id=school.get("id"))
+            except Exception:
+                context["school_pending"] = {"pending_sudin": 0, "pending_public": 0}
     return context
 
 
@@ -360,7 +376,8 @@ def admin_dashboard() -> Response:
     page = _to_int(request.args.get("page"), 1)
     page = max(1, page)
 
-    summary = fetch_dashboard_summary(date_from=date_from, date_to=date_to)
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    summary = fetch_dashboard_summary(date_from=date_from, date_to=date_to, guest_scope=guest_scope)
     rankings, total_rows = fetch_school_rankings(
         page=page,
         per_page=per_page,
@@ -368,6 +385,7 @@ def admin_dashboard() -> Response:
         search_query=search_query,
         date_from=date_from,
         date_to=date_to,
+        guest_scope=guest_scope,
     )
 
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
@@ -380,10 +398,21 @@ def admin_dashboard() -> Response:
             search_query=search_query,
             date_from=date_from,
             date_to=date_to,
+            guest_scope=guest_scope,
         )
 
-    unvisited_schools = fetch_unvisited_schools(limit=10, date_from=date_from, date_to=date_to)
-    recent_visits = fetch_recent_visits(limit=8, date_from=date_from, date_to=date_to)
+    unvisited_schools = fetch_unvisited_schools(
+        limit=10,
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+    recent_visits = fetch_recent_visits(
+        limit=8,
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
 
     date_from_str = date_from.isoformat() if date_from else ""
     date_to_str = date_to.isoformat() if date_to else ""
@@ -403,7 +432,17 @@ def admin_dashboard() -> Response:
         date_from_str=date_from_str,
         date_to_str=date_to_str,
         today_str=date.today().isoformat(),
+        guest_scope=guest_scope,
     )
+
+
+@daftar_tamu_bp.route("/settings/users", methods=["GET", "POST"])
+@role_required("admin")
+def manage_users() -> Response:
+    """Manage dashboard users from Daftar Tamu app."""
+    from dashboard.user_management import handle_manage_users
+
+    return handle_manage_users(actor=current_user(), base_template="daftar_tamu/base_daftar_tamu.html")
 
 
 @daftar_tamu_bp.route("/admin/map-data")
@@ -415,7 +454,8 @@ def admin_map_data() -> Response:
     date_to = _parse_iso_date(request.args.get("date_to"))
     if date_from and date_to and date_from > date_to:
         date_from, date_to = date_to, date_from
-    return jsonify(fetch_map_data(date_from=date_from, date_to=date_to))
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    return jsonify(fetch_map_data(date_from=date_from, date_to=date_to, guest_scope=guest_scope))
 
 
 @daftar_tamu_bp.route("/admin/export")
@@ -434,6 +474,8 @@ def export_rankings() -> Response:
     if sort not in SORT_OPTIONS:
         sort = DEFAULT_SORT
 
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+
     rows, _ = fetch_school_rankings(
         page=1,
         per_page=10000,
@@ -441,6 +483,7 @@ def export_rankings() -> Response:
         search_query=search_query,
         date_from=date_from,
         date_to=date_to,
+        guest_scope=guest_scope,
     )
 
     buffer = StringIO()
@@ -599,6 +642,112 @@ def admin_transaction_reject(transaction_id: int) -> Response:
     return jsonify({"success": True})
 
 
+@daftar_tamu_bp.route("/admin/transactions/bulk-approve", methods=["POST"])
+@role_required("admin")
+def admin_bulk_approve_transactions() -> Response:
+    user = current_user()
+    raw_ids = request.form.getlist("transaction_ids")
+    ids: list[int] = []
+    for raw in raw_ids:
+        try:
+            ids.append(int(raw))
+        except (TypeError, ValueError):
+            continue
+    if not ids:
+        flash("Pilih transaksi yang ingin disetujui.", "warning")
+        return redirect(_build_admin_validation_redirect(request.form))
+
+    note = (request.form.get("reviewer_note") or "").strip()
+    success_count = 0
+    for tx_id in ids:
+        try:
+            ok = update_transaction_status(
+                transaction_id=tx_id,
+                status="approved",
+                reviewer_id=user["id"],
+                reviewer_notes=note or None,
+            )
+        except Exception:
+            ok = False
+        if ok:
+            success_count += 1
+
+    if success_count:
+        flash(f"{success_count} transaksi berhasil disetujui.", "success")
+    else:
+        flash("Tidak ada transaksi yang berhasil disetujui.", "warning")
+
+    return redirect(_build_admin_validation_redirect(request.form))
+
+
+@daftar_tamu_bp.route("/admin/transactions/bulk-reject", methods=["POST"])
+@role_required("admin")
+def admin_bulk_reject_transactions() -> Response:
+    user = current_user()
+    raw_ids = request.form.getlist("transaction_ids")
+    ids: list[int] = []
+    for raw in raw_ids:
+        try:
+            ids.append(int(raw))
+        except (TypeError, ValueError):
+            continue
+    if not ids:
+        flash("Pilih transaksi yang ingin ditolak.", "warning")
+        return redirect(_build_admin_validation_redirect(request.form))
+
+    note = (request.form.get("reviewer_note") or "").strip()
+    if not note:
+        flash("Catatan penolakan wajib diisi.", "warning")
+        return redirect(_build_admin_validation_redirect(request.form))
+
+    success_count = 0
+    for tx_id in ids:
+        try:
+            ok = update_transaction_status(
+                transaction_id=tx_id,
+                status="rejected",
+                reviewer_id=user["id"],
+                reviewer_notes=note,
+            )
+        except Exception:
+            ok = False
+        if ok:
+            success_count += 1
+
+    if success_count:
+        flash(f"{success_count} transaksi berhasil ditolak.", "success")
+    else:
+        flash("Tidak ada transaksi yang berhasil ditolak.", "warning")
+
+    return redirect(_build_admin_validation_redirect(request.form))
+
+
+def _build_admin_validation_redirect(form) -> str:
+    status = (form.get("status") or "").strip() or "pending"
+    search = (form.get("q") or "").strip()
+    date_from = (form.get("date_from") or "").strip()
+    date_to = (form.get("date_to") or "").strip()
+    per_page_raw = (form.get("per_page") or "").strip()
+    page_raw = (form.get("page") or "").strip()
+    try:
+        per_page = int(per_page_raw) if per_page_raw else None
+    except (TypeError, ValueError):
+        per_page = None
+    try:
+        page = int(page_raw) if page_raw else None
+    except (TypeError, ValueError):
+        page = None
+    return url_for(
+        "daftar_tamu.admin_validation",
+        status=status,
+        q=search,
+        date_from=date_from,
+        date_to=date_to,
+        per_page=per_page,
+        page=page,
+    )
+
+
 @daftar_tamu_bp.route("/admin/guests/<int:user_id>/history")
 @role_required("admin")
 def admin_guest_history(user_id: int) -> Response:
@@ -656,6 +805,15 @@ def admin_general_guests() -> Response:
         verified_filter=verified_raw,
         deleted_filter=deleted_raw,
     )
+
+
+@daftar_tamu_bp.route("/admin/umum/search")
+@role_required("admin")
+def admin_general_guest_search() -> Response:
+    query = (request.args.get("q") or "").strip()
+    limit = _to_int(request.args.get("limit"), 15)
+    results = list_general_guest_candidates(query, limit=limit)
+    return jsonify({"success": True, "results": results})
 
 
 @daftar_tamu_bp.route("/admin/umum-transactions")
@@ -865,47 +1023,36 @@ def sekolah_guestbook() -> Response:
         return render_template(
             "daftar_tamu/sekolah_dashboard.html",
             school=None,
-            rows=[],
-            status="",
-            search_query="",
-            page=1,
-            per_page=10,
-            total_rows=0,
-            total_pages=1,
-            date_from_str="",
-            date_to_str="",
-            today_str=date.today().isoformat(),
             error_message="Akun sekolah belum terhubung dengan data sekolah. Hubungi admin.",
         )
 
-    status = (request.args.get("status") or "").strip().lower()
-    search_query = (request.args.get("q") or "").strip()
-    per_page = _to_int(request.args.get("per_page"), 10)
-    per_page = max(5, min(per_page, 100))
-    page = _to_int(request.args.get("page"), 1)
-    page = max(1, page)
+    return render_template(
+        "daftar_tamu/sekolah_dashboard.html",
+        school=school,
+        user_school=school,
+        area_contacts=_build_area_contacts(school),
+        purpose_keywords=list_purpose_keywords(active_only=True),
+        error_message=None,
+    )
+
+
+@daftar_tamu_bp.route("/sekolah/umum-web")
+@role_required("sekolah")
+def sekolah_public_web() -> Response:
+    user = current_user()
+    school = _fetch_school_for_user(user["id"])
+    if not school:
+        return render_template(
+            "daftar_tamu/sekolah_umum_web.html",
+            school=None,
+            error_message="Akun sekolah belum terhubung dengan data sekolah. Hubungi admin.",
+        )
 
     public_status = (request.args.get("public_status") or "").strip().lower()
     public_per_page = _to_int(request.args.get("public_per_page"), 5)
-    public_per_page = max(3, min(public_per_page, 50))
+    public_per_page = max(3, min(public_per_page, 100))
     public_page = _to_int(request.args.get("public_page"), 1)
     public_page = max(1, public_page)
-
-    rows, total_rows = list_school_transactions(
-        school_id=school["id"],
-        status=status,
-        page=page,
-        per_page=per_page,
-    )
-    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
-    if page > total_pages:
-        page = total_pages
-        rows, total_rows = list_school_transactions(
-            school_id=school["id"],
-            status=status,
-            page=page,
-            per_page=per_page,
-        )
 
     public_rows, public_total_rows = list_school_public_transactions(
         school_id=school["id"],
@@ -924,28 +1071,64 @@ def sekolah_guestbook() -> Response:
         )
 
     return render_template(
-        "daftar_tamu/sekolah_dashboard.html",
+        "daftar_tamu/sekolah_umum_web.html",
         school=school,
         user_school=school,
         guestbook_public_url=f"{_web_aska_base_url()}/buku-tamu/{school.get('npsn')}",
-        area_contacts=_build_area_contacts(school),
-        purpose_keywords=list_purpose_keywords(active_only=True),
-        rows=rows,
         public_rows=public_rows,
         public_status=public_status,
         public_page=public_page,
         public_per_page=public_per_page,
         public_total_rows=public_total_rows,
         public_total_pages=public_total_pages,
+        error_message=None,
+    )
+
+
+@daftar_tamu_bp.route("/sekolah/riwayat")
+@role_required("sekolah")
+def sekolah_riwayat() -> Response:
+    user = current_user()
+    school = _fetch_school_for_user(user["id"])
+    if not school:
+        return render_template(
+            "daftar_tamu/sekolah_riwayat.html",
+            school=None,
+            error_message="Akun sekolah belum terhubung dengan data sekolah. Hubungi admin.",
+        )
+
+    status = (request.args.get("status") or "").strip().lower()
+    per_page = _to_int(request.args.get("per_page"), 10)
+    per_page = max(5, min(per_page, 100))
+    page = _to_int(request.args.get("page"), 1)
+    page = max(1, page)
+
+    rows, total_rows = list_school_transactions(
+        school_id=school["id"],
         status=status,
-        search_query=search_query,
+        page=page,
+        per_page=per_page,
+    )
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if page > total_pages:
+        page = total_pages
+        rows, total_rows = list_school_transactions(
+            school_id=school["id"],
+            status=status,
+            page=page,
+            per_page=per_page,
+        )
+
+    return render_template(
+        "daftar_tamu/sekolah_riwayat.html",
+        school=school,
+        user_school=school,
+        rows=rows,
+        status=status,
         page=page,
         per_page=per_page,
         total_rows=total_rows,
         total_pages=total_pages,
-        date_from_str="",
-        date_to_str="",
-        today_str=date.today().isoformat(),
         error_message=None,
     )
 
@@ -973,9 +1156,11 @@ def sekolah_general_guest_search() -> Response:
 def create_general_guest() -> Response:
     user = current_user()
     full_name = (request.form.get("full_name") or "").strip()
+    email = (request.form.get("email") or "").strip().lower()
     phone = (request.form.get("phone") or "").strip()
     instansi = (request.form.get("instansi") or "").strip()
     jabatan = (request.form.get("jabatan") or "").strip()
+    auto_verify = user.get("role") in ("sekolah", "admin")
     if not full_name:
         return jsonify({"success": False, "message": "Nama tamu wajib diisi."}), 400
     if phone:
@@ -984,11 +1169,24 @@ def create_general_guest() -> Response:
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
-            INSERT INTO daftar_tamu_general_guests (full_name, phone, instansi, jabatan, created_by)
-            VALUES (%s, %s, %s, %s, %s)
-            RETURNING id, full_name, phone, instansi, jabatan, is_verified
+            INSERT INTO daftar_tamu_general_guests (
+                full_name, email, phone, instansi, jabatan, created_by,
+                is_verified, verified_by, verified_at
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CASE WHEN %s THEN NOW() ELSE NULL END)
+            RETURNING id, full_name, email, phone, instansi, jabatan, is_verified
             """,
-            (full_name, phone or None, instansi or None, jabatan or None, user.get("id")),
+            (
+                full_name,
+                email or None,
+                phone or None,
+                instansi or None,
+                jabatan or None,
+                user.get("id"),
+                auto_verify,
+                user.get("id") if auto_verify else None,
+                auto_verify,
+            ),
         )
         row = cur.fetchone()
         guest = dict(row) if row else {}
@@ -1007,6 +1205,46 @@ def create_general_guest() -> Response:
     guest["has_duplicate"] = int(stats.get("name_count") or 0) > 1
     guest["has_verified"] = bool(stats.get("has_verified"))
     return jsonify({"success": True, "guest": guest})
+
+
+@daftar_tamu_bp.route("/admin/umum/<int:guest_id>/update", methods=["POST"])
+@role_required("admin")
+def admin_update_general_guest(guest_id: int) -> Response:
+    full_name = (request.form.get("full_name") or "").strip()
+    phone = (request.form.get("phone") or "").strip()
+    instansi = (request.form.get("instansi") or "").strip()
+    jabatan = (request.form.get("jabatan") or "").strip()
+    email = (request.form.get("email") or "").strip().lower()
+
+    if not full_name:
+        return jsonify({"success": False, "message": "Nama tamu wajib diisi."}), 400
+    if phone:
+        phone = _sanitize_phone(phone)
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE daftar_tamu_general_guests
+            SET full_name = %s,
+                phone = %s,
+                instansi = %s,
+                jabatan = %s,
+                email = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            """,
+            (
+                full_name,
+                phone or None,
+                instansi or None,
+                jabatan or None,
+                email or None,
+                guest_id,
+            ),
+        )
+        if cur.rowcount == 0:
+            return jsonify({"success": False, "message": "Tamu umum tidak ditemukan."}), 404
+    return jsonify({"success": True})
 
 
 @daftar_tamu_bp.route("/sekolah/area-contacts")
@@ -1067,7 +1305,7 @@ def sekolah_approve_public_transaction(transaction_id: int) -> Response:
     )
     if not success:
         return jsonify({"success": False, "message": "Transaksi tidak ditemukan."}), 404
-    return redirect(url_for("daftar_tamu.sekolah_guestbook", _anchor="publicGuestbook"))
+    return redirect(url_for("daftar_tamu.sekolah_public_web", _anchor="publicGuestbook"))
 
 
 @daftar_tamu_bp.route("/sekolah/umum-transactions/<int:transaction_id>/reject", methods=["POST"])
@@ -1087,7 +1325,51 @@ def sekolah_reject_public_transaction(transaction_id: int) -> Response:
     )
     if not success:
         return jsonify({"success": False, "message": "Transaksi tidak ditemukan."}), 404
-    return redirect(url_for("daftar_tamu.sekolah_guestbook", _anchor="publicGuestbook"))
+    return redirect(url_for("daftar_tamu.sekolah_public_web", _anchor="publicGuestbook"))
+
+
+@daftar_tamu_bp.route("/sekolah/umum-transactions/bulk-approve", methods=["POST"])
+@role_required("sekolah")
+def sekolah_bulk_approve_public_transactions() -> Response:
+    user = current_user()
+    school = _fetch_school_for_user(user.get("id"))
+    if not school:
+        flash("Akun sekolah belum terhubung dengan data sekolah.", "warning")
+        return redirect(url_for("daftar_tamu.sekolah_public_web"))
+
+    raw_ids = request.form.getlist("transaction_ids")
+    ids: list[int] = []
+    for raw in raw_ids:
+        try:
+            ids.append(int(raw))
+        except (TypeError, ValueError):
+            continue
+    if not ids:
+        flash("Pilih transaksi yang ingin disetujui.", "warning")
+        return redirect(url_for("daftar_tamu.sekolah_public_web"))
+
+    reviewer_notes = (request.form.get("reviewer_notes") or "").strip()
+    success_count = 0
+    for tx_id in ids:
+        try:
+            ok = update_public_transaction_status(
+                transaction_id=tx_id,
+                status="approved",
+                reviewer_id=user.get("id"),
+                reviewer_notes=reviewer_notes or None,
+                school_id=school.get("id"),
+            )
+        except Exception:
+            ok = False
+        if ok:
+            success_count += 1
+
+    if success_count:
+        flash(f"{success_count} pengajuan berhasil disetujui.", "success")
+    else:
+        flash("Tidak ada pengajuan yang berhasil disetujui.", "warning")
+
+    return redirect(url_for("daftar_tamu.sekolah_public_web"))
 
 
 @daftar_tamu_bp.route("/sekolah/qr")
@@ -1213,6 +1495,12 @@ def sekolah_create_transaction() -> Response:
         "map_error": stamp_result.get("map_error"),
     }
 
+    auto_approve = user.get("role") == "sekolah" and not sudin_ids and bool(umum_ids)
+    status_value = "approved" if auto_approve else "pending"
+    reviewed_by = user.get("id") if auto_approve else None
+    reviewed_at = visit_at if auto_approve else None
+    reviewer_notes = "Auto konfirmasi sekolah" if auto_approve else None
+
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
@@ -1232,7 +1520,7 @@ def sekolah_create_transaction() -> Response:
                 created_by,
                 metadata
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'pending', NULL, NULL, NULL, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -1244,6 +1532,10 @@ def sekolah_create_transaction() -> Response:
                 stamp_result.get("raw_path"),
                 latitude,
                 longitude,
+                status_value,
+                reviewed_by,
+                reviewed_at,
+                reviewer_notes,
                 user["id"],
                 Json(metadata),
             ),

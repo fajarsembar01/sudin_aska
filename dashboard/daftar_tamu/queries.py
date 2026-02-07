@@ -20,6 +20,24 @@ SORT_OPTIONS = {
 DEFAULT_SORT = "visits_desc"
 TRANSACTION_STATUSES = {"pending", "approved", "rejected"}
 
+_GUEST_SCOPE_WHERE = """
+      AND (
+        %s = 'all'
+        OR (%s = 'sudin' AND EXISTS (
+            SELECT 1
+            FROM daftar_tamu_transaction_guests g
+            WHERE g.transaction_id = {tx_ref}
+              AND (g.guest_type = 'sudin' OR g.guest_type IS NULL)
+        ))
+        OR (%s = 'umum' AND EXISTS (
+            SELECT 1
+            FROM daftar_tamu_transaction_guests g
+            WHERE g.transaction_id = {tx_ref}
+              AND g.guest_type = 'umum'
+        ))
+      )
+"""
+
 _GUEST_NAMES_SUBQUERY = """
     SELECT STRING_AGG(guest_name, ', ' ORDER BY guest_name)
     FROM (
@@ -64,6 +82,9 @@ WITH filtered_transactions AS (
     WHERE t.status = 'approved'
       AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
       AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
+"""
+    + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+    + """
 ),
 school_rollup AS (
     SELECT
@@ -71,6 +92,7 @@ school_rollup AS (
         s.npsn,
         s.name AS school_name,
         s.jenjang,
+        s.status,
         k.name AS kecamatan,
         l.name AS kelurahan,
         s.alamat,
@@ -107,6 +129,7 @@ school_rollup AS (
         s.npsn,
         s.name,
         s.jenjang,
+        s.status,
         k.name,
         l.name,
         s.alamat,
@@ -128,28 +151,51 @@ def _build_search(search_query: Optional[str]) -> tuple[str, str]:
     return query, f"%{query}%"
 
 
+def _normalize_guest_scope(scope: Optional[str]) -> str:
+    value = (scope or "").strip().lower()
+    if value == "semua":
+        value = "all"
+    if value not in {"sudin", "umum", "all"}:
+        value = "all"
+    return value
+
+
 def ensure_daftar_tamu_seed_data() -> None:
     """No-op: daftar tamu now uses portal_schools and real transactions."""
     return
 
 
-def fetch_dashboard_summary(date_from: Optional[date] = None, date_to: Optional[date] = None) -> Dict[str, Any]:
+def fetch_dashboard_summary(
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
+) -> Dict[str, Any]:
     """Fetch top-level summary stats for admin dashboard."""
+    scope = _normalize_guest_scope(guest_scope)
     cutoff = date.today() - timedelta(days=30)
     params: List[Any] = [
         date_from,
         date_from,
         date_to,
         date_to,
+        scope,
+        scope,
+        scope,
         cutoff,
         date_from,
         date_from,
         date_to,
         date_to,
+        scope,
+        scope,
+        scope,
         date_from,
         date_from,
         date_to,
         date_to,
+        scope,
+        scope,
+        scope,
     ]
     query = (
         _ROLLUP_CTE
@@ -166,11 +212,17 @@ def fetch_dashboard_summary(date_from: Optional[date] = None, date_to: Optional[
         (SELECT COUNT(*) FROM daftar_tamu_transactions t
             WHERE t.status = 'pending'
               AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
-              AND (%s::date IS NULL OR t.visit_at::date <= %s::date)) AS pending_visits,
+              AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
+              """
+        + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+        + """) AS pending_visits,
         (SELECT COUNT(*) FROM daftar_tamu_transactions t
             WHERE t.status = 'rejected'
               AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
-              AND (%s::date IS NULL OR t.visit_at::date <= %s::date)) AS rejected_visits
+              AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
+              """
+        + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+        + """) AS rejected_visits
     """
     )
 
@@ -199,8 +251,10 @@ def fetch_school_rankings(
     search_query: Optional[str] = None,
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
 ) -> Tuple[List[Dict[str, Any]], int]:
     """Fetch school rankings with search, sorting, and pagination."""
+    scope = _normalize_guest_scope(guest_scope)
     safe_page = max(1, page)
     safe_per_page = max(1, min(per_page, 500))
     offset = (safe_page - 1) * safe_per_page
@@ -209,7 +263,7 @@ def fetch_school_rankings(
     order_sql = SORT_OPTIONS[safe_sort]
     query_text, like_query = _build_search(search_query)
 
-    base_params: List[Any] = [date_from, date_from, date_to, date_to]
+    base_params: List[Any] = [date_from, date_from, date_to, date_to, scope, scope, scope]
     search_params: List[Any] = [query_text, like_query, like_query, like_query, like_query]
 
     count_query = (
@@ -224,6 +278,8 @@ def fetch_school_rankings(
         OR COALESCE(kecamatan, '') ILIKE %s
         OR COALESCE(kelurahan, '') ILIKE %s
     )
+      AND status = 'NEGERI'
+      AND jenjang NOT IN ('MI', 'MTS', 'MA')
     """
     )
 
@@ -253,6 +309,8 @@ def fetch_school_rankings(
         OR COALESCE(kecamatan, '') ILIKE %s
         OR COALESCE(kelurahan, '') ILIKE %s
     )
+      AND status = 'NEGERI'
+      AND jenjang NOT IN ('MI', 'MTS', 'MA')
     ORDER BY {order_sql}
     LIMIT %s OFFSET %s
     """
@@ -301,8 +359,10 @@ def fetch_map_data(
     *,
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch map points for visit distribution."""
+    scope = _normalize_guest_scope(guest_scope)
     query = (
         _ROLLUP_CTE
         + f"""
@@ -325,7 +385,7 @@ def fetch_map_data(
     )
 
     with get_cursor() as cur:
-        cur.execute(query, [date_from, date_from, date_to, date_to])
+        cur.execute(query, [date_from, date_from, date_to, date_to, scope, scope, scope])
         rows = [dict(row) for row in cur.fetchall()]
 
     cutoff = date.today() - timedelta(days=30)
@@ -370,8 +430,10 @@ def fetch_unvisited_schools(
     limit: int = 8,
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch schools with zero approved visits in the selected period."""
+    scope = _normalize_guest_scope(guest_scope)
     safe_limit = max(1, min(limit, 100))
     query = (
         _ROLLUP_CTE
@@ -390,7 +452,7 @@ def fetch_unvisited_schools(
     """
     )
     with get_cursor() as cur:
-        cur.execute(query, [date_from, date_from, date_to, date_to, safe_limit])
+        cur.execute(query, [date_from, date_from, date_to, date_to, scope, scope, scope, safe_limit])
         return [dict(row) for row in cur.fetchall()]
 
 
@@ -399,8 +461,10 @@ def fetch_recent_visits(
     limit: int = 10,
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch latest approved visit records for side panel."""
+    scope = _normalize_guest_scope(guest_scope)
     safe_limit = max(1, min(limit, 100))
     query = """
     SELECT
@@ -427,14 +491,18 @@ def fetch_recent_visits(
       AND t.status = 'approved'
       AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
       AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
-    ORDER BY t.visit_at DESC, t.id DESC
-    LIMIT %s
-    """.format(
+      """
+    query = query.format(
         guest_names=_GUEST_NAMES_SUBQUERY.format(tx_ref="t.id"),
         guest_count=_GUEST_COUNT_SUBQUERY.format(tx_ref="t.id"),
     )
+    query += _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+    query += """
+    ORDER BY t.visit_at DESC, t.id DESC
+    LIMIT %s
+    """
     with get_cursor() as cur:
-        cur.execute(query, [date_from, date_from, date_to, date_to, safe_limit])
+        cur.execute(query, [date_from, date_from, date_to, date_to, scope, scope, scope, safe_limit])
         return [dict(row) for row in cur.fetchall()]
 
 
@@ -483,6 +551,9 @@ def list_general_guest_candidates(search_query: Optional[str], limit: int = 20) 
             g.phone,
             g.instansi,
             g.jabatan,
+            g.is_parent,
+            g.student_class,
+            g.student_name,
             g.is_verified,
             COUNT(*) OVER (PARTITION BY lower(g.full_name)) AS name_count,
             MAX(CASE WHEN g.is_verified THEN 1 ELSE 0 END) OVER (PARTITION BY lower(g.full_name)) AS has_verified
@@ -551,6 +622,9 @@ def list_general_guests_admin(
             g.phone,
             g.instansi,
             g.jabatan,
+            g.is_parent,
+            g.student_class,
+            g.student_name,
             g.is_verified,
             g.is_deleted,
             g.deleted_at,
@@ -754,6 +828,36 @@ def list_school_public_transactions(
         row["guest_count"] = guest_count
 
     return rows, total_rows
+
+
+def fetch_school_pending_counts(*, school_id: int) -> Dict[str, int]:
+    """Return pending counts for school: sudin transactions + public (web) submissions."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                (SELECT COUNT(*)
+                 FROM daftar_tamu_transactions t
+                 WHERE t.school_id = %s
+                   AND t.status = 'pending'
+                   AND EXISTS (
+                       SELECT 1
+                       FROM daftar_tamu_transaction_guests g
+                       WHERE g.transaction_id = t.id
+                         AND g.guest_type = 'sudin'
+                   )) AS pending_sudin,
+                (SELECT COUNT(*)
+                 FROM daftar_tamu_general_transactions t
+                 WHERE t.school_id = %s
+                   AND t.status = 'pending') AS pending_public
+            """,
+            (school_id, school_id),
+        )
+        row = dict(cur.fetchone() or {})
+    return {
+        "pending_sudin": int(row.get("pending_sudin") or 0),
+        "pending_public": int(row.get("pending_public") or 0),
+    }
 
 
 def list_admin_transactions(

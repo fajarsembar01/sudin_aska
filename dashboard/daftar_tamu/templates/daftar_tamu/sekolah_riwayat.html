@@ -1,0 +1,140 @@
+{% extends "daftar_tamu/base_daftar_tamu.html" %}
+{% set page_title = "Riwayat Buku Tamu" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="icon-badge feature-icon text-primary">
+                        <i class="bi bi-clock-history"></i>
+                    </span>
+                    <div>
+                        <h1 class="h3 fw-bold page-title mb-1">Riwayat Transaksi</h1>
+                        {% if school %}
+                        <p class="page-subtitle mb-0">
+                            {{ school.name }} &bull; NPSN {{ school.npsn }}
+                            {% if school.kecamatan_name %}&bull; {{ school.kecamatan_name }}{% endif %}
+                        </p>
+                        {% else %}
+                        <p class="page-subtitle mb-0">Akun belum terhubung dengan sekolah.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if error_message %}
+<div class="alert alert-warning">{{ error_message }}</div>
+{% else %}
+<section class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <h2 class="h6 fw-bold mb-0">Riwayat Transaksi</h2>
+                <small class="text-muted">Status validasi admin akan muncul di sini.</small>
+            </div>
+            <form method="get" class="d-flex gap-2">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="" {% if status=='' %}selected{% endif %}>Semua status</option>
+                    <option value="pending" {% if status=='pending' %}selected{% endif %}>Menunggu</option>
+                    <option value="approved" {% if status=='approved' %}selected{% endif %}>Disetujui</option>
+                    <option value="rejected" {% if status=='rejected' %}selected{% endif %}>Ditolak</option>
+                </select>
+                <select name="per_page" class="form-select form-select-sm">
+                    {% for size in [10, 20, 50, 100] %}
+                    <option value="{{ size }}" {% if per_page==size %}selected{% endif %}>{{ size }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Waktu</th>
+                        <th>Tamu</th>
+                        <th>Status</th>
+                        <th>Catatan Admin</th>
+                        <th class="text-end">Foto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ row.visit_at|jakarta('%d %b %Y') }}</div>
+                            <div class="small text-muted">{{ row.visit_at|jakarta('%H:%M') }} WIB</div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ row.guest_display or '-' }}</div>
+                            <div class="small text-muted">{{ row.guest_count or 0 }} tamu</div>
+                            {% if row.purpose %}
+                            <div class="small text-muted">Tujuan: {{ row.purpose }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if row.status == 'approved' %}
+                            <span class="badge text-bg-success">Disetujui</span>
+                            {% elif row.status == 'rejected' %}
+                            <span class="badge text-bg-danger">Ditolak</span>
+                            {% else %}
+                            <span class="badge text-bg-warning">Menunggu</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="small text-muted">{{ row.reviewer_notes or '-' }}</div>
+                            {% if row.reviewer_name %}
+                            <div class="small text-muted">oleh {{ row.reviewer_name }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if row.photo_path %}
+                            {% set photo_name = row.photo_path.split('uploads/portal/')[-1] %}
+                            <a class="btn btn-sm btn-outline-secondary" target="_blank"
+                                href="{{ url_for('portal.uploaded_file', filename=photo_name) }}">
+                                <i class="bi bi-camera"></i>
+                            </a>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">Belum ada transaksi.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% set start_row = ((page - 1) * per_page) + 1 if total_rows else 0 %}
+        {% set end_row = ((page - 1) * per_page) + (rows|length) if total_rows else 0 %}
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+            <small class="text-muted">Menampilkan {{ start_row }}-{{ end_row }} dari {{ total_rows }} transaksi</small>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.sekolah_riwayat', status=status, per_page=per_page, page=page-1) }}">Prev</a>
+                </li>
+                {% set start_page = 1 if page - 2 < 1 else page - 2 %}
+                {% set end_page = total_pages if page + 2 > total_pages else page + 2 %}
+                {% for p in range(start_page, end_page + 1) %}
+                <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.sekolah_riwayat', status=status, per_page=per_page, page=p) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.sekolah_riwayat', status=status, per_page=per_page, page=page+1) }}">Next</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

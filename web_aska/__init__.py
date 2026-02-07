@@ -463,8 +463,6 @@ def create_app() -> Flask:
                     student_class = (guest.get("student_class") or "").strip()
                     student_name = (guest.get("student_name") or "").strip()
                     if is_parent:
-                        instansi = "Wali Murid"
-                        jabatan = "Wali Murid"
                         if class_options:
                             if not student_class or student_class not in class_options:
                                 error = "Kelas siswa wajib dipilih dari daftar yang tersedia."
@@ -472,6 +470,11 @@ def create_app() -> Flask:
                         if not student_name:
                             error = "Nama siswa wajib diisi untuk wali murid."
                             break
+                        instansi = ""
+                        jabatan = ""
+                    else:
+                        student_class = ""
+                        student_name = ""
                     cleaned_guests.append(
                         {
                             "full_name": name,
@@ -479,6 +482,7 @@ def create_app() -> Flask:
                             "jabatan": jabatan,
                             "phone": phone_key,
                             "email": (guest.get("email") or "").strip(),
+                            "is_parent": is_parent,
                             "student_class": student_class,
                             "student_name": student_name,
                         }

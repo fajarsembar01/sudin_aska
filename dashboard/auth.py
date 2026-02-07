@@ -453,59 +453,9 @@ def google_callback() -> Response:
 @auth_bp.route("/settings/users", methods=["GET", "POST"])
 @role_required("admin")
 def manage_users() -> Response:
-    from dashboard.queries import update_dashboard_user
-    
-    if request.method == "POST":
-        action = request.form.get("action", "create")
-        user_id = request.form.get("user_id")
-        
-        email = (request.form.get("email") or "").strip().lower()
-        full_name = (request.form.get("full_name") or "").strip()
-        password = request.form.get("password") or ""
-        role = (request.form.get("role") or "viewer").strip()
-        
-        # New feature: Account Status (for manual verification/rejection)
-        account_status = request.form.get("account_status")
+    from dashboard.user_management import handle_manage_users
 
-        try:
-            if action == "create":
-                if not all([email, full_name, password]):
-                    flash("Semua field wajib diisi.", "warning")
-                else:
-                    password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=12)
-                    create_dashboard_user(email=email, full_name=full_name, password_hash=password_hash, role=role)
-                    flash(f"User {full_name} berhasil dibuat.", "success")
-                    
-            elif action == "update":
-                if not user_id:
-                    flash("ID User tidak valid.", "danger")
-                else:
-                    # Only hash password if provided
-                    pw_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=12) if password else None
-                    update_dashboard_user(
-                        user_id=int(user_id), 
-                        full_name=full_name, 
-                        role=role, 
-                        email=email, 
-                        password_hash=pw_hash,
-                        account_status=account_status
-                    )
-                    flash(f"Data user {full_name} berhasil diperbarui.", "success")
-                    
-            elif action == "verify":
-                # Quick action for verify/reject
-                if not user_id or not account_status:
-                     flash("Data tidak lengkap.", "warning")
-                else:
-                     update_dashboard_user(user_id=int(user_id), full_name=full_name, role=role, account_status=account_status)
-                     flash(f"Status user berhasil diubah menjadi {account_status}.", "success")
-
-        except Exception as exc: 
-            current_app.logger.error(f"Error managing user: {exc}")
-            flash(f"Gagal memproses data: {exc}", "danger")
-
-    users = list_dashboard_users()
-    return render_template("manage_users.html", users=users)
+    return handle_manage_users(actor=current_user(), base_template="base.html")
 
 
 @auth_bp.route("/settings/monev-teams", methods=["GET", "POST"])

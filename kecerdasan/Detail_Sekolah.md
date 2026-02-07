@@ -619,9 +619,9 @@
 ### SDN Semper Barat 01
 - **NPSN**: 20100682
 - **Alamat**: Jl. Raya Tugu Semper No. 1
-- **Website**: Belum tersedia
-- **Sosial Media**: Belum tersedia
-- **Nomor Telepon**: Sekolah: 082143646463
+- **Website**: https://www.sdnsembar01.sch.id/
+- **Sosial Media**: Instagram: sdnsembar01 | TikTok: sembar01official | YouTube: https://www.youtube.com/@sdnsembar01 | Telegram: tanyaaska_bot | WhatsApp Channel: https://whatsapp.com/channel/0029Vb64drS65yD5VaB8gP1n
+- **Nomor Telepon**: Sekolah: 0821436464633 | Operator: 0811
 - **Email**: 11@gmail.com
 - **Bangku Kosong**: 5 (Per kelas: 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 0)
 

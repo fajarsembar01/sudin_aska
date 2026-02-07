@@ -1724,6 +1724,8 @@ def list_dashboard_users() -> List[Dict[str, Any]]:
                 u.created_at,
                 u.last_login_at,
                 u.account_status,
+                u.merged_to,
+                u.merged_at,
                 u.whatsapp_number,
                 u.requested_kecamatan,
                 u.verification_notes,
@@ -1753,6 +1755,12 @@ def update_dashboard_user(
     account_status: Optional[str] = None,
     school_id: Optional[int] = None,
     requested_kecamatan: object = _UNSET,
+    jabatan: Optional[str] = None,
+    whatsapp_number: Optional[str] = None,
+    nip: Optional[str] = None,
+    nrk: Optional[str] = None,
+    degree_prefix: Optional[str] = None,
+    degree_suffix: Optional[str] = None,
 ) -> bool:
     """Update an existing dashboard user."""
     updates = [
@@ -1773,6 +1781,30 @@ def update_dashboard_user(
     if account_status:
         updates.append("account_status = %s")
         params.append(account_status)
+
+    if jabatan is not None:
+        updates.append("jabatan = %s")
+        params.append(jabatan)
+
+    if whatsapp_number is not None:
+        updates.append("whatsapp_number = %s")
+        params.append(whatsapp_number)
+
+    if nip is not None:
+        updates.append("nip = %s")
+        params.append(nip)
+
+    if nrk is not None:
+        updates.append("nrk = %s")
+        params.append(nrk)
+
+    if degree_prefix is not None:
+        updates.append("degree_prefix = %s")
+        params.append(degree_prefix)
+
+    if degree_suffix is not None:
+        updates.append("degree_suffix = %s")
+        params.append(degree_suffix)
 
     if school_id is not None:
         updates.append("school_id = %s")
@@ -1808,18 +1840,159 @@ def create_dashboard_user(
     jabatan: Optional[str] = None,
     degree_prefix: Optional[str] = None,
     degree_suffix: Optional[str] = None,
+    account_status: Optional[str] = None,
 ) -> int:
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
-            INSERT INTO dashboard_users (email, full_name, password_hash, role, school_id, requested_kecamatan, nrk, nip, jabatan, degree_prefix, degree_suffix)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO dashboard_users (
+                email,
+                full_name,
+                password_hash,
+                role,
+                school_id,
+                requested_kecamatan,
+                nrk,
+                nip,
+                jabatan,
+                degree_prefix,
+                degree_suffix,
+                account_status
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
-            (email, full_name, password_hash, role, school_id, requested_kecamatan, nrk, nip, jabatan, degree_prefix, degree_suffix),
+            (
+                email,
+                full_name,
+                password_hash,
+                role,
+                school_id,
+                requested_kecamatan,
+                nrk,
+                nip,
+                jabatan,
+                degree_prefix,
+                degree_suffix,
+                account_status or "approved",
+            ),
         )
         new_id = cur.fetchone()[0]
     return int(new_id)
+
+
+def _quote_ident(name: str) -> str:
+    return '"' + name.replace('"', '""') + '"'
+
+
+def _list_user_fk_columns(cur) -> List[Tuple[str, str]]:
+    cur.execute(
+        """
+        SELECT
+            tc.table_name,
+            kcu.column_name
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name
+         AND tc.table_schema = kcu.table_schema
+        JOIN information_schema.constraint_column_usage ccu
+          ON ccu.constraint_name = tc.constraint_name
+         AND ccu.table_schema = tc.table_schema
+        WHERE tc.constraint_type = 'FOREIGN KEY'
+          AND tc.table_schema = 'public'
+          AND ccu.table_name = 'dashboard_users'
+          AND ccu.column_name = 'id'
+        ORDER BY tc.table_name, kcu.column_name
+        """
+    )
+    return [(row["table_name"], row["column_name"]) for row in cur.fetchall()]
+
+
+def _list_unique_constraints(cur, table_name: str) -> List[List[str]]:
+    cur.execute(
+        """
+        SELECT
+            tc.constraint_name,
+            ARRAY_AGG(kcu.column_name ORDER BY kcu.ordinal_position) AS columns
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name
+         AND tc.table_schema = kcu.table_schema
+        WHERE tc.constraint_type = 'UNIQUE'
+          AND tc.table_schema = 'public'
+          AND tc.table_name = %s
+        GROUP BY tc.constraint_name
+        """,
+        (table_name,),
+    )
+    return [list(row["columns"]) for row in cur.fetchall()]
+
+
+def merge_dashboard_users(old_user_id: int, new_user_id: int, merged_by: Optional[int] = None) -> Dict[str, Any]:
+    """Merge two dashboard user accounts by moving all references to new_user_id."""
+    if old_user_id == new_user_id:
+        raise ValueError("User lama dan baru tidak boleh sama.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT id, full_name, email, account_status
+            FROM dashboard_users
+            WHERE id IN (%s, %s)
+            """,
+            (old_user_id, new_user_id),
+        )
+        rows = {int(row["id"]): dict(row) for row in cur.fetchall()}
+        if old_user_id not in rows or new_user_id not in rows:
+            raise ValueError("User tidak ditemukan.")
+
+        fk_columns = _list_user_fk_columns(cur)
+        for table_name, column_name in fk_columns:
+            if table_name == "dashboard_users" and column_name == "id":
+                continue
+
+            unique_constraints = _list_unique_constraints(cur, table_name)
+            for columns in unique_constraints:
+                if column_name not in columns:
+                    continue
+                other_cols = [col for col in columns if col != column_name]
+                if other_cols:
+                    comparisons = " AND ".join(
+                        f"t_old.{_quote_ident(col)} IS NOT DISTINCT FROM t_new.{_quote_ident(col)}"
+                        for col in other_cols
+                    )
+                else:
+                    comparisons = "TRUE"
+
+                delete_sql = (
+                    f"DELETE FROM {_quote_ident(table_name)} t_old "
+                    f"USING {_quote_ident(table_name)} t_new "
+                    f"WHERE t_old.{_quote_ident(column_name)} = %s "
+                    f"AND t_new.{_quote_ident(column_name)} = %s "
+                    f"AND {comparisons}"
+                )
+                cur.execute(delete_sql, (old_user_id, new_user_id))
+
+            update_sql = (
+                f"UPDATE {_quote_ident(table_name)} "
+                f"SET {_quote_ident(column_name)} = %s "
+                f"WHERE {_quote_ident(column_name)} = %s"
+            )
+            cur.execute(update_sql, (new_user_id, old_user_id))
+
+        # Disable old user and mark merge target
+        cur.execute(
+            """
+            UPDATE dashboard_users
+            SET account_status = 'disabled',
+                merged_to = %s,
+                merged_at = NOW()
+            WHERE id = %s
+            """,
+            (new_user_id, old_user_id),
+        )
+
+    return {"old_user": rows.get(old_user_id), "new_user": rows.get(new_user_id), "merged_by": merged_by}
 
 
 # =====================================================
