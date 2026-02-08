@@ -164,6 +164,61 @@ portal_bp = Blueprint(
 )
 
 UPLOAD_FOLDER = Path(__file__).parent.parent.parent / "uploads" / "portal"
+PHOTO_REQUIRED_PCT = 90.0
+
+
+def _get_low_score_rooms_missing_photos(
+    assessment_id: int,
+    school_id: int,
+    threshold_pct: float = PHOTO_REQUIRED_PCT,
+) -> list[dict]:
+    """Return rooms with score below threshold that don't have photos yet."""
+    rooms = list_school_rooms(school_id)
+    if not rooms:
+        return []
+
+    scores = get_assessment_scores(assessment_id)
+    score_map = {
+        (s.get("school_room_id"), s.get("aspect_id")): s.get("score")
+        for s in scores
+    }
+    photos = get_assessment_photos(assessment_id)
+    rooms_with_photos = {p.get("school_room_id") for p in photos if p.get("school_room_id") is not None}
+
+    missing: list[dict] = []
+    for room in rooms:
+        aspects = room.get("aspects") or []
+        if not aspects:
+            continue
+
+        total = 0.0
+        count = 0
+        room_id = room.get("school_room_id")
+        for aspect in aspects:
+            aspect_id = aspect.get("id")
+            score_val = score_map.get((room_id, aspect_id))
+            if score_val is None:
+                score_val = 3
+            try:
+                total += float(score_val)
+            except (TypeError, ValueError):
+                total += 3.0
+            count += 1
+
+        if count == 0:
+            continue
+
+        pct = (total / count) / 3 * 100
+        if pct < threshold_pct and room_id not in rooms_with_photos:
+            missing.append(
+                {
+                    "school_room_id": room_id,
+                    "room_name": room.get("room_name") or f"Ruang {room_id}",
+                    "room_pct": round(pct, 1),
+                }
+            )
+
+    return missing
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 AREA_CONTACTS = [
     {"area": "Cilincing", "name": "Neni", "phone": "+62 851-1085-1681"},
@@ -1216,6 +1271,7 @@ def assess(school_id: int) -> Response:
         total_aspects=total_aspects,
         assessment_period=assessment_period,
         optional_rooms_data=optional_rooms_data,
+        photo_required_threshold=PHOTO_REQUIRED_PCT,
     )
 
 
