@@ -2,7 +2,7 @@
 {% set page_title = "Penilaian " ~ school.name %}
 
 {% block portal_content %}
-<section class="mb-4">
+<section class="mb-4 assessment-page">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div class="d-flex align-items-center gap-3">
             <a href="{{ url_for('portal.home') }}" class="btn btn-outline-secondary">
@@ -36,6 +36,23 @@
     <input type="hidden" id="schoolId" value="{{ school.id }}">
 
     {% if rooms %}
+    <div id="photoProgressFloating" class="d-lg-none">
+        <div class="photo-progress-row" id="photoProgressRow">
+            <div class="progress photo-progress-compact" id="photoProgressBarWrap">
+                <div class="progress-bar photo-progress-layer photo-progress-layer-min bg-success"
+                    id="photoRequirementBarMinFloat" role="progressbar"></div>
+                <div class="progress-bar photo-progress-layer photo-progress-layer-extra bg-primary"
+                    id="photoRequirementBarExtraFloat" role="progressbar"></div>
+                <span class="photo-progress-label" id="photoProgressLabelFloat">Foto 0/0</span>
+            </div>
+            <button type="button" class="photo-progress-toggle" id="photoProgressToggle" aria-label="Minimize">
+                &times;
+            </button>
+        </div>
+        <button type="button" class="photo-progress-mini" id="photoProgressMini" aria-label="Perbesar">
+            <span id="photoProgressMiniLabel">0/0</span>
+        </button>
+    </div>
     <div class="row g-4">
         <div class="col-lg-8">
             <div class="alert alert-info mb-3 d-flex flex-wrap align-items-center gap-3">
@@ -137,10 +154,6 @@
                                     <i class="bi bi-camera"></i>
                                     <span>Ambil Foto Ruangan</span>
                                 </div>
-                                <div class="small text-muted mt-2 d-none photo-score-warning"
-                                    id="photoScoreWarn{{ room.school_room_id }}">
-                                    Foto hanya untuk ruangan dengan skor 90 atau kurang.
-                                </div>
                                 <div id="photoPreview{{ room.school_room_id }}" class="mt-2">
                                     {% if photos_map.get(room.school_room_id) %}
                                     {% set photo = photos_map.get(room.school_room_id) %}
@@ -205,8 +218,11 @@
                         <span id="photoUploadedCount">{{ photo_uploaded_count }}</span>/<span id="photoRequiredCount">{{ photo_min_required }}</span>
                     </span>
                 </div>
-                <div class="progress my-2" style="height: 6px;">
-                    <div class="progress-bar bg-success" id="photoRequirementBar" role="progressbar"></div>
+                <div class="progress my-2 photo-progress-inline" style="height: 6px;">
+                    <div class="progress-bar photo-progress-layer photo-progress-layer-min bg-success"
+                        id="photoRequirementBarMin" role="progressbar"></div>
+                    <div class="progress-bar photo-progress-layer photo-progress-layer-extra bg-primary"
+                        id="photoRequirementBarExtra" role="progressbar"></div>
                 </div>
                 <p class="text-muted small mb-3" id="photoRequirementNote">
                     Minimal upload foto ruangan {{ photo_min_required }} dari {{ rooms|length }} ruangan (20%).
@@ -343,26 +359,6 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" id="retryLocationBtn">Coba Lagi</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Photo Score Modal -->
-<div class="modal fade" id="photoScoreModal" tabindex="-1" aria-labelledby="photoScoreLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="photoScoreLabel">
-                    <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Peringatan
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                Foto hanya boleh untuk ruangan dengan skor 90 atau kurang.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Oke</button>
             </div>
         </div>
     </div>
@@ -544,17 +540,6 @@
         border-color: transparent;
     }
 
-    .photo-capture-btn.photo-disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        border-style: solid;
-    }
-
-    .photo-capture-btn.photo-disabled:hover {
-        background: var(--bg-subtle);
-        border-color: var(--border-soft);
-    }
-
     /* Tighten spacing between room cards */
     #roomAccordion .room-item {
         margin-bottom: 0.35rem;
@@ -568,7 +553,138 @@
         padding: 0.8rem 0.95rem;
     }
 
+    #photoProgressFloating {
+        display: none;
+    }
+
     @media (max-width: 768px) {
+        #photoProgressFloating {
+            display: block;
+            position: fixed;
+            top: 68px;
+            left: 16px;
+            right: 16px;
+            z-index: 1030;
+            padding: 6px 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border-soft);
+            background: var(--bg-body);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        #photoProgressFloating .photo-progress-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #photoProgressFloating .photo-progress-compact {
+            flex: 1;
+            height: 22px;
+            position: relative;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .photo-progress-inline {
+            position: relative;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        #photoProgressFloating .photo-progress-label {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+            pointer-events: none;
+        }
+
+        .photo-progress-layer {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            border-radius: inherit;
+        }
+
+        .photo-progress-layer-min {
+            opacity: 0.95;
+        }
+
+        .photo-progress-layer-extra {
+            height: 100%;
+            top: 0;
+            border-radius: 999px;
+            opacity: 0.9;
+        }
+
+        #photoProgressFloating .photo-progress-mini {
+            display: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            background:
+                conic-gradient(#0d6efd 0 var(--ring-extra-pct, 0%),
+                    #198754 var(--ring-extra-pct, 0%) var(--ring-min-pct, 0%),
+                    rgba(255, 255, 255, 0.2) var(--ring-min-pct, 0%) 100%);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+        }
+
+        #photoProgressFloating .photo-progress-toggle {
+            width: 22px;
+            height: 22px;
+            border-radius: 999px;
+            border: 0;
+            background: rgba(15, 23, 42, 0.25);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        #photoProgressFloating.minimized {
+            width: 40px;
+            height: 40px;
+            right: auto;
+            padding: 0;
+            border-radius: 999px;
+            border: 0;
+            background: transparent;
+            box-shadow: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #photoProgressFloating.minimized .photo-progress-row {
+            display: none;
+        }
+
+        #photoProgressFloating.minimized .photo-progress-mini {
+            display: flex;
+        }
+
+        #photoProgressFloating.minimized .photo-progress-toggle {
+            display: none;
+        }
+
+        .assessment-page {
+            padding-top: 84px;
+        }
+
         .floating-score {
             left: 16px;
             bottom: 80px;
@@ -607,10 +723,11 @@
     var maxPhotoCount = {{ photo_max_allowed }};
     var totalRoomCount = {{ rooms|length }};
     var photoRoomSet = new Set({{ photo_room_ids|tojson }});
-    var photoScoreThreshold = 90;
     var pendingUploadBlob = null;
     var uploadInProgress = false;
     var locationRequestInFlight = null;
+    var locationWatchId = null;
+    var locationWatchTimer = null;
 
     function showPhotoMaxWarning() {
         if (window.bootstrap) {
@@ -627,65 +744,61 @@
     function updatePhotoRequirementUI() {
         var uploaded = photoRoomSet.size;
         var required = requiredPhotoCount;
+        var maxAllowed = maxPhotoCount;
+        if (!maxAllowed || maxAllowed < required) maxAllowed = required || 1;
+        var clampedUploaded = Math.min(uploaded, maxAllowed);
+        var minTarget = required || 1;
+        var minPct = minTarget > 0 ? (Math.min(clampedUploaded, minTarget) / minTarget) * 100 : 0;
+        minPct = Math.min(100, Math.max(0, minPct));
+        var extraPct = 0;
+        if (maxAllowed > required && clampedUploaded > required) {
+            extraPct = ((clampedUploaded - required) / (maxAllowed - required)) * 100;
+        }
+        extraPct = Math.min(100, Math.max(0, extraPct));
+
         var submitBtn = document.getElementById('submitAssessmentBtn');
         var uploadedEl = document.getElementById('photoUploadedCount');
         var requiredEl = document.getElementById('photoRequiredCount');
         var noteEl = document.getElementById('photoRequirementNote');
-        var barEl = document.getElementById('photoRequirementBar');
+        var barMin = document.getElementById('photoRequirementBarMin');
+        var barExtra = document.getElementById('photoRequirementBarExtra');
+        var barMinFloat = document.getElementById('photoRequirementBarMinFloat');
+        var barExtraFloat = document.getElementById('photoRequirementBarExtraFloat');
+        var labelFloat = document.getElementById('photoProgressLabelFloat');
+        var labelMini = document.getElementById('photoProgressMiniLabel');
+        var miniWrap = document.getElementById('photoProgressMini');
+        var minPctOnly = minTarget > 0 ? Math.min(100, (Math.min(uploaded, minTarget) / minTarget) * 100) : 0;
+        var extraPctOnly = 0;
+        if (maxAllowed > required && uploaded > required) {
+            extraPctOnly = Math.min(
+                100,
+                Math.max(0, ((uploaded - required) / (maxAllowed - required)) * 100)
+            );
+        }
 
         if (uploadedEl) uploadedEl.textContent = uploaded;
         if (requiredEl) requiredEl.textContent = required;
+        if (labelFloat) labelFloat.textContent = 'Foto ' + uploaded + '/' + required;
+
         if (noteEl) {
             noteEl.classList.toggle('text-success', uploaded >= required && required > 0);
             noteEl.classList.toggle('text-muted', uploaded < required);
         }
-        if (barEl) {
-            var pct = required > 0 ? Math.min(100, Math.round((uploaded / required) * 100)) : 100;
-            barEl.style.width = pct + '%';
+        if (barMin) barMin.style.width = minPct + '%';
+        if (barExtra) barExtra.style.width = extraPct + '%';
+        if (barMinFloat) barMinFloat.style.width = minPct + '%';
+        if (barExtraFloat) barExtraFloat.style.width = extraPct + '%';
+        if (labelMini) labelMini.textContent = uploaded + '/' + required;
+        if (miniWrap) {
+            miniWrap.style.setProperty('--ring-min-pct', minPctOnly + '%');
+            miniWrap.style.setProperty('--ring-extra-pct', extraPctOnly + '%');
         }
+
         if (submitBtn) {
             submitBtn.classList.toggle('opacity-75', required > 0 && uploaded < required);
         }
     }
 
-    function getRoomScorePct(roomId) {
-        var scoreEl = document.getElementById('roomScore' + roomId);
-        if (scoreEl) {
-            var raw = (scoreEl.textContent || '').trim().replace(',', '.');
-            var val = parseFloat(raw);
-            if (!isNaN(val)) return val;
-        }
-        var room = document.getElementById('room' + roomId);
-        if (room && typeof room.querySelectorAll !== 'function' && room.length) {
-            room = room[0];
-        }
-        if (!room || typeof room.querySelectorAll !== 'function') return 0;
-        var totalScore = 0;
-        var totalAspects = 0;
-        room.querySelectorAll('.score-group').forEach(function (g) {
-            var selected = g.querySelector('.score-btn.selected');
-            if (selected) {
-                totalScore += parseInt(selected.dataset.score, 10);
-                totalAspects += 1;
-            }
-        });
-        if (totalAspects === 0) return 0;
-        return (totalScore / totalAspects) / 3 * 100;
-    }
-
-    function updatePhotoButtonState(roomId, pct) {
-        var btn = document.querySelector('.photo-capture-btn[data-room-id="' + roomId + '"]');
-        if (!btn) return;
-        var score = (typeof pct === 'number') ? pct : getRoomScorePct(roomId);
-        var disabled = score > photoScoreThreshold;
-        btn.classList.toggle('photo-disabled', disabled);
-        btn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
-        btn.dataset.photoDisabled = disabled ? '1' : '0';
-        var warn = document.getElementById('photoScoreWarn' + roomId);
-        if (warn) {
-            warn.classList.toggle('d-none', !disabled);
-        }
-    }
 
     function hasUnscoredRoom() {
         var rooms = document.querySelectorAll('.room-item');
@@ -710,6 +823,19 @@
     // Force prompt lokasi saat halaman dibuka
     document.addEventListener('DOMContentLoaded', function () {
         ensureLocation();
+        var progressFloating = document.getElementById('photoProgressFloating');
+        var progressToggle = document.getElementById('photoProgressToggle');
+        var progressMini = document.getElementById('photoProgressMini');
+        if (progressFloating && progressToggle) {
+            progressToggle.addEventListener('click', function () {
+                progressFloating.classList.add('minimized');
+            });
+        }
+        if (progressFloating && progressMini) {
+            progressMini.addEventListener('click', function () {
+                progressFloating.classList.remove('minimized');
+            });
+        }
 
         var submitForm = document.getElementById('submitAssessmentForm');
         if (submitForm) {
@@ -919,7 +1045,6 @@
 
         if (totalAspects === 0) {
             scoreDisplay.textContent = '0.0';
-            updatePhotoButtonState(schoolRoomId, 0);
             return;
         }
 
@@ -939,7 +1064,6 @@
             scoreDisplay.classList.add('score-badge-green');
         }
 
-        updatePhotoButtonState(schoolRoomId, pct);
     }
 
     function deletePhoto(photoId, roomId) {
@@ -968,34 +1092,147 @@
             });
     }
 
+    function normalizeCoord(val) {
+        if (val === null || val === undefined || val === '') return null;
+        if (typeof val === 'number') {
+            return isNaN(val) ? null : val;
+        }
+        if (typeof val === 'string') {
+            var cleaned = val.trim().replace(',', '.');
+            if (!cleaned) return null;
+            var parsed = parseFloat(cleaned);
+            return isNaN(parsed) ? null : parsed;
+        }
+        return null;
+    }
+
     function isValidCoord(val) {
-        return typeof val === 'number' && !isNaN(val);
+        return normalizeCoord(val) !== null;
     }
 
     function ensureLocation() {
         if (locationRequestInFlight) return locationRequestInFlight;
         locationRequestInFlight = new Promise(function (resolve) {
+            var statusEl = document.getElementById('gpsStatus');
+            var setStatus = function (text, isError, useSpinner) {
+                if (!statusEl) return;
+                if (useSpinner) {
+                    statusEl.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>' + text;
+                } else {
+                    statusEl.textContent = text;
+                }
+                statusEl.classList.toggle('text-danger', !!isError);
+            };
+
             if (!navigator.geolocation) {
-                document.getElementById('gpsStatus').textContent = 'GPS tidak tersedia';
+                setStatus('GPS tidak tersedia di perangkat ini', true);
                 locationRequestInFlight = null;
                 return resolve(false);
             }
-            document.getElementById('gpsStatus').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mencari lokasi...';
-            navigator.geolocation.getCurrentPosition(
-                function (pos) {
-                    currentLatitude = pos.coords.latitude;
-                    currentLongitude = pos.coords.longitude;
-                    document.getElementById('gpsStatus').textContent = 'Lokasi terdeteksi';
-                    locationRequestInFlight = null;
-                    resolve(true);
-                },
-                function () {
-                    document.getElementById('gpsStatus').textContent = 'GPS tidak tersedia atau ditolak';
+
+            var requestLocation = function (options) {
+                return new Promise(function (resolveRequest) {
+                    navigator.geolocation.getCurrentPosition(
+                        function (pos) { resolveRequest({ ok: true, pos: pos }); },
+                        function (err) { resolveRequest({ ok: false, err: err }); },
+                        options
+                    );
+                });
+            };
+            var stopWatch = function () {
+                if (locationWatchId !== null) {
+                    navigator.geolocation.clearWatch(locationWatchId);
+                    locationWatchId = null;
+                }
+                if (locationWatchTimer) {
+                    clearTimeout(locationWatchTimer);
+                    locationWatchTimer = null;
+                }
+            };
+            var watchForFix = function (durationMs) {
+                return new Promise(function (resolveWatch) {
+                    stopWatch();
+                    var resolved = false;
+                    locationWatchId = navigator.geolocation.watchPosition(
+                        function (pos) {
+                            if (resolved) return;
+                            resolved = true;
+                            stopWatch();
+                            currentLatitude = Number(pos.coords.latitude);
+                            currentLongitude = Number(pos.coords.longitude);
+                            var acc = pos.coords.accuracy;
+                            var suffix = (typeof acc === 'number') ? (' (±' + acc.toFixed(0) + 'm)') : '';
+                            setStatus('Lokasi terdeteksi' + suffix, false);
+                            resolveWatch(true);
+                        },
+                        function () {
+                            // ignore individual watch errors, wait for timeout
+                        },
+                        { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
+                    );
+                    locationWatchTimer = setTimeout(function () {
+                        if (resolved) return;
+                        resolved = true;
+                        stopWatch();
+                        resolveWatch(false);
+                    }, durationMs);
+                });
+            };
+
+            setStatus('Mencari lokasi...', false, true);
+
+            requestLocation({ enableHighAccuracy: true, timeout: 10000, maximumAge: 0 })
+                .then(function (res) {
+                    if (res.ok) {
+                        currentLatitude = Number(res.pos.coords.latitude);
+                        currentLongitude = Number(res.pos.coords.longitude);
+                        var acc = res.pos.coords.accuracy;
+                        var suffix = (typeof acc === 'number') ? (' (±' + acc.toFixed(0) + 'm)') : '';
+                        setStatus('Lokasi terdeteksi' + suffix, false);
+                        locationRequestInFlight = null;
+                        return resolve(true);
+                    }
+
+                    var err = res.err || {};
+                    if (err.code === 1) {
+                        setStatus('Izin lokasi ditolak. Aktifkan di browser lalu coba lagi.', true);
+                        locationRequestInFlight = null;
+                        return resolve(false);
+                    }
+
+                    setStatus('Mencari lokasi (mode hemat)...', false, true);
+                    return requestLocation({ enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 })
+                        .then(function (fallback) {
+                            if (fallback.ok) {
+                                currentLatitude = Number(fallback.pos.coords.latitude);
+                                currentLongitude = Number(fallback.pos.coords.longitude);
+                                var acc2 = fallback.pos.coords.accuracy;
+                                var suffix2 = (typeof acc2 === 'number') ? (' (±' + acc2.toFixed(0) + 'm)') : '';
+                                setStatus('Lokasi terdeteksi' + suffix2, false);
+                                locationRequestInFlight = null;
+                                return resolve(true);
+                            }
+
+                            var msg = 'GPS tidak tersedia. Aktifkan izin lokasi lalu coba lagi.';
+                            if (err.code === 3) msg = 'GPS timeout. Coba lagi di area terbuka.';
+                            if (err.code === 2) msg = 'Lokasi belum tersedia. Pastikan layanan lokasi aktif.';
+                            setStatus('Menunggu GPS...', false, true);
+                            return watchForFix(15000).then(function (watched) {
+                                if (watched) {
+                                    locationRequestInFlight = null;
+                                    return resolve(true);
+                                }
+                                setStatus(msg, true);
+                                locationRequestInFlight = null;
+                                return resolve(false);
+                            });
+                        });
+                })
+                .catch(function () {
+                    setStatus('GPS tidak tersedia. Coba lagi.', true);
                     locationRequestInFlight = null;
                     resolve(false);
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
+                });
         });
         return locationRequestInFlight;
     }
@@ -1010,17 +1247,45 @@
         var modal = new bootstrap.Modal(document.getElementById('cameraModal'));
         modal.show();
 
-        var constraints = { video: { facingMode: useFrontCamera ? 'user' : 'environment' }, audio: false };
+        var constraints = { video: { facingMode: { ideal: useFrontCamera ? 'user' : 'environment' } }, audio: false };
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            if (!window.isSecureContext) {
+                showToast('Akses kamera butuh HTTPS di Safari/Browser ini. Gunakan upload file atau buka lewat HTTPS.');
+                modal.hide();
+                document.getElementById('filePhotoInput').click();
+                return;
+            }
+            var startStream = function (stream) {
+                cameraStream = stream;
+                var videoEl = document.getElementById('cameraPreview');
+                videoEl.srcObject = stream;
+                if (typeof videoEl.play === 'function') {
+                    videoEl.play().catch(function () { });
+                }
+            };
+            var handleCameraError = function (err) {
+                var msg = 'Tidak bisa mengakses kamera, gunakan upload file.';
+                if (err && err.name) {
+                    if (err.name === 'NotAllowedError') msg = 'Izin kamera ditolak. Aktifkan izin kamera di browser lalu coba lagi.';
+                    else if (err.name === 'NotFoundError') msg = 'Kamera tidak ditemukan di perangkat ini.';
+                    else if (err.name === 'NotReadableError') msg = 'Kamera sedang dipakai aplikasi lain.';
+                    else if (err.name === 'OverconstrainedError') msg = 'Kamera tidak memenuhi kebutuhan aplikasi.';
+                    else if (err.name === 'SecurityError') msg = 'Browser butuh HTTPS untuk mengakses kamera.';
+                }
+                showToast(msg);
+                modal.hide();
+                document.getElementById('filePhotoInput').click();
+            };
             navigator.mediaDevices.getUserMedia(constraints)
-                .then(function (stream) {
-                    cameraStream = stream;
-                    document.getElementById('cameraPreview').srcObject = stream;
-                })
+                .then(startStream)
                 .catch(function (err) {
-                    showToast('Tidak bisa mengakses kamera, gunakan upload file.');
-                    modal.hide();
-                    document.getElementById('filePhotoInput').click();
+                    if (err && (err.name === 'OverconstrainedError' || err.name === 'NotFoundError')) {
+                        navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+                            .then(startStream)
+                            .catch(handleCameraError);
+                        return;
+                    }
+                    handleCameraError(err);
                 });
         } else {
             document.getElementById('filePhotoInput').click();
@@ -1029,14 +1294,6 @@
 
     function capturePhoto(roomId) {
         currentRoomId = roomId;
-        var score = getRoomScorePct(roomId);
-        if (score > photoScoreThreshold) {
-            var warnModalEl = document.getElementById('photoScoreModal');
-            if (window.bootstrap && warnModalEl) {
-                bootstrap.Modal.getOrCreateInstance(warnModalEl).show();
-            }
-            return;
-        }
         var roomKey = Number(roomId);
         var maxReached = maxPhotoCount > 0 && photoRoomSet.size >= maxPhotoCount && !photoRoomSet.has(roomKey);
         if (maxReached) {
@@ -1059,6 +1316,9 @@
             if (!warningEl) {
                 openCameraModal(currentRoomId || 0);
                 return;
+            }
+            if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                document.activeElement.blur();
             }
             warningEl.addEventListener('hidden.bs.modal', function handler() {
                 warningEl.removeEventListener('hidden.bs.modal', handler);
@@ -1084,6 +1344,15 @@
                     uploadBlob(blob);
                 }
             });
+        });
+    }
+
+    var locationModalEl = document.getElementById('locationRequiredModal');
+    if (locationModalEl) {
+        locationModalEl.addEventListener('hide.bs.modal', function () {
+            if (document.activeElement && locationModalEl.contains(document.activeElement)) {
+                document.activeElement.blur();
+            }
         });
     }
 
@@ -1181,10 +1450,14 @@
     async function uploadBlob(blob) {
         if (uploadInProgress) return;
         uploadInProgress = true;
-        var hasAny = isValidCoord(currentLatitude) || isValidCoord(currentLongitude);
+        var latVal = normalizeCoord(currentLatitude);
+        var lonVal = normalizeCoord(currentLongitude);
+        var hasAny = latVal !== null || lonVal !== null;
         if (!hasAny) {
             await ensureLocation();
-            hasAny = isValidCoord(currentLatitude) || isValidCoord(currentLongitude);
+            latVal = normalizeCoord(currentLatitude);
+            lonVal = normalizeCoord(currentLongitude);
+            hasAny = latVal !== null || lonVal !== null;
         }
         if (!hasAny) {
             pendingUploadBlob = blob;
@@ -1199,8 +1472,8 @@
         formData.append('photo', blob, 'photo.jpg');
         formData.append('assessment_id', assessmentId);
         formData.append('school_room_id', currentRoomId);
-        formData.append('latitude', (currentLatitude === null || currentLatitude === undefined) ? '' : currentLatitude);
-        formData.append('longitude', (currentLongitude === null || currentLongitude === undefined) ? '' : currentLongitude);
+        formData.append('latitude', latVal === null ? '' : latVal);
+        formData.append('longitude', lonVal === null ? '' : lonVal);
 
         // Show uploading state
         var previewInit = document.getElementById('photoPreview' + currentRoomId);
