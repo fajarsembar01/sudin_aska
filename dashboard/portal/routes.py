@@ -55,7 +55,6 @@ from .queries import (
     save_assessment_photo,
     save_room_details,
     get_assessment_room_details,
-    get_assessment_room_score_pct,
     get_assessment_photos,
     submit_assessment,
     list_staff_assessments,
@@ -1345,14 +1344,6 @@ def upload_photo(school_id: int) -> Response:
 
     try:
         _sync_assessment_period_to_active(assessment)
-        score_pct = get_assessment_room_score_pct(assessment_id, school_room_id)
-        if score_pct > 90:
-            return jsonify(
-                {
-                    "success": False,
-                    "message": "Foto hanya boleh untuk ruangan dengan skor 90 atau kurang.",
-                }
-            ), 400
         all_rooms = list_school_rooms(school_id)
         rooms = _filter_assessment_rooms(all_rooms)
         photos_list = get_assessment_photos(assessment_id)
