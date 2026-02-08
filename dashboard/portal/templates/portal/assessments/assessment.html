@@ -95,7 +95,8 @@
                 {% if room_pct <= 25 %} {% set room_score_class="score-badge-red" %} {% elif room_pct <=50 %} {% set
                     room_score_class="score-badge-orange" %} {% elif room_pct <=75 %} {% set
                     room_score_class="score-badge-yellow" %} {% else %} {% set room_score_class="score-badge-green" %}
-                    {% endif %} <div class="room-item shadow-sm" data-room-name="{{ room.room_name|lower }}">
+                    {% endif %} <div class="room-item shadow-sm" data-room-name="{{ room.room_name|lower }}"
+                    data-school-room-id="{{ room.school_room_id }}">
                     <div class="room-header collapsed" data-bs-toggle="collapse"
                         data-bs-target="#room{{ room.school_room_id }}" aria-expanded="false">
                         <div class="d-flex align-items-center gap-2">
@@ -1064,6 +1065,18 @@
             scoreDisplay.classList.add('score-badge-green');
         }
 
+    }
+
+    function roomHasPhoto(roomId) {
+        var preview = document.getElementById('photoPreview' + roomId);
+        if (!preview) return false;
+        return !!preview.querySelector('img');
+    }
+
+    function roomHasPhoto(roomId) {
+        var preview = document.getElementById('photoPreview' + roomId);
+        if (!preview) return false;
+        return !!preview.querySelector('img');
     }
 
     function deletePhoto(photoId, roomId) {
