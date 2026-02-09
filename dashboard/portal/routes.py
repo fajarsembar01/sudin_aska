@@ -2833,6 +2833,55 @@ def sekolah_profile() -> Response:
     )
 
 
+@portal_bp.route("/sekolah/password", methods=["GET", "POST"])
+@_portal_access_required
+def sekolah_change_password() -> Response:
+    """Allow sekolah users to change their password."""
+    user = current_user()
+    if user.get("role") != "sekolah":
+        flash("Hanya akun sekolah yang dapat mengubah password.", "danger")
+        return redirect(url_for("portal.home"))
+
+    profile = get_dashboard_user_profile(user["id"])
+    if not profile:
+        flash("Profil tidak ditemukan.", "danger")
+        return redirect(url_for("portal.sekolah_home"))
+
+    if request.method == "POST":
+        new_password = request.form.get("new_password") or ""
+        confirm_password = request.form.get("confirm_password") or ""
+
+        errors = []
+        if not new_password:
+            errors.append("Password baru wajib diisi.")
+        if not confirm_password:
+            errors.append("Konfirmasi password baru wajib diisi.")
+        if new_password and confirm_password and new_password != confirm_password:
+            errors.append("Password baru dan konfirmasi tidak sama.")
+        if new_password and len(new_password) < 8:
+            errors.append("Password baru minimal 8 karakter.")
+
+        if errors:
+            for msg in errors:
+                flash(msg, "danger")
+        else:
+            pw_hash = generate_password_hash(new_password, method="pbkdf2:sha256", salt_length=12)
+            update_dashboard_user_profile(
+                user_id=user["id"],
+                full_name=profile.get("full_name") or None,
+                email=profile.get("email") or None,
+                whatsapp_number=profile.get("whatsapp_number"),
+                nip=profile.get("nip"),
+                nrk=profile.get("nrk"),
+                jabatan=profile.get("jabatan"),
+                password_hash=pw_hash,
+            )
+            flash("Password berhasil diperbarui.", "success")
+            return redirect(url_for("portal.sekolah_change_password"))
+
+    return render_template("portal/sekolah/change_password.html")
+
+
 @portal_bp.route("/admin/photos")
 @role_required("admin")
 def admin_photos_partial() -> Response:
