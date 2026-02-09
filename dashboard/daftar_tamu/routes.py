@@ -1460,7 +1460,7 @@ def create_general_guest() -> Response:
     phone = (request.form.get("phone") or "").strip()
     instansi = (request.form.get("instansi") or "").strip()
     jabatan = (request.form.get("jabatan") or "").strip()
-    auto_verify = user.get("role") in ("sekolah", "admin")
+    auto_verify = user.get("role") == "admin"
     if not full_name:
         return jsonify({"success": False, "message": "Nama tamu wajib diisi."}), 400
     if phone:

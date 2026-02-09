@@ -49,8 +49,8 @@
                     <form method="POST" action="{{ url_for('portal.add_school') }}" id="addSchoolForm">
                         <div class="row g-2">
                             <div class="col-6">
-                                <input type="text" name="npsn" class="form-control form-control-sm"
-                                    placeholder="NPSN" id="addSchoolNpsn" required>
+                                <input type="text" name="npsn" class="form-control form-control-sm" placeholder="NPSN"
+                                    id="addSchoolNpsn" required>
                             </div>
                             <div class="col-6">
                                 <select name="jenjang" class="form-select form-select-sm">
@@ -266,14 +266,14 @@
                         <!-- Jenjang Tabs -->
                         <ul class="nav nav-pills nav-fill mb-3" id="jenjangTab" role="tablist">
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="paud-tab" data-bs-toggle="tab"
-                                    data-bs-target="#paud-pane" type="button">
+                                <button class="nav-link" id="paud-tab" data-bs-toggle="tab" data-bs-target="#paud-pane"
+                                    type="button">
                                     <i class="bi bi-stars me-1"></i>PAUD
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="tk-tab" data-bs-toggle="tab"
-                                    data-bs-target="#tk-pane" type="button">
+                                <button class="nav-link" id="tk-tab" data-bs-toggle="tab" data-bs-target="#tk-pane"
+                                    type="button">
                                     <i class="bi bi-flower1 me-1"></i>TK
                                 </button>
                             </li>
@@ -308,16 +308,22 @@
                                                 <div class="small fw-semibold text-primary mb-2"><i
                                                         class="bi bi-door-open me-1"></i>Ruang Kelas PAUD</div>
                                                 <div class="list-group list-group-flush" style="font-size: 0.75rem;">
-                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
                                                         <span>Ruang Kelas PAUD (dasar)</span>
                                                     </label>
-                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
                                                         <span>Kelompok A</span>
                                                     </label>
-                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
                                                         <span>Kelompok B</span>
                                                     </label>
                                                 </div>
@@ -348,16 +354,22 @@
                                                 <div class="small fw-semibold text-primary mb-2"><i
                                                         class="bi bi-door-open me-1"></i>Ruang Kelas TK</div>
                                                 <div class="list-group list-group-flush" style="font-size: 0.75rem;">
-                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
                                                         <span>Ruang Kelas TK (dasar)</span>
                                                     </label>
-                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
                                                         <span>Kelompok A</span>
                                                     </label>
-                                                    <label class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
-                                                        <input class="form-check-input flex-shrink-0" type="checkbox" checked disabled>
+                                                    <label
+                                                        class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
+                                                        <input class="form-check-input flex-shrink-0" type="checkbox"
+                                                            checked disabled>
                                                         <span>Kelompok B</span>
                                                     </label>
                                                 </div>
@@ -670,7 +682,8 @@
                                 data-bs-target="#schoolsCheckPane" type="button" role="tab">
                                 <i class="bi bi-shield-check me-1"></i>Cek Sekolah
                                 {% if school_monitor_attention_count %}
-                                <span class="badge bg-warning text-dark ms-1">{{ school_monitor_attention_count }}</span>
+                                <span class="badge bg-warning text-dark ms-1">{{ school_monitor_attention_count
+                                    }}</span>
                                 {% endif %}
                             </button>
                         </li>
@@ -831,11 +844,10 @@
                                             <td class="text-muted small">{{ s.kecamatan_name or '-' }}</td>
                                             <td class="text-end">
                                                 <div class="btn-group btn-group-sm">
-                                                    <button type="button"
-                                                        class="btn btn-outline-primary py-0 px-2"
-                                                        data-bs-toggle="collapse"
-                                                        data-bs-target="#schoolEdit{{ s.id }}" aria-expanded="false"
-                                                        aria-controls="schoolEdit{{ s.id }}" title="Edit">
+                                                    <button type="button" class="btn btn-outline-primary py-0 px-2"
+                                                        data-bs-toggle="collapse" data-bs-target="#schoolEdit{{ s.id }}"
+                                                        aria-expanded="false" aria-controls="schoolEdit{{ s.id }}"
+                                                        title="Edit">
                                                         <i class="bi bi-pencil"></i>
                                                     </button>
                                                     <button type="button" class="btn btn-outline-danger py-0 px-2"
@@ -902,36 +914,36 @@
                                                         <div class="col-md-2">
                                                             <label class="form-label small mb-1">Jenjang</label>
                                                             <select name="jenjang" class="form-select form-select-sm">
-                                                                <option value="SD" {% if s.jenjang=='SD'
-                                                                    %}selected{% endif %}>SD</option>
-                                                                <option value="MI" {% if s.jenjang=='MI'
-                                                                    %}selected{% endif %}>MI</option>
-                                                                <option value="SMP" {% if s.jenjang=='SMP'
-                                                                    %}selected{% endif %}>SMP</option>
-                                                                <option value="MTS" {% if s.jenjang=='MTS'
-                                                                    %}selected{% endif %}>MTS</option>
-                                                                <option value="SMA" {% if s.jenjang=='SMA'
-                                                                    %}selected{% endif %}>SMA</option>
-                                                                <option value="MA" {% if s.jenjang=='MA'
-                                                                    %}selected{% endif %}>MA</option>
-                                                                <option value="SMK" {% if s.jenjang=='SMK'
-                                                                    %}selected{% endif %}>SMK</option>
+                                                                <option value="SD" {% if s.jenjang=='SD' %}selected{%
+                                                                    endif %}>SD</option>
+                                                                <option value="MI" {% if s.jenjang=='MI' %}selected{%
+                                                                    endif %}>MI</option>
+                                                                <option value="SMP" {% if s.jenjang=='SMP' %}selected{%
+                                                                    endif %}>SMP</option>
+                                                                <option value="MTS" {% if s.jenjang=='MTS' %}selected{%
+                                                                    endif %}>MTS</option>
+                                                                <option value="SMA" {% if s.jenjang=='SMA' %}selected{%
+                                                                    endif %}>SMA</option>
+                                                                <option value="MA" {% if s.jenjang=='MA' %}selected{%
+                                                                    endif %}>MA</option>
+                                                                <option value="SMK" {% if s.jenjang=='SMK' %}selected{%
+                                                                    endif %}>SMK</option>
                                                                 <option value="PAUD" {% if s.jenjang=='PAUD'
                                                                     %}selected{% endif %}>PAUD</option>
-                                                                <option value="TK" {% if s.jenjang=='TK'
-                                                                    %}selected{% endif %}>TK</option>
-                                                                <option value="KB" {% if s.jenjang=='KB'
-                                                                    %}selected{% endif %}>KB</option>
-                                                                <option value="TPA" {% if s.jenjang=='TPA'
-                                                                    %}selected{% endif %}>TPA</option>
-                                                                <option value="SPS" {% if s.jenjang=='SPS'
-                                                                    %}selected{% endif %}>SPS</option>
+                                                                <option value="TK" {% if s.jenjang=='TK' %}selected{%
+                                                                    endif %}>TK</option>
+                                                                <option value="KB" {% if s.jenjang=='KB' %}selected{%
+                                                                    endif %}>KB</option>
+                                                                <option value="TPA" {% if s.jenjang=='TPA' %}selected{%
+                                                                    endif %}>TPA</option>
+                                                                <option value="SPS" {% if s.jenjang=='SPS' %}selected{%
+                                                                    endif %}>SPS</option>
                                                                 <option value="PKBM" {% if s.jenjang=='PKBM'
                                                                     %}selected{% endif %}>PKBM</option>
-                                                                <option value="SKB" {% if s.jenjang=='SKB'
-                                                                    %}selected{% endif %}>SKB</option>
-                                                                <option value="SLB" {% if s.jenjang=='SLB'
-                                                                    %}selected{% endif %}>SLB</option>
+                                                                <option value="SKB" {% if s.jenjang=='SKB' %}selected{%
+                                                                    endif %}>SKB</option>
+                                                                <option value="SLB" {% if s.jenjang=='SLB' %}selected{%
+                                                                    endif %}>SLB</option>
                                                             </select>
                                                         </div>
                                                         <div class="col-md-2">
@@ -977,48 +989,57 @@
                                     </tbody>
                                 </table>
                             </div>
-                        {% else %}
-                        <p class="text-muted mb-0">Belum ada sekolah</p>
-                        {% endif %}
-                    </div>
-
-                    <!-- School Check Tab -->
-                    <div class="tab-pane fade" id="schoolsCheckPane" role="tabpanel">
-                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
-                            <div class="position-relative" style="min-width: 240px;">
-                                <input type="text" id="schoolCheckSearch" class="form-control form-control-sm"
-                                    placeholder="Cari sekolah (NPSN, nama, kecamatan)..." autocomplete="off">
-                                <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-2 text-muted"
-                                    style="pointer-events: none;"></i>
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <small class="text-muted">
-                                    Menampilkan <span id="schoolCheckCount">0</span> dari <span
-                                        id="schoolCheckTotal">{{ school_monitor_items|length }}</span>
-                                </small>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" id="schoolCheckReset">
-                                    Reset Filter
-                                </button>
-                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0">Belum ada sekolah</p>
+                            {% endif %}
                         </div>
+
+                        <!-- School Check Tab -->
+                        <div class="tab-pane fade" id="schoolsCheckPane" role="tabpanel">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                                <div class="position-relative" style="min-width: 240px;">
+                                    <input type="text" id="schoolCheckSearch" class="form-control form-control-sm"
+                                        placeholder="Cari sekolah (NPSN, nama, kecamatan)..." autocomplete="off">
+                                    <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-2 text-muted"
+                                        style="pointer-events: none;"></i>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <small class="text-muted">
+                                        Menampilkan <span id="schoolCheckCount">0</span> dari <span
+                                            id="schoolCheckTotal">{{ school_monitor_items|length }}</span>
+                                    </small>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                                        id="schoolCheckReset">
+                                        Reset Filter
+                                    </button>
+                                </div>
+                            </div>
                             <div class="d-flex flex-wrap gap-3 mb-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="schoolCheckFilterUnclaimed">
-                                <label class="form-check-label small" for="schoolCheckFilterUnclaimed">No user</label>
+                                    <label class="form-check-label small" for="schoolCheckFilterUnclaimed">No
+                                        user</label>
                                 </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="schoolCheckFilterNoRooms">
-                                <label class="form-check-label small" for="schoolCheckFilterNoRooms">No set
-                                    ruangan</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="schoolCheckFilterIncomplete">
-                                <label class="form-check-label small" for="schoolCheckFilterIncomplete">Kurang
-                                    lengkap</label>
-                            </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="schoolCheckFilterNoRooms">
+                                    <label class="form-check-label small" for="schoolCheckFilterNoRooms">No set
+                                        ruangan</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="schoolCheckFilterIncomplete">
+                                    <label class="form-check-label small" for="schoolCheckFilterIncomplete">Kurang
+                                        lengkap</label>
+                                </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="schoolCheckFilterSuspicious">
-                                    <label class="form-check-label small" for="schoolCheckFilterSuspicious">Janggal</label>
+                                    <label class="form-check-label small"
+                                        for="schoolCheckFilterSuspicious">Janggal</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                        id="schoolCheckFilterRoomsNoAspects">
+                                    <label class="form-check-label small" for="schoolCheckFilterRoomsNoAspects">Ruang
+                                        tanpa aspek</label>
                                 </div>
                                 <div style="min-width: 200px;">
                                     <select class="form-select form-select-sm" id="schoolCheckKecamatan">
@@ -1030,217 +1051,231 @@
                                 </div>
                                 <div class="ms-auto" style="min-width: 160px;">
                                     <select class="form-select form-select-sm" id="schoolCheckStatus">
-                                       
+
                                         <option value="negeri" selected>NEGERI</option>
                                         <option value="swasta">SWASTA</option>
                                     </select>
                                 </div>
-                        </div>
-                        {% if school_monitor_items %}
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover align-middle mb-0" id="schoolsCheckTable">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Sekolah</th>
-                                        <th>Kecamatan</th>
-                                        <th>Status</th>
-                                        <th>Temuan</th>
-                                        <th class="text-end">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="schoolsCheckTableBody">
-                                    {% for s in school_monitor_items %}
-                                    <tr class="monitor-row"
-                                        data-search="{{ (s.name or '')|lower }} {{ (s.npsn or '')|lower }} {{ (s.kecamatan_name or '')|lower }} {{ (s.jenjang or '')|lower }}"
-                                        data-kecamatan="{{ (s.kecamatan_name or '')|lower }}"
-                                        data-status="{{ (s.status or '')|lower }}"
-                                        data-claimed="{{ 'true' if s.is_claimed else 'false' }}"
-                                        data-rooms="{{ 'true' if s.has_rooms else 'false' }}"
-                                        data-incomplete="{{ 'true' if s.is_incomplete else 'false' }}"
-                                        data-suspicious="{{ 'true' if s.is_suspicious else 'false' }}">
-                                        <td>
-                                            <div class="fw-semibold">{{ s.name }}</div>
-                                            <div class="small text-muted">{{ s.npsn }} • {{ s.jenjang }}</div>
-                                        </td>
-                                        <td class="text-muted small">{{ s.kecamatan_name or '-' }}</td>
-                                        <td>
-                                            <span
-                                                class="badge {% if s.status == 'NEGERI' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{
-                                                s.status or '-' }}</span>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex flex-wrap gap-1">
-                                                {% if not s.is_claimed %}
-                                                <span class="badge bg-danger">no user</span>
+                            </div>
+                            {% if school_monitor_items %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle mb-0" id="schoolsCheckTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Sekolah</th>
+                                            <th>Kecamatan</th>
+                                            <th>Status</th>
+                                            <th>Temuan</th>
+                                            <th class="text-end">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="schoolsCheckTableBody">
+                                        {% for s in school_monitor_items %}
+                                        <tr class="monitor-row"
+                                            data-search="{{ (s.name or '')|lower }} {{ (s.npsn or '')|lower }} {{ (s.kecamatan_name or '')|lower }} {{ (s.jenjang or '')|lower }}"
+                                            data-kecamatan="{{ (s.kecamatan_name or '')|lower }}"
+                                            data-status="{{ (s.status or '')|lower }}"
+                                            data-claimed="{{ 'true' if s.is_claimed else 'false' }}"
+                                            data-rooms="{{ 'true' if s.has_rooms else 'false' }}"
+                                            data-incomplete="{{ 'true' if s.is_incomplete else 'false' }}"
+                                            data-suspicious="{{ 'true' if s.is_suspicious else 'false' }}"
+                                            data-rooms-no-aspects="{{ 'true' if s.has_rooms_without_aspects else 'false' }}">
+                                            <td>
+                                                <div class="fw-semibold">{{ s.name }}</div>
+                                                <div class="small text-muted">{{ s.npsn }} • {{ s.jenjang }}</div>
+                                            </td>
+                                            <td class="text-muted small">{{ s.kecamatan_name or '-' }}</td>
+                                            <td>
+                                                <span
+                                                    class="badge {% if s.status == 'NEGERI' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{
+                                                    s.status or '-' }}</span>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    {% if not s.is_claimed %}
+                                                    <span class="badge bg-danger">no user</span>
+                                                    {% endif %}
+                                                    {% if not s.has_rooms %}
+                                                    <span class="badge bg-warning text-dark">Belum set ruangan</span>
+                                                    {% endif %}
+                                                    {% if s.is_incomplete %}
+                                                    <span class="badge bg-secondary">Data kurang lengkap</span>
+                                                    {% endif %}
+                                                    {% if s.is_suspicious %}
+                                                    <span class="badge bg-info text-dark">Data janggal</span>
+                                                    {% endif %}
+                                                    {% if s.has_rooms_without_aspects %}
+                                                    <span class="badge bg-danger">Ruang tanpa aspek</span>
+                                                    {% endif %}
+                                                </div>
+                                                {% if s.missing_preview %}
+                                                <div class="text-muted small mt-1"
+                                                    title="{{ s.missing_fields|join(', ') }}">
+                                                    Kurang: {{ s.missing_preview }}
+                                                </div>
                                                 {% endif %}
-                                                {% if not s.has_rooms %}
-                                                <span class="badge bg-warning text-dark">Belum set ruangan</span>
+                                                {% if s.suspicious_preview %}
+                                                <div class="text-muted small mt-1"
+                                                    title="{{ s.suspicious_reasons|join(', ') }}">
+                                                    Janggal: {{ s.suspicious_preview }}
+                                                </div>
                                                 {% endif %}
-                                                {% if s.is_incomplete %}
-                                                <span class="badge bg-secondary">Data kurang lengkap</span>
+                                                {% if s.rooms_no_aspects_preview %}
+                                                <div class="text-muted small mt-1"
+                                                    title="{{ s.rooms_without_aspects|join(', ') }}">
+                                                    Ruang tanpa aspek: {{ s.rooms_no_aspects_preview }}
+                                                </div>
                                                 {% endif %}
-                                                {% if s.is_suspicious %}
-                                                <span class="badge bg-info text-dark">Data janggal</span>
-                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button"
+                                                        class="btn btn-outline-primary school-check-detail-btn"
+                                                        data-bs-toggle="modal" data-bs-target="#schoolCheckDetailModal"
+                                                        data-school='{{ s | tojson | e }}' title="Lihat data sekolah"
+                                                        aria-label="Lihat data sekolah">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                    {% if s.operator_wa %}
+                                                    <a class="btn btn-success" href="{{ s.operator_wa }}"
+                                                        target="_blank" rel="noopener" title="Hubungi via WhatsApp"
+                                                        aria-label="Hubungi via WhatsApp">
+                                                        <i class="bi bi-whatsapp"></i>
+                                                    </a>
+                                                    {% else %}
+                                                    <button class="btn btn-outline-secondary" disabled
+                                                        title="Nomor WhatsApp belum tersedia"
+                                                        aria-label="Nomor WhatsApp belum tersedia">
+                                                        <i class="bi bi-whatsapp"></i>
+                                                    </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="modal fade" id="schoolCheckDetailModal" tabindex="-1"
+                                aria-labelledby="schoolCheckDetailLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <div>
+                                                <h5 class="modal-title" id="schoolCheckDetailLabel">Detail Sekolah</h5>
+                                                <div class="small text-muted" id="schoolDetailSubtitle">-</div>
                                             </div>
-                                            {% if s.missing_preview %}
-                                            <div class="text-muted small mt-1" title="{{ s.missing_fields|join(', ') }}">
-                                                Kurang: {{ s.missing_preview }}
-                                            </div>
-                                            {% endif %}
-                                            {% if s.suspicious_preview %}
-                                            <div class="text-muted small mt-1"
-                                                title="{{ s.suspicious_reasons|join(', ') }}">
-                                                Janggal: {{ s.suspicious_preview }}
-                                            </div>
-                                            {% endif %}
-                                        </td>
-                                        <td class="text-end">
-                                            <div class="btn-group btn-group-sm" role="group">
-                                                <button type="button" class="btn btn-outline-primary school-check-detail-btn"
-                                                    data-bs-toggle="modal" data-bs-target="#schoolCheckDetailModal"
-                                                    data-school='{{ s | tojson | e }}' title="Lihat data sekolah"
-                                                    aria-label="Lihat data sekolah">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
-                                                {% if s.operator_wa %}
-                                                <a class="btn btn-success" href="{{ s.operator_wa }}"
-                                                    target="_blank" rel="noopener" title="Hubungi via WhatsApp"
-                                                    aria-label="Hubungi via WhatsApp">
-                                                    <i class="bi bi-whatsapp"></i>
-                                                </a>
-                                                {% else %}
-                                                <button class="btn btn-outline-secondary" disabled
-                                                    title="Nomor WhatsApp belum tersedia"
-                                                    aria-label="Nomor WhatsApp belum tersedia">
-                                                    <i class="bi bi-whatsapp"></i>
-                                                </button>
-                                                {% endif %}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="modal fade" id="schoolCheckDetailModal" tabindex="-1"
-                            aria-labelledby="schoolCheckDetailLabel" aria-hidden="true">
-                            <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <div>
-                                            <h5 class="modal-title" id="schoolCheckDetailLabel">Detail Sekolah</h5>
-                                            <div class="small text-muted" id="schoolDetailSubtitle">-</div>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
                                         </div>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                            aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div class="row g-3">
-                                            <div class="col-lg-6">
-                                                <h6 class="text-muted mb-2">Info Sekolah</h6>
-                                                <dl class="row small mb-0">
-                                                    <dt class="col-5">Nama</dt>
-                                                    <dd class="col-7" id="schoolDetailName">-</dd>
-                                                    <dt class="col-5">NPSN</dt>
-                                                    <dd class="col-7" id="schoolDetailNpsn">-</dd>
-                                                    <dt class="col-5">Jenjang</dt>
-                                                    <dd class="col-7" id="schoolDetailJenjang">-</dd>
-                                                    <dt class="col-5">Status</dt>
-                                                    <dd class="col-7" id="schoolDetailStatus">-</dd>
-                                                    <dt class="col-5">User</dt>
-                                                    <dd class="col-7" id="schoolDetailClaimed">-</dd>
-                                                    <dt class="col-5">Ruangan</dt>
-                                                    <dd class="col-7" id="schoolDetailRooms">-</dd>
-                                                    <dt class="col-5">Logo</dt>
-                                                    <dd class="col-7">
-                                                        <a href="#" target="_blank" rel="noopener"
-                                                            id="schoolDetailLogo">-</a>
-                                                    </dd>
-                                                </dl>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <h6 class="text-muted mb-2">Lokasi</h6>
-                                                <dl class="row small mb-0">
-                                                    <dt class="col-5">Alamat</dt>
-                                                    <dd class="col-7" id="schoolDetailAlamat">-</dd>
-                                                    <dt class="col-5">Kelurahan</dt>
-                                                    <dd class="col-7" id="schoolDetailKelurahan">-</dd>
-                                                    <dt class="col-5">Kecamatan</dt>
-                                                    <dd class="col-7" id="schoolDetailKecamatan">-</dd>
-                                                    <dt class="col-5">RT/RW</dt>
-                                                    <dd class="col-7" id="schoolDetailRtRw">-</dd>
-                                                    <dt class="col-5">Kode Pos</dt>
-                                                    <dd class="col-7" id="schoolDetailPostalCode">-</dd>
-                                                </dl>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <h6 class="text-muted mb-2">Kontak</h6>
-                                                <dl class="row small mb-0">
-                                                    <dt class="col-5">Operator</dt>
-                                                    <dd class="col-7" id="schoolDetailOperatorPhone">-</dd>
-                                                    <dt class="col-5">Telepon</dt>
-                                                    <dd class="col-7" id="schoolDetailSchoolPhone">-</dd>
-                                                    <dt class="col-5">Email CS</dt>
-                                                    <dd class="col-7" id="schoolDetailCsEmail">-</dd>
-                                                    <dt class="col-5">GMaps</dt>
-                                                    <dd class="col-7">
-                                                        <a href="#" target="_blank" rel="noopener"
-                                                            id="schoolDetailGmaps">-</a>
-                                                    </dd>
-                                                </dl>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <h6 class="text-muted mb-2">Data Statistik</h6>
-                                                <dl class="row small mb-0">
-                                                    <dt class="col-5">Siswa</dt>
-                                                    <dd class="col-7" id="schoolDetailStudentCount">-</dd>
-                                                    <dt class="col-5">Siswa Inklusi</dt>
-                                                    <dd class="col-7" id="schoolDetailInclusionCount">-</dd>
-                                                    <dt class="col-5">Rombel</dt>
-                                                    <dd class="col-7" id="schoolDetailRombelCount">-</dd>
-                                                    <dt class="col-5">Guru</dt>
-                                                    <dd class="col-7" id="schoolDetailTeacherCount">-</dd>
-                                                    <dt class="col-5">Staff</dt>
-                                                    <dd class="col-7" id="schoolDetailStaffCount">-</dd>
-                                                    <dt class="col-5">Bangku Kosong</dt>
-                                                    <dd class="col-7" id="schoolDetailEmptySeats">-</dd>
-                                                    <dt class="col-5">Bangku/Kelas</dt>
-                                                    <dd class="col-7" id="schoolDetailEmptySeatsByGrade">-</dd>
-                                                    <dt class="col-5">Jumlah User</dt>
-                                                    <dd class="col-7" id="schoolDetailUserCount">-</dd>
-                                                    <dt class="col-5">Jumlah Ruang</dt>
-                                                    <dd class="col-7" id="schoolDetailRoomCount">-</dd>
-                                                </dl>
+                                        <div class="modal-body">
+                                            <div class="row g-3">
+                                                <div class="col-lg-6">
+                                                    <h6 class="text-muted mb-2">Info Sekolah</h6>
+                                                    <dl class="row small mb-0">
+                                                        <dt class="col-5">Nama</dt>
+                                                        <dd class="col-7" id="schoolDetailName">-</dd>
+                                                        <dt class="col-5">NPSN</dt>
+                                                        <dd class="col-7" id="schoolDetailNpsn">-</dd>
+                                                        <dt class="col-5">Jenjang</dt>
+                                                        <dd class="col-7" id="schoolDetailJenjang">-</dd>
+                                                        <dt class="col-5">Status</dt>
+                                                        <dd class="col-7" id="schoolDetailStatus">-</dd>
+                                                        <dt class="col-5">User</dt>
+                                                        <dd class="col-7" id="schoolDetailClaimed">-</dd>
+                                                        <dt class="col-5">Ruangan</dt>
+                                                        <dd class="col-7" id="schoolDetailRooms">-</dd>
+                                                        <dt class="col-5">Logo</dt>
+                                                        <dd class="col-7">
+                                                            <a href="#" target="_blank" rel="noopener"
+                                                                id="schoolDetailLogo">-</a>
+                                                        </dd>
+                                                    </dl>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <h6 class="text-muted mb-2">Lokasi</h6>
+                                                    <dl class="row small mb-0">
+                                                        <dt class="col-5">Alamat</dt>
+                                                        <dd class="col-7" id="schoolDetailAlamat">-</dd>
+                                                        <dt class="col-5">Kelurahan</dt>
+                                                        <dd class="col-7" id="schoolDetailKelurahan">-</dd>
+                                                        <dt class="col-5">Kecamatan</dt>
+                                                        <dd class="col-7" id="schoolDetailKecamatan">-</dd>
+                                                        <dt class="col-5">RT/RW</dt>
+                                                        <dd class="col-7" id="schoolDetailRtRw">-</dd>
+                                                        <dt class="col-5">Kode Pos</dt>
+                                                        <dd class="col-7" id="schoolDetailPostalCode">-</dd>
+                                                    </dl>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <h6 class="text-muted mb-2">Kontak</h6>
+                                                    <dl class="row small mb-0">
+                                                        <dt class="col-5">Operator</dt>
+                                                        <dd class="col-7" id="schoolDetailOperatorPhone">-</dd>
+                                                        <dt class="col-5">Telepon</dt>
+                                                        <dd class="col-7" id="schoolDetailSchoolPhone">-</dd>
+                                                        <dt class="col-5">Email CS</dt>
+                                                        <dd class="col-7" id="schoolDetailCsEmail">-</dd>
+                                                        <dt class="col-5">GMaps</dt>
+                                                        <dd class="col-7">
+                                                            <a href="#" target="_blank" rel="noopener"
+                                                                id="schoolDetailGmaps">-</a>
+                                                        </dd>
+                                                    </dl>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <h6 class="text-muted mb-2">Data Statistik</h6>
+                                                    <dl class="row small mb-0">
+                                                        <dt class="col-5">Siswa</dt>
+                                                        <dd class="col-7" id="schoolDetailStudentCount">-</dd>
+                                                        <dt class="col-5">Siswa Inklusi</dt>
+                                                        <dd class="col-7" id="schoolDetailInclusionCount">-</dd>
+                                                        <dt class="col-5">Rombel</dt>
+                                                        <dd class="col-7" id="schoolDetailRombelCount">-</dd>
+                                                        <dt class="col-5">Guru</dt>
+                                                        <dd class="col-7" id="schoolDetailTeacherCount">-</dd>
+                                                        <dt class="col-5">Staff</dt>
+                                                        <dd class="col-7" id="schoolDetailStaffCount">-</dd>
+                                                        <dt class="col-5">Bangku Kosong</dt>
+                                                        <dd class="col-7" id="schoolDetailEmptySeats">-</dd>
+                                                        <dt class="col-5">Bangku/Kelas</dt>
+                                                        <dd class="col-7" id="schoolDetailEmptySeatsByGrade">-</dd>
+                                                        <dt class="col-5">Jumlah User</dt>
+                                                        <dd class="col-7" id="schoolDetailUserCount">-</dd>
+                                                        <dt class="col-5">Jumlah Ruang</dt>
+                                                        <dd class="col-7" id="schoolDetailRoomCount">-</dd>
+                                                    </dl>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary btn-sm"
-                                            data-bs-dismiss="modal">Tutup</button>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary btn-sm"
+                                                data-bs-dismiss="modal">Tutup</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            {% else %}
+                            <p class="text-muted mb-0">Belum ada data sekolah.</p>
+                            {% endif %}
                         </div>
-                        {% else %}
-                        <p class="text-muted mb-0">Belum ada data sekolah.</p>
-                        {% endif %}
-                    </div>
 
-                    <!-- History Pane -->
-                    <div class="tab-pane fade" id="historyPane" role="tabpanel">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                            <h6 class="text-muted mb-0 small">
-                                Aktivitas CRUD Terakhir (<span id="setupHistoryCount">{{ activity_logs|length }}</span>)
-                            </h6>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" id="setupHistoryRefreshBtn">
-                                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
-                            </button>
+                        <!-- History Pane -->
+                        <div class="tab-pane fade" id="historyPane" role="tabpanel">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                                <h6 class="text-muted mb-0 small">
+                                    Aktivitas CRUD Terakhir (<span id="setupHistoryCount">{{ activity_logs|length
+                                        }}</span>)
+                                </h6>
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    id="setupHistoryRefreshBtn">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                                </button>
+                            </div>
+                            {% set table_id = "setupHistoryTable" %}
+                            {% set tbody_id = "setupHistoryBody" %}
+                            {% include 'portal/admin/_activity_log_table.html' %}
                         </div>
-                        {% set table_id = "setupHistoryTable" %}
-                        {% set tbody_id = "setupHistoryBody" %}
-                        {% include 'portal/admin/_activity_log_table.html' %}
-                    </div>
 
                         <!-- Rooms List Tab -->
                         <div class="tab-pane fade show active" id="roomsListPane" role="tabpanel">
@@ -1381,6 +1416,7 @@
                                     }
 
                                     @media (max-width: 768px) {
+
                                         /* Layout tweaks for mobile */
                                         .row.g-4 {
                                             gap: 1rem !important;
@@ -1473,7 +1509,7 @@
                                         }
 
                                         /* Keep collapse rows tidy on mobile */
-                                        #roomsTable tbody tr.collapse > td {
+                                        #roomsTable tbody tr.collapse>td {
                                             padding: 0 !important;
                                         }
 
@@ -1540,10 +1576,11 @@
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td data-label="Kategori"><span
-                                                    class="badge bg-secondary text-uppercase">{{ r.category }}</span>
+                                            <td data-label="Kategori"><span class="badge bg-secondary text-uppercase">{{
+                                                    r.category }}</span>
                                             </td>
-                                            <td data-label="Aspek"><span class="badge bg-primary">{{ r.aspects|length }}</span></td>
+                                            <td data-label="Aspek"><span class="badge bg-primary">{{ r.aspects|length
+                                                    }}</span></td>
                                             <td data-label="Status">
                                                 <form method="POST"
                                                     action="{{ url_for('portal.toggle_room_status', room_id=r.id) }}"
@@ -1904,57 +1941,58 @@
         const setupHistoryCount = document.getElementById('setupHistoryCount');
         const setupHistoryRefreshBtn = document.getElementById('setupHistoryRefreshBtn');
         const setupHistoryRefreshLabel = setupHistoryRefreshBtn ? setupHistoryRefreshBtn.innerHTML : '';
-        const setupHistoryRowsUrl = {{ url_for('portal.admin_activity_log_rows')|tojson }} +
-            '?limit=50&target_type=ROOM&target_type=ASPECT&target_type=SCHOOL';
+        const setupHistoryRowsUrl = {{ url_for('portal.admin_activity_log_rows') | tojson
+    }} +
+    '?limit=50&target_type=ROOM&target_type=ASPECT&target_type=SCHOOL';
 
-        async function refreshSetupHistory() {
-            if (!setupHistoryBody) return;
-            if (setupHistoryRefreshBtn) {
-                setupHistoryRefreshBtn.disabled = true;
-                setupHistoryRefreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-            }
-            try {
-                const res = await fetch(setupHistoryRowsUrl, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                if (!res.ok) {
-                    throw new Error('Gagal mengambil history');
-                }
-                const html = await res.text();
-                setupHistoryBody.innerHTML = html;
-                if (setupHistoryCount) {
-                    const rowCount = setupHistoryBody.querySelectorAll('tr[data-search]').length;
-                    setupHistoryCount.textContent = String(rowCount);
-                }
-            } catch (err) {
-                showToast('Gagal memperbarui history.', true);
-            } finally {
-                if (setupHistoryRefreshBtn) {
-                    setupHistoryRefreshBtn.disabled = false;
-                    setupHistoryRefreshBtn.innerHTML = setupHistoryRefreshLabel ||
-                        '<i class="bi bi-arrow-clockwise me-1"></i>Refresh';
-                }
-            }
-        }
-
+    async function refreshSetupHistory() {
+        if (!setupHistoryBody) return;
         if (setupHistoryRefreshBtn) {
-            setupHistoryRefreshBtn.addEventListener('click', refreshSetupHistory);
+            setupHistoryRefreshBtn.disabled = true;
+            setupHistoryRefreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
         }
-        const historyTab = document.getElementById('historyTab');
-        if (historyTab) {
-            historyTab.addEventListener('shown.bs.tab', refreshSetupHistory);
-        }
-
-        function renderAspects(roomId, aspects) {
-            const container = document.getElementById(`room-aspects-${roomId}`);
-            const countEl = document.getElementById(`room-aspects-count-${roomId}`);
-            if (!container) return;
-            if (!aspects || aspects.length === 0) {
-                container.innerHTML = '<p class="text-muted small mb-3">Belum ada aspek penilaian</p>';
-                if (countEl) countEl.textContent = '0';
-                return;
+        try {
+            const res = await fetch(setupHistoryRowsUrl, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!res.ok) {
+                throw new Error('Gagal mengambil history');
             }
-            container.innerHTML = aspects.map(a => `
+            const html = await res.text();
+            setupHistoryBody.innerHTML = html;
+            if (setupHistoryCount) {
+                const rowCount = setupHistoryBody.querySelectorAll('tr[data-search]').length;
+                setupHistoryCount.textContent = String(rowCount);
+            }
+        } catch (err) {
+            showToast('Gagal memperbarui history.', true);
+        } finally {
+            if (setupHistoryRefreshBtn) {
+                setupHistoryRefreshBtn.disabled = false;
+                setupHistoryRefreshBtn.innerHTML = setupHistoryRefreshLabel ||
+                    '<i class="bi bi-arrow-clockwise me-1"></i>Refresh';
+            }
+        }
+    }
+
+    if (setupHistoryRefreshBtn) {
+        setupHistoryRefreshBtn.addEventListener('click', refreshSetupHistory);
+    }
+    const historyTab = document.getElementById('historyTab');
+    if (historyTab) {
+        historyTab.addEventListener('shown.bs.tab', refreshSetupHistory);
+    }
+
+    function renderAspects(roomId, aspects) {
+        const container = document.getElementById(`room-aspects-${roomId}`);
+        const countEl = document.getElementById(`room-aspects-count-${roomId}`);
+        if (!container) return;
+        if (!aspects || aspects.length === 0) {
+            container.innerHTML = '<p class="text-muted small mb-3">Belum ada aspek penilaian</p>';
+            if (countEl) countEl.textContent = '0';
+            return;
+        }
+        container.innerHTML = aspects.map(a => `
                 <div class="col-12 col-sm-6 col-lg-4 aspect-item" data-aspect-id="${a.id}">
                     <div class="d-flex align-items-center justify-content-between gap-2 rounded border px-2 py-1 bg-light small ${a.active ? '' : 'opacity-75'}">
                         <div class="d-flex align-items-center gap-2 text-truncate">
@@ -1995,577 +2033,586 @@
                     </div>
                 </div>
             `).join('');
-            if (countEl) countEl.textContent = aspects.length;
+        if (countEl) countEl.textContent = aspects.length;
+    }
+
+    // ===== School Search & Pagination =====
+    const schoolSearch = document.getElementById('schoolSearch');
+    const schoolRows = document.querySelectorAll('.school-row');
+    const schoolEditRows = document.querySelectorAll('.school-edit-row');
+    const schoolPrevBtn = document.getElementById('schoolPrevBtn');
+    const schoolNextBtn = document.getElementById('schoolNextBtn');
+    const schoolShowingStart = document.getElementById('schoolShowingStart');
+    const schoolShowingEnd = document.getElementById('schoolShowingEnd');
+    const schoolTotalFiltered = document.getElementById('schoolTotalFiltered');
+    const addSchoolForm = document.getElementById('addSchoolForm');
+    const addSchoolNpsn = document.getElementById('addSchoolNpsn');
+    const addSchoolBtn = document.getElementById('addSchoolBtn');
+    const npsnExistsHelp = document.getElementById('npsnExistsHelp');
+
+    const PAGE_SIZE = 20;
+    let currentPage = 0;
+    let filteredSchools = Array.from(schoolRows);
+    let activeFilters = { jenjang: '', status: '', kecamatan: '', search: '' };
+    let npsnExists = false;
+
+    function normalizeNpsn(value) {
+        return (value || '').toString().trim().toLowerCase().replace(/\s+/g, '');
+    }
+
+    const existingNpsn = new Set(
+        Array.from(schoolRows)
+            .map(row => normalizeNpsn(row.dataset.npsn))
+            .filter(Boolean)
+    );
+
+    function updateNpsnStatus() {
+        if (!addSchoolNpsn) return;
+        const value = normalizeNpsn(addSchoolNpsn.value);
+        npsnExists = Boolean(value) && existingNpsn.has(value);
+
+        if (npsnExists) {
+            addSchoolNpsn.classList.add('is-invalid');
+            if (npsnExistsHelp) npsnExistsHelp.classList.remove('d-none');
+        } else {
+            addSchoolNpsn.classList.remove('is-invalid');
+            if (npsnExistsHelp) npsnExistsHelp.classList.add('d-none');
         }
 
-        // ===== School Search & Pagination =====
-        const schoolSearch = document.getElementById('schoolSearch');
-        const schoolRows = document.querySelectorAll('.school-row');
-        const schoolEditRows = document.querySelectorAll('.school-edit-row');
-        const schoolPrevBtn = document.getElementById('schoolPrevBtn');
-        const schoolNextBtn = document.getElementById('schoolNextBtn');
-        const schoolShowingStart = document.getElementById('schoolShowingStart');
-        const schoolShowingEnd = document.getElementById('schoolShowingEnd');
-        const schoolTotalFiltered = document.getElementById('schoolTotalFiltered');
-        const addSchoolForm = document.getElementById('addSchoolForm');
-        const addSchoolNpsn = document.getElementById('addSchoolNpsn');
-        const addSchoolBtn = document.getElementById('addSchoolBtn');
-        const npsnExistsHelp = document.getElementById('npsnExistsHelp');
-
-        const PAGE_SIZE = 20;
-        let currentPage = 0;
-        let filteredSchools = Array.from(schoolRows);
-        let activeFilters = { jenjang: '', status: '', kecamatan: '', search: '' };
-        let npsnExists = false;
-
-        function normalizeNpsn(value) {
-            return (value || '').toString().trim().toLowerCase().replace(/\s+/g, '');
+        if (addSchoolBtn) {
+            addSchoolBtn.disabled = npsnExists;
         }
+    }
 
-        const existingNpsn = new Set(
-            Array.from(schoolRows)
-                .map(row => normalizeNpsn(row.dataset.npsn))
-                .filter(Boolean)
-        );
+    function updateSchoolTable() {
+        const start = currentPage * PAGE_SIZE;
+        const end = Math.min(start + PAGE_SIZE, filteredSchools.length);
 
-        function updateNpsnStatus() {
-            if (!addSchoolNpsn) return;
-            const value = normalizeNpsn(addSchoolNpsn.value);
-            npsnExists = Boolean(value) && existingNpsn.has(value);
-
-            if (npsnExists) {
-                addSchoolNpsn.classList.add('is-invalid');
-                if (npsnExistsHelp) npsnExistsHelp.classList.remove('d-none');
-            } else {
-                addSchoolNpsn.classList.remove('is-invalid');
-                if (npsnExistsHelp) npsnExistsHelp.classList.add('d-none');
-            }
-
-            if (addSchoolBtn) {
-                addSchoolBtn.disabled = npsnExists;
-            }
-        }
-
-        function updateSchoolTable() {
-            const start = currentPage * PAGE_SIZE;
-            const end = Math.min(start + PAGE_SIZE, filteredSchools.length);
-
-            if (schoolEditRows.length) {
-                schoolEditRows.forEach(row => {
-                    row.classList.remove('show', 'collapsing');
-                    row.style.height = '';
-                });
-            }
-
-            // Hide all rows first
-            schoolRows.forEach(row => row.style.display = 'none');
-
-            // Show only current page
-            for (let i = start; i < end; i++) {
-                if (filteredSchools[i]) {
-                    filteredSchools[i].style.display = '';
-                }
-            }
-
-            // Update indicators
-            if (schoolShowingStart) schoolShowingStart.textContent = filteredSchools.length > 0 ? start + 1 : 0;
-            if (schoolShowingEnd) schoolShowingEnd.textContent = end;
-            if (schoolTotalFiltered) schoolTotalFiltered.textContent = filteredSchools.length;
-
-            // Update button states
-            if (schoolPrevBtn) schoolPrevBtn.disabled = currentPage === 0;
-            if (schoolNextBtn) schoolNextBtn.disabled = end >= filteredSchools.length;
-        }
-
-        function applyFilters() {
-            const searchQuery = activeFilters.search.toLowerCase().trim();
-            filteredSchools = Array.from(schoolRows).filter(row => {
-                const npsn = row.dataset.npsn || '';
-                const name = row.dataset.name || '';
-                const jenjang = row.dataset.jenjang || '';
-                const kecamatan = row.dataset.kecamatan || '';
-                const status = row.dataset.status || '';
-
-                // Check column filters
-                if (activeFilters.jenjang && jenjang !== activeFilters.jenjang) return false;
-                if (activeFilters.status && status !== activeFilters.status) return false;
-                if (activeFilters.kecamatan && kecamatan !== activeFilters.kecamatan) return false;
-
-                // Check search query
-                if (searchQuery.length >= 2) {
-                    return npsn.includes(searchQuery) || name.includes(searchQuery) || jenjang.includes(searchQuery) || kecamatan.includes(searchQuery);
-                }
-                return true;
+        if (schoolEditRows.length) {
+            schoolEditRows.forEach(row => {
+                row.classList.remove('show', 'collapsing');
+                row.style.height = '';
             });
-            currentPage = 0;
-            updateSchoolTable();
         }
 
-        // Setup column dropdown filters
-        function setupColumnFilter(menuId, badgeId, filterKey) {
-            const menu = document.getElementById(menuId);
-            const badge = document.getElementById(badgeId);
-            if (!menu) return;
+        // Hide all rows first
+        schoolRows.forEach(row => row.style.display = 'none');
 
-            menu.querySelectorAll('.dropdown-item').forEach(item => {
-                item.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const value = this.dataset.filterValue || '';
-                    activeFilters[filterKey] = value;
+        // Show only current page
+        for (let i = start; i < end; i++) {
+            if (filteredSchools[i]) {
+                filteredSchools[i].style.display = '';
+            }
+        }
 
-                    // Update active state
-                    menu.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
-                    this.classList.add('active');
+        // Update indicators
+        if (schoolShowingStart) schoolShowingStart.textContent = filteredSchools.length > 0 ? start + 1 : 0;
+        if (schoolShowingEnd) schoolShowingEnd.textContent = end;
+        if (schoolTotalFiltered) schoolTotalFiltered.textContent = filteredSchools.length;
 
-                    // Update badge
-                    if (badge) {
-                        if (value) {
-                            badge.textContent = this.textContent.trim();
-                            badge.classList.remove('d-none');
-                        } else {
-                            badge.classList.add('d-none');
-                        }
+        // Update button states
+        if (schoolPrevBtn) schoolPrevBtn.disabled = currentPage === 0;
+        if (schoolNextBtn) schoolNextBtn.disabled = end >= filteredSchools.length;
+    }
+
+    function applyFilters() {
+        const searchQuery = activeFilters.search.toLowerCase().trim();
+        filteredSchools = Array.from(schoolRows).filter(row => {
+            const npsn = row.dataset.npsn || '';
+            const name = row.dataset.name || '';
+            const jenjang = row.dataset.jenjang || '';
+            const kecamatan = row.dataset.kecamatan || '';
+            const status = row.dataset.status || '';
+
+            // Check column filters
+            if (activeFilters.jenjang && jenjang !== activeFilters.jenjang) return false;
+            if (activeFilters.status && status !== activeFilters.status) return false;
+            if (activeFilters.kecamatan && kecamatan !== activeFilters.kecamatan) return false;
+
+            // Check search query
+            if (searchQuery.length >= 2) {
+                return npsn.includes(searchQuery) || name.includes(searchQuery) || jenjang.includes(searchQuery) || kecamatan.includes(searchQuery);
+            }
+            return true;
+        });
+        currentPage = 0;
+        updateSchoolTable();
+    }
+
+    // Setup column dropdown filters
+    function setupColumnFilter(menuId, badgeId, filterKey) {
+        const menu = document.getElementById(menuId);
+        const badge = document.getElementById(badgeId);
+        if (!menu) return;
+
+        menu.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function (e) {
+                e.preventDefault();
+                const value = this.dataset.filterValue || '';
+                activeFilters[filterKey] = value;
+
+                // Update active state
+                menu.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+
+                // Update badge
+                if (badge) {
+                    if (value) {
+                        badge.textContent = this.textContent.trim();
+                        badge.classList.remove('d-none');
+                    } else {
+                        badge.classList.add('d-none');
                     }
-
-                    applyFilters();
-                });
-            });
-        }
-
-        setupColumnFilter('jenjangFilterMenu', 'jenjangFilterBadge', 'jenjang');
-        setupColumnFilter('statusFilterMenu', 'statusFilterBadge', 'status');
-        setupColumnFilter('kecamatanFilterMenu', 'kecamatanFilterBadge', 'kecamatan');
-
-        if (addSchoolNpsn) {
-            addSchoolNpsn.addEventListener('input', updateNpsnStatus);
-            updateNpsnStatus();
-        }
-
-        if (addSchoolForm) {
-            addSchoolForm.addEventListener('submit', function (e) {
-                if (npsnExists) {
-                    e.preventDefault();
-                    updateNpsnStatus();
                 }
-            });
-        }
 
-        if (schoolSearch) {
-            schoolSearch.addEventListener('input', function () {
-                activeFilters.search = this.value;
                 applyFilters();
             });
+        });
+    }
+
+    setupColumnFilter('jenjangFilterMenu', 'jenjangFilterBadge', 'jenjang');
+    setupColumnFilter('statusFilterMenu', 'statusFilterBadge', 'status');
+    setupColumnFilter('kecamatanFilterMenu', 'kecamatanFilterBadge', 'kecamatan');
+
+    if (addSchoolNpsn) {
+        addSchoolNpsn.addEventListener('input', updateNpsnStatus);
+        updateNpsnStatus();
+    }
+
+    if (addSchoolForm) {
+        addSchoolForm.addEventListener('submit', function (e) {
+            if (npsnExists) {
+                e.preventDefault();
+                updateNpsnStatus();
+            }
+        });
+    }
+
+    if (schoolSearch) {
+        schoolSearch.addEventListener('input', function () {
+            activeFilters.search = this.value;
+            applyFilters();
+        });
+    }
+
+    if (schoolPrevBtn) {
+        schoolPrevBtn.addEventListener('click', function () {
+            if (currentPage > 0) {
+                currentPage--;
+                updateSchoolTable();
+            }
+        });
+    }
+
+    if (schoolNextBtn) {
+        schoolNextBtn.addEventListener('click', function () {
+            if ((currentPage + 1) * PAGE_SIZE < filteredSchools.length) {
+                currentPage++;
+                updateSchoolTable();
+            }
+        });
+    }
+
+    // Initialize
+    updateSchoolTable();
+
+    // ===== School Check Filters =====
+    const schoolCheckRows = Array.from(document.querySelectorAll('#schoolsCheckTableBody .monitor-row'));
+    const schoolCheckSearch = document.getElementById('schoolCheckSearch');
+    const schoolCheckStatus = document.getElementById('schoolCheckStatus');
+    const schoolCheckFilterUnclaimed = document.getElementById('schoolCheckFilterUnclaimed');
+    const schoolCheckFilterNoRooms = document.getElementById('schoolCheckFilterNoRooms');
+    const schoolCheckFilterIncomplete = document.getElementById('schoolCheckFilterIncomplete');
+    const schoolCheckFilterSuspicious = document.getElementById('schoolCheckFilterSuspicious');
+    const schoolCheckKecamatan = document.getElementById('schoolCheckKecamatan');
+    const schoolCheckCount = document.getElementById('schoolCheckCount');
+    const schoolCheckTotal = document.getElementById('schoolCheckTotal');
+    const schoolCheckReset = document.getElementById('schoolCheckReset');
+    const schoolCheckFilterRoomsNoAspects = document.getElementById('schoolCheckFilterRoomsNoAspects');
+
+    function applySchoolCheckFilters() {
+        if (!schoolCheckRows.length) {
+            if (schoolCheckCount) schoolCheckCount.textContent = '0';
+            return;
         }
 
-        if (schoolPrevBtn) {
-            schoolPrevBtn.addEventListener('click', function () {
-                if (currentPage > 0) {
-                    currentPage--;
-                    updateSchoolTable();
-                }
-            });
-        }
+        const query = (schoolCheckSearch?.value || '').toLowerCase().trim();
+        const status = (schoolCheckStatus?.value || '').toLowerCase();
+        const wantUnclaimed = Boolean(schoolCheckFilterUnclaimed?.checked);
+        const wantNoRooms = Boolean(schoolCheckFilterNoRooms?.checked);
+        const wantIncomplete = Boolean(schoolCheckFilterIncomplete?.checked);
+        const wantSuspicious = Boolean(schoolCheckFilterSuspicious?.checked);
+        const wantRoomsNoAspects = Boolean(schoolCheckFilterRoomsNoAspects?.checked);
+        const kecamatan = (schoolCheckKecamatan?.value || '').toLowerCase();
+        let visible = 0;
 
-        if (schoolNextBtn) {
-            schoolNextBtn.addEventListener('click', function () {
-                if ((currentPage + 1) * PAGE_SIZE < filteredSchools.length) {
-                    currentPage++;
-                    updateSchoolTable();
-                }
-            });
-        }
+        schoolCheckRows.forEach(row => {
+            const searchText = (row.dataset.search || '');
+            const rowStatus = (row.dataset.status || '');
+            const rowKecamatan = (row.dataset.kecamatan || '');
+            const isClaimed = row.dataset.claimed === 'true';
+            const hasRooms = row.dataset.rooms === 'true';
+            const isIncomplete = row.dataset.incomplete === 'true';
+            const isSuspicious = row.dataset.suspicious === 'true';
+            const hasRoomsNoAspects = row.dataset.roomsNoAspects === 'true';
 
-        // Initialize
-        updateSchoolTable();
-
-        // ===== School Check Filters =====
-        const schoolCheckRows = Array.from(document.querySelectorAll('#schoolsCheckTableBody .monitor-row'));
-        const schoolCheckSearch = document.getElementById('schoolCheckSearch');
-        const schoolCheckStatus = document.getElementById('schoolCheckStatus');
-        const schoolCheckFilterUnclaimed = document.getElementById('schoolCheckFilterUnclaimed');
-        const schoolCheckFilterNoRooms = document.getElementById('schoolCheckFilterNoRooms');
-        const schoolCheckFilterIncomplete = document.getElementById('schoolCheckFilterIncomplete');
-        const schoolCheckFilterSuspicious = document.getElementById('schoolCheckFilterSuspicious');
-        const schoolCheckKecamatan = document.getElementById('schoolCheckKecamatan');
-        const schoolCheckCount = document.getElementById('schoolCheckCount');
-        const schoolCheckTotal = document.getElementById('schoolCheckTotal');
-        const schoolCheckReset = document.getElementById('schoolCheckReset');
-
-        function applySchoolCheckFilters() {
-            if (!schoolCheckRows.length) {
-                if (schoolCheckCount) schoolCheckCount.textContent = '0';
+            if (query && !searchText.includes(query)) {
+                row.style.display = 'none';
+                return;
+            }
+            if (status && rowStatus !== status) {
+                row.style.display = 'none';
+                return;
+            }
+            if (wantUnclaimed && isClaimed) {
+                row.style.display = 'none';
+                return;
+            }
+            if (wantNoRooms && hasRooms) {
+                row.style.display = 'none';
+                return;
+            }
+            if (wantIncomplete && !isIncomplete) {
+                row.style.display = 'none';
+                return;
+            }
+            if (wantSuspicious && !isSuspicious) {
+                row.style.display = 'none';
+                return;
+            }
+            if (wantRoomsNoAspects && !hasRoomsNoAspects) {
+                row.style.display = 'none';
+                return;
+            }
+            if (kecamatan && rowKecamatan !== kecamatan) {
+                row.style.display = 'none';
                 return;
             }
 
-            const query = (schoolCheckSearch?.value || '').toLowerCase().trim();
-            const status = (schoolCheckStatus?.value || '').toLowerCase();
-            const wantUnclaimed = Boolean(schoolCheckFilterUnclaimed?.checked);
-            const wantNoRooms = Boolean(schoolCheckFilterNoRooms?.checked);
-            const wantIncomplete = Boolean(schoolCheckFilterIncomplete?.checked);
-            const wantSuspicious = Boolean(schoolCheckFilterSuspicious?.checked);
-            const kecamatan = (schoolCheckKecamatan?.value || '').toLowerCase();
-            let visible = 0;
+            row.style.display = '';
+            visible += 1;
+        });
 
-            schoolCheckRows.forEach(row => {
-                const searchText = (row.dataset.search || '');
-                const rowStatus = (row.dataset.status || '');
-                const rowKecamatan = (row.dataset.kecamatan || '');
-                const isClaimed = row.dataset.claimed === 'true';
-                const hasRooms = row.dataset.rooms === 'true';
-                const isIncomplete = row.dataset.incomplete === 'true';
-                const isSuspicious = row.dataset.suspicious === 'true';
+        if (schoolCheckCount) schoolCheckCount.textContent = String(visible);
+        if (schoolCheckTotal) schoolCheckTotal.textContent = String(schoolCheckRows.length);
+    }
 
-                if (query && !searchText.includes(query)) {
-                    row.style.display = 'none';
-                    return;
-                }
-                if (status && rowStatus !== status) {
-                    row.style.display = 'none';
-                    return;
-                }
-                if (wantUnclaimed && isClaimed) {
-                    row.style.display = 'none';
-                    return;
-                }
-                if (wantNoRooms && hasRooms) {
-                    row.style.display = 'none';
-                    return;
-                }
-                if (wantIncomplete && !isIncomplete) {
-                    row.style.display = 'none';
-                    return;
-                }
-                if (wantSuspicious && !isSuspicious) {
-                    row.style.display = 'none';
-                    return;
-                }
-                if (kecamatan && rowKecamatan !== kecamatan) {
-                    row.style.display = 'none';
-                    return;
-                }
+    if (schoolCheckSearch) schoolCheckSearch.addEventListener('input', applySchoolCheckFilters);
+    if (schoolCheckStatus) schoolCheckStatus.addEventListener('change', applySchoolCheckFilters);
+    if (schoolCheckFilterUnclaimed) schoolCheckFilterUnclaimed.addEventListener('change', applySchoolCheckFilters);
+    if (schoolCheckFilterNoRooms) schoolCheckFilterNoRooms.addEventListener('change', applySchoolCheckFilters);
+    if (schoolCheckFilterIncomplete) schoolCheckFilterIncomplete.addEventListener('change', applySchoolCheckFilters);
+    if (schoolCheckFilterSuspicious) schoolCheckFilterSuspicious.addEventListener('change', applySchoolCheckFilters);
+    if (schoolCheckFilterRoomsNoAspects) schoolCheckFilterRoomsNoAspects.addEventListener('change', applySchoolCheckFilters);
+    if (schoolCheckKecamatan) schoolCheckKecamatan.addEventListener('change', applySchoolCheckFilters);
+    if (schoolCheckReset) {
+        schoolCheckReset.addEventListener('click', function () {
+            if (schoolCheckSearch) schoolCheckSearch.value = '';
+            if (schoolCheckStatus) schoolCheckStatus.value = 'negeri';
+            if (schoolCheckFilterUnclaimed) schoolCheckFilterUnclaimed.checked = false;
+            if (schoolCheckFilterNoRooms) schoolCheckFilterNoRooms.checked = false;
+            if (schoolCheckFilterIncomplete) schoolCheckFilterIncomplete.checked = false;
+            if (schoolCheckFilterSuspicious) schoolCheckFilterSuspicious.checked = false;
+            if (schoolCheckFilterRoomsNoAspects) schoolCheckFilterRoomsNoAspects.checked = false;
+            if (schoolCheckKecamatan) schoolCheckKecamatan.value = '';
+            applySchoolCheckFilters();
+        });
+    }
 
-                row.style.display = '';
-                visible += 1;
-            });
+    applySchoolCheckFilters();
 
-            if (schoolCheckCount) schoolCheckCount.textContent = String(visible);
-            if (schoolCheckTotal) schoolCheckTotal.textContent = String(schoolCheckRows.length);
-        }
-
-        if (schoolCheckSearch) schoolCheckSearch.addEventListener('input', applySchoolCheckFilters);
-        if (schoolCheckStatus) schoolCheckStatus.addEventListener('change', applySchoolCheckFilters);
-        if (schoolCheckFilterUnclaimed) schoolCheckFilterUnclaimed.addEventListener('change', applySchoolCheckFilters);
-        if (schoolCheckFilterNoRooms) schoolCheckFilterNoRooms.addEventListener('change', applySchoolCheckFilters);
-        if (schoolCheckFilterIncomplete) schoolCheckFilterIncomplete.addEventListener('change', applySchoolCheckFilters);
-        if (schoolCheckFilterSuspicious) schoolCheckFilterSuspicious.addEventListener('change', applySchoolCheckFilters);
-        if (schoolCheckKecamatan) schoolCheckKecamatan.addEventListener('change', applySchoolCheckFilters);
-        if (schoolCheckReset) {
-            schoolCheckReset.addEventListener('click', function () {
-                if (schoolCheckSearch) schoolCheckSearch.value = '';
-                if (schoolCheckStatus) schoolCheckStatus.value = 'negeri';
-                if (schoolCheckFilterUnclaimed) schoolCheckFilterUnclaimed.checked = false;
-                if (schoolCheckFilterNoRooms) schoolCheckFilterNoRooms.checked = false;
-                if (schoolCheckFilterIncomplete) schoolCheckFilterIncomplete.checked = false;
-                if (schoolCheckFilterSuspicious) schoolCheckFilterSuspicious.checked = false;
-                if (schoolCheckKecamatan) schoolCheckKecamatan.value = '';
-                applySchoolCheckFilters();
-            });
-        }
-
-        applySchoolCheckFilters();
-
-        const schoolDetailModal = document.getElementById('schoolCheckDetailModal');
-        if (schoolDetailModal) {
-            const setText = (id, value) => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                if (value === null || value === undefined || value === '') {
-                    el.textContent = '-';
-                } else {
-                    el.textContent = value;
-                }
-            };
-            const setLink = (id, url, label) => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                if (!url) {
-                    el.textContent = '-';
-                    el.removeAttribute('href');
-                    el.setAttribute('aria-disabled', 'true');
-                    el.classList.add('text-muted');
-                    return;
-                }
-                el.textContent = label || url;
-                el.href = url;
-                el.removeAttribute('aria-disabled');
-                el.classList.remove('text-muted');
-            };
-            const formatEmptyByGrade = (raw) => {
-                if (!raw) return '-';
-                let data = raw;
-                if (typeof data === 'string') {
-                    try {
-                        data = JSON.parse(data);
-                    } catch (err) {
-                        return '-';
-                    }
-                }
-                if (!data || typeof data !== 'object') return '-';
-                const entries = Object.entries(data).filter(([_, val]) => val !== null && val !== undefined && val !== '');
-                if (!entries.length) return '-';
-                entries.sort((a, b) => parseInt(a[0], 10) - parseInt(b[0], 10));
-                return entries.map(([grade, val]) => `Kelas ${grade}: ${val}`).join(', ');
-            };
-
-            schoolDetailModal.addEventListener('show.bs.modal', function (event) {
-                const trigger = event.relatedTarget;
-                if (!trigger) return;
-                const raw = trigger.getAttribute('data-school');
-                let school = {};
-                if (raw) {
-                    try {
-                        school = JSON.parse(raw);
-                    } catch (err) {
-                        school = {};
-                    }
-                }
-                const meta = school.meta || {};
-                const subtitle = [];
-                if (school.npsn) subtitle.push(school.npsn);
-                if (school.jenjang) subtitle.push(school.jenjang);
-                document.getElementById('schoolDetailSubtitle').textContent = subtitle.join(' • ') || '-';
-
-                setText('schoolDetailName', school.name);
-                setText('schoolDetailNpsn', school.npsn);
-                setText('schoolDetailJenjang', school.jenjang);
-                setText('schoolDetailStatus', school.status);
-                setText('schoolDetailClaimed', school.is_claimed ? 'Ada user' : 'No user');
-                setText('schoolDetailRooms', school.has_rooms ? 'Sudah set' : 'Belum set');
-
-                setLink('schoolDetailLogo', school.logo_url, 'Lihat logo');
-
-                setText('schoolDetailAlamat', school.alamat);
-                setText('schoolDetailKelurahan', school.kelurahan_name);
-                setText('schoolDetailKecamatan', school.kecamatan_name);
-
-                const rt = meta.rt || '';
-                const rw = meta.rw || '';
-                const rtRw = rt || rw ? `RT ${rt || '-'} / RW ${rw || '-'}` : '';
-                setText('schoolDetailRtRw', rtRw);
-                setText('schoolDetailPostalCode', meta.postal_code);
-
-                setText('schoolDetailOperatorPhone', meta.coordinator_phone);
-                setText('schoolDetailSchoolPhone', meta.school_phone);
-                setText('schoolDetailCsEmail', meta.cs_email);
-                setLink('schoolDetailGmaps', meta.gmaps_url, 'Buka Maps');
-
-                setText('schoolDetailStudentCount', meta.student_count);
-                setText('schoolDetailInclusionCount', meta.inclusion_student_count);
-                setText('schoolDetailRombelCount', meta.rombel_count);
-                setText('schoolDetailTeacherCount', meta.teacher_count);
-                setText('schoolDetailStaffCount', meta.staff_count);
-                setText('schoolDetailEmptySeats', meta.empty_seats);
-                setText('schoolDetailEmptySeatsByGrade', formatEmptyByGrade(meta.empty_seats_by_grade));
-                setText('schoolDetailUserCount', school.school_user_count);
-                setText('schoolDetailRoomCount', school.room_count);
-            });
-        }
-
-        // ===== Room Search Filter =====
-        const searchInput = document.getElementById('roomSearch');
-        const roomRows = document.querySelectorAll('.room-row');
-        const roomCount = document.getElementById('roomCount');
-
-        if (searchInput) {
-            searchInput.addEventListener('input', function () {
-                const query = this.value.toLowerCase().trim();
-                let visibleCount = 0;
-
-                roomRows.forEach(row => {
-                    const roomName = row.dataset.roomName || '';
-                    const roomCategory = row.dataset.roomCategory || '';
-
-                    // Show all if less than 3 chars, otherwise filter
-                    if (query.length < 3) {
-                        row.style.display = '';
-                        visibleCount++;
-                    } else {
-                        const matches = roomName.includes(query) || roomCategory.includes(query);
-                        row.style.display = matches ? '' : 'none';
-                        if (matches) visibleCount++;
-                    }
-                });
-
-                // Update count
-                if (roomCount) {
-                    roomCount.textContent = visibleCount;
-                }
-            });
-        }
-
-        // ===== Room Drag & Drop Reorder =====
-        const roomsTableBody = document.getElementById('roomsTableBody');
-        let draggingRoomRow = null;
-        let draggingDetailRow = null;
-        let isSavingRoomOrder = false;
-
-        function getRoomDetailRow(roomId) {
-            return document.getElementById(`roomDetail${roomId}`);
-        }
-
-        function refreshSortOrderInputs() {
-            if (!roomsTableBody) return;
-            const rows = Array.from(roomsTableBody.querySelectorAll('tr.room-row'));
-            rows.forEach((row, idx) => {
-                const detailRow = getRoomDetailRow(row.dataset.roomId);
-                const sortInput = detailRow?.querySelector('input[name="sort_order"]');
-                if (sortInput) sortInput.value = idx;
-            });
-        }
-
-        async function persistRoomOrder() {
-            if (!roomsTableBody) return;
-            const orderedIds = Array.from(roomsTableBody.querySelectorAll('tr.room-row'))
-                .map(r => parseInt(r.dataset.roomId || "", 10))
-                .filter(Boolean);
-            if (!orderedIds.length) return;
-
-            roomsTableBody.classList.add('drag-saving');
-            try {
-                const res = await fetch('/portal/admin/setup/rooms/reorder', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken || ''
-                    },
-                    body: JSON.stringify({ room_ids: orderedIds })
-                });
-                const data = await res.json();
-                if (!res.ok || !data.success) {
-                    throw new Error(data.message || 'Gagal menyimpan urutan ruangan');
-                }
-                showToast('Urutan ruangan disimpan.');
-                refreshSetupHistory();
-            } catch (err) {
-                showToast(err.message || 'Gagal menyimpan urutan ruangan', true);
-            } finally {
-                roomsTableBody.classList.remove('drag-saving');
-            }
-        }
-
-        function moveDraggedRow(targetRow, placeAfter = false) {
-            if (!roomsTableBody || !draggingRoomRow || !targetRow) return;
-            const targetDetail = getRoomDetailRow(targetRow.dataset.roomId);
-            const anchor = placeAfter ? (targetDetail || targetRow).nextSibling : targetRow;
-
-            roomsTableBody.insertBefore(draggingRoomRow, anchor);
-            if (draggingDetailRow) {
-                roomsTableBody.insertBefore(draggingDetailRow, anchor);
-            }
-        }
-
-        async function finalizeRoomDrag() {
-            if (!draggingRoomRow || isSavingRoomOrder) return;
-            isSavingRoomOrder = true;
-            refreshSortOrderInputs();
-            await persistRoomOrder();
-            draggingRoomRow.classList.remove('dragging');
-            draggingDetailRow?.classList.remove('dragging');
-            draggingRoomRow = null;
-            draggingDetailRow = null;
-            isSavingRoomOrder = false;
-        }
-
-        if (roomsTableBody) {
-            roomsTableBody.addEventListener('dragstart', function (e) {
-                const handle = e.target.closest('.room-drag-handle');
-                if (!handle) {
-                    e.preventDefault();
-                    return;
-                }
-                draggingRoomRow = handle.closest('tr.room-row');
-                if (!draggingRoomRow) return;
-                draggingDetailRow = getRoomDetailRow(draggingRoomRow.dataset.roomId);
-                draggingRoomRow.classList.add('dragging');
-                draggingDetailRow?.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', draggingRoomRow.dataset.roomId || '');
-            });
-
-            roomsTableBody.addEventListener('dragover', function (e) {
-                if (!draggingRoomRow) return;
-                const targetRow = e.target.closest('tr.room-row');
-                if (!targetRow || targetRow === draggingRoomRow) return;
-
-                e.preventDefault();
-                const rect = targetRow.getBoundingClientRect();
-                const shouldPlaceAfter = (e.clientY - rect.top) > rect.height / 2;
-                moveDraggedRow(targetRow, shouldPlaceAfter);
-            });
-
-            roomsTableBody.addEventListener('drop', function (e) {
-                if (!draggingRoomRow) return;
-                e.preventDefault();
-                finalizeRoomDrag();
-            });
-
-            roomsTableBody.addEventListener('dragend', function () {
-                finalizeRoomDrag();
-            });
-        }
-
-        // ===== Scroll to anchored room and highlight =====
-        if (window.location.hash && window.location.hash.startsWith('#room-')) {
-            const targetRow = document.querySelector(window.location.hash);
-            if (targetRow) {
-                // Small delay to ensure DOM is ready
-                setTimeout(() => {
-                    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    // Add highlight class with animation
-                    targetRow.classList.add('just-edited');
-
-                    // Change door icon to checkmark temporarily
-                    const doorIcon = targetRow.querySelector('.bi-door-open-fill');
-                    if (doorIcon) {
-                        doorIcon.classList.remove('bi-door-open-fill');
-                        doorIcon.classList.add('bi-check-circle-fill');
-                        doorIcon.closest('.icon-badge').classList.remove('text-success');
-                        doorIcon.closest('.icon-badge').classList.add('text-primary');
-
-                        // Revert back after 3 seconds
-                        setTimeout(() => {
-                            doorIcon.classList.remove('bi-check-circle-fill');
-                            doorIcon.classList.add('bi-door-open-fill');
-                            doorIcon.closest('.icon-badge').classList.remove('text-primary');
-                            doorIcon.closest('.icon-badge').classList.add('text-success');
-                        }, 3000);
-                    }
-
-                    // Remove highlight class after animation completes
-                    setTimeout(() => {
-                        targetRow.classList.remove('just-edited');
-                    }, 3000);
-                }, 100);
-            }
-        }
-
-        // ===== Batch Add Aspects =====
-        const aspectList = [];
-        const aspectRoomSelect = document.getElementById('aspectRoomSelect');
-        const aspectNameInput = document.getElementById('aspectNameInput');
-        const addToListBtn = document.getElementById('addToListBtn');
-        const previewList = document.getElementById('aspectPreviewList');
-        const previewActions = document.getElementById('aspectPreviewActions');
-        const aspectCountSpan = document.getElementById('aspectCount');
-        const clearAspectListBtn = document.getElementById('clearAspectListBtn');
-        const saveAspectListBtn = document.getElementById('saveAspectListBtn');
-
-        function updateAspectPreview() {
-            if (aspectList.length === 0) {
-                previewList.innerHTML = '<div class="text-muted small text-center py-2">Belum ada aspek dalam list</div>';
-                previewActions.classList.add('d-none');
+    const schoolDetailModal = document.getElementById('schoolCheckDetailModal');
+    if (schoolDetailModal) {
+        const setText = (id, value) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (value === null || value === undefined || value === '') {
+                el.textContent = '-';
             } else {
-                previewList.innerHTML = aspectList.map((item, index) => `
+                el.textContent = value;
+            }
+        };
+        const setLink = (id, url, label) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (!url) {
+                el.textContent = '-';
+                el.removeAttribute('href');
+                el.setAttribute('aria-disabled', 'true');
+                el.classList.add('text-muted');
+                return;
+            }
+            el.textContent = label || url;
+            el.href = url;
+            el.removeAttribute('aria-disabled');
+            el.classList.remove('text-muted');
+        };
+        const formatEmptyByGrade = (raw) => {
+            if (!raw) return '-';
+            let data = raw;
+            if (typeof data === 'string') {
+                try {
+                    data = JSON.parse(data);
+                } catch (err) {
+                    return '-';
+                }
+            }
+            if (!data || typeof data !== 'object') return '-';
+            const entries = Object.entries(data).filter(([_, val]) => val !== null && val !== undefined && val !== '');
+            if (!entries.length) return '-';
+            entries.sort((a, b) => parseInt(a[0], 10) - parseInt(b[0], 10));
+            return entries.map(([grade, val]) => `Kelas ${grade}: ${val}`).join(', ');
+        };
+
+        schoolDetailModal.addEventListener('show.bs.modal', function (event) {
+            const trigger = event.relatedTarget;
+            if (!trigger) return;
+            const raw = trigger.getAttribute('data-school');
+            let school = {};
+            if (raw) {
+                try {
+                    school = JSON.parse(raw);
+                } catch (err) {
+                    school = {};
+                }
+            }
+            const meta = school.meta || {};
+            const subtitle = [];
+            if (school.npsn) subtitle.push(school.npsn);
+            if (school.jenjang) subtitle.push(school.jenjang);
+            document.getElementById('schoolDetailSubtitle').textContent = subtitle.join(' • ') || '-';
+
+            setText('schoolDetailName', school.name);
+            setText('schoolDetailNpsn', school.npsn);
+            setText('schoolDetailJenjang', school.jenjang);
+            setText('schoolDetailStatus', school.status);
+            setText('schoolDetailClaimed', school.is_claimed ? 'Ada user' : 'No user');
+            setText('schoolDetailRooms', school.has_rooms ? 'Sudah set' : 'Belum set');
+
+            setLink('schoolDetailLogo', school.logo_url, 'Lihat logo');
+
+            setText('schoolDetailAlamat', school.alamat);
+            setText('schoolDetailKelurahan', school.kelurahan_name);
+            setText('schoolDetailKecamatan', school.kecamatan_name);
+
+            const rt = meta.rt || '';
+            const rw = meta.rw || '';
+            const rtRw = rt || rw ? `RT ${rt || '-'} / RW ${rw || '-'}` : '';
+            setText('schoolDetailRtRw', rtRw);
+            setText('schoolDetailPostalCode', meta.postal_code);
+
+            setText('schoolDetailOperatorPhone', meta.coordinator_phone);
+            setText('schoolDetailSchoolPhone', meta.school_phone);
+            setText('schoolDetailCsEmail', meta.cs_email);
+            setLink('schoolDetailGmaps', meta.gmaps_url, 'Buka Maps');
+
+            setText('schoolDetailStudentCount', meta.student_count);
+            setText('schoolDetailInclusionCount', meta.inclusion_student_count);
+            setText('schoolDetailRombelCount', meta.rombel_count);
+            setText('schoolDetailTeacherCount', meta.teacher_count);
+            setText('schoolDetailStaffCount', meta.staff_count);
+            setText('schoolDetailEmptySeats', meta.empty_seats);
+            setText('schoolDetailEmptySeatsByGrade', formatEmptyByGrade(meta.empty_seats_by_grade));
+            setText('schoolDetailUserCount', school.school_user_count);
+            setText('schoolDetailRoomCount', school.room_count);
+        });
+    }
+
+    // ===== Room Search Filter =====
+    const searchInput = document.getElementById('roomSearch');
+    const roomRows = document.querySelectorAll('.room-row');
+    const roomCount = document.getElementById('roomCount');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+            let visibleCount = 0;
+
+            roomRows.forEach(row => {
+                const roomName = row.dataset.roomName || '';
+                const roomCategory = row.dataset.roomCategory || '';
+
+                // Show all if less than 3 chars, otherwise filter
+                if (query.length < 3) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    const matches = roomName.includes(query) || roomCategory.includes(query);
+                    row.style.display = matches ? '' : 'none';
+                    if (matches) visibleCount++;
+                }
+            });
+
+            // Update count
+            if (roomCount) {
+                roomCount.textContent = visibleCount;
+            }
+        });
+    }
+
+    // ===== Room Drag & Drop Reorder =====
+    const roomsTableBody = document.getElementById('roomsTableBody');
+    let draggingRoomRow = null;
+    let draggingDetailRow = null;
+    let isSavingRoomOrder = false;
+
+    function getRoomDetailRow(roomId) {
+        return document.getElementById(`roomDetail${roomId}`);
+    }
+
+    function refreshSortOrderInputs() {
+        if (!roomsTableBody) return;
+        const rows = Array.from(roomsTableBody.querySelectorAll('tr.room-row'));
+        rows.forEach((row, idx) => {
+            const detailRow = getRoomDetailRow(row.dataset.roomId);
+            const sortInput = detailRow?.querySelector('input[name="sort_order"]');
+            if (sortInput) sortInput.value = idx;
+        });
+    }
+
+    async function persistRoomOrder() {
+        if (!roomsTableBody) return;
+        const orderedIds = Array.from(roomsTableBody.querySelectorAll('tr.room-row'))
+            .map(r => parseInt(r.dataset.roomId || "", 10))
+            .filter(Boolean);
+        if (!orderedIds.length) return;
+
+        roomsTableBody.classList.add('drag-saving');
+        try {
+            const res = await fetch('/portal/admin/setup/rooms/reorder', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken || ''
+                },
+                body: JSON.stringify({ room_ids: orderedIds })
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || 'Gagal menyimpan urutan ruangan');
+            }
+            showToast('Urutan ruangan disimpan.');
+            refreshSetupHistory();
+        } catch (err) {
+            showToast(err.message || 'Gagal menyimpan urutan ruangan', true);
+        } finally {
+            roomsTableBody.classList.remove('drag-saving');
+        }
+    }
+
+    function moveDraggedRow(targetRow, placeAfter = false) {
+        if (!roomsTableBody || !draggingRoomRow || !targetRow) return;
+        const targetDetail = getRoomDetailRow(targetRow.dataset.roomId);
+        const anchor = placeAfter ? (targetDetail || targetRow).nextSibling : targetRow;
+
+        roomsTableBody.insertBefore(draggingRoomRow, anchor);
+        if (draggingDetailRow) {
+            roomsTableBody.insertBefore(draggingDetailRow, anchor);
+        }
+    }
+
+    async function finalizeRoomDrag() {
+        if (!draggingRoomRow || isSavingRoomOrder) return;
+        isSavingRoomOrder = true;
+        refreshSortOrderInputs();
+        await persistRoomOrder();
+        draggingRoomRow.classList.remove('dragging');
+        draggingDetailRow?.classList.remove('dragging');
+        draggingRoomRow = null;
+        draggingDetailRow = null;
+        isSavingRoomOrder = false;
+    }
+
+    if (roomsTableBody) {
+        roomsTableBody.addEventListener('dragstart', function (e) {
+            const handle = e.target.closest('.room-drag-handle');
+            if (!handle) {
+                e.preventDefault();
+                return;
+            }
+            draggingRoomRow = handle.closest('tr.room-row');
+            if (!draggingRoomRow) return;
+            draggingDetailRow = getRoomDetailRow(draggingRoomRow.dataset.roomId);
+            draggingRoomRow.classList.add('dragging');
+            draggingDetailRow?.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', draggingRoomRow.dataset.roomId || '');
+        });
+
+        roomsTableBody.addEventListener('dragover', function (e) {
+            if (!draggingRoomRow) return;
+            const targetRow = e.target.closest('tr.room-row');
+            if (!targetRow || targetRow === draggingRoomRow) return;
+
+            e.preventDefault();
+            const rect = targetRow.getBoundingClientRect();
+            const shouldPlaceAfter = (e.clientY - rect.top) > rect.height / 2;
+            moveDraggedRow(targetRow, shouldPlaceAfter);
+        });
+
+        roomsTableBody.addEventListener('drop', function (e) {
+            if (!draggingRoomRow) return;
+            e.preventDefault();
+            finalizeRoomDrag();
+        });
+
+        roomsTableBody.addEventListener('dragend', function () {
+            finalizeRoomDrag();
+        });
+    }
+
+    // ===== Scroll to anchored room and highlight =====
+    if (window.location.hash && window.location.hash.startsWith('#room-')) {
+        const targetRow = document.querySelector(window.location.hash);
+        if (targetRow) {
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
+                targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Add highlight class with animation
+                targetRow.classList.add('just-edited');
+
+                // Change door icon to checkmark temporarily
+                const doorIcon = targetRow.querySelector('.bi-door-open-fill');
+                if (doorIcon) {
+                    doorIcon.classList.remove('bi-door-open-fill');
+                    doorIcon.classList.add('bi-check-circle-fill');
+                    doorIcon.closest('.icon-badge').classList.remove('text-success');
+                    doorIcon.closest('.icon-badge').classList.add('text-primary');
+
+                    // Revert back after 3 seconds
+                    setTimeout(() => {
+                        doorIcon.classList.remove('bi-check-circle-fill');
+                        doorIcon.classList.add('bi-door-open-fill');
+                        doorIcon.closest('.icon-badge').classList.remove('text-primary');
+                        doorIcon.closest('.icon-badge').classList.add('text-success');
+                    }, 3000);
+                }
+
+                // Remove highlight class after animation completes
+                setTimeout(() => {
+                    targetRow.classList.remove('just-edited');
+                }, 3000);
+            }, 100);
+        }
+    }
+
+    // ===== Batch Add Aspects =====
+    const aspectList = [];
+    const aspectRoomSelect = document.getElementById('aspectRoomSelect');
+    const aspectNameInput = document.getElementById('aspectNameInput');
+    const addToListBtn = document.getElementById('addToListBtn');
+    const previewList = document.getElementById('aspectPreviewList');
+    const previewActions = document.getElementById('aspectPreviewActions');
+    const aspectCountSpan = document.getElementById('aspectCount');
+    const clearAspectListBtn = document.getElementById('clearAspectListBtn');
+    const saveAspectListBtn = document.getElementById('saveAspectListBtn');
+
+    function updateAspectPreview() {
+        if (aspectList.length === 0) {
+            previewList.innerHTML = '<div class="text-muted small text-center py-2">Belum ada aspek dalam list</div>';
+            previewActions.classList.add('d-none');
+        } else {
+            previewList.innerHTML = aspectList.map((item, index) => `
                     <div class="d-flex justify-content-between align-items-center p-2 mb-1 rounded" style="background: var(--bg-subtle);">
                         <div>
                             <div class="small fw-semibold">${item.name}</div>
@@ -2576,503 +2623,503 @@
                         </button>
                     </div>
                 `).join('');
-                previewActions.classList.remove('d-none');
-                aspectCountSpan.textContent = aspectList.length;
+            previewActions.classList.remove('d-none');
+            aspectCountSpan.textContent = aspectList.length;
+        }
+    }
+
+    window.removeAspect = function (index) {
+        aspectList.splice(index, 1);
+        updateAspectPreview();
+    };
+
+    if (addToListBtn) {
+        addToListBtn.addEventListener('click', function () {
+            const roomId = aspectRoomSelect.value;
+            const roomName = aspectRoomSelect.selectedOptions[0]?.dataset.roomName || '';
+            const name = aspectNameInput.value.trim();
+
+            if (!roomId) {
+                alert('Pilih ruangan terlebih dahulu');
+                return;
             }
-        }
+            if (!name) {
+                //alert('Masukkan nama aspek');
+                return;
+            }
 
-        window.removeAspect = function (index) {
-            aspectList.splice(index, 1);
+            aspectList.push({ roomId, roomName, name });
+            aspectNameInput.value = '';
+            aspectNameInput.focus();
             updateAspectPreview();
-        };
+        });
 
-        if (addToListBtn) {
-            addToListBtn.addEventListener('click', function () {
-                const roomId = aspectRoomSelect.value;
-                const roomName = aspectRoomSelect.selectedOptions[0]?.dataset.roomName || '';
-                const name = aspectNameInput.value.trim();
+        // Enter key to add
+        aspectNameInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addToListBtn.click();
+            }
+        });
+    }
 
-                if (!roomId) {
-                    alert('Pilih ruangan terlebih dahulu');
-                    return;
-                }
-                if (!name) {
-                    //alert('Masukkan nama aspek');
-                    return;
-                }
+    if (clearAspectListBtn) {
+        clearAspectListBtn.addEventListener('click', function () {
+            aspectList.length = 0;
+            updateAspectPreview();
+        });
+    }
 
-                aspectList.push({ roomId, roomName, name });
-                aspectNameInput.value = '';
-                aspectNameInput.focus();
-                updateAspectPreview();
-            });
+    if (saveAspectListBtn) {
+        saveAspectListBtn.addEventListener('click', async function () {
+            if (aspectList.length === 0) return;
 
-            // Enter key to add
-            aspectNameInput.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addToListBtn.click();
-                }
-            });
-        }
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menyimpan...';
 
-        if (clearAspectListBtn) {
-            clearAspectListBtn.addEventListener('click', function () {
-                aspectList.length = 0;
-                updateAspectPreview();
-            });
-        }
+            try {
+                const response = await fetch('/portal/admin/setup/aspects/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ aspects: aspectList })
+                });
+                const data = await response.json();
 
-        if (saveAspectListBtn) {
-            saveAspectListBtn.addEventListener('click', async function () {
-                if (aspectList.length === 0) return;
-
-                this.disabled = true;
-                this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menyimpan...';
-
-                try {
-                    const response = await fetch('/portal/admin/setup/aspects/batch', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ aspects: aspectList })
-                    });
-                    const data = await response.json();
-
-                    if (data.success) {
-                        // Update UI per room
-                        if (data.room_aspects) {
-                            Object.entries(data.room_aspects).forEach(([rid, aspects]) => {
-                                renderAspects(rid, aspects);
-                            });
-                        }
-                        aspectList = [];
-                        updateAspectPreview();
-                        showToast('Aspek berhasil disimpan.');
-                        refreshSetupHistory();
-                    } else {
-                        alert('Gagal menyimpan: ' + (data.error || 'Unknown error'));
-                        this.disabled = false;
-                        this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan ' + aspectList.length + ' Aspek';
+                if (data.success) {
+                    // Update UI per room
+                    if (data.room_aspects) {
+                        Object.entries(data.room_aspects).forEach(([rid, aspects]) => {
+                            renderAspects(rid, aspects);
+                        });
                     }
-                } catch (err) {
-                    alert('Error: ' + err.message);
+                    aspectList = [];
+                    updateAspectPreview();
+                    showToast('Aspek berhasil disimpan.');
+                    refreshSetupHistory();
+                } else {
+                    alert('Gagal menyimpan: ' + (data.error || 'Unknown error'));
                     this.disabled = false;
                     this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan ' + aspectList.length + ' Aspek';
                 }
-            });
-        }
+            } catch (err) {
+                alert('Error: ' + err.message);
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan ' + aspectList.length + ' Aspek';
+            }
+        });
+    }
 
-        updateAspectPreview();
+    updateAspectPreview();
 
-        // ===== Inline Batch Add Aspects (in room detail) =====
-        const inlineAspectLists = {}; // Store aspects per room
+    // ===== Inline Batch Add Aspects (in room detail) =====
+    const inlineAspectLists = {}; // Store aspects per room
 
-        function updateInlinePreview(roomId) {
-            const list = inlineAspectLists[roomId] || [];
-            const previewDiv = document.querySelector(`.inline-aspect-preview[data-room-id="${roomId}"]`);
-            const saveBtn = document.querySelector(`.inline-save-btn[data-room-id="${roomId}"]`);
-            const countSpan = saveBtn?.querySelector('.inline-aspect-count');
+    function updateInlinePreview(roomId) {
+        const list = inlineAspectLists[roomId] || [];
+        const previewDiv = document.querySelector(`.inline-aspect-preview[data-room-id="${roomId}"]`);
+        const saveBtn = document.querySelector(`.inline-save-btn[data-room-id="${roomId}"]`);
+        const countSpan = saveBtn?.querySelector('.inline-aspect-count');
 
-            if (!previewDiv) return;
+        if (!previewDiv) return;
 
-            if (list.length === 0) {
-                previewDiv.innerHTML = '';
-                saveBtn?.classList.add('d-none');
-            } else {
-                previewDiv.innerHTML = list.map((name, idx) => `
+        if (list.length === 0) {
+            previewDiv.innerHTML = '';
+            saveBtn?.classList.add('d-none');
+        } else {
+            previewDiv.innerHTML = list.map((name, idx) => `
                     <span class="badge bg-primary me-1 mb-1" style="font-weight: normal;">
                         ${name}
                         <i class="bi bi-x-lg ms-1" style="cursor: pointer;"></i>
                     </span>
                 `).join('');
-                saveBtn?.classList.remove('d-none');
-                if (countSpan) countSpan.textContent = list.length;
-            }
+            saveBtn?.classList.remove('d-none');
+            if (countSpan) countSpan.textContent = list.length;
         }
+    }
 
-        // Add to list button - using event delegation
-        document.addEventListener('click', function (e) {
-            // Handle "Ke List" button click
-            if (e.target.closest('.inline-add-btn')) {
-                const btn = e.target.closest('.inline-add-btn');
-                const roomId = btn.getAttribute('data-room-id');
-                const input = document.querySelector(`input.inline-aspect-input[data-room-id="${roomId}"]`);
-
-                if (!input) {
-                    console.error('Input not found for room', roomId);
-                    return;
-                }
-
-                const name = input.value.trim();
-
-                if (!name) {
-                    //alert('Masukkan nama aspek');
-                    return;
-                }
-
-                if (!inlineAspectLists[roomId]) inlineAspectLists[roomId] = [];
-                inlineAspectLists[roomId].push(name);
-                input.value = '';
-                input.focus();
-                updateInlinePreview(roomId);
-            }
-
-            // Handle X button click on preview badge
-            if (e.target.closest('.inline-aspect-preview .bi-x-lg')) {
-                const icon = e.target.closest('.bi-x-lg');
-                const badge = icon.closest('.badge');
-                const previewDiv = icon.closest('.inline-aspect-preview');
-                const roomId = previewDiv.getAttribute('data-room-id');
-                const badges = Array.from(previewDiv.querySelectorAll('.badge'));
-                const index = badges.indexOf(badge);
-
-                if (index !== -1 && inlineAspectLists[roomId]) {
-                    inlineAspectLists[roomId].splice(index, 1);
-                    updateInlinePreview(roomId);
-                }
-            }
-        });
-
-        // Enter key to add - using event delegation
-        document.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter' && e.target.classList.contains('inline-aspect-input')) {
-                e.preventDefault();
-                e.stopPropagation();
-                const roomId = e.target.getAttribute('data-room-id');
-                const btn = document.querySelector(`button.inline-add-btn[data-room-id="${roomId}"]`);
-                if (btn) btn.click();
-            }
-        });
-
-        // Delete aspect (AJAX) with single confirm modal
-        let pendingDelete = null;
-        const deleteModalEl = document.getElementById('aspectDeleteConfirmModal');
-        const deleteModal = deleteModalEl ? new bootstrap.Modal(deleteModalEl) : null;
-        const deleteAspectNameEl = document.getElementById('deleteAspectName');
-        const deleteAspectRoomEl = document.getElementById('deleteAspectRoom');
-        const deleteAspectBtn = document.getElementById('confirmDeleteAspectBtn');
-        const editModalEl = document.getElementById('aspectEditModal');
-        const editModal = editModalEl ? new bootstrap.Modal(editModalEl) : null;
-        const editNameInput = document.getElementById('editAspectNameInput');
-        const editDescInput = document.getElementById('editAspectDescInput');
-        const editOrderInput = document.getElementById('editAspectOrderInput');
-        const editActiveInput = document.getElementById('editAspectActiveInput');
-        const editRequiredInput = document.getElementById('editAspectRequiredInput');
-        const saveAspectEditBtn = document.getElementById('saveAspectEditBtn');
-        let pendingEdit = null;
-
-        document.addEventListener('click', function (e) {
-            const btn = e.target.closest('[data-delete-aspect]');
-            if (!btn || !deleteModal) return;
-            const aspectId = btn.getAttribute('data-delete-aspect');
+    // Add to list button - using event delegation
+    document.addEventListener('click', function (e) {
+        // Handle "Ke List" button click
+        if (e.target.closest('.inline-add-btn')) {
+            const btn = e.target.closest('.inline-add-btn');
             const roomId = btn.getAttribute('data-room-id');
-            const aspectName = btn.getAttribute('data-aspect-name') || 'Aspek';
-            const roomName = btn.getAttribute('data-room-name') || 'Ruang';
-            pendingDelete = { aspectId, roomId, aspectName, roomName, trigger: btn };
-            if (deleteAspectNameEl) deleteAspectNameEl.textContent = aspectName;
-            if (deleteAspectRoomEl) deleteAspectRoomEl.textContent = roomName;
-            deleteModal.show();
-        });
+            const input = document.querySelector(`input.inline-aspect-input[data-room-id="${roomId}"]`);
 
-        // Edit aspect
-        document.addEventListener('click', function (e) {
-            const btn = e.target.closest('[data-edit-aspect]');
-            if (!btn || !editModal) return;
-            const aspectId = btn.getAttribute('data-edit-aspect');
-            const roomId = btn.getAttribute('data-room-id');
-            const aspectName = btn.getAttribute('data-aspect-name') || '';
-            const aspectDesc = btn.getAttribute('data-aspect-desc') || '';
-            const aspectOrder = btn.getAttribute('data-aspect-order') || '0';
-            const aspectActive = btn.getAttribute('data-aspect-active') === 'true';
-            const aspectRequired = btn.getAttribute('data-aspect-required') === 'true';
-            pendingEdit = { aspectId, roomId };
-            editNameInput.value = aspectName;
-            editDescInput.value = aspectDesc;
-            editOrderInput.value = aspectOrder;
-            editActiveInput.checked = aspectActive;
-            if (editRequiredInput) editRequiredInput.checked = aspectRequired;
-            saveAspectEditBtn.disabled = false;
-            saveAspectEditBtn.innerHTML = '<i class="bi bi-check-lg"></i> Simpan';
-            editModal.show();
-        });
-
-        saveAspectEditBtn?.addEventListener('click', async function () {
-            if (!pendingEdit) return;
-            const { aspectId, roomId } = pendingEdit;
-            const payload = {
-                name: editNameInput.value.trim(),
-                description: editDescInput.value.trim(),
-                sort_order: parseInt(editOrderInput.value || "0", 10),
-                active: editActiveInput.checked,
-                is_required: editRequiredInput ? editRequiredInput.checked : false,
-            };
-            if (!payload.name) {
-                alert('Nama aspek wajib diisi.');
+            if (!input) {
+                console.error('Input not found for room', roomId);
                 return;
             }
-            saveAspectEditBtn.disabled = true;
-            saveAspectEditBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-            try {
-                const res = await fetch(`/portal/admin/setup/aspect/${aspectId}`, {
+
+            const name = input.value.trim();
+
+            if (!name) {
+                //alert('Masukkan nama aspek');
+                return;
+            }
+
+            if (!inlineAspectLists[roomId]) inlineAspectLists[roomId] = [];
+            inlineAspectLists[roomId].push(name);
+            input.value = '';
+            input.focus();
+            updateInlinePreview(roomId);
+        }
+
+        // Handle X button click on preview badge
+        if (e.target.closest('.inline-aspect-preview .bi-x-lg')) {
+            const icon = e.target.closest('.bi-x-lg');
+            const badge = icon.closest('.badge');
+            const previewDiv = icon.closest('.inline-aspect-preview');
+            const roomId = previewDiv.getAttribute('data-room-id');
+            const badges = Array.from(previewDiv.querySelectorAll('.badge'));
+            const index = badges.indexOf(badge);
+
+            if (index !== -1 && inlineAspectLists[roomId]) {
+                inlineAspectLists[roomId].splice(index, 1);
+                updateInlinePreview(roomId);
+            }
+        }
+    });
+
+    // Enter key to add - using event delegation
+    document.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter' && e.target.classList.contains('inline-aspect-input')) {
+            e.preventDefault();
+            e.stopPropagation();
+            const roomId = e.target.getAttribute('data-room-id');
+            const btn = document.querySelector(`button.inline-add-btn[data-room-id="${roomId}"]`);
+            if (btn) btn.click();
+        }
+    });
+
+    // Delete aspect (AJAX) with single confirm modal
+    let pendingDelete = null;
+    const deleteModalEl = document.getElementById('aspectDeleteConfirmModal');
+    const deleteModal = deleteModalEl ? new bootstrap.Modal(deleteModalEl) : null;
+    const deleteAspectNameEl = document.getElementById('deleteAspectName');
+    const deleteAspectRoomEl = document.getElementById('deleteAspectRoom');
+    const deleteAspectBtn = document.getElementById('confirmDeleteAspectBtn');
+    const editModalEl = document.getElementById('aspectEditModal');
+    const editModal = editModalEl ? new bootstrap.Modal(editModalEl) : null;
+    const editNameInput = document.getElementById('editAspectNameInput');
+    const editDescInput = document.getElementById('editAspectDescInput');
+    const editOrderInput = document.getElementById('editAspectOrderInput');
+    const editActiveInput = document.getElementById('editAspectActiveInput');
+    const editRequiredInput = document.getElementById('editAspectRequiredInput');
+    const saveAspectEditBtn = document.getElementById('saveAspectEditBtn');
+    let pendingEdit = null;
+
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('[data-delete-aspect]');
+        if (!btn || !deleteModal) return;
+        const aspectId = btn.getAttribute('data-delete-aspect');
+        const roomId = btn.getAttribute('data-room-id');
+        const aspectName = btn.getAttribute('data-aspect-name') || 'Aspek';
+        const roomName = btn.getAttribute('data-room-name') || 'Ruang';
+        pendingDelete = { aspectId, roomId, aspectName, roomName, trigger: btn };
+        if (deleteAspectNameEl) deleteAspectNameEl.textContent = aspectName;
+        if (deleteAspectRoomEl) deleteAspectRoomEl.textContent = roomName;
+        deleteModal.show();
+    });
+
+    // Edit aspect
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('[data-edit-aspect]');
+        if (!btn || !editModal) return;
+        const aspectId = btn.getAttribute('data-edit-aspect');
+        const roomId = btn.getAttribute('data-room-id');
+        const aspectName = btn.getAttribute('data-aspect-name') || '';
+        const aspectDesc = btn.getAttribute('data-aspect-desc') || '';
+        const aspectOrder = btn.getAttribute('data-aspect-order') || '0';
+        const aspectActive = btn.getAttribute('data-aspect-active') === 'true';
+        const aspectRequired = btn.getAttribute('data-aspect-required') === 'true';
+        pendingEdit = { aspectId, roomId };
+        editNameInput.value = aspectName;
+        editDescInput.value = aspectDesc;
+        editOrderInput.value = aspectOrder;
+        editActiveInput.checked = aspectActive;
+        if (editRequiredInput) editRequiredInput.checked = aspectRequired;
+        saveAspectEditBtn.disabled = false;
+        saveAspectEditBtn.innerHTML = '<i class="bi bi-check-lg"></i> Simpan';
+        editModal.show();
+    });
+
+    saveAspectEditBtn?.addEventListener('click', async function () {
+        if (!pendingEdit) return;
+        const { aspectId, roomId } = pendingEdit;
+        const payload = {
+            name: editNameInput.value.trim(),
+            description: editDescInput.value.trim(),
+            sort_order: parseInt(editOrderInput.value || "0", 10),
+            active: editActiveInput.checked,
+            is_required: editRequiredInput ? editRequiredInput.checked : false,
+        };
+        if (!payload.name) {
+            alert('Nama aspek wajib diisi.');
+            return;
+        }
+        saveAspectEditBtn.disabled = true;
+        saveAspectEditBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        try {
+            const res = await fetch(`/portal/admin/setup/aspect/${aspectId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken || ''
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                renderAspects(roomId, data.aspects);
+                showToast('Aspek diperbarui.');
+                refreshSetupHistory();
+                editModal.hide();
+            } else {
+                alert(data.message || 'Gagal memperbarui aspek');
+            }
+        } catch (err) {
+            alert('Gagal memperbarui aspek');
+            console.error(err);
+        } finally {
+            saveAspectEditBtn.disabled = false;
+            saveAspectEditBtn.innerHTML = '<i class="bi bi-check-lg"></i> Simpan';
+            pendingEdit = null;
+        }
+    });
+
+    deleteAspectBtn?.addEventListener('click', function () {
+        if (!pendingDelete) return;
+        const { aspectId, roomId, aspectName, trigger } = pendingDelete;
+        const action = {
+            confirmTitle: 'Hapus Aspek',
+            confirmText: `Hapus aspek ${aspectName}?`,
+            label: 'Hapus',
+            buttonClass: 'btn-danger',
+            allowNote: false,
+            undoLabel: 'Penghapusan aspek dijadwalkan',
+            execute: function () {
+                return fetch(`/portal/admin/setup/aspect/${aspectId}/delete`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': csrfToken || ''
                     },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (data.success) {
-                    renderAspects(roomId, data.aspects);
-                    showToast('Aspek diperbarui.');
-                    refreshSetupHistory();
-                    editModal.hide();
-                } else {
-                    alert(data.message || 'Gagal memperbarui aspek');
-                }
-            } catch (err) {
-                alert('Gagal memperbarui aspek');
-                console.error(err);
-            } finally {
-                saveAspectEditBtn.disabled = false;
-                saveAspectEditBtn.innerHTML = '<i class="bi bi-check-lg"></i> Simpan';
-                pendingEdit = null;
-            }
-        });
-
-        deleteAspectBtn?.addEventListener('click', function () {
-            if (!pendingDelete) return;
-            const { aspectId, roomId, aspectName, trigger } = pendingDelete;
-            const action = {
-                confirmTitle: 'Hapus Aspek',
-                confirmText: `Hapus aspek ${aspectName}?`,
-                label: 'Hapus',
-                buttonClass: 'btn-danger',
-                allowNote: false,
-                undoLabel: 'Penghapusan aspek dijadwalkan',
-                execute: function () {
-                    return fetch(`/portal/admin/setup/aspect/${aspectId}/delete`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken || ''
-                        },
-                        body: JSON.stringify({})
-                    })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (!data || !data.success) {
-                                throw new Error(data.message || 'Gagal menghapus aspek');
-                            }
-                            return data;
-                        });
-                },
-                onSchedule: function () {
-                    deleteAspectBtn.disabled = true;
-                    deleteAspectBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-                    if (trigger) trigger.disabled = true;
-                    deleteModal.hide();
-                },
-                onUndo: function () {
-                    deleteAspectBtn.disabled = false;
-                    deleteAspectBtn.innerHTML = '<i class="bi bi-trash"></i> Hapus';
-                    if (trigger) trigger.disabled = false;
-                    showToast('Penghapusan aspek dibatalkan.');
-                },
-                onSuccess: function (data) {
-                    renderAspects(roomId, data.aspects);
-                    showToast(`${aspectName} dihapus.`);
-                    refreshSetupHistory();
-                },
-                onFailure: function (err) {
-                    deleteAspectBtn.disabled = false;
-                    deleteAspectBtn.innerHTML = '<i class="bi bi-trash"></i> Hapus';
-                    if (trigger) trigger.disabled = false;
-                    alert(err.message || 'Gagal menghapus aspek');
-                }
-            };
-            pendingDelete = null;
-            if (window.scheduleAdminAction) {
-                window.scheduleAdminAction(action);
-            } else {
-                action.execute().then(action.onSuccess).catch(action.onFailure);
-            }
-        });
-
-        // Reset state on modal close (prevent lingering backdrop/blocking)
-        [deleteModalEl, editModalEl].forEach(el => {
-            if (!el) return;
-            el.addEventListener('hidden.bs.modal', () => {
-                pendingDelete = null;
-                pendingEdit = null;
-                deleteAspectBtn && (deleteAspectBtn.disabled = false, deleteAspectBtn.innerHTML = '<i class="bi bi-trash"></i> Hapus');
-                saveAspectEditBtn && (saveAspectEditBtn.disabled = false, saveAspectEditBtn.innerHTML = '<i class="bi bi-check-lg"></i> Simpan');
-                document.body.classList.remove('modal-open');
-                document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
-            });
-        });
-
-        // Toggle required badge (AJAX)
-        document.addEventListener('click', async function (e) {
-            console.log('Click event detected:', e.target);
-            const badge = e.target.closest('.aspect-required-badge');
-            console.log('Badge found:', badge);
-
-            if (!badge) return;
-
-            // Prevent event bubbling IMMEDIATELY
-            e.stopPropagation();
-            e.preventDefault();
-
-            console.log('Badge clicked! classList:', badge.classList.value);
-            console.log('Badge attributes:', {
-                aspectId: badge.getAttribute('data-aspect-id'),
-                roomId: badge.getAttribute('data-room-id'),
-                isRequired: badge.getAttribute('data-is-required'),
-                pointerEvents: badge.style.pointerEvents
-            });
-
-            const aspectId = badge.getAttribute('data-aspect-id');
-            const roomId = badge.getAttribute('data-room-id');
-
-            if (!aspectId || !roomId) {
-                console.error('Missing aspectId or roomId', { aspectId, roomId });
-                showToast('Error: Data aspek tidak lengkap', true);
-                return;
-            }
-
-            // Check if already processing
-            if (badge.style.pointerEvents === 'none') {
-                console.warn('Badge already processing, ignoring click');
-                return;
-            }
-
-            // Add loading state
-            badge.classList.add('opacity-50');
-            badge.style.pointerEvents = 'none';
-            console.log('Loading state applied');
-
-            try {
-                console.log(`Sending request to /portal/admin/setup/aspect/${aspectId}/toggle-required`);
-
-                const res = await fetch(`/portal/admin/setup/aspect/${aspectId}/toggle-required`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
                     body: JSON.stringify({})
-                });
-
-                console.log('Response received:', res.status, res.statusText);
-
-                if (!res.ok) {
-                    console.error('Response not OK:', res.status, res.statusText);
-                    const errorText = await res.text();
-                    console.error('Error response body:', errorText);
-                    showToast(`Gagal mengubah status: ${res.status} ${res.statusText}`, true);
-                    badge.classList.remove('opacity-50');
-                    badge.style.pointerEvents = '';
-                    return;
-                }
-
-                const data = await res.json();
-                console.log('Toggle response data:', data);
-
-                if (data.success) {
-                    console.log('Toggle successful, is_required:', data.is_required);
-
-                    // Re-render all aspects in the room to sync state
-                    if (data.aspects && data.room_id) {
-                        console.log('Re-rendering aspects for room:', data.room_id);
-                        renderAspects(data.room_id, data.aspects);
-                        showToast(`✓ Status berhasil diubah menjadi ${data.is_required ? 'Wajib' : 'Opsional'}`);
-                    } else {
-                        console.log('Updating badge directly');
-                        // Fallback: update only this badge
-                        const isReq = data.is_required;
-                        badge.setAttribute('data-is-required', isReq ? 'true' : 'false');
-                        badge.textContent = isReq ? 'Wajib' : 'Opsional';
-
-                        // Remove old classes
-                        badge.classList.remove('bg-warning-subtle', 'text-warning', 'bg-secondary-subtle', 'text-secondary');
-
-                        // Add new classes
-                        if (isReq) {
-                            badge.classList.add('bg-warning-subtle', 'text-warning');
-                        } else {
-                            badge.classList.add('bg-secondary-subtle', 'text-secondary');
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (!data || !data.success) {
+                            throw new Error(data.message || 'Gagal menghapus aspek');
                         }
+                        return data;
+                    });
+            },
+            onSchedule: function () {
+                deleteAspectBtn.disabled = true;
+                deleteAspectBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                if (trigger) trigger.disabled = true;
+                deleteModal.hide();
+            },
+            onUndo: function () {
+                deleteAspectBtn.disabled = false;
+                deleteAspectBtn.innerHTML = '<i class="bi bi-trash"></i> Hapus';
+                if (trigger) trigger.disabled = false;
+                showToast('Penghapusan aspek dibatalkan.');
+            },
+            onSuccess: function (data) {
+                renderAspects(roomId, data.aspects);
+                showToast(`${aspectName} dihapus.`);
+                refreshSetupHistory();
+            },
+            onFailure: function (err) {
+                deleteAspectBtn.disabled = false;
+                deleteAspectBtn.innerHTML = '<i class="bi bi-trash"></i> Hapus';
+                if (trigger) trigger.disabled = false;
+                alert(err.message || 'Gagal menghapus aspek');
+            }
+        };
+        pendingDelete = null;
+        if (window.scheduleAdminAction) {
+            window.scheduleAdminAction(action);
+        } else {
+            action.execute().then(action.onSuccess).catch(action.onFailure);
+        }
+    });
 
-                        showToast(`✓ Status berhasil diubah menjadi ${isReq ? 'Wajib' : 'Opsional'}`);
-                    }
-                    refreshSetupHistory();
-                } else {
-                    console.error('Toggle failed:', data.message);
-                    showToast(data.message || 'Gagal mengubah status wajib.', true);
-                    badge.classList.remove('opacity-50');
-                    badge.style.pointerEvents = '';
-                }
-            } catch (err) {
-                console.error('Toggle error (catch):', err);
-                console.error('Error stack:', err.stack);
-                showToast('Gagal mengubah status. Silakan coba lagi.', true);
+    // Reset state on modal close (prevent lingering backdrop/blocking)
+    [deleteModalEl, editModalEl].forEach(el => {
+        if (!el) return;
+        el.addEventListener('hidden.bs.modal', () => {
+            pendingDelete = null;
+            pendingEdit = null;
+            deleteAspectBtn && (deleteAspectBtn.disabled = false, deleteAspectBtn.innerHTML = '<i class="bi bi-trash"></i> Hapus');
+            saveAspectEditBtn && (saveAspectEditBtn.disabled = false, saveAspectEditBtn.innerHTML = '<i class="bi bi-check-lg"></i> Simpan');
+            document.body.classList.remove('modal-open');
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        });
+    });
+
+    // Toggle required badge (AJAX)
+    document.addEventListener('click', async function (e) {
+        console.log('Click event detected:', e.target);
+        const badge = e.target.closest('.aspect-required-badge');
+        console.log('Badge found:', badge);
+
+        if (!badge) return;
+
+        // Prevent event bubbling IMMEDIATELY
+        e.stopPropagation();
+        e.preventDefault();
+
+        console.log('Badge clicked! classList:', badge.classList.value);
+        console.log('Badge attributes:', {
+            aspectId: badge.getAttribute('data-aspect-id'),
+            roomId: badge.getAttribute('data-room-id'),
+            isRequired: badge.getAttribute('data-is-required'),
+            pointerEvents: badge.style.pointerEvents
+        });
+
+        const aspectId = badge.getAttribute('data-aspect-id');
+        const roomId = badge.getAttribute('data-room-id');
+
+        if (!aspectId || !roomId) {
+            console.error('Missing aspectId or roomId', { aspectId, roomId });
+            showToast('Error: Data aspek tidak lengkap', true);
+            return;
+        }
+
+        // Check if already processing
+        if (badge.style.pointerEvents === 'none') {
+            console.warn('Badge already processing, ignoring click');
+            return;
+        }
+
+        // Add loading state
+        badge.classList.add('opacity-50');
+        badge.style.pointerEvents = 'none';
+        console.log('Loading state applied');
+
+        try {
+            console.log(`Sending request to /portal/admin/setup/aspect/${aspectId}/toggle-required`);
+
+            const res = await fetch(`/portal/admin/setup/aspect/${aspectId}/toggle-required`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            });
+
+            console.log('Response received:', res.status, res.statusText);
+
+            if (!res.ok) {
+                console.error('Response not OK:', res.status, res.statusText);
+                const errorText = await res.text();
+                console.error('Error response body:', errorText);
+                showToast(`Gagal mengubah status: ${res.status} ${res.statusText}`, true);
                 badge.classList.remove('opacity-50');
                 badge.style.pointerEvents = '';
-            } finally {
-                // ALWAYS restore clickability
-                console.log('Finally block: restoring badge state');
-                setTimeout(() => {
-                    badge.classList.remove('opacity-50');
-                    badge.style.pointerEvents = '';
-                    console.log('Badge restored to clickable state');
-                }, 100);
+                return;
             }
-        }, { capture: true }); // Use capture phase to ensure we catch the event early
 
-        // Save button
-        document.querySelectorAll('.inline-save-btn').forEach(btn => {
-            btn.addEventListener('click', async function () {
-                const roomId = this.dataset.roomId;
-                const list = inlineAspectLists[roomId] || [];
+            const data = await res.json();
+            console.log('Toggle response data:', data);
 
-                if (list.length === 0) return;
+            if (data.success) {
+                console.log('Toggle successful, is_required:', data.is_required);
 
-                this.disabled = true;
-                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                // Re-render all aspects in the room to sync state
+                if (data.aspects && data.room_id) {
+                    console.log('Re-rendering aspects for room:', data.room_id);
+                    renderAspects(data.room_id, data.aspects);
+                    showToast(`✓ Status berhasil diubah menjadi ${data.is_required ? 'Wajib' : 'Opsional'}`);
+                } else {
+                    console.log('Updating badge directly');
+                    // Fallback: update only this badge
+                    const isReq = data.is_required;
+                    badge.setAttribute('data-is-required', isReq ? 'true' : 'false');
+                    badge.textContent = isReq ? 'Wajib' : 'Opsional';
 
-                try {
-                    const requiredFlag = document.getElementById('aspectRequiredInput')?.checked ?? true;
-                    const aspects = list.map(name => ({ roomId, name, is_required: requiredFlag }));
-                    const response = await fetch('/portal/admin/setup/aspects/batch', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ aspects })
-                    });
-                    const data = await response.json();
+                    // Remove old classes
+                    badge.classList.remove('bg-warning-subtle', 'text-warning', 'bg-secondary-subtle', 'text-secondary');
 
-                    if (data.success) {
-                        if (data.room_aspects && data.room_aspects[roomId]) {
-                            renderAspects(roomId, data.room_aspects[roomId]);
-                        }
-                        inlineAspectLists[roomId] = [];
-                        updateInlinePreview(roomId);
-                        showToast('Aspek berhasil disimpan.');
-                        refreshSetupHistory();
-                        document.getElementById(`room-${roomId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        this.disabled = false;
-                        this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan 0';
+                    // Add new classes
+                    if (isReq) {
+                        badge.classList.add('bg-warning-subtle', 'text-warning');
                     } else {
-                        alert('Gagal: ' + (data.error || 'Unknown error'));
-                        this.disabled = false;
-                        this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan ' + list.length;
+                        badge.classList.add('bg-secondary-subtle', 'text-secondary');
                     }
-                } catch (err) {
-                    alert('Error: ' + err.message);
+
+                    showToast(`✓ Status berhasil diubah menjadi ${isReq ? 'Wajib' : 'Opsional'}`);
+                }
+                refreshSetupHistory();
+            } else {
+                console.error('Toggle failed:', data.message);
+                showToast(data.message || 'Gagal mengubah status wajib.', true);
+                badge.classList.remove('opacity-50');
+                badge.style.pointerEvents = '';
+            }
+        } catch (err) {
+            console.error('Toggle error (catch):', err);
+            console.error('Error stack:', err.stack);
+            showToast('Gagal mengubah status. Silakan coba lagi.', true);
+            badge.classList.remove('opacity-50');
+            badge.style.pointerEvents = '';
+        } finally {
+            // ALWAYS restore clickability
+            console.log('Finally block: restoring badge state');
+            setTimeout(() => {
+                badge.classList.remove('opacity-50');
+                badge.style.pointerEvents = '';
+                console.log('Badge restored to clickable state');
+            }, 100);
+        }
+    }, { capture: true }); // Use capture phase to ensure we catch the event early
+
+    // Save button
+    document.querySelectorAll('.inline-save-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const roomId = this.dataset.roomId;
+            const list = inlineAspectLists[roomId] || [];
+
+            if (list.length === 0) return;
+
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+            try {
+                const requiredFlag = document.getElementById('aspectRequiredInput')?.checked ?? true;
+                const aspects = list.map(name => ({ roomId, name, is_required: requiredFlag }));
+                const response = await fetch('/portal/admin/setup/aspects/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ aspects })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    if (data.room_aspects && data.room_aspects[roomId]) {
+                        renderAspects(roomId, data.room_aspects[roomId]);
+                    }
+                    inlineAspectLists[roomId] = [];
+                    updateInlinePreview(roomId);
+                    showToast('Aspek berhasil disimpan.');
+                    refreshSetupHistory();
+                    document.getElementById(`room-${roomId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan 0';
+                } else {
+                    alert('Gagal: ' + (data.error || 'Unknown error'));
                     this.disabled = false;
                     this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan ' + list.length;
                 }
-            });
+            } catch (err) {
+                alert('Error: ' + err.message);
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan ' + list.length;
+            }
         });
+    });
     });
 </script>
 {% endblock portal_scripts %}
