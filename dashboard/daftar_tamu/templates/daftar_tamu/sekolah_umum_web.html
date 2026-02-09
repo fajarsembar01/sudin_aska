@@ -32,7 +32,7 @@
 {% else %}
 <section class="row g-3 mb-4">
     <div class="col-lg-4">
-            <div class="card border-0 shadow-sm h-100">
+        <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
                 <h2 class="h6 fw-bold mb-2">QR Buku Tamu</h2>
                 <p class="small text-muted mb-3">
@@ -40,8 +40,8 @@
                 </p>
                 <div class="text-center mb-3">
                     {% if guestbook_qr_ready %}
-                    <img src="{{ url_for('daftar_tamu.sekolah_guestbook_qr', format='png') }}"
-                        alt="QR Buku Tamu" class="img-fluid border rounded-3" style="max-width: 220px;">
+                    <img src="{{ url_for('daftar_tamu.sekolah_guestbook_qr', format='png') }}" alt="QR Buku Tamu"
+                        class="img-fluid border rounded-3" style="max-width: 220px;">
                     {% else %}
                     <div class="border rounded-3 p-4 text-muted">QR belum dibuat.</div>
                     {% endif %}
@@ -61,6 +61,12 @@
                     <a class="btn btn-outline-secondary btn-sm"
                         href="{{ url_for('daftar_tamu.sekolah_guestbook_qr', format='pdf', paper='a5') }}">Download
                         PDF A5</a>
+                    <form method="post" action="{{ url_for('daftar_tamu.sekolah_generate_guestbook_qr') }}">
+                        <button class="btn btn-outline-warning btn-sm w-100" type="submit"
+                            onclick="return confirm('Generate ulang QR Code? QR lama akan terganti.')">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Generate Ulang QR
+                        </button>
+                    </form>
                     {% else %}
                     <form method="post" action="{{ url_for('daftar_tamu.sekolah_generate_guestbook_qr') }}">
                         <button class="btn btn-primary btn-sm w-100" type="submit">Generate QR</button>
@@ -84,13 +90,17 @@
                     <form method="get" class="d-flex gap-2">
                         <select name="public_status" class="form-select form-select-sm">
                             <option value="" {% if public_status=='' %}selected{% endif %}>Semua status</option>
-                            <option value="pending" {% if public_status=='pending' %}selected{% endif %}>Menunggu</option>
-                            <option value="approved" {% if public_status=='approved' %}selected{% endif %}>Disetujui</option>
-                            <option value="rejected" {% if public_status=='rejected' %}selected{% endif %}>Ditolak</option>
+                            <option value="pending" {% if public_status=='pending' %}selected{% endif %}>Menunggu
+                            </option>
+                            <option value="approved" {% if public_status=='approved' %}selected{% endif %}>Disetujui
+                            </option>
+                            <option value="rejected" {% if public_status=='rejected' %}selected{% endif %}>Ditolak
+                            </option>
                         </select>
                         <select name="public_per_page" class="form-select form-select-sm">
                             {% for size in [5, 10, 20, 50, 100] %}
-                            <option value="{{ size }}" {% if public_per_page==size %}selected{% endif %}>{{ size }}</option>
+                            <option value="{{ size }}" {% if public_per_page==size %}selected{% endif %}>{{ size }}
+                            </option>
                             {% endfor %}
                         </select>
                         <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
@@ -157,7 +167,8 @@
                                         <div class="small text-muted">Catatan tamu: {{ row.notes }}</div>
                                         {% endif %}
                                         {% if row.reviewer_notes %}
-                                        <div class="small text-muted">Catatan verifikator: {{ row.reviewer_notes }}</div>
+                                        <div class="small text-muted">Catatan verifikator: {{ row.reviewer_notes }}
+                                        </div>
                                         {% endif %}
                                     </td>
                                     <td class="text-end">
@@ -177,7 +188,8 @@
                                                 onsubmit="document.getElementById('publicRejectNote{{ row.id }}').value = document.getElementById('publicNote{{ row.id }}').value;">
                                                 <input type="hidden" name="reviewer_notes"
                                                     id="publicRejectNote{{ row.id }}">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                                                <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger">Reject</button>
                                             </form>
                                         </div>
                                         {% else %}
@@ -188,7 +200,8 @@
                                 {% endfor %}
                                 {% else %}
                                 <tr>
-                                    <td colspan="6" class="text-center text-muted py-3">Belum ada pengajuan tamu umum.</td>
+                                    <td colspan="6" class="text-center text-muted py-3">Belum ada pengajuan tamu umum.
+                                    </td>
                                 </tr>
                                 {% endif %}
                             </tbody>
@@ -203,18 +216,19 @@
                             <a class="page-link"
                                 href="{{ url_for('daftar_tamu.sekolah_public_web', public_status=public_status, public_page=public_page-1, public_per_page=public_per_page, _anchor='publicGuestbook') }}">Prev</a>
                         </li>
-                        {% set start_page = 1 if public_page - 2 < 1 else public_page - 2 %}
-                        {% set end_page = public_total_pages if public_page + 2 > public_total_pages else public_page + 2 %}
-                        {% for p in range(start_page, end_page + 1) %}
-                        <li class="page-item {% if p == public_page %}active{% endif %}">
-                            <a class="page-link"
-                                href="{{ url_for('daftar_tamu.sekolah_public_web', public_status=public_status, public_page=p, public_per_page=public_per_page, _anchor='publicGuestbook') }}">{{ p }}</a>
-                        </li>
-                        {% endfor %}
-                        <li class="page-item {% if public_page >= public_total_pages %}disabled{% endif %}">
-                            <a class="page-link"
-                                href="{{ url_for('daftar_tamu.sekolah_public_web', public_status=public_status, public_page=public_page+1, public_per_page=public_per_page, _anchor='publicGuestbook') }}">Next</a>
-                        </li>
+                        {% set start_page = 1 if public_page - 2 < 1 else public_page - 2 %} {% set
+                            end_page=public_total_pages if public_page + 2> public_total_pages else public_page + 2 %}
+                            {% for p in range(start_page, end_page + 1) %}
+                            <li class="page-item {% if p == public_page %}active{% endif %}">
+                                <a class="page-link"
+                                    href="{{ url_for('daftar_tamu.sekolah_public_web', public_status=public_status, public_page=p, public_per_page=public_per_page, _anchor='publicGuestbook') }}">{{
+                                    p }}</a>
+                            </li>
+                            {% endfor %}
+                            <li class="page-item {% if public_page >= public_total_pages %}disabled{% endif %}">
+                                <a class="page-link"
+                                    href="{{ url_for('daftar_tamu.sekolah_public_web', public_status=public_status, public_page=public_page+1, public_per_page=public_per_page, _anchor='publicGuestbook') }}">Next</a>
+                            </li>
                     </ul>
                 </nav>
                 {% endif %}
