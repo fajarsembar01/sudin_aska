@@ -3257,6 +3257,25 @@ def admin_setup() -> Response:
         is_claimed = (school.get("school_user_count") or 0) > 0
         has_rooms = (school.get("room_count") or 0) > 0
 
+        # Check for rooms selected without any aspects
+        rooms_without_aspects = []
+        with get_cursor() as cur:
+            cur.execute(
+                """
+                SELECT r.name
+                FROM portal_school_rooms sr
+                JOIN portal_rooms r ON r.id = sr.room_id
+                WHERE sr.school_id = %s
+                AND NOT EXISTS (
+                    SELECT 1 FROM portal_school_room_aspects psra
+                    WHERE psra.school_room_id = sr.id
+                )
+                ORDER BY r.name
+                """,
+                (school.get("id"),)
+            )
+            rooms_without_aspects = [row["name"] for row in cur.fetchall()]
+
         operator_phone_raw = meta.get("coordinator_phone") or meta.get("school_phone") or ""
         operator_phone_display = str(operator_phone_raw).strip()
         operator_phone = _sanitize_phone(operator_phone_display)
@@ -3282,7 +3301,14 @@ def admin_setup() -> Response:
             if len(suspicious_reasons) > 2:
                 suspicious_preview = f"{suspicious_preview} +{len(suspicious_reasons) - 2} lainnya"
 
-        needs_attention = (not is_claimed) or (not has_rooms) or bool(missing_fields) or bool(suspicious_reasons)
+        rooms_no_aspects_preview = ""
+        if rooms_without_aspects:
+            preview_items = rooms_without_aspects[:2]
+            rooms_no_aspects_preview = ", ".join(preview_items)
+            if len(rooms_without_aspects) > 2:
+                rooms_no_aspects_preview = f"{rooms_no_aspects_preview} +{len(rooms_without_aspects) - 2} lainnya"
+
+        needs_attention = (not is_claimed) or (not has_rooms) or bool(missing_fields) or bool(suspicious_reasons) or bool(rooms_without_aspects)
         if needs_attention:
             school_monitor_attention_count += 1
 
@@ -3304,10 +3330,13 @@ def admin_setup() -> Response:
                 "has_rooms": has_rooms,
                 "is_incomplete": bool(missing_fields),
                 "is_suspicious": bool(suspicious_reasons),
+                "has_rooms_without_aspects": bool(rooms_without_aspects),
                 "missing_preview": missing_preview,
                 "missing_fields": missing_fields,
                 "suspicious_preview": suspicious_preview,
                 "suspicious_reasons": suspicious_reasons,
+                "rooms_without_aspects": rooms_without_aspects,
+                "rooms_no_aspects_preview": rooms_no_aspects_preview,
                 "operator_phone": operator_phone_display,
                 "operator_wa": wa_link,
             }
