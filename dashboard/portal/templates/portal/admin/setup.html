@@ -2228,6 +2228,7 @@
     const schoolCheckCount = document.getElementById('schoolCheckCount');
     const schoolCheckTotal = document.getElementById('schoolCheckTotal');
     const schoolCheckReset = document.getElementById('schoolCheckReset');
+    const schoolCheckFilterRoomsNoAspects = document.getElementById('schoolCheckFilterRoomsNoAspects');
 
     function applySchoolCheckFilters() {
         if (!schoolCheckRows.length) {
@@ -2241,6 +2242,7 @@
         const wantNoRooms = Boolean(schoolCheckFilterNoRooms?.checked);
         const wantIncomplete = Boolean(schoolCheckFilterIncomplete?.checked);
         const wantSuspicious = Boolean(schoolCheckFilterSuspicious?.checked);
+        const wantRoomsNoAspects = Boolean(schoolCheckFilterRoomsNoAspects?.checked);
         const kecamatan = (schoolCheckKecamatan?.value || '').toLowerCase();
         let visible = 0;
 
@@ -2252,6 +2254,7 @@
             const hasRooms = row.dataset.rooms === 'true';
             const isIncomplete = row.dataset.incomplete === 'true';
             const isSuspicious = row.dataset.suspicious === 'true';
+            const hasRoomsNoAspects = row.dataset.roomsNoAspects === 'true';
 
             if (query && !searchText.includes(query)) {
                 row.style.display = 'none';
@@ -2277,6 +2280,10 @@
                 row.style.display = 'none';
                 return;
             }
+            if (wantRoomsNoAspects && !hasRoomsNoAspects) {
+                row.style.display = 'none';
+                return;
+            }
             if (kecamatan && rowKecamatan !== kecamatan) {
                 row.style.display = 'none';
                 return;
@@ -2296,6 +2303,7 @@
     if (schoolCheckFilterNoRooms) schoolCheckFilterNoRooms.addEventListener('change', applySchoolCheckFilters);
     if (schoolCheckFilterIncomplete) schoolCheckFilterIncomplete.addEventListener('change', applySchoolCheckFilters);
     if (schoolCheckFilterSuspicious) schoolCheckFilterSuspicious.addEventListener('change', applySchoolCheckFilters);
+    if (schoolCheckFilterRoomsNoAspects) schoolCheckFilterRoomsNoAspects.addEventListener('change', applySchoolCheckFilters);
     if (schoolCheckKecamatan) schoolCheckKecamatan.addEventListener('change', applySchoolCheckFilters);
     if (schoolCheckReset) {
         schoolCheckReset.addEventListener('click', function () {
@@ -2305,6 +2313,7 @@
             if (schoolCheckFilterNoRooms) schoolCheckFilterNoRooms.checked = false;
             if (schoolCheckFilterIncomplete) schoolCheckFilterIncomplete.checked = false;
             if (schoolCheckFilterSuspicious) schoolCheckFilterSuspicious.checked = false;
+            if (schoolCheckFilterRoomsNoAspects) schoolCheckFilterRoomsNoAspects.checked = false;
             if (schoolCheckKecamatan) schoolCheckKecamatan.value = '';
             applySchoolCheckFilters();
         });
