@@ -202,7 +202,7 @@ def _store_guestbook_qr_payload(school_id: int, payload: dict) -> None:
         )
 
 
-def _build_guestbook_qr(target_url: str, size: int = 1024) -> Image.Image:
+def _build_guestbook_qr(target_url: str, size: int = 1024, logo_path: Optional[Path] = None) -> Image.Image:
     qr = qrcode.QRCode(
         version=None,
         error_correction=qrcode.constants.ERROR_CORRECT_H,
@@ -214,11 +214,15 @@ def _build_guestbook_qr(target_url: str, size: int = 1024) -> Image.Image:
     qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
     qr_img = qr_img.resize((size, size), Image.LANCZOS)
 
+
     base_dir = Path(__file__).resolve().parents[2]
-    logo_candidates = [
+    logo_candidates = []
+    if logo_path:
+        logo_candidates.append(logo_path)
+    logo_candidates.extend([
         base_dir / "web_aska" / "static" / "favicon.ico",
         base_dir / "web_aska" / "static" / "logo.png",
-    ]
+    ])
     logo = None
     for logo_path in logo_candidates:
         if not logo_path.exists():
@@ -271,6 +275,7 @@ def _fetch_school_for_user(user_id: int) -> Optional[dict]:
                    s.name,
                    s.jenjang,
                    s.alamat,
+                   s.logo_url,
                    l.name AS kelurahan_name,
                    k.name AS kecamatan_name
             FROM dashboard_users u
@@ -1502,7 +1507,25 @@ def sekolah_generate_guestbook_qr() -> Response:
         return redirect(url_for("daftar_tamu.sekolah_public_web"))
 
     target_url = f"{_web_aska_base_url()}/buku-tamu/{school.get('npsn')}"
-    qr_img = _build_guestbook_qr(target_url, size=1024)
+    
+    # Resolve logo path
+    logo_path = None
+    logo_url = school.get("logo_url")
+    if logo_url and "/portal/uploads/" in logo_url:
+        # Resolve URL to local path
+        # URL format: /portal/uploads/<filename>
+        # Local upload dir: base_dir/uploads/portal
+        try:
+            filename = logo_url.split("/portal/uploads/")[-1]
+            base_dir = Path(__file__).resolve().parents[2]
+            upload_folder = base_dir / "uploads" / "portal"
+            candidate_path = upload_folder / filename
+            if candidate_path.exists():
+                logo_path = candidate_path
+        except Exception:
+            pass
+
+    qr_img = _build_guestbook_qr(target_url, size=1024, logo_path=logo_path)
     buf = BytesIO()
     qr_img.convert("RGB").save(buf, format="PNG")
     qr_base64 = base64.b64encode(buf.getvalue()).decode("ascii")
