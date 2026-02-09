@@ -211,12 +211,16 @@ def handle_manage_users(*, actor: Optional[dict], base_template: str) -> Respons
             flash(f"Gagal memproses data: {exc}", "danger")
 
     users = list_dashboard_users()
+    merge_old_users = [u for u in users if u.get("account_status") == "not_registered"]
+    merge_new_users = [u for u in users if u.get("account_status") == "approved"]
     kecamatan_list = list_kecamatan()
     activity_logs = fetch_activity_logs(limit=50, target_types=("USER",))
 
     return render_template(
         "portal/admin/manage_users.html",
         users=users,
+        merge_old_users=merge_old_users,
+        merge_new_users=merge_new_users,
         kecamatan_list=kecamatan_list,
         activity_logs=activity_logs,
         base_template=base_template,

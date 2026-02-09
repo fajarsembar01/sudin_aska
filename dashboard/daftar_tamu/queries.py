@@ -20,6 +20,19 @@ SORT_OPTIONS = {
 DEFAULT_SORT = "visits_desc"
 TRANSACTION_STATUSES = {"pending", "approved", "rejected"}
 
+USER_SORT_OPTIONS = {
+    "visits_desc": "visit_count DESC, last_visit_date DESC NULLS LAST, full_name ASC",
+    "visits_asc": "visit_count ASC, last_visit_date DESC NULLS LAST, full_name ASC",
+    "last_visit_desc": "last_visit_date DESC NULLS LAST, visit_count DESC, full_name ASC",
+    "last_visit_asc": "last_visit_date ASC NULLS FIRST, visit_count DESC, full_name ASC",
+}
+DEFAULT_USER_SORT = "visits_desc"
+USER_VISIT_SORT_OPTIONS = {
+    "date_desc": "ft.visit_at DESC, ft.id DESC",
+    "date_asc": "ft.visit_at ASC, ft.id ASC",
+}
+DEFAULT_USER_VISIT_SORT = "date_desc"
+
 _GUEST_SCOPE_WHERE = """
       AND (
         %s = 'all'
@@ -355,6 +368,448 @@ def fetch_school_rankings(
     return rows, total_rows
 
 
+def fetch_user_rankings(
+    *,
+    page: int = 1,
+    per_page: int = 10,
+    sort_key: str = DEFAULT_USER_SORT,
+    search_query: Optional[str] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
+) -> Tuple[List[Dict[str, Any]], int]:
+    """Fetch user rankings for approved users based on visit history."""
+    scope = _normalize_guest_scope(guest_scope)
+    safe_page = max(1, page)
+    safe_per_page = max(5, min(per_page, 100))
+    offset = (safe_page - 1) * safe_per_page
+
+    safe_sort = sort_key if sort_key in USER_SORT_OPTIONS else DEFAULT_USER_SORT
+    order_sql = USER_SORT_OPTIONS[safe_sort]
+    query_text, like_query = _build_search(search_query)
+
+    base_cte = (
+        """
+    WITH filtered_transactions AS (
+        SELECT t.*
+        FROM daftar_tamu_transactions t
+        WHERE t.status = 'approved'
+          AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
+          AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
+        """
+        + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+        + """
+    ),
+    user_transactions AS (
+        SELECT ft.id AS transaction_id, ft.created_by AS user_id
+        FROM filtered_transactions ft
+        WHERE ft.created_by IS NOT NULL
+        UNION
+        SELECT ft.id AS transaction_id, g.user_id AS user_id
+        FROM filtered_transactions ft
+        JOIN daftar_tamu_transaction_guests g ON g.transaction_id = ft.id
+        WHERE g.user_id IS NOT NULL
+    ),
+    user_rollup AS (
+        SELECT
+            u.id AS user_id,
+            u.full_name,
+            u.email,
+            u.role,
+            COUNT(ut.transaction_id) AS visit_count,
+            MAX(ft.visit_at) AS last_visit_date,
+            CASE
+                WHEN u.role = 'coordinator' THEN 1
+                WHEN u.role = 'staff' THEN 2
+                ELSE 3
+            END AS role_rank
+        FROM dashboard_users u
+        LEFT JOIN user_transactions ut ON ut.user_id = u.id
+        LEFT JOIN filtered_transactions ft ON ft.id = ut.transaction_id
+        WHERE u.account_status = 'approved'
+          AND (u.role IS NULL OR u.role <> 'sekolah')
+        GROUP BY u.id, u.full_name, u.email, u.role
+    )
+    """
+    )
+
+    search_clause = """
+    WHERE (
+        %s = ''
+        OR r.full_name ILIKE %s
+        OR r.email ILIKE %s
+        OR COALESCE(r.role, '') ILIKE %s
+        OR COALESCE(latest.school_name, '') ILIKE %s
+        OR COALESCE(latest.school_kecamatan, '') ILIKE %s
+    )
+    """
+
+    count_query = (
+        base_cte
+        + """
+    SELECT COUNT(*) AS total
+    FROM user_rollup r
+    LEFT JOIN LATERAL (
+        SELECT
+            s.name AS school_name,
+            k.name AS school_kecamatan,
+            ft.visit_at
+        FROM user_transactions ut
+        JOIN filtered_transactions ft ON ft.id = ut.transaction_id
+        JOIN portal_schools s ON s.id = ft.school_id
+        LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+        LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+        WHERE ut.user_id = r.user_id
+        ORDER BY ft.visit_at DESC, ft.id DESC
+        LIMIT 1
+    ) latest ON TRUE
+    """
+        + search_clause
+    )
+
+    data_query = (
+        base_cte
+        + f"""
+    SELECT
+        r.user_id,
+        r.full_name,
+        r.email,
+        r.role,
+        r.visit_count,
+        r.last_visit_date,
+        latest.school_name AS last_school_name,
+        latest.school_npsn,
+        latest.school_kecamatan
+    FROM user_rollup r
+    LEFT JOIN LATERAL (
+        SELECT
+            s.name AS school_name,
+            s.npsn AS school_npsn,
+            k.name AS school_kecamatan,
+            ft.visit_at
+        FROM user_transactions ut
+        JOIN filtered_transactions ft ON ft.id = ut.transaction_id
+        JOIN portal_schools s ON s.id = ft.school_id
+        LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+        LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+        WHERE ut.user_id = r.user_id
+        ORDER BY ft.visit_at DESC, ft.id DESC
+        LIMIT 1
+    ) latest ON TRUE
+    """
+        + search_clause
+        + f"""
+    ORDER BY
+        r.role_rank ASC,
+        {order_sql}
+    LIMIT %s OFFSET %s
+    """
+    )
+
+    params_common: List[Any] = [
+        date_from,
+        date_from,
+        date_to,
+        date_to,
+        scope,
+        scope,
+        scope,
+        query_text,
+        like_query,
+        like_query,
+        like_query,
+        like_query,
+        like_query,
+    ]
+
+    with get_cursor() as cur:
+        cur.execute(count_query, params_common)
+        total_rows = int((cur.fetchone() or {}).get("total") or 0)
+
+        cur.execute(data_query, params_common + [safe_per_page, offset])
+        rows = [dict(row) for row in cur.fetchall()]
+
+    today = date.today()
+    for idx, row in enumerate(rows, start=offset + 1):
+        row["rank"] = idx
+        row["visit_count"] = int(row.get("visit_count") or 0)
+        last_visit = row.get("last_visit_date")
+        row["days_since_visit"] = (today - last_visit.date()).days if last_visit else None
+
+    return rows, total_rows
+
+
+def list_user_transactions(
+    *,
+    user_id: int,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
+    page: int = 1,
+    per_page: int = 10,
+) -> Tuple[List[Dict[str, Any]], int]:
+    """List approved transactions linked to a specific user."""
+    scope = _normalize_guest_scope(guest_scope)
+    safe_page = max(1, page)
+    safe_per_page = max(5, min(per_page, 100))
+    offset = (safe_page - 1) * safe_per_page
+
+    count_query = (
+        """
+        SELECT COUNT(*) AS total
+        FROM daftar_tamu_transactions t
+        WHERE t.status = 'approved'
+          AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
+          AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
+          AND (
+              t.created_by = %s
+              OR EXISTS (
+                  SELECT 1
+                  FROM daftar_tamu_transaction_guests g
+                  WHERE g.transaction_id = t.id
+                    AND g.user_id = %s
+              )
+          )
+        """
+        + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+    )
+
+    data_query = (
+        """
+        SELECT
+            t.id,
+            t.visit_at,
+            t.purpose,
+            t.notes,
+            t.photo_path,
+            t.photo_raw_path,
+            t.latitude,
+            t.longitude,
+            s.id AS school_id,
+            s.name AS school_name,
+            s.npsn,
+            s.jenjang,
+            k.name AS kecamatan,
+            l.name AS kelurahan,
+            (
+                {guest_names}
+            ) AS guest_names,
+            (
+                {guest_count}
+            ) AS guest_count
+        FROM daftar_tamu_transactions t
+        JOIN portal_schools s ON s.id = t.school_id
+        LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+        LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+        WHERE t.status = 'approved'
+          AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
+          AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
+          AND (
+              t.created_by = %s
+              OR EXISTS (
+                  SELECT 1
+                  FROM daftar_tamu_transaction_guests g
+                  WHERE g.transaction_id = t.id
+                    AND g.user_id = %s
+              )
+          )
+        """
+        + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+        + """
+        ORDER BY t.visit_at DESC, t.id DESC
+        LIMIT %s OFFSET %s
+        """
+    ).format(
+        guest_names=_GUEST_NAMES_SUBQUERY.format(tx_ref="t.id"),
+        guest_count=_GUEST_COUNT_SUBQUERY.format(tx_ref="t.id"),
+    )
+
+    params = [
+        date_from,
+        date_from,
+        date_to,
+        date_to,
+        user_id,
+        user_id,
+        scope,
+        scope,
+        scope,
+    ]
+
+    with get_cursor() as cur:
+        cur.execute(count_query, params)
+        total_rows = int((cur.fetchone() or {}).get("total") or 0)
+
+        cur.execute(data_query, params + [safe_per_page, offset])
+        rows = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        names_raw = row.get("guest_names") or ""
+        names = [n.strip() for n in names_raw.split(",") if n.strip()]
+        guest_count = int(row.get("guest_count") or 0)
+        if not guest_count:
+            guest_count = len(names)
+        if names:
+            if len(names) > 2:
+                display = f"{names[0]} +{len(names) - 1}"
+            elif len(names) == 2:
+                display = f"{names[0]} & {names[1]}"
+            else:
+                display = names[0]
+        else:
+            display = None
+        row["guest_display"] = display
+        row["guest_count"] = guest_count
+
+    return rows, total_rows
+
+
+def fetch_user_visit_history(
+    *,
+    user_id: int,
+    page: int = 1,
+    per_page: int = 10,
+    sort_key: str = DEFAULT_USER_VISIT_SORT,
+    search_query: Optional[str] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
+) -> Tuple[List[Dict[str, Any]], int]:
+    """Fetch visit history rows for a user (creator or guest)."""
+    scope = _normalize_guest_scope(guest_scope)
+    safe_page = max(1, page)
+    safe_per_page = max(5, min(per_page, 100))
+    offset = (safe_page - 1) * safe_per_page
+
+    safe_sort = sort_key if sort_key in USER_VISIT_SORT_OPTIONS else DEFAULT_USER_VISIT_SORT
+    order_sql = USER_VISIT_SORT_OPTIONS[safe_sort]
+    query_text, like_query = _build_search(search_query)
+
+    base_cte = (
+        """
+    WITH filtered_transactions AS (
+        SELECT t.*
+        FROM daftar_tamu_transactions t
+        WHERE t.status = 'approved'
+          AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
+          AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
+        """
+        + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+        + """
+    ),
+    user_transactions AS (
+        SELECT ft.id AS transaction_id, ft.created_by AS user_id
+        FROM filtered_transactions ft
+        WHERE ft.created_by IS NOT NULL
+        UNION
+        SELECT ft.id AS transaction_id, g.user_id AS user_id
+        FROM filtered_transactions ft
+        JOIN daftar_tamu_transaction_guests g ON g.transaction_id = ft.id
+        WHERE g.user_id IS NOT NULL
+    )
+    """
+    )
+
+    search_clause = """
+    AND (
+        %s = ''
+        OR s.name ILIKE %s
+        OR to_char(ft.visit_at::date, 'YYYY-MM-DD') ILIKE %s
+        OR to_char(ft.visit_at::date, 'DD Mon YYYY') ILIKE %s
+    )
+    """
+
+    count_query = (
+        base_cte
+        + """
+    SELECT COUNT(*) AS total
+    FROM user_transactions ut
+    JOIN filtered_transactions ft ON ft.id = ut.transaction_id
+    JOIN portal_schools s ON s.id = ft.school_id
+    WHERE ut.user_id = %s
+    """
+        + search_clause
+    )
+
+    data_query = (
+        base_cte
+        + f"""
+    SELECT
+        ft.id AS transaction_id,
+        ft.visit_at,
+        s.name AS school_name,
+        s.npsn AS school_npsn
+    FROM user_transactions ut
+    JOIN filtered_transactions ft ON ft.id = ut.transaction_id
+    JOIN portal_schools s ON s.id = ft.school_id
+    WHERE ut.user_id = %s
+    """
+        + search_clause
+        + f"""
+    ORDER BY {order_sql}
+    LIMIT %s OFFSET %s
+    """
+    )
+
+    params_common: List[Any] = [
+        date_from,
+        date_from,
+        date_to,
+        date_to,
+        scope,
+        scope,
+        scope,
+        user_id,
+        query_text,
+        like_query,
+        like_query,
+        like_query,
+    ]
+
+    with get_cursor() as cur:
+        cur.execute(count_query, params_common)
+        total_rows = int((cur.fetchone() or {}).get("total") or 0)
+
+        cur.execute(data_query, params_common + [safe_per_page, offset])
+        rows = [dict(row) for row in cur.fetchall()]
+
+    return rows, total_rows
+
+
+def list_user_visited_school_ids(
+    *,
+    user_id: int,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
+) -> List[int]:
+    """Return distinct school IDs visited by the user in the selected period."""
+    scope = _normalize_guest_scope(guest_scope)
+    query = (
+        """
+        SELECT DISTINCT t.school_id
+        FROM daftar_tamu_transactions t
+        WHERE t.created_by = %s
+          AND t.status = 'approved'
+          AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
+          AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
+        """
+        + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+    )
+    params = [
+        user_id,
+        date_from,
+        date_from,
+        date_to,
+        date_to,
+        scope,
+        scope,
+        scope,
+    ]
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [int(row["school_id"]) for row in cur.fetchall() if row.get("school_id") is not None]
+
 def fetch_map_data(
     *,
     date_from: Optional[date] = None,
@@ -517,10 +972,11 @@ def list_guest_candidates(search_query: Optional[str], limit: int = 20) -> List[
             role,
             nrk,
             jabatan,
+            account_status,
             degree_prefix,
             degree_suffix
         FROM dashboard_users
-        WHERE account_status = 'approved'
+        WHERE account_status IN ('approved', 'not_registered')
           AND (
             %s = ''
             OR full_name ILIKE %s
@@ -529,7 +985,7 @@ def list_guest_candidates(search_query: Optional[str], limit: int = 20) -> List[
             OR COALESCE(nrk, '') ILIKE %s
             OR COALESCE(role, '') ILIKE %s
         )
-        ORDER BY full_name ASC
+        ORDER BY (account_status = 'approved') DESC, full_name ASC
         LIMIT %s
     """
     with get_cursor() as cur:

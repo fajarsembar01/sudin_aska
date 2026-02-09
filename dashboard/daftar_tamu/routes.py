@@ -21,7 +21,14 @@ import qrcode
 from dashboard.auth import current_user, role_required
 from dashboard.db_access import get_cursor
 from dashboard.portal.permissions import can_access_aska, get_permission_summary, is_superadmin
-from dashboard.portal.queries import fetch_admin_pending_summary, list_portal_kontak
+from dashboard.portal.queries import (
+    fetch_admin_pending_summary,
+    get_staff_assigned_schools,
+    get_user_kecamatan_details,
+    get_user_kecamatan_ids,
+    list_portal_kontak,
+    list_schools_by_kecamatan,
+)
 from utils import current_jakarta_time
 
 from .media import stamp_guestbook_photo
@@ -34,6 +41,8 @@ from .queries import (
     fetch_map_data,
     fetch_recent_visits,
     fetch_school_rankings,
+    fetch_user_rankings,
+    fetch_user_visit_history,
     fetch_unvisited_schools,
     fetch_school_pending_counts,
     get_transaction_detail,
@@ -42,6 +51,8 @@ from .queries import (
     list_guest_candidates,
     list_general_guest_candidates,
     list_general_guests_admin,
+    list_user_transactions,
+    list_user_visited_school_ids,
     list_purpose_keyword_rows,
     list_purpose_keywords,
     list_contact_priority_rows,
@@ -290,6 +301,78 @@ def _fetch_school_for_user(user_id: int) -> Optional[dict]:
         return dict(row) if row else None
 
 
+def _fetch_dashboard_user(user_id: int) -> Optional[dict]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                u.id,
+                u.full_name,
+                u.email,
+                u.role,
+                u.jabatan,
+                u.requested_kecamatan,
+                k.name AS requested_kecamatan_name
+            FROM dashboard_users u
+            LEFT JOIN portal_kecamatan k ON u.requested_kecamatan = k.id
+            WHERE u.id = %s
+            LIMIT 1
+            """,
+            (user_id,),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def _list_unvisited_schools_for_user(
+    *,
+    user_id: int,
+    date_from: Optional[date],
+    date_to: Optional[date],
+    guest_scope: str,
+    assigned_schools: Optional[list[dict]] = None,
+    kecamatan_ids: Optional[list[int]] = None,
+) -> list[dict]:
+    assigned_schools = assigned_schools or []
+    candidates: list[dict] = []
+
+    if assigned_schools:
+        for school in assigned_schools:
+            candidates.append(
+                {
+                    "school_id": school.get("school_id"),
+                    "school_name": school.get("school_name"),
+                    "npsn": school.get("npsn"),
+                    "kecamatan": school.get("kecamatan_name"),
+                }
+            )
+    else:
+        if kecamatan_ids is None:
+            kecamatan_ids = get_user_kecamatan_ids(user_id)
+        if not kecamatan_ids:
+            return []
+        schools = list_schools_by_kecamatan(kecamatan_ids, active_only=True)
+        for school in schools:
+            candidates.append(
+                {
+                    "school_id": school.get("id"),
+                    "school_name": school.get("name"),
+                    "npsn": school.get("npsn"),
+                    "kecamatan": school.get("kecamatan_name"),
+                }
+            )
+
+    visited_ids = set(
+        list_user_visited_school_ids(
+            user_id=user_id,
+            date_from=date_from,
+            date_to=date_to,
+            guest_scope=guest_scope,
+        )
+    )
+    return [school for school in candidates if school.get("school_id") not in visited_ids]
+
+
 def _sanitize_phone(phone: str) -> str:
     digits_only = "".join(ch for ch in phone if ch.isdigit())
     if digits_only.startswith("0"):
@@ -426,6 +509,34 @@ def admin_dashboard() -> Response:
         date_to=date_to,
         guest_scope=guest_scope,
     )
+    user_search_query = (request.args.get("user_q") or "").strip()
+    user_sort = (request.args.get("user_sort") or "").strip().lower() or "visits_desc"
+    user_per_page = _to_int(request.args.get("user_per_page"), 10)
+    user_per_page = max(5, min(user_per_page, 100))
+    user_page = _to_int(request.args.get("user_page"), 1)
+    user_page = max(1, user_page)
+
+    user_rankings, user_total_rows = fetch_user_rankings(
+        page=user_page,
+        per_page=user_per_page,
+        sort_key=user_sort,
+        search_query=user_search_query,
+        date_from=None,
+        date_to=None,
+        guest_scope=guest_scope,
+    )
+    user_total_pages = max(1, math.ceil(user_total_rows / user_per_page)) if user_total_rows else 1
+    if user_page > user_total_pages:
+        user_page = user_total_pages
+        user_rankings, user_total_rows = fetch_user_rankings(
+            page=user_page,
+            per_page=user_per_page,
+            sort_key=user_sort,
+            search_query=user_search_query,
+            date_from=None,
+            date_to=None,
+            guest_scope=guest_scope,
+        )
 
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
     if page > total_pages:
@@ -460,6 +571,13 @@ def admin_dashboard() -> Response:
         "daftar_tamu/admin_dashboard.html",
         summary=summary,
         rankings=rankings,
+        user_rankings=user_rankings,
+        user_total_rows=user_total_rows,
+        user_total_pages=user_total_pages,
+        user_page=user_page,
+        user_per_page=user_per_page,
+        user_search_query=user_search_query,
+        user_sort=user_sort,
         unvisited_schools=unvisited_schools,
         recent_visits=recent_visits,
         page=page,
@@ -472,6 +590,145 @@ def admin_dashboard() -> Response:
         date_to_str=date_to_str,
         today_str=date.today().isoformat(),
         guest_scope=guest_scope,
+    )
+
+
+@daftar_tamu_bp.route("/admin/user/<int:user_id>/riwayat")
+@role_required("admin")
+def admin_user_history(user_id: int) -> Response:
+    user_profile = _fetch_dashboard_user(user_id)
+    if not user_profile:
+        return render_template(
+            "daftar_tamu/admin_user_history.html",
+            user_profile=None,
+            rows=[],
+            total_rows=0,
+            total_pages=1,
+            page=1,
+            per_page=10,
+            date_from_str="",
+            date_to_str="",
+            guest_scope="all",
+            today_str=date.today().isoformat(),
+            assigned_schools=[],
+            assigned_kecamatan=[],
+            unvisited_schools=[],
+            error_message="User tidak ditemukan.",
+        ), 404
+
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+
+    per_page = _to_int(request.args.get("per_page"), 10)
+    per_page = max(5, min(per_page, 100))
+
+    page = _to_int(request.args.get("page"), 1)
+    page = max(1, page)
+
+    rows, total_rows = list_user_transactions(
+        user_id=user_id,
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+        page=page,
+        per_page=per_page,
+    )
+
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if page > total_pages:
+        page = total_pages
+        rows, total_rows = list_user_transactions(
+            user_id=user_id,
+            date_from=date_from,
+            date_to=date_to,
+            guest_scope=guest_scope,
+            page=page,
+            per_page=per_page,
+        )
+
+    hide_assignments = True
+    assigned_schools = []
+    assigned_kecamatan = []
+    unvisited_schools = []
+
+    return render_template(
+        "daftar_tamu/admin_user_history.html",
+        user_profile=user_profile,
+        rows=rows,
+        total_rows=total_rows,
+        total_pages=total_pages,
+        page=page,
+        per_page=per_page,
+        date_from_str=date_from.isoformat() if date_from else "",
+        date_to_str=date_to.isoformat() if date_to else "",
+        guest_scope=guest_scope,
+        today_str=date.today().isoformat(),
+        assigned_schools=assigned_schools,
+        assigned_kecamatan=assigned_kecamatan,
+        unvisited_schools=unvisited_schools,
+        hide_assignments=hide_assignments,
+        error_message=None,
+    )
+
+
+@daftar_tamu_bp.route("/admin/user/<int:user_id>/visits")
+@role_required("admin")
+def admin_user_visits(user_id: int) -> Response:
+    """Return visit history rows for modal on admin dashboard."""
+    user_profile = _fetch_dashboard_user(user_id)
+    if not user_profile:
+        return jsonify({"success": False, "message": "User tidak ditemukan."}), 404
+
+    page = _to_int(request.args.get("page"), 1)
+    page = max(1, page)
+    per_page = _to_int(request.args.get("per_page"), 10)
+    per_page = max(5, min(per_page, 100))
+    sort = (request.args.get("sort") or "").strip().lower() or "date_desc"
+    search_query = (request.args.get("q") or "").strip()
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+
+    rows, total_rows = fetch_user_visit_history(
+        user_id=user_id,
+        page=page,
+        per_page=per_page,
+        sort_key=sort,
+        search_query=search_query,
+        date_from=None,
+        date_to=None,
+        guest_scope=guest_scope,
+    )
+
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if page > total_pages:
+        page = total_pages
+        rows, total_rows = fetch_user_visit_history(
+            user_id=user_id,
+            page=page,
+            per_page=per_page,
+            sort_key=sort,
+            search_query=search_query,
+            date_from=None,
+            date_to=None,
+            guest_scope=guest_scope,
+        )
+
+    for row in rows:
+        visit_at = row.get("visit_at")
+        row["visit_at"] = visit_at.isoformat() if visit_at else None
+
+    return jsonify(
+        {
+            "success": True,
+            "rows": rows,
+            "total_rows": total_rows,
+            "total_pages": total_pages,
+            "page": page,
+            "per_page": per_page,
+            "sort": sort,
+        }
     )
 
 
