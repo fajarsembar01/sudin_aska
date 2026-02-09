@@ -1,0 +1,10 @@
+{
+  "doc_hash": "04ead51cb724bc15bd224c7a4873b728854e5f337fb448537dd00c60627beb91",
+  "chunk_size": 500,
+  "chunk_overlap": 50,
+  "embedding_signature": {
+    "provider": "openai",
+    "model": "text-embedding-3-large",
+    "api_base": "https://api.openai.com/v1"
+  }
+}
