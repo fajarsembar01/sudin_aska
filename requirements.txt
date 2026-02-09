@@ -16,7 +16,7 @@ langchain-openai==0.1.7
 langchain-community==0.2.10
 
 # Vector store backend
-faiss-cpu>=1.7.4; platform_system != "Windows"
+faiss-cpu>=1.7.4
 
 # Database (PostgreSQL)
 psycopg2-binary==2.9.9
