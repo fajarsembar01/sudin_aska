@@ -517,10 +517,11 @@ def list_guest_candidates(search_query: Optional[str], limit: int = 20) -> List[
             role,
             nrk,
             jabatan,
+            account_status,
             degree_prefix,
             degree_suffix
         FROM dashboard_users
-        WHERE account_status = 'approved'
+        WHERE account_status IN ('approved', 'not_registered')
           AND (
             %s = ''
             OR full_name ILIKE %s
@@ -529,7 +530,7 @@ def list_guest_candidates(search_query: Optional[str], limit: int = 20) -> List[
             OR COALESCE(nrk, '') ILIKE %s
             OR COALESCE(role, '') ILIKE %s
         )
-        ORDER BY full_name ASC
+        ORDER BY (account_status = 'approved') DESC, full_name ASC
         LIMIT %s
     """
     with get_cursor() as cur:
