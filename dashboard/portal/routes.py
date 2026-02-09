@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from urllib.parse import quote_plus
 import subprocess
 import sys
@@ -230,10 +230,11 @@ AREA_CONTACTS = [
 @portal_bp.route("/uploads/<path:filename>")
 def uploaded_file(filename):
     """Serve uploaded files (supports nested paths)."""
-    requested_path = Path(filename)
+    normalized = (filename or "").replace("\\", "/")
+    requested_path = PurePosixPath(normalized)
     if requested_path.is_absolute() or ".." in requested_path.parts:
         abort(404)
-    return send_from_directory(UPLOAD_FOLDER, str(requested_path))
+    return send_from_directory(UPLOAD_FOLDER, requested_path.as_posix())
 
 
 def _allowed_file(filename: str) -> bool:
