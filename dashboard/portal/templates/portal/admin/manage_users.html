@@ -141,8 +141,8 @@
                         </span>
                         <h2 class="h6 fw-bold mb-0">Merge Akun</h2>
                     </div>
-                    {% set merge_old_users = users | selectattr('account_status', 'equalto', 'not_registered') | list %}
-                    {% set merge_new_users = users | rejectattr('account_status', 'equalto', 'not_registered') | rejectattr('account_status', 'equalto', 'disabled') | list %}
+                    {% set merge_old_users = merge_old_users or [] %}
+                    {% set merge_new_users = merge_new_users or [] %}
                     <form method="post" id="mergeForm"
                         onsubmit="return confirm('Merge akun ini? Semua data akun lama dipindahkan ke akun baru, akun lama dinonaktifkan.');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -180,47 +180,6 @@
             </div>
         </div>
 
-        <div class="card border-0 shadow-sm mt-3">
-            <div class="card-body">
-                <div class="d-flex align-items-center gap-2 mb-3">
-                    <span class="icon-badge section-icon text-info">
-                        <i class="bi bi-person-badge"></i>
-                    </span>
-                    <h2 class="h6 fw-bold mb-0">Tambah User Not Register</h2>
-                </div>
-                <form method="post" id="unregisteredForm">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <input type="hidden" name="action" value="create">
-                    <input type="hidden" name="is_unregistered" value="1">
-                    <input type="hidden" name="role" value="staff">
-                    <div class="mb-3">
-                        <label class="form-label small">Nama Lengkap</label>
-                        <input type="text" class="form-control form-control-sm" name="full_name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small">Jabatan</label>
-                        <input type="text" class="form-control form-control-sm" name="jabatan" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small">Kecamatan</label>
-                        <select class="form-select form-select-sm" name="requested_kecamatan" required>
-                            <option value="">-- Pilih Kecamatan --</option>
-                            {% for k in kecamatan_list %}
-                            <option value="{{ k.id }}">{{ k.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-outline-info">
-                            <i class="bi bi-person-plus me-2"></i>Simpan Not Register
-                        </button>
-                    </div>
-                    <small class="text-muted d-block mt-2">
-                        Status otomatis <strong>Not Register</strong>. Role default: staff.
-                    </small>
-                </form>
-            </div>
-        </div>
     </div>
 
     <!-- Right Column: List -->
@@ -664,19 +623,30 @@
 
     function bindMergeSearch(inputEl, selectEl) {
         if (!inputEl || !selectEl) return;
-        inputEl.addEventListener('input', function () {
-            const query = (inputEl.value || '').trim().toLowerCase();
-            Array.from(selectEl.options).forEach(option => {
-                if (!option.value) {
-                    option.hidden = false;
+        const originalOptions = Array.from(selectEl.options).map(option => ({
+            value: option.value,
+            label: option.textContent || '',
+            disabled: option.disabled,
+        }));
+
+        function renderOptions(query) {
+            const keyword = (query || '').trim().toLowerCase();
+            selectEl.innerHTML = '';
+            originalOptions.forEach(option => {
+                if (option.value && keyword && !option.label.toLowerCase().includes(keyword)) {
                     return;
                 }
-                const label = (option.textContent || '').toLowerCase();
-                option.hidden = Boolean(query) && !label.includes(query);
+                const el = document.createElement('option');
+                el.value = option.value;
+                el.textContent = option.label;
+                if (option.disabled) el.disabled = true;
+                selectEl.appendChild(el);
             });
-            if (selectEl.selectedOptions.length && selectEl.selectedOptions[0].hidden) {
-                selectEl.value = '';
-            }
+        }
+
+        renderOptions('');
+        inputEl.addEventListener('input', function () {
+            renderOptions(inputEl.value);
         });
     }
 
