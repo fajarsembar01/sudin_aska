@@ -3,6 +3,8 @@
 {% set sort_visits = "visits_asc" if sort == "visits_desc" else "visits_desc" %}
 {% set sort_last_visit = "last_visit_asc" if sort == "last_visit_desc" else "last_visit_desc" %}
 {% set sort_name = "name_desc" if sort == "name_asc" else "name_asc" %}
+{% set user_sort_visits = "visits_asc" if user_sort == "visits_desc" else "visits_desc" %}
+{% set user_sort_last_visit = "last_visit_asc" if user_sort == "last_visit_desc" else "last_visit_desc" %}
 
 {% block head_extra %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -365,6 +367,167 @@
                 </div>
             </div>
         </div>
+
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-header bg-transparent border-0">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h2 class="h6 fw-bold mb-0">Ranking User Berdasarkan Kunjungan</h2>
+                        <small class="text-muted">Urutan default: coordinator, lalu staff, kemudian role lainnya.</small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-2 mb-3">
+                    <input type="hidden" name="q" value="{{ search_query }}">
+                    <input type="hidden" name="sort" value="{{ sort }}">
+                    <input type="hidden" name="per_page" value="{{ per_page }}">
+                    <input type="hidden" name="page" value="{{ page }}">
+                    <input type="hidden" name="date_from" value="{{ date_from_str }}">
+                    <input type="hidden" name="date_to" value="{{ date_to_str }}">
+                    <input type="hidden" name="guest_scope" value="{{ guest_scope }}">
+                    <input type="hidden" name="user_sort" value="{{ user_sort }}">
+                    <input type="hidden" name="user_page" value="1">
+                    <div class="col-md-6">
+                        <input type="text" name="user_q" class="form-control" value="{{ user_search_query }}"
+                            placeholder="Cari nama, role, kecamatan, sekolah terakhir...">
+                    </div>
+                    <div class="col-md-3">
+                        <select name="user_per_page" class="form-select">
+                            {% for option in [10, 25, 50, 100] %}
+                            <option value="{{ option }}" {% if user_per_page==option %}selected{% endif %}>{{ option }} / halaman</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-grid">
+                        <button type="submit" class="btn btn-primary">Terapkan</button>
+                    </div>
+                </form>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-3">#</th>
+                                <th>Akun</th>
+                                <th class="text-end">
+                                    <a class="text-decoration-none"
+                                        href="{{ url_for('daftar_tamu.admin_dashboard',
+                                            q=search_query, sort=sort, per_page=per_page, page=page,
+                                            date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope,
+                                            user_q=user_search_query, user_per_page=user_per_page, user_page=1,
+                                            user_sort=user_sort_visits) }}">
+                                        Kunjungan
+                                    </a>
+                                </th>
+                                <th>
+                                    <a class="text-decoration-none"
+                                        href="{{ url_for('daftar_tamu.admin_dashboard',
+                                            q=search_query, sort=sort, per_page=per_page, page=page,
+                                            date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope,
+                                            user_q=user_search_query, user_per_page=user_per_page, user_page=1,
+                                            user_sort=user_sort_last_visit) }}">
+                                        Kunjungan Terakhir
+                                    </a>
+                                </th>
+                                <th>Sekolah Terakhir</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in user_rankings %}
+                            <tr>
+                                <td class="ps-3 fw-semibold">{{ row.rank }}</td>
+                                <td>
+                                    <div class="fw-semibold">{{ row.full_name }}</div>
+                                    <div class="small text-muted">
+                                        {{ row.role or '-' }}{% if row.email %} &bull; {{ row.email }}{% endif %}
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    {% if row.visit_count > 0 %}
+                                    <button type="button"
+                                        class="btn btn-sm btn-outline-primary user-visit-btn"
+                                        data-user-id="{{ row.user_id }}"
+                                        data-user-name="{{ row.full_name }}"
+                                        data-user-role="{{ row.role }}"
+                                        data-user-email="{{ row.email }}"
+                                        data-visits-url="{{ url_for('daftar_tamu.admin_user_visits', user_id=row.user_id) }}">
+                                        {{ row.visit_count }}
+                                    </button>
+                                    {% else %}
+                                    <span class="badge bg-secondary rounded-pill">0</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if row.last_visit_date %}
+                                    <div>{{ row.last_visit_date.strftime('%d %b %Y') }}</div>
+                                    <div class="small text-muted">
+                                        {{ row.days_since_visit }} hari lalu
+                                    </div>
+                                    {% else %}
+                                    <span class="status-pill text-bg-danger">Belum pernah</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if row.last_school_name %}
+                                    <div class="fw-semibold">{{ row.last_school_name }}</div>
+                                    <div class="small text-muted">
+                                        {{ row.school_npsn or '-' }} &bull; {{ row.school_kecamatan or '-' }}
+                                    </div>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm btn-outline-primary"
+                                        href="{{ url_for('daftar_tamu.admin_user_history', user_id=row.user_id, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}">
+                                        Detail
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">Belum ada data untuk filter yang dipilih.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% set user_start_row = ((user_page - 1) * user_per_page) + 1 if user_total_rows else 0 %}
+                {% set user_end_row = ((user_page - 1) * user_per_page) + (user_rankings|length) if user_total_rows else 0 %}
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+                    <small class="text-muted">Menampilkan {{ user_start_row }}-{{ user_end_row }} dari {{ user_total_rows }} akun</small>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item {% if user_page <= 1 %}disabled{% endif %}">
+                            <a class="page-link"
+                                href="{{ url_for('daftar_tamu.admin_dashboard',
+                                    q=search_query, sort=sort, per_page=per_page, page=page,
+                                    date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope,
+                                    user_q=user_search_query, user_sort=user_sort, user_per_page=user_per_page, user_page=user_page-1) }}">Prev</a>
+                        </li>
+                        {% set user_start_page = 1 if user_page - 2 < 1 else user_page - 2 %}
+                        {% set user_end_page = user_total_pages if user_page + 2 > user_total_pages else user_page + 2 %}
+                        {% for p in range(user_start_page, user_end_page + 1) %}
+                        <li class="page-item {% if p == user_page %}active{% endif %}">
+                            <a class="page-link"
+                                href="{{ url_for('daftar_tamu.admin_dashboard',
+                                    q=search_query, sort=sort, per_page=per_page, page=page,
+                                    date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope,
+                                    user_q=user_search_query, user_sort=user_sort, user_per_page=user_per_page, user_page=p) }}">{{ p }}</a>
+                        </li>
+                        {% endfor %}
+                        <li class="page-item {% if user_page >= user_total_pages %}disabled{% endif %}">
+                            <a class="page-link"
+                                href="{{ url_for('daftar_tamu.admin_dashboard',
+                                    q=search_query, sort=sort, per_page=per_page, page=page,
+                                    date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope,
+                                    user_q=user_search_query, user_sort=user_sort, user_per_page=user_per_page, user_page=user_page+1) }}">Next</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="col-xl-4">
@@ -428,6 +591,64 @@
         </div>
     </div>
 </section>
+
+<div class="modal fade" id="userVisitModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title mb-0">Riwayat Kunjungan</h5>
+                    <div class="small text-muted" id="userVisitModalMeta">-</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <div class="fw-semibold" id="userVisitModalName">-</div>
+                    <form id="userVisitSearchForm" class="d-flex flex-wrap gap-2">
+                        <input type="text" class="form-control form-control-sm" id="userVisitSearchInput"
+                            placeholder="Cari sekolah / tanggal">
+                        <select class="form-select form-select-sm" id="userVisitPerPage">
+                            {% for option in [10, 20, 50, 100] %}
+                            <option value="{{ option }}">{{ option }} / halaman</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary">Cari</button>
+                    </form>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Nama Sekolah</th>
+                                <th class="text-end">
+                                    <button type="button" class="btn btn-link p-0 fw-semibold" id="userVisitSortBtn"
+                                        data-sort="date_desc">
+                                        Tanggal Kunjungan
+                                    </button>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="userVisitRows">
+                            <tr>
+                                <td colspan="2" class="text-center text-muted py-4">Pilih kunjungan untuk melihat riwayat.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+                    <small class="text-muted" id="userVisitSummary">-</small>
+                    <ul class="pagination pagination-sm mb-0" id="userVisitPagination"></ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block portal_scripts %}
@@ -522,6 +743,186 @@
             .catch(() => {
                 // no-op: keep map visible even when data API fails
             });
+    })();
+</script>
+<script>
+    (function () {
+        const modalEl = document.getElementById('userVisitModal');
+        if (!modalEl || !window.bootstrap) return;
+
+        const modal = new bootstrap.Modal(modalEl);
+        const rowsEl = document.getElementById('userVisitRows');
+        const summaryEl = document.getElementById('userVisitSummary');
+        const paginationEl = document.getElementById('userVisitPagination');
+        const searchForm = document.getElementById('userVisitSearchForm');
+        const searchInput = document.getElementById('userVisitSearchInput');
+        const perPageSelect = document.getElementById('userVisitPerPage');
+        const sortBtn = document.getElementById('userVisitSortBtn');
+        const nameEl = document.getElementById('userVisitModalName');
+        const metaEl = document.getElementById('userVisitModalMeta');
+        const guestScope = "{{ guest_scope }}";
+
+        let currentUrl = '';
+        const state = { page: 1, per_page: Number(perPageSelect.value || 10), sort: 'date_desc', q: '' };
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function setSortLabel() {
+            const label = state.sort === 'date_desc' ? 'Tanggal Kunjungan (Terbaru)' : 'Tanggal Kunjungan (Terlama)';
+            sortBtn.textContent = label;
+        }
+
+        function renderRows(rows) {
+            rowsEl.innerHTML = '';
+            if (!Array.isArray(rows) || rows.length === 0) {
+                rowsEl.innerHTML = '<tr><td colspan="2" class="text-center text-muted py-4">Belum ada kunjungan.</td></tr>';
+                return;
+            }
+            rows.forEach(function (row) {
+                const tr = document.createElement('tr');
+                const visitAt = row.visit_at ? new Date(row.visit_at) : null;
+                const visitLabel = visitAt
+                    ? visitAt.toLocaleDateString('id-ID', { dateStyle: 'medium' })
+                    : '-';
+                tr.innerHTML = '<td>' + escapeHtml(row.school_name || '-') + '</td>'
+                    + '<td class="text-end">' + escapeHtml(visitLabel) + '</td>';
+                rowsEl.appendChild(tr);
+            });
+        }
+
+        function renderSummary(page, perPage, totalRows, shownRows) {
+            if (!totalRows) {
+                summaryEl.textContent = 'Menampilkan 0 dari 0 kunjungan';
+                return;
+            }
+            const startRow = ((page - 1) * perPage) + 1;
+            const endRow = ((page - 1) * perPage) + shownRows;
+            summaryEl.textContent = 'Menampilkan ' + startRow + '-' + endRow + ' dari ' + totalRows + ' kunjungan';
+        }
+
+        function renderPagination(totalPages) {
+            paginationEl.innerHTML = '';
+            if (!totalPages || totalPages <= 1) return;
+
+            function createPage(label, page, disabled, active) {
+                const li = document.createElement('li');
+                li.className = 'page-item';
+                if (disabled) li.classList.add('disabled');
+                if (active) li.classList.add('active');
+                const a = document.createElement('a');
+                a.className = 'page-link';
+                a.href = '#';
+                a.textContent = label;
+                if (!disabled && !active) {
+                    a.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        state.page = page;
+                        loadVisits();
+                    });
+                }
+                li.appendChild(a);
+                paginationEl.appendChild(li);
+            }
+
+            createPage('Prev', state.page - 1, state.page <= 1, false);
+
+            const startPage = Math.max(1, state.page - 2);
+            const endPage = Math.min(totalPages, state.page + 2);
+            for (let p = startPage; p <= endPage; p += 1) {
+                createPage(String(p), p, false, p === state.page);
+            }
+
+            createPage('Next', state.page + 1, state.page >= totalPages, false);
+        }
+
+        function loadVisits() {
+            if (!currentUrl) return;
+            rowsEl.innerHTML = '<tr><td colspan="2" class="text-center text-muted py-4">Memuat...</td></tr>';
+            summaryEl.textContent = 'Memuat...';
+            paginationEl.innerHTML = '';
+
+            const params = new URLSearchParams();
+            params.set('page', String(state.page));
+            params.set('per_page', String(state.per_page));
+            params.set('sort', state.sort);
+            if (state.q) params.set('q', state.q);
+            if (guestScope) params.set('guest_scope', guestScope);
+
+            fetch(currentUrl + '?' + params.toString())
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.success) throw new Error(data.message || 'Gagal memuat riwayat.');
+                    renderRows(data.rows || []);
+                    renderSummary(data.page || state.page, data.per_page || state.per_page, data.total_rows || 0, (data.rows || []).length);
+                    renderPagination(data.total_pages || 1);
+                })
+                .catch(function (err) {
+                    rowsEl.innerHTML = '<tr><td colspan="2" class="text-center text-danger py-4">'
+                        + escapeHtml(err.message || 'Gagal memuat riwayat.') + '</td></tr>';
+                    summaryEl.textContent = '-';
+                    paginationEl.innerHTML = '';
+                });
+        }
+
+        function openModalFromButton(btn) {
+            currentUrl = btn.getAttribute('data-visits-url') || '';
+            const name = btn.getAttribute('data-user-name') || 'User';
+            const role = btn.getAttribute('data-user-role') || '';
+            const email = btn.getAttribute('data-user-email') || '';
+            nameEl.textContent = name;
+            metaEl.textContent = [role, email].filter(Boolean).join(' - ') || '-';
+            state.page = 1;
+            state.q = '';
+            state.sort = 'date_desc';
+            setSortLabel();
+            if (searchInput) searchInput.value = '';
+            if (perPageSelect) {
+                perPageSelect.value = '10';
+                state.per_page = Number(perPageSelect.value || 10);
+            }
+            loadVisits();
+            modal.show();
+        }
+
+        document.addEventListener('click', function (event) {
+            const btn = event.target.closest('.user-visit-btn');
+            if (!btn) return;
+            event.preventDefault();
+            openModalFromButton(btn);
+        });
+
+        if (searchForm) {
+            searchForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                state.q = (searchInput.value || '').trim();
+                state.page = 1;
+                loadVisits();
+            });
+        }
+
+        if (perPageSelect) {
+            perPageSelect.addEventListener('change', function () {
+                state.per_page = Number(perPageSelect.value || 10);
+                state.page = 1;
+                loadVisits();
+            });
+        }
+
+        if (sortBtn) {
+            sortBtn.addEventListener('click', function () {
+                state.sort = state.sort === 'date_desc' ? 'date_asc' : 'date_desc';
+                state.page = 1;
+                setSortLabel();
+                loadVisits();
+            });
+        }
     })();
 </script>
 {% endblock %}

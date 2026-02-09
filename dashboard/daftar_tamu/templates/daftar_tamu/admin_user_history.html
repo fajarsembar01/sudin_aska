@@ -1,0 +1,209 @@
+{% extends "daftar_tamu/base_daftar_tamu.html" %}
+{% set page_title = "Riwayat Kunjungan User" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="icon-badge feature-icon text-primary">
+                        <i class="bi bi-person-lines-fill"></i>
+                    </span>
+                    <div>
+                        <h1 class="h3 fw-bold page-title mb-1">Riwayat Kunjungan User</h1>
+                        {% if user_profile %}
+                        <p class="page-subtitle mb-0">
+                            {{ user_profile.full_name }} &bull; {{ user_profile.role|upper }}
+                            {% if user_profile.jabatan %}&bull; {{ user_profile.jabatan }}{% endif %}
+                        </p>
+                        {% else %}
+                        <p class="page-subtitle mb-0">User tidak ditemukan.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('daftar_tamu.admin_dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Kembali
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if error_message %}
+<div class="alert alert-warning">{{ error_message }}</div>
+{% else %}
+<section class="row g-3 mb-4">
+    {% set main_col_class = 'col-12' if hide_assignments else 'col-xl-8' %}
+    <div class="{{ main_col_class }}">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h2 class="h6 fw-bold mb-0">Daftar Kunjungan</h2>
+                        <small class="text-muted">Menampilkan kunjungan terverifikasi sesuai periode.</small>
+                    </div>
+                    <form method="get" class="row g-2 align-items-end">
+                        <div class="col-auto">
+                            <label class="form-label small mb-1">Dari</label>
+                            <input type="date" class="form-control form-control-sm" name="date_from"
+                                value="{{ date_from_str }}" max="{{ today_str }}">
+                        </div>
+                        <div class="col-auto">
+                            <label class="form-label small mb-1">Sampai</label>
+                            <input type="date" class="form-control form-control-sm" name="date_to"
+                                value="{{ date_to_str }}" max="{{ today_str }}">
+                        </div>
+                        <div class="col-auto">
+                            <label class="form-label small mb-1">Statistik</label>
+                            <select name="guest_scope" class="form-select form-select-sm">
+                                <option value="sudin" {% if guest_scope=='sudin' %}selected{% endif %}>SUDIN</option>
+                                <option value="umum" {% if guest_scope=='umum' %}selected{% endif %}>Umum</option>
+                                <option value="all" {% if guest_scope=='all' %}selected{% endif %}>Semua</option>
+                            </select>
+                        </div>
+                        <div class="col-auto">
+                            <label class="form-label small mb-1">Per halaman</label>
+                            <select name="per_page" class="form-select form-select-sm">
+                                {% for option in [10, 20, 50, 100] %}
+                                <option value="{{ option }}" {% if per_page==option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-sm btn-primary">Terapkan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Waktu</th>
+                                <th>Sekolah</th>
+                                <th>Tamu</th>
+                                <th class="text-end">Foto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in rows %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">{{ row.visit_at|jakarta('%d %b %Y') }}</div>
+                                    <div class="small text-muted">{{ row.visit_at|jakarta('%H:%M') }} WIB</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">{{ row.school_name }}</div>
+                                    <div class="small text-muted">
+                                        {{ row.npsn }} &bull; {{ row.kecamatan or '-' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">{{ row.guest_display or '-' }}</div>
+                                    <div class="small text-muted">{{ row.guest_count or 0 }} tamu</div>
+                                    {% if row.purpose %}
+                                    <div class="small text-muted">Tujuan: {{ row.purpose }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if row.photo_path %}
+                                    {% set photo_name = row.photo_path.split('uploads/portal/')[-1] %}
+                                    <a class="btn btn-sm btn-outline-secondary" target="_blank"
+                                        href="{{ url_for('portal.uploaded_file', filename=photo_name) }}">
+                                        <i class="bi bi-camera"></i>
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">Belum ada kunjungan.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% set start_row = ((page - 1) * per_page) + 1 if total_rows else 0 %}
+                {% set end_row = ((page - 1) * per_page) + (rows|length) if total_rows else 0 %}
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+                    <small class="text-muted">Menampilkan {{ start_row }}-{{ end_row }} dari {{ total_rows }} kunjungan</small>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                            <a class="page-link"
+                                href="{{ url_for('daftar_tamu.admin_user_history', user_id=user_profile.id, page=page-1, per_page=per_page, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}">Prev</a>
+                        </li>
+                        {% set start_page = 1 if page - 2 < 1 else page - 2 %}
+                        {% set end_page = total_pages if page + 2 > total_pages else page + 2 %}
+                        {% for p in range(start_page, end_page + 1) %}
+                        <li class="page-item {% if p == page %}active{% endif %}">
+                            <a class="page-link"
+                                href="{{ url_for('daftar_tamu.admin_user_history', user_id=user_profile.id, page=p, per_page=per_page, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}">{{ p }}</a>
+                        </li>
+                        {% endfor %}
+                        <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                            <a class="page-link"
+                                href="{{ url_for('daftar_tamu.admin_user_history', user_id=user_profile.id, page=page+1, per_page=per_page, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}">Next</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if not hide_assignments %}
+    <div class="col-xl-4">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">
+                    <i class="bi bi-person-check text-primary me-1"></i>Penugasan User
+                </h2>
+                <div class="small text-muted mb-2">{{ user_profile.email or '-' }}</div>
+                {% if assigned_schools %}
+                <div class="small fw-semibold mb-2">Sekolah yang ditugaskan:</div>
+                <div class="text-muted small">{{ assigned_schools|length }} sekolah</div>
+                {% elif assigned_kecamatan %}
+                <div class="small fw-semibold mb-2">Kecamatan yang ditugaskan:</div>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for kec in assigned_kecamatan %}
+                    <span class="badge bg-light text-dark">{{ kec.kecamatan_name }}</span>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-muted small">Belum ada penugasan kecamatan/sekolah.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">
+                    <i class="bi bi-exclamation-triangle text-danger me-1"></i>Sekolah Belum Tersambangi
+                </h2>
+                {% if unvisited_schools %}
+                <div class="list-group list-group-flush">
+                    {% for school in unvisited_schools %}
+                    <div class="list-group-item px-0 py-2 border-0 border-bottom">
+                        <div class="fw-semibold small">{{ school.school_name }}</div>
+                        <div class="text-muted small">
+                            {{ school.npsn }} &bull; {{ school.kecamatan or '-' }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0">Tidak ada sekolah belum tersambangi atau penugasan belum tersedia.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endif %}
+{% endblock %}

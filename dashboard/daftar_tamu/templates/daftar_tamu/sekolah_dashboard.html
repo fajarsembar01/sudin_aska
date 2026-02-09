@@ -352,12 +352,19 @@
                 var meta = [];
                 if (item.jabatan) meta.push(item.jabatan);
                 if (item.nrk) meta.push('NRK ' + item.nrk);
+                var statusBadge = '';
+                if (item.account_status === 'not_registered') {
+                    statusBadge = '<span class="badge text-bg-secondary ms-2">Not Register</span>';
+                }
                 var title = escapeHtml(item.full_name || item.email || '');
                 var metaText = escapeHtml(meta.join(' • '));
-                row.innerHTML = '<div class="fw-semibold">' + title + '</div>'
+                row.innerHTML = '<div class="fw-semibold">' + title + statusBadge + '</div>'
                     + '<div class="small text-muted">' + metaText + '</div>';
                 row.addEventListener('click', function () {
-                    var label = (item.full_name || item.email || 'Tamu') + (meta.length ? ' • ' + meta.join(' • ') : '');
+                    var statusLabel = item.account_status === 'not_registered' ? 'Not Register' : '';
+                    var label = (item.full_name || item.email || 'Tamu')
+                        + (meta.length ? ' • ' + meta.join(' • ') : '')
+                        + (statusLabel ? ' • ' + statusLabel : '');
                     addSelectedGuest({
                         id: item.id,
                         type: 'sudin',
