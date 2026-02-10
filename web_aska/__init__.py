@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import secrets
+import re
 from pathlib import Path
 from datetime import datetime, timezone
 from flask import Flask, request, jsonify, render_template, session, redirect, url_for, flash, send_from_directory, abort
@@ -25,7 +26,6 @@ from db import (
     find_general_guest_by_phone,
     list_guestbook_purpose_keywords,
     list_guestbook_contact_priorities,
-    list_school_classroom_options,
 )
 from account_status import BLOCKING_STATUSES, build_status_notice, ACCOUNT_STATUS_ACTIVE
 from responses import detect_bullying_category, is_corruption_report_intent
@@ -184,6 +184,21 @@ def create_app() -> Flask:
             if len(buttons) >= 4:
                 break
         return buttons
+
+    def _guestbook_grade_options(jenjang: str | None) -> list[str]:
+        if not jenjang:
+            return [str(i) for i in range(1, 13)]
+        upper = jenjang.strip().upper()
+        if upper in {"SD", "MI"}:
+            return [str(i) for i in range(1, 7)]
+        if upper in {"SMP", "MTS"}:
+            return [str(i) for i in range(7, 10)]
+        if upper in {"SMA", "SMK", "MA"}:
+            return [str(i) for i in range(10, 13)]
+        return [str(i) for i in range(1, 13)]
+
+    def _guestbook_class_letters() -> list[str]:
+        return [chr(code) for code in range(ord("A"), ord("Z") + 1)]
 
     def _sync_session_quota(quota_state: dict | None) -> None:
         if "user" not in session or not quota_state:
@@ -396,10 +411,14 @@ def create_app() -> Flask:
                 error="Sekolah tidak ditemukan atau nonaktif.",
                 purpose_keywords=[],
                 contact_buttons=[],
-                class_options=[],
+                grade_options=[],
+                class_letters=[],
             ), 404
 
-        class_options = list_school_classroom_options(school.get("id"))
+        grade_options = _guestbook_grade_options(school.get("jenjang"))
+        class_letters = _guestbook_class_letters()
+        allowed_grades = set(grade_options)
+        allowed_letters = {letter.upper() for letter in class_letters}
         error = None
         def _is_truthy(value: object) -> bool:
             if isinstance(value, bool):
@@ -407,6 +426,19 @@ def create_app() -> Flask:
             if value is None:
                 return False
             return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+        def _is_valid_student_class(value: str) -> bool:
+            if not value:
+                return False
+            match = re.search(r"(\d{1,2})\s*([A-Za-z])?", value)
+            if not match:
+                return False
+            grade, letter = match.groups()
+            if grade not in allowed_grades:
+                return False
+            if letter and letter.upper() not in allowed_letters:
+                return False
+            return True
 
         if request.method == "POST":
             guest_type = (request.form.get("guest_type") or "umum").strip().lower()
@@ -466,10 +498,9 @@ def create_app() -> Flask:
                     student_class = (guest.get("student_class") or "").strip()
                     student_name = (guest.get("student_name") or "").strip()
                     if is_parent:
-                        if class_options:
-                            if not student_class or student_class not in class_options:
-                                error = "Kelas siswa wajib dipilih dari daftar yang tersedia."
-                                break
+                        if not student_class or not _is_valid_student_class(student_class):
+                            error = "Kelas siswa wajib dipilih dari daftar yang tersedia."
+                            break
                         if not student_name:
                             error = "Nama siswa wajib diisi untuk wali murid."
                             break
@@ -538,7 +569,8 @@ def create_app() -> Flask:
             error=error,
             purpose_keywords=list_guestbook_purpose_keywords(active_only=True),
             contact_buttons=_build_contact_buttons(school),
-            class_options=class_options,
+            grade_options=grade_options,
+            class_letters=class_letters,
         )
 
     @app.route("/api/guestbook/lookup")
