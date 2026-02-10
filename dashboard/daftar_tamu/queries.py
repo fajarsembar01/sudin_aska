@@ -32,6 +32,11 @@ USER_VISIT_SORT_OPTIONS = {
     "date_asc": "ft.visit_at ASC, ft.id ASC",
 }
 DEFAULT_USER_VISIT_SORT = "date_desc"
+SCHOOL_VISIT_SORT_OPTIONS = {
+    "date_desc": "t.visit_at DESC, t.id DESC",
+    "date_asc": "t.visit_at ASC, t.id ASC",
+}
+DEFAULT_SCHOOL_VISIT_SORT = "date_desc"
 
 _GUEST_SCOPE_WHERE = """
       AND (
@@ -714,6 +719,7 @@ def fetch_user_visit_history(
     AND (
         %s = ''
         OR s.name ILIKE %s
+        OR COALESCE(ft.purpose, '') ILIKE %s
         OR to_char(ft.visit_at::date, 'YYYY-MM-DD') ILIKE %s
         OR to_char(ft.visit_at::date, 'DD Mon YYYY') ILIKE %s
     )
@@ -737,6 +743,8 @@ def fetch_user_visit_history(
     SELECT
         ft.id AS transaction_id,
         ft.visit_at,
+        ft.purpose,
+        ft.photo_path,
         s.name AS school_name,
         s.npsn AS school_npsn
     FROM user_transactions ut
@@ -764,6 +772,7 @@ def fetch_user_visit_history(
         like_query,
         like_query,
         like_query,
+        like_query,
     ]
 
     with get_cursor() as cur:
@@ -772,6 +781,144 @@ def fetch_user_visit_history(
 
         cur.execute(data_query, params_common + [safe_per_page, offset])
         rows = [dict(row) for row in cur.fetchall()]
+
+    return rows, total_rows
+
+
+def fetch_school_visit_history(
+    *,
+    school_id: int,
+    page: int = 1,
+    per_page: int = 10,
+    sort_key: str = DEFAULT_SCHOOL_VISIT_SORT,
+    search_query: Optional[str] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
+) -> Tuple[List[Dict[str, Any]], int]:
+    """Fetch visit history rows for a school."""
+    scope = _normalize_guest_scope(guest_scope)
+    safe_page = max(1, page)
+    safe_per_page = max(5, min(per_page, 100))
+    offset = (safe_page - 1) * safe_per_page
+
+    safe_sort = sort_key if sort_key in SCHOOL_VISIT_SORT_OPTIONS else DEFAULT_SCHOOL_VISIT_SORT
+    order_sql = SCHOOL_VISIT_SORT_OPTIONS[safe_sort]
+    query_text, like_query = _build_search(search_query)
+
+    base_cte = (
+        """
+    WITH filtered_transactions AS (
+        SELECT t.*
+        FROM daftar_tamu_transactions t
+        WHERE t.status = 'approved'
+          AND t.school_id = %s
+          AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
+          AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
+        """
+        + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+        + """
+    )
+    """
+    )
+
+    search_clause = """
+    WHERE (
+        %s = ''
+        OR COALESCE(guests.guest_names, '') ILIKE %s
+        OR COALESCE(t.purpose, '') ILIKE %s
+        OR to_char(t.visit_at::date, 'YYYY-MM-DD') ILIKE %s
+        OR to_char(t.visit_at::date, 'DD Mon YYYY') ILIKE %s
+    )
+    """
+
+    guest_names_sql = _GUEST_NAMES_SUBQUERY.format(tx_ref="t.id")
+    guest_count_sql = _GUEST_COUNT_SUBQUERY.format(tx_ref="t.id")
+
+    count_query = (
+        base_cte
+        + """
+    SELECT COUNT(*) AS total
+    FROM filtered_transactions t
+    LEFT JOIN LATERAL (
+        SELECT
+            ({guest_names}) AS guest_names,
+            ({guest_count}) AS guest_count
+    ) guests ON TRUE
+    """.format(
+            guest_names=guest_names_sql,
+            guest_count=guest_count_sql,
+        )
+        + search_clause
+    )
+
+    data_query = (
+        base_cte
+        + """
+    SELECT
+        t.id AS transaction_id,
+        t.visit_at,
+        t.purpose,
+        t.photo_path,
+        guests.guest_names,
+        guests.guest_count
+    FROM filtered_transactions t
+    LEFT JOIN LATERAL (
+        SELECT
+            ({guest_names}) AS guest_names,
+            ({guest_count}) AS guest_count
+    ) guests ON TRUE
+    """.format(
+            guest_names=guest_names_sql,
+            guest_count=guest_count_sql,
+        )
+        + search_clause
+        + f"""
+    ORDER BY {order_sql}
+    LIMIT %s OFFSET %s
+    """
+    )
+
+    params_common: List[Any] = [
+        school_id,
+        date_from,
+        date_from,
+        date_to,
+        date_to,
+        scope,
+        scope,
+        scope,
+        query_text,
+        like_query,
+        like_query,
+        like_query,
+        like_query,
+    ]
+
+    with get_cursor() as cur:
+        cur.execute(count_query, params_common)
+        total_rows = int((cur.fetchone() or {}).get("total") or 0)
+
+        cur.execute(data_query, params_common + [safe_per_page, offset])
+        rows = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        names_raw = row.get("guest_names") or ""
+        names = [n.strip() for n in names_raw.split(",") if n.strip()]
+        guest_count = int(row.get("guest_count") or 0)
+        if not guest_count:
+            guest_count = len(names)
+        if names:
+            if len(names) > 2:
+                display = f"{names[0]} +{len(names) - 1}"
+            elif len(names) == 2:
+                display = f"{names[0]} & {names[1]}"
+            else:
+                display = names[0]
+        else:
+            display = None
+        row["guest_display"] = display
+        row["guest_count"] = guest_count
 
     return rows, total_rows
 
