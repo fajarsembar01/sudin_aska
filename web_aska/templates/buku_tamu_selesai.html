@@ -64,7 +64,7 @@
         <button type="button" class="suggestion-chip">Kapan liburan semester?</button>
         <button type="button" class="suggestion-chip">Cara daftar siswa baru?</button>
         <button type="button" class="suggestion-chip">Syarat KJP terbaru?</button>
-        <button type="button" class="suggestion-chip">Lapor bullying gimana?</button>
+        <button type="button" class="suggestion-chip">Apa email SDN ....?</button>
     </div>
     {% endif %}
 </div>
@@ -149,6 +149,20 @@
             if (!raw) return '';
             var url = String(raw).trim();
             if (!url) return '';
+            var dupMatch = url.match(/^https?:\/\/[^/]+\/(https?:\/\/.+)$/i);
+            if (dupMatch && dupMatch[1]) {
+                url = dupMatch[1];
+            }
+            try {
+                var u = new URL(url.indexOf('http') === 0 ? url : 'https://' + url);
+                u.hash = '';
+                u.pathname = u.pathname
+                    .replace(/%20.*$/i, '')
+                    .replace(/%f0%9f[a-f0-9]{6}.*$/i, '');
+                url = u.toString();
+            } catch (err) {
+                // keep original if parsing fails
+            }
             if (!/^https?:\/\//i.test(url)) {
                 if (url.startsWith('www.')) {
                     url = 'https://' + url;
@@ -272,7 +286,7 @@
                     continue;
                 }
                 if (label.indexOf('website') >= 0 || label.indexOf('situs') >= 0) {
-                    if (value) addLink(value, 'website');
+                    if (value && URL_CHECK.test(value)) addLink(value, 'website');
                     continue;
                 }
             }

@@ -11,6 +11,7 @@ from responses import (
     is_corruption_report_intent,
     mentions_corruption_only,
 )
+from reporting_flags import reporting_enabled
 from utils import now_str, send_typing_once, strip_markdown
 from utils import send_and_update_thinking_bubble
 
@@ -33,6 +34,8 @@ async def handle_corruption(
 
     Returns True if handled.
     """
+    if not reporting_enabled("corruption"):
+        return False
     # Corruption flow session management
     corruption_sessions = context.chat_data.setdefault("corruption_sessions", {})
     corruption_session: Optional[CorruptionResponse] = corruption_sessions.get(storage_key)
