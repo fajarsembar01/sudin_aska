@@ -8,6 +8,7 @@ import json
 import math
 import os
 from io import BytesIO, StringIO
+import requests
 from pathlib import Path
 from datetime import date, datetime
 from typing import Optional
@@ -266,6 +267,51 @@ def _build_guestbook_qr(target_url: str, size: int = 1024, logo_path: Optional[P
     return qr_img
 
 
+def _load_school_logo(school: dict) -> Optional[Image.Image]:
+    logo_url = (school or {}).get("logo_url")
+    if not logo_url:
+        return None
+    try:
+        if str(logo_url).startswith(("http://", "https://")):
+            resp = requests.get(logo_url, timeout=5)
+            resp.raise_for_status()
+            return Image.open(BytesIO(resp.content))
+            
+        # Clean path: remove leading slash to prevent absolute path issues
+        clean_path = str(logo_url).lstrip("/")
+        
+        # Define base root directory
+        root_dir = Path(__file__).resolve().parent.parent.parent
+        
+        # Logic to try multiple potential paths
+        candidates = []
+        
+        # 1. Try as is (relative to root)
+        candidates.append(root_dir / clean_path)
+        
+        # 2. Handle known mismatch: DB 'portal/uploads' -> FS 'uploads/portal'
+        if clean_path.startswith("portal/uploads/"):
+            swapped_path = clean_path.replace("portal/uploads/", "uploads/portal/", 1)
+            candidates.append(root_dir / swapped_path)
+            
+        # 3. Try forcing 'uploads/portal/' + filename
+        filename = Path(clean_path).name
+        candidates.append(root_dir / "uploads" / "portal" / "logos" / filename)
+        
+        # 4. Try just 'uploads/' + clean_path (if portal prefix is extra)
+        if clean_path.startswith("portal/"):
+             candidates.append(root_dir / "uploads" / clean_path[7:]) # remove 'portal/'
+             
+        for candidate in candidates:
+            if candidate.exists():
+                return Image.open(candidate)
+                
+        return None
+    except Exception:
+        return None
+
+
+
 def _measure_multiline(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont, spacing: int = 4) -> tuple[int, int]:
     if hasattr(draw, "multiline_textbbox"):
         bbox = draw.multiline_textbbox((0, 0), text, font=font, spacing=spacing)
@@ -287,6 +333,7 @@ def _fetch_school_for_user(user_id: int) -> Optional[dict]:
                    s.name,
                    s.jenjang,
                    s.alamat,
+                   s.metadata,
                    s.logo_url,
                    l.name AS kelurahan_name,
                    k.name AS kecamatan_name
@@ -1991,33 +2038,138 @@ def sekolah_guestbook_qr() -> Response:
         return jsonify({"success": False, "message": f"QR tersimpan tidak valid: {exc}"}), 500
 
     if fmt == "pdf":
-        page_sizes = {
-            "a4": (2480, 3508),
-            "a5": (1748, 2480),
-        }
-        width, height = page_sizes[paper]
-        canvas = Image.new("RGB", (width, height), "white")
-        qr_size = int(min(width, height) * 0.55)
-        qr_resized = qr_img.resize((qr_size, qr_size), Image.LANCZOS).convert("RGB")
-        qr_x = (width - qr_size) // 2
-        qr_y = int(height * 0.18)
-        canvas.paste(qr_resized, (qr_x, qr_y))
+        template_path = Path(__file__).resolve().parent.parent / "static" / "qr" / "new_template.png"
+        if not template_path.exists():
+            return jsonify({"success": False, "message": "Template QR tidak ditemukan."}), 500
+
+        canvas = Image.open(template_path).convert("RGBA")
+        base_w, base_h = 4419, 6250  # ukuran template.png
+        scale = canvas.width / base_w
+
+        # Posisi & ukuran elemen (berdasarkan contoh.svg, diskalakan)
+        qr_box_bbox = (1054, 2092, 3364, 4427)  # extracted from template.png
+        qr_box_w = qr_box_bbox[2] - qr_box_bbox[0]
+        qr_box_h = qr_box_bbox[3] - qr_box_bbox[1]
+        qr_size_base = int(min(qr_box_w, qr_box_h) * 0.78)  # keep margin
+        qr_center_x_base = (qr_box_bbox[0] + qr_box_bbox[2]) / 2
+        qr_center_y_base = (qr_box_bbox[1] + qr_box_bbox[3]) / 2
+        name_y_base = 4720
+        web_label_y_base = 5440
+        web_value_y_base = 5535
+        ig_label_y_base = 5440
+        ig_value_y_base = 5535
+        web_x_base = 1480
+        ig_x_base = 2920
+        logo_center_base = (3800, 500)
+        logo_diameter_base = 510
+
+        qr_size = int(qr_size_base * scale)
+        qr_x = int((qr_center_x_base - qr_size_base / 2) * scale)
+        qr_y = int((qr_center_y_base - qr_size_base / 2) * scale)
+        qr_resized = qr_img.resize((qr_size, qr_size), Image.LANCZOS).convert("RGBA")
+        canvas.alpha_composite(qr_resized, (qr_x, qr_y))
 
         draw = ImageDraw.Draw(canvas)
-        font = ImageFont.load_default()
-        text_lines = [
-            school.get("name") or "Sekolah",
-            f"NPSN {school.get('npsn')}",
-            "Scan untuk buku tamu web_aska",
-        ]
-        text = "\n".join(text_lines)
-        text_w, text_h = _measure_multiline(draw, text, font, spacing=4)
-        text_x = (width - text_w) // 2
-        text_y = qr_y + qr_size + 40
-        draw.multiline_text((text_x, text_y), text, fill=(20, 20, 20), font=font, spacing=4, align="center")
+        def _font(path: str, size: int):
+            # Try multiple font paths for better compatibility
+            font_paths = [
+                path,
+                f"/System/Library/Fonts/Supplemental/{path}",
+                f"/Library/Fonts/{path}",
+                "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+                "/Library/Fonts/Arial Unicode.ttf",
+            ]
+            for font_path in font_paths:
+                try:
+                    return ImageFont.truetype(font_path, int(size * scale))
+                except Exception:
+                    continue
+            # Last resort: use a very large default font
+            return ImageFont.load_default()
+
+        font_name = _font("Arial Bold.ttf", 220)
+        font_small_value = _font("Arial Bold.ttf", 80)
+
+        cx = canvas.width // 2
+        draw.text((cx, int(name_y_base * scale)), (school.get("name") or "Nama Sekolah").upper(),
+                  fill=(60, 70, 180, 255), font=font_name, anchor="mm")
+
+        meta = school.get("metadata") or {}
+        if isinstance(meta, str):
+            try:
+                meta = json.loads(meta)
+            except json.JSONDecodeError:
+                meta = {}
+        def _shorten(text: str, max_len: int = 40) -> str:
+            text = text or "-"
+            return text if len(text) <= max_len else text[: max_len - 3] + "..."
+
+        website_text = _shorten(meta.get("website") or "-")
+        # Remove protocol and www
+        for prefix in ["https://", "http://", "www."]:
+             if website_text.lower().startswith(prefix):
+                 website_text = website_text[len(prefix):]
+        # Remove trailing slash
+        website_text = website_text.rstrip("/")
+
+        instagram_text = _shorten(meta.get("instagram") or meta.get("ig") or "-")
+        if instagram_text != "-" and not instagram_text.startswith("@"):
+             instagram_text = f"@{instagram_text}"
+
+        web_value_y_base = 5190
+        ig_value_y_base = 5190
+
+        # Adjust X for left alignment (lm anchor)
+        # web_x_base was 1150 (left), changing to 1200 (slightly right)
+        # ig_x_base was 2600 (left)
+        web_x_base = 1200
+        ig_x_base = 2600
+
+        draw.text((int(web_x_base * scale), int(web_value_y_base * scale)), website_text,
+                  fill=(0, 0, 0, 255), font=font_small_value, anchor="lm")
+        draw.text((int(ig_x_base * scale), int(ig_value_y_base * scale)), instagram_text,
+                  fill=(0, 0, 0, 255), font=font_small_value, anchor="lm")
+
+        logo_img = _load_school_logo(school)
+        if logo_img:
+            # Logo dimensions
+            logo_size = int(logo_diameter_base * scale)
+            
+            # Process logo
+            logo_img = logo_img.convert("RGBA")
+            
+            # Create ultra high quality circular mask
+            # Render at 4x size then downscale for maximum anti-aliasing
+            mask_scale_factor = 4
+            mask_size = logo_size * mask_scale_factor
+            
+            mask = Image.new("L", (mask_size, mask_size), 0)
+            mask_draw = ImageDraw.Draw(mask)
+            mask_draw.ellipse((0, 0, mask_size, mask_size), fill=255)
+            
+            # Downscale mask perfectly
+            mask = mask.resize((logo_size, logo_size), Image.LANCZOS)
+            
+            # Resize logo to fit
+            # First resize to mask_size (upscale if needed) then downscale with LANCZOS
+            logo_img = logo_img.resize((mask_size, mask_size), Image.LANCZOS)
+            logo_img = logo_img.resize((logo_size, logo_size), Image.LANCZOS)
+            
+            # Enhance sharpness slightly after downscaling to prevent blur
+            from PIL import ImageFilter
+            logo_img = logo_img.filter(ImageFilter.SHARPEN)
+            
+            # Calculate position to center in the circle
+            logo_pos = (
+                int(logo_center_base[0] * scale - logo_size / 2),
+                int(logo_center_base[1] * scale - logo_size / 2)
+            )
+            
+            # Paste logo with mask
+            canvas.paste(logo_img, logo_pos, mask)
 
         buf = BytesIO()
-        canvas.save(buf, format="PDF")
+        canvas.convert("RGB").save(buf, format="PDF")
         buf.seek(0)
         filename = f"qr_buku_tamu_{school.get('npsn')}_{paper}.pdf"
         return send_file(

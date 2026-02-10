@@ -327,16 +327,25 @@
                             </div>
                             <div class="col-12" data-parent-field>
                                 <label class="form-label">Kelas Siswa *</label>
-                                <select id="regStudentClass" class="form-select"
-                                    {% if not class_options %}disabled{% endif %}>
-                                    <option value="">Pilih kelas</option>
-                                    {% for cls in class_options|default([]) %}
-                                    <option value="{{ cls }}">{{ cls }}</option>
-                                    {% endfor %}
-                                </select>
-                                {% if not class_options %}
-                                <div class="form-text">Belum ada kelas dikonfigurasi oleh sekolah.</div>
-                                {% endif %}
+                                <div class="row g-2">
+                                    <div class="col-6 col-md-5">
+                                        <select id="regStudentGrade" class="form-select">
+                                            <option value="">Kelas</option>
+                                            {% for grade in grade_options|default([]) %}
+                                            <option value="{{ grade }}">{{ grade }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-6 col-md-7">
+                                        <select id="regStudentSection" class="form-select">
+                                            <option value="">Abjad</option>
+                                            {% for letter in class_letters|default([]) %}
+                                            <option value="{{ letter }}">{{ letter }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-text">Contoh: 3C</div>
                             </div>
                             <div class="col-12" data-parent-field>
                                 <label class="form-label">Nama Siswa *</label>
@@ -451,7 +460,8 @@
             var regParentNo = document.getElementById('regParentNo');
             var workFields = document.querySelectorAll('[data-work-field]');
             var parentFields = document.querySelectorAll('[data-parent-field]');
-            var regStudentClass = document.getElementById('regStudentClass');
+            var regStudentGrade = document.getElementById('regStudentGrade');
+            var regStudentSection = document.getElementById('regStudentSection');
             var regStudentName = document.getElementById('regStudentName');
 
             var selectedGuests = new Map();
@@ -518,6 +528,18 @@
                 return digits;
             }
 
+            function buildStudentClass() {
+                var grade = regStudentGrade ? (regStudentGrade.value || '').trim() : '';
+                var section = regStudentSection ? (regStudentSection.value || '').trim() : '';
+                if (!grade || !section) return '';
+                return grade + String(section).toUpperCase();
+            }
+
+            function resetStudentClass() {
+                if (regStudentGrade) regStudentGrade.value = '';
+                if (regStudentSection) regStudentSection.value = '';
+            }
+
             function setParentMode(isParent) {
                 if (workFields && workFields.length) {
                     workFields.forEach(function (field) {
@@ -532,17 +554,15 @@
                 if (isParent) {
                     if (regInstansi) regInstansi.value = '';
                     if (regJabatan) regJabatan.value = '';
-                    if (regStudentClass && !regStudentClass.disabled) {
-                        regStudentClass.required = true;
-                    }
+                    if (regStudentGrade) regStudentGrade.required = true;
+                    if (regStudentSection) regStudentSection.required = true;
                     if (regStudentName) {
                         regStudentName.required = true;
                     }
                 } else {
-                    if (regStudentClass) {
-                        regStudentClass.required = false;
-                        regStudentClass.value = '';
-                    }
+                    if (regStudentGrade) regStudentGrade.required = false;
+                    if (regStudentSection) regStudentSection.required = false;
+                    resetStudentClass();
                     if (regStudentName) {
                         regStudentName.required = false;
                         regStudentName.value = '';
@@ -556,7 +576,8 @@
                     el.disabled = !isActive;
                 });
                 if (!isActive) {
-                    if (regStudentClass) regStudentClass.required = false;
+                    if (regStudentGrade) regStudentGrade.required = false;
+                    if (regStudentSection) regStudentSection.required = false;
                     if (regStudentName) regStudentName.required = false;
                     return;
                 }
@@ -729,7 +750,7 @@
                 var name = (regName.value || '').trim();
                 var phone = normalizePhone(regPhone.value || '');
                 var isParent = regParentYes && regParentYes.checked;
-                var studentClass = regStudentClass ? (regStudentClass.value || '').trim() : '';
+                var studentClass = buildStudentClass();
                 var studentName = regStudentName ? (regStudentName.value || '').trim() : '';
                 if (!name) {
                     alert('Nama wajib diisi.');
@@ -740,7 +761,7 @@
                     return;
                 }
                 if (isParent) {
-                    if (regStudentClass && !regStudentClass.disabled && !studentClass) {
+                    if (!studentClass) {
                         alert('Kelas siswa wajib dipilih.');
                         return;
                     }
