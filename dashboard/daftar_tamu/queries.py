@@ -719,6 +719,7 @@ def fetch_user_visit_history(
     AND (
         %s = ''
         OR s.name ILIKE %s
+        OR COALESCE(ft.purpose, '') ILIKE %s
         OR to_char(ft.visit_at::date, 'YYYY-MM-DD') ILIKE %s
         OR to_char(ft.visit_at::date, 'DD Mon YYYY') ILIKE %s
     )
@@ -742,6 +743,8 @@ def fetch_user_visit_history(
     SELECT
         ft.id AS transaction_id,
         ft.visit_at,
+        ft.purpose,
+        ft.photo_path,
         s.name AS school_name,
         s.npsn AS school_npsn
     FROM user_transactions ut
@@ -766,6 +769,7 @@ def fetch_user_visit_history(
         scope,
         user_id,
         query_text,
+        like_query,
         like_query,
         like_query,
         like_query,
@@ -855,6 +859,7 @@ def fetch_school_visit_history(
         t.id AS transaction_id,
         t.visit_at,
         t.purpose,
+        t.photo_path,
         guests.guest_names,
         guests.guest_count
     FROM filtered_transactions t
