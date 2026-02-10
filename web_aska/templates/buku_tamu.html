@@ -229,6 +229,16 @@
             border-color: #4c89ff;
             box-shadow: 0 0 0 0.2rem rgba(76, 137, 255, 0.2);
         }
+
+        .selected-guests-field {
+            border: 1px solid transparent;
+            border-radius: 10px;
+            padding: 6px;
+        }
+
+        .selected-guests-field.is-invalid {
+            border-color: #dc3545;
+        }
     </style>
 </head>
 
@@ -367,14 +377,18 @@
 
                     <div class="mb-3 mt-4">
                         <label class="form-label fw-semibold">Tamu Terpilih</label>
-                        <div id="selectedGuests" class="d-flex flex-wrap gap-2"></div>
-                        <div id="selectedGuestsEmpty" class="text-muted small">Belum ada tamu dipilih.</div>
+                        <div id="selectedGuestsField" class="selected-guests-field">
+                            <div id="selectedGuests" class="d-flex flex-wrap gap-2"></div>
+                            <div id="selectedGuestsEmpty" class="text-muted small">Belum ada tamu dipilih.</div>
+                        </div>
+                        <div id="selectedGuestsError" class="text-danger small d-none">Nama tamu wajib dipilih.</div>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Tujuan Kunjungan</label>
                         <input type="text" name="purpose" id="purposeInput" class="form-control"
                             placeholder="Contoh: Bertemu kepala sekolah" list="purposeKeywordList">
+                        <div id="purposeError" class="invalid-feedback">Tujuan kunjungan wajib diisi.</div>
                         <datalist id="purposeKeywordList">
                             {% for kw in purpose_keywords|default([]) %}
                             <option value="{{ kw }}"></option>
@@ -447,9 +461,13 @@
             var addNewGuestBtn = document.getElementById('addNewGuestBtn');
             var selectedGuestsWrap = document.getElementById('selectedGuests');
             var selectedGuestsEmpty = document.getElementById('selectedGuestsEmpty');
+            var selectedGuestsField = document.getElementById('selectedGuestsField');
+            var selectedGuestsError = document.getElementById('selectedGuestsError');
             var guestPayloadInput = document.getElementById('guestPayloadInput');
             var submitBtn = guestForm ? guestForm.querySelector('button[type="submit"]') : null;
             var registerInputs = registerForm ? registerForm.querySelectorAll('input, select, textarea, button') : [];
+            var purposeInput = document.getElementById('purposeInput');
+            var purposeError = document.getElementById('purposeError');
 
             var regName = document.getElementById('regName');
             var regPhone = document.getElementById('regPhone');
@@ -590,7 +608,12 @@
 
             function syncSubmitState() {
                 if (!submitBtn) return;
-                submitBtn.disabled = selectedGuests.size === 0;
+                var hasGuests = selectedGuests.size > 0;
+                var hasPurpose = purposeInput ? purposeInput.value.trim().length > 0 : false;
+                if (selectedGuestsField) selectedGuestsField.classList.toggle('is-invalid', !hasGuests);
+                if (selectedGuestsError) selectedGuestsError.classList.toggle('d-none', hasGuests);
+                if (purposeInput) purposeInput.classList.toggle('is-invalid', !hasPurpose);
+                submitBtn.disabled = !(hasGuests && hasPurpose);
             }
 
             function renderSelectedGuests() {
@@ -631,6 +654,12 @@
                     selectedGuestsWrap.appendChild(chip);
                 });
                 syncSubmitState();
+            }
+
+            if (purposeInput) {
+                purposeInput.addEventListener('input', function () {
+                    syncSubmitState();
+                });
             }
 
             function showSearchResult(html) {
@@ -834,9 +863,11 @@
                     if (sudinModal) sudinModal.show();
                     return;
                 }
-                if (selectedGuests.size === 0) {
+                var hasGuests = selectedGuests.size > 0;
+                var hasPurpose = purposeInput ? purposeInput.value.trim().length > 0 : false;
+                if (!hasGuests || !hasPurpose) {
                     e.preventDefault();
-                    alert('Minimal pilih satu tamu. Klik hasil pencarian untuk menambahkan.');
+                    syncSubmitState();
                     return;
                 }
                 var payload = [];
