@@ -41,6 +41,7 @@ from .queries import (
     fetch_map_data,
     fetch_recent_visits,
     fetch_school_rankings,
+    fetch_school_visit_history,
     fetch_user_rankings,
     fetch_user_visit_history,
     fetch_unvisited_schools,
@@ -291,6 +292,26 @@ def _fetch_school_for_user(user_id: int) -> Optional[dict]:
             WHERE u.id = %s
             """,
             (user_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def _fetch_school_profile(school_id: int) -> Optional[dict]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT s.id,
+                   s.npsn,
+                   s.name,
+                   s.jenjang,
+                   k.name AS kecamatan_name
+            FROM portal_schools s
+            LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            WHERE s.id = %s
+            """,
+            (school_id,),
         )
         row = cur.fetchone()
         return dict(row) if row else None
@@ -707,6 +728,71 @@ def admin_user_visits(user_id: int) -> Response:
             search_query=search_query,
             date_from=None,
             date_to=None,
+            guest_scope=guest_scope,
+        )
+
+    for row in rows:
+        visit_at = row.get("visit_at")
+        row["visit_at"] = visit_at.isoformat() if visit_at else None
+
+    return jsonify(
+        {
+            "success": True,
+            "rows": rows,
+            "total_rows": total_rows,
+            "total_pages": total_pages,
+            "page": page,
+            "per_page": per_page,
+            "sort": sort,
+        }
+    )
+
+
+@daftar_tamu_bp.route("/admin/sekolah/<int:school_id>/visits")
+@role_required("admin")
+def admin_school_visits(school_id: int) -> Response:
+    """Return visit history rows for school modal on admin dashboard."""
+    school = _fetch_school_profile(school_id)
+    if not school:
+        return jsonify({"success": False, "message": "Sekolah tidak ditemukan."}), 404
+
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    page = _to_int(request.args.get("page"), 1)
+    page = max(1, page)
+    per_page = _to_int(request.args.get("per_page"), 10)
+    per_page = max(5, min(per_page, 100))
+    sort = (request.args.get("sort") or "").strip().lower() or "date_desc"
+    if sort not in {"date_desc", "date_asc"}:
+        sort = "date_desc"
+    search_query = (request.args.get("q") or "").strip()
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+
+    rows, total_rows = fetch_school_visit_history(
+        school_id=school_id,
+        page=page,
+        per_page=per_page,
+        sort_key=sort,
+        search_query=search_query,
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if page > total_pages:
+        page = total_pages
+        rows, total_rows = fetch_school_visit_history(
+            school_id=school_id,
+            page=page,
+            per_page=per_page,
+            sort_key=sort,
+            search_query=search_query,
+            date_from=date_from,
+            date_to=date_to,
             guest_scope=guest_scope,
         )
 
