@@ -2077,22 +2077,33 @@ def sekolah_guestbook_qr() -> Response:
 
         draw = ImageDraw.Draw(canvas)
         def _font(path: str, size: int):
-            # Try multiple font paths for better compatibility
-            font_paths = [
+            # Try finding bundled font first for server compatibility
+            root_dir = Path(__file__).resolve().parent.parent.parent
+            bundled_font = root_dir / "dashboard" / "static" / "fonts" / "Roboto-Bold.ttf"
+            
+            # List of potential font paths to try
+            font_candidates = [
+                bundled_font,
                 path,
                 f"/System/Library/Fonts/Supplemental/{path}",
+                f"/System/Library/Fonts/{path}",
                 f"/Library/Fonts/{path}",
-                "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
-                "/Library/Fonts/Arial Unicode.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", # Linux typical
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf" # Linux typical
             ]
-            for font_path in font_paths:
+            
+            for font_path in font_candidates:
                 try:
-                    return ImageFont.truetype(font_path, int(size * scale))
+                    if os.path.exists(str(font_path)):
+                        return ImageFont.truetype(str(font_path), int(size * scale))
                 except Exception:
                     continue
-            # Last resort: use a very large default font
+            
+            # Fallback if nothing works
+            print("WARNING: All font paths failed, using default font (tiny)")
             return ImageFont.load_default()
 
+        # Use generic name, but function will pick Roboto-Bold.ttf if available
         font_name = _font("Arial Bold.ttf", 220)
         font_small_value = _font("Arial Bold.ttf", 80)
 
