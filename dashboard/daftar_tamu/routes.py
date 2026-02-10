@@ -2043,7 +2043,13 @@ def sekolah_guestbook_qr() -> Response:
             return jsonify({"success": False, "message": "Template QR tidak ditemukan."}), 500
 
         canvas = Image.open(template_path).convert("RGBA")
-        base_w, base_h = 4419, 6250  # ukuran template.png
+        base_w, base_h = 4419, 6250  # target high resolution
+        
+        # Upscale template if it's smaller than target base resolution
+        # This ensures text, logos, and QR are rendered at high definition
+        if canvas.width < base_w:
+             canvas = canvas.resize((base_w, base_h), Image.LANCZOS)
+             
         scale = canvas.width / base_w
 
         # Posisi & ukuran elemen (berdasarkan contoh.svg, diskalakan)
