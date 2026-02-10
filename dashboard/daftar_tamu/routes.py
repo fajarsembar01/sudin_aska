@@ -41,6 +41,7 @@ from .queries import (
     fetch_map_data,
     fetch_recent_visits,
     fetch_school_rankings,
+    fetch_school_visit_history,
     fetch_user_rankings,
     fetch_user_visit_history,
     fetch_unvisited_schools,
@@ -301,6 +302,26 @@ def _fetch_school_for_user(user_id: int) -> Optional[dict]:
         return dict(row) if row else None
 
 
+def _fetch_school_profile(school_id: int) -> Optional[dict]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT s.id,
+                   s.npsn,
+                   s.name,
+                   s.jenjang,
+                   k.name AS kecamatan_name
+            FROM portal_schools s
+            LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            WHERE s.id = %s
+            """,
+            (school_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
 def _fetch_dashboard_user(user_id: int) -> Optional[dict]:
     with get_cursor() as cur:
         cur.execute(
@@ -378,6 +399,62 @@ def _sanitize_phone(phone: str) -> str:
     if digits_only.startswith("0"):
         digits_only = "62" + digits_only[1:]
     return digits_only
+
+
+def _build_photo_url(photo_path: Optional[str], *, external: bool = False) -> Optional[str]:
+    if not photo_path:
+        return None
+    normalized = (photo_path or "").replace("\\", "/")
+    if "uploads/portal/" in normalized:
+        filename = normalized.split("uploads/portal/")[-1]
+    else:
+        filename = normalized.split("/")[-1]
+    filename = (filename or "").lstrip("/")
+    if not filename:
+        return None
+    return url_for("portal.uploaded_file", filename=filename, _external=external)
+
+
+def _format_date_dmy(value: Optional[datetime | date]) -> str:
+    if not value:
+        return ""
+    if isinstance(value, datetime):
+        value = value.date()
+    return value.strftime("%d/%m/%Y")
+
+
+def _build_csv_response(headers: list[str], rows: list[list[object]], filename: str) -> Response:
+    buffer = StringIO()
+    writer = csv.writer(buffer, delimiter=";", quoting=csv.QUOTE_MINIMAL, lineterminator="\n")
+    writer.writerow(headers)
+    for row in rows:
+        writer.writerow(row)
+    response = Response(buffer.getvalue(), mimetype="text/csv; charset=utf-8")
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    return response
+
+
+def _build_xlsx_response(headers: list[str], rows: list[list[object]], filename: str) -> Response:
+    try:
+        from openpyxl import Workbook
+    except ImportError as exc:
+        return Response("Library openpyxl belum terinstall.", status=500)
+
+    output = BytesIO()
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Data"
+    ws.append(headers)
+    for row in rows:
+        ws.append(list(row))
+    wb.save(output)
+    output.seek(0)
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=filename,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
 
 
 def _build_area_contacts(school: Optional[dict], message: Optional[str] = None) -> list[dict]:
@@ -689,6 +766,10 @@ def admin_user_visits(user_id: int) -> Response:
     sort = (request.args.get("sort") or "").strip().lower() or "date_desc"
     search_query = (request.args.get("q") or "").strip()
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
 
     rows, total_rows = fetch_user_visit_history(
         user_id=user_id,
@@ -696,8 +777,8 @@ def admin_user_visits(user_id: int) -> Response:
         per_page=per_page,
         sort_key=sort,
         search_query=search_query,
-        date_from=None,
-        date_to=None,
+        date_from=date_from,
+        date_to=date_to,
         guest_scope=guest_scope,
     )
 
@@ -710,14 +791,15 @@ def admin_user_visits(user_id: int) -> Response:
             per_page=per_page,
             sort_key=sort,
             search_query=search_query,
-            date_from=None,
-            date_to=None,
+            date_from=date_from,
+            date_to=date_to,
             guest_scope=guest_scope,
         )
 
     for row in rows:
         visit_at = row.get("visit_at")
         row["visit_at"] = visit_at.isoformat() if visit_at else None
+        row["photo_url"] = _build_photo_url(row.get("photo_path"))
 
     return jsonify(
         {
@@ -730,6 +812,216 @@ def admin_user_visits(user_id: int) -> Response:
             "sort": sort,
         }
     )
+
+
+@daftar_tamu_bp.route("/admin/sekolah/<int:school_id>/visits")
+@role_required("admin")
+def admin_school_visits(school_id: int) -> Response:
+    """Return visit history rows for school modal on admin dashboard."""
+    school = _fetch_school_profile(school_id)
+    if not school:
+        return jsonify({"success": False, "message": "Sekolah tidak ditemukan."}), 404
+
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    page = _to_int(request.args.get("page"), 1)
+    page = max(1, page)
+    per_page = _to_int(request.args.get("per_page"), 10)
+    per_page = max(5, min(per_page, 100))
+    sort = (request.args.get("sort") or "").strip().lower() or "date_desc"
+    if sort not in {"date_desc", "date_asc"}:
+        sort = "date_desc"
+    search_query = (request.args.get("q") or "").strip()
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+
+    rows, total_rows = fetch_school_visit_history(
+        school_id=school_id,
+        page=page,
+        per_page=per_page,
+        sort_key=sort,
+        search_query=search_query,
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if page > total_pages:
+        page = total_pages
+        rows, total_rows = fetch_school_visit_history(
+            school_id=school_id,
+            page=page,
+            per_page=per_page,
+            sort_key=sort,
+            search_query=search_query,
+            date_from=date_from,
+            date_to=date_to,
+            guest_scope=guest_scope,
+        )
+
+    for row in rows:
+        visit_at = row.get("visit_at")
+        row["visit_at"] = visit_at.isoformat() if visit_at else None
+        row["photo_url"] = _build_photo_url(row.get("photo_path"))
+
+    return jsonify(
+        {
+            "success": True,
+            "rows": rows,
+            "total_rows": total_rows,
+            "total_pages": total_pages,
+            "page": page,
+            "per_page": per_page,
+            "sort": sort,
+        }
+    )
+
+
+@daftar_tamu_bp.route("/admin/user/<int:user_id>/visits/export")
+@role_required("admin")
+def admin_user_visits_export(user_id: int) -> Response:
+    """Export user visit history (Excel-friendly CSV)."""
+    user_profile = _fetch_dashboard_user(user_id)
+    if not user_profile:
+        return Response("User tidak ditemukan.", status=404)
+
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    search_query = (request.args.get("q") or "").strip()
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    sort = (request.args.get("sort") or "").strip().lower() or "date_desc"
+    if sort not in {"date_desc", "date_asc"}:
+        sort = "date_desc"
+
+    per_page = 100
+    rows, total_rows = fetch_user_visit_history(
+        user_id=user_id,
+        page=1,
+        per_page=per_page,
+        sort_key=sort,
+        search_query=search_query,
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if total_pages > 1:
+        for page in range(2, total_pages + 1):
+            page_rows, _ = fetch_user_visit_history(
+                user_id=user_id,
+                page=page,
+                per_page=per_page,
+                sort_key=sort,
+                search_query=search_query,
+                date_from=date_from,
+                date_to=date_to,
+                guest_scope=guest_scope,
+            )
+            rows.extend(page_rows)
+
+    headers = [
+        "Nama Sekolah",
+        "Tanggal Kunjungan",
+        "Tujuan",
+        "Foto",
+    ]
+    data_rows: list[list[object]] = []
+    for row in rows:
+        photo_flag = "Ada" if row.get("photo_path") else "-"
+        data_rows.append(
+            [
+                row.get("school_name") or "",
+                _format_date_dmy(row.get("visit_at")),
+                row.get("purpose") or "",
+                photo_flag,
+            ]
+        )
+
+    file_format = (request.args.get("format") or "excel").strip().lower()
+    if file_format in {"excel", "xlsx"}:
+        filename = f"riwayat_kunjungan_user_{user_id}_{date.today().isoformat()}.xlsx"
+        return _build_xlsx_response(headers, data_rows, filename)
+
+    filename = f"riwayat_kunjungan_user_{user_id}_{date.today().isoformat()}.csv"
+    return _build_csv_response(headers, data_rows, filename)
+
+
+@daftar_tamu_bp.route("/admin/sekolah/<int:school_id>/visits/export")
+@role_required("admin")
+def admin_school_visits_export(school_id: int) -> Response:
+    """Export school visit history (Excel-friendly CSV)."""
+    school = _fetch_school_profile(school_id)
+    if not school:
+        return Response("Sekolah tidak ditemukan.", status=404)
+
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    search_query = (request.args.get("q") or "").strip()
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    sort = (request.args.get("sort") or "").strip().lower() or "date_desc"
+    if sort not in {"date_desc", "date_asc"}:
+        sort = "date_desc"
+
+    per_page = 100
+    rows, total_rows = fetch_school_visit_history(
+        school_id=school_id,
+        page=1,
+        per_page=per_page,
+        sort_key=sort,
+        search_query=search_query,
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if total_pages > 1:
+        for page in range(2, total_pages + 1):
+            page_rows, _ = fetch_school_visit_history(
+                school_id=school_id,
+                page=page,
+                per_page=per_page,
+                sort_key=sort,
+                search_query=search_query,
+                date_from=date_from,
+                date_to=date_to,
+                guest_scope=guest_scope,
+            )
+            rows.extend(page_rows)
+
+    headers = [
+        "Nama Tamu Terakhir",
+        "Tanggal Kunjungan",
+        "Tujuan",
+        "Foto",
+    ]
+    data_rows: list[list[object]] = []
+    for row in rows:
+        photo_flag = "Ada" if row.get("photo_path") else "-"
+        data_rows.append(
+            [
+                row.get("guest_display") or row.get("guest_names") or "",
+                _format_date_dmy(row.get("visit_at")),
+                row.get("purpose") or "",
+                photo_flag,
+            ]
+        )
+
+    file_format = (request.args.get("format") or "excel").strip().lower()
+    if file_format in {"excel", "xlsx"}:
+        filename = f"riwayat_kunjungan_sekolah_{school_id}_{date.today().isoformat()}.xlsx"
+        return _build_xlsx_response(headers, data_rows, filename)
+
+    filename = f"riwayat_kunjungan_sekolah_{school_id}_{date.today().isoformat()}.csv"
+    return _build_csv_response(headers, data_rows, filename)
 
 
 @daftar_tamu_bp.route("/settings/users", methods=["GET", "POST"])
@@ -782,23 +1074,20 @@ def export_rankings() -> Response:
         guest_scope=guest_scope,
     )
 
-    buffer = StringIO()
-    writer = csv.writer(buffer)
-    writer.writerow(
-        [
-            "Peringkat",
-            "NPSN",
-            "Nama Sekolah",
-            "Jenjang",
-            "Kecamatan",
-            "Kelurahan",
-            "Jumlah Kunjungan",
-            "Kunjungan Terakhir",
-            "Tamu Terakhir",
-        ]
-    )
+    headers = [
+        "Peringkat",
+        "NPSN",
+        "Nama Sekolah",
+        "Jenjang",
+        "Kecamatan",
+        "Kelurahan",
+        "Jumlah Kunjungan",
+        "Kunjungan Terakhir",
+        "Tamu Terakhir",
+    ]
+    data_rows: list[list[object]] = []
     for row in rows:
-        writer.writerow(
+        data_rows.append(
             [
                 row.get("rank"),
                 row.get("npsn"),
@@ -807,22 +1096,18 @@ def export_rankings() -> Response:
                 row.get("kecamatan"),
                 row.get("kelurahan"),
                 row.get("visit_count"),
-                row.get("last_visit_date").isoformat() if row.get("last_visit_date") else "",
+                _format_date_dmy(row.get("last_visit_date")),
                 row.get("last_guest_display") or "",
             ]
         )
 
     file_format = (request.args.get("format") or "csv").strip().lower()
-    if file_format == "excel":
-        filename = f"ranking_daftar_tamu_{date.today().isoformat()}.xls"
-        mimetype = "application/vnd.ms-excel"
-    else:
-        filename = f"ranking_daftar_tamu_{date.today().isoformat()}.csv"
-        mimetype = "text/csv"
+    if file_format in {"excel", "xlsx"}:
+        filename = f"ranking_daftar_tamu_{date.today().isoformat()}.xlsx"
+        return _build_xlsx_response(headers, data_rows, filename)
 
-    response = Response(buffer.getvalue(), mimetype=mimetype)
-    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
-    return response
+    filename = f"ranking_daftar_tamu_{date.today().isoformat()}.csv"
+    return _build_csv_response(headers, data_rows, filename)
 
 
 # ===============================
