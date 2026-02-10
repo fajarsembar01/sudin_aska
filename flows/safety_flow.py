@@ -17,6 +17,7 @@ from responses import (
     get_bullying_timeout_message,
     is_bullying_stop_request,
 )
+from reporting_flags import reporting_enabled
 from utils import now_str, send_typing_once, strip_markdown
 
 
@@ -49,6 +50,8 @@ async def handle_bullying(
     topic: Optional[str] = None,
 ) -> bool:
     """Kelola sesi curhat bullying dengan gaya percakapan natural."""
+    if not reporting_enabled("bullying"):
+        return False
 
     async def _send_message(text: str) -> None:
         if not text:

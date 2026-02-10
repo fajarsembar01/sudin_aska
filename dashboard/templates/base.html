@@ -76,6 +76,7 @@
                             </li>
                         </ul>
                     </li>
+                    {% if reports_enabled %}
                     {% set report_endpoints = ['main.psych_reports', 'main.bullying_reports', 'main.corruption_reports']
                     %}
                     {% set total_report_notifications = (pending_psych_count|default(0)) +
@@ -89,6 +90,7 @@
                             {% endif %}
                         </a>
                         <ul class="dropdown-menu">
+                            {% if psych_reports_enabled %}
                             <li>
                                 <a class="dropdown-item d-flex align-items-center justify-content-between {% if request.endpoint == 'main.psych_reports' %}active{% endif %}"
                                     href="{{ url_for('main.psych_reports') }}">
@@ -98,6 +100,8 @@
                                     {% endif %}
                                 </a>
                             </li>
+                            {% endif %}
+                            {% if bullying_reports_enabled %}
                             <li>
                                 <a class="dropdown-item d-flex align-items-center justify-content-between {% if request.endpoint == 'main.bullying_reports' %}active{% endif %}"
                                     href="{{ url_for('main.bullying_reports') }}">
@@ -107,6 +111,8 @@
                                     {% endif %}
                                 </a>
                             </li>
+                            {% endif %}
+                            {% if corruption_reports_enabled %}
                             <li>
                                 <a class="dropdown-item d-flex align-items-center justify-content-between {% if request.endpoint == 'main.corruption_reports' %}active{% endif %}"
                                     href="{{ url_for('main.corruption_reports') }}">
@@ -116,8 +122,10 @@
                                     {% endif %}
                                 </a>
                             </li>
+                            {% endif %}
                         </ul>
                     </li>
+                    {% endif %}
                     {% if is_admin %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if request.endpoint in ['auth.manage_users', 'auth.manage_aska_users', 'auth.manage_monev_teams'] %}active{% endif %}"

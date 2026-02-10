@@ -23,6 +23,7 @@ from responses import (
     psych_stage_exists,
     summarize_psych_message,
 )
+from reporting_flags import reporting_enabled
 from utils import now_str, send_typing_once, strip_markdown
 
 
@@ -146,6 +147,8 @@ async def handle_psych(
 
     Returns True if handled.
     """
+    if not reporting_enabled("psych"):
+        return False
     psych_sessions = context.chat_data.setdefault("psych_sessions", {})
     psych_session = psych_sessions.get(storage_key)
 

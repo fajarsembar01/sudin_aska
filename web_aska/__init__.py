@@ -29,6 +29,7 @@ from db import (
 )
 from account_status import BLOCKING_STATUSES, build_status_notice, ACCOUNT_STATUS_ACTIVE
 from responses import detect_bullying_category, is_corruption_report_intent
+from reporting_flags import reporting_enabled
 from utils import normalize_input, replace_bot_mentions
 
 LIMIT_BLOCK_MESSAGE = (
@@ -234,19 +235,21 @@ def create_app() -> Flask:
 
         session_data = web_sessions.get(user_id) or {}
 
-        bullying_sessions = session_data.get("bullying_sessions") or {}
-        if bullying_sessions.get(user_id):
-            return True
+        if reporting_enabled("bullying"):
+            bullying_sessions = session_data.get("bullying_sessions") or {}
+            if bullying_sessions.get(user_id):
+                return True
 
-        corruption_sessions = session_data.get("corruption_sessions") or {}
-        if corruption_sessions.get(user_id):
-            return True
+        if reporting_enabled("corruption"):
+            corruption_sessions = session_data.get("corruption_sessions") or {}
+            if corruption_sessions.get(user_id):
+                return True
 
         cleaned = normalize_input(replace_bot_mentions(message, WEB_BOT_USERNAME))
-        if detect_bullying_category(cleaned):
+        if reporting_enabled("bullying") and detect_bullying_category(cleaned):
             return True
 
-        if is_corruption_report_intent(cleaned):
+        if reporting_enabled("corruption") and is_corruption_report_intent(cleaned):
             return True
 
         return False
@@ -727,6 +730,9 @@ def create_app() -> Flask:
 
     @app.route("/cek-laporan", methods=["GET"])
     def cek_laporan():
+        if not reporting_enabled("corruption"):
+            abort(404)
+
         ticket = request.args.get("ticket", "").strip()
         report = None
         error = None
@@ -740,6 +746,8 @@ def create_app() -> Flask:
 
     @app.route("/cek-laporan/<ticket_id>")
     def cek_laporan_detail(ticket_id: str):
+        if not reporting_enabled("corruption"):
+            abort(404)
         return redirect(url_for("cek_laporan", ticket=ticket_id, _anchor="hasil"))
 
     # Register feedback blueprint

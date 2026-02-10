@@ -169,7 +169,7 @@ def build_markdown(schools: List[Dict[str, Any]]) -> str:
             return (0, preferred_order.index(value), value)
         return (1, 999, value)
 
-    lines: List[str] = ["# Daftar Sekolah"]
+    lines: List[str] = ["# Daftar Sekolah JU(Jakarta Utara) 2"]
 
     for jenjang in sorted(grouped.keys(), key=_jenjang_sort_key):
         lines.append("")

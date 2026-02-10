@@ -91,6 +91,33 @@ def _env_flag(name: str, default: str = "false") -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _reporting_enabled(kind: Optional[str] = None) -> bool:
+    global_enabled = bool(current_app.config.get("ASKA_REPORTING_ENABLED", False))
+    if not global_enabled:
+        return False
+    if not kind:
+        return global_enabled
+
+    kind_map = {
+        "bullying": "ASKA_REPORTING_BULLYING_ENABLED",
+        "psych": "ASKA_REPORTING_PSYCH_ENABLED",
+        "corruption": "ASKA_REPORTING_CORRUPTION_ENABLED",
+    }
+    key = kind_map.get(kind.strip().lower())
+    if not key:
+        return global_enabled
+    return global_enabled and bool(current_app.config.get(key, True))
+
+
+def _reporting_disabled_response(message: str = "Fitur pelaporan ASKA sedang dinonaktifkan.") -> Response:
+    wants_json = request.is_json or request.accept_mimetypes.best == "application/json"
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    if request.method == "POST" and (wants_json or is_ajax):
+        return jsonify({"success": False, "message": message}), 403
+    flash(message, "warning")
+    return redirect(url_for("main.dashboard"))
+
+
 def _resolve_runtime_path(value: Optional[str], default: str) -> Path:
     path = Path(value or default)
     if not path.is_absolute():
@@ -586,6 +613,9 @@ def chat_thread(user_id: str) -> Response:
 @main_bp.route("/bullying-reports")
 @role_required("admin")
 def bullying_reports() -> Response:
+    if not _reporting_enabled("bullying"):
+        return _reporting_disabled_response()
+
     args: MultiDict = request.args
     raw_status = (args.get("status") or "").strip().lower() or None
     if raw_status and raw_status not in BULLYING_STATUSES:
@@ -629,6 +659,9 @@ def bullying_reports() -> Response:
 @main_bp.route("/bullying-reports/<int:report_id>")
 @role_required("admin")
 def bullying_report_detail(report_id: int) -> Response:
+    if not _reporting_enabled("bullying"):
+        return _reporting_disabled_response()
+
     report = fetch_bullying_report_detail(report_id)
     if not report:
         flash("Laporan tidak ditemukan.", "warning")
@@ -639,6 +672,9 @@ def bullying_report_detail(report_id: int) -> Response:
 @main_bp.route("/bullying-reports/bulk-status", methods=["POST"])
 @role_required("admin")
 def bulk_update_bullying_status() -> Response:
+    if not _reporting_enabled("bullying"):
+        return _reporting_disabled_response()
+
     data = request.get_json()
     report_ids = data.get("report_ids")
     status = data.get("status")
@@ -664,6 +700,9 @@ def bulk_update_bullying_status() -> Response:
 @main_bp.route("/bullying-reports/<int:report_id>/status", methods=["POST"])
 @role_required("admin")
 def update_bullying_status(report_id: int) -> Response:
+    if not _reporting_enabled("bullying"):
+        return _reporting_disabled_response()
+
     action = (request.form.get("action") or "save").strip().lower()
     status_value = request.form.get("status")
     notes = request.form.get("notes") or ""
@@ -726,6 +765,9 @@ def update_bullying_status(report_id: int) -> Response:
 @main_bp.route("/corruption-reports")
 @role_required("admin")
 def corruption_reports() -> Response:
+    if not _reporting_enabled("corruption"):
+        return _reporting_disabled_response()
+
     args: MultiDict = request.args
     raw_status = (args.get("status") or "").strip().lower() or None
     if raw_status and raw_status not in CORRUPTION_STATUSES:
@@ -760,6 +802,9 @@ def corruption_reports() -> Response:
 @main_bp.route("/corruption-reports/<int:report_id>")
 @role_required("admin")
 def corruption_report_detail(report_id: int) -> Response:
+    if not _reporting_enabled("corruption"):
+        return _reporting_disabled_response()
+
     report = fetch_corruption_report_detail(report_id)
     if not report:
         flash("Laporan korupsi tidak ditemukan.", "warning")
@@ -770,6 +815,9 @@ def corruption_report_detail(report_id: int) -> Response:
 @main_bp.route("/corruption-reports/bulk-status", methods=["POST"])
 @role_required("admin")
 def bulk_update_corruption_status() -> Response:
+    if not _reporting_enabled("corruption"):
+        return _reporting_disabled_response()
+
     data = request.get_json()
     report_ids = data.get("report_ids")
     status = data.get("status")
@@ -795,6 +843,9 @@ def bulk_update_corruption_status() -> Response:
 @main_bp.route("/corruption-reports/<int:report_id>/status", methods=["POST"])
 @role_required("admin")
 def update_corruption_status(report_id: int) -> Response:
+    if not _reporting_enabled("corruption"):
+        return _reporting_disabled_response()
+
     action = (request.form.get("action") or "save").strip().lower()
     status_value = request.form.get("status")
     next_url = request.form.get("next") or url_for("main.corruption_reports")
@@ -830,6 +881,9 @@ def update_corruption_status(report_id: int) -> Response:
 @main_bp.route("/psych-reports")
 @role_required("admin")
 def psych_reports() -> Response:
+    if not _reporting_enabled("psych"):
+        return _reporting_disabled_response()
+
     args: MultiDict = request.args
     raw_status = (args.get("status") or "").strip().lower() or None
     raw_severity = (args.get("severity") or "").strip().lower() or None
@@ -878,6 +932,9 @@ def psych_reports() -> Response:
 @main_bp.route("/psych-reports/user/<int:user_id>")
 @role_required("admin")
 def psych_report_user_detail(user_id: int) -> Response:
+    if not _reporting_enabled("psych"):
+        return _reporting_disabled_response()
+
     records = fetch_psych_group_reports(user_id=user_id)
     if not records:
         flash("Tidak ada laporan konseling yang ditemukan untuk siswa ini.", "warning")
@@ -896,6 +953,9 @@ def psych_report_user_detail(user_id: int) -> Response:
 @main_bp.route("/psych-reports/report/<int:report_id>")
 @role_required("admin")
 def psych_report_single_detail(report_id: int) -> Response:
+    if not _reporting_enabled("psych"):
+        return _reporting_disabled_response()
+
     records = fetch_psych_group_reports(report_id=report_id)
     if not records:
         flash("Laporan konseling tidak ditemukan atau sudah dihapus.", "warning")
@@ -918,6 +978,9 @@ def psych_report_single_detail(report_id: int) -> Response:
 @main_bp.route("/psych-reports/bulk-status", methods=["POST"])
 @role_required("admin")
 def bulk_update_psych_status() -> Response:
+    if not _reporting_enabled("psych"):
+        return _reporting_disabled_response()
+
     data = request.get_json()
     report_ids = data.get("report_ids")
     status = data.get("status")
@@ -943,6 +1006,9 @@ def bulk_update_psych_status() -> Response:
 @main_bp.route("/psych-reports/<int:report_id>/status", methods=["POST"])
 @role_required("admin")
 def update_psych_status(report_id: int) -> Response:
+    if not _reporting_enabled("psych"):
+        return _reporting_disabled_response()
+
     status_value = (request.form.get("status") or "").strip().lower()
     next_url = request.form.get("next") or url_for("main.psych_reports")
 

@@ -44,7 +44,6 @@ Suku Dinas Pendidikan Jakarta Utara 2 menjalankan tugas dekonsentrasi dan tugas 
 2. **Layanan Peserta Didik**
    - Mengelola pelaksanaan kebijakan PPDB pada jenjang yang menjadi kewenangan.  
    - Memfasilitasi layanan bantuan pendidikan (mis. KJP/Beasiswa Daerah) bekerja sama dengan instansi terkait.  
-   - Mendukung program layanan psikososial, pencegahan perundungan, dan pelaporan dugaan pelanggaran di lingkungan pendidikan.  
 
 3. **Administrasi dan Tata Kelola Pendidikan**
    - Mengelola data pendidikan (Dapodik, SIRUP, e-Kinerja, dan sistem lain sesuai regulasi).  
@@ -90,7 +89,6 @@ Agar ASKA dapat menjawab pertanyaan dengan konteks Sudin, berikut contoh jenis l
 
 - Informasi umum tentang **PPDB** di wilayah Jakarta Utara 2 (alur, jalur, dan kanal resmi informasi).  
 - Penjelasan singkat mengenai **bantuan pendidikan** (misalnya KJP/Beasiswa Daerah) dan kanal pengaduan terkait.  
-- Gambaran tugas Sudin dalam menangani **laporan bullying, kekerasan, dan dugaan korupsi/pungli** di lingkungan pendidikan.  
 - Kontak atau tautan resmi untuk:
   - Pengaduan layanan pendidikan.  
   - Informasi administrasi sekolah (mutasi, surat keterangan, dsb), bila disediakan oleh Sudin.  
