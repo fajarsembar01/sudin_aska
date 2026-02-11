@@ -1881,6 +1881,270 @@ def create_dashboard_user(
     return int(new_id)
 
 
+def list_admin_users() -> List[Dict[str, Any]]:
+    """List dashboard users with admin role."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, full_name, email, role
+            FROM dashboard_users
+            WHERE role = 'admin'
+            ORDER BY full_name ASC
+            """
+        )
+        rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+def fetch_telegram_notification_settings() -> Dict[str, Any]:
+    """Fetch stored Telegram bot token configuration."""
+    try:
+        with get_cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    s.bot_token,
+                    s.updated_at,
+                    s.updated_by,
+                    u.full_name AS updated_by_name,
+                    u.email AS updated_by_email
+                FROM telegram_notification_settings s
+                LEFT JOIN dashboard_users u ON u.id = s.updated_by
+                WHERE s.id = 1
+                LIMIT 1
+                """
+            )
+            row = cur.fetchone()
+    except Exception:
+        return {}
+    return dict(row) if row else {}
+
+
+def upsert_telegram_notification_settings(bot_token: Optional[str], updated_by: Optional[int]) -> bool:
+    """Insert/update Telegram bot token configuration."""
+    clean_token = (bot_token or "").strip() or None
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO telegram_notification_settings (id, bot_token, updated_at, updated_by)
+            VALUES (1, %s, NOW(), %s)
+            ON CONFLICT (id) DO UPDATE
+            SET bot_token = EXCLUDED.bot_token,
+                updated_at = NOW(),
+                updated_by = EXCLUDED.updated_by
+            """,
+            (clean_token, updated_by),
+        )
+        return True
+
+
+def list_telegram_admin_accounts() -> List[Dict[str, Any]]:
+    """List Telegram admin username mappings."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                ta.id,
+                ta.telegram_username,
+                ta.dashboard_user_id,
+                ta.created_at,
+                u.full_name AS admin_name,
+                u.email AS admin_email,
+                u.role AS admin_role
+            FROM telegram_admin_accounts ta
+            LEFT JOIN dashboard_users u ON u.id = ta.dashboard_user_id
+            ORDER BY LOWER(ta.telegram_username) ASC
+            """
+        )
+        rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+def list_telegram_notification_groups() -> List[Dict[str, Any]]:
+    """List Telegram group chat IDs for notifications."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                tg.id,
+                tg.chat_id,
+                tg.title,
+                tg.created_at,
+                tg.updated_at,
+                tg.created_by,
+                u.full_name AS created_by_name,
+                u.email AS created_by_email
+            FROM telegram_notification_groups tg
+            LEFT JOIN dashboard_users u ON u.id = tg.created_by
+            ORDER BY tg.updated_at DESC
+            """
+        )
+        rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+def upsert_telegram_notification_group(chat_id: int, title: Optional[str], created_by: Optional[int]) -> bool:
+    """Insert or update a Telegram notification group."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO telegram_notification_groups (chat_id, title, created_by, updated_at)
+            VALUES (%s, %s, %s, NOW())
+            ON CONFLICT (chat_id) DO UPDATE
+            SET title = EXCLUDED.title,
+                created_by = EXCLUDED.created_by,
+                updated_at = NOW()
+            """,
+            (chat_id, title, created_by),
+        )
+        return True
+
+
+def delete_telegram_notification_group(group_id: int) -> bool:
+    """Delete Telegram notification group by id."""
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM telegram_notification_groups WHERE id = %s", (group_id,))
+        return cur.rowcount > 0
+
+
+def delete_telegram_notification_group_by_chat_id(chat_id: int) -> bool:
+    """Delete Telegram notification group by chat id."""
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM telegram_notification_groups WHERE chat_id = %s", (chat_id,))
+        return cur.rowcount > 0
+
+
+def upsert_telegram_admin_accounts(entries: List[Dict[str, Any]], created_by: Optional[int]) -> int:
+    """Upsert multiple Telegram admin mappings."""
+    if not entries:
+        return 0
+    with get_cursor(commit=True) as cur:
+        for entry in entries:
+            cur.execute(
+                """
+                INSERT INTO telegram_admin_accounts (dashboard_user_id, telegram_username, created_by)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (telegram_username) DO UPDATE
+                SET dashboard_user_id = EXCLUDED.dashboard_user_id,
+                    created_by = EXCLUDED.created_by
+                """,
+                (
+                    entry.get("dashboard_user_id"),
+                    entry.get("telegram_username"),
+                    created_by,
+                ),
+            )
+    return len(entries)
+
+
+def delete_telegram_admin_account(mapping_id: int) -> bool:
+    """Delete a Telegram admin mapping by id."""
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM telegram_admin_accounts WHERE id = %s", (mapping_id,))
+        return cur.rowcount > 0
+
+
+def get_telegram_admin_by_username(username: str) -> Optional[Dict[str, Any]]:
+    """Return admin mapping if username is authorized and linked to admin user."""
+    if not username:
+        return None
+    normalized = username.strip().lstrip("@").lower()
+    if not normalized:
+        return None
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                ta.id,
+                ta.telegram_username,
+                ta.dashboard_user_id,
+                u.full_name AS admin_name,
+                u.email AS admin_email
+            FROM telegram_admin_accounts ta
+            JOIN dashboard_users u ON u.id = ta.dashboard_user_id
+            WHERE ta.telegram_username = %s
+              AND u.role = 'admin'
+            LIMIT 1
+            """,
+            (normalized,),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def fetch_pending_dashboard_users(limit: int = 10) -> List[Dict[str, Any]]:
+    """Fetch pending dashboard user registrations."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                u.id,
+                u.full_name,
+                u.email,
+                u.role,
+                u.created_at,
+                k.name AS kecamatan_name
+            FROM dashboard_users u
+            LEFT JOIN portal_kecamatan k ON u.requested_kecamatan = k.id
+            WHERE u.account_status = 'pending'
+            ORDER BY u.created_at ASC
+            LIMIT %s
+            """,
+            (limit,),
+        )
+        rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+def fetch_dashboard_user_basic(user_id: int) -> Optional[Dict[str, Any]]:
+    """Fetch basic dashboard user details for verification."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                id,
+                full_name,
+                email,
+                role,
+                account_status,
+                requested_kecamatan,
+                created_at
+            FROM dashboard_users
+            WHERE id = %s
+            LIMIT 1
+            """,
+            (user_id,),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def update_dashboard_user_verification(
+    user_id: int,
+    status: str,
+    verified_by: Optional[int],
+    note: Optional[str] = None,
+) -> bool:
+    """Update account_status for dashboard user verification."""
+    normalized = (status or "").strip().lower()
+    if normalized not in {"pending", "approved", "rejected", "suspended"}:
+        raise ValueError("Status verifikasi tidak dikenal.")
+    clean_note = (note or "").strip() or None
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE dashboard_users
+            SET account_status = %s,
+                verification_notes = COALESCE(%s, verification_notes),
+                verified_by = CASE WHEN %s IN ('approved', 'rejected') THEN %s ELSE NULL END,
+                verified_at = CASE WHEN %s IN ('approved', 'rejected') THEN NOW() ELSE NULL END
+            WHERE id = %s
+            """,
+            (normalized, clean_note, normalized, verified_by, normalized, user_id),
+        )
+        return cur.rowcount > 0
+
+
 def _quote_ident(name: str) -> str:
     return '"' + name.replace('"', '""') + '"'
 
