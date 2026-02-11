@@ -277,21 +277,21 @@ def admin_select_role() -> Response:
     cards = [
         {
             "title": "ASKA Insight",
-            "description": "Dashboard analitik dan pemantauan data",
+            "description": "Dashboard analitik dan pemantauan data.",
             "icon": "bi-graph-up-arrow",
             "href": url_for("main.dashboard"),
             "col_class": "col-md-4 col-12",
         },
         {
-            "title": "Portal",
-            "description": "Akses portal sekolah dan layanan publik",
-            "icon": "bi-window-sidebar",
+            "title": "PANBERSS",
+            "description": "Dashboard pemantauan kebersihan dan sarana sekolah.",
+            "icon": "bi bi-building",
             "href": url_for("portal.home"),
             "col_class": "col-md-4 col-12",
         },
         {
             "title": "Daftar Tamu",
-            "description": "Dashboard pemantauan kunjungan tamu sekolah",
+            "description": "Dashboard pemantauan kunjungan tamu sekolah.",
             "icon": "bi-person-vcard",
             "href": url_for("daftar_tamu.admin_dashboard"),
             "col_class": "col-md-4 col-12",
