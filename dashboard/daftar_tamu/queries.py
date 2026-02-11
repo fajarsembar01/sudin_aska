@@ -1477,8 +1477,16 @@ def list_admin_transactions(
     offset = (safe_page - 1) * safe_per_page
 
     status_value = (status or "").strip().lower()
-    if status_value and status_value not in TRANSACTION_STATUSES:
+    if status_value and status_value not in TRANSACTION_STATUSES and status_value != "history":
         status_value = ""
+
+    status_filter = """
+        (
+            %s = ''
+            OR (%s = 'history' AND t.status IN ('approved', 'rejected'))
+            OR t.status = %s
+        )
+    """
 
     query_text, like_query = _build_search(search_query)
 
@@ -1488,7 +1496,7 @@ def list_admin_transactions(
         JOIN portal_schools s ON s.id = t.school_id
         LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
         LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
-        WHERE (%s = '' OR t.status = %s)
+        WHERE {status_filter}
           AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
           AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
           AND (
@@ -1516,7 +1524,7 @@ def list_admin_transactions(
                   )
             )
           )
-    """
+    """.format(status_filter=status_filter)
     data_query = """
         SELECT
             t.id,
@@ -1551,7 +1559,7 @@ def list_admin_transactions(
         LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
         LEFT JOIN dashboard_users reviewer ON reviewer.id = t.reviewed_by
         LEFT JOIN dashboard_users creator ON creator.id = t.created_by
-        WHERE (%s = '' OR t.status = %s)
+        WHERE {status_filter}
           AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
           AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
           AND (
@@ -1582,11 +1590,13 @@ def list_admin_transactions(
         ORDER BY t.visit_at DESC, t.id DESC
         LIMIT %s OFFSET %s
     """.format(
+        status_filter=status_filter,
         guest_names=_GUEST_NAMES_SUBQUERY.format(tx_ref="t.id"),
         guest_count=_GUEST_COUNT_SUBQUERY.format(tx_ref="t.id"),
     )
 
     params_common = [
+        status_value,
         status_value,
         status_value,
         date_from,

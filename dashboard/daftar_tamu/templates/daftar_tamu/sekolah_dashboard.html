@@ -178,8 +178,14 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Tujuan Kunjungan</label>
-                    <input type="text" id="purposeInput" class="form-control" placeholder="Contoh: Monitoring sarpras"
-                        list="purposeKeywordList">
+                    <div class="position-relative">
+                        <input type="text" id="purposeInput" class="form-control"
+                            placeholder="Contoh: Monitoring sarpras" list="purposeKeywordList">
+                        <div id="purposeSuggestions"
+                            class="position-absolute w-100 rounded-3 shadow-sm d-none"
+                            style="top: 100%; left: 0; z-index: 1050; max-height: 220px; overflow-y: auto; background-color: var(--bg-surface); border: 1px solid var(--border-soft);">
+                        </div>
+                    </div>
                     <div id="purposeError" class="invalid-feedback">Tujuan kunjungan wajib diisi.</div>
                     <datalist id="purposeKeywordList">
                         {% for kw in purpose_keywords|default([]) %}
@@ -255,6 +261,8 @@
         var generalPhoneInput = document.getElementById('generalPhoneInput');
         var purposeInput = document.getElementById('purposeInput');
         var purposeError = document.getElementById('purposeError');
+        var purposeSuggestions = document.getElementById('purposeSuggestions');
+        var purposeKeywords = {{ purpose_keywords|default([]) | tojson }};
 
         var cameraPreview = document.getElementById('cameraPreview');
         var photoResult = document.getElementById('photoResult');
@@ -364,6 +372,66 @@
         if (purposeInput) {
             purposeInput.addEventListener('input', function () {
                 updateSubmitState();
+            });
+        }
+
+        function shouldUsePurposeSuggestions() {
+            var ua = navigator.userAgent || '';
+            var isAndroid = /Android/i.test(ua);
+            var isFirefox = /Firefox/i.test(ua) || /Fennec/i.test(ua);
+            var hasDatalist = 'list' in document.createElement('input');
+            return !hasDatalist || (isAndroid && isFirefox);
+        }
+
+        function renderPurposeSuggestions(items) {
+            if (!purposeSuggestions) return;
+            if (!items || !items.length) {
+                purposeSuggestions.classList.add('d-none');
+                purposeSuggestions.innerHTML = '';
+                return;
+            }
+            purposeSuggestions.innerHTML = '';
+            items.forEach(function (item) {
+                var el = document.createElement('div');
+                el.className = 'px-3 py-2 suggestion-item';
+                el.setAttribute('role', 'button');
+                el.dataset.value = item;
+                el.textContent = item;
+                el.addEventListener('click', function () {
+                    var value = el.dataset.value || '';
+                    if (purposeInput) {
+                        purposeInput.value = value;
+                        updateSubmitState();
+                        purposeInput.focus();
+                    }
+                    purposeSuggestions.classList.add('d-none');
+                });
+                purposeSuggestions.appendChild(el);
+            });
+            purposeSuggestions.classList.remove('d-none');
+        }
+
+        function filterPurposeKeywords(query) {
+            var keywordList = Array.isArray(purposeKeywords) ? purposeKeywords : [];
+            var q = String(query || '').toLowerCase().trim();
+            if (!q) return keywordList.slice(0, 8);
+            return keywordList.filter(function (item) {
+                return String(item || '').toLowerCase().indexOf(q) !== -1;
+            }).slice(0, 8);
+        }
+
+        if (purposeInput && purposeSuggestions && shouldUsePurposeSuggestions()) {
+            purposeInput.setAttribute('autocomplete', 'off');
+            purposeInput.addEventListener('focus', function () {
+                renderPurposeSuggestions(filterPurposeKeywords(purposeInput.value));
+            });
+            purposeInput.addEventListener('input', function () {
+                renderPurposeSuggestions(filterPurposeKeywords(purposeInput.value));
+            });
+            document.addEventListener('click', function (event) {
+                if (!purposeSuggestions || !purposeInput) return;
+                if (event.target === purposeInput || purposeSuggestions.contains(event.target)) return;
+                purposeSuggestions.classList.add('d-none');
             });
         }
 
