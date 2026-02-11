@@ -75,6 +75,10 @@
                 <div class="fw-semibold text-truncate" title="{{ f.filename }}">{{ f.filename }}</div>
                 <div class="text-muted small">Ukuran {{ f.size_label }} • {{ f.updated_at_label }}</div>
                 <div class="mt-3">
+                    <label class="form-label small text-muted">Cari Sekolah</label>
+                    <input type="text" class="form-control form-control-sm school-search" placeholder="Ketik nama sekolah">
+                </div>
+                <div class="mt-2">
                     <label class="form-label small text-muted">Sekolah</label>
                     <select class="form-select form-select-sm school-select" data-file-path="{{ f.rel_path }}">
                         <option value="">Pilih sekolah</option>
@@ -128,6 +132,7 @@
         var schoolOptions = document.getElementById('schoolOptionsTemplate');
         var cards = document.querySelectorAll('.orphan-card');
         var cache = {};
+        var allSchools = [];
 
         function formatDraftLabel(draft) {
             var label = '#' + draft.id;
@@ -137,10 +142,51 @@
             if (draft.period_name) {
                 label += ' • ' + draft.period_name;
             }
-            if (draft.created_at) {
+            if (draft.created_at_label) {
+                label += ' • ' + draft.created_at_label;
+            } else if (draft.created_at) {
                 label += ' • ' + draft.created_at.replace('T', ' ').slice(0, 16);
             }
             return label;
+        }
+
+        function hydrateSchools() {
+            if (!schoolOptions) return;
+            var options = schoolOptions.querySelectorAll('option');
+            options.forEach(function (opt) {
+                if (!opt.value) return;
+                var label = (opt.textContent || '').trim();
+                allSchools.push({
+                    id: opt.value,
+                    label: label,
+                    search: label.toLowerCase()
+                });
+            });
+        }
+
+        function renderSchoolSelect(select, filterText) {
+            var selectedValue = select.value;
+            var filter = (filterText || '').toLowerCase().trim();
+            var items = filter
+                ? allSchools.filter(function (s) { return s.search.indexOf(filter) !== -1; })
+                : allSchools.slice();
+
+            var hasSelected = selectedValue && items.some(function (s) { return s.id === selectedValue; });
+            var html = '<option value=\"\">Pilih sekolah</option>';
+
+            if (selectedValue && !hasSelected) {
+                var selectedItem = allSchools.find(function (s) { return s.id === selectedValue; });
+                if (selectedItem) {
+                    html += '<option value=\"' + selectedItem.id + '\" selected>' + selectedItem.label + '</option>';
+                }
+            }
+
+            items.forEach(function (s) {
+                var selected = s.id === selectedValue ? ' selected' : '';
+                html += '<option value=\"' + s.id + '\"' + selected + '>' + s.label + '</option>';
+            });
+
+            select.innerHTML = html;
         }
 
         function fetchSchoolData(schoolId) {
@@ -171,18 +217,25 @@
             el.textContent = message;
         }
 
-        if (schoolOptions) {
-            document.querySelectorAll('.school-select').forEach(function (select) {
-                select.innerHTML = schoolOptions.innerHTML;
-            });
-        }
+        hydrateSchools();
 
         cards.forEach(function (card) {
             var schoolSelect = card.querySelector('.school-select');
+            var schoolSearch = card.querySelector('.school-search');
             var draftSelect = card.querySelector('.draft-select');
             var roomSelect = card.querySelector('.room-select');
             var mergeBtn = card.querySelector('.merge-btn');
             var statusEl = card.querySelector('.merge-status');
+
+            if (schoolSelect && allSchools.length) {
+                renderSchoolSelect(schoolSelect, '');
+            }
+
+            if (schoolSearch && schoolSelect) {
+                schoolSearch.addEventListener('input', function () {
+                    renderSchoolSelect(schoolSelect, this.value);
+                });
+            }
 
             if (schoolSelect) {
                 schoolSelect.addEventListener('change', function () {

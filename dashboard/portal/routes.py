@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from urllib.parse import quote_plus
 import subprocess
@@ -13,6 +13,7 @@ import uuid
 import re
 import os
 import urllib.request as urlrequest
+from zoneinfo import ZoneInfo
 
 from flask import (
     Blueprint,
@@ -165,6 +166,7 @@ portal_bp = Blueprint(
 
 UPLOAD_FOLDER = Path(__file__).parent.parent.parent / "uploads" / "portal"
 PHOTO_REQUIRED_PCT = 90.0
+JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
 
 
 def _get_low_score_rooms_missing_photos(
@@ -280,7 +282,7 @@ def _collect_orphan_photo_files() -> tuple[list[dict], dict]:
         if db_key in db_paths:
             continue
         stat = path.stat()
-        updated_at = datetime.fromtimestamp(stat.st_mtime)
+        updated_at = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).astimezone(JAKARTA_TZ)
         orphans.append(
             {
                 "rel_path": rel,
@@ -289,7 +291,7 @@ def _collect_orphan_photo_files() -> tuple[list[dict], dict]:
                 "size_label": _format_bytes(stat.st_size),
                 "updated_at": updated_at,
                 "updated_at_iso": updated_at.isoformat(timespec="seconds"),
-                "updated_at_label": updated_at.strftime("%d %b %Y %H:%M"),
+                "updated_at_label": updated_at.strftime("%d %b %Y %H:%M WIB"),
             }
         )
 
@@ -3071,7 +3073,11 @@ def admin_photo_recovery_school_data(school_id: int) -> Response:
             item = dict(row)
             created_at = item.get("created_at")
             if isinstance(created_at, datetime):
+                if created_at.tzinfo is None:
+                    created_at = created_at.replace(tzinfo=timezone.utc)
+                created_at = created_at.astimezone(JAKARTA_TZ)
                 item["created_at"] = created_at.isoformat(timespec="seconds")
+                item["created_at_label"] = created_at.strftime("%d %b %Y %H:%M WIB")
             drafts.append(item)
 
     rooms_raw = list_school_rooms(school_id)
@@ -3162,7 +3168,7 @@ def admin_photo_recovery_merge() -> Response:
         )
 
     photo_path = f"uploads/portal/{rel_path}"
-    captured_at = datetime.fromtimestamp(candidate.stat().st_mtime)
+    captured_at = datetime.fromtimestamp(candidate.stat().st_mtime, tz=timezone.utc).astimezone(JAKARTA_TZ)
 
     try:
         saved = save_assessment_photo(
