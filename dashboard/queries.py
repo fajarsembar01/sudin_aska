@@ -2308,7 +2308,7 @@ def create_monev_team(name: str, team_type: str, kecamatan_id: int = None) -> Op
     Returns:
         New team ID if successful, None otherwise
     """
-    with get_cursor() as cur:
+    with get_cursor(commit=True) as cur:
         cur.execute("""
             INSERT INTO monev_teams (name, team_type, kecamatan_id, created_at, updated_at)
             VALUES (%s, %s, %s, NOW(), NOW())
@@ -2327,7 +2327,7 @@ def delete_monev_team(team_id: int) -> bool:
     Returns:
         True if deleted, False otherwise
     """
-    with get_cursor() as cur:
+    with get_cursor(commit=True) as cur:
         # First delete all team members
         cur.execute("DELETE FROM monev_team_members WHERE team_id = %s", (team_id,))
         # Then delete the team
