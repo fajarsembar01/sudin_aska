@@ -38,6 +38,7 @@
                 <input type="hidden" name="status" value="pending">
                 {% else %}
                 <select name="status" class="form-select">
+                    <option value="history" {% if status=='history' %}selected{% endif %}>Semua Riwayat</option>
                     <option value="approved" {% if status=='approved' %}selected{% endif %}>Disetujui</option>
                     <option value="rejected" {% if status=='rejected' %}selected{% endif %}>Ditolak</option>
                 </select>
@@ -65,7 +66,7 @@
 
 <section class="card border-0 shadow-sm">
     <div class="card-body">
-        {% set history_status = 'rejected' if status == 'rejected' else 'approved' %}
+        {% set history_status = status if status != 'pending' else 'history' %}
         <ul class="nav nav-tabs mb-3">
             <li class="nav-item">
                 <a class="nav-link {% if status == 'pending' %}active{% endif %}"
@@ -106,6 +107,39 @@
                     <i class="bi bi-x-circle me-1"></i>Tolak Terpilih
                 </button>
             </div>
+            {% else %}
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="selectAllAdmin">
+                    <label class="form-check-label small" for="selectAllAdmin">Pilih semua</label>
+                </div>
+                <input type="text" name="reviewer_note" class="form-control form-control-sm"
+                    style="max-width: 260px;" placeholder="Catatan validasi ulang (opsional)">
+                <button type="submit" class="btn btn-sm btn-outline-warning" id="bulkPendingAdmin"
+                    formaction="{{ url_for('daftar_tamu.admin_bulk_pending_transactions') }}" disabled>
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Kembalikan ke Pending
+                </button>
+                {% if status == 'approved' %}
+                <button type="submit" class="btn btn-sm btn-outline-danger" id="bulkRejectAdmin"
+                    formaction="{{ url_for('daftar_tamu.admin_bulk_reject_transactions') }}" disabled>
+                    <i class="bi bi-x-circle me-1"></i>Tolak Terpilih
+                </button>
+                {% elif status == 'rejected' %}
+                <button type="submit" class="btn btn-sm btn-success" id="bulkApproveAdmin"
+                    formaction="{{ url_for('daftar_tamu.admin_bulk_approve_transactions') }}" disabled>
+                    <i class="bi bi-check2-circle me-1"></i>Setujui Terpilih
+                </button>
+                {% else %}
+                <button type="submit" class="btn btn-sm btn-success" id="bulkApproveAdmin"
+                    formaction="{{ url_for('daftar_tamu.admin_bulk_approve_transactions') }}" disabled>
+                    <i class="bi bi-check2-circle me-1"></i>Setujui Terpilih
+                </button>
+                <button type="submit" class="btn btn-sm btn-outline-danger" id="bulkRejectAdmin"
+                    formaction="{{ url_for('daftar_tamu.admin_bulk_reject_transactions') }}" disabled>
+                    <i class="bi bi-x-circle me-1"></i>Tolak Terpilih
+                </button>
+                {% endif %}
+            </div>
             {% endif %}
 
             <div class="table-responsive">
@@ -124,10 +158,8 @@
                         {% for row in rows %}
                         <tr data-transaction-id="{{ row.id }}">
                             <td>
-                                {% if row.status == 'pending' %}
                                 <input class="form-check-input admin-select" type="checkbox" name="transaction_ids"
                                     value="{{ row.id }}">
-                                {% endif %}
                             </td>
                             <td>
                                 <div class="fw-semibold">{{ row.visit_at|jakarta('%d %b %Y') }}</div>
@@ -173,6 +205,24 @@
                                     <button type="button" class="btn btn-sm btn-outline-danger" title="Tolak"
                                         aria-label="Tolak" data-action="reject" data-transaction-id="{{ row.id }}">
                                         <i class="bi bi-x-lg"></i>
+                                    </button>
+                                    {% elif row.status == 'approved' %}
+                                    <button type="button" class="btn btn-sm btn-outline-warning" title="Kembalikan ke pending"
+                                        aria-label="Kembalikan ke pending" data-action="pending" data-transaction-id="{{ row.id }}">
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Tolak"
+                                        aria-label="Tolak" data-action="reject" data-transaction-id="{{ row.id }}">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                    {% elif row.status == 'rejected' %}
+                                    <button type="button" class="btn btn-sm btn-outline-warning" title="Kembalikan ke pending"
+                                        aria-label="Kembalikan ke pending" data-action="pending" data-transaction-id="{{ row.id }}">
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-success" title="Setujui"
+                                        aria-label="Setujui" data-action="approve" data-transaction-id="{{ row.id }}">
+                                        <i class="bi bi-check-lg"></i>
                                     </button>
                                     {% endif %}
                                 </div>
@@ -278,6 +328,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-warning" id="detailPendingBtn">Kembalikan ke Pending</button>
                 <button type="button" class="btn btn-danger" id="detailRejectBtn">Tolak</button>
                 <button type="button" class="btn btn-success" id="detailApproveBtn">Setujui</button>
             </div>
@@ -357,24 +408,56 @@
             document.getElementById('detailContent').classList.toggle('d-none', show);
         }
 
-        function resetDetailButtons(isPending) {
+        function configureDetailButtons(status) {
             var approveBtn = document.getElementById('detailApproveBtn');
             var rejectBtn = document.getElementById('detailRejectBtn');
-            approveBtn.disabled = !isPending;
-            rejectBtn.disabled = !isPending;
-            approveBtn.classList.toggle('d-none', !isPending);
-            rejectBtn.classList.toggle('d-none', !isPending);
+            var pendingBtn = document.getElementById('detailPendingBtn');
+            var isPending = status === 'pending';
+            var isApproved = status === 'approved';
+            var isRejected = status === 'rejected';
+
+            approveBtn.disabled = !(isPending || isRejected);
+            rejectBtn.disabled = !(isPending || isApproved);
+            pendingBtn.disabled = !(isApproved || isRejected);
+
+            approveBtn.classList.toggle('d-none', !(isPending || isRejected));
+            rejectBtn.classList.toggle('d-none', !(isPending || isApproved));
+            pendingBtn.classList.toggle('d-none', !(isApproved || isRejected));
             var noteInput = document.getElementById('detailAdminNote');
             if (noteInput) {
-                noteInput.disabled = !isPending;
+                noteInput.disabled = !(isPending || isApproved || isRejected);
             }
+        }
+
+        function addQuickActionButton(container, rowEl, action, label, btnClass, iconClass) {
+            if (!container) return;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm ' + btnClass;
+            btn.title = label;
+            btn.setAttribute('aria-label', label);
+            btn.setAttribute('data-action', action);
+            btn.setAttribute('data-transaction-id', rowEl.getAttribute('data-transaction-id'));
+            btn.innerHTML = '<i class="bi ' + iconClass + '"></i>';
+            btn.addEventListener('click', function () {
+                var transactionId = btn.getAttribute('data-transaction-id');
+                if (!transactionId) return;
+                if (action === 'reject') {
+                    var note = window.prompt('Catatan penolakan (wajib):');
+                    if (!note) return;
+                    submitQuickDecision(transactionId, action, rowEl, note);
+                    return;
+                }
+                submitQuickDecision(transactionId, action, rowEl, '');
+            });
+            container.appendChild(btn);
         }
 
         function loadTransactionDetail(transactionId, rowEl) {
             currentTransactionId = transactionId;
             currentRow = rowEl;
             showDetailLoading(true);
-            resetDetailButtons(false);
+            configureDetailButtons(null);
             document.getElementById('detailAdminNote').value = '';
             fetch('/daftar-tamu/admin/transactions/' + transactionId)
                 .then(function (res) { return res.json(); })
@@ -432,7 +515,7 @@
 
                     var photoEl = document.getElementById('detailPhoto');
                     photoEl.src = buildPhotoUrl(trx.photo_path);
-                    resetDetailButtons(trx.status === 'pending');
+                    configureDetailButtons(trx.status);
                     showDetailLoading(false);
                     detailModal.show();
                 })
@@ -481,15 +564,41 @@
             var badge = rowEl.querySelector('td:nth-child(5) .badge');
             setStatusBadge(badge, status);
             var checkCell = rowEl.querySelector('td:first-child');
-            if (checkCell) {
+            if (checkCell && !(activeStatusFilter === 'history' && status !== 'pending')) {
                 checkCell.innerHTML = '';
+            }
+            if (checkCell) {
+                var checkInput = checkCell.querySelector('input.admin-select');
+                if (checkInput) {
+                    checkInput.checked = false;
+                }
             }
             var approveBtn = rowEl.querySelector('[data-action="approve"]');
             if (approveBtn) approveBtn.remove();
             var rejectBtn = rowEl.querySelector('[data-action="reject"]');
             if (rejectBtn) rejectBtn.remove();
-            if (activeStatusFilter === 'pending') {
+            var pendingBtn = rowEl.querySelector('[data-action="pending"]');
+            if (pendingBtn) pendingBtn.remove();
+            if (activeStatusFilter === 'history') {
+                if (status === 'pending') {
+                    rowEl.remove();
+                    return;
+                }
+            } else if (activeStatusFilter !== status) {
                 rowEl.remove();
+                return;
+            }
+            if (activeStatusFilter === 'history') {
+                var actionWrap = rowEl.querySelector('td.text-end .d-inline-flex');
+                if (actionWrap) {
+                    if (status === 'approved') {
+                        addQuickActionButton(actionWrap, rowEl, 'pending', 'Kembalikan ke pending', 'btn-outline-warning', 'bi-arrow-counterclockwise');
+                        addQuickActionButton(actionWrap, rowEl, 'reject', 'Tolak', 'btn-outline-danger', 'bi-x-lg');
+                    } else if (status === 'rejected') {
+                        addQuickActionButton(actionWrap, rowEl, 'pending', 'Kembalikan ke pending', 'btn-outline-warning', 'bi-arrow-counterclockwise');
+                        addQuickActionButton(actionWrap, rowEl, 'approve', 'Setujui', 'btn-outline-success', 'bi-check-lg');
+                    }
+                }
             }
             if (window.refreshAdminBulkState) {
                 window.refreshAdminBulkState();
@@ -513,9 +622,15 @@
                 .then(function (data) {
                     if (!data.success) throw new Error(data.message || 'Gagal memperbarui status');
                     detailModal.hide();
-                    updateRowStatus(currentRow, action === 'approve' ? 'approved' : 'rejected');
-                    if (window.updateAdminPendingCounts && activeStatusFilter === 'pending') {
-                        window.updateAdminPendingCounts({ guestbook: -1 });
+                    var nextStatus = action === 'approve' ? 'approved' : (action === 'reject' ? 'rejected' : 'pending');
+                    updateRowStatus(currentRow, nextStatus);
+                    if (window.updateAdminPendingCounts) {
+                        if (activeStatusFilter === 'pending' && nextStatus !== 'pending') {
+                            window.updateAdminPendingCounts({ guestbook: -1 });
+                        }
+                        if (activeStatusFilter !== 'pending' && nextStatus === 'pending') {
+                            window.updateAdminPendingCounts({ guestbook: 1 });
+                        }
                     }
                 })
                 .catch(function (err) {
@@ -541,9 +656,15 @@
                 .then(function (res) { return res.json(); })
                 .then(function (data) {
                     if (!data.success) throw new Error(data.message || 'Gagal memperbarui status');
-                    updateRowStatus(rowEl, action === 'approve' ? 'approved' : 'rejected');
-                    if (window.updateAdminPendingCounts && activeStatusFilter === 'pending') {
-                        window.updateAdminPendingCounts({ guestbook: -1 });
+                    var nextStatus = action === 'approve' ? 'approved' : (action === 'reject' ? 'rejected' : 'pending');
+                    updateRowStatus(rowEl, nextStatus);
+                    if (window.updateAdminPendingCounts) {
+                        if (activeStatusFilter === 'pending' && nextStatus !== 'pending') {
+                            window.updateAdminPendingCounts({ guestbook: -1 });
+                        }
+                        if (activeStatusFilter !== 'pending' && nextStatus === 'pending') {
+                            window.updateAdminPendingCounts({ guestbook: 1 });
+                        }
                     }
                 })
                 .catch(function (err) {
@@ -571,6 +692,15 @@
             });
         });
 
+        document.querySelectorAll('[data-action="pending"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var transactionId = btn.getAttribute('data-transaction-id');
+                var rowEl = btn.closest('tr');
+                if (!transactionId) return;
+                submitQuickDecision(transactionId, 'pending', rowEl, '');
+            });
+        });
+
         document.getElementById('detailApproveBtn').addEventListener('click', function () {
             submitDecision('approve');
         });
@@ -579,10 +709,15 @@
             submitDecision('reject');
         });
 
+        document.getElementById('detailPendingBtn').addEventListener('click', function () {
+            submitDecision('pending');
+        });
+
         (function () {
             var selectAll = document.getElementById('selectAllAdmin');
             var approveBtn = document.getElementById('bulkApproveAdmin');
             var rejectBtn = document.getElementById('bulkRejectAdmin');
+            var pendingBtn = document.getElementById('bulkPendingAdmin');
             var form = document.getElementById('bulkValidationForm');
             var noteInput = form ? form.querySelector('input[name="reviewer_note"]') : null;
 
@@ -595,6 +730,7 @@
                 var hasSelected = checks.some(function (el) { return el.checked; });
                 if (approveBtn) approveBtn.disabled = !hasSelected;
                 if (rejectBtn) rejectBtn.disabled = !hasSelected;
+                if (pendingBtn) pendingBtn.disabled = !hasSelected;
                 if (selectAll) {
                     var allChecked = checks.length > 0 && checks.every(function (el) { return el.checked; });
                     selectAll.checked = allChecked;

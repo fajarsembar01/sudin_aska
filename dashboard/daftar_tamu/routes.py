@@ -1166,7 +1166,7 @@ def export_rankings() -> Response:
 @role_required("admin")
 def admin_validation() -> Response:
     status = (request.args.get("status") or "pending").strip().lower()
-    if status not in ("pending", "approved", "rejected"):
+    if status not in ("pending", "approved", "rejected", "history"):
         status = "pending"
 
     date_from = _parse_iso_date(request.args.get("date_from"))
@@ -1271,6 +1271,25 @@ def admin_transaction_reject(transaction_id: int) -> Response:
     return jsonify({"success": True})
 
 
+@daftar_tamu_bp.route("/admin/transactions/<int:transaction_id>/pending", methods=["POST"])
+@role_required("admin")
+def admin_transaction_pending(transaction_id: int) -> Response:
+    user = current_user()
+    note = (request.form.get("reviewer_note") or "").strip()
+    try:
+        ok = update_transaction_status(
+            transaction_id=transaction_id,
+            status="pending",
+            reviewer_id=user["id"],
+            reviewer_notes=note or None,
+        )
+    except ValueError:
+        ok = False
+    if not ok:
+        return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
+    return jsonify({"success": True})
+
+
 @daftar_tamu_bp.route("/admin/transactions/bulk-approve", methods=["POST"])
 @role_required("admin")
 def admin_bulk_approve_transactions() -> Response:
@@ -1347,6 +1366,44 @@ def admin_bulk_reject_transactions() -> Response:
         flash(f"{success_count} transaksi berhasil ditolak.", "success")
     else:
         flash("Tidak ada transaksi yang berhasil ditolak.", "warning")
+
+    return redirect(_build_admin_validation_redirect(request.form))
+
+
+@daftar_tamu_bp.route("/admin/transactions/bulk-pending", methods=["POST"])
+@role_required("admin")
+def admin_bulk_pending_transactions() -> Response:
+    user = current_user()
+    raw_ids = request.form.getlist("transaction_ids")
+    ids: list[int] = []
+    for raw in raw_ids:
+        try:
+            ids.append(int(raw))
+        except (TypeError, ValueError):
+            continue
+    if not ids:
+        flash("Pilih transaksi yang ingin dikembalikan ke pending.", "warning")
+        return redirect(_build_admin_validation_redirect(request.form))
+
+    note = (request.form.get("reviewer_note") or "").strip()
+    success_count = 0
+    for tx_id in ids:
+        try:
+            ok = update_transaction_status(
+                transaction_id=tx_id,
+                status="pending",
+                reviewer_id=user["id"],
+                reviewer_notes=note or None,
+            )
+        except Exception:
+            ok = False
+        if ok:
+            success_count += 1
+
+    if success_count:
+        flash(f"{success_count} transaksi berhasil dikembalikan ke pending.", "success")
+    else:
+        flash("Tidak ada transaksi yang berhasil dikembalikan ke pending.", "warning")
 
     return redirect(_build_admin_validation_redirect(request.form))
 
