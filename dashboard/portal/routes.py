@@ -241,6 +241,82 @@ def _allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def _format_bytes(size: int) -> str:
+    units = ["B", "KB", "MB", "GB", "TB"]
+    value = float(size)
+    for unit in units:
+        if value < 1024 or unit == units[-1]:
+            if unit == "B":
+                return f"{int(value)} {unit}"
+            return f"{value:.1f} {unit}"
+        value /= 1024
+    return f"{value:.1f} TB"
+
+
+def _collect_orphan_photo_files() -> tuple[list[dict], dict]:
+    if not UPLOAD_FOLDER.exists():
+        return [], {"total_files": 0, "db_photos": 0, "orphan_count": 0}
+
+    with get_cursor() as cur:
+        cur.execute("SELECT photo_path FROM portal_assessment_photos")
+        db_paths = {
+            (row["photo_path"] or "").replace("\\", "/")
+            for row in cur.fetchall()
+            if row.get("photo_path")
+        }
+
+    orphans: list[dict] = []
+    total_files = 0
+    for path in UPLOAD_FOLDER.rglob("*"):
+        if not path.is_file():
+            continue
+        if not _allowed_file(path.name):
+            continue
+        rel = path.relative_to(UPLOAD_FOLDER).as_posix()
+        if rel.startswith("logos/"):
+            continue
+        total_files += 1
+        db_key = f"uploads/portal/{rel}"
+        if db_key in db_paths:
+            continue
+        stat = path.stat()
+        updated_at = datetime.fromtimestamp(stat.st_mtime)
+        orphans.append(
+            {
+                "rel_path": rel,
+                "filename": path.name,
+                "size_bytes": stat.st_size,
+                "size_label": _format_bytes(stat.st_size),
+                "updated_at": updated_at,
+                "updated_at_iso": updated_at.isoformat(timespec="seconds"),
+                "updated_at_label": updated_at.strftime("%d %b %Y %H:%M"),
+            }
+        )
+
+    orphans.sort(key=lambda item: item.get("updated_at") or datetime.min, reverse=True)
+    stats = {
+        "total_files": total_files,
+        "db_photos": len(db_paths),
+        "orphan_count": len(orphans),
+    }
+    return orphans, stats
+
+
+def _normalize_photo_rel_path(value: str | None) -> str | None:
+    if not value:
+        return None
+    normalized = value.replace("\\", "/").strip()
+    if normalized.startswith("uploads/portal/"):
+        normalized = normalized[len("uploads/portal/") :]
+    normalized = normalized.lstrip("/")
+    rel = PurePosixPath(normalized)
+    if rel.is_absolute() or ".." in rel.parts:
+        return None
+    if rel.parts and rel.parts[0] == "logos":
+        return None
+    return rel.as_posix()
+
+
 def _portal_access_required(view):
     """Decorator for portal access (staff, sekolah, coordinator, or admin)."""
     from functools import wraps
@@ -2949,6 +3025,165 @@ def admin_related_photos() -> Response:
     
     result = _serialize_related_photos(school_id, room_id, staff_ids=staff_ids)
     return jsonify(result)
+
+
+@portal_bp.route("/admin/photo-recovery")
+@role_required("admin")
+def admin_photo_recovery() -> Response:
+    """Admin page to recover orphaned photos into draft assessments."""
+    orphan_files, stats = _collect_orphan_photo_files()
+    schools = list_portal_schools(active_only=False)
+    return render_template(
+        "portal/admin/photo_recovery.html",
+        orphan_files=orphan_files,
+        stats=stats,
+        schools=schools,
+    )
+
+
+@portal_bp.route("/admin/photo-recovery/school/<int:school_id>")
+@role_required("admin")
+def admin_photo_recovery_school_data(school_id: int) -> Response:
+    """Return draft assessments and rooms for a school (AJAX JSON)."""
+    school = get_school_by_id(school_id)
+    if not school:
+        return jsonify({"success": False, "message": "Sekolah tidak ditemukan"}), 404
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT 
+                a.id,
+                a.created_at,
+                a.staff_id,
+                u.full_name AS staff_name,
+                p.name AS period_name
+            FROM portal_assessments a
+            LEFT JOIN dashboard_users u ON u.id = a.staff_id
+            LEFT JOIN portal_assessment_periods p ON p.id = a.period_id
+            WHERE a.school_id = %s AND a.status = 'draft'
+            ORDER BY a.created_at DESC
+            """,
+            (school_id,),
+        )
+        drafts = []
+        for row in cur.fetchall():
+            item = dict(row)
+            created_at = item.get("created_at")
+            if isinstance(created_at, datetime):
+                item["created_at"] = created_at.isoformat(timespec="seconds")
+            drafts.append(item)
+
+    rooms_raw = list_school_rooms(school_id)
+    rooms = [
+        {
+            "school_room_id": room.get("school_room_id"),
+            "room_name": room.get("room_name"),
+        }
+        for room in rooms_raw
+    ]
+
+    return jsonify({"success": True, "drafts": drafts, "rooms": rooms})
+
+
+@portal_bp.route("/admin/photo-recovery/merge", methods=["POST"])
+@role_required("admin")
+def admin_photo_recovery_merge() -> Response:
+    """Attach an orphaned photo file to a draft assessment room."""
+    payload = request.get_json(silent=True) or {}
+    if not payload:
+        payload = request.form.to_dict()
+
+    file_path = (payload.get("file_path") or "").strip()
+    action = (payload.get("action") or "skip").strip().lower()
+
+    try:
+        assessment_id = int(payload.get("assessment_id"))
+        school_room_id = int(payload.get("school_room_id"))
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "message": "Data penilaian tidak valid."}), 400
+
+    rel_path = _normalize_photo_rel_path(file_path)
+    if not rel_path:
+        return jsonify({"success": False, "message": "Path foto tidak valid."}), 400
+
+    candidate = (UPLOAD_FOLDER / rel_path).resolve()
+    try:
+        candidate.relative_to(UPLOAD_FOLDER.resolve())
+    except ValueError:
+        return jsonify({"success": False, "message": "Path foto tidak valid."}), 400
+
+    if not candidate.exists() or not candidate.is_file():
+        return jsonify({"success": False, "message": "File foto tidak ditemukan."}), 404
+
+    if not _allowed_file(candidate.name):
+        return jsonify({"success": False, "message": "Tipe file tidak didukung."}), 400
+
+    assessment = get_assessment_by_id(assessment_id)
+    if not assessment:
+        return jsonify({"success": False, "message": "Assessment tidak ditemukan."}), 404
+
+    if assessment.get("status") != "draft":
+        return jsonify({"success": False, "message": "Assessment bukan draft."}), 400
+
+    with get_cursor() as cur:
+        cur.execute(
+            "SELECT id, school_id FROM portal_school_rooms WHERE id = %s",
+            (school_room_id,),
+        )
+        room_row = cur.fetchone()
+
+    if not room_row:
+        return jsonify({"success": False, "message": "Ruangan tidak ditemukan."}), 404
+
+    if room_row["school_id"] != assessment.get("school_id"):
+        return jsonify({"success": False, "message": "Ruangan tidak sesuai sekolah draft."}), 400
+
+    if action not in ("skip", "replace"):
+        action = "skip"
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id FROM portal_assessment_photos
+            WHERE assessment_id = %s AND school_room_id = %s
+            """,
+            (assessment_id, school_room_id),
+        )
+        existing = cur.fetchone()
+
+    if existing and action == "skip":
+        return jsonify(
+            {
+                "success": True,
+                "status": "skipped",
+                "message": "Sudah ada foto pada ruangan ini. Tidak diganti.",
+            }
+        )
+
+    photo_path = f"uploads/portal/{rel_path}"
+    captured_at = datetime.fromtimestamp(candidate.stat().st_mtime)
+
+    try:
+        saved = save_assessment_photo(
+            assessment_id=assessment_id,
+            school_room_id=school_room_id,
+            photo_path=photo_path,
+            latitude=None,
+            longitude=None,
+            captured_at=captured_at,
+        )
+    except Exception as exc:
+        current_app.logger.exception("Error merging orphan photo")
+        return jsonify({"success": False, "message": str(exc)}), 500
+
+    return jsonify(
+        {
+            "success": True,
+            "status": "saved",
+            "photo": saved,
+        }
+    )
 
 
 @portal_bp.route("/coordinator/related-photos")
