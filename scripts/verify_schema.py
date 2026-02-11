@@ -25,6 +25,7 @@ def verify_schema():
     expected_tables = [
         "chat_logs", "bullying_reports", "psych_reports", "chat_feedback", "web_users", "telegram_users",
         "dashboard_users", "school_classes", "students", "notifications", "twitter_worker_logs",
+        "telegram_notification_settings", "telegram_admin_accounts", "telegram_notification_groups",
         "portal_schools", "portal_rooms", "portal_aspects", "portal_school_rooms",
         "portal_assessment_periods", "portal_assessments", "portal_assessment_scores",
         "portal_assessment_photos", "portal_assessment_room_details"

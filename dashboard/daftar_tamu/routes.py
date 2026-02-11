@@ -13,7 +13,7 @@ from pathlib import Path
 from datetime import date, datetime
 from typing import Optional
 
-from flask import Blueprint, Response, jsonify, render_template, request, url_for, send_file, redirect, flash
+from flask import Blueprint, Response, jsonify, render_template, request, url_for, send_file, redirect, flash, current_app
 from psycopg2.extras import Json
 from urllib.parse import quote_plus
 from PIL import Image, ImageDraw, ImageFont
@@ -48,6 +48,7 @@ from .queries import (
     fetch_unvisited_schools,
     fetch_school_pending_counts,
     get_transaction_detail,
+    list_admin_public_school_summary,
     list_admin_public_transactions,
     list_admin_transactions,
     list_guest_candidates,
@@ -1444,6 +1445,55 @@ def admin_general_guest_search() -> Response:
     return jsonify({"success": True, "results": results})
 
 
+@daftar_tamu_bp.route("/admin/umum-rekap")
+@role_required("admin")
+def admin_public_summary() -> Response:
+    status = (request.args.get("status") or "").strip().lower()
+    search_query = (request.args.get("q") or "").strip()
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    per_page = _to_int(request.args.get("per_page"), 10)
+    per_page = max(5, min(per_page, 200))
+    page = _to_int(request.args.get("page"), 1)
+    page = max(1, page)
+
+    rows, total_rows = list_admin_public_school_summary(
+        status=status,
+        search_query=search_query,
+        date_from=date_from,
+        date_to=date_to,
+        page=page,
+        per_page=per_page,
+    )
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if page > total_pages:
+        page = total_pages
+        rows, total_rows = list_admin_public_school_summary(
+            status=status,
+            search_query=search_query,
+            date_from=date_from,
+            date_to=date_to,
+            page=page,
+            per_page=per_page,
+        )
+
+    return render_template(
+        "daftar_tamu/admin_public_summary.html",
+        rows=rows,
+        status=status,
+        search_query=search_query,
+        page=page,
+        per_page=per_page,
+        total_rows=total_rows,
+        total_pages=total_pages,
+        date_from_str=date_from.isoformat() if date_from else "",
+        date_to_str=date_to.isoformat() if date_to else "",
+    )
+
+
 @daftar_tamu_bp.route("/admin/umum-transactions")
 @role_required("admin")
 def admin_public_transactions() -> Response:
@@ -2373,5 +2423,48 @@ def sekolah_create_transaction() -> Response:
                 """,
                 (transaction_id, guest_id),
             )
+
+    if status_value == "pending" and transaction_id:
+        try:
+            from dashboard.telegram_notifications import notify_guestbook_request
+
+            detail = get_transaction_detail(transaction_id)
+            photo_url = None
+            guest_summary = None
+
+            if detail:
+                photo_path = detail.get("photo_path")
+                if photo_path:
+                    photo_name = photo_path.split("uploads/portal/")[-1]
+                    photo_url = url_for(
+                        "portal.uploaded_file",
+                        filename=photo_name,
+                        _external=True,
+                    )
+
+                guests = detail.get("guests") or []
+                guest_names = [
+                    (g.get("full_name") or "").strip()
+                    for g in guests
+                    if (g.get("full_name") or "").strip()
+                ]
+                if guest_names:
+                    if len(guest_names) > 3:
+                        guest_summary = f"{', '.join(guest_names[:3])} +{len(guest_names) - 3}"
+                    else:
+                        guest_summary = ", ".join(guest_names)
+
+            notify_guestbook_request(
+                transaction_id=transaction_id,
+                school_name=school.get("name") or "Sekolah",
+                npsn=school.get("npsn"),
+                visit_at=visit_at,
+                guest_summary=guest_summary,
+                purpose=purpose or None,
+                notes=notes or None,
+                photo_url=photo_url,
+            )
+        except Exception:
+            current_app.logger.exception("Gagal mengirim notifikasi buku tamu.")
 
     return jsonify({"success": True, "transaction_id": transaction_id})
