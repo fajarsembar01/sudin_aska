@@ -211,6 +211,43 @@ _TELEGRAM_USERS_INDEX_STATUS = """
 CREATE INDEX IF NOT EXISTS idx_telegram_users_status ON telegram_users (status);
 """
 
+_TELEGRAM_NOTIFICATION_SETTINGS_SQL = """
+CREATE TABLE IF NOT EXISTS telegram_notification_settings (
+    id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    bot_token TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+"""
+
+_TELEGRAM_ADMIN_ACCOUNTS_SQL = """
+CREATE TABLE IF NOT EXISTS telegram_admin_accounts (
+    id SERIAL PRIMARY KEY,
+    dashboard_user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    telegram_username TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    UNIQUE (telegram_username)
+);
+"""
+
+_TELEGRAM_ADMIN_ACCOUNTS_INDEX_USER = """
+CREATE INDEX IF NOT EXISTS idx_telegram_admin_accounts_user
+ON telegram_admin_accounts (dashboard_user_id);
+"""
+
+_TELEGRAM_NOTIFICATION_GROUPS_SQL = """
+CREATE TABLE IF NOT EXISTS telegram_notification_groups (
+    id SERIAL PRIMARY KEY,
+    chat_id BIGINT UNIQUE NOT NULL,
+    title TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+"""
+
 # ===== Portal PANBERSS Schema =====
 
 _PORTAL_KECAMATAN_SQL = """
@@ -734,6 +771,10 @@ def ensure_dashboard_schema() -> None:
         _CHAT_FEEDBACK_CREATED_INDEX_SQL,
         _TELEGRAM_USERS_SQL,
         _TELEGRAM_USERS_INDEX_STATUS,
+        _TELEGRAM_NOTIFICATION_SETTINGS_SQL,
+        _TELEGRAM_ADMIN_ACCOUNTS_SQL,
+        _TELEGRAM_ADMIN_ACCOUNTS_INDEX_USER,
+        _TELEGRAM_NOTIFICATION_GROUPS_SQL,
         # Portal PANBERSS tables
         _PORTAL_KECAMATAN_SQL,
         _PORTAL_KECAMATAN_INDEX_SQL,
