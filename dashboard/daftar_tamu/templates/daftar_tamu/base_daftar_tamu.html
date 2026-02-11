@@ -23,6 +23,10 @@
                 'daftar_tamu.admin_purpose_keywords',
                 'daftar_tamu.admin_contact_priority'
                 ] %}
+                {% set admin_web_endpoints = [
+                'daftar_tamu.admin_public_summary',
+                'daftar_tamu.admin_public_transactions'
+                ] %}
                 {% set pending_guestbook = admin_pending.pending_guestbook if admin_pending else 0 %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'daftar_tamu.admin_dashboard' %}active{% endif %}"
@@ -73,6 +77,26 @@
                             <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_contact_priority' %}active{% endif %}"
                                 href="{{ url_for('daftar_tamu.admin_contact_priority') }}">
                                 <i class="bi bi-list-ol me-2"></i>Prioritas Kontak
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {% if request.endpoint in admin_web_endpoints %}active{% endif %}"
+                        href="#" data-bs-toggle="dropdown">
+                        <i class="bi bi-globe2 nav-icon"></i>Absen Web
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_public_summary' %}active{% endif %}"
+                                href="{{ url_for('daftar_tamu.admin_public_summary') }}">
+                                <i class="bi bi-clipboard-data me-2"></i>Rekap Absen Web
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_public_transactions' %}active{% endif %}"
+                                href="{{ url_for('daftar_tamu.admin_public_transactions') }}">
+                                <i class="bi bi-people me-2"></i>Cek Absen Web
                             </a>
                         </li>
                     </ul>
