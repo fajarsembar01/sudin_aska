@@ -1789,6 +1789,167 @@ def list_admin_public_transactions(
     return rows, total_rows
 
 
+def list_admin_public_school_summary(
+    *,
+    status: Optional[str] = None,
+    search_query: Optional[str] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    page: int = 1,
+    per_page: int = 10,
+) -> Tuple[List[Dict[str, Any]], int]:
+    safe_page = max(1, page)
+    safe_per_page = max(1, min(per_page, 200))
+    offset = (safe_page - 1) * safe_per_page
+
+    status_value = (status or "").strip().lower()
+    if status_value and status_value not in TRANSACTION_STATUSES:
+        status_value = ""
+
+    query_text, like_query = _build_search(search_query)
+
+    rollup_cte = """
+        WITH filtered_transactions AS (
+            SELECT t.*
+            FROM daftar_tamu_general_transactions t
+            WHERE (%s::date IS NULL OR t.visit_at::date >= %s::date)
+              AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
+              AND (%s = '' OR t.status = %s)
+        ),
+        school_rollup AS (
+            SELECT
+                s.id AS school_id,
+                s.npsn,
+                s.name AS school_name,
+                s.jenjang,
+                k.name AS kecamatan,
+                l.name AS kelurahan,
+                COUNT(ft.id) AS total_visits,
+                COUNT(*) FILTER (WHERE ft.status = 'pending') AS pending_visits,
+                COUNT(*) FILTER (WHERE ft.status = 'approved') AS approved_visits,
+                COUNT(*) FILTER (WHERE ft.status = 'rejected') AS rejected_visits,
+                MAX(ft.visit_at) AS last_visit_at,
+                latest.guest_names AS last_guest_names,
+                latest.guest_count AS last_guest_count
+            FROM portal_schools s
+            LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            LEFT JOIN filtered_transactions ft ON ft.school_id = s.id
+            LEFT JOIN LATERAL (
+                SELECT
+                    ({guest_names}) AS guest_names,
+                    ({guest_count}) AS guest_count
+                FROM filtered_transactions t2
+                WHERE t2.school_id = s.id
+                ORDER BY t2.visit_at DESC, t2.id DESC
+                LIMIT 1
+            ) latest ON TRUE
+            WHERE s.active = TRUE
+            GROUP BY
+                s.id,
+                s.npsn,
+                s.name,
+                s.jenjang,
+                k.name,
+                l.name,
+                latest.guest_names,
+                latest.guest_count
+        )
+    """.format(
+        guest_names=_PUBLIC_GUEST_NAMES_SUBQUERY.format(tx_ref="t2.id"),
+        guest_count=_PUBLIC_GUEST_COUNT_SUBQUERY.format(tx_ref="t2.id"),
+    )
+
+    count_query = (
+        rollup_cte
+        + """
+        SELECT COUNT(*) AS total
+        FROM school_rollup
+        WHERE (
+            %s = ''
+            OR school_name ILIKE %s
+            OR npsn ILIKE %s
+            OR COALESCE(kecamatan, '') ILIKE %s
+            OR COALESCE(kelurahan, '') ILIKE %s
+        )
+        """
+    )
+
+    data_query = (
+        rollup_cte
+        + """
+        SELECT
+            school_id,
+            npsn,
+            school_name,
+            jenjang,
+            kecamatan,
+            kelurahan,
+            total_visits,
+            pending_visits,
+            approved_visits,
+            rejected_visits,
+            last_visit_at,
+            last_guest_names,
+            last_guest_count
+        FROM school_rollup
+        WHERE (
+            %s = ''
+            OR school_name ILIKE %s
+            OR npsn ILIKE %s
+            OR COALESCE(kecamatan, '') ILIKE %s
+            OR COALESCE(kelurahan, '') ILIKE %s
+        )
+        ORDER BY total_visits DESC, last_visit_at DESC NULLS LAST, school_name ASC
+        LIMIT %s OFFSET %s
+        """
+    )
+
+    params_common = [
+        date_from,
+        date_from,
+        date_to,
+        date_to,
+        status_value,
+        status_value,
+    ]
+    search_params = [query_text, like_query, like_query, like_query, like_query]
+
+    with get_cursor() as cur:
+        cur.execute(count_query, params_common + search_params)
+        total_rows = int((cur.fetchone() or {}).get("total") or 0)
+
+        cur.execute(
+            data_query,
+            params_common + search_params + [safe_per_page, offset],
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        row["total_visits"] = int(row.get("total_visits") or 0)
+        row["pending_visits"] = int(row.get("pending_visits") or 0)
+        row["approved_visits"] = int(row.get("approved_visits") or 0)
+        row["rejected_visits"] = int(row.get("rejected_visits") or 0)
+
+        names_raw = row.get("last_guest_names") or ""
+        names = [n.strip() for n in names_raw.split(",") if n.strip()]
+        guest_count = int(row.get("last_guest_count") or 0)
+        if not guest_count:
+            guest_count = len(names)
+        if names:
+            if len(names) > 2:
+                display = f"{names[0]} +{len(names) - 1}"
+            elif len(names) == 2:
+                display = f"{names[0]} & {names[1]}"
+            else:
+                display = names[0]
+        else:
+            display = None
+        row["last_guest_display"] = display
+
+    return rows, total_rows
+
+
 def get_transaction_detail(transaction_id: int) -> Optional[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(
