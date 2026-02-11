@@ -96,6 +96,8 @@
                                 <td>
                                     {% if school.draft_assessment_id %}
                                     <span class="badge bg-warning text-dark"><i class="bi bi-pencil"></i> Draft</span>
+                                    {% elif school.last_assessment_status == 'verified' %}
+                                    <span class="badge bg-primary"><i class="bi bi-patch-check"></i> Terverifikasi</span>
                                     {% elif school.last_assessment_status == 'submitted' %}
                                     <span class="badge bg-success"><i class="bi bi-check-circle"></i> Selesai</span>
                                     {% else %}
@@ -104,10 +106,36 @@
                                 </td>
                                 <td>
                                     {% if school.draft_assessment_id %}
-                                    <a href="{{ url_for('portal.assess', school_id=school.school_id) }}"
-                                        class="btn btn-sm btn-warning start-assessment-btn" data-has-draft="true">
-                                        <i class="bi bi-pencil-square"></i> Lanjutkan
-                                    </a>
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ url_for('portal.assess', school_id=school.school_id, assessment_id=school.draft_assessment_id) }}"
+                                            class="btn btn-sm btn-warning start-assessment-btn" data-has-draft="true">
+                                            <i class="bi bi-pencil-square"></i> Lanjutkan
+                                        </a>
+                                        <form action="{{ url_for('portal.delete_draft_route', assessment_id=school.draft_assessment_id) }}"
+                                            method="POST"
+                                            onsubmit="return confirm('Hapus draft penilaian untuk {{ school.school_name }}?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus Draft">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    {% elif school.last_assessment_status in ['submitted', 'verified'] and school.last_assessment_id %}
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ url_for('portal.view_assessment', assessment_id=school.last_assessment_id) }}"
+                                            class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-box-arrow-up-right"></i> Lihat
+                                        </a>
+                                        {% if school.last_assessment_status == 'submitted' %}
+                                        <form method="POST"
+                                            action="{{ url_for('portal.request_reopen', assessment_id=school.last_assessment_id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-warning text-dark">
+                                                <i class="bi bi-arrow-repeat"></i> Ajukan Reopen
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
                                     {% else %}
                                     <a href="{{ url_for('portal.assess', school_id=school.school_id) }}"
                                         class="btn btn-sm btn-primary start-assessment-btn" data-has-draft="false">

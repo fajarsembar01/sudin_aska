@@ -895,7 +895,7 @@
                             {% if permissions.can_assign_staff %}
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('portal.admin_manage_staff') }}">
-                                    <i class="bi bi-people me-2"></i>Kelola Staff
+                                    <i class="bi bi-journal-check me-2"></i>Kelola Penugasan
                                 </a>
                             </li>
                             {% endif %}
@@ -934,11 +934,11 @@
                     {% endif %}
 
                     {% if current_user and current_user.role == 'sekolah' %}
-                    <!-- Sekolah: PANBERS menu -->
+                    <!-- Sekolah: PANBERSS menu -->
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'portal.sekolah_rooms' %}active{% endif %}"
                             href="{{ url_for('portal.sekolah_rooms') }}">
-                            <i class="bi bi-sliders nav-icon"></i>PANBERS
+                            <i class="bi bi-sliders nav-icon"></i>PANBERSS
                         </a>
                     </li>
                     <li class="nav-item">

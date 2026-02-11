@@ -1,7 +1,7 @@
 {# Shared stats content component - expects stats_role variable ('admin' or 'coordinator') #}
 {# Set defaults if not provided #}
 {% set is_admin = (stats_role == 'admin') %}
-{% set title = stats_title or ('Statistik Portal PANBERSS' if is_admin else 'Statistik Tim ' ~ (team.name or
+{% set title = stats_title or ('Dashboard PANBERSS' if is_admin else 'Statistik Tim ' ~ (team.name or
 team.kecamatan_name or 'Koordinator')) %}
 {% set subtitle = stats_subtitle or ('Ringkasan data penilaian sekolah' if is_admin else 'Data penilaian oleh anggota
 tim Anda') %}

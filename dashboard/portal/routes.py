@@ -1065,7 +1065,7 @@ def schools() -> Response:
 @portal_bp.route("/sekolah")
 @role_required("sekolah")
 def sekolah_home() -> Response:
-    """Landing page for sekolah role (choose Buku Tamu or PANBERS)."""
+    """Landing page for sekolah role (choose Buku Tamu or PANBERSS)."""
     user = current_user()
     school = _fetch_user_school(user.get("id"))
     if not school:
@@ -1074,18 +1074,18 @@ def sekolah_home() -> Response:
     if school and school.get("name") and school.get("npsn"):
         subtitle = f"{school.get('name')} • NPSN {school.get('npsn')}"
     cards = [
-        {
-            "title": "Buku Tamu",
-            "description": "Input kunjungan tamu, foto wajib, GPS otomatis, dan pantau status verifikasi.",
-            "icon": "bi-journal-text",
-            "href": url_for("daftar_tamu.sekolah_guestbook"),
+         {
+            "title": "PANBERSS",
+            "description": "Konfigurasi ruangan untuk pemantauan kebersihan dan sarana sekolah.",
+            "icon": "bi bi-building",
+            "href": url_for("portal.sekolah_rooms"),
             "col_class": "col-md-6 col-12",
         },
         {
-            "title": "PANBERS",
-            "description": "Konfigurasi ruangan dan persiapan penilaian sekolah.",
-            "icon": "bi-sliders",
-            "href": url_for("portal.sekolah_rooms"),
+            "title": "Buku Tamu",
+            "description": "Input kunjungan tamu dan pantau status verifikasi kunjungan.",
+            "icon": "bi-person-vcard",
+            "href": url_for("daftar_tamu.sekolah_guestbook"),
             "col_class": "col-md-6 col-12",
         },
     ]
@@ -1409,7 +1409,7 @@ def save_score(school_id: int) -> Response:
 def save_note(school_id: int) -> Response:
     """API endpoint to save room note."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff"):
+    if user.get("role") not in ("admin", "staff", "coordinator"):
         return jsonify({"success": False, "message": "Unauthorized"}), 403
     
     data = request.get_json(silent=True) or {}
@@ -1451,7 +1451,7 @@ def save_note(school_id: int) -> Response:
 def upload_photo(school_id: int) -> Response:
     """Upload a photo with GPS data."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff"):
+    if user.get("role") not in ("admin", "staff", "coordinator"):
         return jsonify({"success": False, "message": "Unauthorized"}), 403
     
     assessment_id = request.form.get("assessment_id", type=int)
@@ -1565,7 +1565,7 @@ def upload_photo(school_id: int) -> Response:
 def submit(school_id: int) -> Response:
     """Submit the assessment."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff"):
+    if user.get("role") not in ("admin", "staff", "coordinator"):
         flash("Unauthorized", "danger")
         return redirect(url_for("portal.home"))
     
@@ -1681,7 +1681,7 @@ def submit(school_id: int) -> Response:
 def save_draft(school_id: int) -> Response:
     """Explicitly save assessment as draft (no submit)."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff"):
+    if user.get("role") not in ("admin", "staff", "coordinator"):
         flash("Unauthorized", "danger")
         return redirect(url_for("portal.home"))
 
@@ -1739,7 +1739,7 @@ def request_reopen(assessment_id: int) -> Response:
     """Staff requests admin approval to reopen a submitted assessment."""
     user = current_user()
     from .queries import log_activity
-    if user.get("role") not in ("admin", "staff"):
+    if user.get("role") not in ("admin", "staff", "coordinator"):
         flash("Unauthorized", "danger")
         return redirect(url_for("portal.home"))
 
@@ -2041,7 +2041,7 @@ def view_assessment(assessment_id: int) -> Response:
 def delete_photo_route(school_id: int, photo_id: int) -> Response:
     """Delete a photo belonging to an assessment."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff"):
+    if user.get("role") not in ("admin", "staff", "coordinator"):
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     assessment_id = request.form.get("assessment_id", type=int)
@@ -2157,7 +2157,7 @@ def delete_assessment_route(assessment_id: int) -> Response:
 def delete_draft_route(assessment_id: int) -> Response:
     """Staff deletes their own draft assessment."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff"):
+    if user.get("role") not in ("admin", "staff", "coordinator"):
         flash("Unauthorized", "danger")
         return redirect(url_for("portal.home"))
 
@@ -2181,6 +2181,8 @@ def delete_draft_route(assessment_id: int) -> Response:
     else:
         flash("Gagal menghapus draft.", "danger")
 
+    if user.get("role") == "coordinator":
+        return redirect(url_for("portal.coordinator_assessments"))
     return redirect(url_for("portal.home"))
 
 
@@ -4721,6 +4723,69 @@ def admin_manage_staff() -> Response:
     )
 
 
+@portal_bp.route("/coordinator/manage-staff")
+@role_required("coordinator")
+def coordinator_manage_staff() -> Response:
+    """Coordinator interface to submit staff-school assignment requests."""
+    user = current_user()
+    team, team_members, _ = _get_coordinator_team_context(user.get("id"))
+    if not team:
+        flash("Anda belum memiliki tim.", "warning")
+        return redirect(url_for("portal.view_my_team"))
+
+    staff_list = []
+    team_member_ids = []
+    for member in team_members:
+        staff_id = member.get("staff_id")
+        if not staff_id:
+            continue
+        team_member_ids.append(staff_id)
+        assigned_count = len(get_staff_assigned_schools(staff_id))
+        staff_list.append(
+            {
+                "id": staff_id,
+                "email": member.get("email"),
+                "full_name": member.get("full_name"),
+                "nip": member.get("nip"),
+                "role": member.get("role"),
+                "assigned_schools_count": assigned_count,
+            }
+        )
+
+    if user.get("id") not in team_member_ids:
+        assigned_count = len(get_staff_assigned_schools(user.get("id")))
+        staff_list.append(
+            {
+                "id": user.get("id"),
+                "email": user.get("email"),
+                "full_name": user.get("full_name") or "Koordinator",
+                "nip": user.get("nip"),
+                "role": user.get("role"),
+                "assigned_schools_count": assigned_count,
+            }
+        )
+
+    staff_list.sort(key=lambda row: (row.get("full_name") or "").lower())
+
+    available_schools = list_portal_schools()
+    periods = list_periods()
+    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (
+        periods[0]["id"] if periods else None
+    )
+
+    return render_template(
+        "portal/admin/manage_staff.html",
+        staff_list=staff_list,
+        assignments_overview=[],
+        available_schools=available_schools,
+        pending_requests=[],
+        periods=periods,
+        active_period_id=active_period_id,
+        user=user,
+        activity_logs=[],
+    )
+
+
 @portal_bp.route("/admin/assign-school", methods=["POST"])
 @role_required("admin")
 def admin_assign_school() -> Response:
@@ -5116,6 +5181,29 @@ def get_staff_assignments_api(staff_id: int) -> Response:
         })
     except Exception as e:
         current_app.logger.exception("Error fetching staff assignments")
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
+
+
+@portal_bp.route("/coordinator/staff/<int:staff_id>/assignments")
+@role_required("coordinator")
+def coordinator_staff_assignments_api(staff_id: int) -> Response:
+    """API endpoint for coordinators to view assignments within their team."""
+    user = current_user()
+    team, _, staff_ids = _get_coordinator_team_context(user.get("id"))
+    if not team or staff_id not in staff_ids:
+        return jsonify({"success": False, "message": "Tidak diizinkan"}), 403
+
+    try:
+        assignments = get_staff_assigned_schools(staff_id)
+        return jsonify({
+            "success": True,
+            "assignments": assignments
+        })
+    except Exception as e:
+        current_app.logger.exception("Error fetching coordinator staff assignments")
         return jsonify({
             "success": False,
             "message": str(e)
