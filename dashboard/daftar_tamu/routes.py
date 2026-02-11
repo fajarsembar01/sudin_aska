@@ -13,7 +13,7 @@ from pathlib import Path
 from datetime import date, datetime
 from typing import Optional
 
-from flask import Blueprint, Response, jsonify, render_template, request, url_for, send_file, redirect, flash
+from flask import Blueprint, Response, jsonify, render_template, request, url_for, send_file, redirect, flash, current_app
 from psycopg2.extras import Json
 from urllib.parse import quote_plus
 from PIL import Image, ImageDraw, ImageFont
@@ -2423,5 +2423,48 @@ def sekolah_create_transaction() -> Response:
                 """,
                 (transaction_id, guest_id),
             )
+
+    if status_value == "pending" and transaction_id:
+        try:
+            from dashboard.telegram_notifications import notify_guestbook_request
+
+            detail = get_transaction_detail(transaction_id)
+            photo_url = None
+            guest_summary = None
+
+            if detail:
+                photo_path = detail.get("photo_path")
+                if photo_path:
+                    photo_name = photo_path.split("uploads/portal/")[-1]
+                    photo_url = url_for(
+                        "portal.uploaded_file",
+                        filename=photo_name,
+                        _external=True,
+                    )
+
+                guests = detail.get("guests") or []
+                guest_names = [
+                    (g.get("full_name") or "").strip()
+                    for g in guests
+                    if (g.get("full_name") or "").strip()
+                ]
+                if guest_names:
+                    if len(guest_names) > 3:
+                        guest_summary = f"{', '.join(guest_names[:3])} +{len(guest_names) - 3}"
+                    else:
+                        guest_summary = ", ".join(guest_names)
+
+            notify_guestbook_request(
+                transaction_id=transaction_id,
+                school_name=school.get("name") or "Sekolah",
+                npsn=school.get("npsn"),
+                visit_at=visit_at,
+                guest_summary=guest_summary,
+                purpose=purpose or None,
+                notes=notes or None,
+                photo_url=photo_url,
+            )
+        except Exception:
+            current_app.logger.exception("Gagal mengirim notifikasi buku tamu.")
 
     return jsonify({"success": True, "transaction_id": transaction_id})

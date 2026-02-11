@@ -75,7 +75,10 @@ def _start_refresh_server() -> None:
     logging.info("Refresh server active at http://%s:%s/api/admin/refresh-knowledge", host, port)
 
 load_dotenv()
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TOKEN = (os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
+if not TOKEN:
+    logging.error("TELEGRAM_BOT_TOKEN tidak ditemukan. Bot AI tidak dapat dijalankan.")
+    raise SystemExit(1)
 
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
