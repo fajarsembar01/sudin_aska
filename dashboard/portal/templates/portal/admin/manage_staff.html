@@ -1,19 +1,30 @@
 {% extends "portal/base_portal.html" %}
+{% set is_admin = user and user.role == 'admin' %}
+{% set is_coordinator = user and user.role == 'coordinator' %}
+{% set assignment_mode = 'direct' if is_admin else 'request' %}
+{% set staff_assignments_url = url_for('portal.get_staff_assignments_api', staff_id=0) if is_admin else url_for('portal.coordinator_staff_assignments_api', staff_id=0) %}
+{% set assignment_save_url = url_for('portal.admin_assign_school_batch') if is_admin else url_for('portal.coordinator_assignment_requests') %}
 
-{% block title %}Kelola Staff - Portal PANBERSS{% endblock %}
+{% block title %}Kelola Penugasan - Portal PANBERSS{% endblock %}
 
 {% block portal_content %}
 <div class="container-fluid py-4">
     <div class="row mb-3">
         <div class="col-12 d-flex align-items-center justify-content-between">
             <div>
-                <h2 class="mb-0"><i class="bi bi-people-fill"></i> Kelola Staff & Penugasan Sekolah</h2>
-                <p class="text-muted mb-0">Tugaskan sekolah ke staff untuk penilaian</p>
+                <h2 class="mb-0"><i class="bi bi-journal-check"></i> Kelola Penugasan Sekolah</h2>
+                <p class="text-muted mb-0">Tugaskan staff dan koordinator ke sekolah untuk penilaian</p>
             </div>
             <div class="btn-group">
+                {% if is_admin %}
                 <a href="{{ url_for('portal.coordinator_assignment_requests') }}" class="btn btn-outline-primary btn-sm">
                     <i class="bi bi-send"></i> Halaman Koordinator
                 </a>
+                {% elif is_coordinator %}
+                <a href="{{ url_for('portal.coordinator_assignment_requests') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-inbox"></i> Riwayat Pengajuan
+                </a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -23,6 +34,7 @@
             <button class="nav-link active" id="tab-assign" data-bs-toggle="tab" data-bs-target="#pane-assign"
                 type="button" role="tab">Penugasan</button>
         </li>
+        {% if is_admin %}
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="tab-requests" data-bs-toggle="tab" data-bs-target="#pane-requests"
                 type="button" role="tab">
@@ -41,6 +53,7 @@
             <button class="nav-link" id="tab-assignments" data-bs-toggle="tab" data-bs-target="#pane-assignments"
                 type="button" role="tab">Semua Penugasan</button>
         </li>
+        {% endif %}
     </ul>
 
     <div class="tab-content">
@@ -50,23 +63,30 @@
                 <div class="col-md-5">
                     <div class="card shadow-sm">
                         <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0"><i class="bi bi-person-badge"></i> Daftar Staff</h5>
+                            <h5 class="mb-0"><i class="bi bi-person-badge"></i> Daftar Staff & Koordinator</h5>
                         </div>
                         <div class="card-body">
                             <div class="mb-3">
-                                <input type="text" class="form-control" id="searchStaff" placeholder="Cari staff...">
+                                <input type="text" class="form-control" id="searchStaff" placeholder="Cari staff & koordinator...">
                             </div>
-
+                            
+                            <!-- staff_list berisi staff dan koordinator (lihat pada queries.py) -->
                             <div class="list-group" id="staffList">
                                 {% for staff in staff_list %}
                                 <a href="#" class="list-group-item list-group-item-action staff-item"
                                     data-staff-id="{{ staff.id }}" data-staff-name="{{ staff.full_name }}"
-                                    data-staff-email="{{ staff.email }}" data-assigned-count="{{ staff.assigned_schools_count }}">
+                                    data-staff-email="{{ staff.email }}" data-assigned-count="{{ staff.assigned_schools_count }}"
+                                    data-staff-role="{{ staff.role or '' }}">
                                     <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1">{{ staff.full_name }}</h6>
+                                        <h6 class="mb-1">
+                                            {{ staff.full_name }}
+                                        </h6>
                                         <span class="badge bg-info staff-count">{{ staff.assigned_schools_count }} sekolah</span>
                                     </div>
-                                    <small class="text-muted">{{ staff.email }}</small>
+                                    {% if staff.role %}
+                                    <div class="badge bg-secondary ms-1">{{ staff.role|upper }}</div>
+                                    {% endif %}
+                                    <br><small class="text-muted">{{ staff.email }}</small>
                                     {% if staff.nip %}
                                     <br><small class="text-muted">NIP: {{ staff.nip }}</small>
                                     {% endif %}
@@ -220,11 +240,11 @@
                                         <small class="text-muted">Klik hasil untuk menambah ke daftar penugasan.</small>
                                     </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label">Catatan (Opsional, berlaku untuk semua)</label>
-                                        <textarea class="form-control" id="notesInput" rows="2"
-                                            placeholder="Catatan khusus untuk penugasan ini..."></textarea>
-                                    </div>
+                            <div class="mb-3">
+                                <label class="form-label">Catatan (Opsional{% if is_coordinator %}, akan dikirim ke admin{% endif %})</label>
+                                <textarea class="form-control" id="notesInput" rows="2"
+                                    placeholder="Catatan khusus untuk penugasan ini..."></textarea>
+                            </div>
                                     <div class="mb-3">
                                         <label class="form-label">Periode Penilaian</label>
                                         <select class="form-select" id="periodSelect" disabled>
@@ -249,9 +269,16 @@
                                             <i class="bi bi-x-circle"></i> Reset Daftar
                                         </button>
                                         <button type="button" class="btn btn-success flex-fill" id="saveQueueBtn">
+                                            {% if is_admin %}
                                             <i class="bi bi-save"></i> Simpan Semua Penugasan
+                                            {% else %}
+                                            <i class="bi bi-send"></i> Kirim Permintaan
+                                            {% endif %}
                                         </button>
                                     </div>
+                                    {% if is_coordinator %}
+                                    <small class="text-muted">Permintaan akan diproses oleh admin.</small>
+                                    {% endif %}
                                 </form>
                             </div>
                         </div>
@@ -261,14 +288,15 @@
                     <div class="card shadow-sm" id="helpPanel">
                         <div class="card-body text-center py-5">
                             <i class="bi bi-arrow-left-circle fs-1 text-muted mb-3 d-block"></i>
-                            <h5 class="text-muted">Pilih Staff</h5>
-                            <p class="text-muted mb-0">Klik nama staff di sebelah kiri untuk mengelola penugasan sekolah</p>
+                            <h5 class="text-muted">Pilih Staff/Koordinator</h5>
+                            <p class="text-muted mb-0">Klik nama staff/koordinator di sebelah kiri untuk mengelola penugasan sekolah</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        {% if is_admin %}
         <div class="tab-pane fade" id="pane-requests" role="tabpanel">
             <div class="card shadow-sm">
                 <div class="card-header bg-warning d-flex justify-content-between align-items-center">
@@ -531,6 +559,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 
@@ -705,6 +734,11 @@
         const assignmentEditNotes = document.getElementById('assignmentEditNotes');
         const assignmentEditId = document.getElementById('assignmentEditId');
         const assignmentEditSaveBtn = document.getElementById('assignmentEditSaveBtn');
+        const assignmentMode = "{{ assignment_mode }}";
+        const staffAssignmentsUrlTemplate = "{{ staff_assignments_url }}";
+        const assignmentSaveUrl = "{{ assignment_save_url }}";
+        const saveQueueDefaultHtml = saveQueueBtn ? saveQueueBtn.innerHTML : '';
+        const isDirectAssign = assignmentMode === 'direct';
         const availableSchools = {{ available_schools | tojson | safe }};
         let queue = [];
         let lastFocusedRow = null;
@@ -1451,22 +1485,26 @@
         // Load assignments for selected staff
         function loadAssignments(staffId) {
             currentAssignments.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm"></div> Memuat...</div>';
+            const fetchUrl = staffAssignmentsUrlTemplate.replace('0', staffId);
 
-            return fetch(`/portal/admin/staff/${staffId}/assignments`)
+            return fetch(fetchUrl)
                 .then(r => r.json())
                 .then(data => {
                     if (data.success && data.assignments.length > 0) {
                         let html = '';
                         data.assignments.forEach(assignment => {
+                            const removeBtn = isDirectAssign
+                                ? `<button class="btn btn-sm btn-danger" onclick="removeAssignment(${staffId}, ${assignment.school_id})">
+                                    <i class="bi bi-trash"></i>
+                                </button>`
+                                : '';
                             html += `
                             <div class="assignment-item">
                                 <div>
                                     <strong>${assignment.school_name}</strong><br>
                                     <small class="text-muted">${assignment.npsn} • ${assignment.kelurahan_name || '-'} • ${assignment.kecamatan_name || 'N/A'}</small>
                                 </div>
-                                <button class="btn btn-sm btn-danger" onclick="removeAssignment(${staffId}, ${assignment.school_id})">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                                ${removeBtn}
                             </div>
                         `;
                         });
@@ -1484,7 +1522,7 @@
                 });
         }
 
-        // Save batch assignments
+        // Save batch assignments / requests
         saveQueueBtn.addEventListener('click', function () {
             const staffId = selectedStaffId.value;
             if (!staffId) {
@@ -1495,21 +1533,33 @@
                 alert('Tambahkan minimal satu sekolah.');
                 return;
             }
-            saveQueueBtn.disabled = true;
-            saveQueueBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menyimpan...';
 
-            fetch('/portal/admin/assign-schools-batch', {
+            const periodId = periodSelect ? periodSelect.value : '';
+            const payload = {
+                staff_id: parseInt(staffId, 10),
+                school_ids: queue.map(q => q.id)
+            };
+            if (assignmentMode === 'direct') {
+                payload.notes = notesInput.value || null;
+            } else {
+                payload.note = notesInput.value || null;
+            }
+            if (periodId) {
+                payload.period_id = periodId;
+            }
+
+            saveQueueBtn.disabled = true;
+            const savingLabel = assignmentMode === 'direct' ? 'Menyimpan...' : 'Mengirim...';
+            saveQueueBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${savingLabel}`;
+
+            fetch(assignmentSaveUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
-                body: JSON.stringify({
-                    staff_id: parseInt(staffId, 10),
-                    school_ids: queue.map(q => q.id),
-                    notes: notesInput.value || null
-                })
-                })
+                body: JSON.stringify(payload)
+            })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
@@ -1518,25 +1568,35 @@
                         notesInput.value = '';
                         schoolSearchInput.value = '';
                         schoolSearchResults.classList.add('d-none');
-                        loadAssignments(staffId).then(count => {
-                            if (data.total_assignments !== undefined) {
-                                updateStaffBadge(staffId, data.total_assignments);
-                            } else if (typeof count === 'number') {
-                                updateStaffBadge(staffId, count);
-                            }
-                        });
-                        showFeedback('Penugasan berhasil disimpan.');
+                        if (assignmentMode === 'direct') {
+                            loadAssignments(staffId).then(count => {
+                                if (data.total_assignments !== undefined) {
+                                    updateStaffBadge(staffId, data.total_assignments);
+                                } else if (typeof count === 'number') {
+                                    updateStaffBadge(staffId, count);
+                                }
+                            });
+                            showFeedback('Penugasan berhasil disimpan.');
+                        } else {
+                            showFeedback('Permintaan penugasan berhasil dikirim.');
+                        }
                     } else {
-                        alert(data.message || 'Gagal menyimpan penugasan.');
+                        const fallback = assignmentMode === 'direct'
+                            ? 'Gagal menyimpan penugasan.'
+                            : 'Gagal mengirim permintaan.';
+                        alert(data.message || fallback);
                     }
                 })
                 .catch(err => {
-                    alert('Gagal menyimpan penugasan');
+                    const fallback = assignmentMode === 'direct'
+                        ? 'Gagal menyimpan penugasan'
+                        : 'Gagal mengirim permintaan';
+                    alert(fallback);
                     console.error(err);
                 })
                 .finally(() => {
                     saveQueueBtn.disabled = false;
-                    saveQueueBtn.innerHTML = '<i class="bi bi-save"></i> Simpan Semua Penugasan';
+                    saveQueueBtn.innerHTML = saveQueueDefaultHtml;
                 });
         });
 

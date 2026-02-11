@@ -151,8 +151,8 @@
             </div>
             {% if show_logout %}
             <div class="card-footer bg-transparent border-top p-3 text-center">
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-link text-muted text-decoration-none btn-sm">
-                    <i class="bi bi-box-arrow-left me-1"></i>Logout
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-link text-muted text-decoration-none btn-sm d-flex justify-content-center align-items-center">
+                    Logout<i class="ms-2 bi bi-box-arrow-right"></i>
                 </a>
             </div>
             {% endif %}
