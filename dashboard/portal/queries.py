@@ -2851,7 +2851,7 @@ def get_staff_assigned_schools(staff_id: int) -> List[Dict[str, Any]]:
 
 
 def list_all_staff_assignments_overview() -> List[Dict[str, Any]]:
-    """List all staff-school assignments with latest assessment status."""
+    """List all staff/coordinator school assignments with latest assessment status."""
     with get_cursor() as cur:
         cur.execute(
             """
@@ -2862,6 +2862,7 @@ def list_all_staff_assignments_overview() -> List[Dict[str, Any]]:
                 u.id as staff_id,
                 u.full_name as staff_name,
                 u.email as staff_email,
+                u.role as staff_role,
                 s.id as school_id,
                 s.npsn,
                 s.name as school_name,
@@ -2891,7 +2892,7 @@ def list_all_staff_assignments_overview() -> List[Dict[str, Any]]:
                 ORDER BY a.created_at DESC
                 LIMIT 1
             ) draft_assessment ON TRUE
-            WHERE u.role = 'staff'
+            WHERE u.role IN ('staff', 'coordinator')
               AND u.account_status = 'approved'
               AND s.active = TRUE
             ORDER BY ssa.assigned_at DESC NULLS LAST, u.full_name, s.name
@@ -2949,7 +2950,7 @@ def remove_staff_school_assignment(staff_id: int, school_id: int) -> bool:
 
 
 def list_all_staff_with_assignments() -> List[Dict[str, Any]]:
-    """List all staff members with their assigned schools count (for admin management)."""
+    """List staff/coordinator members with their assigned schools count (for admin management)."""
     with get_cursor() as cur:
         cur.execute(
             """
@@ -2958,6 +2959,7 @@ def list_all_staff_with_assignments() -> List[Dict[str, Any]]:
                 u.email,
                 u.full_name,
                 u.nip,
+                u.role,
                 u.jabatan,
                 u.created_at,
                 u.last_login_at,
@@ -2966,8 +2968,8 @@ def list_all_staff_with_assignments() -> List[Dict[str, Any]]:
             FROM dashboard_users u
             LEFT JOIN staff_school_assignments ssa ON u.id = ssa.staff_id
             LEFT JOIN portal_schools s ON ssa.school_id = s.id AND s.active = TRUE
-            WHERE u.role = 'staff' AND u.account_status = 'approved'
-            GROUP BY u.id, u.email, u.full_name, u.nip, u.jabatan, u.created_at, u.last_login_at
+            WHERE u.role IN ('staff', 'coordinator') AND u.account_status = 'approved'
+            GROUP BY u.id, u.email, u.full_name, u.nip, u.role, u.jabatan, u.created_at, u.last_login_at
             ORDER BY u.full_name
             """
         )
