@@ -226,11 +226,34 @@
                     <!-- Tab Daftar User (Non-Pending) -->
                     <div class="tab-pane fade show active" id="list-pane" role="tabpanel" aria-labelledby="list-tab"
                         tabindex="0">
-                        <div class="mb-3">
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                                <input type="text" class="form-control" id="userSearch"
-                                    placeholder="Cari nama, email, role, NPSN..." autocomplete="off">
+                        <div class="row g-2 mb-3">
+                            <div class="col-12 col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" class="form-control" id="userSearch"
+                                        placeholder="Cari nama, email, role, NPSN..." autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <select class="form-select" id="userRoleFilter">
+                                    <option value="">Semua Role</option>
+                                    <option value="viewer">Viewer</option>
+                                    <option value="editor">Editor</option>
+                                    <option value="staff">Staff</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="coordinator">Coordinator</option>
+                                    <option value="sekolah">Sekolah</option>
+                                </select>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <select class="form-select" id="userStatusFilter">
+                                    <option value="">Semua Status</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="rejected">Rejected</option>
+                                    <option value="suspended">Suspended</option>
+                                    <option value="not_registered">Not Register</option>
+                                    <option value="disabled">Disabled</option>
+                                </select>
                             </div>
                         </div>
                         <div class="table-responsive">
@@ -249,6 +272,8 @@
                                     %}
                                     {% for user in active_users %}
                                     <tr style="cursor: pointer;" data-user-row="true"
+                                        data-role="{{ user.role or '' }}"
+                                        data-status="{{ user.account_status or '' }}"
                                         data-search="{{ (user.full_name or '') ~ ' ' ~ (user.email or '') ~ ' ' ~ (user.role or '') ~ ' ' ~ (user.account_status or '') ~ ' ' ~ (user.kecamatan_name or '') ~ ' ' ~ (user.jabatan or '') ~ ' ' ~ (user.whatsapp_number or '') ~ ' ' ~ (user.get('school_npsn') or '') ~ ' ' ~ (user.get('school_name') or '') }}"
                                         onclick='editUser({{ user|tojson }})'>
                                         <td>
@@ -677,16 +702,25 @@
         const userSearch = document.getElementById('userSearch');
         if (!userSearch) return;
 
+        const roleFilter = document.getElementById('userRoleFilter');
+        const statusFilter = document.getElementById('userStatusFilter');
         const userRows = Array.from(document.querySelectorAll('#userTableBody tr[data-user-row="true"]'));
         const noUserResults = document.getElementById('noUserResults');
 
         function updateUserFilter() {
             const query = userSearch.value.trim().toLowerCase();
+            const roleValue = roleFilter ? roleFilter.value.trim().toLowerCase() : '';
+            const statusValue = statusFilter ? statusFilter.value.trim().toLowerCase() : '';
             let visibleCount = 0;
 
             userRows.forEach(row => {
                 const haystack = (row.dataset.search || '').toLowerCase();
-                const matches = !query || haystack.includes(query);
+                const rowRole = (row.dataset.role || '').toLowerCase();
+                const rowStatus = (row.dataset.status || '').toLowerCase();
+                const matchesQuery = !query || haystack.includes(query);
+                const matchesRole = !roleValue || rowRole === roleValue;
+                const matchesStatus = !statusValue || rowStatus === statusValue;
+                const matches = matchesQuery && matchesRole && matchesStatus;
                 row.style.display = matches ? '' : 'none';
                 if (matches) {
                     visibleCount += 1;
@@ -694,7 +728,8 @@
             });
 
             if (noUserResults) {
-                if (query && visibleCount === 0 && userRows.length > 0) {
+                const hasFilters = Boolean(query || roleValue || statusValue);
+                if (hasFilters && visibleCount === 0 && userRows.length > 0) {
                     noUserResults.style.display = '';
                 } else {
                     noUserResults.style.display = 'none';
@@ -703,6 +738,8 @@
         }
 
         userSearch.addEventListener('input', updateUserFilter);
+        if (roleFilter) roleFilter.addEventListener('change', updateUserFilter);
+        if (statusFilter) statusFilter.addEventListener('change', updateUserFilter);
     });
 
     document.addEventListener('DOMContentLoaded', function () {
