@@ -84,7 +84,23 @@
                             {% for classroom in classrooms %}
                             <tr data-classroom-id="{{ classroom.id }}">
                                 <td class="fw-semibold">{{ classroom.name }}</td>
-                                <td><span class="badge bg-info">Kelas {{ classroom.grade_level }}</span></td>
+                                {% set grade_label = 'Kelas ' ~ classroom.grade_level %}
+                                {% if classroom.grade_level == -2 %}
+                                    {% set grade_label = 'KB' %}
+                                {% elif classroom.grade_level == -1 %}
+                                    {% if jenjang == 'TK' %}
+                                        {% set grade_label = 'TK A' %}
+                                    {% else %}
+                                        {% set grade_label = 'Kelompok A' %}
+                                    {% endif %}
+                                {% elif classroom.grade_level == 0 and jenjang in ['TK', 'PAUD'] %}
+                                    {% if jenjang == 'TK' %}
+                                        {% set grade_label = 'TK B' %}
+                                    {% else %}
+                                        {% set grade_label = 'Kelompok B' %}
+                                    {% endif %}
+                                {% endif %}
+                                <td><span class="badge bg-info">{{ grade_label }}</span></td>
                                 <td>{{ classroom.variant or '-' }}</td>
                                 <td>
                                     <button class="btn btn-sm btn-danger delete-classroom" data-id="{{ classroom.id }}"
@@ -120,6 +136,7 @@
         let classrooms = {{ classrooms | default ([]) | tojson | safe
     }};
     const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+    const schoolJenjang = "{{ jenjang or '' }}".toUpperCase();
 
     // ===== Helpers for paralel kelas (SD) =====
     const gradeParallelInputs = document.querySelectorAll('[data-grade-parallel]');
@@ -139,16 +156,38 @@
         });
     }
 
+    function formatGradeLabel(grade) {
+        if (grade === -2) return 'KB';
+        if (grade === -1) return schoolJenjang === 'TK' ? 'TK A' : 'Kelompok A';
+        if (grade === 0 && (schoolJenjang === 'TK' || schoolJenjang === 'PAUD')) {
+            return schoolJenjang === 'TK' ? 'TK B' : 'Kelompok B';
+        }
+        return `Kelas ${grade}`;
+    }
+
+    function buildClassroomName(grade, variant) {
+        if (schoolJenjang === 'TK') {
+            if (grade === -1) return `Kelas TK A${variant || ''}`.trim();
+            if (grade === 0) return `Kelas TK B${variant || ''}`.trim();
+        }
+        return `Kelas ${grade}${variant || ''}`.trim();
+    }
+
     function updateClassroomTable() {
         const tbody = document.getElementById('classroomTableBody');
         if (!tbody) return;
 
         const sorted = [...classrooms].sort((a, b) => {
-            const gradeA = parseInt(a.grade_level) || 999;
-            const gradeB = parseInt(b.grade_level) || 999;
-            if (gradeA !== gradeB) return gradeA - gradeB;
+            const gradeA = parseInt(a.grade_level);
+            const gradeB = parseInt(b.grade_level);
+            const gradeAVal = isNaN(gradeA) ? 999 : gradeA;
+            const gradeBVal = isNaN(gradeB) ? 999 : gradeB;
+            if (gradeAVal !== gradeBVal) return gradeAVal - gradeBVal;
             const varA = (a.variant || '').toString();
             const varB = (b.variant || '').toString();
+            const varANum = parseInt(varA, 10);
+            const varBNum = parseInt(varB, 10);
+            if (!isNaN(varANum) && !isNaN(varBNum) && varANum !== varBNum) return varANum - varBNum;
             if (varA.toUpperCase() !== varB.toUpperCase()) return varA.localeCompare(varB);
             return (a.name || '').localeCompare(b.name || '');
         });
@@ -169,7 +208,7 @@
             html += `
                     <tr data-classroom-id="${c.id}">
                         <td class="fw-semibold">${c.name}</td>
-                        <td><span class="badge bg-info">Kelas ${c.grade_level}</span></td>
+                        <td><span class="badge bg-info">${formatGradeLabel(parseInt(c.grade_level))}</span></td>
                         <td>${c.variant || '-'}</td>
                         <td>
                             <button class="btn btn-sm btn-danger delete-classroom" 
@@ -202,10 +241,12 @@
         classrooms = classrooms.filter(c => parseInt(c.grade_level) !== grade);
 
         for (let i = 0; i < target; i++) {
-            const variant = alphabet[i] || String(i + 1);
+            const variant = (schoolJenjang === 'TK' && (grade === -1 || grade === 0))
+                ? String(i + 1)
+                : (alphabet[i] || String(i + 1));
             const existing = existingByVariant[variant];
             classrooms.push({
-                name: (existing && existing.name) ? existing.name : `Kelas ${grade}${variant}`,
+                name: (existing && existing.name) ? existing.name : buildClassroomName(grade, variant),
                 grade_level: grade,
                 variant: variant,
                 capacity: existing ? existing.capacity : null,

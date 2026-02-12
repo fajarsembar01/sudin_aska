@@ -3370,6 +3370,10 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
     copies its aspects to generated rooms (e.g., "Ruang Kelas 1A").
     """
     import re  # Import at function level for regex operations
+
+    tk_variant_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s+([AB])\s*\d+\s*$", re.IGNORECASE)
+    tk_base_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s*$", re.IGNORECASE)
+    numeric_variant_pattern = re.compile(r"\bKelas\s+-?\d+[A-Z]+$", re.IGNORECASE)
     
     classrooms = list_school_classrooms(school_id, active_only=True)
     if not classrooms:
@@ -3380,7 +3384,7 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                 WHERE school_id = %s
                 AND room_id IN (
                     SELECT id FROM portal_rooms
-                    WHERE name ~ E'Kelas\\\\s+-?\\\\d+[A-Z]+'
+                    WHERE name ~ E'Kelas\\\\s+-?\\\\d+[A-Z]+' OR name ~ E'Kelas\\\\s+TK\\\\s+[AB]\\\\d+'
                 )
             """, (school_id,))
         return
@@ -3388,8 +3392,11 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
     # Include inactive rooms so we can revive old variants instead of colliding on insert
     all_rooms = list_portal_rooms(active_only=False)
 
+    def _is_variant_name(room_name: str) -> bool:
+        return bool(numeric_variant_pattern.search(room_name or "") or tk_variant_pattern.match(room_name or ""))
+
     def _room_grade(room_name: str) -> Optional[int]:
-        m = re.search(r"\bKelas\s+(\d+)", room_name or "", flags=re.IGNORECASE)
+        m = re.search(r"\bKelas\s+(-?\d+)", room_name or "", flags=re.IGNORECASE)
         if not m:
             return None
         try:
@@ -3397,13 +3404,41 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
         except (TypeError, ValueError):
             return None
 
+    def _tk_base_label(grade_int: int) -> Optional[str]:
+        if grade_int == -1:
+            return "Kelas TK A"
+        if grade_int == 0:
+            return "Kelas TK B"
+        return None
+
+    def _build_room_name(grade_int: int, variant: str | None) -> str:
+        tk_label = _tk_base_label(grade_int)
+        if tk_label:
+            return f"{tk_label}{variant or ''}".strip()
+        base_room = template_by_grade.get(grade_int)
+        base_name = (base_room or {}).get("name") or f"Ruang Kelas {grade_int}"
+        return f"{base_name}{variant or ''}".strip()
+
+    def _normalize_tk_variant(grade_int: int, variant: str) -> str:
+        if grade_int in (-1, 0) and variant and not variant.isdigit():
+            if len(variant) == 1 and variant.isalpha():
+                return str(ord(variant) - ord("A") + 1)
+        return variant
+
     # Map grade -> base room, plus fallback template for missing grades
     template_by_grade: Dict[int, Dict[str, Any]] = {}
     fallback_template: Optional[Dict[str, Any]] = None
     for room in all_rooms:
         name_val = room.get("name") or ""
-        # Skip variant names like "Ruang Kelas 1A" when choosing template
-        if re.search(r"\bKelas\s+\d+[A-Z]+$", name_val, flags=re.IGNORECASE):
+        # Map base TK room as template for TK A/B
+        if tk_base_pattern.match(name_val):
+            template_by_grade.setdefault(-1, room)
+            template_by_grade.setdefault(0, room)
+            if not fallback_template:
+                fallback_template = room
+            continue
+        # Skip variant names like "Ruang Kelas 1A" or "Kelas TK A1" when choosing template
+        if _is_variant_name(name_val):
             continue
         grade = _room_grade(name_val)
         if grade is not None and grade not in template_by_grade:
@@ -3433,7 +3468,10 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
             if not base_room:
                 # Create a base template for this grade using fallback styling (aspects/category/etc).
                 template_source = fallback_template
-                base_name = f"Ruang Kelas {grade_int}"
+                if grade_int in (-1, 0):
+                    base_name = "Ruang Kelas TK"
+                else:
+                    base_name = f"Ruang Kelas {grade_int}"
                 base_cat = (template_source or {}).get("category") or "akademik"
                 base_desc = (template_source or {}).get("description")
                 base_sort = (template_source or {}).get("sort_order") or 0
@@ -3449,6 +3487,9 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                 )
                 new_base = dict(cur.fetchone())
                 template_by_grade[grade_int] = new_base
+                if grade_int in (-1, 0):
+                    template_by_grade[-1] = new_base
+                    template_by_grade[0] = new_base
                 room_by_name[base_name.lower()] = new_base
                 base_room = new_base
 
@@ -3469,9 +3510,9 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                         ),
                     )
 
-            variant = (cls.get("variant") or "").strip().upper()
-            base_name = base_room.get("name") or f"Kelas {grade_int}"
-            target_name = f"{base_name}{variant}" if variant else base_name
+            raw_variant = (cls.get("variant") or "").strip().upper()
+            variant = _normalize_tk_variant(grade_int, raw_variant)
+            target_name = _build_room_name(grade_int, variant)
 
             # Debug logging to track variant room creation
             from flask import current_app
@@ -3566,14 +3607,16 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
     configured_room_names = set()
     for cls in classrooms:
         grade = cls.get("grade_level")
-        variant = (cls.get("variant") or "").strip().upper()
-        if grade is not None and variant:
-            try:
-                grade_int = int(grade)
-                base_name = f"Ruang Kelas {grade_int}"
-                configured_room_names.add(f"{base_name}{variant}")
-            except (TypeError, ValueError):
-                continue
+        if grade is None:
+            continue
+        try:
+            grade_int = int(grade)
+        except (TypeError, ValueError):
+            continue
+        raw_variant = (cls.get("variant") or "").strip().upper()
+        variant = _normalize_tk_variant(grade_int, raw_variant)
+        if variant:
+            configured_room_names.add(_build_room_name(grade_int, variant))
     
     # Get all variant rooms currently assigned to this school
     with get_cursor() as cur:
@@ -3582,7 +3625,7 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
             FROM portal_school_rooms sr
             JOIN portal_rooms r ON r.id = sr.room_id
             WHERE sr.school_id = %s
-            AND r.name ~ E'Kelas\\\\s+-?\\\\d+[A-Z]+'
+            AND (r.name ~ E'Kelas\\\\s+-?\\\\d+[A-Z]+' OR r.name ~ E'Kelas\\\\s+TK\\\\s+[AB]\\\\d+')
         """, (school_id,))
         
         assigned_variant_rooms = cur.fetchall()

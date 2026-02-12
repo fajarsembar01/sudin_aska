@@ -605,7 +605,14 @@ def _expected_grade_levels(jenjang: str | None) -> list[int]:
 
 def _classroom_grade_from_name(name: str) -> int | None:
     """Extract grade number from classroom name (supports variants like 5A)."""
-    match = re.search(r"\bKelas\s+(-?\d+)", name or "", flags=re.IGNORECASE)
+    if not name:
+        return None
+    match = re.search(r"\bKelas\s+TK\s+([AB])\s*\d+\b", name, flags=re.IGNORECASE)
+    if match:
+        return -1 if match.group(1).upper() == "A" else 0
+    if re.search(r"\bKelas\s+TK\b", name, flags=re.IGNORECASE):
+        return -1
+    match = re.search(r"\bKelas\s+(-?\d+)", name, flags=re.IGNORECASE)
     if not match:
         return None
     try:
@@ -622,6 +629,7 @@ def _is_classroom_variant(name: str) -> bool:
             name or "",
             flags=re.IGNORECASE,
         )
+        or re.match(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s+[AB]\s*\d+\s*$", name or "", flags=re.IGNORECASE)
     )
 
 
@@ -632,6 +640,8 @@ def _classroom_band_for_grade(grade: int) -> list[int]:
         return list(range(7, 10))
     if grade == 10:
         return list(range(10, 13))
+    if grade in (-1, 0):
+        return [-1, 0]
     return [grade]
 
 
@@ -1104,6 +1114,11 @@ def sekolah_home() -> Response:
 def _filter_assessment_rooms(rooms: list[dict]) -> list[dict]:
     """Filter rooms to hide base kelas when variant rooms exist."""
     def _grade_and_variant(name: str) -> tuple[int | None, str | None]:
+        match = re.search(r"\bKelas\s+TK\s+([AB])\s*(\d+)\b", name or "", flags=re.IGNORECASE)
+        if match:
+            grade = -1 if match.group(1).upper() == "A" else 0
+            variant = match.group(2).strip() or None
+            return grade, variant
         match = re.search(r"\bKelas\s+(\d+)(\s*[A-Za-z]+)?$", name or "", flags=re.IGNORECASE)
         if not match:
             return None, None
@@ -2318,6 +2333,9 @@ def sekolah_rooms() -> Response:
         try:
             g = int(cls.get("grade_level"))
             variant = (cls.get("variant") or "").strip().upper()
+            if g in (-1, 0) and variant and not variant.isdigit():
+                if len(variant) == 1 and variant.isalpha():
+                    variant = str(ord(variant) - ord("A") + 1)
             if variant:  # Only add if there's a variant
                 classroom_variants.add((g, variant))
             classroom_grades.add(g)
@@ -2344,11 +2362,16 @@ def sekolah_rooms() -> Response:
 
     # Categorize rooms by grade number (so SD tab doesn't show kelas 10-12)
     # Regex patterns to match classroom names (support negative grades for PAUD/TK)
+    tk_variant_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s+([AB])\s*(\d+)\s*$", re.IGNORECASE)
+    tk_base_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s*$", re.IGNORECASE)
     variant_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+(-?\d+)\s*([A-Za-z]+)\s*$", re.IGNORECASE)
     base_pattern = re.compile(r"\bKelas\s+(-?\d+)\b", re.IGNORECASE)
 
     def _room_grade(room: dict) -> int | None:
         name_val = room.get("name") or ""
+        m = tk_variant_pattern.match(name_val)
+        if m:
+            return -1 if m.group(1).upper() == "A" else 0
         m = variant_pattern.match(name_val) or base_pattern.search(name_val)
         if not m:
             return None
@@ -2358,11 +2381,15 @@ def sekolah_rooms() -> Response:
             return None
 
     def _is_variant_class(name: str) -> bool:
-        return bool(variant_pattern.match(name or ""))
+        return bool(variant_pattern.match(name or "") or tk_variant_pattern.match(name or ""))
+
     
     def _room_variant(room: dict) -> str | None:
         """Extract variant letter from room name (e.g., 'A' from 'Ruang Kelas 1A')."""
         name_val = room.get("name") or ""
+        m = tk_variant_pattern.match(name_val)
+        if m and m.group(2):
+            return m.group(2).strip()
         m = variant_pattern.match(name_val)
         if not m or not m.group(2):
             return None
@@ -2416,7 +2443,7 @@ def sekolah_rooms() -> Response:
             variant = _room_variant(r)
             
             # Check if this exact (grade, variant) pair is configured
-            is_exact_match = (g, variant) in classroom_variants if (g and variant) else False
+            is_exact_match = (g, variant) in classroom_variants if (g is not None and variant) else False
             is_saved = r.get("id") in saved_room_ids
             should_skip = not is_exact_match and not is_saved
             
@@ -3630,6 +3657,12 @@ def admin_setup() -> Response:
         )
 
     def _room_grade(name: str) -> int | None:
+        if re.search(r"\bKelas\s+TK\s+A\s*\d+\b", name or "", flags=re.IGNORECASE):
+            return -1
+        if re.search(r"\bKelas\s+TK\s+B\s*\d+\b", name or "", flags=re.IGNORECASE):
+            return 0
+        if re.search(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s*$", name or "", flags=re.IGNORECASE):
+            return -1
         m = re.search(r"\bKelas\s+(\d+)", name or "", flags=re.IGNORECASE)
         if not m:
             return None
@@ -3640,7 +3673,10 @@ def admin_setup() -> Response:
 
     def _is_variant_class(name: str) -> bool:
         # Detect names like "Ruang Kelas 1A" "Ruang Kelas 1B" etc.
-        return bool(re.search(r"^Ruang\\s+Kelas\\s+\\d+\\s*[A-Za-z]+$", name or "", flags=re.IGNORECASE))
+        return bool(
+            re.search(r"^Ruang\\s+Kelas\\s+\\d+\\s*[A-Za-z]+$", name or "", flags=re.IGNORECASE)
+            or re.search(r"^\\s*(?:Ruang\\s+)?Kelas\\s+TK\\s+[AB]\\s*\\d+$", name or "", flags=re.IGNORECASE)
+        )
 
     # Build base rooms: keep non-class rooms and only one representative per jenjang band (SD=1, SMP=7, SMA=10)
     base_rooms = []
@@ -3650,6 +3686,7 @@ def admin_setup() -> Response:
         grade = _room_grade(name)
         is_variant = _is_variant_class(name)
         templ = None
+        is_tk_base = bool(re.search(r"^\\s*(?:Ruang\\s+)?Kelas\\s+TK\\s*$", name or "", flags=re.IGNORECASE))
         if grade is not None:
             if grade <= 6:
                 templ = 1
@@ -3661,6 +3698,8 @@ def admin_setup() -> Response:
         should_keep = False
         if grade is None:
             should_keep = True  # non-class room
+        elif is_tk_base:
+            should_keep = True
         elif templ in (1, 7, 10) and grade == templ and not is_variant:
             should_keep = True  # representative per band
 
