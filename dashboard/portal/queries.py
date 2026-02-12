@@ -1967,15 +1967,43 @@ def update_school_rooms(
     """
     aspect_map = aspect_map or {}
     with get_cursor(commit=True) as cur:
-        # Remove existing rooms (cascade removes aspect selections)
+        # Deduplicate while preserving order
+        deduped_room_ids = list(dict.fromkeys(room_ids))
+
+        # Fetch existing school rooms to avoid full delete (prevents wiping drafts)
         cur.execute(
-            "DELETE FROM portal_school_rooms WHERE school_id = %s",
+            """
+            SELECT id, room_id
+            FROM portal_school_rooms
+            WHERE school_id = %s
+            """,
             (school_id,),
         )
+        existing_rows = cur.fetchall()
+        existing_map: Dict[int, int] = {row["room_id"]: row["id"] for row in existing_rows}
+
+        selected_set = set(deduped_room_ids)
+        existing_set = set(existing_map.keys())
+
+        # Remove rooms that are no longer selected
+        removed_room_ids = [rid for rid in existing_set if rid not in selected_set]
+        if removed_room_ids:
+            cur.execute(
+                """
+                DELETE FROM portal_school_rooms
+                WHERE school_id = %s AND room_id = ANY(%s)
+                """,
+                (school_id, removed_room_ids),
+            )
 
         # Add rooms and collect mapping to school_room_id
         room_map: Dict[int, int] = {}
-        for rid in room_ids:
+        for rid in deduped_room_ids:
+            existing_sr_id = existing_map.get(rid)
+            if existing_sr_id:
+                room_map[rid] = existing_sr_id
+                continue
+
             cur.execute(
                 """
                 INSERT INTO portal_school_rooms (school_id, room_id)
@@ -1988,6 +2016,16 @@ def update_school_rooms(
             room_map[rid] = sr_id
 
         if room_map:
+            # Reset aspect selections for the selected rooms only
+            selected_school_room_ids = list(room_map.values())
+            cur.execute(
+                """
+                DELETE FROM portal_school_room_aspects
+                WHERE school_room_id = ANY(%s)
+                """,
+                (selected_school_room_ids,),
+            )
+
             # Required aspects per room
             cur.execute(
                 """
@@ -1995,7 +2033,7 @@ def update_school_rooms(
                 FROM portal_aspects
                 WHERE room_id = ANY(%s) AND is_required = TRUE
                 """,
-                ([rid for rid in room_ids],),
+                ([rid for rid in room_map.keys()],),
             )
             required_by_room: Dict[int, List[int]] = {}
             for row in cur.fetchall():
@@ -2020,7 +2058,7 @@ def update_school_rooms(
                     aspect_values,
                 )
 
-        return len(room_ids)
+        return len(deduped_room_ids)
 
 
 def list_all_staff() -> List[Dict[str, Any]]:
