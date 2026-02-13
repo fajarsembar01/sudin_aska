@@ -5,6 +5,7 @@ import os
 from dotenv import load_dotenv
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler
 
+from db import save_chat
 from telegram_admin_commands import (
     admin_pending,
     admin_approve,
@@ -25,6 +26,13 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 async def notif_start(update, context):
+    user = update.effective_user
+    message_obj = update.effective_message
+    if user:
+        username = user.username or user.first_name or "admin"
+        text = message_obj.text if message_obj else "/start"
+        save_chat(user.id, username, text, role="user", topic=None)
+
     message = (
         "Halo! Ini bot notifikasi admin ASKA.\n"
         "Gunakan /pending untuk daftar akun menunggu verifikasi.\n"

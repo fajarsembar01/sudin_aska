@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Iterable, Optional
 import logging
 
-from telegram import Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 from db import save_chat
@@ -16,6 +16,10 @@ from dashboard.queries import (
     delete_telegram_notification_group_by_chat_id,
 )
 from dashboard.daftar_tamu.queries import get_transaction_detail, update_transaction_status
+from dashboard.telegram_notifications import (
+    notify_guestbook_status_update,
+    notify_verification_status_update,
+)
 
 
 def _normalize_username(username: Optional[str]) -> Optional[str]:
@@ -44,6 +48,10 @@ async def _finalize_callback(
     status_label: str,
     actor_name: Optional[str],
     actor_username: Optional[str],
+    *,
+    summary_text: Optional[str] = None,
+    detail_lines: Optional[Iterable[str]] = None,
+    reply_markup: Optional[InlineKeyboardMarkup] = None,
 ) -> None:
     logger = logging.getLogger("telegram.admin")
     message = query.message
@@ -55,23 +63,85 @@ async def _finalize_callback(
         suffix_actor = f" oleh @{actor_username}"
     else:
         suffix_actor = ""
-    if message and message.text:
-        suffix = f"\n\nStatus: {status_label}{suffix_actor}"
-        if suffix not in message.text:
-            new_text = message.text + suffix
+
+    lines = []
+    if summary_text:
+        lines.append(summary_text.strip())
+    lines.append(f"Status: {status_label}{suffix_actor}")
+    for raw in detail_lines or []:
+        clean = (raw or "").strip()
+        if clean:
+            lines.append(clean)
+    final_text = "\n".join(lines).strip() or f"Status: {status_label}{suffix_actor}"
+
+    if message:
+        try:
+            await message.reply_text(final_text, reply_markup=reply_markup)
             try:
-                await query.edit_message_text(new_text)
-                return
+                await message.delete()
             except Exception:
-                logger.exception("Gagal edit pesan callback.")
-                pass
+                logger.exception("Gagal menghapus pesan callback lama.")
+            return
+        except Exception:
+            logger.exception("Gagal mengirim pesan status baru callback.")
+            pass
+
+    if message and message.text:
+        try:
+            await query.edit_message_text(final_text, reply_markup=reply_markup)
+            return
+        except Exception:
+            logger.exception("Gagal edit pesan callback.")
+            pass
+
     try:
         await query.edit_message_reply_markup(reply_markup=None)
     except Exception:
         logger.exception("Gagal menghapus reply markup.")
         pass
     if message:
-        await message.reply_text(f"Status: {status_label}{suffix_actor}")
+        await message.reply_text(final_text, reply_markup=reply_markup)
+
+
+def _extract_photo_button_markup(
+    existing_markup: Optional[InlineKeyboardMarkup],
+) -> Optional[InlineKeyboardMarkup]:
+    if not existing_markup:
+        return None
+
+    photo_rows = []
+    for row in existing_markup.inline_keyboard or []:
+        photo_buttons = []
+        for button in row:
+            text = (getattr(button, "text", None) or "").strip()
+            url = (getattr(button, "url", None) or "").strip()
+            if not text or not url:
+                continue
+            if "foto" not in text.lower() and "photo" not in text.lower():
+                continue
+            photo_buttons.append(InlineKeyboardButton(text=text, url=url))
+        if photo_buttons:
+            photo_rows.append(photo_buttons)
+
+    if not photo_rows:
+        return None
+    return InlineKeyboardMarkup(photo_rows)
+
+
+def _extract_photo_url(
+    existing_markup: Optional[InlineKeyboardMarkup],
+) -> Optional[str]:
+    if not existing_markup:
+        return None
+    for row in existing_markup.inline_keyboard or []:
+        for button in row:
+            text = (getattr(button, "text", None) or "").strip()
+            url = (getattr(button, "url", None) or "").strip()
+            if not text or not url:
+                continue
+            if "foto" in text.lower() or "photo" in text.lower():
+                return url
+    return None
 
 
 def _authorize_admin(update: Update) -> Optional[dict]:
@@ -335,8 +405,27 @@ async def handle_verification_callback(update: Update, context: ContextTypes.DEF
 
         actor_username = _normalize_username(getattr(query.from_user, "username", None))
         actor_name = admin.get("admin_name") or admin.get("admin_email")
+        source_chat_id = getattr(query.message, "chat_id", None)
         await query.answer(f"{status_label}!", show_alert=False)
-        await _finalize_callback(query, status_label, actor_name, actor_username)
+        try:
+            notify_verification_status_update(
+                user_id=user_id,
+                full_name=user.get("full_name"),
+                status_label=status_label,
+                actor_name=actor_name,
+                actor_username=actor_username,
+                exclude_chat_ids={int(source_chat_id)} if source_chat_id is not None else None,
+            )
+        except Exception:
+            logger.exception("Gagal mengirim broadcast update verifikasi akun.")
+        await _finalize_callback(
+            query,
+            status_label,
+            actor_name,
+            actor_username,
+            summary_text=f"Permintaan verifikasi akun ID {user_id} telah diproses.",
+            detail_lines=[f"Nama: {user.get('full_name') or '-'}"],
+        )
     except Exception:
         logger.exception("Error tidak terduga pada callback.")
         try:
@@ -422,8 +511,32 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
 
         actor_username = _normalize_username(getattr(query.from_user, "username", None))
         actor_name = admin.get("admin_name") or admin.get("admin_email")
+        source_chat_id = getattr(query.message, "chat_id", None)
+        existing_markup = getattr(query.message, "reply_markup", None)
+        photo_markup = _extract_photo_button_markup(existing_markup)
+        photo_url = _extract_photo_url(existing_markup)
         await query.answer(f"{status_label}!", show_alert=False)
-        await _finalize_callback(query, status_label, actor_name, actor_username)
+        try:
+            notify_guestbook_status_update(
+                transaction_id=tx_id,
+                school_name=detail.get("school_name"),
+                status_label=status_label,
+                actor_name=actor_name,
+                actor_username=actor_username,
+                photo_url=photo_url,
+                exclude_chat_ids={int(source_chat_id)} if source_chat_id is not None else None,
+            )
+        except Exception:
+            logger.exception("Gagal mengirim broadcast update buku tamu.")
+        await _finalize_callback(
+            query,
+            status_label,
+            actor_name,
+            actor_username,
+            summary_text=f"Permintaan verifikasi buku tamu ID {tx_id} telah diproses.",
+            detail_lines=[f"Sekolah: {detail.get('school_name') or '-'}"],
+            reply_markup=photo_markup,
+        )
     except Exception:
         logger.exception("Error tidak terduga pada guestbook callback.")
         try:

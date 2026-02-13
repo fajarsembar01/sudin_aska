@@ -4,7 +4,7 @@ import os
 import json
 import urllib.parse
 import urllib.request
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from .db_access import get_cursor
 from .queries import fetch_telegram_notification_settings, list_telegram_notification_groups
@@ -53,6 +53,145 @@ def _send_telegram_message(
     req = urllib.request.Request(url, data=payload.encode("utf-8"), method="POST")
     with urllib.request.urlopen(req, timeout=8) as resp:  # nosec - external API call
         return 200 <= resp.status < 300
+
+
+def _broadcast_notification(
+    *,
+    text: str,
+    reply_markup: Optional[dict] = None,
+    exclude_chat_ids: Optional[Set[int]] = None,
+) -> Dict[str, Any]:
+    token = _resolve_bot_token()
+    if not token:
+        return {"sent": 0, "group_sent": 0, "skipped": "token_missing"}
+
+    recipients = _list_admin_recipients()
+    groups = list_telegram_notification_groups()
+
+    sent = 0
+    missing: List[str] = []
+    for recipient in recipients:
+        telegram_user_id = recipient.get("telegram_user_id")
+        if not telegram_user_id:
+            missing.append(recipient.get("telegram_username") or "")
+            continue
+        target_chat_id = int(telegram_user_id)
+        if exclude_chat_ids and target_chat_id in exclude_chat_ids:
+            continue
+        try:
+            if _send_telegram_message(
+                token,
+                target_chat_id,
+                text,
+                reply_markup=reply_markup,
+            ):
+                sent += 1
+        except Exception:
+            continue
+
+    group_sent = 0
+    for group in groups:
+        chat_id = group.get("chat_id")
+        if not chat_id:
+            continue
+        target_chat_id = int(chat_id)
+        if exclude_chat_ids and target_chat_id in exclude_chat_ids:
+            continue
+        try:
+            if _send_telegram_message(
+                token,
+                target_chat_id,
+                text,
+                reply_markup=reply_markup,
+            ):
+                group_sent += 1
+        except Exception:
+            continue
+
+    return {
+        "sent": sent,
+        "group_sent": group_sent,
+        "missing_usernames": [name for name in missing if name],
+        "total_admins": len(recipients),
+        "total_groups": len(groups),
+    }
+
+
+def notify_verification_status_update(
+    *,
+    user_id: int,
+    full_name: Optional[str],
+    status_label: str,
+    actor_name: Optional[str],
+    actor_username: Optional[str],
+    exclude_chat_ids: Optional[Set[int]] = None,
+) -> Dict[str, Any]:
+    actor_display = "-"
+    if actor_name and actor_username:
+        actor_display = f"{actor_name} (@{actor_username})"
+    elif actor_name:
+        actor_display = actor_name
+    elif actor_username:
+        actor_display = f"@{actor_username}"
+
+    timestamp = to_jakarta(current_jakarta_time())
+    time_label = timestamp.strftime("%d %b %Y, %H:%M") if timestamp else ""
+
+    lines = [
+        "Update verifikasi akun",
+        f"ID: {user_id}",
+        f"Nama: {full_name or '-'}",
+        f"Status: {status_label}",
+        f"Diverifikasi oleh: {actor_display}",
+    ]
+    if time_label:
+        lines.append(f"Waktu: {time_label}")
+    return _broadcast_notification(
+        text="\n".join(lines),
+        exclude_chat_ids=exclude_chat_ids,
+    )
+
+
+def notify_guestbook_status_update(
+    *,
+    transaction_id: int,
+    school_name: Optional[str],
+    status_label: str,
+    actor_name: Optional[str],
+    actor_username: Optional[str],
+    photo_url: Optional[str] = None,
+    exclude_chat_ids: Optional[Set[int]] = None,
+) -> Dict[str, Any]:
+    actor_display = "-"
+    if actor_name and actor_username:
+        actor_display = f"{actor_name} (@{actor_username})"
+    elif actor_name:
+        actor_display = actor_name
+    elif actor_username:
+        actor_display = f"@{actor_username}"
+
+    timestamp = to_jakarta(current_jakarta_time())
+    time_label = timestamp.strftime("%d %b %Y, %H:%M") if timestamp else ""
+
+    lines = [
+        "Update verifikasi buku tamu",
+        f"ID: {transaction_id}",
+        f"Sekolah: {school_name or '-'}",
+        f"Status: {status_label}",
+        f"Diverifikasi oleh: {actor_display}",
+    ]
+    if time_label:
+        lines.append(f"Waktu: {time_label}")
+
+    reply_markup = None
+    if photo_url:
+        reply_markup = {"inline_keyboard": [[{"text": "🖼️ Lihat Foto", "url": photo_url}]]}
+
+    return _broadcast_notification(
+        text="\n".join(lines),
+        reply_markup=reply_markup,
+        exclude_chat_ids=exclude_chat_ids,
+    )
 
 
 def _build_verification_keyboard(user_id: int) -> dict:
