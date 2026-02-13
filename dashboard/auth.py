@@ -166,6 +166,32 @@ def _redirect_after_login(user: dict, fallback: Optional[str] = None) -> str:
         return url_for("auth.login")
 
 
+def _get_login_block_feedback(user: dict) -> Optional[tuple[str, str]]:
+    """Return flash message/category when user status is not allowed to login."""
+    status = (user.get("account_status") or "approved").strip().lower()
+    if status == "approved":
+        return None
+    if status == "pending":
+        return (
+            "Akun Anda masih menunggu verifikasi admin. Silakan hubungi admin wilayah.",
+            "warning",
+        )
+    if status == "rejected":
+        return (
+            "Akun Anda belum dapat digunakan karena pengajuan ditolak. Silakan hubungi admin wilayah.",
+            "danger",
+        )
+    if status in {"suspended", "disabled"}:
+        return (
+            "Akun Anda sedang dinonaktifkan. Silakan hubungi admin wilayah.",
+            "danger",
+        )
+    return (
+        "Akun Anda belum dapat digunakan saat ini. Silakan hubungi admin wilayah.",
+        "danger",
+    )
+
+
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register() -> Response:
@@ -385,6 +411,12 @@ def login() -> Response:
             flash("Email belum terdaftar. Hubungi admin untuk membuat akun.", "danger")
             return render_template("login.html", email=email, coordinator_contacts=coordinator_contacts)
 
+        login_block = _get_login_block_feedback(user)
+        if login_block:
+            message, category = login_block
+            flash(message, category)
+            return render_template("login.html", email=email, coordinator_contacts=coordinator_contacts)
+
         if not check_password_hash(user["password_hash"], password):
             flash("Salah password, hubungi admin untuk reset akses.", "danger")
             return render_template("login.html", email=email, coordinator_contacts=coordinator_contacts)
@@ -474,6 +506,12 @@ def google_callback() -> Response:
     user = get_user_by_email(email)
     if not user:
         flash("Email tersebut belum terdaftar pada dashboard. Hubungi admin untuk mendapatkan akses.", "danger")
+        return redirect(url_for("auth.login"))
+
+    login_block = _get_login_block_feedback(user)
+    if login_block:
+        message, category = login_block
+        flash(message, category)
         return redirect(url_for("auth.login"))
 
     _establish_session(user, remember=True, email_override=email)

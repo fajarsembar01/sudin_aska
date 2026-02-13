@@ -1694,7 +1694,8 @@ def get_user_by_email(email: str) -> Optional[DictRow]:
                 degree_suffix,
                 no_tester_enabled,
                 assigned_class_id,
-                last_login_at
+                last_login_at,
+                COALESCE(account_status, 'approved') AS account_status
             FROM dashboard_users
             WHERE email = %s
             LIMIT 1
