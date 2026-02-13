@@ -1967,15 +1967,43 @@ def update_school_rooms(
     """
     aspect_map = aspect_map or {}
     with get_cursor(commit=True) as cur:
-        # Remove existing rooms (cascade removes aspect selections)
+        # Deduplicate while preserving order
+        deduped_room_ids = list(dict.fromkeys(room_ids))
+
+        # Fetch existing school rooms to avoid full delete (prevents wiping drafts)
         cur.execute(
-            "DELETE FROM portal_school_rooms WHERE school_id = %s",
+            """
+            SELECT id, room_id
+            FROM portal_school_rooms
+            WHERE school_id = %s
+            """,
             (school_id,),
         )
+        existing_rows = cur.fetchall()
+        existing_map: Dict[int, int] = {row["room_id"]: row["id"] for row in existing_rows}
+
+        selected_set = set(deduped_room_ids)
+        existing_set = set(existing_map.keys())
+
+        # Remove rooms that are no longer selected
+        removed_room_ids = [rid for rid in existing_set if rid not in selected_set]
+        if removed_room_ids:
+            cur.execute(
+                """
+                DELETE FROM portal_school_rooms
+                WHERE school_id = %s AND room_id = ANY(%s)
+                """,
+                (school_id, removed_room_ids),
+            )
 
         # Add rooms and collect mapping to school_room_id
         room_map: Dict[int, int] = {}
-        for rid in room_ids:
+        for rid in deduped_room_ids:
+            existing_sr_id = existing_map.get(rid)
+            if existing_sr_id:
+                room_map[rid] = existing_sr_id
+                continue
+
             cur.execute(
                 """
                 INSERT INTO portal_school_rooms (school_id, room_id)
@@ -1988,6 +2016,16 @@ def update_school_rooms(
             room_map[rid] = sr_id
 
         if room_map:
+            # Reset aspect selections for the selected rooms only
+            selected_school_room_ids = list(room_map.values())
+            cur.execute(
+                """
+                DELETE FROM portal_school_room_aspects
+                WHERE school_room_id = ANY(%s)
+                """,
+                (selected_school_room_ids,),
+            )
+
             # Required aspects per room
             cur.execute(
                 """
@@ -1995,7 +2033,7 @@ def update_school_rooms(
                 FROM portal_aspects
                 WHERE room_id = ANY(%s) AND is_required = TRUE
                 """,
-                ([rid for rid in room_ids],),
+                ([rid for rid in room_map.keys()],),
             )
             required_by_room: Dict[int, List[int]] = {}
             for row in cur.fetchall():
@@ -2020,7 +2058,7 @@ def update_school_rooms(
                     aspect_values,
                 )
 
-        return len(room_ids)
+        return len(deduped_room_ids)
 
 
 def list_all_staff() -> List[Dict[str, Any]]:
@@ -2851,7 +2889,7 @@ def get_staff_assigned_schools(staff_id: int) -> List[Dict[str, Any]]:
 
 
 def list_all_staff_assignments_overview() -> List[Dict[str, Any]]:
-    """List all staff-school assignments with latest assessment status."""
+    """List all staff/coordinator school assignments with latest assessment status."""
     with get_cursor() as cur:
         cur.execute(
             """
@@ -2862,6 +2900,7 @@ def list_all_staff_assignments_overview() -> List[Dict[str, Any]]:
                 u.id as staff_id,
                 u.full_name as staff_name,
                 u.email as staff_email,
+                u.role as staff_role,
                 s.id as school_id,
                 s.npsn,
                 s.name as school_name,
@@ -2891,7 +2930,7 @@ def list_all_staff_assignments_overview() -> List[Dict[str, Any]]:
                 ORDER BY a.created_at DESC
                 LIMIT 1
             ) draft_assessment ON TRUE
-            WHERE u.role = 'staff'
+            WHERE u.role IN ('staff', 'coordinator')
               AND u.account_status = 'approved'
               AND s.active = TRUE
             ORDER BY ssa.assigned_at DESC NULLS LAST, u.full_name, s.name
@@ -2949,7 +2988,7 @@ def remove_staff_school_assignment(staff_id: int, school_id: int) -> bool:
 
 
 def list_all_staff_with_assignments() -> List[Dict[str, Any]]:
-    """List all staff members with their assigned schools count (for admin management)."""
+    """List staff/coordinator members with their assigned schools count (for admin management)."""
     with get_cursor() as cur:
         cur.execute(
             """
@@ -2958,6 +2997,7 @@ def list_all_staff_with_assignments() -> List[Dict[str, Any]]:
                 u.email,
                 u.full_name,
                 u.nip,
+                u.role,
                 u.jabatan,
                 u.created_at,
                 u.last_login_at,
@@ -2966,8 +3006,8 @@ def list_all_staff_with_assignments() -> List[Dict[str, Any]]:
             FROM dashboard_users u
             LEFT JOIN staff_school_assignments ssa ON u.id = ssa.staff_id
             LEFT JOIN portal_schools s ON ssa.school_id = s.id AND s.active = TRUE
-            WHERE u.role = 'staff' AND u.account_status = 'approved'
-            GROUP BY u.id, u.email, u.full_name, u.nip, u.jabatan, u.created_at, u.last_login_at
+            WHERE u.role IN ('staff', 'coordinator') AND u.account_status = 'approved'
+            GROUP BY u.id, u.email, u.full_name, u.nip, u.role, u.jabatan, u.created_at, u.last_login_at
             ORDER BY u.full_name
             """
         )
@@ -3368,6 +3408,10 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
     copies its aspects to generated rooms (e.g., "Ruang Kelas 1A").
     """
     import re  # Import at function level for regex operations
+
+    tk_variant_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s+([AB])\s*\d+\s*$", re.IGNORECASE)
+    tk_base_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s*$", re.IGNORECASE)
+    numeric_variant_pattern = re.compile(r"\bKelas\s+-?\d+[A-Z]+$", re.IGNORECASE)
     
     classrooms = list_school_classrooms(school_id, active_only=True)
     if not classrooms:
@@ -3378,7 +3422,7 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                 WHERE school_id = %s
                 AND room_id IN (
                     SELECT id FROM portal_rooms
-                    WHERE name ~ E'Kelas\\\\s+-?\\\\d+[A-Z]+'
+                    WHERE name ~ E'Kelas\\\\s+-?\\\\d+[A-Z]+' OR name ~ E'Kelas\\\\s+TK\\\\s+[AB]\\\\d+'
                 )
             """, (school_id,))
         return
@@ -3386,8 +3430,11 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
     # Include inactive rooms so we can revive old variants instead of colliding on insert
     all_rooms = list_portal_rooms(active_only=False)
 
+    def _is_variant_name(room_name: str) -> bool:
+        return bool(numeric_variant_pattern.search(room_name or "") or tk_variant_pattern.match(room_name or ""))
+
     def _room_grade(room_name: str) -> Optional[int]:
-        m = re.search(r"\bKelas\s+(\d+)", room_name or "", flags=re.IGNORECASE)
+        m = re.search(r"\bKelas\s+(-?\d+)", room_name or "", flags=re.IGNORECASE)
         if not m:
             return None
         try:
@@ -3395,13 +3442,41 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
         except (TypeError, ValueError):
             return None
 
+    def _tk_base_label(grade_int: int) -> Optional[str]:
+        if grade_int == -1:
+            return "Kelas TK A"
+        if grade_int == 0:
+            return "Kelas TK B"
+        return None
+
+    def _build_room_name(grade_int: int, variant: str | None) -> str:
+        tk_label = _tk_base_label(grade_int)
+        if tk_label:
+            return f"{tk_label}{variant or ''}".strip()
+        base_room = template_by_grade.get(grade_int)
+        base_name = (base_room or {}).get("name") or f"Ruang Kelas {grade_int}"
+        return f"{base_name}{variant or ''}".strip()
+
+    def _normalize_tk_variant(grade_int: int, variant: str) -> str:
+        if grade_int in (-1, 0) and variant and not variant.isdigit():
+            if len(variant) == 1 and variant.isalpha():
+                return str(ord(variant) - ord("A") + 1)
+        return variant
+
     # Map grade -> base room, plus fallback template for missing grades
     template_by_grade: Dict[int, Dict[str, Any]] = {}
     fallback_template: Optional[Dict[str, Any]] = None
     for room in all_rooms:
         name_val = room.get("name") or ""
-        # Skip variant names like "Ruang Kelas 1A" when choosing template
-        if re.search(r"\bKelas\s+\d+[A-Z]+$", name_val, flags=re.IGNORECASE):
+        # Map base TK room as template for TK A/B
+        if tk_base_pattern.match(name_val):
+            template_by_grade.setdefault(-1, room)
+            template_by_grade.setdefault(0, room)
+            if not fallback_template:
+                fallback_template = room
+            continue
+        # Skip variant names like "Ruang Kelas 1A" or "Kelas TK A1" when choosing template
+        if _is_variant_name(name_val):
             continue
         grade = _room_grade(name_val)
         if grade is not None and grade not in template_by_grade:
@@ -3431,7 +3506,10 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
             if not base_room:
                 # Create a base template for this grade using fallback styling (aspects/category/etc).
                 template_source = fallback_template
-                base_name = f"Ruang Kelas {grade_int}"
+                if grade_int in (-1, 0):
+                    base_name = "Ruang Kelas TK"
+                else:
+                    base_name = f"Ruang Kelas {grade_int}"
                 base_cat = (template_source or {}).get("category") or "akademik"
                 base_desc = (template_source or {}).get("description")
                 base_sort = (template_source or {}).get("sort_order") or 0
@@ -3447,6 +3525,9 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                 )
                 new_base = dict(cur.fetchone())
                 template_by_grade[grade_int] = new_base
+                if grade_int in (-1, 0):
+                    template_by_grade[-1] = new_base
+                    template_by_grade[0] = new_base
                 room_by_name[base_name.lower()] = new_base
                 base_room = new_base
 
@@ -3467,9 +3548,9 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                         ),
                     )
 
-            variant = (cls.get("variant") or "").strip().upper()
-            base_name = base_room.get("name") or f"Kelas {grade_int}"
-            target_name = f"{base_name}{variant}" if variant else base_name
+            raw_variant = (cls.get("variant") or "").strip().upper()
+            variant = _normalize_tk_variant(grade_int, raw_variant)
+            target_name = _build_room_name(grade_int, variant)
 
             # Debug logging to track variant room creation
             from flask import current_app
@@ -3564,14 +3645,16 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
     configured_room_names = set()
     for cls in classrooms:
         grade = cls.get("grade_level")
-        variant = (cls.get("variant") or "").strip().upper()
-        if grade is not None and variant:
-            try:
-                grade_int = int(grade)
-                base_name = f"Ruang Kelas {grade_int}"
-                configured_room_names.add(f"{base_name}{variant}")
-            except (TypeError, ValueError):
-                continue
+        if grade is None:
+            continue
+        try:
+            grade_int = int(grade)
+        except (TypeError, ValueError):
+            continue
+        raw_variant = (cls.get("variant") or "").strip().upper()
+        variant = _normalize_tk_variant(grade_int, raw_variant)
+        if variant:
+            configured_room_names.add(_build_room_name(grade_int, variant))
     
     # Get all variant rooms currently assigned to this school
     with get_cursor() as cur:
@@ -3580,7 +3663,7 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
             FROM portal_school_rooms sr
             JOIN portal_rooms r ON r.id = sr.room_id
             WHERE sr.school_id = %s
-            AND r.name ~ E'Kelas\\\\s+-?\\\\d+[A-Z]+'
+            AND (r.name ~ E'Kelas\\\\s+-?\\\\d+[A-Z]+' OR r.name ~ E'Kelas\\\\s+TK\\\\s+[AB]\\\\d+')
         """, (school_id,))
         
         assigned_variant_rooms = cur.fetchall()

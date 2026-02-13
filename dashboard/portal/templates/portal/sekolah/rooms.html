@@ -224,23 +224,25 @@
                                         {% if room.is_required %}
                                         <input type="hidden" name="room_ids" value="{{ room.id }}">
                                         {% endif %}
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex align-items-center gap-2 mb-1">
-                                                <span class="fw-semibold">{{ display_name }}</span>
-                                                {% if room.is_required %}
-                                                <span class="badge bg-warning-subtle text-warning">Wajib</span>
-                                                {% endif %}
+                                        <div class="w-100">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <div class="fw-semibold d-flex align-items-center gap-2">
+                                                        {{ display_name }}
+                                                        {% if room.is_required %}
+                                                        <span class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <small class="text-muted">{{ room.aspects|length }} aspek
+                                                        penilaian</small>
+                                                </div>
                                                 {% if room.aspects %}
-                                                <button class="btn btn-link btn-sm p-0 text-muted" type="button"
-                                                    data-bs-toggle="collapse" data-bs-target="#aspects-{{ room.id }}"
-                                                    title="Pilih Aspek">
-                                                    <i class="bi bi-list-check"></i> Aspek
+                                                <button class="btn btn-link btn-sm p-0" type="button"
+                                                    data-bs-toggle="collapse" data-bs-target="#aspects-{{ room.id }}">
+                                                    Aspek
                                                 </button>
                                                 {% endif %}
                                             </div>
-                                            {% if room.description %}
-                                            <small class="text-muted">{{ room.description }}</small>
-                                            {% endif %}
                                             {% if room.aspects %}
                                             <div class="collapse mt-2 room-aspects" id="aspects-{{ room.id }}">
                                                 <ul class="list-unstyled mb-0 small">
@@ -322,23 +324,25 @@
                                         {% if room.is_required %}
                                         <input type="hidden" name="room_ids" value="{{ room.id }}">
                                         {% endif %}
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex align-items-center gap-2 mb-1">
-                                                <span class="fw-semibold">{{ display_name }}</span>
-                                                {% if room.is_required %}
-                                                <span class="badge bg-warning-subtle text-warning">Wajib</span>
-                                                {% endif %}
+                                        <div class="w-100">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <div class="fw-semibold d-flex align-items-center gap-2">
+                                                        {{ display_name }}
+                                                        {% if room.is_required %}
+                                                        <span class="badge bg-warning-subtle text-warning">Wajib</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <small class="text-muted">{{ room.aspects|length }} aspek
+                                                        penilaian</small>
+                                                </div>
                                                 {% if room.aspects %}
-                                                <button class="btn btn-link btn-sm p-0 text-muted" type="button"
-                                                    data-bs-toggle="collapse" data-bs-target="#aspects-{{ room.id }}"
-                                                    title="Pilih Aspek">
-                                                    <i class="bi bi-list-check"></i> Aspek
+                                                <button class="btn btn-link btn-sm p-0" type="button"
+                                                    data-bs-toggle="collapse" data-bs-target="#aspects-{{ room.id }}">
+                                                    Aspek
                                                 </button>
                                                 {% endif %}
                                             </div>
-                                            {% if room.description %}
-                                            <small class="text-muted">{{ room.description }}</small>
-                                            {% endif %}
                                             {% if room.aspects %}
                                             <div class="collapse mt-2 room-aspects" id="aspects-{{ room.id }}">
                                                 <ul class="list-unstyled mb-0 small">

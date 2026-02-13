@@ -607,7 +607,14 @@ def _expected_grade_levels(jenjang: str | None) -> list[int]:
 
 def _classroom_grade_from_name(name: str) -> int | None:
     """Extract grade number from classroom name (supports variants like 5A)."""
-    match = re.search(r"\bKelas\s+(-?\d+)", name or "", flags=re.IGNORECASE)
+    if not name:
+        return None
+    match = re.search(r"\bKelas\s+TK\s+([AB])\s*\d+\b", name, flags=re.IGNORECASE)
+    if match:
+        return -1 if match.group(1).upper() == "A" else 0
+    if re.search(r"\bKelas\s+TK\b", name, flags=re.IGNORECASE):
+        return -1
+    match = re.search(r"\bKelas\s+(-?\d+)", name, flags=re.IGNORECASE)
     if not match:
         return None
     try:
@@ -624,6 +631,7 @@ def _is_classroom_variant(name: str) -> bool:
             name or "",
             flags=re.IGNORECASE,
         )
+        or re.match(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s+[AB]\s*\d+\s*$", name or "", flags=re.IGNORECASE)
     )
 
 
@@ -634,6 +642,8 @@ def _classroom_band_for_grade(grade: int) -> list[int]:
         return list(range(7, 10))
     if grade == 10:
         return list(range(10, 13))
+    if grade in (-1, 0):
+        return [-1, 0]
     return [grade]
 
 
@@ -1067,7 +1077,7 @@ def schools() -> Response:
 @portal_bp.route("/sekolah")
 @role_required("sekolah")
 def sekolah_home() -> Response:
-    """Landing page for sekolah role (choose Buku Tamu or PANBERS)."""
+    """Landing page for sekolah role (choose Buku Tamu or PANBERSS)."""
     user = current_user()
     school = _fetch_user_school(user.get("id"))
     if not school:
@@ -1076,18 +1086,18 @@ def sekolah_home() -> Response:
     if school and school.get("name") and school.get("npsn"):
         subtitle = f"{school.get('name')} • NPSN {school.get('npsn')}"
     cards = [
-        {
-            "title": "Buku Tamu",
-            "description": "Input kunjungan tamu, foto wajib, GPS otomatis, dan pantau status verifikasi.",
-            "icon": "bi-journal-text",
-            "href": url_for("daftar_tamu.sekolah_guestbook"),
+         {
+            "title": "PANBERSS",
+            "description": "Konfigurasi ruangan untuk pemantauan kebersihan dan sarana sekolah.",
+            "icon": "bi bi-building",
+            "href": url_for("portal.sekolah_rooms"),
             "col_class": "col-md-6 col-12",
         },
         {
-            "title": "PANBERS",
-            "description": "Konfigurasi ruangan dan persiapan penilaian sekolah.",
-            "icon": "bi-sliders",
-            "href": url_for("portal.sekolah_rooms"),
+            "title": "Buku Tamu",
+            "description": "Input kunjungan tamu dan pantau status verifikasi kunjungan.",
+            "icon": "bi-person-vcard",
+            "href": url_for("daftar_tamu.sekolah_guestbook"),
             "col_class": "col-md-6 col-12",
         },
     ]
@@ -1106,6 +1116,11 @@ def sekolah_home() -> Response:
 def _filter_assessment_rooms(rooms: list[dict]) -> list[dict]:
     """Filter rooms to hide base kelas when variant rooms exist."""
     def _grade_and_variant(name: str) -> tuple[int | None, str | None]:
+        match = re.search(r"\bKelas\s+TK\s+([AB])\s*(\d+)\b", name or "", flags=re.IGNORECASE)
+        if match:
+            grade = -1 if match.group(1).upper() == "A" else 0
+            variant = match.group(2).strip() or None
+            return grade, variant
         match = re.search(r"\bKelas\s+(\d+)(\s*[A-Za-z]+)?$", name or "", flags=re.IGNORECASE)
         if not match:
             return None, None
@@ -1411,7 +1426,7 @@ def save_score(school_id: int) -> Response:
 def save_note(school_id: int) -> Response:
     """API endpoint to save room note."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff"):
+    if user.get("role") not in ("admin", "staff", "coordinator"):
         return jsonify({"success": False, "message": "Unauthorized"}), 403
     
     data = request.get_json(silent=True) or {}
@@ -1453,7 +1468,7 @@ def save_note(school_id: int) -> Response:
 def upload_photo(school_id: int) -> Response:
     """Upload a photo with GPS data."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff"):
+    if user.get("role") not in ("admin", "staff", "coordinator"):
         return jsonify({"success": False, "message": "Unauthorized"}), 403
     
     assessment_id = request.form.get("assessment_id", type=int)
@@ -1567,7 +1582,7 @@ def upload_photo(school_id: int) -> Response:
 def submit(school_id: int) -> Response:
     """Submit the assessment."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff"):
+    if user.get("role") not in ("admin", "staff", "coordinator"):
         flash("Unauthorized", "danger")
         return redirect(url_for("portal.home"))
     
@@ -1683,7 +1698,7 @@ def submit(school_id: int) -> Response:
 def save_draft(school_id: int) -> Response:
     """Explicitly save assessment as draft (no submit)."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff"):
+    if user.get("role") not in ("admin", "staff", "coordinator"):
         flash("Unauthorized", "danger")
         return redirect(url_for("portal.home"))
 
@@ -1741,7 +1756,7 @@ def request_reopen(assessment_id: int) -> Response:
     """Staff requests admin approval to reopen a submitted assessment."""
     user = current_user()
     from .queries import log_activity
-    if user.get("role") not in ("admin", "staff"):
+    if user.get("role") not in ("admin", "staff", "coordinator"):
         flash("Unauthorized", "danger")
         return redirect(url_for("portal.home"))
 
@@ -2043,7 +2058,7 @@ def view_assessment(assessment_id: int) -> Response:
 def delete_photo_route(school_id: int, photo_id: int) -> Response:
     """Delete a photo belonging to an assessment."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff"):
+    if user.get("role") not in ("admin", "staff", "coordinator"):
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     assessment_id = request.form.get("assessment_id", type=int)
@@ -2159,7 +2174,7 @@ def delete_assessment_route(assessment_id: int) -> Response:
 def delete_draft_route(assessment_id: int) -> Response:
     """Staff deletes their own draft assessment."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff"):
+    if user.get("role") not in ("admin", "staff", "coordinator"):
         flash("Unauthorized", "danger")
         return redirect(url_for("portal.home"))
 
@@ -2183,6 +2198,8 @@ def delete_draft_route(assessment_id: int) -> Response:
     else:
         flash("Gagal menghapus draft.", "danger")
 
+    if user.get("role") == "coordinator":
+        return redirect(url_for("portal.coordinator_assessments"))
     return redirect(url_for("portal.home"))
 
 
@@ -2318,6 +2335,9 @@ def sekolah_rooms() -> Response:
         try:
             g = int(cls.get("grade_level"))
             variant = (cls.get("variant") or "").strip().upper()
+            if g in (-1, 0) and variant and not variant.isdigit():
+                if len(variant) == 1 and variant.isalpha():
+                    variant = str(ord(variant) - ord("A") + 1)
             if variant:  # Only add if there's a variant
                 classroom_variants.add((g, variant))
             classroom_grades.add(g)
@@ -2344,11 +2364,16 @@ def sekolah_rooms() -> Response:
 
     # Categorize rooms by grade number (so SD tab doesn't show kelas 10-12)
     # Regex patterns to match classroom names (support negative grades for PAUD/TK)
+    tk_variant_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s+([AB])\s*(\d+)\s*$", re.IGNORECASE)
+    tk_base_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s*$", re.IGNORECASE)
     variant_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+(-?\d+)\s*([A-Za-z]+)\s*$", re.IGNORECASE)
     base_pattern = re.compile(r"\bKelas\s+(-?\d+)\b", re.IGNORECASE)
 
     def _room_grade(room: dict) -> int | None:
         name_val = room.get("name") or ""
+        m = tk_variant_pattern.match(name_val)
+        if m:
+            return -1 if m.group(1).upper() == "A" else 0
         m = variant_pattern.match(name_val) or base_pattern.search(name_val)
         if not m:
             return None
@@ -2358,11 +2383,15 @@ def sekolah_rooms() -> Response:
             return None
 
     def _is_variant_class(name: str) -> bool:
-        return bool(variant_pattern.match(name or ""))
+        return bool(variant_pattern.match(name or "") or tk_variant_pattern.match(name or ""))
+
     
     def _room_variant(room: dict) -> str | None:
         """Extract variant letter from room name (e.g., 'A' from 'Ruang Kelas 1A')."""
         name_val = room.get("name") or ""
+        m = tk_variant_pattern.match(name_val)
+        if m and m.group(2):
+            return m.group(2).strip()
         m = variant_pattern.match(name_val)
         if not m or not m.group(2):
             return None
@@ -2416,7 +2445,7 @@ def sekolah_rooms() -> Response:
             variant = _room_variant(r)
             
             # Check if this exact (grade, variant) pair is configured
-            is_exact_match = (g, variant) in classroom_variants if (g and variant) else False
+            is_exact_match = (g, variant) in classroom_variants if (g is not None and variant) else False
             is_saved = r.get("id") in saved_room_ids
             should_skip = not is_exact_match and not is_saved
             
@@ -3634,6 +3663,12 @@ def admin_setup() -> Response:
         )
 
     def _room_grade(name: str) -> int | None:
+        if re.search(r"\bKelas\s+TK\s+A\s*\d+\b", name or "", flags=re.IGNORECASE):
+            return -1
+        if re.search(r"\bKelas\s+TK\s+B\s*\d+\b", name or "", flags=re.IGNORECASE):
+            return 0
+        if re.search(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s*$", name or "", flags=re.IGNORECASE):
+            return -1
         m = re.search(r"\bKelas\s+(\d+)", name or "", flags=re.IGNORECASE)
         if not m:
             return None
@@ -3644,7 +3679,10 @@ def admin_setup() -> Response:
 
     def _is_variant_class(name: str) -> bool:
         # Detect names like "Ruang Kelas 1A" "Ruang Kelas 1B" etc.
-        return bool(re.search(r"^Ruang\\s+Kelas\\s+\\d+\\s*[A-Za-z]+$", name or "", flags=re.IGNORECASE))
+        return bool(
+            re.search(r"^Ruang\\s+Kelas\\s+\\d+\\s*[A-Za-z]+$", name or "", flags=re.IGNORECASE)
+            or re.search(r"^\\s*(?:Ruang\\s+)?Kelas\\s+TK\\s+[AB]\\s*\\d+$", name or "", flags=re.IGNORECASE)
+        )
 
     # Build base rooms: keep non-class rooms and only one representative per jenjang band (SD=1, SMP=7, SMA=10)
     base_rooms = []
@@ -3654,6 +3692,7 @@ def admin_setup() -> Response:
         grade = _room_grade(name)
         is_variant = _is_variant_class(name)
         templ = None
+        is_tk_base = bool(re.search(r"^\\s*(?:Ruang\\s+)?Kelas\\s+TK\\s*$", name or "", flags=re.IGNORECASE))
         if grade is not None:
             if grade <= 6:
                 templ = 1
@@ -3665,6 +3704,8 @@ def admin_setup() -> Response:
         should_keep = False
         if grade is None:
             should_keep = True  # non-class room
+        elif is_tk_base:
+            should_keep = True
         elif templ in (1, 7, 10) and grade == templ and not is_variant:
             should_keep = True  # representative per band
 
@@ -4727,6 +4768,69 @@ def admin_manage_staff() -> Response:
     )
 
 
+@portal_bp.route("/coordinator/manage-staff")
+@role_required("coordinator")
+def coordinator_manage_staff() -> Response:
+    """Coordinator interface to submit staff-school assignment requests."""
+    user = current_user()
+    team, team_members, _ = _get_coordinator_team_context(user.get("id"))
+    if not team:
+        flash("Anda belum memiliki tim.", "warning")
+        return redirect(url_for("portal.view_my_team"))
+
+    staff_list = []
+    team_member_ids = []
+    for member in team_members:
+        staff_id = member.get("staff_id")
+        if not staff_id:
+            continue
+        team_member_ids.append(staff_id)
+        assigned_count = len(get_staff_assigned_schools(staff_id))
+        staff_list.append(
+            {
+                "id": staff_id,
+                "email": member.get("email"),
+                "full_name": member.get("full_name"),
+                "nip": member.get("nip"),
+                "role": member.get("role"),
+                "assigned_schools_count": assigned_count,
+            }
+        )
+
+    if user.get("id") not in team_member_ids:
+        assigned_count = len(get_staff_assigned_schools(user.get("id")))
+        staff_list.append(
+            {
+                "id": user.get("id"),
+                "email": user.get("email"),
+                "full_name": user.get("full_name") or "Koordinator",
+                "nip": user.get("nip"),
+                "role": user.get("role"),
+                "assigned_schools_count": assigned_count,
+            }
+        )
+
+    staff_list.sort(key=lambda row: (row.get("full_name") or "").lower())
+
+    available_schools = list_portal_schools()
+    periods = list_periods()
+    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (
+        periods[0]["id"] if periods else None
+    )
+
+    return render_template(
+        "portal/admin/manage_staff.html",
+        staff_list=staff_list,
+        assignments_overview=[],
+        available_schools=available_schools,
+        pending_requests=[],
+        periods=periods,
+        active_period_id=active_period_id,
+        user=user,
+        activity_logs=[],
+    )
+
+
 @portal_bp.route("/admin/assign-school", methods=["POST"])
 @role_required("admin")
 def admin_assign_school() -> Response:
@@ -5122,6 +5226,29 @@ def get_staff_assignments_api(staff_id: int) -> Response:
         })
     except Exception as e:
         current_app.logger.exception("Error fetching staff assignments")
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
+
+
+@portal_bp.route("/coordinator/staff/<int:staff_id>/assignments")
+@role_required("coordinator")
+def coordinator_staff_assignments_api(staff_id: int) -> Response:
+    """API endpoint for coordinators to view assignments within their team."""
+    user = current_user()
+    team, _, staff_ids = _get_coordinator_team_context(user.get("id"))
+    if not team or staff_id not in staff_ids:
+        return jsonify({"success": False, "message": "Tidak diizinkan"}), 403
+
+    try:
+        assignments = get_staff_assigned_schools(staff_id)
+        return jsonify({
+            "success": True,
+            "assignments": assignments
+        })
+    except Exception as e:
+        current_app.logger.exception("Error fetching coordinator staff assignments")
         return jsonify({
             "success": False,
             "message": str(e)
