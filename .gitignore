@@ -9,6 +9,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.cache/
 
 # OS files (macOS/Linux)
 .DS_Store
