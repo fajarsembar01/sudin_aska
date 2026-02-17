@@ -1,0 +1,4397 @@
+{% extends "daftar_tamu/base_daftar_tamu.html" %}
+{% set page_title = "Riwayat Buku Tamu Saya" %}
+
+{% block head_extra %}
+<link rel="manifest" href="{{ url_for('static', filename='pwa/aska-dt-manifest.webmanifest') }}">
+<meta name="theme-color" content="#0284c7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+    .history-superapp {
+        --sa-primary: #0284c7;
+        --sa-secondary: #0f766e;
+        --sa-bg-soft: #f2f8ff;
+        --sa-card-border: #dde8f5;
+        --sa-card-shadow: 0 .45rem 1.15rem rgba(15, 23, 42, .08);
+        --sa-radius-lg: 1rem;
+        --sa-radius-xl: 1.25rem;
+        --sa-fab-shadow: 0 .6rem 1.6rem rgba(2, 132, 199, .36);
+        --sa-text-strong: var(--text-primary);
+        --sa-text-soft: var(--text-secondary);
+        --sa-text-muted: var(--text-muted);
+    }
+
+    .guest-history-shell {
+        border-radius: var(--sa-radius-xl);
+        background: var(--bg-surface);
+        border: 1px solid rgba(19, 78, 74, .08);
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+    }
+
+    .guest-history-shell::before,
+    .guest-history-shell::after {
+        content: "";
+        position: absolute;
+        border-radius: 999px;
+        filter: blur(2px);
+        opacity: .22;
+        animation: shellFloat 9s ease-in-out infinite;
+        pointer-events: none;
+    }
+
+    .guest-history-shell::before {
+        width: 180px;
+        height: 180px;
+        right: -70px;
+        top: -90px;
+        background: rgba(56, 189, 248, .24);
+    }
+
+    .guest-history-shell::after {
+        width: 220px;
+        height: 220px;
+        left: -80px;
+        bottom: -130px;
+        background: rgba(20, 184, 166, .2);
+        animation-delay: 1.3s;
+    }
+
+    .guest-history-shell > .card-body {
+        position: relative;
+        z-index: 1;
+    }
+
+    .history-tabs {
+        background: #e9f3ff;
+        border-radius: 999px;
+        padding: .25rem;
+        display: inline-flex;
+        gap: .25rem;
+    }
+
+    .history-tab-link {
+        border-radius: 999px;
+        border: none;
+        color: #1f3b57;
+        font-weight: 600;
+        padding: .45rem .95rem;
+        text-decoration: none;
+    }
+
+    .history-tab-link.active {
+        background: var(--sa-primary);
+        color: #fff;
+        box-shadow: 0 .35rem 1rem rgba(2, 132, 199, .28);
+    }
+
+    .history-meta {
+        background: var(--sa-bg-soft);
+        border: 1px solid var(--sa-card-border);
+        border-radius: .9rem;
+        padding: .75rem 1rem;
+    }
+
+    .super-lanes {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 1fr;
+        gap: .65rem;
+        margin-bottom: .75rem;
+    }
+
+    .lane-card {
+        border: 1px solid var(--sa-card-border);
+        border-radius: var(--sa-radius-lg);
+        padding: .72rem .8rem;
+        background: #fff;
+        box-shadow: var(--sa-card-shadow);
+    }
+
+    .lane-title {
+        display: inline-flex;
+        align-items: center;
+        gap: .42rem;
+        font-size: .78rem;
+        font-weight: 700;
+        color: var(--sa-text-strong);
+        letter-spacing: .01em;
+        text-transform: uppercase;
+        margin-bottom: .45rem;
+    }
+
+    .lane-priority {
+        background: var(--bg-surface);
+    }
+
+    .lane-priority-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: .35rem;
+    }
+
+    .lane-priority-item {
+        border-radius: .7rem;
+        padding: .45rem .5rem;
+        background: rgba(255, 255, 255, .88);
+        border: 1px solid rgba(148, 163, 184, .2);
+    }
+
+    .lane-priority-item strong {
+        display: block;
+        color: var(--sa-text-strong);
+        font-size: .98rem;
+        line-height: 1;
+    }
+
+    .lane-priority-item span {
+        display: block;
+        color: var(--sa-text-muted);
+        font-size: .7rem;
+        margin-top: .18rem;
+    }
+
+    .lane-latest {
+        background: var(--bg-surface);
+    }
+
+    .lane-latest strong {
+        color: var(--sa-text-strong);
+        font-size: 1.08rem;
+        line-height: 1.1;
+        display: block;
+    }
+
+    .lane-latest small {
+        color: var(--sa-text-soft);
+        font-size: .74rem;
+    }
+
+    .lane-progress {
+        height: .35rem;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, .2);
+        overflow: hidden;
+        margin-top: .5rem;
+    }
+
+    .lane-progress > span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        width: 0;
+        background: var(--sa-primary);
+    }
+
+    .lane-actions {
+        background: var(--bg-surface);
+    }
+
+    .quick-actions-grid {
+        display: grid;
+        gap: .35rem;
+    }
+
+    .quick-actions-grid .btn {
+        justify-content: flex-start;
+    }
+
+    .history-highlights {
+        display: flex;
+        gap: .55rem;
+        margin-bottom: .75rem;
+        flex-wrap: wrap;
+    }
+
+    .history-highlight-pill {
+        border: 1px solid #dbe9f6;
+        background: var(--bg-surface);
+        border-radius: .85rem;
+        padding: .45rem .65rem;
+        display: inline-flex;
+        align-items: center;
+        gap: .42rem;
+        color: var(--sa-text-soft);
+        font-size: .79rem;
+        font-weight: 600;
+        box-shadow: 0 .2rem .65rem rgba(15, 23, 42, .05);
+    }
+
+    .history-highlight-pill i {
+        font-size: .95rem;
+    }
+
+    .history-chip-sticky {
+        position: sticky;
+        top: 74px;
+        z-index: 8;
+        margin-bottom: .7rem;
+    }
+
+    .history-chip-scroll {
+        display: flex;
+        gap: .4rem;
+        overflow-x: auto;
+        padding: .28rem;
+        background: rgba(255, 255, 255, .82);
+        border: 1px solid #dfebf7;
+        border-radius: 999px;
+        box-shadow: 0 .25rem .65rem rgba(15, 23, 42, .06);
+        backdrop-filter: blur(8px);
+        scrollbar-width: none;
+    }
+
+    .history-chip-scroll::-webkit-scrollbar {
+        display: none;
+    }
+
+    .history-chip {
+        border: 1px solid #cfe2f3;
+        border-radius: 999px;
+        background: #ffffff;
+        color: var(--sa-text-soft);
+        font-size: .76rem;
+        line-height: 1;
+        padding: .45rem .68rem;
+        display: inline-flex;
+        align-items: center;
+        gap: .38rem;
+        white-space: nowrap;
+        transition: all .18s ease;
+    }
+
+    .history-chip:hover {
+        border-color: #93c5fd;
+        background: #f8fbff;
+    }
+
+    .history-chip.is-active {
+        border-color: transparent;
+        background: var(--sa-primary);
+        color: #fff;
+        box-shadow: 0 .35rem .85rem rgba(2, 132, 199, .3);
+    }
+
+    .history-chip-badge {
+        min-width: 1.3rem;
+        height: 1.3rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .66rem;
+        padding: 0 .28rem;
+        background: #e2e8f0;
+        color: var(--sa-text-soft);
+    }
+
+    .history-chip.is-active .history-chip-badge {
+        background: rgba(255, 255, 255, .22);
+        color: #fff;
+    }
+
+    .history-chip:focus-visible,
+    .super-dock-item:focus-visible,
+    .swipe-action-btn:focus-visible,
+    .super-fab:focus-visible {
+        outline: 2px solid #0ea5e9;
+        outline-offset: 2px;
+    }
+
+    .timeline-wrap {
+        position: relative;
+        padding-left: 1rem;
+    }
+
+    .timeline-wrap.is-filtering .timeline-item {
+        transition: opacity .18s ease, transform .18s ease;
+    }
+
+    .timeline-wrap::before {
+        content: "";
+        position: absolute;
+        left: .5rem;
+        top: .4rem;
+        bottom: .4rem;
+        width: 2px;
+        background: var(--sa-primary);
+        opacity: .35;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-left: .9rem;
+        margin-bottom: 1rem;
+        opacity: 0;
+        transform: translateY(10px);
+        animation: timelineRise .5s ease forwards;
+        content-visibility: auto;
+        contain-intrinsic-size: 145px;
+    }
+
+    .timeline-item.is-collapsed {
+        opacity: 1;
+        transform: none;
+        animation: none;
+        min-height: var(--virtual-height, 140px);
+    }
+
+    .timeline-item.is-collapsed .timeline-dot,
+    .timeline-item.is-collapsed .timeline-swipe {
+        display: none !important;
+    }
+
+    .timeline-item.is-collapsed::after {
+        content: "";
+        display: block;
+        border-radius: .9rem;
+        border: 1px dashed #d5e4f3;
+        background: var(--bg-subtle);
+        height: var(--virtual-height, 140px);
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: .22rem;
+        top: 1.15rem;
+        width: .62rem;
+        height: .62rem;
+        border-radius: 50%;
+        background: #0284c7;
+        box-shadow: 0 0 0 .25rem rgba(14, 165, 233, .2);
+    }
+
+    .timeline-card {
+        background: #fff;
+        border: 1px solid #e6eef7;
+        border-radius: 1rem;
+        padding: .8rem;
+        box-shadow: 0 .35rem 1.2rem rgba(15, 23, 42, .06);
+        display: flex;
+        gap: .8rem;
+        transition: transform .22s ease, box-shadow .22s ease;
+        will-change: transform;
+    }
+
+    .timeline-swipe {
+        position: relative;
+        border-radius: 1rem;
+        overflow: hidden;
+        touch-action: pan-y;
+    }
+
+    .timeline-swipe-actions {
+        position: absolute;
+        right: .28rem;
+        top: .3rem;
+        bottom: .3rem;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: .32rem;
+        pointer-events: none;
+    }
+
+    .swipe-action-btn {
+        pointer-events: auto;
+        border-radius: .72rem;
+        padding: .34rem .56rem;
+        font-size: .72rem;
+        line-height: 1;
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 .16rem .45rem rgba(15, 23, 42, .14);
+    }
+
+    .timeline-swipe.is-open .timeline-card {
+        transform: translateX(-116px);
+    }
+
+    .timeline-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 .55rem 1.4rem rgba(15, 23, 42, .12);
+    }
+
+    .timeline-photo {
+        width: 86px;
+        height: 86px;
+        border-radius: .85rem;
+        overflow: hidden;
+        background: #dbeafe;
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .timeline-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .timeline-photo-empty {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #1d4ed8;
+        font-size: 1.35rem;
+    }
+
+    .photo-status-icon {
+        position: absolute;
+        right: -.3rem;
+        bottom: -.3rem;
+        width: 1.55rem;
+        height: 1.55rem;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #fff;
+        font-size: .86rem;
+        line-height: 1;
+    }
+
+    .photo-status-icon.is-pending {
+        animation: statusPulse 1.5s ease infinite;
+    }
+
+    .photo-status-icon.tone-success {
+        background: #16a34a;
+        color: #fff;
+    }
+
+    .photo-status-icon.tone-warning {
+        background: #f59e0b;
+        color: #fff;
+    }
+
+    .photo-status-icon.tone-danger {
+        background: #dc2626;
+        color: #fff;
+    }
+
+    .timeline-content {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .timeline-school {
+        font-weight: 700;
+        color: var(--sa-text-strong);
+        margin-bottom: .1rem;
+    }
+
+    .timeline-time {
+        color: var(--sa-text-soft);
+        font-size: .82rem;
+    }
+
+    .timeline-purpose {
+        margin: .4rem 0 .2rem;
+        font-size: .86rem;
+        color: var(--sa-text-soft);
+    }
+
+    .timeline-guest {
+        color: var(--sa-text-muted);
+        font-size: .8rem;
+    }
+
+    .staff-note-value {
+        margin-top: .45rem;
+        padding: .55rem .65rem;
+        border-radius: .65rem;
+        background: #f0f9ff;
+        border: 1px solid #d9eefc;
+        color: var(--sa-text-strong);
+        font-size: .82rem;
+    }
+
+    .staff-note-value small {
+        color: var(--sa-text-muted);
+        display: block;
+        margin-top: .2rem;
+    }
+
+    .staff-note-level {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        margin-bottom: .35rem;
+    }
+
+    .staff-note-trigger {
+        margin-top: .5rem;
+    }
+
+    .staff-note-sheet {
+        --staff-sheet-vh: 100dvh;
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+        height: min(80vh, 680px);
+        z-index: 1200;
+    }
+
+    .staff-note-sheet .offcanvas-header {
+        border-bottom: 1px solid #e8eef7;
+        touch-action: pan-x;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    .staff-note-sheet .offcanvas-body {
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .staff-note-sheet .offcanvas-title {
+        font-size: 1.02rem;
+        line-height: 1.25;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .staff-note-sheet #staffNoteSheetForm {
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+        gap: .48rem;
+    }
+
+    .staff-note-sheet .form-label {
+        margin-bottom: .28rem !important;
+    }
+
+    .staff-note-sheet .staff-note-actions {
+        margin-top: auto;
+        padding-top: .58rem;
+        border-top: 1px solid #e8eef7;
+        background: var(--bg-surface);
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+    }
+
+    .staff-note-sheet textarea {
+        min-height: 120px;
+        font-size: .84rem;
+    }
+
+    .mobile-notif-sheet {
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+        height: min(72vh, 560px);
+        background-color: var(--bg-surface);
+        color: var(--sa-text-strong);
+        z-index: 1200;
+    }
+
+    .mobile-notif-sheet .offcanvas-header {
+        border-bottom: 1px solid #e8eef7;
+        align-items: center;
+        touch-action: pan-x;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    .mobile-notif-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+    }
+
+    .mobile-notif-actions .btn {
+        white-space: nowrap;
+    }
+
+    .mobile-notif-sheet .offcanvas-body {
+        background-color: var(--bg-surface);
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .mobile-notif-sheet .notification-quick {
+        max-height: calc(72vh - 132px);
+        overflow: auto;
+    }
+
+    .mobile-photo-modal .modal-dialog {
+        max-width: min(92vw, 420px);
+        margin: 1rem auto;
+    }
+
+    .mobile-photo-modal .modal-content {
+        background: var(--bg-surface);
+        color: var(--sa-text-strong);
+        border: 1px solid var(--sa-card-border);
+        border-radius: 1rem;
+    }
+
+    .mobile-photo-modal .modal-header {
+        border-bottom: 1px solid #e8eef7;
+    }
+
+    .mobile-photo-modal .modal-body {
+        padding: .85rem;
+    }
+
+    .mobile-photo-frame {
+        border: 1px solid #dbe7f5;
+        border-radius: .85rem;
+        background: var(--bg-subtle);
+        min-height: min(40vh, 320px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        touch-action: pan-y;
+    }
+
+    .mobile-photo-frame img {
+        display: block;
+        max-width: 100%;
+        max-height: min(52vh, 420px);
+        object-fit: contain;
+    }
+
+    .lazy-media {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .lazy-media::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, .35);
+        transform: translateX(-120%);
+        animation: shimmer 1.15s infinite;
+        z-index: 2;
+    }
+
+    .lazy-media.is-loaded::before {
+        animation: none;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .lazy-media img {
+        opacity: 0;
+        transition: opacity .25s ease;
+    }
+
+    .lazy-media.is-loaded img {
+        opacity: 1;
+    }
+
+    .detail-card {
+        border: 1px solid #e5edf7;
+        border-radius: .95rem;
+        padding: .8rem;
+        background: #fff;
+        box-shadow: 0 .25rem .9rem rgba(15, 23, 42, .05);
+    }
+
+    .detail-filter-panel {
+        border: 1px solid var(--sa-card-border);
+        border-radius: .95rem;
+        background: var(--bg-surface);
+        margin-bottom: .85rem;
+        overflow: hidden;
+    }
+
+    .detail-filter-panel[open] {
+        box-shadow: 0 .25rem .9rem rgba(15, 23, 42, .05);
+    }
+
+    .detail-filter-summary {
+        list-style: none;
+        margin: 0;
+        padding: .68rem .8rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .7rem;
+        cursor: pointer;
+        background: var(--bg-subtle);
+    }
+
+    .detail-filter-summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .detail-filter-summary-title {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        font-size: .82rem;
+        font-weight: 700;
+        color: var(--sa-text-strong);
+    }
+
+    .detail-filter-summary-meta {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        font-size: .74rem;
+        font-weight: 600;
+        color: var(--sa-text-muted);
+    }
+
+    .detail-filter-count {
+        font-size: .66rem;
+        line-height: 1;
+        padding: .34rem .48rem;
+        border-radius: 999px;
+    }
+
+    .detail-filter-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: .24rem;
+    }
+
+    .detail-filter-toggle .label-expanded,
+    .detail-filter-panel[open] .detail-filter-toggle .label-collapsed {
+        display: none;
+    }
+
+    .detail-filter-panel[open] .detail-filter-toggle .label-expanded,
+    .detail-filter-panel:not([open]) .detail-filter-toggle .label-collapsed {
+        display: inline;
+    }
+
+    .detail-filter-chevron {
+        transition: transform .2s ease;
+    }
+
+    .detail-filter-panel[open] .detail-filter-chevron {
+        transform: rotate(180deg);
+    }
+
+    .detail-filter-body {
+        padding: .72rem .8rem .8rem;
+    }
+
+    .detail-filter-form .form-label {
+        font-weight: 600;
+        color: var(--sa-text-soft);
+    }
+
+    .home-empty-state {
+        border: 1px dashed #cbd5e1;
+        background: var(--bg-subtle);
+        border-radius: 1rem;
+        padding: 1.1rem .95rem;
+        text-align: center;
+        color: var(--sa-text-soft);
+    }
+
+    .home-empty-state i {
+        font-size: 1.4rem;
+        color: var(--sa-primary);
+        display: block;
+        margin-bottom: .38rem;
+    }
+
+    .history-inline-state {
+        border: 1px solid #f1d9a7;
+        background: #fffbeb;
+        border-radius: .78rem;
+        color: #7c2d12;
+        font-size: .8rem;
+        padding: .58rem .7rem;
+        margin-bottom: .65rem;
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: .55rem;
+    }
+
+    .history-inline-state.is-visible {
+        display: flex;
+    }
+
+    .history-inline-state .btn {
+        white-space: nowrap;
+    }
+
+    .history-undo-container {
+        position: fixed;
+        left: 50%;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 6.2rem);
+        transform: translateX(-50%);
+        z-index: 1110;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        gap: .45rem;
+        align-items: center;
+    }
+
+    .history-undo-toast {
+        pointer-events: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: .6rem;
+        padding: .52rem .75rem;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, .94);
+        color: #fff;
+        box-shadow: 0 .5rem 1.2rem rgba(2, 6, 23, .35);
+        font-size: .75rem;
+    }
+
+    .history-undo-toast .btn {
+        border-radius: 999px;
+        padding: .24rem .58rem;
+        font-size: .72rem;
+        line-height: 1;
+    }
+
+    .history-sync-dot {
+        width: .5rem;
+        height: .5rem;
+        border-radius: 999px;
+        display: inline-block;
+        background: #22d3ee;
+        box-shadow: 0 0 0 .25rem rgba(34, 211, 238, .2);
+    }
+
+    .super-bottom-dock {
+        position: fixed;
+        left: .7rem;
+        right: .7rem;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + .6rem);
+        background: rgba(255, 255, 255, .96);
+        border: 1px solid #d9e7f6;
+        border-radius: 1rem;
+        box-shadow: 0 .65rem 1.6rem rgba(15, 23, 42, .18);
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: .15rem;
+        padding: .22rem;
+        z-index: 1085;
+        backdrop-filter: blur(10px);
+        transition: transform .22s ease, opacity .2s ease;
+    }
+
+    .super-dock-item {
+        border: 0;
+        text-decoration: none;
+        background: transparent;
+        border-radius: .82rem;
+        color: var(--sa-text-soft);
+        text-align: center;
+        padding: .48rem .2rem .44rem;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: .15rem;
+        font-size: .65rem;
+        font-weight: 600;
+        min-height: 3rem;
+    }
+
+    .super-dock-item i {
+        font-size: .98rem;
+        line-height: 1;
+    }
+
+    .super-dock-item.is-active {
+        color: #fff;
+        background: var(--sa-primary);
+    }
+
+    .super-fab {
+        position: fixed;
+        right: 1.1rem;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
+        border: 0;
+        border-radius: 999px;
+        width: 3rem;
+        height: 3rem;
+        color: #fff;
+        font-size: 1.2rem;
+        background: var(--sa-primary);
+        box-shadow: var(--sa-fab-shadow);
+        z-index: 1090;
+        transition: transform .22s ease, opacity .2s ease;
+    }
+
+    .history-superapp .offcanvas.show ~ .super-bottom-dock,
+    .history-superapp .offcanvas.showing ~ .super-bottom-dock,
+    .history-superapp .offcanvas.show ~ .super-fab,
+    .history-superapp .offcanvas.showing ~ .super-fab,
+    .history-superapp .modal.show ~ .super-bottom-dock,
+    .history-superapp .modal.show ~ .super-fab {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(130%);
+    }
+
+    .history-superapp .text-muted {
+        color: var(--sa-text-muted) !important;
+    }
+
+    .history-superapp .table {
+        --bs-table-bg: transparent;
+        --bs-table-color: var(--sa-text-strong);
+        --bs-table-border-color: var(--sa-card-border);
+        color: var(--sa-text-strong);
+    }
+
+    .history-superapp .table > :not(caption) > * > * {
+        background-color: transparent;
+        color: inherit;
+    }
+
+    .history-superapp .table-hover > tbody > tr:hover > * {
+        --bs-table-accent-bg: rgba(148, 163, 184, .14);
+    }
+
+    .history-superapp .table thead.bg-light {
+        background-color: var(--bg-subtle) !important;
+    }
+
+    .history-superapp .table thead.bg-light th {
+        color: var(--sa-text-soft);
+        border-bottom-color: var(--sa-card-border);
+    }
+
+    .history-superapp .pagination .page-link {
+        background-color: var(--bg-surface);
+        color: var(--sa-text-soft);
+        border-color: var(--sa-card-border);
+    }
+
+    .history-superapp .pagination .page-item.active .page-link {
+        background-color: var(--sa-primary);
+        border-color: var(--sa-primary);
+        color: #fff;
+    }
+
+    .history-superapp .pagination .page-item.disabled .page-link {
+        color: var(--sa-text-muted);
+        background-color: var(--bg-subtle);
+    }
+
+    .history-superapp .staff-note-sheet {
+        background-color: var(--bg-surface);
+        color: var(--sa-text-strong);
+    }
+
+    .history-superapp .staff-note-sheet .offcanvas-body {
+        background-color: var(--bg-surface);
+    }
+
+    html[data-theme="dark"] .history-superapp {
+        --sa-bg-soft: #10263b;
+        --sa-card-border: rgba(148, 163, 184, .3);
+        --sa-card-shadow: 0 .55rem 1.2rem rgba(2, 6, 23, .5);
+        --sa-fab-shadow: 0 .7rem 1.7rem rgba(2, 132, 199, .4);
+    }
+
+    html[data-theme="dark"] .history-superapp .guest-history-shell {
+        background: var(--bg-surface);
+        border-color: rgba(110, 168, 211, .24);
+    }
+
+    html[data-theme="dark"] .history-superapp .guest-history-shell::before {
+        background: rgba(56, 189, 248, .18);
+    }
+
+    html[data-theme="dark"] .history-superapp .guest-history-shell::after {
+        background: rgba(45, 212, 191, .16);
+    }
+
+    html[data-theme="dark"] .history-superapp .history-tabs {
+        background: #1a314a;
+    }
+
+    html[data-theme="dark"] .history-superapp .history-tab-link {
+        color: #d6e6f7;
+    }
+
+    html[data-theme="dark"] .history-superapp .lane-card,
+    html[data-theme="dark"] .history-superapp .timeline-card,
+    html[data-theme="dark"] .history-superapp .detail-card {
+        background: #13243c;
+        border-color: rgba(148, 163, 184, .28);
+        box-shadow: 0 .4rem 1.05rem rgba(2, 6, 23, .38);
+    }
+
+    html[data-theme="dark"] .history-superapp .lane-priority {
+        background: var(--bg-surface);
+    }
+
+    html[data-theme="dark"] .history-superapp .lane-latest {
+        background: var(--bg-surface);
+    }
+
+    html[data-theme="dark"] .history-superapp .lane-actions {
+        background: var(--bg-surface);
+    }
+
+    html[data-theme="dark"] .history-superapp .lane-priority-item,
+    html[data-theme="dark"] .history-superapp .history-highlight-pill,
+    html[data-theme="dark"] .history-superapp .history-chip-scroll,
+    html[data-theme="dark"] .history-superapp .detail-filter-panel,
+    html[data-theme="dark"] .history-superapp .staff-note-value,
+    html[data-theme="dark"] .history-superapp .home-empty-state {
+        background: rgba(15, 23, 42, .72);
+        border-color: rgba(148, 163, 184, .3);
+    }
+
+    html[data-theme="dark"] .history-superapp .detail-filter-summary {
+        background: rgba(15, 23, 42, .82);
+    }
+
+    html[data-theme="dark"] .history-superapp .history-chip {
+        background: rgba(15, 23, 42, .82);
+        border-color: rgba(148, 163, 184, .32);
+    }
+
+    html[data-theme="dark"] .history-superapp .history-chip:hover {
+        background: rgba(30, 41, 59, .9);
+        border-color: rgba(125, 211, 252, .52);
+    }
+
+    html[data-theme="dark"] .history-superapp .history-chip-badge {
+        background: rgba(148, 163, 184, .22);
+        color: #dbeafe;
+    }
+
+    html[data-theme="dark"] .history-superapp .timeline-wrap::before {
+        background: var(--sa-primary);
+        opacity: .48;
+    }
+
+    html[data-theme="dark"] .history-superapp .timeline-dot {
+        background: #38bdf8;
+        box-shadow: 0 0 0 .26rem rgba(56, 189, 248, .26);
+    }
+
+    html[data-theme="dark"] .history-superapp .timeline-item.is-collapsed::after,
+    html[data-theme="dark"] .history-superapp .timeline-skeleton .timeline-card {
+        border-color: rgba(148, 163, 184, .32);
+        background: rgba(15, 23, 42, .86);
+    }
+
+    html[data-theme="dark"] .history-superapp .timeline-photo,
+    html[data-theme="dark"] .history-superapp .timeline-skeleton .timeline-photo {
+        background: #1d3658;
+    }
+
+    html[data-theme="dark"] .history-superapp .timeline-photo-empty {
+        color: #93c5fd;
+    }
+
+    html[data-theme="dark"] .history-superapp .photo-status-icon {
+        border-color: #0e192c;
+    }
+
+    html[data-theme="dark"] .history-superapp .swipe-action-btn {
+        border-color: rgba(148, 163, 184, .36);
+        box-shadow: 0 .16rem .45rem rgba(2, 6, 23, .48);
+    }
+
+    html[data-theme="dark"] .history-superapp .staff-note-sheet .offcanvas-header {
+        border-bottom-color: rgba(148, 163, 184, .3);
+    }
+
+    html[data-theme="dark"] .history-superapp .staff-note-sheet .staff-note-actions {
+        border-top-color: rgba(148, 163, 184, .3);
+    }
+
+    html[data-theme="dark"] .history-superapp .mobile-notif-sheet .offcanvas-header {
+        border-bottom-color: rgba(148, 163, 184, .3);
+    }
+
+    html[data-theme="dark"] .history-superapp .mobile-photo-modal .modal-content {
+        background: #13243c;
+        border-color: rgba(148, 163, 184, .32);
+    }
+
+    html[data-theme="dark"] .history-superapp .mobile-photo-modal .modal-header {
+        border-bottom-color: rgba(148, 163, 184, .3);
+    }
+
+    html[data-theme="dark"] .history-superapp .mobile-photo-frame {
+        border-color: rgba(148, 163, 184, .32);
+        background: rgba(15, 23, 42, .72);
+    }
+
+    html[data-theme="dark"] .history-superapp .staff-note-sheet .btn-close {
+        filter: invert(1) grayscale(1) brightness(220%);
+    }
+
+    html[data-theme="dark"] .history-superapp .mobile-notif-sheet .btn-close {
+        filter: invert(1) grayscale(1) brightness(220%);
+    }
+
+    html[data-theme="dark"] .history-superapp .mobile-photo-modal .btn-close {
+        filter: invert(1) grayscale(1) brightness(220%);
+    }
+
+    html[data-theme="dark"] .history-superapp .form-control,
+    html[data-theme="dark"] .history-superapp .form-select {
+        background-color: #0f172a;
+        border-color: rgba(148, 163, 184, .34);
+        color: #e2e8f0;
+    }
+
+    html[data-theme="dark"] .history-superapp .form-control::placeholder {
+        color: #94a3b8;
+    }
+
+    html[data-theme="dark"] .history-superapp .form-control:focus,
+    html[data-theme="dark"] .history-superapp .form-select:focus {
+        border-color: rgba(56, 189, 248, .56);
+        box-shadow: 0 0 0 .2rem rgba(56, 189, 248, .18);
+    }
+
+    html[data-theme="dark"] .history-superapp .lazy-media::before {
+        background: rgba(148, 163, 184, .18);
+    }
+
+    html[data-theme="dark"] .history-superapp .history-inline-state {
+        border-color: rgba(245, 158, 11, .5);
+        background: rgba(120, 53, 15, .28);
+        color: #fde68a;
+    }
+
+    html[data-theme="dark"] .history-superapp .super-bottom-dock {
+        background: rgba(15, 23, 42, .9);
+        border-color: rgba(148, 163, 184, .3);
+        box-shadow: 0 .7rem 1.8rem rgba(2, 6, 23, .55);
+    }
+
+    html[data-theme="dark"] .history-superapp .table-hover > tbody > tr:hover > * {
+        --bs-table-accent-bg: rgba(30, 41, 59, .78);
+    }
+
+    .timeline-skeleton .timeline-card {
+        border-style: dashed;
+        border-color: #d5e5f5;
+        background: var(--bg-subtle);
+    }
+
+    .timeline-skeleton .timeline-photo {
+        background: #e4eef9;
+    }
+
+    .timeline-skeleton .timeline-dot {
+        background: #93c5fd;
+        box-shadow: 0 0 0 .25rem rgba(147, 197, 253, .2);
+    }
+
+    .skeleton-line {
+        display: block;
+        height: .62rem;
+        border-radius: 999px;
+        margin-bottom: .45rem;
+        background: rgba(148, 163, 184, .28);
+        animation: skeletonPulse 1.2s ease-in-out infinite;
+    }
+
+    .skeleton-line:last-child {
+        margin-bottom: 0;
+    }
+
+    .detail-card + .detail-card {
+        margin-top: .75rem;
+    }
+
+    .detail-card {
+        opacity: 0;
+        transform: translateY(10px);
+        animation: timelineRise .45s ease forwards;
+    }
+
+    .timeline-item:nth-child(1),
+    .detail-card:nth-child(1) { animation-delay: .03s; }
+    .timeline-item:nth-child(2),
+    .detail-card:nth-child(2) { animation-delay: .06s; }
+    .timeline-item:nth-child(3),
+    .detail-card:nth-child(3) { animation-delay: .09s; }
+    .timeline-item:nth-child(4),
+    .detail-card:nth-child(4) { animation-delay: .12s; }
+    .timeline-item:nth-child(5),
+    .detail-card:nth-child(5) { animation-delay: .15s; }
+    .timeline-item:nth-child(6),
+    .detail-card:nth-child(6) { animation-delay: .18s; }
+    .timeline-item:nth-child(7),
+    .detail-card:nth-child(7) { animation-delay: .21s; }
+    .timeline-item:nth-child(8),
+    .detail-card:nth-child(8) { animation-delay: .24s; }
+
+    @keyframes timelineRise {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes shellFloat {
+        0% { transform: translate3d(0, 0, 0); }
+        50% { transform: translate3d(0, -8px, 0); }
+        100% { transform: translate3d(0, 0, 0); }
+    }
+
+    @keyframes statusPulse {
+        0% { box-shadow: 0 0 0 .2rem rgba(245, 158, 11, .24); }
+        70% { box-shadow: 0 0 0 .42rem rgba(245, 158, 11, 0); }
+        100% { box-shadow: 0 0 0 .2rem rgba(245, 158, 11, 0); }
+    }
+
+    @keyframes shimmer {
+        100% { transform: translateX(120%); }
+    }
+
+    @keyframes skeletonPulse {
+        0%, 100% { opacity: .5; }
+        50% { opacity: 1; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .timeline-item,
+        .detail-card {
+            opacity: 1;
+            transform: none;
+            animation: none;
+        }
+        .photo-status-icon.is-pending,
+        .guest-history-shell::before,
+        .guest-history-shell::after,
+        .skeleton-line,
+        .super-fab {
+            animation: none;
+        }
+        .timeline-card {
+            transition: none;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .history-superapp {
+            padding-bottom: 7rem;
+        }
+
+        .history-page-hero {
+            display: none !important;
+        }
+
+        .history-superapp[data-current-tab="beranda"] .super-lanes,
+        .history-superapp[data-current-tab="beranda"] .history-highlights,
+        .history-superapp[data-current-tab="beranda"] .history-meta {
+            display: none !important;
+        }
+
+        .super-lanes {
+            grid-template-columns: 1fr;
+        }
+
+        .lane-priority-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .history-tabs {
+            display: none !important;
+        }
+
+        .history-highlights {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: .1rem;
+            margin-bottom: .65rem;
+            scrollbar-width: none;
+        }
+
+        .history-highlights::-webkit-scrollbar {
+            display: none;
+        }
+
+        .history-highlight-pill {
+            white-space: nowrap;
+        }
+
+        .history-chip-sticky {
+            top: 64px;
+            margin-bottom: .6rem;
+        }
+
+        .history-chip-scroll .history-chip-badge {
+            display: none;
+        }
+
+        .timeline-swipe-actions {
+            padding-right: .18rem;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+            gap: .26rem;
+        }
+
+        .swipe-action-btn {
+            min-width: 84px;
+            justify-content: center;
+            font-size: .66rem;
+            padding: .3rem .48rem;
+        }
+
+        .timeline-swipe.is-open .timeline-card {
+            transform: translateX(-96px);
+        }
+
+        .timeline-card {
+            padding: .62rem;
+            gap: .52rem;
+        }
+
+        .timeline-photo {
+            width: 72px;
+            height: 72px;
+        }
+
+        .timeline-purpose,
+        .timeline-guest {
+            display: none;
+        }
+
+        .timeline-time {
+            font-size: .76rem;
+        }
+
+        .timeline-school {
+            margin-bottom: .08rem;
+            font-size: .94rem;
+        }
+
+        .timeline-item {
+            margin-bottom: .72rem;
+        }
+
+        .staff-note-value {
+            margin-top: .38rem;
+            padding: .42rem .5rem;
+            font-size: .76rem;
+        }
+
+        .staff-note-value small[data-staff-note-updated] {
+            display: none !important;
+        }
+
+        .table-responsive {
+            border-radius: .9rem;
+        }
+
+        .staff-note-sheet.offcanvas-bottom {
+            height: var(--staff-sheet-vh, 100dvh) !important;
+            min-height: var(--staff-sheet-vh, 100dvh) !important;
+            max-height: var(--staff-sheet-vh, 100dvh) !important;
+        }
+
+        .staff-note-sheet .offcanvas-header {
+            padding: .62rem .72rem;
+        }
+
+        .staff-note-sheet .offcanvas-body {
+            padding: .62rem .72rem calc(env(safe-area-inset-bottom, 0px) + .72rem);
+        }
+
+        .staff-note-sheet .offcanvas-title {
+            font-size: .94rem;
+        }
+
+        .staff-note-sheet .form-label {
+            font-size: .75rem;
+        }
+
+        .staff-note-sheet textarea {
+            min-height: 150px;
+        }
+
+        .staff-note-sheet .staff-note-actions .btn {
+            font-size: .74rem;
+            padding-top: .34rem;
+            padding-bottom: .34rem;
+        }
+
+        .detail-filter-summary {
+            padding: .6rem .66rem;
+        }
+
+        .detail-filter-summary-meta {
+            font-size: .69rem;
+            gap: .32rem;
+        }
+
+        .detail-filter-body {
+            padding: .62rem .66rem .7rem;
+        }
+
+        .detail-filter-form .form-label {
+            font-size: .7rem;
+            margin-bottom: .24rem !important;
+        }
+    }
+
+    @media (min-width: 768px) {
+        .timeline-swipe-actions {
+            display: none;
+        }
+
+        .super-bottom-dock,
+        .super-fab {
+            display: none !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<div class="history-superapp"
+    id="historySuperApp"
+    data-current-tab="{{ tab }}"
+    data-history-feed-url="{{ history_feed_base_url }}"
+    data-history-stream-url="{{ history_stream_url }}"
+    data-history-metrics-url="{{ url_for('daftar_tamu.user_guestbook_ux_metrics_ingest') }}">
+<section class="mb-4 history-page-hero">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="icon-badge feature-icon text-primary">
+                        <i class="bi bi-clock-history"></i>
+                    </span>
+                    <div>
+                        <h1 class="h3 fw-bold page-title mb-1">Riwayat Buku Tamu Saya</h1>
+                        <p class="page-subtitle mb-0">
+                            {{ user_profile.full_name or user_profile.email }} &bull; {{ user_profile.role|upper }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm guest-history-shell">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <div>
+                <h2 class="h6 fw-bold mb-0">Riwayat Kehadiran Buku Tamu</h2>
+                <small class="text-muted">Default menampilkan semua status transaksi.</small>
+            </div>
+            <div class="history-tabs">
+                <a class="history-tab-link {% if tab == 'beranda' %}active{% endif %}"
+                    href="{{ url_for('daftar_tamu.user_guestbook_history', tab='beranda', q=search_query, sort='date_desc', date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, status=status, home_limit=home_limit, per_page=per_page, page=1) }}">
+                    Beranda
+                </a>
+                <a class="history-tab-link {% if tab == 'detail' %}active{% endif %}"
+                    href="{{ url_for('daftar_tamu.user_guestbook_history', tab='detail', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, status=status, home_limit=home_limit, per_page=per_page, page=page) }}">
+                    Detail History
+                </a>
+            </div>
+        </div>
+
+        {% if tab == 'beranda' %}
+        {% set home_stats = namespace(approved=0, pending=0, rejected=0, mendesak=0, tindak_lanjut=0, pantau=0, tidak_perlu=0) %}
+        {% for item in home_rows %}
+            {% if item.status == 'approved' %}
+                {% set home_stats.approved = home_stats.approved + 1 %}
+            {% elif item.status == 'rejected' %}
+                {% set home_stats.rejected = home_stats.rejected + 1 %}
+            {% else %}
+                {% set home_stats.pending = home_stats.pending + 1 %}
+            {% endif %}
+            {% if item.staff_note_level == 'mendesak' %}
+                {% set home_stats.mendesak = home_stats.mendesak + 1 %}
+            {% elif item.staff_note_level == 'tindak_lanjut' %}
+                {% set home_stats.tindak_lanjut = home_stats.tindak_lanjut + 1 %}
+            {% elif item.staff_note_level == 'pantau' %}
+                {% set home_stats.pantau = home_stats.pantau + 1 %}
+            {% elif item.staff_note_level == 'tidak_perlu' %}
+                {% set home_stats.tidak_perlu = home_stats.tidak_perlu + 1 %}
+            {% endif %}
+        {% endfor %}
+        {% set shown_percent = ((home_rows|length * 100) / home_total_rows)|round(0, 'floor')|int if home_total_rows else 0 %}
+        <div class="super-lanes d-none d-md-grid">
+            <article class="lane-card lane-priority">
+                <div class="lane-title">
+                    <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                    Butuh Ditangani Sekarang
+                </div>
+                <div class="lane-priority-grid">
+                    <div class="lane-priority-item">
+                        <strong data-home-chip-count="mendesak">{{ home_stats.mendesak }}</strong>
+                        <span>Mendesak</span>
+                    </div>
+                    <div class="lane-priority-item">
+                        <strong data-home-chip-count="tindak_lanjut">{{ home_stats.tindak_lanjut }}</strong>
+                        <span>Butuh aksi</span>
+                    </div>
+                    <div class="lane-priority-item">
+                        <strong data-home-chip-count="pending">{{ home_stats.pending }}</strong>
+                        <span>Menunggu</span>
+                    </div>
+                </div>
+            </article>
+            <article class="lane-card lane-latest">
+                <div class="lane-title">
+                    <i class="bi bi-clock-history text-primary"></i>
+                    Riwayat Terbaru
+                </div>
+                <strong><span data-home-shown-count>{{ home_rows|length }}</span> / <span data-home-total-label>{{ home_total_rows }}</span></strong>
+                <small data-home-meta-small>riwayat ter-load di sesi ini</small>
+                <div class="lane-progress">
+                    <span data-home-progress style="width: {{ shown_percent }}%;"></span>
+                </div>
+            </article>
+            <article class="lane-card lane-actions">
+                <div class="lane-title">
+                    <i class="bi bi-lightning-charge-fill text-warning"></i>
+                    Quick Actions
+                </div>
+                <div class="quick-actions-grid">
+                    <button type="button"
+                        class="btn btn-sm btn-outline-danger js-home-chip-jump"
+                        data-chip-target="mendesak"
+                        data-beranda-url="{{ url_for('daftar_tamu.user_guestbook_history', tab='beranda', q=search_query, sort='date_desc', date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, status=status, home_limit=home_limit, per_page=per_page, page=1) }}">
+                        <i class="bi bi-exclamation-diamond me-1"></i>Filter Mendesak
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary js-open-first-staff-note">
+                        <i class="bi bi-journal-check me-1"></i>Catatan Cepat
+                    </button>
+                    <a class="btn btn-sm btn-outline-secondary"
+                        href="{{ url_for('daftar_tamu.user_guestbook_history', tab='detail', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, status=status, home_limit=home_limit, per_page=per_page, page=1) }}">
+                        <i class="bi bi-grid me-1"></i>Buka Detail
+                    </a>
+                </div>
+            </article>
+        </div>
+        <div class="history-highlights d-none d-md-flex">
+            <div class="history-highlight-pill">
+                <i class="bi bi-check-circle-fill text-success"></i>
+                <span data-home-stat="approved">{{ home_stats.approved }} terverifikasi</span>
+            </div>
+            <div class="history-highlight-pill">
+                <i class="bi bi-hourglass-split text-warning"></i>
+                <span data-home-stat="pending">{{ home_stats.pending }} menunggu</span>
+            </div>
+            <div class="history-highlight-pill">
+                <i class="bi bi-x-circle-fill text-danger"></i>
+                <span data-home-stat="rejected">{{ home_stats.rejected }} ditolak</span>
+            </div>
+            <div class="history-highlight-pill">
+                <i class="bi bi-journal-text text-primary"></i>
+                <span data-home-stat="shown">{{ home_rows|length }} riwayat tampil</span>
+            </div>
+        </div>
+        <div class="history-meta mb-3 d-none d-md-flex flex-wrap justify-content-between align-items-center gap-2">
+            <small class="text-muted" id="homeMetaSummary">Menampilkan {{ home_rows|length }} dari {{ home_total_rows }} riwayat terbaru.</small>
+            <small class="text-muted">1 baris 1 riwayat, mobile-first timeline.</small>
+        </div>
+
+        <div class="history-chip-sticky">
+            <div class="history-chip-scroll" id="homeFilterChips">
+                <button type="button" class="history-chip is-active" data-home-filter="all" aria-pressed="true">
+                    Semua
+                    <span class="history-chip-badge" data-home-chip-count="all">{{ home_rows|length }}</span>
+                </button>
+                <button type="button" class="history-chip" data-home-filter="mendesak" aria-pressed="false">
+                    Mendesak
+                    <span class="history-chip-badge" data-home-chip-count="mendesak">{{ home_stats.mendesak }}</span>
+                </button>
+                <button type="button" class="history-chip" data-home-filter="tindak_lanjut" aria-pressed="false">
+                    Butuh Penanganan
+                    <span class="history-chip-badge" data-home-chip-count="tindak_lanjut">{{ home_stats.tindak_lanjut }}</span>
+                </button>
+                <button type="button" class="history-chip" data-home-filter="pantau" aria-pressed="false">
+                    Dipantau
+                    <span class="history-chip-badge" data-home-chip-count="pantau">{{ home_stats.pantau }}</span>
+                </button>
+                <button type="button" class="history-chip" data-home-filter="selesai" aria-pressed="false">
+                    Selesai
+                    <span class="history-chip-badge" data-home-chip-count="selesai">{{ home_stats.approved }}</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="history-inline-state" id="homeInlineState" role="status" aria-live="polite"></div>
+        <div class="home-empty-state d-none" id="homeFilterEmpty">
+            <i class="bi bi-search"></i>
+            <div class="fw-semibold">Belum ada data pada filter ini</div>
+            <small>Coba ganti filter atau muat riwayat berikutnya.</small>
+            <div class="mt-2">
+                <button type="button" class="btn btn-sm btn-outline-primary js-reset-home-filter">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Tampilkan Semua
+                </button>
+            </div>
+        </div>
+
+        <div class="timeline-wrap"
+            id="homeTimelineWrap"
+            data-home-total="{{ home_total_rows }}"
+            data-home-chunk="4">
+            {% if home_rows %}
+            {% for row in home_rows %}
+            {% include "daftar_tamu/partials/_user_guestbook_home_timeline_item.html" %}
+            {% endfor %}
+            {% else %}
+            <div class="home-empty-state">
+                <i class="bi bi-journal-x"></i>
+                <div class="fw-semibold">Belum ada riwayat buku tamu</div>
+                <small>Aktivitas kunjungan akan tampil otomatis setelah data masuk.</small>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if home_has_more %}
+        <div class="mt-3">
+            <a class="btn btn-outline-primary w-100 js-load-more"
+                data-home-next-page="{{ ((home_rows|length + 3) // 4) + 1 }}"
+                href="{{ url_for('daftar_tamu.user_guestbook_history', tab='beranda', q=search_query, sort='date_desc', date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, status=status, home_limit=home_limit + 4, per_page=per_page, page=1) }}">
+                Muat 4 riwayat lagi
+            </a>
+        </div>
+        {% endif %}
+        {% else %}
+        {% set detail_filter = namespace(active=0) %}
+        {% if search_query %}{% set detail_filter.active = detail_filter.active + 1 %}{% endif %}
+        {% if date_from_str %}{% set detail_filter.active = detail_filter.active + 1 %}{% endif %}
+        {% if date_to_str %}{% set detail_filter.active = detail_filter.active + 1 %}{% endif %}
+        {% if guest_scope and guest_scope != 'all' %}{% set detail_filter.active = detail_filter.active + 1 %}{% endif %}
+        {% if sort and sort != 'date_desc' %}{% set detail_filter.active = detail_filter.active + 1 %}{% endif %}
+        {% if per_page != 10 %}{% set detail_filter.active = detail_filter.active + 1 %}{% endif %}
+        <details class="detail-filter-panel" {% if detail_filter.active > 0 %}open{% endif %}>
+            <summary class="detail-filter-summary">
+                <span class="detail-filter-summary-title">
+                    <i class="bi bi-sliders"></i>
+                    Filter Detail History
+                </span>
+                <span class="detail-filter-summary-meta">
+                    <span class="badge {% if detail_filter.active > 0 %}text-bg-primary{% else %}text-bg-secondary{% endif %} detail-filter-count">
+                        {{ detail_filter.active }} aktif
+                    </span>
+                    <span class="detail-filter-toggle">
+                        <span class="label-collapsed">Tampilkan</span>
+                        <span class="label-expanded">Sembunyikan</span>
+                        <i class="bi bi-chevron-down detail-filter-chevron"></i>
+                    </span>
+                </span>
+            </summary>
+            <div class="detail-filter-body">
+                <form method="get" class="detail-filter-form row g-2 align-items-end mb-0">
+                    <input type="hidden" name="tab" value="detail">
+                    <input type="hidden" name="status" value="{{ status }}">
+                    <input type="hidden" name="home_limit" value="{{ home_limit }}">
+                    <div class="col-12 col-md-3">
+                        <label class="form-label small mb-1">Cari</label>
+                        <input type="search" class="form-control form-control-sm" name="q" value="{{ search_query }}"
+                            placeholder="Sekolah / tujuan / tanggal">
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small mb-1">Dari</label>
+                        <input type="date" class="form-control form-control-sm" name="date_from" value="{{ date_from_str }}"
+                            max="{{ today_str }}">
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small mb-1">Sampai</label>
+                        <input type="date" class="form-control form-control-sm" name="date_to" value="{{ date_to_str }}"
+                            max="{{ today_str }}">
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small mb-1">Tipe Tamu</label>
+                        <select name="guest_scope" class="form-select form-select-sm">
+                            <option value="all" {% if guest_scope=='all' %}selected{% endif %}>Semua</option>
+                            <option value="sudin" {% if guest_scope=='sudin' %}selected{% endif %}>SUDIN</option>
+                            <option value="umum" {% if guest_scope=='umum' %}selected{% endif %}>Umum</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-1">
+                        <label class="form-label small mb-1">Urut</label>
+                        <select name="sort" class="form-select form-select-sm">
+                            <option value="date_desc" {% if sort=='date_desc' %}selected{% endif %}>Baru</option>
+                            <option value="date_asc" {% if sort=='date_asc' %}selected{% endif %}>Lama</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-1">
+                        <label class="form-label small mb-1">Per hal.</label>
+                        <select name="per_page" class="form-select form-select-sm">
+                            {% for option in [10, 20, 50, 100] %}
+                            <option value="{{ option }}" {% if per_page==option %}selected{% endif %}>{{ option }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-1">
+                        <button type="submit" class="btn btn-sm btn-primary w-100">Terapkan</button>
+                    </div>
+                </form>
+            </div>
+        </details>
+
+        <div class="d-md-none">
+            {% for row in detail_rows %}
+            <article class="detail-card"
+                data-transaction-id="{{ row.transaction_id }}"
+                data-status="{{ row.status }}"
+                data-note-level="{{ row.staff_note_level or '' }}"
+                data-signature="{{ row.signature if row.signature is defined else '' }}">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div>
+                        <div class="fw-semibold">{{ row.school_name }}</div>
+                        <div class="small text-muted">{{ row.visit_at|jakarta('%d %b %Y, %H:%M') }} WIB</div>
+                    </div>
+                    <span class="badge text-bg-{% if row.status == 'approved' %}success{% elif row.status == 'rejected' %}danger{% else %}warning{% endif %}" data-status-badge>
+                        {{ row.status_label }}
+                    </span>
+                </div>
+                <div class="small mt-2 text-muted">{{ row.guest_display or '-' }} &bull; {{ row.guest_count or 0 }} tamu</div>
+                <div class="small text-muted">Tujuan: {{ row.purpose or '-' }}</div>
+                {% if row.photo_url %}
+                <a class="btn btn-sm btn-outline-secondary mt-2 js-mobile-photo-preview"
+                    target="_blank"
+                    href="{{ row.photo_url }}"
+                    data-photo-url="{{ row.photo_url }}"
+                    data-photo-title="{{ row.school_name }} - {{ row.visit_at|jakarta('%d %b %Y, %H:%M') }} WIB">
+                    <i class="bi bi-camera me-1"></i>Lihat Foto
+                </a>
+                {% endif %}
+                <div class="small mt-2 text-muted">Catatan verifikator: {{ row.reviewer_notes or '-' }}</div>
+                <div class="staff-note-value mt-2 {% if not row.staff_note %}d-none{% endif %}" data-staff-note-block>
+                    <div class="staff-note-level {% if not row.staff_note_level_label %}d-none{% endif %}" data-staff-note-level-wrap>
+                        <span class="badge text-bg-{{ row.staff_note_level_tone or 'secondary' }}" data-staff-note-level-badge>{{ row.staff_note_level_label or '' }}</span>
+                    </div>
+                    <span data-staff-note-text>{{ row.staff_note or '' }}</span>
+                    <small class="{% if not row.staff_note_updated_at %}d-none{% endif %}" data-staff-note-updated>
+                        {% if row.staff_note_updated_at %}Update: {{ row.staff_note_updated_at }}{% endif %}
+                    </small>
+                </div>
+                {% if row.can_add_staff_note %}
+                <button type="button"
+                    class="btn btn-sm btn-outline-primary staff-note-trigger js-open-staff-note-sheet"
+                    data-note-url="{{ url_for('daftar_tamu.user_guestbook_staff_note', transaction_id=row.transaction_id) }}"
+                    data-note="{{ row.staff_note or '' }}"
+                    data-note-level="{{ row.staff_note_level or 'tidak_perlu' }}"
+                    data-title="{{ row.school_name }} - {{ row.visit_at|jakarta('%d %b %Y, %H:%M') }} WIB"
+                    data-tab="detail"
+                    data-q="{{ search_query }}"
+                    data-sort="{{ sort }}"
+                    data-date-from="{{ date_from_str }}"
+                    data-date-to="{{ date_to_str }}"
+                    data-guest-scope="{{ guest_scope }}"
+                    data-status="{{ status }}"
+                    data-home-limit="{{ home_limit }}"
+                    data-per-page="{{ per_page }}"
+                    data-page="{{ page }}">
+                    <i class="bi bi-journal-text me-1"></i>
+                    <span data-note-trigger-label>
+                        {% if row.staff_note %}Ubah catatan staf{% else %}Tambah catatan staf{% endif %}
+                    </span>
+                </button>
+                {% endif %}
+            </article>
+            {% else %}
+            <div class="text-center text-muted py-4">Belum ada riwayat buku tamu.</div>
+            {% endfor %}
+        </div>
+
+        <div class="table-responsive d-none d-md-block">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Waktu</th>
+                        <th>Sekolah</th>
+                        <th>Tamu</th>
+                        <th>Status</th>
+                        <th>Catatan</th>
+                        <th class="text-end">Foto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in detail_rows %}
+                    <tr data-transaction-id="{{ row.transaction_id }}"
+                        data-status="{{ row.status }}"
+                        data-note-level="{{ row.staff_note_level or '' }}"
+                        data-signature="{{ row.signature if row.signature is defined else '' }}">
+                        <td>
+                            <div class="fw-semibold">{{ row.visit_at|jakarta('%d %b %Y') }}</div>
+                            <div class="small text-muted">{{ row.visit_at|jakarta('%H:%M') }} WIB</div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ row.school_name }}</div>
+                            <div class="small text-muted">{{ row.school_npsn or '-' }}</div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ row.guest_display or '-' }}</div>
+                            <div class="small text-muted">{{ row.guest_count or 0 }} tamu</div>
+                            <div class="small text-muted">Tujuan: {{ row.purpose or '-' }}</div>
+                        </td>
+                        <td>
+                            <span class="badge text-bg-{% if row.status == 'approved' %}success{% elif row.status == 'rejected' %}danger{% else %}warning{% endif %}" data-status-badge>
+                                {{ row.status_label }}
+                            </span>
+                        </td>
+                        <td style="min-width: 260px;">
+                            <div class="small text-muted">Verifikator: {{ row.reviewer_notes or '-' }}</div>
+                            <div class="staff-note-value mt-2 {% if not row.staff_note %}d-none{% endif %}" data-staff-note-block>
+                                <div class="staff-note-level {% if not row.staff_note_level_label %}d-none{% endif %}" data-staff-note-level-wrap>
+                                    <span class="badge text-bg-{{ row.staff_note_level_tone or 'secondary' }}" data-staff-note-level-badge>{{ row.staff_note_level_label or '' }}</span>
+                                </div>
+                                <span data-staff-note-text>{{ row.staff_note or '' }}</span>
+                                <small class="{% if not row.staff_note_updated_at %}d-none{% endif %}" data-staff-note-updated>
+                                    {% if row.staff_note_updated_at %}Update: {{ row.staff_note_updated_at }}{% endif %}
+                                </small>
+                            </div>
+                            {% if row.can_add_staff_note %}
+                            <button type="button"
+                                class="btn btn-sm btn-outline-primary staff-note-trigger js-open-staff-note-sheet"
+                                data-note-url="{{ url_for('daftar_tamu.user_guestbook_staff_note', transaction_id=row.transaction_id) }}"
+                                data-note="{{ row.staff_note or '' }}"
+                                data-note-level="{{ row.staff_note_level or 'tidak_perlu' }}"
+                                data-title="{{ row.school_name }} - {{ row.visit_at|jakarta('%d %b %Y, %H:%M') }} WIB"
+                                data-tab="detail"
+                                data-q="{{ search_query }}"
+                                data-sort="{{ sort }}"
+                                data-date-from="{{ date_from_str }}"
+                                data-date-to="{{ date_to_str }}"
+                                data-guest-scope="{{ guest_scope }}"
+                                data-status="{{ status }}"
+                                data-home-limit="{{ home_limit }}"
+                                data-per-page="{{ per_page }}"
+                                data-page="{{ page }}">
+                                <i class="bi bi-journal-text me-1"></i>
+                                <span data-note-trigger-label>
+                                    {% if row.staff_note %}Ubah catatan staf{% else %}Tambah catatan staf{% endif %}
+                                </span>
+                            </button>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if row.photo_url %}
+                            <a class="btn btn-sm btn-outline-secondary" target="_blank" href="{{ row.photo_url }}">
+                                <i class="bi bi-camera"></i>
+                            </a>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">Belum ada riwayat buku tamu.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% set start_row = ((page - 1) * per_page) + 1 if detail_total_rows else 0 %}
+        {% set end_row = ((page - 1) * per_page) + (detail_rows|length) if detail_total_rows else 0 %}
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+            <small class="text-muted">Menampilkan {{ start_row }}-{{ end_row }} dari {{ detail_total_rows }} riwayat</small>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                    <a class="page-link"
+                        href="{{ url_for('daftar_tamu.user_guestbook_history', tab='detail', page=page-1, per_page=per_page, q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, status=status, home_limit=home_limit) }}">Prev</a>
+                </li>
+                {% set start_page = 1 if page - 2 < 1 else page - 2 %}
+                {% set end_page = detail_total_pages if page + 2 > detail_total_pages else page + 2 %}
+                {% for p in range(start_page, end_page + 1) %}
+                <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link"
+                        href="{{ url_for('daftar_tamu.user_guestbook_history', tab='detail', page=p, per_page=per_page, q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, status=status, home_limit=home_limit) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {% if page >= detail_total_pages %}disabled{% endif %}">
+                    <a class="page-link"
+                        href="{{ url_for('daftar_tamu.user_guestbook_history', tab='detail', page=page+1, per_page=per_page, q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, status=status, home_limit=home_limit) }}">Next</a>
+                </li>
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<div class="offcanvas offcanvas-bottom staff-note-sheet" tabindex="-1" id="staffNoteSheet" aria-labelledby="staffNoteSheetLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="staffNoteSheetLabel">Catatan Staff</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Tutup"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form method="post" id="staffNoteSheetForm" action="#">
+            <input type="hidden" name="tab" value="">
+            <input type="hidden" name="q" value="">
+            <input type="hidden" name="sort" value="">
+            <input type="hidden" name="date_from" value="">
+            <input type="hidden" name="date_to" value="">
+            <input type="hidden" name="guest_scope" value="">
+            <input type="hidden" name="status" value="">
+            <input type="hidden" name="home_limit" value="">
+            <input type="hidden" name="per_page" value="">
+            <input type="hidden" name="page" value="">
+
+            <div class="mb-3">
+                <label class="form-label small fw-semibold">Tingkat Catatan</label>
+                <select name="staff_note_level" class="form-select form-select-sm">
+                    <option value="tidak_perlu">Tidak Perlu Penanganan</option>
+                    <option value="pantau">Perlu Dipantau</option>
+                    <option value="tindak_lanjut">Butuh Penanganan</option>
+                    <option value="mendesak">Sangat Butuh Penanganan</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label small fw-semibold">Catatan Staff</label>
+                <textarea name="staff_note" class="form-control form-control-sm" maxlength="500"
+                    placeholder="Tulis catatan staff untuk admin (maks 500 karakter)"></textarea>
+            </div>
+            <div class="d-flex justify-content-between gap-2 staff-note-actions">
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="staffNoteClearBtn">
+                    <i class="bi bi-eraser me-1"></i>Kosongkan
+                </button>
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-check2-circle me-1"></i>Simpan Catatan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-bottom mobile-notif-sheet d-md-none" tabindex="-1" id="mobileNotifSheet" aria-labelledby="mobileNotifSheetLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="mobileNotifSheetLabel">Notifikasi</h5>
+        <div class="mobile-notif-actions">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="mobileNotifRefreshBtn" title="Perbarui">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+            <button type="button" class="btn btn-link btn-sm text-decoration-none px-0" id="mobileNotifMarkAllBtn">
+                Tandai semua
+            </button>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Tutup"></button>
+        </div>
+    </div>
+    <div class="offcanvas-body">
+        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+            <small class="text-muted">Notifikasi PANBERS + Buku Tamu</small>
+            <span class="badge text-bg-primary d-none" id="mobileNotifUnreadBadge" data-count="0">0</span>
+        </div>
+        <div id="mobileNotifEmpty" class="notification-empty text-muted small">Belum ada notifikasi terbaru.</div>
+        <div class="notification-quick" id="mobileNotifList"></div>
+    </div>
+</div>
+
+<div class="modal fade mobile-photo-modal" id="mobilePhotoPreviewModal" tabindex="-1" aria-labelledby="mobilePhotoPreviewLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mobilePhotoPreviewLabel">Foto Kunjungan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mobile-photo-frame">
+                    <img id="mobilePhotoPreviewImage" src="" alt="Foto kunjungan">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<nav class="super-bottom-dock d-md-none" id="superBottomDock">
+    <a class="super-dock-item {% if tab == 'beranda' %}is-active{% endif %}"
+        href="{{ url_for('daftar_tamu.user_guestbook_history', tab='beranda', q=search_query, sort='date_desc', date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, status=status, home_limit=home_limit, per_page=per_page, page=1) }}">
+        <i class="bi bi-house-door-fill"></i>
+        <span>Beranda</span>
+    </a>
+    <a class="super-dock-item {% if tab == 'detail' %}is-active{% endif %}"
+        href="{{ url_for('daftar_tamu.user_guestbook_history', tab='detail', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, status=status, home_limit=home_limit, per_page=per_page, page=1) }}">
+        <i class="bi bi-layout-text-window-reverse"></i>
+        <span>Detail</span>
+    </a>
+    <button type="button" class="super-dock-item js-open-global-notif">
+        <i class="bi bi-bell-fill"></i>
+        <span>Notif</span>
+    </button>
+    <a class="super-dock-item" href="{{ url_for('portal.home') }}">
+        <i class="bi bi-grid-fill"></i>
+        <span>Home</span>
+    </a>
+</nav>
+<button type="button" class="super-fab d-md-none js-open-first-staff-note" id="quickStaffNoteFab" aria-label="Aksi cepat">
+    <i class="bi bi-lightning-charge-fill"></i>
+</button>
+<div class="history-undo-container" id="historyUndoContainer" aria-live="polite"></div>
+</div>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+    (function () {
+        var appRoot = document.getElementById('historySuperApp');
+        var currentTab = ((appRoot && appRoot.getAttribute('data-current-tab')) || 'beranda').toLowerCase();
+        var historyFeedUrl = (appRoot && appRoot.getAttribute('data-history-feed-url')) || '';
+        var historyStreamUrl = (appRoot && appRoot.getAttribute('data-history-stream-url')) || '';
+        var historyMetricsUrl = (appRoot && appRoot.getAttribute('data-history-metrics-url')) || '';
+        var stateStorageKey = 'aska_dt_superapp_state:' + window.location.pathname;
+        var metricStorageKey = 'aska_dt_superapp_metrics:' + window.location.pathname;
+        var noteQueueStorageKey = 'aska_dt_note_queue:' + window.location.pathname;
+        var sessionStorageKey = 'aska_dt_session_key:' + window.location.pathname;
+        var csrfMetaEl = document.querySelector('meta[name="csrf-token"]');
+        var csrfToken = csrfMetaEl ? (csrfMetaEl.getAttribute('content') || '') : '';
+        var themeColorMetaEl = document.querySelector('meta[name="theme-color"]');
+
+        function syncThemeColorMeta() {
+            if (!themeColorMetaEl) {
+                return;
+            }
+            var isDark = (document.documentElement.getAttribute('data-theme') || '').toLowerCase() === 'dark';
+            themeColorMetaEl.setAttribute('content', isDark ? '#0f172a' : '#0284c7');
+        }
+
+        syncThemeColorMeta();
+        if (window.MutationObserver) {
+            var themeObserver = new MutationObserver(function (mutations) {
+                for (var i = 0; i < mutations.length; i += 1) {
+                    if (mutations[i].attributeName === 'data-theme') {
+                        syncThemeColorMeta();
+                        break;
+                    }
+                }
+            });
+            themeObserver.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['data-theme']
+            });
+        }
+
+        function safeParseJson(raw, fallback) {
+            if (!raw) {
+                return fallback;
+            }
+            try {
+                return JSON.parse(raw);
+            } catch (error) {
+                return fallback;
+            }
+        }
+
+        function readStorage(key, fallback) {
+            try {
+                return safeParseJson(window.localStorage.getItem(key), fallback);
+            } catch (error) {
+                return fallback;
+            }
+        }
+
+        function writeStorage(key, value) {
+            try {
+                window.localStorage.setItem(key, JSON.stringify(value));
+            } catch (error) {
+                // no-op
+            }
+        }
+
+        function randomToken() {
+            return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+        }
+
+        function getSessionKey() {
+            var key = '';
+            try {
+                key = window.sessionStorage.getItem(sessionStorageKey) || '';
+            } catch (error) {
+                key = '';
+            }
+            if (!key) {
+                key = randomToken();
+                try {
+                    window.sessionStorage.setItem(sessionStorageKey, key);
+                } catch (error) {
+                    // no-op
+                }
+            }
+            return key;
+        }
+
+        function getFetchHeaders(extraHeaders) {
+            var headers = extraHeaders ? Object.assign({}, extraHeaders) : {};
+            if (csrfToken) {
+                headers['X-CSRFToken'] = csrfToken;
+            }
+            return headers;
+        }
+
+        var viewState = readStorage(stateStorageKey, {});
+        var metrics = readStorage(metricStorageKey, { events: {}, updated_at: '' });
+        var metricPersistTimer = null;
+        var lastVirtualizedReported = -1;
+        var lastMetricsSyncAt = 0;
+        var metricsSyncInFlight = false;
+
+        function scheduleMetricPersist() {
+            if (metricPersistTimer) {
+                window.clearTimeout(metricPersistTimer);
+            }
+            metricPersistTimer = window.setTimeout(function () {
+                writeStorage(metricStorageKey, metrics);
+                metricPersistTimer = null;
+            }, 500);
+        }
+
+        function trackUX(eventName, payload) {
+            if (!eventName) {
+                return;
+            }
+            if (!metrics.events) {
+                metrics.events = {};
+            }
+            metrics.events[eventName] = (metrics.events[eventName] || 0) + 1;
+            metrics.last_event = eventName;
+            metrics.updated_at = new Date().toISOString();
+            if (payload) {
+                metrics.last_payload = payload;
+            }
+            scheduleMetricPersist();
+            syncMetrics(false);
+        }
+
+        window.__askaGuestbookUx = metrics;
+
+        function collectMetricsPayload() {
+            return {
+                session_key: getSessionKey(),
+                page_path: window.location.pathname,
+                tab: currentTab,
+                metrics: metrics
+            };
+        }
+
+        function sendMetricsBeacon() {
+            if (!historyMetricsUrl || !window.navigator || typeof window.navigator.sendBeacon !== 'function') {
+                return false;
+            }
+            try {
+                var formData = new FormData();
+                formData.append('session_key', getSessionKey());
+                formData.append('page_path', window.location.pathname);
+                formData.append('tab', currentTab);
+                formData.append('metrics_json', JSON.stringify(metrics || {}));
+                if (csrfToken) {
+                    formData.append('csrf_token', csrfToken);
+                }
+                return window.navigator.sendBeacon(historyMetricsUrl, formData);
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function syncMetrics(force) {
+            if (!historyMetricsUrl || metricsSyncInFlight) {
+                return;
+            }
+            var now = Date.now();
+            if (!force && (now - lastMetricsSyncAt) < 45000) {
+                return;
+            }
+            metricsSyncInFlight = true;
+            try {
+                var response = await fetch(historyMetricsUrl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: getFetchHeaders({
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }),
+                    body: JSON.stringify(collectMetricsPayload())
+                });
+                if (response.ok) {
+                    lastMetricsSyncAt = now;
+                }
+            } catch (error) {
+                // keep local cache and retry on next cycle
+            } finally {
+                metricsSyncInFlight = false;
+            }
+        }
+
+        var sheetEl = document.getElementById('staffNoteSheet');
+        var formEl = document.getElementById('staffNoteSheetForm');
+        var titleEl = document.getElementById('staffNoteSheetLabel');
+        var sheet = null;
+        var noteInput = null;
+        var levelInput = null;
+        var hiddenKeys = ['tab', 'q', 'sort', 'date_from', 'date_to', 'guest_scope', 'status', 'home_limit', 'per_page', 'page'];
+        var noteSubmitBtn = null;
+        var undoContainer = document.getElementById('historyUndoContainer');
+        var activeUndoTimers = {};
+        var offlineQueueFlushInFlight = false;
+        var streamSource = null;
+        var streamRetryTimer = null;
+        var streamRetryDelay = 3500;
+
+        if (sheetEl && formEl && titleEl && window.bootstrap && bootstrap.Offcanvas) {
+            sheet = bootstrap.Offcanvas.getOrCreateInstance(sheetEl);
+            noteInput = formEl.querySelector('textarea[name="staff_note"]');
+            levelInput = formEl.querySelector('select[name="staff_note_level"]');
+            noteSubmitBtn = formEl.querySelector('button[type="submit"]');
+        }
+
+        function bindOffcanvasSwipeDownToClose(panelEl, offcanvasInstance, metricEvent) {
+            if (!panelEl || !offcanvasInstance) {
+                return;
+            }
+            var swipeArea = panelEl;
+            var bodyEl = panelEl.querySelector('.offcanvas-body');
+            var swipeState = {
+                active: false,
+                pointerId: null,
+                startX: 0,
+                startY: 0,
+                lastX: 0,
+                lastY: 0,
+                startedInBody: false,
+                scrollEl: null
+            };
+
+            function isSwipeEnabled() {
+                return window.matchMedia('(max-width: 767.98px)').matches
+                    && (panelEl.classList.contains('show') || panelEl.classList.contains('showing'));
+            }
+
+            function isInteractiveTarget(target) {
+                var el = target instanceof Element ? target : (target && target.parentElement ? target.parentElement : null);
+                return !!(el && el.closest('button, input, textarea, select, [contenteditable="true"], [data-swipe-close-ignore="1"]'));
+            }
+
+            function findScrollableAncestor(target) {
+                var node = target;
+                while (node && node !== panelEl) {
+                    if (node instanceof HTMLElement) {
+                        var style = window.getComputedStyle(node);
+                        var overflowY = style ? style.overflowY : '';
+                        var canScrollY = (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay')
+                            && (node.scrollHeight - node.clientHeight > 1);
+                        if (canScrollY) {
+                            return node;
+                        }
+                    }
+                    node = node.parentElement;
+                }
+                if (bodyEl && (bodyEl.scrollHeight - bodyEl.clientHeight > 1)) {
+                    return bodyEl;
+                }
+                return null;
+            }
+
+            function releasePointerCapture(pointerId) {
+                if (pointerId === null || typeof swipeArea.releasePointerCapture !== 'function') {
+                    return;
+                }
+                try {
+                    swipeArea.releasePointerCapture(pointerId);
+                } catch (error) {
+                    // no-op
+                }
+            }
+
+            function resetSwipeState() {
+                var pointerId = swipeState.pointerId;
+                swipeState.active = false;
+                swipeState.pointerId = null;
+                swipeState.startedInBody = false;
+                swipeState.scrollEl = null;
+                releasePointerCapture(pointerId);
+            }
+
+            function startSwipe(pointerId, clientX, clientY, target) {
+                if (!isSwipeEnabled()) {
+                    return false;
+                }
+                if (swipeState.active) {
+                    return false;
+                }
+                if (isInteractiveTarget(target)) {
+                    return false;
+                }
+                var inBody = !!(bodyEl && bodyEl.contains(target));
+                var scrollEl = findScrollableAncestor(target);
+                swipeState.active = true;
+                swipeState.pointerId = pointerId;
+                swipeState.startX = clientX;
+                swipeState.startY = clientY;
+                swipeState.lastX = clientX;
+                swipeState.lastY = clientY;
+                swipeState.startedInBody = inBody;
+                swipeState.scrollEl = scrollEl;
+                if (pointerId !== null && typeof swipeArea.setPointerCapture === 'function') {
+                    try {
+                        swipeArea.setPointerCapture(pointerId);
+                    } catch (error) {
+                        // no-op
+                    }
+                }
+                return true;
+            }
+
+            function updateSwipePosition(clientX, clientY) {
+                if (!swipeState.active) {
+                    return;
+                }
+                swipeState.lastX = clientX;
+                swipeState.lastY = clientY;
+            }
+
+            function shouldCloseSwipe(diffX, diffY) {
+                if (swipeState.scrollEl && swipeState.scrollEl.scrollTop > 4) {
+                    return false;
+                }
+                return diffY > 42 && Math.abs(diffY) > Math.abs(diffX) * 0.75;
+            }
+
+            function finishSwipe(clientX, clientY) {
+                if (!swipeState.active) {
+                    return false;
+                }
+                var diffX = clientX - swipeState.startX;
+                var diffY = clientY - swipeState.startY;
+                var closePanel = shouldCloseSwipe(diffX, diffY);
+                resetSwipeState();
+                if (!closePanel) {
+                    return false;
+                }
+                offcanvasInstance.hide();
+                if (metricEvent) {
+                    trackUX(metricEvent);
+                }
+                return true;
+            }
+
+            panelEl.addEventListener('hidden.bs.offcanvas', resetSwipeState);
+
+            if (window.PointerEvent) {
+                swipeArea.addEventListener('pointerdown', function (event) {
+                    if (event.pointerType === 'mouse' && event.button !== 0) {
+                        return;
+                    }
+                    startSwipe(event.pointerId, event.clientX, event.clientY, event.target);
+                });
+
+                swipeArea.addEventListener('pointermove', function (event) {
+                    if (!swipeState.active) {
+                        return;
+                    }
+                    if (swipeState.pointerId !== null && event.pointerId !== swipeState.pointerId) {
+                        return;
+                    }
+                    updateSwipePosition(event.clientX, event.clientY);
+                    var diffX = event.clientX - swipeState.startX;
+                    var diffY = event.clientY - swipeState.startY;
+                    if (diffY > 8 && Math.abs(diffY) > Math.abs(diffX) * 0.7) {
+                        if (swipeState.scrollEl && swipeState.scrollEl.scrollTop > 4) {
+                            return;
+                        }
+                        if (event.cancelable) {
+                            event.preventDefault();
+                        }
+                    }
+                });
+
+                swipeArea.addEventListener('pointerup', function (event) {
+                    if (!swipeState.active) {
+                        return;
+                    }
+                    if (swipeState.pointerId !== null && event.pointerId !== swipeState.pointerId) {
+                        return;
+                    }
+                    finishSwipe(event.clientX, event.clientY);
+                });
+
+                swipeArea.addEventListener('pointercancel', function (event) {
+                    if (!swipeState.active) {
+                        return;
+                    }
+                    if (swipeState.pointerId !== null && event.pointerId !== swipeState.pointerId) {
+                        return;
+                    }
+                    finishSwipe(swipeState.lastX, swipeState.lastY);
+                });
+            }
+
+            swipeArea.addEventListener('touchstart', function (event) {
+                if (!event.touches || !event.touches.length) {
+                    return;
+                }
+                var touch = event.touches[0];
+                var pointerId = touch && typeof touch.identifier === 'number' ? touch.identifier : 0;
+                startSwipe(pointerId, touch.clientX, touch.clientY, event.target);
+            }, { passive: true, capture: true });
+
+            swipeArea.addEventListener('touchmove', function (event) {
+                if (!swipeState.active || !event.touches || !event.touches.length) {
+                    return;
+                }
+                var touch = event.touches[0];
+                if (!touch) {
+                    return;
+                }
+                updateSwipePosition(touch.clientX, touch.clientY);
+                var diffX = touch.clientX - swipeState.startX;
+                var diffY = touch.clientY - swipeState.startY;
+                if (diffY > 8 && Math.abs(diffY) > Math.abs(diffX) * 0.7) {
+                    if (swipeState.scrollEl && swipeState.scrollEl.scrollTop > 4) {
+                        return;
+                    }
+                    if (event.cancelable) {
+                        event.preventDefault();
+                    }
+                }
+            }, { passive: false, capture: true });
+
+            swipeArea.addEventListener('touchend', function (event) {
+                if (!swipeState.active || !event.changedTouches || !event.changedTouches.length) {
+                    return;
+                }
+                var touch = event.changedTouches[0];
+                if (!touch) {
+                    return;
+                }
+                finishSwipe(touch.clientX, touch.clientY);
+            }, { passive: true, capture: true });
+
+            swipeArea.addEventListener('touchcancel', function () {
+                finishSwipe(swipeState.lastX, swipeState.lastY);
+            }, { passive: true, capture: true });
+        }
+
+        function syncStaffNoteSheetViewportHeight() {
+            if (!sheetEl) {
+                return;
+            }
+            if (!window.matchMedia('(max-width: 767.98px)').matches) {
+                sheetEl.style.removeProperty('--staff-sheet-vh');
+                return;
+            }
+            var viewportHeight = 0;
+            if (window.visualViewport && window.visualViewport.height) {
+                viewportHeight = Math.round(window.visualViewport.height);
+            }
+            if (!viewportHeight) {
+                viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+            }
+            if (viewportHeight > 0) {
+                sheetEl.style.setProperty('--staff-sheet-vh', viewportHeight + 'px');
+            }
+        }
+
+        if (sheetEl) {
+            sheetEl.addEventListener('show.bs.offcanvas', syncStaffNoteSheetViewportHeight);
+            sheetEl.addEventListener('shown.bs.offcanvas', syncStaffNoteSheetViewportHeight);
+        }
+        if (window.visualViewport && typeof window.visualViewport.addEventListener === 'function') {
+            window.visualViewport.addEventListener('resize', syncStaffNoteSheetViewportHeight);
+        }
+        syncStaffNoteSheetViewportHeight();
+
+        function normalizeLevel(raw) {
+            var value = (raw || '').toLowerCase();
+            if (['mendesak', 'tindak_lanjut', 'pantau', 'tidak_perlu'].indexOf(value) === -1) {
+                return '';
+            }
+            return value;
+        }
+
+        function sanitizeHomeFilter(value) {
+            var normalized = (value || 'all').toLowerCase();
+            if (['all', 'mendesak', 'tindak_lanjut', 'pantau', 'selesai'].indexOf(normalized) === -1) {
+                return 'all';
+            }
+            return normalized;
+        }
+
+        function getLevelLabel(level) {
+            if (level === 'mendesak') return 'Sangat Butuh Penanganan';
+            if (level === 'tindak_lanjut') return 'Butuh Penanganan';
+            if (level === 'pantau') return 'Perlu Dipantau';
+            if (level === 'tidak_perlu') return 'Tidak Perlu Penanganan';
+            return '';
+        }
+
+        function getLevelTone(level) {
+            if (level === 'mendesak') return 'danger';
+            if (level === 'tindak_lanjut') return 'warning';
+            if (level === 'pantau') return 'info';
+            if (level === 'tidak_perlu') return 'secondary';
+            return 'secondary';
+        }
+
+        function pushToast(message, duration) {
+            if (!message) {
+                return;
+            }
+            if (typeof window.showToast === 'function') {
+                window.showToast(message, duration || 2200);
+                return;
+            }
+            var toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 start-50 translate-middle-x mb-4 px-4 py-2 rounded-pill text-white shadow';
+            toast.style.cssText = 'background:#333;z-index:1100;';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            window.setTimeout(function () {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity .28s ease';
+                window.setTimeout(function () { toast.remove(); }, 280);
+            }, duration || 2200);
+        }
+
+        function setValue(name, value) {
+            if (!formEl) {
+                return;
+            }
+            var input = formEl.querySelector('[name="' + name + '"]');
+            if (input) {
+                input.value = value || '';
+            }
+        }
+
+        function bindStaffNoteSheet(trigger) {
+            if (!trigger || !sheet || !formEl || !noteInput || !levelInput || !titleEl) {
+                return;
+            }
+            var ds = trigger.dataset || {};
+            formEl.action = ds.noteUrl || '#';
+            var mobileMode = window.matchMedia('(max-width: 767.98px)').matches;
+            var titleSource = ds.title ? String(ds.title).trim() : '';
+            if (mobileMode) {
+                titleEl.textContent = 'Catatan Staff';
+                if (titleSource) {
+                    titleEl.setAttribute('title', titleSource);
+                } else {
+                    titleEl.removeAttribute('title');
+                }
+            } else {
+                titleEl.textContent = titleSource ? ('Catatan Staff - ' + titleSource) : 'Catatan Staff';
+                titleEl.removeAttribute('title');
+            }
+            noteInput.value = ds.note || '';
+            levelInput.value = normalizeLevel(ds.noteLevel) || 'tidak_perlu';
+
+            hiddenKeys.forEach(function (key) {
+                var dsKey = key.replace(/_([a-z])/g, function (_, c) { return c.toUpperCase(); });
+                setValue(key, ds[dsKey] || '');
+            });
+
+            syncStaffNoteSheetViewportHeight();
+            sheet.show();
+        }
+
+        function extractTransactionIdFromUrl(url) {
+            var match = String(url || '').match(/\/riwayat\/(\d+)\/catatan-staf/i);
+            if (!match || !match[1]) {
+                return 0;
+            }
+            return parseInt(match[1], 10) || 0;
+        }
+
+        function updateStaffNoteBlock(blockEl, noteValue, levelValue, updatedAtValue) {
+            if (!blockEl) {
+                return;
+            }
+            var levelWrap = blockEl.querySelector('[data-staff-note-level-wrap]');
+            var levelBadge = blockEl.querySelector('[data-staff-note-level-badge]');
+            var noteText = blockEl.querySelector('[data-staff-note-text]');
+            var noteUpdated = blockEl.querySelector('[data-staff-note-updated]');
+
+            if (!noteValue) {
+                blockEl.classList.add('d-none');
+                if (noteText) {
+                    noteText.textContent = '';
+                }
+                if (levelWrap) {
+                    levelWrap.classList.add('d-none');
+                }
+                if (levelBadge) {
+                    levelBadge.textContent = '';
+                    levelBadge.className = 'badge text-bg-secondary';
+                }
+                if (noteUpdated) {
+                    noteUpdated.classList.add('d-none');
+                    noteUpdated.textContent = '';
+                }
+                return;
+            }
+
+            blockEl.classList.remove('d-none');
+            if (noteText) {
+                noteText.textContent = noteValue;
+            }
+            if (levelWrap && levelBadge) {
+                var label = getLevelLabel(levelValue);
+                if (label) {
+                    levelWrap.classList.remove('d-none');
+                    levelBadge.textContent = label;
+                    levelBadge.className = 'badge text-bg-' + getLevelTone(levelValue);
+                } else {
+                    levelWrap.classList.add('d-none');
+                    levelBadge.textContent = '';
+                    levelBadge.className = 'badge text-bg-secondary';
+                }
+            }
+            if (noteUpdated) {
+                if (updatedAtValue) {
+                    noteUpdated.classList.remove('d-none');
+                    noteUpdated.textContent = 'Update: ' + updatedAtValue;
+                } else {
+                    noteUpdated.classList.add('d-none');
+                    noteUpdated.textContent = '';
+                }
+            }
+        }
+
+        function updateTriggerLabel(trigger, noteValue) {
+            if (!trigger) {
+                return;
+            }
+            var labelEl = trigger.querySelector('[data-note-trigger-label]');
+            if (labelEl) {
+                labelEl.textContent = noteValue ? 'Ubah catatan staf' : 'Tambah catatan staf';
+            }
+        }
+
+        function getStatusMeta(statusValue) {
+            var value = String(statusValue || '').toLowerCase();
+            if (value === 'approved') {
+                return { tone: 'success', icon: 'bi-check-circle-fill', label: 'Terverifikasi' };
+            }
+            if (value === 'rejected') {
+                return { tone: 'danger', icon: 'bi-x-circle-fill', label: 'Ditolak' };
+            }
+            return { tone: 'warning', icon: 'bi-hourglass-split', label: 'Menunggu' };
+        }
+
+        function updateRowStatusByTransaction(transactionId, payload) {
+            if (!transactionId || !payload) {
+                return;
+            }
+            var statusValue = (payload.status || '').toLowerCase();
+            if (!statusValue) {
+                return;
+            }
+            var meta = getStatusMeta(statusValue);
+            document.querySelectorAll('[data-transaction-id="' + transactionId + '"]').forEach(function (row) {
+                row.setAttribute('data-status', statusValue);
+                var canAddNote = statusValue === 'approved';
+                var iconWrap = row.querySelector('[data-status-icon-wrap]');
+                var iconEl = row.querySelector('[data-status-icon]');
+                if (iconWrap) {
+                    iconWrap.classList.remove('tone-success', 'tone-danger', 'tone-warning', 'is-pending');
+                    iconWrap.classList.add('tone-' + meta.tone);
+                    if (meta.tone === 'warning') {
+                        iconWrap.classList.add('is-pending');
+                    }
+                    iconWrap.setAttribute('title', meta.label);
+                    iconWrap.setAttribute('aria-label', meta.label);
+                }
+                if (iconEl) {
+                    iconEl.className = 'bi ' + meta.icon;
+                }
+                row.querySelectorAll('[data-status-badge]').forEach(function (badge) {
+                    badge.className = 'badge text-bg-' + meta.tone;
+                    badge.textContent = meta.label;
+                });
+                row.querySelectorAll('.js-open-staff-note-sheet').forEach(function (trigger) {
+                    if (canAddNote) {
+                        trigger.classList.remove('d-none');
+                    } else {
+                        trigger.classList.add('d-none');
+                    }
+                });
+            });
+        }
+
+        function captureCurrentNoteState(transactionId) {
+            var fallback = { note: '', level: '', updated_at: '', status: '' };
+            if (!transactionId) {
+                return fallback;
+            }
+            var row = document.querySelector('[data-transaction-id="' + transactionId + '"]');
+            if (!row) {
+                return fallback;
+            }
+            var noteTextEl = row.querySelector('[data-staff-note-text]');
+            var noteUpdatedEl = row.querySelector('[data-staff-note-updated]');
+            var noteBlockEl = row.querySelector('[data-staff-note-block]');
+            var hasNote = !!(noteBlockEl && !noteBlockEl.classList.contains('d-none') && noteTextEl && noteTextEl.textContent.trim());
+            return {
+                note: hasNote && noteTextEl ? noteTextEl.textContent.trim() : '',
+                level: hasNote ? ((row.getAttribute('data-note-level') || '').trim()) : '',
+                updated_at: (hasNote && noteUpdatedEl ? noteUpdatedEl.textContent.replace(/^Update:\s*/i, '').trim() : ''),
+                status: (row.getAttribute('data-status') || '').trim().toLowerCase()
+            };
+        }
+
+        function buildPayloadFromState(transactionId, state, actionUrl, message) {
+            var safeState = state || {};
+            return {
+                success: true,
+                message: message || '',
+                transaction_id: transactionId,
+                status: safeState.status || '',
+                staff_note: (safeState.note || '').trim(),
+                staff_note_level: (safeState.note || '').trim() ? (safeState.level || 'tidak_perlu') : '',
+                staff_note_updated_at: safeState.updated_at || '',
+                note_url: actionUrl || ''
+            };
+        }
+
+        function updateNoteByTransaction(transactionId, payload) {
+            if (!transactionId) {
+                return;
+            }
+            var noteValue = (payload.staff_note || '').trim();
+            var levelValue = normalizeLevel(payload.staff_note_level) || '';
+            var updatedAtValue = (payload.staff_note_updated_at || '').trim();
+            var signatureValue = (payload.signature || '').trim();
+            updateRowStatusByTransaction(transactionId, payload);
+
+            document.querySelectorAll('[data-transaction-id="' + transactionId + '"]').forEach(function (row) {
+                row.setAttribute('data-note-level', noteValue ? levelValue : '');
+                if (signatureValue) {
+                    row.setAttribute('data-signature', signatureValue);
+                }
+                updateStaffNoteBlock(row.querySelector('[data-staff-note-block]'), noteValue, levelValue, updatedAtValue);
+                row.querySelectorAll('.js-open-staff-note-sheet').forEach(function (trigger) {
+                    trigger.dataset.note = noteValue || '';
+                    trigger.dataset.noteLevel = noteValue ? (levelValue || 'tidak_perlu') : 'tidak_perlu';
+                    updateTriggerLabel(trigger, noteValue);
+                });
+            });
+
+            document.querySelectorAll('.js-open-staff-note-sheet').forEach(function (trigger) {
+                if (!trigger.dataset.noteUrl || trigger.dataset.noteUrl.indexOf('/riwayat/' + transactionId + '/catatan-staf') === -1) {
+                    return;
+                }
+                trigger.dataset.note = noteValue || '';
+                trigger.dataset.noteLevel = noteValue ? (levelValue || 'tidak_perlu') : 'tidak_perlu';
+                updateTriggerLabel(trigger, noteValue);
+            });
+        }
+
+        function readOfflineQueue() {
+            return readStorage(noteQueueStorageKey, []);
+        }
+
+        function writeOfflineQueue(items) {
+            writeStorage(noteQueueStorageKey, Array.isArray(items) ? items : []);
+        }
+
+        function enqueueOfflineMutation(actionUrl, noteValue, levelValue, transactionId) {
+            if (!actionUrl || !transactionId) {
+                return;
+            }
+            var queue = readOfflineQueue().filter(function (item) {
+                return item && item.action_url !== actionUrl;
+            });
+            queue.push({
+                action_url: actionUrl,
+                transaction_id: transactionId,
+                note: noteValue || '',
+                level: levelValue || 'tidak_perlu',
+                enqueued_at: new Date().toISOString()
+            });
+            writeOfflineQueue(queue);
+        }
+
+        async function postNoteMutation(actionUrl, noteValue, levelValue) {
+            var payloadBody = new FormData();
+            payloadBody.append('staff_note', noteValue || '');
+            payloadBody.append('staff_note_level', levelValue || 'tidak_perlu');
+            var response = await fetch(actionUrl, {
+                method: 'POST',
+                body: payloadBody,
+                credentials: 'same-origin',
+                headers: getFetchHeaders({
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                })
+            });
+            var payload = {};
+            try {
+                payload = await response.json();
+            } catch (parseError) {
+                payload = {};
+            }
+            if (!response.ok || !payload.success) {
+                throw new Error(payload.message || 'Gagal menyimpan catatan staf.');
+            }
+            return payload;
+        }
+
+        async function flushOfflineQueue() {
+            if (offlineQueueFlushInFlight || !window.navigator.onLine) {
+                return;
+            }
+            var queue = readOfflineQueue();
+            if (!queue.length) {
+                return;
+            }
+            offlineQueueFlushInFlight = true;
+            var remaining = [];
+            for (var i = 0; i < queue.length; i++) {
+                var item = queue[i];
+                if (!item || !item.action_url) {
+                    continue;
+                }
+                try {
+                    var result = await postNoteMutation(item.action_url, item.note || '', item.level || 'tidak_perlu');
+                    var transactionId = parseInt(result.transaction_id || item.transaction_id || extractTransactionIdFromUrl(item.action_url), 10) || 0;
+                    if (transactionId) {
+                        updateNoteByTransaction(transactionId, result);
+                    }
+                    trackUX('offline_queue_flush_success');
+                } catch (error) {
+                    remaining.push(item);
+                    trackUX('offline_queue_flush_error');
+                }
+            }
+            writeOfflineQueue(remaining);
+            offlineQueueFlushInFlight = false;
+            if (!remaining.length) {
+                pushToast('Sinkronisasi offline selesai.');
+            }
+        }
+
+        function clearUndoToast(transactionId) {
+            if (!undoContainer) {
+                return;
+            }
+            var toastEl = undoContainer.querySelector('[data-undo-transaction="' + transactionId + '"]');
+            if (toastEl && toastEl.parentNode) {
+                toastEl.parentNode.removeChild(toastEl);
+            }
+            if (activeUndoTimers[transactionId]) {
+                window.clearTimeout(activeUndoTimers[transactionId]);
+                delete activeUndoTimers[transactionId];
+            }
+        }
+
+        function showUndoToast(transactionId, previousState, actionUrl) {
+            if (!undoContainer || !transactionId || !actionUrl) {
+                return;
+            }
+            clearUndoToast(transactionId);
+            var toastEl = document.createElement('div');
+            toastEl.className = 'history-undo-toast';
+            toastEl.setAttribute('data-undo-transaction', String(transactionId));
+            toastEl.innerHTML = '<span class="history-sync-dot" aria-hidden="true"></span><span>Catatan disimpan.</span><button type="button" class="btn btn-sm btn-outline-light">Undo 5s</button>';
+            var undoBtn = toastEl.querySelector('button');
+            if (undoBtn) {
+                undoBtn.addEventListener('click', async function () {
+                    clearUndoToast(transactionId);
+                    updateNoteByTransaction(
+                        transactionId,
+                        buildPayloadFromState(transactionId, previousState, actionUrl, 'Perubahan dibatalkan.')
+                    );
+                    try {
+                        var rollback = await postNoteMutation(
+                            actionUrl,
+                            previousState.note || '',
+                            previousState.level || 'tidak_perlu'
+                        );
+                        updateNoteByTransaction(transactionId, rollback);
+                        pushToast('Perubahan dibatalkan.');
+                        trackUX('note_undo_success');
+                    } catch (error) {
+                        pushToast((error && error.message) || 'Gagal rollback catatan.');
+                        trackUX('note_undo_error');
+                    }
+                });
+            }
+            undoContainer.appendChild(toastEl);
+            activeUndoTimers[transactionId] = window.setTimeout(function () {
+                clearUndoToast(transactionId);
+            }, 5000);
+        }
+
+        async function submitStaffNoteAjax(event) {
+            if (!formEl) {
+                return;
+            }
+            event.preventDefault();
+            if (!formEl.action || formEl.action === '#') {
+                return;
+            }
+            var actionUrl = formEl.action;
+            var transactionId = parseInt(extractTransactionIdFromUrl(actionUrl), 10) || 0;
+            var nextNoteValue = noteInput ? noteInput.value.trim() : '';
+            var nextLevelValue = normalizeLevel(levelInput ? levelInput.value : '') || 'tidak_perlu';
+            var previousState = captureCurrentNoteState(transactionId);
+            var hasChanged = (previousState.note || '') !== nextNoteValue || (previousState.level || '') !== (nextNoteValue ? nextLevelValue : '');
+
+            // Optimistic paint before network round-trip.
+            updateNoteByTransaction(
+                transactionId,
+                buildPayloadFromState(
+                    transactionId,
+                    {
+                        note: nextNoteValue,
+                        level: nextNoteValue ? nextLevelValue : '',
+                        updated_at: 'Sedang disinkronkan...',
+                        status: previousState.status || ''
+                    },
+                    actionUrl
+                )
+            );
+
+            var submitDefaultHtml = noteSubmitBtn ? noteSubmitBtn.innerHTML : '';
+            if (noteSubmitBtn) {
+                noteSubmitBtn.disabled = true;
+                noteSubmitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Menyimpan...';
+            }
+
+            try {
+                var payload = await postNoteMutation(actionUrl, nextNoteValue, nextLevelValue);
+                transactionId = parseInt(payload.transaction_id || transactionId, 10) || transactionId;
+                updateNoteByTransaction(transactionId, payload);
+                if (sheet) {
+                    sheet.hide();
+                }
+                pushToast(payload.message || 'Catatan staf berhasil disimpan.');
+                trackUX('note_submit_success', { has_note: !!(payload.staff_note || '').trim(), level: payload.staff_note_level || '' });
+                if (hasChanged) {
+                    showUndoToast(transactionId, previousState, actionUrl);
+                }
+                saveViewState();
+                if (timelineWrap) {
+                    applyHomeFilter(activeHomeFilter, false);
+                    scheduleVirtualization();
+                }
+            } catch (error) {
+                var shouldQueue = !window.navigator.onLine || String((error && error.message) || '').toLowerCase().indexOf('failed to fetch') !== -1;
+                if (shouldQueue && transactionId) {
+                    enqueueOfflineMutation(actionUrl, nextNoteValue, nextLevelValue, transactionId);
+                    if (sheet) {
+                        sheet.hide();
+                    }
+                    pushToast('Offline: catatan masuk antrean dan akan sinkron saat online.');
+                    trackUX('note_submit_queued', { has_note: !!nextNoteValue });
+                } else {
+                    updateNoteByTransaction(transactionId, buildPayloadFromState(transactionId, previousState, actionUrl));
+                    pushToast((error && error.message) || 'Gagal menyimpan catatan staf.');
+                    trackUX('note_submit_error');
+                }
+            } finally {
+                if (noteSubmitBtn) {
+                    noteSubmitBtn.disabled = false;
+                    noteSubmitBtn.innerHTML = submitDefaultHtml;
+                }
+            }
+        }
+
+        function isElementVisible(el) {
+            return !!(el && (el.offsetWidth || el.offsetHeight || el.getClientRects().length));
+        }
+
+        function openFirstStaffNote() {
+            var candidates = [];
+            var homeCandidates = document.querySelectorAll('#homeTimelineWrap .timeline-item:not(.d-none) .js-open-staff-note-sheet');
+            homeCandidates.forEach(function (candidate) {
+                if (isElementVisible(candidate)) {
+                    candidates.push(candidate);
+                }
+            });
+            if (!candidates.length) {
+                document.querySelectorAll('.js-open-staff-note-sheet').forEach(function (candidate) {
+                    if (isElementVisible(candidate)) {
+                        candidates.push(candidate);
+                    }
+                });
+            }
+            if (!candidates.length) {
+                pushToast('Belum ada transaksi yang bisa diberi catatan.');
+                trackUX('quick_note_unavailable');
+                return;
+            }
+            trackUX('quick_note_open');
+            bindStaffNoteSheet(candidates[0]);
+        }
+
+        var notifRootEl = document.getElementById('userGuestbookNotifRoot');
+        var topNotifBadgeEl = document.getElementById('userGuestbookNotifBadge');
+        var topNotifUnreadLabelEl = document.getElementById('userGuestbookNotifUnreadLabel');
+        var topNotifMarkAllBtn = document.getElementById('userGuestbookNotifMarkAll');
+        var mobileNotifSheetEl = document.getElementById('mobileNotifSheet');
+        var mobileNotifListEl = document.getElementById('mobileNotifList');
+        var mobileNotifEmptyEl = document.getElementById('mobileNotifEmpty');
+        var mobileNotifUnreadBadgeEl = document.getElementById('mobileNotifUnreadBadge');
+        var mobileNotifRefreshBtn = document.getElementById('mobileNotifRefreshBtn');
+        var mobileNotifMarkAllBtn = document.getElementById('mobileNotifMarkAllBtn');
+        var mobilePhotoPreviewModalEl = document.getElementById('mobilePhotoPreviewModal');
+        var mobilePhotoPreviewLabelEl = document.getElementById('mobilePhotoPreviewLabel');
+        var mobilePhotoPreviewImageEl = document.getElementById('mobilePhotoPreviewImage');
+        var mobileNotifSheet = null;
+        var mobilePhotoPreviewModal = null;
+        var mobileNotifLoading = false;
+        var mobileNotifLastRequestAt = 0;
+        var mobileNotifListUrl = notifRootEl ? (notifRootEl.getAttribute('data-list-url') || '') : '';
+        var mobileNotifReadUrl = notifRootEl ? (notifRootEl.getAttribute('data-read-url') || '') : '';
+        var mobileNotifFallbackUrl = notifRootEl ? (notifRootEl.getAttribute('data-history-url') || window.location.href) : window.location.href;
+
+        if (mobileNotifSheetEl && window.bootstrap && bootstrap.Offcanvas) {
+            mobileNotifSheet = bootstrap.Offcanvas.getOrCreateInstance(mobileNotifSheetEl);
+        }
+        if (mobilePhotoPreviewModalEl && window.bootstrap && bootstrap.Modal) {
+            mobilePhotoPreviewModal = bootstrap.Modal.getOrCreateInstance(mobilePhotoPreviewModalEl);
+        }
+
+        bindOffcanvasSwipeDownToClose(sheetEl, sheet, 'note_sheet_swipe_close');
+        bindOffcanvasSwipeDownToClose(mobileNotifSheetEl, mobileNotifSheet, 'notif_sheet_swipe_close');
+
+        function parseNotifCount(value) {
+            var parsed = parseInt(value || '0', 10);
+            if (isNaN(parsed) || parsed < 0) {
+                return 0;
+            }
+            return parsed;
+        }
+
+        function escapeNotifHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function setUnifiedNotifUnreadCount(count) {
+            var safeCount = parseNotifCount(count);
+            if (mobileNotifUnreadBadgeEl) {
+                mobileNotifUnreadBadgeEl.textContent = String(safeCount);
+                mobileNotifUnreadBadgeEl.setAttribute('data-count', String(safeCount));
+                mobileNotifUnreadBadgeEl.classList.toggle('d-none', safeCount <= 0);
+            }
+            if (mobileNotifMarkAllBtn) {
+                mobileNotifMarkAllBtn.disabled = safeCount <= 0;
+            }
+            if (topNotifBadgeEl) {
+                topNotifBadgeEl.textContent = String(safeCount);
+                topNotifBadgeEl.setAttribute('data-count', String(safeCount));
+                topNotifBadgeEl.classList.toggle('d-none', safeCount <= 0);
+            }
+            if (topNotifUnreadLabelEl) {
+                topNotifUnreadLabelEl.textContent = String(safeCount);
+                topNotifUnreadLabelEl.setAttribute('data-count', String(safeCount));
+                topNotifUnreadLabelEl.classList.toggle('d-none', safeCount <= 0);
+            }
+            if (topNotifMarkAllBtn) {
+                topNotifMarkAllBtn.disabled = safeCount <= 0;
+            }
+        }
+
+        function buildMobileNotifItemHtml(item) {
+            var notifId = parseInt(item && item.id ? item.id : 0, 10) || 0;
+            var href = (item && item.link) ? item.link : mobileNotifFallbackUrl;
+            var title = escapeNotifHtml(item && item.title ? item.title : 'Notifikasi');
+            var message = escapeNotifHtml(item && item.message ? item.message : '');
+            var icon = escapeNotifHtml(item && item.icon ? item.icon : 'bi-info-circle-fill');
+            var tone = escapeNotifHtml(item && item.tone ? item.tone : 'secondary');
+            var createdLabel = escapeNotifHtml(item && item.created_label ? item.created_label : '');
+            var isUnread = !!(item && item.is_unread);
+
+            return [
+                '<a class="notification-quick-item' + (isUnread ? '' : ' opacity-75') + '"',
+                ' href="' + escapeNotifHtml(href) + '"',
+                ' data-mobile-notif-link="1"',
+                ' data-mobile-notif-id="' + String(notifId) + '"',
+                ' data-mobile-notif-unread="' + (isUnread ? '1' : '0') + '">',
+                '<div class="notification-quick-meta">',
+                '<div class="fw-semibold text-' + tone + '"><i class="bi ' + icon + ' me-1"></i>' + title + '</div>',
+                '<small>' + message + '</small>',
+                '</div>',
+                '<div class="notification-quick-time">' + createdLabel + '</div>',
+                '</a>'
+            ].join('');
+        }
+
+        function openMobilePhotoPreview(trigger) {
+            if (!mobilePhotoPreviewModal || !mobilePhotoPreviewImageEl) {
+                return false;
+            }
+            var ds = (trigger && trigger.dataset) || {};
+            var imageUrl = (ds.photoUrl || trigger.getAttribute('href') || '').trim();
+            if (!imageUrl) {
+                return false;
+            }
+            var title = (ds.photoTitle || 'Foto Kunjungan').trim();
+            if (mobilePhotoPreviewLabelEl) {
+                mobilePhotoPreviewLabelEl.textContent = title || 'Foto Kunjungan';
+            }
+            mobilePhotoPreviewImageEl.setAttribute('src', imageUrl);
+            mobilePhotoPreviewImageEl.setAttribute('alt', title || 'Foto kunjungan');
+            mobilePhotoPreviewModal.show();
+            trackUX('photo_preview_open_mobile');
+            return true;
+        }
+
+        function renderMobileNotifItems(items) {
+            if (!mobileNotifListEl || !mobileNotifEmptyEl) {
+                return;
+            }
+            var safeItems = Array.isArray(items) ? items : [];
+            if (!safeItems.length) {
+                mobileNotifListEl.innerHTML = '';
+                mobileNotifEmptyEl.classList.remove('d-none');
+                return;
+            }
+            mobileNotifEmptyEl.classList.add('d-none');
+            mobileNotifListEl.innerHTML = safeItems.map(buildMobileNotifItemHtml).join('');
+        }
+
+        function markMobileNotificationsRead(payload) {
+            if (!mobileNotifReadUrl) {
+                return Promise.resolve(null);
+            }
+            return fetch(mobileNotifReadUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: getFetchHeaders({
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }),
+                body: JSON.stringify(payload || {})
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        return null;
+                    }
+                    return response.json();
+                })
+                .then(function (data) {
+                    if (data && data.success) {
+                        setUnifiedNotifUnreadCount(data.unread_count || 0);
+                    }
+                    return data;
+                })
+                .catch(function () {
+                    return null;
+                });
+        }
+
+        function fetchMobileNotifications(force) {
+            if (!mobileNotifListUrl || mobileNotifLoading) {
+                return Promise.resolve(null);
+            }
+            var now = Date.now();
+            if (!force && now - mobileNotifLastRequestAt < 800) {
+                return Promise.resolve(null);
+            }
+            mobileNotifLoading = true;
+            mobileNotifLastRequestAt = now;
+            if (mobileNotifRefreshBtn) {
+                mobileNotifRefreshBtn.disabled = true;
+            }
+            return fetch(mobileNotifListUrl + '?limit=8', {
+                credentials: 'same-origin',
+                headers: getFetchHeaders({
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                })
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        return null;
+                    }
+                    return response.json();
+                })
+                .then(function (data) {
+                    if (!data || !data.success) {
+                        return null;
+                    }
+                    setUnifiedNotifUnreadCount(data.unread_count || 0);
+                    renderMobileNotifItems(data.items || []);
+                    return data;
+                })
+                .catch(function () {
+                    pushToast('Gagal memuat notifikasi.');
+                    return null;
+                })
+                .finally(function () {
+                    mobileNotifLoading = false;
+                    if (mobileNotifRefreshBtn) {
+                        mobileNotifRefreshBtn.disabled = false;
+                    }
+                });
+        }
+
+        if (mobileNotifRefreshBtn) {
+            mobileNotifRefreshBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                fetchMobileNotifications(true);
+            });
+        }
+
+        if (mobileNotifMarkAllBtn) {
+            mobileNotifMarkAllBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                if (mobileNotifMarkAllBtn.disabled) {
+                    return;
+                }
+                markMobileNotificationsRead({ all: true }).then(function () {
+                    fetchMobileNotifications(true);
+                });
+            });
+        }
+
+        if (mobileNotifListEl) {
+            mobileNotifListEl.addEventListener('click', function (event) {
+                var linkEl = event.target && event.target.closest ? event.target.closest('[data-mobile-notif-link="1"]') : null;
+                if (!linkEl) {
+                    return;
+                }
+                event.preventDefault();
+                var href = linkEl.getAttribute('href') || mobileNotifFallbackUrl;
+                var notifId = parseInt(linkEl.getAttribute('data-mobile-notif-id') || '0', 10) || 0;
+                var isUnread = linkEl.getAttribute('data-mobile-notif-unread') === '1';
+
+                function navigateToTarget() {
+                    window.location.href = href;
+                }
+
+                if (isUnread && notifId) {
+                    markMobileNotificationsRead({ ids: [notifId] }).then(navigateToTarget).catch(navigateToTarget);
+                    return;
+                }
+                navigateToTarget();
+            });
+        }
+
+        if (mobileNotifSheetEl) {
+            mobileNotifSheetEl.addEventListener('shown.bs.offcanvas', function () {
+                fetchMobileNotifications(true);
+            });
+        }
+
+        if (mobilePhotoPreviewModalEl) {
+            mobilePhotoPreviewModalEl.addEventListener('hidden.bs.modal', function () {
+                if (mobilePhotoPreviewImageEl) {
+                    mobilePhotoPreviewImageEl.setAttribute('src', '');
+                }
+            });
+
+            var photoSwipeSurfaceEl = mobilePhotoPreviewModalEl.querySelector('.mobile-photo-frame');
+            var photoSwipeState = { active: false, startX: 0, startY: 0, pointerId: null };
+            if (photoSwipeSurfaceEl) {
+                photoSwipeSurfaceEl.addEventListener('pointerdown', function (event) {
+                    if (!mobilePhotoPreviewModal || !mobilePhotoPreviewModalEl.classList.contains('show')) {
+                        return;
+                    }
+                    if (event.pointerType !== 'touch') {
+                        return;
+                    }
+                    photoSwipeState.active = true;
+                    photoSwipeState.startX = event.clientX;
+                    photoSwipeState.startY = event.clientY;
+                    photoSwipeState.pointerId = event.pointerId;
+                });
+
+                function finishPhotoSwipe(event) {
+                    if (!photoSwipeState.active) {
+                        return;
+                    }
+                    if (photoSwipeState.pointerId !== null && event.pointerId !== photoSwipeState.pointerId) {
+                        return;
+                    }
+                    var diffX = event.clientX - photoSwipeState.startX;
+                    var diffY = event.clientY - photoSwipeState.startY;
+                    photoSwipeState.active = false;
+                    photoSwipeState.pointerId = null;
+                    if (diffY > 90 && Math.abs(diffY) > Math.abs(diffX)) {
+                        mobilePhotoPreviewModal.hide();
+                        trackUX('photo_preview_swipe_close');
+                    }
+                }
+
+                photoSwipeSurfaceEl.addEventListener('pointerup', finishPhotoSwipe);
+                photoSwipeSurfaceEl.addEventListener('pointercancel', function () {
+                    photoSwipeState.active = false;
+                    photoSwipeState.pointerId = null;
+                });
+            }
+        }
+
+        setUnifiedNotifUnreadCount(topNotifBadgeEl ? topNotifBadgeEl.getAttribute('data-count') : 0);
+
+        function openUnifiedNotificationMenu() {
+            if (mobileNotifSheet) {
+                var isOpen = !!(mobileNotifSheetEl && (mobileNotifSheetEl.classList.contains('show') || mobileNotifSheetEl.classList.contains('showing')));
+                if (isOpen) {
+                    mobileNotifSheet.hide();
+                    trackUX('notif_close_mobile_dock');
+                    return;
+                }
+                mobileNotifSheet.show();
+                fetchMobileNotifications(true);
+                trackUX('notif_open_mobile_dock');
+                return;
+            }
+
+            var notifToggle = document.getElementById('userGuestbookNotifToggle');
+            if (notifToggle && isElementVisible(notifToggle)) {
+                if (window.bootstrap && bootstrap.Dropdown) {
+                    bootstrap.Dropdown.getOrCreateInstance(notifToggle).show();
+                } else {
+                    notifToggle.click();
+                }
+                trackUX('notif_open_mobile_dock');
+                return;
+            }
+
+            if (mobileNotifListUrl) {
+                pushToast('Membuka notifikasi...');
+                fetchMobileNotifications(true);
+                return;
+            }
+
+            pushToast('Belum ada notifikasi terbaru.');
+        }
+
+        var activeHomeFilter = 'all';
+        var timelineWrap = document.getElementById('homeTimelineWrap');
+        var loadMoreLink = document.querySelector('.js-load-more');
+        var homeFilterWrap = document.getElementById('homeFilterChips');
+        var summaryEl = document.getElementById('homeMetaSummary');
+        var homeMetaSmallEl = document.querySelector('[data-home-meta-small]');
+        var shownCountEl = document.querySelector('[data-home-shown-count]');
+        var totalLabelEl = document.querySelector('[data-home-total-label]');
+        var progressEl = document.querySelector('[data-home-progress]');
+        var inlineStateEl = document.getElementById('homeInlineState');
+        var filterEmptyEl = document.getElementById('homeFilterEmpty');
+        var isLoading = false;
+        var observer = null;
+        var prefetchCache = { url: '', payload: null };
+        var prefetchInFlight = false;
+        var prefetchTimer = null;
+        var virtualTicking = false;
+        var statePersistTimer = null;
+        var homeChunkSize = timelineWrap ? Math.max(4, parsePositiveInt(timelineWrap.getAttribute('data-home-chunk'), 4) || 4) : 4;
+        var nextHomePage = loadMoreLink ? Math.max(1, parsePositiveInt(loadMoreLink.getAttribute('data-home-next-page'), 2) || 2) : 1;
+
+        function getTimelineItems() {
+            if (!timelineWrap) {
+                return [];
+            }
+            return Array.from(timelineWrap.querySelectorAll('.timeline-item[data-transaction-id]'));
+        }
+
+        function parsePositiveInt(value, fallback) {
+            var parsed = parseInt(value || '', 10);
+            if (isNaN(parsed) || parsed < 0) {
+                return fallback;
+            }
+            return parsed;
+        }
+
+        function saveViewState() {
+            viewState = {
+                tab: currentTab,
+                filter: activeHomeFilter,
+                scroll_y: window.scrollY || 0,
+                updated_at: Date.now()
+            };
+            writeStorage(stateStorageKey, viewState);
+        }
+
+        function scheduleSaveViewState() {
+            if (statePersistTimer) {
+                window.clearTimeout(statePersistTimer);
+            }
+            statePersistTimer = window.setTimeout(function () {
+                saveViewState();
+            }, 260);
+        }
+
+        function closeAllSwipeCards(exceptRoot) {
+            document.querySelectorAll('[data-swipe-root].is-open').forEach(function (root) {
+                if (exceptRoot && root === exceptRoot) {
+                    return;
+                }
+                if (typeof root._swipeClose === 'function') {
+                    root._swipeClose();
+                }
+            });
+        }
+
+        function initSwipeCards(scope) {
+            if (!scope) {
+                return;
+            }
+            scope.querySelectorAll('[data-swipe-root]').forEach(function (root) {
+                if (root.dataset.swipeBound === '1') {
+                    return;
+                }
+                root.dataset.swipeBound = '1';
+
+                var card = root.querySelector('.timeline-card');
+                if (!card) {
+                    return;
+                }
+
+                var actionPane = root.querySelector('.timeline-swipe-actions');
+                function resolveMaxShift() {
+                    var fallback = window.matchMedia('(max-width: 767.98px)').matches ? 96 : 116;
+                    if (!actionPane) {
+                        return fallback;
+                    }
+                    var paneWidth = Math.ceil(actionPane.getBoundingClientRect().width || actionPane.offsetWidth || 0);
+                    if (!paneWidth) {
+                        return fallback;
+                    }
+                    return Math.min(140, Math.max(76, paneWidth + 14));
+                }
+
+                var maxShift = resolveMaxShift();
+                var startX = 0;
+                var dragging = false;
+                var baseOffset = 0;
+                var currentOffset = 0;
+
+                function setOffset(offset, animated) {
+                    currentOffset = offset;
+                    card.style.transition = animated ? 'transform .2s ease' : 'none';
+                    card.style.transform = 'translateX(' + offset + 'px)';
+                    if (offset < -8) {
+                        root.classList.add('is-open');
+                    } else {
+                        root.classList.remove('is-open');
+                    }
+                }
+
+                function closeSwipe() {
+                    setOffset(0, true);
+                }
+
+                function openSwipe() {
+                    var wasOpen = root.classList.contains('is-open');
+                    setOffset(-maxShift, true);
+                    if (!wasOpen) {
+                        if (window.navigator && typeof window.navigator.vibrate === 'function') {
+                            window.navigator.vibrate(10);
+                        }
+                        trackUX('swipe_open');
+                    }
+                }
+
+                root._swipeClose = closeSwipe;
+
+                root.addEventListener('pointerdown', function (event) {
+                    if (window.matchMedia('(min-width: 768px)').matches) {
+                        return;
+                    }
+                    if (event.pointerType === 'mouse' && event.button !== 0) {
+                        return;
+                    }
+                    if (event.target.closest('a, button, input, textarea, select, label')) {
+                        return;
+                    }
+                    maxShift = resolveMaxShift();
+                    closeAllSwipeCards(root);
+                    dragging = true;
+                    startX = event.clientX;
+                    baseOffset = root.classList.contains('is-open') ? -maxShift : 0;
+                    currentOffset = baseOffset;
+                    card.style.transition = 'none';
+                    if (typeof root.setPointerCapture === 'function') {
+                        root.setPointerCapture(event.pointerId);
+                    }
+                });
+
+                root.addEventListener('pointermove', function (event) {
+                    if (!dragging) {
+                        return;
+                    }
+                    var nextOffset = baseOffset + (event.clientX - startX);
+                    if (nextOffset > 0) {
+                        nextOffset = nextOffset * .25;
+                    }
+                    if (nextOffset < (-maxShift - 24)) {
+                        nextOffset = -maxShift - 24;
+                    }
+                    setOffset(nextOffset, false);
+                });
+
+                function finishPointer(event) {
+                    if (!dragging) {
+                        return;
+                    }
+                    dragging = false;
+                    if (typeof root.releasePointerCapture === 'function') {
+                        try {
+                            root.releasePointerCapture(event.pointerId);
+                        } catch (error) {
+                            // no-op
+                        }
+                    }
+                    var openThreshold = -Math.max(40, Math.round(maxShift * 0.5));
+                    if (currentOffset <= openThreshold) {
+                        openSwipe();
+                    } else {
+                        closeSwipe();
+                    }
+                }
+
+                root.addEventListener('pointerup', finishPointer);
+                root.addEventListener('pointercancel', finishPointer);
+            });
+        }
+
+        function resetVirtualization() {
+            if (!timelineWrap) {
+                return;
+            }
+            timelineWrap.querySelectorAll('.timeline-item.is-collapsed').forEach(function (item) {
+                item.classList.remove('is-collapsed');
+                item.style.minHeight = '';
+                item.style.removeProperty('--virtual-height');
+            });
+        }
+
+        function applyVirtualization() {
+            if (!timelineWrap) {
+                return;
+            }
+            var mobileMode = window.matchMedia('(max-width: 767.98px)').matches;
+            var visibleRows = getTimelineItems().filter(function (item) {
+                return !item.classList.contains('d-none') && !item.classList.contains('timeline-skeleton');
+            });
+            if (!mobileMode || visibleRows.length < 26) {
+                resetVirtualization();
+                return;
+            }
+
+            var viewportHeight = window.innerHeight || 720;
+            var collapsedCount = 0;
+            visibleRows.forEach(function (item) {
+                var rect = item.getBoundingClientRect();
+                var farAway = rect.bottom < -1100 || rect.top > viewportHeight + 1500;
+                if (farAway) {
+                    var keepHeight = item.offsetHeight || parsePositiveInt(item.style.minHeight, 140) || 140;
+                    item.style.minHeight = keepHeight + 'px';
+                    item.style.setProperty('--virtual-height', keepHeight + 'px');
+                    item.classList.add('is-collapsed');
+                    collapsedCount += 1;
+                } else if (item.classList.contains('is-collapsed')) {
+                    item.classList.remove('is-collapsed');
+                    item.style.minHeight = '';
+                    item.style.removeProperty('--virtual-height');
+                }
+            });
+
+            if (Math.abs(collapsedCount - lastVirtualizedReported) >= 8) {
+                trackUX('virtualized_items', { collapsed: collapsedCount });
+                lastVirtualizedReported = collapsedCount;
+            }
+        }
+
+        function scheduleVirtualization() {
+            if (virtualTicking) {
+                return;
+            }
+            virtualTicking = true;
+            window.requestAnimationFrame(function () {
+                virtualTicking = false;
+                applyVirtualization();
+            });
+        }
+
+        function countByFilter(items, filterName) {
+            if (!items.length) {
+                return 0;
+            }
+            if (filterName === 'all') {
+                return items.length;
+            }
+            if (filterName === 'selesai') {
+                return items.filter(function (item) {
+                    return (item.getAttribute('data-status') || '').toLowerCase() === 'approved';
+                }).length;
+            }
+            return items.filter(function (item) {
+                return (item.getAttribute('data-note-level') || '').toLowerCase() === filterName;
+            }).length;
+        }
+
+        function matchesHomeFilter(item, filterName) {
+            if (!item) {
+                return false;
+            }
+            if (!filterName || filterName === 'all') {
+                return true;
+            }
+            var status = (item.getAttribute('data-status') || '').toLowerCase();
+            var noteLevel = (item.getAttribute('data-note-level') || '').toLowerCase();
+            if (filterName === 'selesai') {
+                return status === 'approved';
+            }
+            return noteLevel === filterName;
+        }
+
+        function setInlineState(message, withRetryButton) {
+            if (!inlineStateEl) {
+                return;
+            }
+            if (!message) {
+                inlineStateEl.classList.remove('is-visible');
+                inlineStateEl.innerHTML = '';
+                return;
+            }
+            var retryHtml = withRetryButton
+                ? '<button type="button" class="btn btn-sm btn-outline-warning" id="homeInlineRetryBtn"><i class="bi bi-arrow-repeat me-1"></i>Coba Lagi</button>'
+                : '';
+            inlineStateEl.innerHTML = '<span>' + message + '</span>' + retryHtml;
+            inlineStateEl.classList.add('is-visible');
+        }
+
+        function setHomeStat(name, text) {
+            document.querySelectorAll('[data-home-stat="' + name + '"]').forEach(function (el) {
+                el.textContent = text;
+            });
+        }
+
+        function setHomeCountTarget(name, value) {
+            document.querySelectorAll('[data-home-chip-count="' + name + '"]').forEach(function (el) {
+                el.textContent = String(value);
+            });
+        }
+
+        function updateHomeStats() {
+            if (!timelineWrap) {
+                return;
+            }
+            var items = getTimelineItems();
+            var visibleItems = items.filter(function (item) {
+                return !item.classList.contains('d-none');
+            });
+            var totalRows = parsePositiveInt(timelineWrap.getAttribute('data-home-total'), items.length);
+            if (totalRows < items.length) {
+                totalRows = items.length;
+            }
+
+            var approvedVisible = visibleItems.filter(function (item) {
+                return (item.getAttribute('data-status') || '').toLowerCase() === 'approved';
+            }).length;
+            var pendingVisible = visibleItems.filter(function (item) {
+                return (item.getAttribute('data-status') || '').toLowerCase() === 'pending';
+            }).length;
+            var rejectedVisible = visibleItems.filter(function (item) {
+                return (item.getAttribute('data-status') || '').toLowerCase() === 'rejected';
+            }).length;
+
+            setHomeStat('approved', approvedVisible + ' terverifikasi');
+            setHomeStat('pending', pendingVisible + ' menunggu');
+            setHomeStat('rejected', rejectedVisible + ' ditolak');
+            setHomeStat('shown', visibleItems.length + ' riwayat tampil');
+            if (shownCountEl) {
+                shownCountEl.textContent = String(visibleItems.length);
+            }
+
+            setHomeCountTarget('all', items.length);
+            setHomeCountTarget('mendesak', countByFilter(items, 'mendesak'));
+            setHomeCountTarget('tindak_lanjut', countByFilter(items, 'tindak_lanjut'));
+            setHomeCountTarget('pantau', countByFilter(items, 'pantau'));
+            setHomeCountTarget('selesai', countByFilter(items, 'selesai'));
+            setHomeCountTarget('pending', pendingVisible);
+
+            if (summaryEl) {
+                if (activeHomeFilter && activeHomeFilter !== 'all') {
+                    summaryEl.textContent = 'Filter aktif: ' + visibleItems.length + ' riwayat dari ' + totalRows + ' data total.';
+                } else {
+                    summaryEl.textContent = 'Menampilkan ' + visibleItems.length + ' dari ' + totalRows + ' riwayat terbaru.';
+                }
+            }
+            if (homeMetaSmallEl) {
+                homeMetaSmallEl.textContent = activeHomeFilter === 'all'
+                    ? 'riwayat ter-load di sesi ini'
+                    : 'hasil dari filter ' + activeHomeFilter.replace('_', ' ');
+            }
+            if (totalLabelEl) {
+                totalLabelEl.textContent = String(totalRows);
+            }
+            if (progressEl) {
+                var loadPercent = totalRows ? Math.min(100, Math.round((items.length * 100) / totalRows)) : 0;
+                progressEl.style.width = loadPercent + '%';
+            }
+
+            if (filterEmptyEl && items.length) {
+                filterEmptyEl.classList.toggle('d-none', visibleItems.length > 0);
+            }
+        }
+
+        function applyHomeFilter(filterName, notify) {
+            if (!timelineWrap) {
+                return;
+            }
+            var previousFilter = activeHomeFilter;
+            activeHomeFilter = sanitizeHomeFilter(filterName || 'all');
+            timelineWrap.classList.add('is-filtering');
+            var items = getTimelineItems();
+            items.forEach(function (item) {
+                var matched = matchesHomeFilter(item, activeHomeFilter);
+                item.classList.toggle('d-none', !matched);
+            });
+            if (homeFilterWrap) {
+                homeFilterWrap.querySelectorAll('[data-home-filter]').forEach(function (chip) {
+                    var isActive = chip.getAttribute('data-home-filter') === activeHomeFilter;
+                    chip.classList.toggle('is-active', isActive);
+                    chip.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                });
+            }
+            if (items.length && activeHomeFilter !== 'all' && !items.some(function (item) { return !item.classList.contains('d-none'); })) {
+                setInlineState('Tidak ada riwayat pada filter ini. Coba filter lain.', false);
+            } else {
+                setInlineState('', false);
+            }
+            updateHomeStats();
+            scheduleVirtualization();
+            if (previousFilter !== activeHomeFilter) {
+                trackUX('filter_changed', {
+                    filter: activeHomeFilter,
+                    source: notify ? 'quick_action' : 'chip'
+                });
+            }
+            if (notify) {
+                pushToast('Filter: ' + (activeHomeFilter === 'all' ? 'Semua' : activeHomeFilter.replace('_', ' ')));
+            }
+            window.setTimeout(function () {
+                timelineWrap.classList.remove('is-filtering');
+            }, 180);
+            scheduleSaveViewState();
+        }
+
+        function createSkeletonNodes(count) {
+            if (!timelineWrap) {
+                return [];
+            }
+            var nodes = [];
+            for (var i = 0; i < count; i++) {
+                var skeleton = document.createElement('article');
+                skeleton.className = 'timeline-item timeline-skeleton';
+                skeleton.innerHTML = [
+                    '<span class="timeline-dot" aria-hidden="true"></span>',
+                    '<div class="timeline-card">',
+                    '<div class="timeline-photo"></div>',
+                    '<div class="timeline-content">',
+                    '<span class="skeleton-line" style="width: 62%;"></span>',
+                    '<span class="skeleton-line" style="width: 48%;"></span>',
+                    '<span class="skeleton-line" style="width: 84%;"></span>',
+                    '<span class="skeleton-line" style="width: 56%;"></span>',
+                    '</div>',
+                    '</div>'
+                ].join('');
+                timelineWrap.appendChild(skeleton);
+                nodes.push(skeleton);
+            }
+            return nodes;
+        }
+
+        function removeNodes(nodes) {
+            nodes.forEach(function (node) {
+                if (node && node.parentNode) {
+                    node.parentNode.removeChild(node);
+                }
+            });
+        }
+
+        function initLazyImages(scope) {
+            if (!scope) {
+                return;
+            }
+            scope.querySelectorAll('.js-lazy-image').forEach(function (img) {
+                if (img.dataset.lazyBound === '1') {
+                    return;
+                }
+                img.dataset.lazyBound = '1';
+                var holder = img.closest('.lazy-media');
+                if (!holder) {
+                    return;
+                }
+
+                function markLoaded() {
+                    holder.classList.add('is-loaded');
+                }
+
+                if (img.complete) {
+                    markLoaded();
+                } else {
+                    img.addEventListener('load', markLoaded, { once: true });
+                    img.addEventListener('error', markLoaded, { once: true });
+                }
+            });
+        }
+
+        function buildFeedUrl(page) {
+            if (!historyFeedUrl) {
+                return '';
+            }
+            try {
+                var url = new URL(historyFeedUrl, window.location.origin);
+                url.searchParams.set('home_page', String(Math.max(1, page || 1)));
+                url.searchParams.set('home_chunk_size', String(homeChunkSize || 4));
+                return url.toString();
+            } catch (error) {
+                return '';
+            }
+        }
+
+        function appendTimelineItemsFromHtml(itemsHtml) {
+            if (!timelineWrap || !itemsHtml) {
+                return 0;
+            }
+            var seenIds = {};
+            getTimelineItems().forEach(function (item) {
+                var txId = item.getAttribute('data-transaction-id');
+                if (txId) {
+                    seenIds[txId] = true;
+                }
+            });
+
+            var holder = document.createElement('div');
+            holder.innerHTML = itemsHtml;
+            var incoming = Array.from(holder.querySelectorAll('.timeline-item[data-transaction-id]'));
+            var added = 0;
+            incoming.forEach(function (node) {
+                var txId = node.getAttribute('data-transaction-id');
+                if (!txId || seenIds[txId]) {
+                    return;
+                }
+                seenIds[txId] = true;
+                timelineWrap.appendChild(node);
+                added += 1;
+            });
+            return added;
+        }
+
+        function schedulePrefetch() {
+            if (!timelineWrap || !loadMoreLink || isLoading || prefetchInFlight) {
+                return;
+            }
+            if (window.navigator && window.navigator.connection && window.navigator.connection.saveData) {
+                return;
+            }
+            var nextHref = buildFeedUrl(nextHomePage) || loadMoreLink.getAttribute('href');
+            if (!nextHref) {
+                return;
+            }
+            if (prefetchCache.url === nextHref && prefetchCache.payload) {
+                return;
+            }
+            if (prefetchTimer) {
+                window.clearTimeout(prefetchTimer);
+                prefetchTimer = null;
+            }
+
+            var runPrefetch = function () {
+                if (!loadMoreLink || isLoading || prefetchInFlight) {
+                    return;
+                }
+                var href = buildFeedUrl(nextHomePage) || loadMoreLink.getAttribute('href');
+                if (!href || (prefetchCache.url === href && prefetchCache.payload)) {
+                    return;
+                }
+                prefetchInFlight = true;
+                fetch(href, {
+                    credentials: 'same-origin',
+                    headers: getFetchHeaders({ 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' })
+                })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error('prefetch-failed');
+                        }
+                        return response.json();
+                    })
+                    .then(function (payload) {
+                        if (!payload || !payload.success) {
+                            throw new Error('prefetch-invalid');
+                        }
+                        prefetchCache.url = href;
+                        prefetchCache.payload = payload;
+                        trackUX('prefetch_success');
+                    })
+                    .catch(function () {
+                        trackUX('prefetch_error');
+                    })
+                    .finally(function () {
+                        prefetchInFlight = false;
+                    });
+            };
+
+            if (typeof window.requestIdleCallback === 'function') {
+                window.requestIdleCallback(runPrefetch, { timeout: 1500 });
+            } else {
+                prefetchTimer = window.setTimeout(runPrefetch, 420);
+            }
+        }
+
+        async function loadMoreHistory() {
+            if (!loadMoreLink || !timelineWrap || isLoading) {
+                return;
+            }
+
+            var nextHref = buildFeedUrl(nextHomePage) || loadMoreLink.getAttribute('href');
+            if (!nextHref) {
+                return;
+            }
+            if (!historyFeedUrl) {
+                window.location.assign(nextHref);
+                return;
+            }
+
+            isLoading = true;
+            setInlineState('', false);
+            loadMoreLink.classList.add('disabled');
+            loadMoreLink.setAttribute('aria-disabled', 'true');
+            loadMoreLink.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Mengambil riwayat...';
+            var skeletonNodes = createSkeletonNodes(homeChunkSize || 4);
+
+            try {
+                var payload = null;
+                if (prefetchCache.url === nextHref && prefetchCache.payload) {
+                    payload = prefetchCache.payload;
+                    prefetchCache.url = '';
+                    prefetchCache.payload = null;
+                    trackUX('load_more_from_prefetch');
+                }
+                if (!payload) {
+                    var response = await fetch(nextHref, {
+                        credentials: 'same-origin',
+                        headers: getFetchHeaders({ 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' })
+                    });
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+                    payload = await response.json();
+                }
+                if (!payload || !payload.success) {
+                    throw new Error(payload && payload.message ? payload.message : 'Data riwayat tidak valid');
+                }
+
+                removeNodes(skeletonNodes);
+                var newlyAddedCount = appendTimelineItemsFromHtml(payload.items_html || '');
+                if (!newlyAddedCount) {
+                    throw new Error('Tidak ada data tambahan');
+                }
+                timelineWrap.setAttribute('data-home-total', String(parsePositiveInt(payload.home_total_rows, getTimelineItems().length)));
+
+                initLazyImages(timelineWrap);
+                initSwipeCards(timelineWrap);
+                applyHomeFilter(activeHomeFilter, false);
+                schedulePrefetch();
+
+                pushToast(newlyAddedCount + ' riwayat baru ditambahkan.');
+                trackUX('load_more_success', { added: newlyAddedCount, page: nextHomePage });
+
+                if (payload.has_more && payload.next_page) {
+                    nextHomePage = parsePositiveInt(payload.next_page, nextHomePage + 1);
+                    loadMoreLink.classList.remove('disabled');
+                    loadMoreLink.removeAttribute('aria-disabled');
+                    loadMoreLink.innerHTML = 'Muat 4 riwayat lagi';
+                    loadMoreLink.setAttribute('data-home-next-page', String(nextHomePage));
+                } else {
+                    var loadWrap = loadMoreLink.closest('.mt-3');
+                    if (loadWrap) {
+                        loadWrap.remove();
+                    } else {
+                        loadMoreLink.remove();
+                    }
+                    loadMoreLink = null;
+                    if (observer) {
+                        observer.disconnect();
+                    }
+                    trackUX('load_more_finished');
+                }
+            } catch (error) {
+                pushToast('Gagal memuat riwayat. Coba lagi.');
+                trackUX('load_more_error');
+                if (loadMoreLink) {
+                    loadMoreLink.classList.remove('disabled');
+                    loadMoreLink.removeAttribute('aria-disabled');
+                    loadMoreLink.innerHTML = 'Coba muat lagi';
+                }
+                setInlineState('Muat otomatis gagal. Tekan Coba Lagi untuk mencoba ulang.', true);
+            } finally {
+                removeNodes(skeletonNodes);
+                isLoading = false;
+            }
+        }
+
+        function applyLiveUpdates(payload) {
+            if (!payload || !Array.isArray(payload.rows)) {
+                return;
+            }
+            var unknownCount = 0;
+            payload.rows.forEach(function (rowPayload) {
+                var txId = parsePositiveInt(rowPayload.transaction_id, 0);
+                if (!txId) {
+                    return;
+                }
+                var rowExists = !!document.querySelector('[data-transaction-id="' + txId + '"]');
+                updateNoteByTransaction(txId, rowPayload);
+                if (!rowExists) {
+                    unknownCount += 1;
+                }
+            });
+            if (Array.isArray(payload.removed_ids) && payload.removed_ids.length) {
+                payload.removed_ids.forEach(function (removedId) {
+                    var txId = parsePositiveInt(removedId, 0);
+                    if (!txId) {
+                        return;
+                    }
+                    document.querySelectorAll('[data-transaction-id="' + txId + '"]').forEach(function (node) {
+                        if (node && node.parentNode) {
+                            node.parentNode.removeChild(node);
+                        }
+                    });
+                });
+            }
+            if (timelineWrap) {
+                applyHomeFilter(activeHomeFilter, false);
+                scheduleVirtualization();
+            }
+            if (unknownCount > 0) {
+                setInlineState('Ada update baru di server. Muat riwayat terbaru untuk melihatnya.', false);
+                pushToast('Ada pembaruan riwayat baru.');
+            }
+        }
+
+        function stopHistoryStream() {
+            if (streamRetryTimer) {
+                window.clearTimeout(streamRetryTimer);
+                streamRetryTimer = null;
+            }
+            if (streamSource) {
+                try {
+                    streamSource.close();
+                } catch (error) {
+                    // no-op
+                }
+                streamSource = null;
+            }
+        }
+
+        function scheduleStreamReconnect() {
+            if (streamRetryTimer) {
+                return;
+            }
+            streamRetryTimer = window.setTimeout(function () {
+                streamRetryTimer = null;
+                startHistoryStream();
+            }, streamRetryDelay);
+        }
+
+        function startHistoryStream() {
+            if (!historyStreamUrl || typeof window.EventSource === 'undefined') {
+                return;
+            }
+            if (document.visibilityState === 'hidden') {
+                return;
+            }
+            stopHistoryStream();
+            try {
+                streamSource = new EventSource(historyStreamUrl);
+            } catch (error) {
+                scheduleStreamReconnect();
+                return;
+            }
+            streamSource.addEventListener('history_update', function (event) {
+                var payload = safeParseJson(event.data, null);
+                if (payload) {
+                    applyLiveUpdates(payload);
+                    trackUX('sse_update_received', { rows: Array.isArray(payload.rows) ? payload.rows.length : 0 });
+                }
+            });
+            streamSource.addEventListener('ping', function () {
+                trackUX('sse_ping');
+            });
+            streamSource.onopen = function () {
+                streamRetryDelay = 3500;
+                trackUX('sse_connected');
+            };
+            streamSource.onerror = function () {
+                trackUX('sse_error');
+                stopHistoryStream();
+                streamRetryDelay = Math.min(18000, Math.round(streamRetryDelay * 1.6));
+                scheduleStreamReconnect();
+            };
+        }
+
+        function restoreViewState() {
+            if (!timelineWrap) {
+                return;
+            }
+            var now = Date.now();
+            var savedAt = parsePositiveInt(viewState.updated_at, 0);
+            var isFresh = savedAt > 0 && (now - savedAt) < (4 * 60 * 60 * 1000);
+            var sameTab = (viewState.tab || 'beranda') === currentTab;
+            if (!isFresh || !sameTab) {
+                applyHomeFilter('all', false);
+                return;
+            }
+
+            var savedFilter = sanitizeHomeFilter(viewState.filter || 'all');
+            applyHomeFilter(savedFilter, false);
+            var savedScroll = parsePositiveInt(viewState.scroll_y, 0);
+            if (savedScroll > 0 && currentTab === 'beranda') {
+                window.setTimeout(function () {
+                    window.scrollTo(0, savedScroll);
+                    scheduleVirtualization();
+                }, 40);
+            }
+            trackUX('state_restored', { tab: currentTab, filter: savedFilter });
+        }
+
+        document.addEventListener('click', function (event) {
+            var photoPreviewTrigger = event.target.closest('.js-mobile-photo-preview');
+            if (photoPreviewTrigger && window.matchMedia('(max-width: 767.98px)').matches) {
+                event.preventDefault();
+                if (!openMobilePhotoPreview(photoPreviewTrigger)) {
+                    pushToast('Foto tidak tersedia.');
+                }
+                return;
+            }
+
+            var noteTrigger = event.target.closest('.js-open-staff-note-sheet');
+            if (noteTrigger) {
+                event.preventDefault();
+                trackUX('note_sheet_open');
+                bindStaffNoteSheet(noteTrigger);
+                return;
+            }
+
+            var quickNoteTrigger = event.target.closest('.js-open-first-staff-note');
+            if (quickNoteTrigger) {
+                event.preventDefault();
+                openFirstStaffNote();
+                return;
+            }
+
+            var notifTrigger = event.target.closest('.js-open-global-notif');
+            if (notifTrigger) {
+                event.preventDefault();
+                openUnifiedNotificationMenu();
+                return;
+            }
+
+            var chipJump = event.target.closest('.js-home-chip-jump');
+            if (chipJump) {
+                event.preventDefault();
+                if (!timelineWrap) {
+                    var berandaUrl = chipJump.getAttribute('data-beranda-url');
+                    if (berandaUrl) {
+                        viewState = {
+                            tab: 'beranda',
+                            filter: sanitizeHomeFilter(chipJump.getAttribute('data-chip-target') || 'all'),
+                            scroll_y: 0,
+                            updated_at: Date.now()
+                        };
+                        writeStorage(stateStorageKey, viewState);
+                        window.location.assign(berandaUrl);
+                        return;
+                    }
+                    pushToast('Filter prioritas tersedia di tab Beranda.');
+                    return;
+                }
+                var jumpTarget = sanitizeHomeFilter(chipJump.getAttribute('data-chip-target') || 'all');
+                applyHomeFilter(jumpTarget, true);
+                return;
+            }
+
+            var filterChip = event.target.closest('[data-home-filter]');
+            if (filterChip) {
+                event.preventDefault();
+                var nextFilter = sanitizeHomeFilter(filterChip.getAttribute('data-home-filter') || 'all');
+                applyHomeFilter(nextFilter, false);
+                return;
+            }
+
+            var resetChip = event.target.closest('.js-reset-home-filter');
+            if (resetChip) {
+                event.preventDefault();
+                applyHomeFilter('all', true);
+                return;
+            }
+
+            var retryBtn = event.target.closest('#homeInlineRetryBtn');
+            if (retryBtn) {
+                event.preventDefault();
+                trackUX('load_more_retry');
+                loadMoreHistory();
+                return;
+            }
+
+            if (!event.target.closest('[data-swipe-root]')) {
+                closeAllSwipeCards(null);
+            }
+        });
+
+        var clearBtn = document.getElementById('staffNoteClearBtn');
+        if (clearBtn && noteInput && levelInput) {
+            clearBtn.addEventListener('click', function () {
+                noteInput.value = '';
+                levelInput.value = 'tidak_perlu';
+                noteInput.focus();
+                trackUX('note_sheet_cleared');
+            });
+        }
+
+        if (noteInput) {
+            noteInput.addEventListener('focus', function () {
+                window.setTimeout(syncStaffNoteSheetViewportHeight, 120);
+            });
+            noteInput.addEventListener('blur', function () {
+                window.setTimeout(syncStaffNoteSheetViewportHeight, 120);
+            });
+        }
+
+        if (formEl) {
+            formEl.addEventListener('submit', submitStaffNoteAjax);
+        }
+
+        function registerHistoryServiceWorker() {
+            if (!('serviceWorker' in window.navigator)) {
+                return;
+            }
+            window.navigator.serviceWorker.register('{{ url_for("static", filename="js/aska-dt-sw.js") }}')
+                .then(function () {
+                    trackUX('pwa_sw_registered');
+                })
+                .catch(function () {
+                    trackUX('pwa_sw_register_error');
+                });
+        }
+
+        initLazyImages(document);
+        initSwipeCards(document);
+
+        if (timelineWrap) {
+            restoreViewState();
+            updateHomeStats();
+            scheduleVirtualization();
+        }
+
+        if (loadMoreLink && timelineWrap) {
+            loadMoreLink.addEventListener('click', function (event) {
+                event.preventDefault();
+                loadMoreHistory();
+            });
+
+            if ('IntersectionObserver' in window) {
+                observer = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) {
+                            loadMoreHistory();
+                        }
+                    });
+                }, {
+                    root: null,
+                    rootMargin: '420px 0px 560px 0px',
+                    threshold: 0.01
+                });
+                observer.observe(loadMoreLink);
+            }
+            schedulePrefetch();
+        }
+
+        flushOfflineQueue();
+        syncMetrics(true);
+        startHistoryStream();
+        registerHistoryServiceWorker();
+        window.setInterval(function () {
+            syncMetrics(false);
+        }, 60000);
+
+        document.querySelectorAll('.history-tab-link, #superBottomDock a.super-dock-item[href]').forEach(function (link) {
+            link.addEventListener('click', function () {
+                try {
+                    var parsed = new URL(link.getAttribute('href'), window.location.origin);
+                    var nextTab = (parsed.searchParams.get('tab') || currentTab || 'beranda').toLowerCase();
+                    viewState = {
+                        tab: nextTab,
+                        filter: nextTab === 'beranda' ? activeHomeFilter : 'all',
+                        scroll_y: 0,
+                        updated_at: Date.now()
+                    };
+                    writeStorage(stateStorageKey, viewState);
+                } catch (error) {
+                    // no-op
+                }
+            });
+        });
+
+        window.addEventListener('resize', function () {
+            if (window.matchMedia('(min-width: 768px)').matches) {
+                closeAllSwipeCards(null);
+                document.querySelectorAll('[data-swipe-root] .timeline-card').forEach(function (card) {
+                    card.style.transform = '';
+                    card.style.transition = '';
+                });
+            }
+            syncStaffNoteSheetViewportHeight();
+            scheduleVirtualization();
+            scheduleSaveViewState();
+        });
+
+        window.addEventListener('scroll', function () {
+            scheduleVirtualization();
+            scheduleSaveViewState();
+        }, { passive: true });
+
+        window.addEventListener('online', function () {
+            pushToast('Koneksi kembali online. Sinkronisasi dijalankan.');
+            flushOfflineQueue();
+            syncMetrics(true);
+            startHistoryStream();
+        });
+
+        window.addEventListener('offline', function () {
+            pushToast('Mode offline aktif. Perubahan akan diantrikan.');
+            stopHistoryStream();
+        });
+
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'hidden') {
+                saveViewState();
+                sendMetricsBeacon();
+                stopHistoryStream();
+            } else {
+                schedulePrefetch();
+                flushOfflineQueue();
+                syncMetrics(true);
+                startHistoryStream();
+            }
+        });
+
+        window.addEventListener('beforeunload', function () {
+            saveViewState();
+            writeStorage(metricStorageKey, metrics);
+            sendMetricsBeacon();
+            stopHistoryStream();
+        });
+
+        document.querySelectorAll('.alert[role="alert"]').forEach(function (alertEl) {
+            var message = (alertEl.textContent || '').replace(/\s+/g, ' ').trim();
+            if (message) {
+                pushToast(message, 2300);
+            }
+        });
+    })();
+</script>
+{% endblock %}

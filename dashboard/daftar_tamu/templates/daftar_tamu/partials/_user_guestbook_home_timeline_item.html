@@ -1,0 +1,101 @@
+<article class="timeline-item"
+    data-transaction-id="{{ row.transaction_id }}"
+    data-status="{{ row.status }}"
+    data-note-level="{{ row.staff_note_level or '' }}"
+    data-signature="{{ row.signature if row.signature is defined else '' }}">
+    <span class="timeline-dot" aria-hidden="true"></span>
+    <div class="timeline-swipe" data-swipe-root>
+        <div class="timeline-swipe-actions">
+            {% if row.photo_url %}
+            <a class="btn btn-outline-secondary swipe-action-btn js-mobile-photo-preview"
+                target="_blank"
+                href="{{ row.photo_url }}"
+                data-photo-url="{{ row.photo_url }}"
+                data-photo-title="{{ row.school_name }} - {{ row.visit_at|jakarta('%d %b %Y, %H:%M') }} WIB">
+                <i class="bi bi-camera me-1"></i>Foto
+            </a>
+            {% endif %}
+            {% if row.can_add_staff_note %}
+            <button type="button"
+                class="btn btn-primary swipe-action-btn js-open-staff-note-sheet"
+                data-note-url="{{ url_for('daftar_tamu.user_guestbook_staff_note', transaction_id=row.transaction_id) }}"
+                data-note="{{ row.staff_note or '' }}"
+                data-note-level="{{ row.staff_note_level or 'tidak_perlu' }}"
+                data-title="{{ row.school_name }} - {{ row.visit_at|jakarta('%d %b %Y, %H:%M') }} WIB"
+                data-tab="beranda"
+                data-q="{{ search_query }}"
+                data-sort="date_desc"
+                data-date-from="{{ date_from_str }}"
+                data-date-to="{{ date_to_str }}"
+                data-guest-scope="{{ guest_scope }}"
+                data-status="{{ status }}"
+                data-home-limit="{{ home_limit }}"
+                data-per-page="{{ per_page }}"
+                data-page="1">
+                <i class="bi bi-journal-text me-1"></i>Catatan
+            </button>
+            {% endif %}
+        </div>
+        <div class="timeline-card">
+            <div class="timeline-photo lazy-media {% if not row.photo_url %}is-loaded{% endif %}">
+                {% if row.photo_url %}
+                <img class="js-lazy-image"
+                    loading="lazy"
+                    decoding="async"
+                    src="{{ row.photo_thumb_url or row.photo_url }}"
+                    data-full-src="{{ row.photo_url }}"
+                    alt="Foto kunjungan {{ row.school_name }}">
+                {% else %}
+                <div class="timeline-photo-empty"><i class="bi bi-camera"></i></div>
+                {% endif %}
+                <span class="photo-status-icon tone-{{ row.status_tone }} {% if row.status_tone == 'warning' %}is-pending{% endif %}"
+                    data-status-icon-wrap
+                    title="{{ row.status_label }}"
+                    aria-label="{{ row.status_label }}">
+                    <i class="bi {{ row.status_icon }}" data-status-icon></i>
+                </span>
+            </div>
+            <div class="timeline-content">
+                <div class="timeline-school">{{ row.school_name }}</div>
+                <div class="timeline-time">{{ row.visit_at|jakarta('%d %b %Y, %H:%M') }} WIB</div>
+                <div class="timeline-purpose">{{ row.purpose or '-' }}</div>
+                <div class="timeline-guest">{{ row.guest_display or '-' }} &bull; {{ row.guest_count or 0 }} tamu</div>
+
+                <div class="staff-note-value {% if not row.staff_note %}d-none{% endif %}" data-staff-note-block>
+                    <div class="staff-note-level {% if not row.staff_note_level_label %}d-none{% endif %}" data-staff-note-level-wrap>
+                        <span class="badge text-bg-{{ row.staff_note_level_tone or 'secondary' }}"
+                            data-staff-note-level-badge>{{ row.staff_note_level_label or '' }}</span>
+                    </div>
+                    <span data-staff-note-text>{{ row.staff_note or '' }}</span>
+                    <small class="{% if not row.staff_note_updated_at %}d-none{% endif %}" data-staff-note-updated>
+                        {% if row.staff_note_updated_at %}Update: {{ row.staff_note_updated_at }}{% endif %}
+                    </small>
+                </div>
+
+                {% if row.can_add_staff_note %}
+                <button type="button"
+                    class="btn btn-sm btn-outline-primary staff-note-trigger js-open-staff-note-sheet d-none d-md-inline-flex"
+                    data-note-url="{{ url_for('daftar_tamu.user_guestbook_staff_note', transaction_id=row.transaction_id) }}"
+                    data-note="{{ row.staff_note or '' }}"
+                    data-note-level="{{ row.staff_note_level or 'tidak_perlu' }}"
+                    data-title="{{ row.school_name }} - {{ row.visit_at|jakarta('%d %b %Y, %H:%M') }} WIB"
+                    data-tab="beranda"
+                    data-q="{{ search_query }}"
+                    data-sort="date_desc"
+                    data-date-from="{{ date_from_str }}"
+                    data-date-to="{{ date_to_str }}"
+                    data-guest-scope="{{ guest_scope }}"
+                    data-status="{{ status }}"
+                    data-home-limit="{{ home_limit }}"
+                    data-per-page="{{ per_page }}"
+                    data-page="1">
+                    <i class="bi bi-journal-text me-1"></i>
+                    <span data-note-trigger-label>
+                        {% if row.staff_note %}Ubah catatan staf{% else %}Tambah catatan staf{% endif %}
+                    </span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</article>

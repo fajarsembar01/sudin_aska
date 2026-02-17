@@ -117,6 +117,7 @@ ON bullying_report_events (report_id);
 _NOTIFICATIONS_SQL = """
 CREATE TABLE IF NOT EXISTS notifications (
     id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES dashboard_users(id) ON DELETE CASCADE,
     category TEXT NOT NULL,
     title TEXT NOT NULL,
     message TEXT,
@@ -138,6 +139,16 @@ ON notifications (status);
 _NOTIFICATIONS_INDEX_CREATED = """
 CREATE INDEX IF NOT EXISTS idx_notifications_created_at
 ON notifications (created_at DESC);
+"""
+
+_NOTIFICATIONS_INDEX_USER_STATUS_CREATED = """
+CREATE INDEX IF NOT EXISTS idx_notifications_user_status_created_at
+ON notifications (user_id, status, created_at DESC);
+"""
+
+_NOTIFICATIONS_INDEX_USER_CATEGORY_CREATED = """
+CREATE INDEX IF NOT EXISTS idx_notifications_user_category_created_at
+ON notifications (user_id, category, created_at DESC);
 """
 
 _TWITTER_LOGS_SQL = """
@@ -759,8 +770,11 @@ def ensure_dashboard_schema() -> None:
         _BULLYING_EVENTS_SQL,
         _BULLYING_EVENTS_INDEX_SQL,
         _NOTIFICATIONS_SQL,
+        "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES dashboard_users(id) ON DELETE CASCADE",
         _NOTIFICATIONS_INDEX_STATUS,
         _NOTIFICATIONS_INDEX_CREATED,
+        _NOTIFICATIONS_INDEX_USER_STATUS_CREATED,
+        _NOTIFICATIONS_INDEX_USER_CATEGORY_CREATED,
         _TWITTER_LOGS_SQL,
         _TWITTER_LOGS_INDEX_CREATED,
         _TWITTER_LOGS_INDEX_LEVEL,

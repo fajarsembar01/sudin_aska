@@ -649,6 +649,19 @@
             background: var(--bg-subtle);
             border: 1px solid var(--border-soft);
             margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: background-color 0.16s ease, transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+        }
+
+        .notification-quick-item:hover,
+        .notification-quick-item:focus-visible {
+            text-decoration: none;
+            color: var(--text-primary);
+            background: var(--bg-surface);
+            border-color: var(--accent);
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+            transform: translateY(-1px);
         }
 
         .notification-quick-item:last-child {
@@ -772,7 +785,7 @@
             <div class="collapse navbar-collapse" id="portalNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     {% if not current_user or current_user.role != 'sekolah' %}
-                    {% set home_active_endpoints = ['portal.home', 'portal.coordinator_dashboard'] %}
+                    {% set home_active_endpoints = ['portal.home', 'portal.coordinator_dashboard', 'portal.staff_oss_home'] %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint in home_active_endpoints %}active{% endif %}"
                             href="{{ url_for('portal.home') }}">
@@ -839,6 +852,22 @@
                             href="{{ url_for('portal.view_my_team') }}">
                             <i class="bi bi-people nav-icon"></i>Tim Saya
                         </a>
+                    </li>
+                    {% endif %}
+
+                    {% if current_user and current_user.role in ['staff', 'coordinator', 'sekolah'] %}
+                    <li class="nav-item">
+                        {% if current_user.role == 'sekolah' %}
+                        <a class="nav-link {% if request.blueprint == 'daftar_tamu' %}active{% endif %}"
+                            href="{{ url_for('daftar_tamu.sekolah_guestbook') }}">
+                            <i class="bi bi-journal-text nav-icon"></i>Buku Tamu
+                        </a>
+                        {% else %}
+                        <a class="nav-link {% if request.endpoint == 'daftar_tamu.user_guestbook_history' %}active{% endif %}"
+                            href="{{ url_for('daftar_tamu.user_guestbook_history') }}">
+                            <i class="bi bi-journal-text nav-icon"></i>Buku Tamu
+                        </a>
+                        {% endif %}
                     </li>
                     {% endif %}
 
@@ -951,8 +980,8 @@
                 </ul>
 
                 <div class="d-flex align-items-center gap-3 user-nav-actions">
-                    {% if current_user and current_user.role in ['admin', 'sekolah'] %}
-                    <a href="{{ url_for('main.admin_select_role') if current_user.role == 'admin' else url_for('portal.sekolah_home') }}"
+                    {% if current_user and current_user.role in ['admin', 'sekolah', 'staff', 'coordinator'] %}
+                    <a href="{{ url_for('main.admin_select_role') if current_user.role == 'admin' else url_for('portal.home') }}"
                         class="btn btn-outline-secondary btn-sm text-nowrap oss-home-btn">
                         <i class="bi bi-house me-1"></i><span class="oss-home-label">Home</span>
                     </a>
@@ -1057,6 +1086,44 @@
                                 data-reject-guestbook="{{ url_for('daftar_tamu.admin_transaction_reject', transaction_id=0) }}"
                                 data-preview-url="{{ url_for('portal.admin_pending_preview') }}">
                             </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if current_user and current_user.role in ['staff', 'coordinator', 'sekolah'] %}
+                    {% set user_notif_unread = user_app_notifications.unread_count if user_app_notifications else 0 %}
+                    <div class="dropdown notification-menu"
+                        id="userGuestbookNotifRoot"
+                        data-list-url="{{ url_for('portal.user_app_notifications') }}"
+                        data-read-url="{{ url_for('portal.user_app_notifications_mark_read') }}"
+                        data-history-url="{% if current_user.role == 'sekolah' %}{{ url_for('daftar_tamu.sekolah_riwayat') }}{% else %}{{ url_for('portal.home') }}{% endif %}">
+                        <button class="notification-toggle" type="button" data-bs-toggle="dropdown"
+                            id="userGuestbookNotifToggle" aria-expanded="false" aria-label="Notifikasi pengguna">
+                            <i class="bi bi-bell"></i>
+                            <span class="notification-badge{% if user_notif_unread == 0 %} d-none{% endif %}"
+                                id="userGuestbookNotifBadge" data-count="{{ user_notif_unread }}">{{ user_notif_unread }}</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end notification-dropdown">
+                            <div class="notification-header">
+                                <span class="fw-semibold">Notifikasi Saya</span>
+                                <div class="notification-controls">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm notification-refresh"
+                                        id="userGuestbookNotifRefresh" title="Perbarui">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-link btn-sm text-decoration-none px-0"
+                                        id="userGuestbookNotifMarkAll"{% if user_notif_unread == 0 %} disabled{% endif %}>
+                                        Tandai semua
+                                    </button>
+                                    <span class="badge bg-info-subtle text-info-emphasis{% if user_notif_unread == 0 %} d-none{% endif %}"
+                                        id="userGuestbookNotifUnreadLabel" data-count="{{ user_notif_unread }}">{{ user_notif_unread }}</span>
+                                </div>
+                            </div>
+                            <div id="userGuestbookNotifEmpty"
+                                class="notification-empty text-muted small{% if user_notif_unread > 0 %} d-none{% endif %}">
+                                Belum ada notifikasi terbaru.
+                            </div>
+                            <div class="notification-quick" id="userGuestbookNotifList"></div>
                         </div>
                     </div>
                     {% endif %}
@@ -2192,6 +2259,218 @@
                 if (document.hidden) return;
                 fetchSummary();
             }, 600000);
+        })();
+    </script>
+        <script>
+        (function () {
+            var isUnifiedNotifRole = {{ 'true' if current_user and current_user.role in ['staff', 'coordinator', 'sekolah'] else 'false' }};
+            if (!isUnifiedNotifRole) return;
+            if (window.__askaUnifiedNotifInit) return;
+            window.__askaUnifiedNotifInit = true;
+
+            var root = document.getElementById('userGuestbookNotifRoot');
+            if (!root) return;
+
+            var listUrl = root.getAttribute('data-list-url');
+            var readUrl = root.getAttribute('data-read-url');
+            var historyUrl = root.getAttribute('data-history-url') || '';
+            var listEl = document.getElementById('userGuestbookNotifList');
+            var emptyEl = document.getElementById('userGuestbookNotifEmpty');
+            var badgeEl = document.getElementById('userGuestbookNotifBadge');
+            var unreadLabelEl = document.getElementById('userGuestbookNotifUnreadLabel');
+            var refreshBtn = document.getElementById('userGuestbookNotifRefresh');
+            var markAllBtn = document.getElementById('userGuestbookNotifMarkAll');
+            var toggleBtn = document.getElementById('userGuestbookNotifToggle');
+            var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            var csrfToken = csrfMeta ? (csrfMeta.getAttribute('content') || '') : '';
+
+            var isLoading = false;
+            var lastRequestAt = 0;
+
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            function parseCount(value) {
+                var parsed = parseInt(value || '0', 10);
+                return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+            }
+
+            function setUnreadCount(count) {
+                var safeCount = parseCount(count);
+                if (badgeEl) {
+                    badgeEl.textContent = safeCount;
+                    badgeEl.dataset.count = String(safeCount);
+                    badgeEl.classList.toggle('d-none', safeCount <= 0);
+                }
+                if (unreadLabelEl) {
+                    unreadLabelEl.textContent = safeCount;
+                    unreadLabelEl.dataset.count = String(safeCount);
+                    unreadLabelEl.classList.toggle('d-none', safeCount <= 0);
+                }
+                if (markAllBtn) {
+                    markAllBtn.disabled = safeCount <= 0;
+                }
+            }
+
+            function buildItemHtml(item) {
+                var id = parseInt(item && item.id ? item.id : 0, 10);
+                var href = (item && item.link) ? item.link : historyUrl;
+                var title = escapeHtml(item && item.title ? item.title : 'Notifikasi');
+                var message = escapeHtml(item && item.message ? item.message : '');
+                var icon = escapeHtml(item && item.icon ? item.icon : 'bi-bell-fill');
+                var tone = escapeHtml(item && item.tone ? item.tone : 'secondary');
+                var createdLabel = escapeHtml(item && item.created_label ? item.created_label : '');
+                var isUnread = !!(item && item.is_unread);
+
+                return [
+                    '<a class="notification-quick-item' + (isUnread ? '' : ' opacity-75') + '"',
+                    ' href="' + escapeHtml(href) + '"',
+                    ' data-notif-link="1"',
+                    ' data-notif-id="' + String(id || 0) + '"',
+                    ' data-notif-unread="' + (isUnread ? '1' : '0') + '">',
+                    '<div class="notification-quick-meta">',
+                    '<div class="fw-semibold text-' + tone + '"><i class="bi ' + icon + ' me-1"></i>' + title + '</div>',
+                    '<small>' + message + '</small>',
+                    '</div>',
+                    '<div class="notification-quick-time">' + createdLabel + '</div>',
+                    '</a>'
+                ].join('');
+            }
+
+            function renderItems(items) {
+                var safeItems = Array.isArray(items) ? items : [];
+                if (!listEl || !emptyEl) return;
+                if (!safeItems.length) {
+                    listEl.innerHTML = '';
+                    emptyEl.classList.remove('d-none');
+                    return;
+                }
+                emptyEl.classList.add('d-none');
+                listEl.innerHTML = safeItems.map(buildItemHtml).join('');
+            }
+
+            function markRead(payload) {
+                if (!readUrl) return Promise.resolve(null);
+                var headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                };
+                if (csrfToken) {
+                    headers['X-CSRFToken'] = csrfToken;
+                }
+                return fetch(readUrl, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(payload || {})
+                })
+                    .then(function (response) {
+                        if (!response.ok) return null;
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (data && data.success) {
+                            setUnreadCount(data.unread_count || 0);
+                        }
+                        return data;
+                    })
+                    .catch(function () {
+                        return null;
+                    });
+            }
+
+            function fetchNotifications(force) {
+                if (!listUrl || isLoading) return Promise.resolve(null);
+                var now = Date.now();
+                if (!force && now - lastRequestAt < 800) {
+                    return Promise.resolve(null);
+                }
+                isLoading = true;
+                lastRequestAt = now;
+
+                return fetch(listUrl + '?limit=8', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(function (response) {
+                        if (!response.ok) return null;
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (!data || !data.success) return;
+                        setUnreadCount(data.unread_count || 0);
+                        renderItems(data.items || []);
+                    })
+                    .catch(function () { })
+                    .finally(function () {
+                        isLoading = false;
+                    });
+            }
+
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    fetchNotifications(true);
+                });
+            }
+
+            if (markAllBtn) {
+                markAllBtn.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (markAllBtn.disabled) return;
+                    markRead({ all: true }).then(function () {
+                        fetchNotifications(true);
+                    });
+                });
+            }
+
+            if (listEl) {
+                listEl.addEventListener('click', function (event) {
+                    var linkEl = event.target && event.target.closest ? event.target.closest('[data-notif-link="1"]') : null;
+                    if (!linkEl) return;
+
+                    var href = linkEl.getAttribute('href');
+                    var notifId = parseInt(linkEl.getAttribute('data-notif-id') || '0', 10);
+                    var isUnread = linkEl.getAttribute('data-notif-unread') === '1';
+                    if (!href || !notifId || !isUnread) return;
+
+                    event.preventDefault();
+                    markRead({ ids: [notifId] })
+                        .then(function () {
+                            window.location.href = href;
+                        })
+                        .catch(function () {
+                            window.location.href = href;
+                        });
+                });
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('shown.bs.dropdown', function () {
+                    fetchNotifications(true);
+                });
+            }
+
+            document.addEventListener('visibilitychange', function () {
+                if (document.hidden) return;
+                fetchNotifications(false);
+            });
+
+            fetchNotifications(true);
+            setInterval(function () {
+                if (document.hidden) return;
+                fetchNotifications(false);
+            }, 45000);
         })();
     </script>
     {% block portal_scripts %}{% endblock %}

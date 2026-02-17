@@ -1,0 +1,13 @@
+{
+  "name": "aska-dashboard-e2e",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Playwright mobile e2e for ASKA guestbook super app",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0"
+  }
+}

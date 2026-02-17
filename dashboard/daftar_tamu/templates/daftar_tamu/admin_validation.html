@@ -31,7 +31,7 @@
 <section class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <form method="get" class="row g-2 align-items-end">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label small mb-1">Tab</label>
                 {% if status == 'pending' %}
                 <input type="text" class="form-control" value="Validasi" disabled>
@@ -44,10 +44,20 @@
                 </select>
                 {% endif %}
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label class="form-label small mb-1">Cari sekolah/tamu</label>
                 <input type="text" name="q" class="form-control" value="{{ search_query }}"
                     placeholder="Nama sekolah, NPSN, nama tamu, email, NRK...">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-1">Tingkat Catatan Staff</label>
+                <select name="staff_note_level" class="form-select">
+                    <option value="" {% if not staff_note_level %}selected{% endif %}>Semua</option>
+                    <option value="tidak_perlu" {% if staff_note_level=='tidak_perlu' %}selected{% endif %}>Tidak Perlu Penanganan</option>
+                    <option value="pantau" {% if staff_note_level=='pantau' %}selected{% endif %}>Perlu Dipantau</option>
+                    <option value="tindak_lanjut" {% if staff_note_level=='tindak_lanjut' %}selected{% endif %}>Butuh Penanganan</option>
+                    <option value="mendesak" {% if staff_note_level=='mendesak' %}selected{% endif %}>Sangat Butuh Penanganan</option>
+                </select>
             </div>
             <div class="col-md-2">
                 <label class="form-label small mb-1">Dari</label>
@@ -70,13 +80,13 @@
         <ul class="nav nav-tabs mb-3">
             <li class="nav-item">
                 <a class="nav-link {% if status == 'pending' %}active{% endif %}"
-                    href="{{ url_for('daftar_tamu.admin_validation', status='pending', q=search_query, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str) }}">
+                    href="{{ url_for('daftar_tamu.admin_validation', status='pending', q=search_query, staff_note_level=staff_note_level, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str) }}">
                     Validasi
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if status != 'pending' %}active{% endif %}"
-                    href="{{ url_for('daftar_tamu.admin_validation', status=history_status, q=search_query, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str) }}">
+                    href="{{ url_for('daftar_tamu.admin_validation', status=history_status, q=search_query, staff_note_level=staff_note_level, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str) }}">
                     Riwayat
                 </a>
             </li>
@@ -85,6 +95,7 @@
         <form method="post" id="bulkValidationForm">
             <input type="hidden" name="status" value="{{ status }}">
             <input type="hidden" name="q" value="{{ search_query }}">
+            <input type="hidden" name="staff_note_level" value="{{ staff_note_level }}">
             <input type="hidden" name="date_from" value="{{ date_from_str }}">
             <input type="hidden" name="date_to" value="{{ date_to_str }}">
             <input type="hidden" name="per_page" value="{{ per_page }}">
@@ -174,6 +185,22 @@
                             <td>
                                 <div class="fw-semibold">{{ row.guest_display or '-' }}</div>
                                 <div class="small text-muted">{{ row.guest_count or 0 }} tamu</div>
+                                {% if row.staff_note_text %}
+                                <div class="small mt-1">
+                                    <span class="badge text-bg-{% if row.staff_note_level == 'mendesak' %}danger{% elif row.staff_note_level == 'tindak_lanjut' %}warning{% elif row.staff_note_level == 'pantau' %}info{% else %}secondary{% endif %}">
+                                        Catatan Staff
+                                        {% if row.staff_note_level == 'mendesak' %}Sangat Butuh Penanganan
+                                        {% elif row.staff_note_level == 'tindak_lanjut' %}Butuh Penanganan
+                                        {% elif row.staff_note_level == 'pantau' %}Perlu Dipantau
+                                        {% elif row.staff_note_level == 'tidak_perlu' %}Tidak Perlu Penanganan
+                                        {% else %}-
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="small text-muted" title="{{ row.staff_note_text }}">
+                                    {{ row.staff_note_text[:120] }}{% if row.staff_note_text|length > 120 %}...{% endif %}
+                                </div>
+                                {% endif %}
                             </td>
                             <td>
                                 {% if row.status == 'approved' %}
@@ -244,17 +271,17 @@
             <small class="text-muted">Menampilkan {{ start_row }}-{{ end_row }} dari {{ total_rows }} transaksi</small>
             <ul class="pagination pagination-sm mb-0">
                 <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_validation', q=search_query, status=status, per_page=per_page, page=page-1, date_from=date_from_str, date_to=date_to_str) }}">Prev</a>
+                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_validation', q=search_query, status=status, staff_note_level=staff_note_level, per_page=per_page, page=page-1, date_from=date_from_str, date_to=date_to_str) }}">Prev</a>
                 </li>
                 {% set start_page = 1 if page - 2 < 1 else page - 2 %}
                 {% set end_page = total_pages if page + 2 > total_pages else page + 2 %}
                 {% for p in range(start_page, end_page + 1) %}
                 <li class="page-item {% if p == page %}active{% endif %}">
-                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_validation', q=search_query, status=status, per_page=per_page, page=p, date_from=date_from_str, date_to=date_to_str) }}">{{ p }}</a>
+                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_validation', q=search_query, status=status, staff_note_level=staff_note_level, per_page=per_page, page=p, date_from=date_from_str, date_to=date_to_str) }}">{{ p }}</a>
                 </li>
                 {% endfor %}
                 <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_validation', q=search_query, status=status, per_page=per_page, page=page+1, date_from=date_from_str, date_to=date_to_str) }}">Next</a>
+                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_validation', q=search_query, status=status, staff_note_level=staff_note_level, per_page=per_page, page=page+1, date_from=date_from_str, date_to=date_to_str) }}">Next</a>
                 </li>
             </ul>
         </div>

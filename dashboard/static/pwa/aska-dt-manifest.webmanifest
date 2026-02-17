@@ -1,0 +1,25 @@
+{
+  "name": "ASKA Buku Tamu Super App",
+  "short_name": "ASKA Tamu",
+  "description": "Riwayat buku tamu staff/koordinator dengan mode super app mobile.",
+  "start_url": "/daftar-tamu/saya/riwayat?tab=beranda",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f2f8ff",
+  "theme_color": "#0284c7",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/logo/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/logo/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

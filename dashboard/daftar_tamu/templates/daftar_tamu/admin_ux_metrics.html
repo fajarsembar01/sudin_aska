@@ -1,0 +1,152 @@
+{% extends "daftar_tamu/base_daftar_tamu.html" %}
+{% set page_title = "Metrik UX Super App" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <h1 class="h4 fw-bold mb-1">Metrik UX Super App Buku Tamu</h1>
+                    <p class="text-muted mb-0">Rekap interaksi staff/koordinator dalam {{ days }} hari terakhir.</p>
+                </div>
+                <form method="get" class="d-flex align-items-center gap-2">
+                    <label class="small text-muted mb-0">Periode</label>
+                    <select class="form-select form-select-sm" name="days">
+                        {% for d in [7, 14, 30, 60, 90] %}
+                        <option value="{{ d }}" {% if days == d %}selected{% endif %}>{{ d }} hari</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-sm btn-primary" type="submit">Terapkan</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <small class="text-muted">Total Session</small>
+                <div class="h3 fw-bold mb-0">{{ summary.total_sessions or 0 }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <small class="text-muted">User Aktif</small>
+                <div class="h3 fw-bold mb-0">{{ summary.active_users or 0 }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <small class="text-muted">Session 24 Jam</small>
+                <div class="h3 fw-bold mb-0">{{ summary.active_sessions_24h or 0 }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <small class="text-muted">Total Event</small>
+                <div class="h3 fw-bold mb-0">{{ summary.total_events or 0 }}</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-3">
+    <div class="col-12 col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Top Event</h2>
+                {% if summary.top_events %}
+                <div class="list-group list-group-flush">
+                    {% for event_name, total in summary.top_events %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span class="text-lowercase">{{ event_name.replace('_', ' ') }}</span>
+                        <span class="badge text-bg-primary">{{ total }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-muted">Belum ada data event.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">User Teraktif</h2>
+                {% if summary.top_users %}
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th class="text-end">Event</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in summary.top_users %}
+                            <tr>
+                                <td>{{ user.full_name }}</td>
+                                <td>{{ user.role or '-' }}</td>
+                                <td class="text-end">{{ user.events or 0 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-muted">Belum ada user aktif.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm mt-3">
+    <div class="card-body">
+        <h2 class="h6 fw-bold mb-3">Session Terbaru</h2>
+        {% if summary.recent_sessions %}
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Waktu</th>
+                        <th>User</th>
+                        <th>Role</th>
+                        <th>Event</th>
+                        <th>Last Event</th>
+                        <th>Path</th>
+                        <th>Session Key</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in summary.recent_sessions %}
+                    <tr>
+                        <td>{{ row.updated_at_label or '-' }}</td>
+                        <td>{{ row.full_name or '-' }}</td>
+                        <td>{{ row.role or '-' }}</td>
+                        <td>{{ row.events or 0 }}</td>
+                        <td>{{ row.last_event or '-' }}</td>
+                        <td><code>{{ row.page_path or '-' }}</code></td>
+                        <td><code>{{ row.session_key or '-' }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-muted">Belum ada session metrik yang terkirim.</div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

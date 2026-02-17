@@ -5,7 +5,7 @@
 <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container-fluid px-lg-4">
         <a class="navbar-brand"
-            href="{% if current_user and current_user.role == 'admin' %}{{ url_for('daftar_tamu.admin_dashboard') }}{% else %}{{ url_for('daftar_tamu.sekolah_guestbook') }}{% endif %}">
+            href="{% if current_user and current_user.role == 'admin' %}{{ url_for('daftar_tamu.admin_dashboard') }}{% elif current_user and current_user.role == 'sekolah' %}{{ url_for('daftar_tamu.sekolah_guestbook') }}{% elif current_user and current_user.role in ['staff', 'coordinator'] %}{{ url_for('daftar_tamu.user_guestbook_history') }}{% else %}{{ url_for('portal.home') }}{% endif %}">
             <span class="icon-badge brand-icon text-primary">
                 <i class="bi bi-person-vcard"></i>
             </span>
@@ -21,7 +21,8 @@
                 'daftar_tamu.admin_general_guests',
                 'daftar_tamu.admin_public_transactions',
                 'daftar_tamu.admin_purpose_keywords',
-                'daftar_tamu.admin_contact_priority'
+                'daftar_tamu.admin_contact_priority',
+                'daftar_tamu.admin_guestbook_ux_metrics'
                 ] %}
                 {% set admin_web_endpoints = [
                 'daftar_tamu.admin_public_summary',
@@ -79,6 +80,12 @@
                                 <i class="bi bi-list-ol me-2"></i>Prioritas Kontak
                             </a>
                         </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_guestbook_ux_metrics' %}active{% endif %}"
+                                href="{{ url_for('daftar_tamu.admin_guestbook_ux_metrics') }}">
+                                <i class="bi bi-phone me-2"></i>Metrik UX Super App
+                            </a>
+                        </li>
                     </ul>
                 </li>
                 <li class="nav-item dropdown">
@@ -128,12 +135,19 @@
                         {% endif %}
                     </a>
                 </li>
+                {% elif current_user and current_user.role in ['staff', 'coordinator'] %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'daftar_tamu.user_guestbook_history' %}active{% endif %}"
+                        href="{{ url_for('daftar_tamu.user_guestbook_history') }}">
+                        <i class="bi bi-clock-history nav-icon"></i>Riwayat Saya
+                    </a>
+                </li>
                 {% endif %}
             </ul>
 
             <div class="d-flex align-items-center gap-3 user-nav-actions">
-                {% if current_user and current_user.role in ['admin', 'sekolah'] %}
-                <a href="{{ url_for('main.admin_select_role') if current_user.role == 'admin' else url_for('portal.sekolah_home') }}"
+                {% if current_user and current_user.role in ['admin', 'sekolah', 'staff', 'coordinator'] %}
+                <a href="{{ url_for('main.admin_select_role') if current_user.role == 'admin' else (url_for('portal.sekolah_home') if current_user.role == 'sekolah' else url_for('portal.home')) }}"
                     class="btn btn-outline-secondary btn-sm text-nowrap oss-home-btn">
                     <i class="bi bi-house me-1"></i><span class="oss-home-label">Home</span>
                 </a>
@@ -241,9 +255,261 @@
                 </div>
                 {% endif %}
 
+                {% if current_user and current_user.role in ['staff', 'coordinator', 'sekolah'] %}
+                {% set user_notif_unread = user_app_notifications.unread_count if user_app_notifications else 0 %}
+                <div class="dropdown notification-menu"
+                    id="userGuestbookNotifRoot"
+                    data-list-url="{{ url_for('portal.user_app_notifications') }}"
+                    data-read-url="{{ url_for('portal.user_app_notifications_mark_read') }}"
+                    data-history-url="{% if current_user.role == 'sekolah' %}{{ url_for('daftar_tamu.sekolah_riwayat') }}{% else %}{{ url_for('daftar_tamu.user_guestbook_history', tab='detail') }}{% endif %}">
+                    <button class="notification-toggle" type="button" data-bs-toggle="dropdown"
+                        id="userGuestbookNotifToggle" aria-expanded="false" aria-label="Notifikasi pengguna">
+                        <i class="bi bi-bell"></i>
+                        <span class="notification-badge{% if user_notif_unread == 0 %} d-none{% endif %}"
+                            id="userGuestbookNotifBadge" data-count="{{ user_notif_unread }}">{{ user_notif_unread }}</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end notification-dropdown">
+                        <div class="notification-header">
+                            <span class="fw-semibold">Notifikasi Saya</span>
+                            <div class="notification-controls">
+                                <button type="button" class="btn btn-outline-secondary btn-sm notification-refresh"
+                                    id="userGuestbookNotifRefresh" title="Perbarui">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                                <button type="button" class="btn btn-link btn-sm text-decoration-none px-0"
+                                    id="userGuestbookNotifMarkAll"{% if user_notif_unread == 0 %} disabled{% endif %}>
+                                    Tandai semua
+                                </button>
+                                <span class="badge bg-info-subtle text-info-emphasis{% if user_notif_unread == 0 %} d-none{% endif %}"
+                                    id="userGuestbookNotifUnreadLabel" data-count="{{ user_notif_unread }}">{{ user_notif_unread }}</span>
+                            </div>
+                        </div>
+                        <div id="userGuestbookNotifEmpty"
+                            class="notification-empty text-muted small{% if user_notif_unread > 0 %} d-none{% endif %}">
+                            Belum ada notifikasi terbaru.
+                        </div>
+                        <div class="notification-quick" id="userGuestbookNotifList"></div>
+                    </div>
+                </div>
+                {% endif %}
+
                 {% include "portal/components/_user_menu.html" %}
             </div>
         </div>
     </div>
 </nav>
+{% if current_user and current_user.role in ['staff', 'coordinator', 'sekolah'] %}
+<script>
+    (function () {
+        if (window.__askaUnifiedNotifInit) return;
+        window.__askaUnifiedNotifInit = true;
+        var root = document.getElementById('userGuestbookNotifRoot');
+        if (!root) return;
+
+        var listUrl = root.getAttribute('data-list-url');
+        var readUrl = root.getAttribute('data-read-url');
+        var historyUrl = root.getAttribute('data-history-url') || '';
+        var listEl = document.getElementById('userGuestbookNotifList');
+        var emptyEl = document.getElementById('userGuestbookNotifEmpty');
+        var badgeEl = document.getElementById('userGuestbookNotifBadge');
+        var unreadLabelEl = document.getElementById('userGuestbookNotifUnreadLabel');
+        var refreshBtn = document.getElementById('userGuestbookNotifRefresh');
+        var markAllBtn = document.getElementById('userGuestbookNotifMarkAll');
+        var toggleBtn = document.getElementById('userGuestbookNotifToggle');
+        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        var csrfToken = csrfMeta ? (csrfMeta.getAttribute('content') || '') : '';
+
+        var isLoading = false;
+        var lastRequestAt = 0;
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function parseCount(value) {
+            var parsed = parseInt(value || '0', 10);
+            return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+        }
+
+        function setUnreadCount(count) {
+            var safeCount = parseCount(count);
+            if (badgeEl) {
+                badgeEl.textContent = safeCount;
+                badgeEl.dataset.count = String(safeCount);
+                badgeEl.classList.toggle('d-none', safeCount <= 0);
+            }
+            if (unreadLabelEl) {
+                unreadLabelEl.textContent = safeCount;
+                unreadLabelEl.dataset.count = String(safeCount);
+                unreadLabelEl.classList.toggle('d-none', safeCount <= 0);
+            }
+            if (markAllBtn) {
+                markAllBtn.disabled = safeCount <= 0;
+            }
+        }
+
+        function buildItemHtml(item) {
+            var id = parseInt(item && item.id ? item.id : 0, 10);
+            var href = (item && item.link) ? item.link : historyUrl;
+            var title = escapeHtml(item && item.title ? item.title : 'Notifikasi buku tamu');
+            var message = escapeHtml(item && item.message ? item.message : '');
+            var icon = escapeHtml(item && item.icon ? item.icon : 'bi-info-circle-fill');
+            var tone = escapeHtml(item && item.tone ? item.tone : 'secondary');
+            var createdLabel = escapeHtml(item && item.created_label ? item.created_label : '');
+            var isUnread = !!(item && item.is_unread);
+
+            return [
+                '<a class="notification-quick-item' + (isUnread ? '' : ' opacity-75') + '"',
+                ' href="' + escapeHtml(href) + '"',
+                ' data-notif-link="1"',
+                ' data-notif-id="' + String(id || 0) + '"',
+                ' data-notif-unread="' + (isUnread ? '1' : '0') + '">',
+                '<div class="notification-quick-meta">',
+                '<div class="fw-semibold text-' + tone + '"><i class="bi ' + icon + ' me-1"></i>' + title + '</div>',
+                '<small>' + message + '</small>',
+                '</div>',
+                '<div class="notification-quick-time">' + createdLabel + '</div>',
+                '</a>'
+            ].join('');
+        }
+
+        function renderItems(items) {
+            var safeItems = Array.isArray(items) ? items : [];
+            if (!listEl || !emptyEl) return;
+
+            if (!safeItems.length) {
+                listEl.innerHTML = '';
+                emptyEl.classList.remove('d-none');
+                return;
+            }
+
+            emptyEl.classList.add('d-none');
+            listEl.innerHTML = safeItems.map(buildItemHtml).join('');
+        }
+
+        function markRead(payload) {
+            if (!readUrl) return Promise.resolve(null);
+            var headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            };
+            if (csrfToken) {
+                headers['X-CSRFToken'] = csrfToken;
+            }
+            return fetch(readUrl, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(payload || {})
+            })
+                .then(function (response) {
+                    if (!response.ok) return null;
+                    return response.json();
+                })
+                .then(function (data) {
+                    if (data && data.success) {
+                        setUnreadCount(data.unread_count || 0);
+                    }
+                    return data;
+                })
+                .catch(function () {
+                    return null;
+                });
+        }
+
+        function fetchNotifications(force) {
+            if (!listUrl || isLoading) return Promise.resolve(null);
+            var now = Date.now();
+            if (!force && now - lastRequestAt < 800) {
+                return Promise.resolve(null);
+            }
+            isLoading = true;
+            lastRequestAt = now;
+
+            return fetch(listUrl + '?limit=8', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(function (response) {
+                    if (!response.ok) return null;
+                    return response.json();
+                })
+                .then(function (data) {
+                    if (!data || !data.success) return;
+                    setUnreadCount(data.unread_count || 0);
+                    renderItems(data.items || []);
+                })
+                .catch(function () { })
+                .finally(function () {
+                    isLoading = false;
+                });
+        }
+
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                fetchNotifications(true);
+            });
+        }
+
+        if (markAllBtn) {
+            markAllBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (markAllBtn.disabled) return;
+                markRead({ all: true }).then(function () {
+                    fetchNotifications(true);
+                });
+            });
+        }
+
+        if (listEl) {
+            listEl.addEventListener('click', function (event) {
+                var linkEl = event.target && event.target.closest ? event.target.closest('[data-notif-link="1"]') : null;
+                if (!linkEl) return;
+
+                var href = linkEl.getAttribute('href');
+                var notifId = parseInt(linkEl.getAttribute('data-notif-id') || '0', 10);
+                var isUnread = linkEl.getAttribute('data-notif-unread') === '1';
+                if (!href || !notifId || !isUnread) return;
+
+                event.preventDefault();
+                markRead({ ids: [notifId] })
+                    .then(function () {
+                        window.location.href = href;
+                    })
+                    .catch(function () {
+                        window.location.href = href;
+                    });
+            });
+        }
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener('shown.bs.dropdown', function () {
+                fetchNotifications(true);
+            });
+        }
+
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) return;
+            fetchNotifications(false);
+        });
+
+        fetchNotifications(true);
+
+        setInterval(function () {
+            if (document.hidden) return;
+            fetchNotifications(false);
+        }, 45000);
+    })();
+</script>
+{% endif %}
 {% endblock %}

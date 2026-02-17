@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+import json
+from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
 from dashboard.db_access import get_cursor
@@ -37,6 +38,24 @@ SCHOOL_VISIT_SORT_OPTIONS = {
     "date_asc": "t.visit_at ASC, t.id ASC",
 }
 DEFAULT_SCHOOL_VISIT_SORT = "date_desc"
+STAFF_NOTE_LEVELS = {"tidak_perlu", "pantau", "tindak_lanjut", "mendesak"}
+STAFF_NOTE_LEVEL_RANK = {
+    "mendesak": 0,
+    "tindak_lanjut": 1,
+    "pantau": 2,
+    "tidak_perlu": 3,
+}
+GUESTBOOK_NOTIFICATION_CATEGORY = "daftar_tamu_status"
+PANBERS_REOPEN_NOTIFICATION_CATEGORY = "panbers_reopen_status"
+PANBERS_ASSIGNMENT_NOTIFICATION_CATEGORY = "panbers_assignment_status"
+PANBERS_TEAM_MEMBER_NOTIFICATION_CATEGORY = "panbers_team_member_status"
+USER_APP_NOTIFICATION_CATEGORIES = (
+    GUESTBOOK_NOTIFICATION_CATEGORY,
+    PANBERS_REOPEN_NOTIFICATION_CATEGORY,
+    PANBERS_ASSIGNMENT_NOTIFICATION_CATEGORY,
+    PANBERS_TEAM_MEMBER_NOTIFICATION_CATEGORY,
+)
+_NOTIFICATION_SCHEMA_READY = False
 
 _GUEST_SCOPE_WHERE = """
       AND (
@@ -167,6 +186,124 @@ school_rollup AS (
 def _build_search(search_query: Optional[str]) -> tuple[str, str]:
     query = (search_query or "").strip()
     return query, f"%{query}%"
+
+
+def _normalize_staff_note_level(level: Optional[str]) -> str:
+    value = (level or "").strip().lower()
+    if value in {"mendesak", "urgent", "critical", "sangat_mendesak", "sangat mendesak"}:
+        return "mendesak"
+    if value in {"tindak_lanjut", "tindak lanjut", "normal", "follow_up", "perlu_tindakan"}:
+        return "tindak_lanjut"
+    if value in {"pantau", "monitor", "other", "lainnya", "lainnya/pantau"}:
+        return "pantau"
+    if value in {"tidak_perlu", "tidak perlu", "info", "informasi", "arsip", "no_action"}:
+        return "tidak_perlu"
+    if value in STAFF_NOTE_LEVELS:
+        return value
+    return ""
+
+
+def _summarize_staff_notes(metadata_value: Any) -> Dict[str, Any]:
+    metadata = metadata_value
+    if isinstance(metadata, str):
+        try:
+            metadata = json.loads(metadata)
+        except json.JSONDecodeError:
+            metadata = {}
+    if not isinstance(metadata, dict):
+        return {
+            "staff_note_text": "",
+            "staff_note_level": "",
+            "staff_note_updated_at": "",
+            "staff_note_count": 0,
+        }
+
+    staff_notes = metadata.get("staff_notes")
+    if not isinstance(staff_notes, dict):
+        return {
+            "staff_note_text": "",
+            "staff_note_level": "",
+            "staff_note_updated_at": "",
+            "staff_note_count": 0,
+        }
+
+    best_note = ""
+    best_level = ""
+    best_updated_at = ""
+    best_rank = 99
+    note_count = 0
+
+    for raw_entry in staff_notes.values():
+        note_text = ""
+        note_level = "tindak_lanjut"
+        note_updated_at = ""
+
+        if isinstance(raw_entry, dict):
+            note_text = (raw_entry.get("note") or "").strip()
+            note_level = _normalize_staff_note_level(raw_entry.get("level")) or "tindak_lanjut"
+            note_updated_at = (raw_entry.get("updated_at") or "").strip()
+        elif isinstance(raw_entry, str):
+            note_text = raw_entry.strip()
+            note_level = "tindak_lanjut"
+
+        if not note_text:
+            continue
+
+        note_count += 1
+        rank = STAFF_NOTE_LEVEL_RANK.get(note_level, 9)
+        if rank < best_rank:
+            best_rank = rank
+            best_note = note_text
+            best_level = note_level
+            best_updated_at = note_updated_at
+        elif rank == best_rank and note_updated_at:
+            try:
+                current_dt = datetime.fromisoformat(best_updated_at.replace("Z", "+00:00")) if best_updated_at else None
+            except ValueError:
+                current_dt = None
+            try:
+                incoming_dt = datetime.fromisoformat(note_updated_at.replace("Z", "+00:00"))
+            except ValueError:
+                incoming_dt = None
+            if incoming_dt and (not current_dt or incoming_dt > current_dt):
+                best_note = note_text
+                best_level = note_level
+                best_updated_at = note_updated_at
+
+    return {
+        "staff_note_text": best_note,
+        "staff_note_level": best_level,
+        "staff_note_updated_at": best_updated_at,
+        "staff_note_count": note_count,
+    }
+
+
+def _ensure_guestbook_notification_schema() -> None:
+    global _NOTIFICATION_SCHEMA_READY
+    if _NOTIFICATION_SCHEMA_READY:
+        return
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            ALTER TABLE notifications
+            ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES dashboard_users(id) ON DELETE CASCADE
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_notifications_user_status_created_at
+            ON notifications (user_id, status, created_at DESC)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_notifications_user_category_created_at
+            ON notifications (user_id, category, created_at DESC)
+            """
+        )
+
+    _NOTIFICATION_SCHEMA_READY = True
 
 
 def _normalize_guest_scope(scope: Optional[str]) -> str:
@@ -781,6 +918,164 @@ def fetch_user_visit_history(
 
         cur.execute(data_query, params_common + [safe_per_page, offset])
         rows = [dict(row) for row in cur.fetchall()]
+
+    return rows, total_rows
+
+
+def fetch_user_guestbook_history(
+    *,
+    user_id: int,
+    page: int = 1,
+    per_page: int = 10,
+    sort_key: str = DEFAULT_USER_VISIT_SORT,
+    status: Optional[str] = None,
+    search_query: Optional[str] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
+) -> Tuple[List[Dict[str, Any]], int]:
+    """Fetch user guestbook history across all statuses by default."""
+    scope = _normalize_guest_scope(guest_scope)
+    safe_page = max(1, page)
+    safe_per_page = max(1, min(per_page, 100))
+    offset = (safe_page - 1) * safe_per_page
+
+    safe_sort = sort_key if sort_key in USER_VISIT_SORT_OPTIONS else DEFAULT_USER_VISIT_SORT
+    order_sql = USER_VISIT_SORT_OPTIONS[safe_sort]
+    query_text, like_query = _build_search(search_query)
+
+    status_value = (status or "").strip().lower()
+    if status_value in {"all", "semua"}:
+        status_value = ""
+    if status_value and status_value not in TRANSACTION_STATUSES:
+        status_value = ""
+
+    base_cte = (
+        """
+    WITH filtered_transactions AS (
+        SELECT t.*
+        FROM daftar_tamu_transactions t
+        WHERE (%s = '' OR t.status = %s)
+          AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
+          AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
+        """
+        + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+        + """
+    ),
+    user_transactions AS (
+        SELECT ft.id AS transaction_id, ft.created_by AS user_id
+        FROM filtered_transactions ft
+        WHERE ft.created_by IS NOT NULL
+        UNION
+        SELECT ft.id AS transaction_id, g.user_id AS user_id
+        FROM filtered_transactions ft
+        JOIN daftar_tamu_transaction_guests g ON g.transaction_id = ft.id
+        WHERE g.user_id IS NOT NULL
+    )
+    """
+    )
+
+    search_clause = """
+    AND (
+        %s = ''
+        OR s.name ILIKE %s
+        OR COALESCE(ft.purpose, '') ILIKE %s
+        OR to_char(ft.visit_at::date, 'YYYY-MM-DD') ILIKE %s
+        OR to_char(ft.visit_at::date, 'DD Mon YYYY') ILIKE %s
+    )
+    """
+
+    count_query = (
+        base_cte
+        + """
+    SELECT COUNT(*) AS total
+    FROM user_transactions ut
+    JOIN filtered_transactions ft ON ft.id = ut.transaction_id
+    JOIN portal_schools s ON s.id = ft.school_id
+    WHERE ut.user_id = %s
+    """
+        + search_clause
+    )
+
+    data_query = (
+        base_cte
+        + """
+    SELECT
+        ft.id AS transaction_id,
+        ft.visit_at,
+        ft.status,
+        ft.purpose,
+        ft.photo_path,
+        ft.reviewer_notes,
+        ft.reviewed_at,
+        ft.metadata,
+        s.name AS school_name,
+        s.npsn AS school_npsn,
+        reviewer.full_name AS reviewer_name,
+        (
+            {guest_names}
+        ) AS guest_names,
+        (
+            {guest_count}
+        ) AS guest_count
+    FROM user_transactions ut
+    JOIN filtered_transactions ft ON ft.id = ut.transaction_id
+    JOIN portal_schools s ON s.id = ft.school_id
+    LEFT JOIN dashboard_users reviewer ON reviewer.id = ft.reviewed_by
+    WHERE ut.user_id = %s
+    """.format(
+            guest_names=_GUEST_NAMES_SUBQUERY.format(tx_ref="ft.id"),
+            guest_count=_GUEST_COUNT_SUBQUERY.format(tx_ref="ft.id"),
+        )
+        + search_clause
+        + f"""
+    ORDER BY {order_sql}
+    LIMIT %s OFFSET %s
+    """
+    )
+
+    params_common: List[Any] = [
+        status_value,
+        status_value,
+        date_from,
+        date_from,
+        date_to,
+        date_to,
+        scope,
+        scope,
+        scope,
+        user_id,
+        query_text,
+        like_query,
+        like_query,
+        like_query,
+        like_query,
+    ]
+
+    with get_cursor() as cur:
+        cur.execute(count_query, params_common)
+        total_rows = int((cur.fetchone() or {}).get("total") or 0)
+
+        cur.execute(data_query, params_common + [safe_per_page, offset])
+        rows = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        names_raw = row.get("guest_names") or ""
+        names = [n.strip() for n in names_raw.split(",") if n.strip()]
+        guest_count = int(row.get("guest_count") or 0)
+        if not guest_count:
+            guest_count = len(names)
+        if names:
+            if len(names) > 2:
+                display = f"{names[0]} +{len(names) - 1}"
+            elif len(names) == 2:
+                display = f"{names[0]} & {names[1]}"
+            else:
+                display = names[0]
+        else:
+            display = None
+        row["guest_display"] = display
+        row["guest_count"] = guest_count
 
     return rows, total_rows
 
@@ -1466,6 +1761,7 @@ def fetch_school_pending_counts(*, school_id: int) -> Dict[str, int]:
 def list_admin_transactions(
     *,
     status: Optional[str] = None,
+    staff_note_level: Optional[str] = None,
     search_query: Optional[str] = None,
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
@@ -1479,12 +1775,58 @@ def list_admin_transactions(
     status_value = (status or "").strip().lower()
     if status_value and status_value not in TRANSACTION_STATUSES and status_value != "history":
         status_value = ""
+    staff_note_level_value = _normalize_staff_note_level(staff_note_level)
 
     status_filter = """
         (
             %s = ''
             OR (%s = 'history' AND t.status IN ('approved', 'rejected'))
             OR t.status = %s
+        )
+    """
+    staff_note_filter = """
+        (
+            %s = ''
+            OR COALESCE(
+                (
+                    SELECT MIN(
+                        CASE lower(COALESCE(sn.note_obj->>'level', 'tindak_lanjut'))
+                            WHEN 'mendesak' THEN 1
+                            WHEN 'critical' THEN 1
+                            WHEN 'urgent' THEN 1
+                            WHEN 'tindak_lanjut' THEN 2
+                            WHEN 'normal' THEN 2
+                            WHEN 'follow_up' THEN 2
+                            WHEN 'pantau' THEN 3
+                            WHEN 'monitor' THEN 3
+                            WHEN 'other' THEN 3
+                            WHEN 'tidak_perlu' THEN 4
+                            WHEN 'info' THEN 4
+                            WHEN 'informasi' THEN 4
+                            WHEN 'arsip' THEN 4
+                            ELSE 3
+                        END
+                    )
+                    FROM jsonb_each(COALESCE(t.metadata->'staff_notes', '{}'::jsonb)) sn(user_key, note_obj)
+                    WHERE NULLIF(TRIM(COALESCE(sn.note_obj->>'note', '')), '') IS NOT NULL
+                ),
+                0
+            ) = CASE %s
+                    WHEN 'mendesak' THEN 1
+                    WHEN 'tindak_lanjut' THEN 2
+                    WHEN 'pantau' THEN 3
+                    WHEN 'tidak_perlu' THEN 4
+                    ELSE 0
+                END
+            OR (
+                %s = 'tindak_lanjut'
+                AND EXISTS (
+                    SELECT 1
+                    FROM jsonb_each(COALESCE(t.metadata->'staff_notes', '{}'::jsonb)) sn(user_key, note_obj)
+                    WHERE jsonb_typeof(sn.note_obj) = 'string'
+                      AND NULLIF(TRIM(COALESCE(sn.note_obj #>> '{}', '')), '') IS NOT NULL
+                )
+            )
         )
     """
 
@@ -1497,6 +1839,7 @@ def list_admin_transactions(
         LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
         LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
         WHERE {status_filter}
+          AND {staff_note_filter}
           AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
           AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
           AND (
@@ -1524,7 +1867,7 @@ def list_admin_transactions(
                   )
             )
           )
-    """.format(status_filter=status_filter)
+    """.format(status_filter=status_filter, staff_note_filter=staff_note_filter)
     data_query = """
         SELECT
             t.id,
@@ -1539,6 +1882,7 @@ def list_admin_transactions(
             t.created_at,
             t.reviewer_notes,
             t.reviewed_at,
+            t.metadata,
             s.id AS school_id,
             s.name AS school_name,
             s.npsn,
@@ -1560,6 +1904,7 @@ def list_admin_transactions(
         LEFT JOIN dashboard_users reviewer ON reviewer.id = t.reviewed_by
         LEFT JOIN dashboard_users creator ON creator.id = t.created_by
         WHERE {status_filter}
+          AND {staff_note_filter}
           AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
           AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
           AND (
@@ -1591,6 +1936,7 @@ def list_admin_transactions(
         LIMIT %s OFFSET %s
     """.format(
         status_filter=status_filter,
+        staff_note_filter=staff_note_filter,
         guest_names=_GUEST_NAMES_SUBQUERY.format(tx_ref="t.id"),
         guest_count=_GUEST_COUNT_SUBQUERY.format(tx_ref="t.id"),
     )
@@ -1599,6 +1945,9 @@ def list_admin_transactions(
         status_value,
         status_value,
         status_value,
+        staff_note_level_value,
+        staff_note_level_value,
+        staff_note_level_value,
         date_from,
         date_from,
         date_to,
@@ -1643,6 +1992,8 @@ def list_admin_transactions(
             display = None
         row["guest_display"] = display
         row["guest_count"] = guest_count
+        row.update(_summarize_staff_notes(row.get("metadata")))
+        row.pop("metadata", None)
 
     return rows, total_rows
 
@@ -2127,6 +2478,479 @@ def update_transaction_status(
     return cur.rowcount > 0
 
 
+def _build_guestbook_status_notification_text(status: str) -> tuple[str, str]:
+    safe_status = (status or "").strip().lower()
+    if safe_status == "approved":
+        return "Buku tamu disetujui", "Disetujui"
+    if safe_status == "rejected":
+        return "Buku tamu ditolak", "Ditolak"
+    return "Status buku tamu diperbarui", "Menunggu Verifikasi"
+
+
+def _normalize_notification_categories(categories: Optional[List[str]] = None) -> tuple[str, ...]:
+    source = categories if categories else list(USER_APP_NOTIFICATION_CATEGORIES)
+    seen: set[str] = set()
+    normalized: list[str] = []
+    for raw in source:
+        value = (raw or "").strip()
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        normalized.append(value)
+    return tuple(normalized)
+
+
+def create_user_notifications(
+    *,
+    recipient_ids: List[int],
+    category: str,
+    title: str,
+    message: Optional[str] = None,
+    link: Optional[str] = None,
+    reference_table: Optional[str] = None,
+    reference_id: Optional[int] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+) -> int:
+    _ensure_guestbook_notification_schema()
+
+    safe_recipient_ids: list[int] = []
+    seen: set[int] = set()
+    for raw_id in recipient_ids or []:
+        try:
+            user_id = int(raw_id)
+        except (TypeError, ValueError):
+            continue
+        if user_id <= 0 or user_id in seen:
+            continue
+        seen.add(user_id)
+        safe_recipient_ids.append(user_id)
+    if not safe_recipient_ids:
+        return 0
+
+    safe_category = (category or "").strip()
+    safe_title = (title or "").strip()
+    if not safe_category or not safe_title:
+        return 0
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id
+            FROM dashboard_users
+            WHERE id = ANY(%s::int[])
+              AND role IN ('staff', 'coordinator', 'sekolah')
+            """,
+            [safe_recipient_ids],
+        )
+        eligible_ids = [int(row["id"]) for row in cur.fetchall() if row.get("id")]
+
+    if not eligible_ids:
+        return 0
+
+    payload = json.dumps(metadata or {})
+    insert_rows = [
+        (
+            user_id,
+            safe_category,
+            safe_title,
+            (message or "").strip() or None,
+            (link or "").strip() or None,
+            (reference_table or "").strip() or None,
+            int(reference_id) if reference_id else None,
+            payload,
+        )
+        for user_id in eligible_ids
+    ]
+    with get_cursor(commit=True) as cur:
+        cur.executemany(
+            """
+            INSERT INTO notifications (
+                user_id,
+                category,
+                title,
+                message,
+                status,
+                link,
+                reference_table,
+                reference_id,
+                metadata
+            )
+            VALUES (%s, %s, %s, %s, 'unread', %s, %s, %s, %s::jsonb)
+            """,
+            insert_rows,
+        )
+    return len(insert_rows)
+
+
+def fetch_user_notification_summary(
+    *,
+    user_id: int,
+    categories: Optional[List[str]] = None,
+) -> Dict[str, int]:
+    _ensure_guestbook_notification_schema()
+    safe_categories = _normalize_notification_categories(categories)
+    if not safe_categories:
+        return {"unread_count": 0, "total_count": 0}
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                COUNT(*) FILTER (WHERE n.status = 'unread') AS unread_count,
+                COUNT(*) AS total_count
+            FROM notifications n
+            WHERE n.user_id = %s
+              AND n.status <> 'archived'
+              AND n.category = ANY(%s::text[])
+            """,
+            [int(user_id), list(safe_categories)],
+        )
+        row = dict(cur.fetchone() or {})
+    return {
+        "unread_count": int(row.get("unread_count") or 0),
+        "total_count": int(row.get("total_count") or 0),
+    }
+
+
+def list_user_notifications(
+    *,
+    user_id: int,
+    limit: int = 8,
+    categories: Optional[List[str]] = None,
+) -> List[Dict[str, Any]]:
+    safe_limit = max(1, min(int(limit or 8), 50))
+    _ensure_guestbook_notification_schema()
+    safe_categories = _normalize_notification_categories(categories)
+    if not safe_categories:
+        return []
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                n.id,
+                n.category,
+                n.title,
+                n.message,
+                n.status,
+                n.link,
+                n.reference_table,
+                n.reference_id,
+                n.metadata,
+                n.created_at,
+                n.read_at
+            FROM notifications n
+            WHERE n.user_id = %s
+              AND n.status <> 'archived'
+              AND n.category = ANY(%s::text[])
+            ORDER BY n.created_at DESC, n.id DESC
+            LIMIT %s
+            """,
+            [int(user_id), list(safe_categories), safe_limit],
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        metadata_value = row.get("metadata")
+        if isinstance(metadata_value, str):
+            try:
+                row["metadata"] = json.loads(metadata_value)
+            except json.JSONDecodeError:
+                row["metadata"] = {}
+        elif not isinstance(metadata_value, dict):
+            row["metadata"] = {}
+
+    return rows
+
+
+def mark_user_notifications_read(
+    *,
+    user_id: int,
+    notification_ids: Optional[List[int]] = None,
+    mark_all: bool = False,
+    categories: Optional[List[str]] = None,
+) -> int:
+    safe_ids: List[int] = []
+    for raw_id in notification_ids or []:
+        try:
+            safe_ids.append(int(raw_id))
+        except (TypeError, ValueError):
+            continue
+
+    _ensure_guestbook_notification_schema()
+    safe_categories = _normalize_notification_categories(categories)
+    if not safe_categories:
+        return 0
+
+    with get_cursor(commit=True) as cur:
+        if mark_all:
+            cur.execute(
+                """
+                UPDATE notifications n
+                SET status = 'read',
+                    read_at = COALESCE(n.read_at, NOW())
+                WHERE n.user_id = %s
+                  AND n.status = 'unread'
+                  AND n.category = ANY(%s::text[])
+                """,
+                [int(user_id), list(safe_categories)],
+            )
+            return cur.rowcount
+
+        if not safe_ids:
+            return 0
+
+        cur.execute(
+            """
+            UPDATE notifications n
+            SET status = 'read',
+                read_at = COALESCE(n.read_at, NOW())
+            WHERE n.user_id = %s
+              AND n.status = 'unread'
+              AND n.category = ANY(%s::text[])
+              AND n.id = ANY(%s::int[])
+            """,
+            [int(user_id), list(safe_categories), safe_ids],
+        )
+        return cur.rowcount
+
+
+def create_guestbook_status_notifications(
+    *,
+    transaction_id: int,
+    status: str,
+    actor_name: Optional[str] = None,
+    reviewer_notes: Optional[str] = None,
+    link: Optional[str] = None,
+    school_link: Optional[str] = None,
+) -> int:
+    safe_status = (status or "").strip().lower()
+    if safe_status not in TRANSACTION_STATUSES:
+        raise ValueError("Invalid status")
+
+    _ensure_guestbook_notification_schema()
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                t.id,
+                t.school_id,
+                t.visit_at,
+                s.name AS school_name,
+                (
+                    {guest_names}
+                ) AS guest_names
+            FROM daftar_tamu_transactions t
+            JOIN portal_schools s ON s.id = t.school_id
+            WHERE t.id = %s
+            """.format(guest_names=_GUEST_NAMES_SUBQUERY.format(tx_ref="t.id")),
+            [int(transaction_id)],
+        )
+        tx_row = cur.fetchone()
+        if not tx_row:
+            return 0
+        tx_data = dict(tx_row)
+
+        cur.execute(
+            """
+            SELECT DISTINCT target.user_id, u.role
+            FROM (
+                SELECT g.user_id
+                FROM daftar_tamu_transaction_guests g
+                WHERE g.transaction_id = %s
+                  AND g.user_id IS NOT NULL
+                UNION
+                SELECT t.created_by AS user_id
+                FROM daftar_tamu_transactions t
+                WHERE t.id = %s
+                  AND t.created_by IS NOT NULL
+            ) target
+            JOIN dashboard_users u ON u.id = target.user_id
+            WHERE u.role IN ('staff', 'coordinator', 'sekolah')
+            """,
+            [int(transaction_id), int(transaction_id)],
+        )
+        recipient_rows = [dict(row) for row in cur.fetchall()]
+
+    staff_coordinator_ids: list[int] = []
+    school_ids: list[int] = []
+    for row in recipient_rows:
+        raw_id = row.get("user_id")
+        try:
+            user_id = int(raw_id)
+        except (TypeError, ValueError):
+            continue
+        role = (row.get("role") or "").strip().lower()
+        if role == "sekolah":
+            school_ids.append(user_id)
+        else:
+            staff_coordinator_ids.append(user_id)
+
+    if not staff_coordinator_ids and not school_ids:
+        return 0
+
+    raw_guest_names = (tx_data.get("guest_names") or "").strip()
+    guest_names = [name.strip() for name in raw_guest_names.split(",") if name.strip()]
+    guest_summary = ""
+    if guest_names:
+        if len(guest_names) > 2:
+            guest_summary = f"{guest_names[0]} +{len(guest_names) - 1}"
+        elif len(guest_names) == 2:
+            guest_summary = f"{guest_names[0]} & {guest_names[1]}"
+        else:
+            guest_summary = guest_names[0]
+
+    title, status_label = _build_guestbook_status_notification_text(safe_status)
+    school_name = (tx_data.get("school_name") or "Sekolah").strip()
+    actor_label = (actor_name or "").strip()
+    note_text = (reviewer_notes or "").strip()
+    if len(note_text) > 220:
+        note_text = note_text[:217].rstrip() + "..."
+
+    message_parts = [f"{school_name}: status menjadi {status_label}."]
+    if guest_summary:
+        message_parts.append(f"Tamu: {guest_summary}.")
+    if actor_label:
+        message_parts.append(f"Oleh {actor_label}.")
+    if note_text:
+        message_parts.append(f"Catatan: {note_text}")
+    message = " ".join(message_parts).strip()
+
+    metadata = {
+        "transaction_id": int(transaction_id),
+        "status": safe_status,
+        "status_label": status_label,
+        "actor_name": actor_label,
+        "school_id": tx_data.get("school_id"),
+        "school_name": school_name,
+        "visit_at": tx_data.get("visit_at").isoformat() if tx_data.get("visit_at") else None,
+        "guest_summary": guest_summary,
+    }
+    if note_text:
+        metadata["reviewer_notes"] = note_text
+
+    total_created = 0
+    if staff_coordinator_ids:
+        total_created += create_user_notifications(
+            recipient_ids=staff_coordinator_ids,
+            category=GUESTBOOK_NOTIFICATION_CATEGORY,
+            title=title,
+            message=message,
+            link=link,
+            reference_table="daftar_tamu_transactions",
+            reference_id=int(transaction_id),
+            metadata=metadata,
+        )
+    if school_ids:
+        total_created += create_user_notifications(
+            recipient_ids=school_ids,
+            category=GUESTBOOK_NOTIFICATION_CATEGORY,
+            title=title,
+            message=message,
+            link=(school_link or "").strip() or link,
+            reference_table="daftar_tamu_transactions",
+            reference_id=int(transaction_id),
+            metadata=metadata,
+        )
+    return total_created
+
+
+def fetch_user_guestbook_notification_summary(
+    *,
+    user_id: int,
+) -> Dict[str, int]:
+    return fetch_user_notification_summary(user_id=user_id, categories=[GUESTBOOK_NOTIFICATION_CATEGORY])
+
+
+def list_user_guestbook_notifications(
+    *,
+    user_id: int,
+    limit: int = 8,
+) -> List[Dict[str, Any]]:
+    return list_user_notifications(
+        user_id=user_id,
+        limit=limit,
+        categories=[GUESTBOOK_NOTIFICATION_CATEGORY],
+    )
+
+
+def mark_user_guestbook_notifications_read(
+    *,
+    user_id: int,
+    notification_ids: Optional[List[int]] = None,
+    mark_all: bool = False,
+) -> int:
+    return mark_user_notifications_read(
+        user_id=user_id,
+        notification_ids=notification_ids,
+        mark_all=mark_all,
+        categories=[GUESTBOOK_NOTIFICATION_CATEGORY],
+    )
+
+
+def upsert_transaction_staff_note(
+    *,
+    transaction_id: int,
+    user_id: int,
+    note: Optional[str] = None,
+    level: Optional[str] = None,
+) -> bool:
+    safe_note = (note or "").strip()
+    safe_level = _normalize_staff_note_level(level) or "tindak_lanjut"
+    note_path = ["staff_notes", str(user_id)]
+
+    if safe_note:
+        payload = json.dumps(
+            {
+                "note": safe_note,
+                "level": safe_level,
+                "updated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+            }
+        )
+        query = """
+            UPDATE daftar_tamu_transactions t
+            SET metadata = jsonb_set(COALESCE(t.metadata, '{}'::jsonb), %s::text[], %s::jsonb, true),
+                updated_at = NOW()
+            WHERE t.id = %s
+              AND t.status = 'approved'
+              AND COALESCE(t.photo_path, '') <> ''
+              AND (
+                  t.created_by = %s
+                  OR EXISTS (
+                      SELECT 1
+                      FROM daftar_tamu_transaction_guests g
+                      WHERE g.transaction_id = t.id
+                        AND g.user_id = %s
+                  )
+              )
+        """
+        params: List[Any] = [note_path, payload, transaction_id, user_id, user_id]
+    else:
+        query = """
+            UPDATE daftar_tamu_transactions t
+            SET metadata = (COALESCE(t.metadata, '{}'::jsonb) #- %s::text[]),
+                updated_at = NOW()
+            WHERE t.id = %s
+              AND t.status = 'approved'
+              AND COALESCE(t.photo_path, '') <> ''
+              AND (
+                  t.created_by = %s
+                  OR EXISTS (
+                      SELECT 1
+                      FROM daftar_tamu_transaction_guests g
+                      WHERE g.transaction_id = t.id
+                        AND g.user_id = %s
+                  )
+              )
+        """
+        params = [note_path, transaction_id, user_id, user_id]
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(query, params)
+        return cur.rowcount > 0
+
+
 def update_public_transaction_status(
     *,
     transaction_id: int,
@@ -2335,3 +3159,98 @@ def update_contact_priority(*, keyword_id: int, sort_order: int, active: bool) -
             [safe_order, bool(active), int(keyword_id)],
         )
         return cur.rowcount > 0
+
+
+_UX_METRICS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS daftar_tamu_ux_metrics (
+    id BIGSERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    session_key TEXT NOT NULL,
+    page_path TEXT,
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (user_id, session_key)
+);
+"""
+
+_UX_METRICS_UPDATED_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_ux_metrics_updated_at
+ON daftar_tamu_ux_metrics (updated_at DESC);
+"""
+
+_UX_METRICS_USER_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_daftar_tamu_ux_metrics_user_id
+ON daftar_tamu_ux_metrics (user_id);
+"""
+
+
+def _ensure_guestbook_ux_metrics_table() -> None:
+    with get_cursor(commit=True) as cur:
+        cur.execute(_UX_METRICS_TABLE_SQL)
+        cur.execute(_UX_METRICS_UPDATED_INDEX_SQL)
+        cur.execute(_UX_METRICS_USER_INDEX_SQL)
+
+
+def upsert_guestbook_ux_metrics(
+    *,
+    user_id: int,
+    session_key: str,
+    payload: Dict[str, Any],
+    page_path: Optional[str] = None,
+) -> Dict[str, Any]:
+    _ensure_guestbook_ux_metrics_table()
+    safe_session = (session_key or "").strip()
+    if not safe_session:
+        raise ValueError("session_key wajib diisi.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO daftar_tamu_ux_metrics (user_id, session_key, page_path, payload)
+            VALUES (%s, %s, %s, %s::jsonb)
+            ON CONFLICT (user_id, session_key)
+            DO UPDATE SET
+                page_path = EXCLUDED.page_path,
+                payload = EXCLUDED.payload,
+                updated_at = NOW()
+            RETURNING id, user_id, session_key, page_path, payload, created_at, updated_at
+            """,
+            [int(user_id), safe_session, (page_path or "").strip() or None, json.dumps(payload or {})],
+        )
+        row = cur.fetchone()
+    return dict(row) if row else {}
+
+
+def fetch_guestbook_ux_metric_rows(
+    *,
+    days: int = 14,
+    limit: int = 400,
+) -> List[Dict[str, Any]]:
+    _ensure_guestbook_ux_metrics_table()
+    safe_days = max(1, min(int(days or 14), 90))
+    safe_limit = max(1, min(int(limit or 400), 2000))
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                m.id,
+                m.user_id,
+                u.full_name,
+                u.email,
+                u.role,
+                m.session_key,
+                m.page_path,
+                m.payload,
+                m.created_at,
+                m.updated_at
+            FROM daftar_tamu_ux_metrics m
+            LEFT JOIN dashboard_users u ON u.id = m.user_id
+            WHERE m.updated_at >= NOW() - (%s || ' days')::interval
+            ORDER BY m.updated_at DESC
+            LIMIT %s
+            """,
+            [safe_days, safe_limit],
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+    return rows

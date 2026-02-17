@@ -4,16 +4,30 @@ from __future__ import annotations
 
 import base64
 import csv
+import hashlib
 import json
 import math
 import os
+import time
 from io import BytesIO, StringIO
 import requests
 from pathlib import Path
 from datetime import date, datetime
 from typing import Optional
 
-from flask import Blueprint, Response, jsonify, render_template, request, url_for, send_file, redirect, flash, current_app
+from flask import (
+    Blueprint,
+    Response,
+    current_app,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    stream_with_context,
+    url_for,
+)
 from psycopg2.extras import Json
 from urllib.parse import quote_plus
 from PIL import Image, ImageDraw, ImageFont
@@ -30,7 +44,7 @@ from dashboard.portal.queries import (
     list_portal_kontak,
     list_schools_by_kecamatan,
 )
-from utils import current_jakarta_time
+from utils import current_jakarta_time, to_jakarta
 
 from .media import stamp_guestbook_photo
 from .queries import (
@@ -43,6 +57,7 @@ from .queries import (
     fetch_recent_visits,
     fetch_school_rankings,
     fetch_school_visit_history,
+    fetch_user_guestbook_history,
     fetch_user_rankings,
     fetch_user_visit_history,
     fetch_unvisited_schools,
@@ -64,12 +79,35 @@ from .queries import (
     list_school_transactions,
     update_contact_priority,
     set_purpose_keyword_active,
+    fetch_guestbook_ux_metric_rows,
+    USER_APP_NOTIFICATION_CATEGORIES,
+    fetch_user_notification_summary,
+    upsert_guestbook_ux_metrics,
+    list_user_notifications,
+    mark_user_notifications_read,
+    create_guestbook_status_notifications,
+    upsert_transaction_staff_note,
     upsert_purpose_keyword,
     update_public_transaction_status,
     update_transaction_status,
 )
 
 DAFTAR_TAMU_URL_PREFIX = "/daftar-tamu"
+_HISTORY_TAB_OPTIONS = {"beranda", "detail"}
+_HISTORY_STATUS_OPTIONS = {"pending", "approved", "rejected"}
+_HISTORY_SORT_OPTIONS = {"date_desc", "date_asc"}
+_STAFF_NOTE_LEVEL_LABEL_MAP = {
+    "tidak_perlu": "Tidak Perlu Penanganan",
+    "pantau": "Perlu Dipantau",
+    "tindak_lanjut": "Butuh Penanganan",
+    "mendesak": "Sangat Butuh Penanganan",
+}
+_STAFF_NOTE_LEVEL_TONE_MAP = {
+    "tidak_perlu": "secondary",
+    "pantau": "info",
+    "tindak_lanjut": "warning",
+    "mendesak": "danger",
+}
 
 
 daftar_tamu_bp = Blueprint(
@@ -104,6 +142,21 @@ def _parse_guest_scope(value: Optional[str], default: str = "sudin") -> str:
     if scope not in {"sudin", "umum", "all"}:
         scope = default
     return scope
+
+
+def _normalize_staff_note_level(value: Optional[str], default: str = "") -> str:
+    level = (value or "").strip().lower()
+    if level in {"mendesak", "urgent", "critical", "sangat_mendesak", "sangat mendesak"}:
+        level = "mendesak"
+    elif level in {"tindak_lanjut", "tindak lanjut", "normal", "follow_up", "perlu_tindakan"}:
+        level = "tindak_lanjut"
+    elif level in {"pantau", "monitor", "other", "lainnya", "lainnya/pantau"}:
+        level = "pantau"
+    elif level in {"tidak_perlu", "tidak perlu", "info", "informasi", "arsip", "no_action"}:
+        level = "tidak_perlu"
+    if level not in {"tidak_perlu", "pantau", "tindak_lanjut", "mendesak"}:
+        level = default
+    return level
 
 
 def _parse_guest_ids(raw: Optional[str]) -> list[int]:
@@ -171,6 +224,31 @@ def _notify_guestbook_status_change(
         actor_name=actor_name,
         actor_username=None,
         photo_links=photo_links,
+    )
+
+
+def _notify_user_app_status_change(
+    *,
+    transaction_id: int,
+    status: str,
+    actor: Optional[dict],
+    reviewer_notes: Optional[str] = None,
+) -> None:
+    safe_status = (status or "").strip().lower()
+    if safe_status not in {"pending", "approved", "rejected"}:
+        return
+
+    actor_name = (actor or {}).get("full_name") or (actor or {}).get("email")
+    history_link = url_for("daftar_tamu.user_guestbook_history", tab="detail")
+    school_history_link = url_for("daftar_tamu.sekolah_riwayat")
+
+    create_guestbook_status_notifications(
+        transaction_id=transaction_id,
+        status=safe_status,
+        actor_name=actor_name,
+        reviewer_notes=reviewer_notes,
+        link=history_link,
+        school_link=school_history_link,
     )
 
 
@@ -492,18 +570,63 @@ def _sanitize_phone(phone: str) -> str:
     return digits_only
 
 
-def _build_photo_url(photo_path: Optional[str], *, external: bool = False) -> Optional[str]:
+def _photo_filename_from_path(photo_path: Optional[str]) -> str:
     if not photo_path:
-        return None
-    normalized = (photo_path or "").replace("\\", "/")
+        return ""
+    normalized = str(photo_path).replace("\\", "/").strip()
+    if not normalized:
+        return ""
     if "uploads/portal/" in normalized:
-        filename = normalized.split("uploads/portal/")[-1]
+        normalized = normalized.split("uploads/portal/", 1)[1]
     else:
-        filename = normalized.split("/")[-1]
-    filename = (filename or "").lstrip("/")
+        normalized = normalized.lstrip("/")
+    normalized = normalized.replace("\\", "/").lstrip("/")
+    if ".." in Path(normalized).parts:
+        return ""
+    return normalized
+
+
+def _resolve_portal_upload_path(filename: str) -> Optional[Path]:
+    safe_name = _photo_filename_from_path(filename)
+    if not safe_name:
+        return None
+    upload_root = Path(__file__).resolve().parents[2] / "uploads" / "portal"
+    candidate = (upload_root / safe_name).resolve()
+    try:
+        candidate.relative_to(upload_root.resolve())
+    except ValueError:
+        return None
+    if not candidate.exists() or not candidate.is_file():
+        return None
+    return candidate
+
+
+def _build_photo_url(photo_path: Optional[str], *, external: bool = False) -> Optional[str]:
+    filename = _photo_filename_from_path(photo_path)
     if not filename:
         return None
     return url_for("portal.uploaded_file", filename=filename, _external=external)
+
+
+def _build_photo_thumb_url(
+    photo_path: Optional[str],
+    *,
+    width: int = 360,
+    quality: int = 72,
+    external: bool = False,
+) -> Optional[str]:
+    filename = _photo_filename_from_path(photo_path)
+    if not filename:
+        return None
+    safe_width = max(120, min(int(width), 1200))
+    safe_quality = max(40, min(int(quality), 90))
+    return url_for(
+        "daftar_tamu.guestbook_photo_thumb",
+        filename=filename,
+        w=safe_width,
+        q=safe_quality,
+        _external=external,
+    )
 
 
 def _format_guest_photo_button_label(index: int, guest_name: Optional[str]) -> str:
@@ -601,6 +724,47 @@ def _build_xlsx_response(headers: list[str], rows: list[list[object]], filename:
     )
 
 
+@daftar_tamu_bp.route("/media/photo-thumb/<path:filename>")
+@role_required("admin", "sekolah", "staff", "coordinator")
+def guestbook_photo_thumb(filename: str) -> Response:
+    """Serve resized WEBP thumbnail with cache headers for mobile timeline."""
+    safe_width = max(120, min(_to_int(request.args.get("w"), 360), 1200))
+    safe_quality = max(40, min(_to_int(request.args.get("q"), 72), 90))
+    image_path = _resolve_portal_upload_path(filename)
+    if not image_path:
+        return Response("Foto tidak ditemukan.", status=404)
+
+    stat = image_path.stat()
+    etag_token = hashlib.sha1(
+        f"{image_path.as_posix()}:{stat.st_mtime_ns}:{stat.st_size}:{safe_width}:{safe_quality}".encode("utf-8")
+    ).hexdigest()
+    etag_value = f'W/"{etag_token}"'
+    if request.headers.get("If-None-Match") == etag_value:
+        response = Response(status=304)
+        response.headers["ETag"] = etag_value
+        response.headers["Cache-Control"] = "public, max-age=2592000, stale-while-revalidate=604800"
+        return response
+
+    try:
+        with Image.open(image_path) as original:
+            source = original.convert("RGBA") if original.mode not in {"RGB", "RGBA"} else original.copy()
+            if source.width > safe_width:
+                target_height = max(1, int((safe_width / source.width) * source.height))
+                source = source.resize((safe_width, target_height), Image.LANCZOS)
+            output = BytesIO()
+            source.save(output, format="WEBP", quality=safe_quality, method=6)
+            output.seek(0)
+    except Exception:
+        current_app.logger.exception("Gagal membuat thumbnail foto daftar tamu.")
+        return Response("Gagal memproses foto.", status=500)
+
+    response = send_file(output, mimetype="image/webp")
+    response.headers["ETag"] = etag_value
+    response.headers["Cache-Control"] = "public, max-age=2592000, stale-while-revalidate=604800"
+    response.headers["Content-Disposition"] = "inline"
+    return response
+
+
 def _build_area_contacts(school: Optional[dict], message: Optional[str] = None) -> list[dict]:
     if not school:
         return []
@@ -668,17 +832,30 @@ def inject_daftar_tamu_context() -> dict:
         "pending_guestbook": 0,
         "total": 0,
     }
+    user_app_notifications = {
+        "unread_count": 0,
+        "total_count": 0,
+    }
     if user.get("role") == "admin":
         try:
             admin_pending = fetch_admin_pending_summary()
         except Exception:
             pass
+    elif user.get("role") in {"staff", "coordinator", "sekolah"}:
+        try:
+            user_app_notifications = fetch_user_notification_summary(
+                user_id=int(user.get("id")),
+                categories=list(USER_APP_NOTIFICATION_CATEGORIES),
+            )
+        except Exception:
+            user_app_notifications = {"unread_count": 0, "total_count": 0}
 
     context = {
         "permissions": get_permission_summary(user),
         "is_superadmin": is_superadmin(user),
         "can_access_aska": can_access_aska(user),
         "admin_pending": admin_pending,
+        "user_app_notifications": user_app_notifications,
     }
     if user.get("role") == "sekolah":
         school = _fetch_school_for_user(user.get("id"))
@@ -1264,6 +1441,7 @@ def admin_validation() -> Response:
     status = (request.args.get("status") or "pending").strip().lower()
     if status not in ("pending", "approved", "rejected", "history"):
         status = "pending"
+    staff_note_level = _normalize_staff_note_level(request.args.get("staff_note_level"), default="")
 
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
@@ -1280,6 +1458,7 @@ def admin_validation() -> Response:
 
     rows, total_rows = list_admin_transactions(
         status=status,
+        staff_note_level=staff_note_level,
         search_query=search_query,
         date_from=date_from,
         date_to=date_to,
@@ -1292,6 +1471,7 @@ def admin_validation() -> Response:
         page = total_pages
         rows, total_rows = list_admin_transactions(
             status=status,
+            staff_note_level=staff_note_level,
             search_query=search_query,
             date_from=date_from,
             date_to=date_to,
@@ -1306,6 +1486,7 @@ def admin_validation() -> Response:
         "daftar_tamu/admin_validation.html",
         rows=rows,
         status=status,
+        staff_note_level=staff_note_level,
         search_query=search_query,
         page=page,
         per_page=per_page,
@@ -1344,6 +1525,15 @@ def admin_transaction_approve(transaction_id: int) -> Response:
     if not ok:
         return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
     try:
+        _notify_user_app_status_change(
+            transaction_id=transaction_id,
+            status="approved",
+            actor=user,
+            reviewer_notes=note or None,
+        )
+    except Exception:
+        current_app.logger.exception("Gagal menyimpan notifikasi status buku tamu aplikasi.")
+    try:
         _notify_guestbook_status_change(
             transaction_id=transaction_id,
             status="approved",
@@ -1374,6 +1564,15 @@ def admin_transaction_reject(transaction_id: int) -> Response:
     if not ok:
         return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
     try:
+        _notify_user_app_status_change(
+            transaction_id=transaction_id,
+            status="rejected",
+            actor=user,
+            reviewer_notes=note,
+        )
+    except Exception:
+        current_app.logger.exception("Gagal menyimpan notifikasi status buku tamu aplikasi.")
+    try:
         _notify_guestbook_status_change(
             transaction_id=transaction_id,
             status="rejected",
@@ -1401,6 +1600,15 @@ def admin_transaction_pending(transaction_id: int) -> Response:
         ok = False
     if not ok:
         return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
+    try:
+        _notify_user_app_status_change(
+            transaction_id=transaction_id,
+            status="pending",
+            actor=user,
+            reviewer_notes=note or None,
+        )
+    except Exception:
+        current_app.logger.exception("Gagal menyimpan notifikasi status buku tamu aplikasi.")
     return jsonify({"success": True})
 
 
@@ -1433,6 +1641,15 @@ def admin_bulk_approve_transactions() -> Response:
             ok = False
         if ok:
             success_count += 1
+            try:
+                _notify_user_app_status_change(
+                    transaction_id=tx_id,
+                    status="approved",
+                    actor=user,
+                    reviewer_notes=note or None,
+                )
+            except Exception:
+                current_app.logger.exception("Gagal menyimpan notifikasi status buku tamu aplikasi.")
             try:
                 _notify_guestbook_status_change(
                     transaction_id=tx_id,
@@ -1485,6 +1702,15 @@ def admin_bulk_reject_transactions() -> Response:
         if ok:
             success_count += 1
             try:
+                _notify_user_app_status_change(
+                    transaction_id=tx_id,
+                    status="rejected",
+                    actor=user,
+                    reviewer_notes=note,
+                )
+            except Exception:
+                current_app.logger.exception("Gagal menyimpan notifikasi status buku tamu aplikasi.")
+            try:
                 _notify_guestbook_status_change(
                     transaction_id=tx_id,
                     status="rejected",
@@ -1531,6 +1757,15 @@ def admin_bulk_pending_transactions() -> Response:
             ok = False
         if ok:
             success_count += 1
+            try:
+                _notify_user_app_status_change(
+                    transaction_id=tx_id,
+                    status="pending",
+                    actor=user,
+                    reviewer_notes=note or None,
+                )
+            except Exception:
+                current_app.logger.exception("Gagal menyimpan notifikasi status buku tamu aplikasi.")
 
     if success_count:
         flash(f"{success_count} transaksi berhasil dikembalikan ke pending.", "success")
@@ -1542,6 +1777,7 @@ def admin_bulk_pending_transactions() -> Response:
 
 def _build_admin_validation_redirect(form) -> str:
     status = (form.get("status") or "").strip() or "pending"
+    staff_note_level = _normalize_staff_note_level(form.get("staff_note_level"), default="")
     search = (form.get("q") or "").strip()
     date_from = (form.get("date_from") or "").strip()
     date_to = (form.get("date_to") or "").strip()
@@ -1558,6 +1794,7 @@ def _build_admin_validation_redirect(form) -> str:
     return url_for(
         "daftar_tamu.admin_validation",
         status=status,
+        staff_note_level=staff_note_level,
         q=search,
         date_from=date_from,
         date_to=date_to,
@@ -2095,6 +2332,850 @@ def sekolah_riwayat() -> Response:
         total_pages=total_pages,
         error_message=None,
     )
+
+
+def _extract_user_staff_note(metadata_value: object, user_id: int) -> tuple[str, str, str]:
+    metadata = metadata_value
+    if isinstance(metadata, str):
+        try:
+            metadata = json.loads(metadata)
+        except json.JSONDecodeError:
+            metadata = {}
+    if not isinstance(metadata, dict):
+        return "", "", ""
+
+    staff_notes = metadata.get("staff_notes")
+    if not isinstance(staff_notes, dict):
+        return "", "", ""
+
+    entry = staff_notes.get(str(user_id))
+    if isinstance(entry, dict):
+        note = (entry.get("note") or "").strip()
+        updated_at = (entry.get("updated_at") or "").strip()
+        level = _normalize_staff_note_level(entry.get("level"), default="tindak_lanjut") or "tindak_lanjut"
+        return note, updated_at, level
+    if isinstance(entry, str):
+        return entry.strip(), "", "tindak_lanjut"
+    return "", "", ""
+
+
+def _build_user_guestbook_history_redirect(source) -> str:
+    params = _parse_user_guestbook_history_args(source)
+
+    return url_for(
+        "daftar_tamu.user_guestbook_history",
+        tab=params["tab"],
+        q=params["search_query"],
+        sort=params["sort"],
+        date_from=params["date_from_str"],
+        date_to=params["date_to_str"],
+        guest_scope=params["guest_scope"],
+        status=params["status"],
+        page=params["page"],
+        per_page=params["per_page"],
+        home_limit=params["home_limit"],
+    )
+
+
+def _normalize_history_tab(value: Optional[str]) -> str:
+    tab = (value or "").strip().lower() or "beranda"
+    if tab not in _HISTORY_TAB_OPTIONS:
+        return "beranda"
+    return tab
+
+
+def _normalize_history_status(value: Optional[str]) -> str:
+    status = (value or "").strip().lower()
+    if status in {"all", "semua"}:
+        return ""
+    if status not in _HISTORY_STATUS_OPTIONS:
+        return ""
+    return status
+
+
+def _normalize_history_sort(value: Optional[str]) -> str:
+    sort = (value or "").strip().lower() or "date_desc"
+    if sort not in _HISTORY_SORT_OPTIONS:
+        return "date_desc"
+    return sort
+
+
+def _format_staff_note_updated_label(value: str) -> str:
+    raw = (value or "").strip()
+    if not raw:
+        return ""
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        return to_jakarta(parsed).strftime("%d %b %Y, %H:%M WIB")
+    except ValueError:
+        return raw
+
+
+def _parse_user_guestbook_history_args(source) -> dict:
+    home_limit_max = 80
+    tab = _normalize_history_tab(source.get("tab"))
+    status = _normalize_history_status(source.get("status"))
+    date_from = _parse_iso_date(source.get("date_from"))
+    date_to = _parse_iso_date(source.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    search_query = (source.get("q") or "").strip()
+    guest_scope = _parse_guest_scope(source.get("guest_scope"), default="all")
+
+    page = _to_int(source.get("page"), 1)
+    page = max(1, page)
+    per_page = _to_int(source.get("per_page"), 10)
+    per_page = max(5, min(per_page, 100))
+    home_limit = _to_int(source.get("home_limit"), 4)
+    home_limit = max(4, min(home_limit, home_limit_max))
+    if home_limit % 4:
+        home_limit = 4 * math.ceil(home_limit / 4)
+
+    sort = _normalize_history_sort(source.get("sort"))
+    home_page = max(1, _to_int(source.get("home_page"), 1))
+    home_chunk_size = max(4, min(_to_int(source.get("home_chunk_size"), 4), 20))
+    if home_chunk_size % 4:
+        home_chunk_size = 4 * math.ceil(home_chunk_size / 4)
+
+    return {
+        "tab": tab,
+        "status": status,
+        "date_from": date_from,
+        "date_to": date_to,
+        "date_from_str": date_from.isoformat() if date_from else "",
+        "date_to_str": date_to.isoformat() if date_to else "",
+        "search_query": search_query,
+        "guest_scope": guest_scope,
+        "page": page,
+        "per_page": per_page,
+        "home_limit": home_limit,
+        "sort": sort,
+        "home_page": home_page,
+        "home_chunk_size": home_chunk_size,
+        "home_limit_max": home_limit_max,
+    }
+
+
+def _decorate_user_history_rows(rows: list[dict], user_id: int) -> None:
+    for row in rows:
+        status_value = (row.get("status") or "").strip().lower()
+        row["photo_url"] = _build_photo_url(row.get("photo_path"))
+        row["photo_thumb_url"] = _build_photo_thumb_url(row.get("photo_path"), width=420, quality=72)
+        row["status_label"] = {
+            "approved": "Terverifikasi",
+            "rejected": "Ditolak",
+        }.get(status_value, "Menunggu")
+        row["status_icon"] = {
+            "approved": "bi-check-circle-fill",
+            "rejected": "bi-x-circle-fill",
+        }.get(status_value, "bi-hourglass-split")
+        row["status_tone"] = {
+            "approved": "success",
+            "rejected": "danger",
+        }.get(status_value, "warning")
+
+        visit_at = row.get("visit_at")
+        if visit_at:
+            local_visit = to_jakarta(visit_at)
+            row["visit_at_iso"] = local_visit.isoformat(timespec="seconds")
+            row["visit_at_label"] = local_visit.strftime("%d %b %Y, %H:%M WIB")
+        else:
+            row["visit_at_iso"] = ""
+            row["visit_at_label"] = ""
+
+        staff_note, staff_note_updated_at, staff_note_level = _extract_user_staff_note(row.get("metadata"), user_id)
+        row["staff_note"] = staff_note
+        row["staff_note_updated_at_raw"] = staff_note_updated_at
+        row["staff_note_updated_at"] = _format_staff_note_updated_label(staff_note_updated_at)
+        row["staff_note_level"] = staff_note_level
+        row["staff_note_level_label"] = _STAFF_NOTE_LEVEL_LABEL_MAP.get(staff_note_level, "")
+        row["staff_note_level_tone"] = _STAFF_NOTE_LEVEL_TONE_MAP.get(staff_note_level, "secondary")
+        row["can_add_staff_note"] = status_value == "approved" and bool(row.get("photo_path"))
+        row["signature"] = _build_user_history_signature(row)
+
+
+def _build_user_history_signature(row: dict) -> str:
+    reviewed_at = row.get("reviewed_at")
+    if isinstance(reviewed_at, datetime):
+        reviewed_val = reviewed_at.isoformat(timespec="seconds")
+    else:
+        reviewed_val = str(reviewed_at or "")
+    return "|".join(
+        [
+            str(row.get("transaction_id") or ""),
+            str((row.get("status") or "").strip().lower()),
+            reviewed_val,
+            str((row.get("staff_note") or "").strip()),
+            str((row.get("staff_note_level") or "").strip()),
+            str((row.get("staff_note_updated_at_raw") or "").strip()),
+            str((row.get("photo_path") or "").strip()),
+        ]
+    )
+
+
+def _serialize_user_history_row(row: dict) -> dict:
+    return {
+        "transaction_id": int(row.get("transaction_id") or 0),
+        "status": (row.get("status") or "").strip().lower(),
+        "status_label": row.get("status_label") or "",
+        "status_icon": row.get("status_icon") or "",
+        "status_tone": row.get("status_tone") or "warning",
+        "school_name": row.get("school_name") or "",
+        "visit_at_label": row.get("visit_at_label") or "",
+        "visit_at_iso": row.get("visit_at_iso") or "",
+        "purpose": row.get("purpose") or "",
+        "guest_display": row.get("guest_display") or "",
+        "guest_count": int(row.get("guest_count") or 0),
+        "photo_url": row.get("photo_url") or "",
+        "photo_thumb_url": row.get("photo_thumb_url") or "",
+        "reviewer_notes": row.get("reviewer_notes") or "",
+        "staff_note": row.get("staff_note") or "",
+        "staff_note_level": row.get("staff_note_level") or "",
+        "staff_note_level_label": row.get("staff_note_level_label") or "",
+        "staff_note_level_tone": row.get("staff_note_level_tone") or "secondary",
+        "staff_note_updated_at": row.get("staff_note_updated_at") or "",
+        "can_add_staff_note": bool(row.get("can_add_staff_note")),
+        "signature": _build_user_history_signature(row),
+    }
+
+
+def _format_notification_time_label(value: object) -> str:
+    if not isinstance(value, datetime):
+        return ""
+    local_dt = to_jakarta(value) or value
+    now_dt = current_jakarta_time()
+    delta_seconds = int((now_dt - local_dt).total_seconds())
+    if delta_seconds < 60:
+        return "Baru saja"
+    if delta_seconds < 3600:
+        return f"{max(1, delta_seconds // 60)} menit lalu"
+    if delta_seconds < 86400:
+        return f"{max(1, delta_seconds // 3600)} jam lalu"
+    return local_dt.strftime("%d %b %Y, %H:%M WIB")
+
+
+def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dict:
+    notification_id = int(row.get("id") or 0)
+    category = (row.get("category") or "").strip()
+    status_value = (row.get("status") or "").strip().lower()
+    metadata = row.get("metadata")
+    if not isinstance(metadata, dict):
+        metadata = {}
+    status_key = str(metadata.get("status") or "").strip().lower()
+
+    icon = "bi-bell-fill"
+    if category == "daftar_tamu_status":
+        icon = "bi-journal-check"
+    elif category == "panbers_reopen_status":
+        icon = "bi-arrow-counterclockwise"
+    elif category == "panbers_assignment_status":
+        icon = "bi-diagram-3-fill"
+    elif category == "panbers_team_member_status":
+        icon = "bi-people-fill"
+
+    tone = "secondary"
+    if status_key == "approved":
+        tone = "success"
+    elif status_key == "rejected":
+        tone = "danger"
+    elif status_key == "pending":
+        tone = "warning"
+
+    created_at = row.get("created_at")
+    created_at_iso = created_at.isoformat(timespec="seconds") if isinstance(created_at, datetime) else ""
+
+    fallback_title = "Notifikasi buku tamu"
+    if category == "panbers_reopen_status":
+        fallback_title = "Notifikasi reopen PANBERSS"
+    elif category == "panbers_assignment_status":
+        fallback_title = "Notifikasi penugasan PANBERSS"
+    elif category == "panbers_team_member_status":
+        fallback_title = "Notifikasi tim PANBERSS"
+
+    return {
+        "id": notification_id,
+        "category": category,
+        "title": (row.get("title") or "").strip() or fallback_title,
+        "message": (row.get("message") or "").strip(),
+        "status": status_value or "unread",
+        "is_unread": status_value == "unread",
+        "link": (row.get("link") or "").strip() or fallback_link,
+        "icon": icon,
+        "tone": tone,
+        "created_at": created_at_iso,
+        "created_label": _format_notification_time_label(created_at),
+        "reference_id": int(row.get("reference_id") or 0),
+    }
+
+
+def _build_user_guestbook_history_context(user: dict, source) -> dict:
+    params = _parse_user_guestbook_history_args(source)
+    user_id = int(user.get("id"))
+
+    home_rows: list[dict] = []
+    home_total_rows = 0
+    home_has_more = False
+
+    detail_rows: list[dict] = []
+    detail_total_rows = 0
+    detail_total_pages = 1
+
+    if params["tab"] == "detail":
+        detail_rows, detail_total_rows = fetch_user_guestbook_history(
+            user_id=user_id,
+            page=params["page"],
+            per_page=params["per_page"],
+            sort_key=params["sort"],
+            status=params["status"],
+            search_query=params["search_query"],
+            date_from=params["date_from"],
+            date_to=params["date_to"],
+            guest_scope=params["guest_scope"],
+        )
+        detail_total_pages = max(1, math.ceil(detail_total_rows / params["per_page"])) if detail_total_rows else 1
+        if params["page"] > detail_total_pages:
+            params["page"] = detail_total_pages
+            detail_rows, detail_total_rows = fetch_user_guestbook_history(
+                user_id=user_id,
+                page=params["page"],
+                per_page=params["per_page"],
+                sort_key=params["sort"],
+                status=params["status"],
+                search_query=params["search_query"],
+                date_from=params["date_from"],
+                date_to=params["date_to"],
+                guest_scope=params["guest_scope"],
+            )
+    else:
+        home_rows, home_total_rows = fetch_user_guestbook_history(
+            user_id=user_id,
+            page=1,
+            per_page=params["home_limit"],
+            sort_key="date_desc",
+            status=params["status"],
+            search_query=params["search_query"],
+            date_from=params["date_from"],
+            date_to=params["date_to"],
+            guest_scope=params["guest_scope"],
+        )
+        home_has_more = home_total_rows > len(home_rows) and params["home_limit"] < params["home_limit_max"]
+
+    _decorate_user_history_rows(home_rows, user_id)
+    _decorate_user_history_rows(detail_rows, user_id)
+
+    feed_base_url = url_for(
+        "daftar_tamu.user_guestbook_history_feed",
+        tab="beranda",
+        q=params["search_query"],
+        sort="date_desc",
+        date_from=params["date_from_str"],
+        date_to=params["date_to_str"],
+        guest_scope=params["guest_scope"],
+        status=params["status"],
+        home_chunk_size=4,
+    )
+
+    stream_url = url_for(
+        "daftar_tamu.user_guestbook_history_stream",
+        tab="beranda",
+        q=params["search_query"],
+        sort="date_desc",
+        date_from=params["date_from_str"],
+        date_to=params["date_to_str"],
+        guest_scope=params["guest_scope"],
+        status=params["status"],
+    )
+
+    return {
+        "tab": params["tab"],
+        "status": params["status"],
+        "home_rows": home_rows,
+        "home_total_rows": home_total_rows,
+        "home_limit": params["home_limit"],
+        "home_has_more": home_has_more,
+        "detail_rows": detail_rows,
+        "detail_total_rows": detail_total_rows,
+        "detail_total_pages": detail_total_pages,
+        "page": params["page"],
+        "per_page": params["per_page"],
+        "sort": params["sort"],
+        "search_query": params["search_query"],
+        "date_from_str": params["date_from_str"],
+        "date_to_str": params["date_to_str"],
+        "guest_scope": params["guest_scope"],
+        "today_str": date.today().isoformat(),
+        "user_profile": user,
+        "history_feed_base_url": feed_base_url,
+        "history_stream_url": stream_url,
+    }
+
+
+def _fetch_user_guestbook_home_chunk(
+    *,
+    user_id: int,
+    page: int,
+    chunk_size: int,
+    status: str,
+    search_query: str,
+    date_from: Optional[date],
+    date_to: Optional[date],
+    guest_scope: str,
+) -> tuple[list[dict], int]:
+    rows, total_rows = fetch_user_guestbook_history(
+        user_id=user_id,
+        page=page,
+        per_page=chunk_size,
+        sort_key="date_desc",
+        status=status,
+        search_query=search_query,
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+    _decorate_user_history_rows(rows, user_id)
+    return rows, total_rows
+
+
+@daftar_tamu_bp.route("/saya/notifikasi")
+@role_required("staff", "coordinator", "sekolah")
+def user_guestbook_notifications() -> Response:
+    user = current_user()
+    user_id = int(user.get("id"))
+    limit = max(1, min(_to_int(request.args.get("limit"), 8), 30))
+    if user.get("role") == "sekolah":
+        fallback_link = url_for("daftar_tamu.sekolah_riwayat")
+    else:
+        fallback_link = url_for("daftar_tamu.user_guestbook_history", tab="detail")
+    categories = list(USER_APP_NOTIFICATION_CATEGORIES)
+
+    try:
+        summary = fetch_user_notification_summary(user_id=user_id, categories=categories)
+        rows = list_user_notifications(user_id=user_id, limit=limit, categories=categories)
+    except Exception:
+        current_app.logger.exception("Gagal mengambil notifikasi buku tamu pengguna aplikasi.")
+        return jsonify(
+            {
+                "success": False,
+                "items": [],
+                "unread_count": 0,
+                "total_count": 0,
+                "generated_at": current_jakarta_time().isoformat(timespec="seconds"),
+            }
+        )
+
+    return jsonify(
+        {
+            "success": True,
+            "items": [_serialize_user_guestbook_notification(row, fallback_link) for row in rows],
+            "unread_count": int(summary.get("unread_count") or 0),
+            "total_count": int(summary.get("total_count") or 0),
+            "generated_at": current_jakarta_time().isoformat(timespec="seconds"),
+        }
+    )
+
+
+@daftar_tamu_bp.route("/saya/notifikasi/tandai-dibaca", methods=["POST"])
+@role_required("staff", "coordinator", "sekolah")
+def user_guestbook_notifications_mark_read() -> Response:
+    user = current_user()
+    user_id = int(user.get("id"))
+
+    payload = request.get_json(silent=True) if request.is_json else {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    mark_all_raw = payload.get("all", request.form.get("all"))
+    mark_all = str(mark_all_raw or "").strip().lower() in {"1", "true", "yes", "on"}
+
+    raw_ids = payload.get("ids")
+    if not isinstance(raw_ids, list):
+        raw_ids = request.form.getlist("ids") or request.form.getlist("notification_ids")
+    if not raw_ids and request.form.get("id"):
+        raw_ids = [request.form.get("id")]
+
+    notification_ids: list[int] = []
+    for raw_id in raw_ids or []:
+        try:
+            notification_ids.append(int(raw_id))
+        except (TypeError, ValueError):
+            continue
+
+    categories = list(USER_APP_NOTIFICATION_CATEGORIES)
+    try:
+        updated_count = mark_user_notifications_read(
+            user_id=user_id,
+            notification_ids=notification_ids,
+            mark_all=mark_all,
+            categories=categories,
+        )
+        summary = fetch_user_notification_summary(user_id=user_id, categories=categories)
+    except Exception:
+        current_app.logger.exception("Gagal memperbarui notifikasi buku tamu pengguna aplikasi.")
+        return jsonify({"success": False, "message": "Gagal memperbarui notifikasi."}), 500
+
+    return jsonify(
+        {
+            "success": True,
+            "updated_count": int(updated_count or 0),
+            "unread_count": int(summary.get("unread_count") or 0),
+            "total_count": int(summary.get("total_count") or 0),
+        }
+    )
+
+
+@daftar_tamu_bp.route("/saya/riwayat")
+@role_required("staff", "coordinator")
+def user_guestbook_history() -> Response:
+    """Show current user guestbook history with mobile-first home + detail tabs."""
+    user = current_user()
+    context = _build_user_guestbook_history_context(user, request.args)
+    return render_template("daftar_tamu/user_guestbook_history.html", **context)
+
+
+@daftar_tamu_bp.route("/saya/riwayat/feed")
+@role_required("staff", "coordinator")
+def user_guestbook_history_feed() -> Response:
+    """Return JSON feed chunk for super-app timeline."""
+    user = current_user()
+    user_id = int(user.get("id"))
+    params = _parse_user_guestbook_history_args(request.args)
+
+    home_rows, home_total_rows = _fetch_user_guestbook_home_chunk(
+        user_id=user_id,
+        page=params["home_page"],
+        chunk_size=params["home_chunk_size"],
+        status=params["status"],
+        search_query=params["search_query"],
+        date_from=params["date_from"],
+        date_to=params["date_to"],
+        guest_scope=params["guest_scope"],
+    )
+    total_pages = max(1, math.ceil(home_total_rows / params["home_chunk_size"])) if home_total_rows else 1
+    has_more = params["home_page"] < total_pages
+
+    items_html = render_template(
+        "daftar_tamu/partials/_user_guestbook_home_timeline_items.html",
+        rows=home_rows,
+        search_query=params["search_query"],
+        date_from_str=params["date_from_str"],
+        date_to_str=params["date_to_str"],
+        guest_scope=params["guest_scope"],
+        status=params["status"],
+        per_page=params["per_page"],
+        home_limit=params["home_limit"],
+    )
+
+    return jsonify(
+        {
+            "success": True,
+            "home_page": params["home_page"],
+            "home_chunk_size": params["home_chunk_size"],
+            "home_total_rows": home_total_rows,
+            "home_total_pages": total_pages,
+            "has_more": has_more,
+            "next_page": params["home_page"] + 1 if has_more else None,
+            "items_count": len(home_rows),
+            "items": [_serialize_user_history_row(row) for row in home_rows],
+            "items_html": items_html,
+            "generated_at": current_jakarta_time().isoformat(timespec="seconds"),
+        }
+    )
+
+
+@daftar_tamu_bp.route("/saya/riwayat/stream")
+@role_required("staff", "coordinator")
+def user_guestbook_history_stream() -> Response:
+    """Server-Sent Events for realtime row updates in super-app history."""
+    user = current_user()
+    user_id = int(user.get("id"))
+    params = _parse_user_guestbook_history_args(request.args)
+    poll_limit = 40
+
+    def _snapshot() -> tuple[list[dict], dict[int, str]]:
+        rows, _ = _fetch_user_guestbook_home_chunk(
+            user_id=user_id,
+            page=1,
+            chunk_size=poll_limit,
+            status=params["status"],
+            search_query=params["search_query"],
+            date_from=params["date_from"],
+            date_to=params["date_to"],
+            guest_scope=params["guest_scope"],
+        )
+        signatures = {int(row.get("transaction_id") or 0): _build_user_history_signature(row) for row in rows if row.get("transaction_id")}
+        return rows, signatures
+
+    def _event_payload(event_name: str, payload: dict) -> str:
+        return f"event: {event_name}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+    @stream_with_context
+    def _generate():
+        _, last_signatures = _snapshot()
+        started_at = time.monotonic()
+        heartbeat_counter = 0
+        yield "retry: 4500\n\n"
+        while time.monotonic() - started_at < 55:
+            time.sleep(4)
+            rows, next_signatures = _snapshot()
+            changed_rows = []
+            for row in rows:
+                tx_id = int(row.get("transaction_id") or 0)
+                if not tx_id:
+                    continue
+                if last_signatures.get(tx_id) != next_signatures.get(tx_id):
+                    changed_rows.append(_serialize_user_history_row(row))
+            removed_ids = [tx_id for tx_id in last_signatures.keys() if tx_id not in next_signatures]
+            if changed_rows or removed_ids:
+                payload = {
+                    "rows": changed_rows,
+                    "removed_ids": removed_ids,
+                    "generated_at": current_jakarta_time().isoformat(timespec="seconds"),
+                }
+                yield _event_payload("history_update", payload)
+                last_signatures = next_signatures
+                heartbeat_counter = 0
+                continue
+
+            heartbeat_counter += 1
+            if heartbeat_counter >= 3:
+                yield _event_payload("ping", {"ok": True})
+                heartbeat_counter = 0
+
+    response = Response(_generate(), mimetype="text/event-stream")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["X-Accel-Buffering"] = "no"
+    response.headers["Connection"] = "keep-alive"
+    return response
+
+
+def _normalize_metric_events(raw_events) -> dict[str, int]:
+    if not isinstance(raw_events, dict):
+        return {}
+    normalized: dict[str, int] = {}
+    for key, raw_value in raw_events.items():
+        event_name = str(key or "").strip().lower()
+        if not event_name:
+            continue
+        try:
+            value = int(raw_value)
+        except (TypeError, ValueError):
+            continue
+        if value <= 0:
+            continue
+        normalized[event_name] = min(value, 1_000_000)
+    return normalized
+
+
+def _build_guestbook_ux_summary(rows: list[dict]) -> dict:
+    now_jakarta = current_jakarta_time()
+    event_totals: dict[str, int] = {}
+    user_totals: dict[str, dict] = {}
+    sessions: list[dict] = []
+
+    for row in rows:
+        payload = row.get("payload")
+        if isinstance(payload, str):
+            try:
+                payload = json.loads(payload)
+            except json.JSONDecodeError:
+                payload = {}
+        if not isinstance(payload, dict):
+            payload = {}
+
+        events = _normalize_metric_events(payload.get("events"))
+        session_total = sum(events.values())
+        for event_name, event_count in events.items():
+            event_totals[event_name] = event_totals.get(event_name, 0) + event_count
+
+        user_id = int(row.get("user_id") or 0)
+        if user_id:
+            entry = user_totals.setdefault(
+                str(user_id),
+                {
+                    "user_id": user_id,
+                    "full_name": row.get("full_name") or row.get("email") or f"User {user_id}",
+                    "role": row.get("role") or "",
+                    "events": 0,
+                },
+            )
+            entry["events"] += session_total
+
+        updated_at = row.get("updated_at")
+        updated_label = ""
+        if isinstance(updated_at, datetime):
+            local_dt = to_jakarta(updated_at)
+            updated_label = local_dt.strftime("%d %b %Y, %H:%M WIB")
+        sessions.append(
+            {
+                "user_id": user_id,
+                "full_name": row.get("full_name") or row.get("email") or "-",
+                "role": row.get("role") or "-",
+                "session_key": row.get("session_key") or "",
+                "page_path": row.get("page_path") or "",
+                "events": session_total,
+                "last_event": payload.get("last_event") or "-",
+                "updated_at_label": updated_label,
+                "updated_at": updated_at,
+            }
+        )
+
+    top_events = sorted(event_totals.items(), key=lambda item: item[1], reverse=True)[:12]
+    top_users = sorted(user_totals.values(), key=lambda item: item.get("events", 0), reverse=True)[:10]
+    sessions.sort(key=lambda item: item.get("updated_at") or datetime.min, reverse=True)
+    recent_sessions = sessions[:25]
+    total_events = sum(event_totals.values())
+
+    active_24h = 0
+    for row in rows:
+        updated_at = row.get("updated_at")
+        if isinstance(updated_at, datetime) and (now_jakarta - to_jakarta(updated_at)).total_seconds() <= 86400:
+            active_24h += 1
+
+    return {
+        "total_sessions": len(rows),
+        "active_users": len(user_totals),
+        "active_sessions_24h": active_24h,
+        "total_events": total_events,
+        "top_events": top_events,
+        "top_users": top_users,
+        "recent_sessions": recent_sessions,
+    }
+
+
+@daftar_tamu_bp.route("/saya/riwayat/ux-metrics", methods=["POST"])
+@role_required("staff", "coordinator")
+def user_guestbook_ux_metrics_ingest() -> Response:
+    """Persist UX telemetry snapshot for super-app history page."""
+    user = current_user()
+    payload = request.get_json(silent=True) or {}
+    if not payload:
+        payload = request.form.to_dict()
+    if not isinstance(payload, dict):
+        return jsonify({"success": False, "message": "Payload metrik tidak valid."}), 400
+
+    metrics_raw = payload.get("metrics")
+    if isinstance(metrics_raw, str):
+        try:
+            metrics_raw = json.loads(metrics_raw)
+        except json.JSONDecodeError:
+            metrics_raw = {}
+    if not isinstance(metrics_raw, dict):
+        metrics_json_raw = payload.get("metrics_json")
+        if isinstance(metrics_json_raw, str):
+            try:
+                metrics_raw = json.loads(metrics_json_raw)
+            except json.JSONDecodeError:
+                metrics_raw = {}
+        else:
+            metrics_raw = {}
+
+    session_key = (payload.get("session_key") or "").strip()
+    if not session_key:
+        return jsonify({"success": False, "message": "session_key wajib diisi."}), 400
+
+    events = _normalize_metric_events(metrics_raw.get("events") if isinstance(metrics_raw, dict) else payload.get("events"))
+    metric_payload = {
+        "events": events,
+        "updated_at": metrics_raw.get("updated_at") if isinstance(metrics_raw, dict) else payload.get("updated_at"),
+        "last_event": metrics_raw.get("last_event") if isinstance(metrics_raw, dict) else payload.get("last_event"),
+        "last_payload": metrics_raw.get("last_payload") if isinstance(metrics_raw, dict) else payload.get("last_payload"),
+        "tab": (payload.get("tab") or "").strip(),
+    }
+
+    try:
+        upsert_guestbook_ux_metrics(
+            user_id=int(user.get("id")),
+            session_key=session_key,
+            payload=metric_payload,
+            page_path=(payload.get("page_path") or request.path).strip(),
+        )
+    except ValueError as exc:
+        return jsonify({"success": False, "message": str(exc)}), 400
+    except Exception:
+        current_app.logger.exception("Gagal menyimpan metrik UX daftar tamu.")
+        return jsonify({"success": False, "message": "Gagal menyimpan metrik."}), 500
+
+    return jsonify({"success": True})
+
+
+@daftar_tamu_bp.route("/admin/ux-metrics")
+@role_required("admin")
+def admin_guestbook_ux_metrics() -> Response:
+    """Admin dashboard for super-app UX telemetry."""
+    days = max(1, min(_to_int(request.args.get("days"), 14), 90))
+    rows = fetch_guestbook_ux_metric_rows(days=days, limit=800)
+    summary = _build_guestbook_ux_summary(rows)
+    return render_template(
+        "daftar_tamu/admin_ux_metrics.html",
+        days=days,
+        summary=summary,
+        today_str=date.today().isoformat(),
+    )
+
+
+@daftar_tamu_bp.route("/saya/riwayat/<int:transaction_id>/catatan-staf", methods=["POST"])
+@role_required("staff", "coordinator")
+def user_guestbook_staff_note(transaction_id: int) -> Response:
+    user = current_user()
+    note = (request.form.get("staff_note") or "").strip()
+    staff_note_level = _normalize_staff_note_level(request.form.get("staff_note_level"), default="tindak_lanjut") or "tindak_lanjut"
+    is_ajax = (
+        request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or "application/json" in (request.headers.get("Accept") or "").lower()
+    )
+    if len(note) > 500:
+        if is_ajax:
+            return jsonify({"success": False, "message": "Catatan staf maksimal 500 karakter."}), 400
+        flash("Catatan staf maksimal 500 karakter.", "warning")
+        return redirect(_build_user_guestbook_history_redirect(request.form))
+
+    ok = upsert_transaction_staff_note(
+        transaction_id=transaction_id,
+        user_id=int(user.get("id")),
+        note=note,
+        level=staff_note_level,
+    )
+    if ok:
+        message = "Catatan staf berhasil disimpan." if note else "Catatan staf dihapus."
+        if is_ajax:
+            updated_label = current_jakarta_time().strftime("%d %b %Y, %H:%M WIB") if note else ""
+            signature = "|".join(
+                [
+                    str(transaction_id),
+                    "approved",
+                    "",
+                    note,
+                    staff_note_level if note else "",
+                    updated_label,
+                    "",
+                ]
+            )
+            return jsonify(
+                {
+                    "success": True,
+                    "message": message,
+                    "transaction_id": transaction_id,
+                    "status": "approved",
+                    "staff_note": note,
+                    "staff_note_level": staff_note_level if note else "",
+                    "staff_note_level_label": _STAFF_NOTE_LEVEL_LABEL_MAP.get(staff_note_level, "") if note else "",
+                    "staff_note_level_tone": _STAFF_NOTE_LEVEL_TONE_MAP.get(staff_note_level, "secondary") if note else "secondary",
+                    "staff_note_updated_at": updated_label,
+                    "signature": signature,
+                }
+            )
+        flash(message, "success")
+    else:
+        if is_ajax:
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "Catatan hanya bisa diisi jika foto transaksi sudah diverifikasi.",
+                }
+            ), 400
+        flash("Catatan hanya bisa diisi jika foto transaksi sudah diverifikasi.", "warning")
+    return redirect(_build_user_guestbook_history_redirect(request.form))
 
 
 @daftar_tamu_bp.route("/sekolah/guest-search")

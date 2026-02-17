@@ -147,6 +147,16 @@ from dashboard.telegram_notifications import (
     notify_team_member_request,
     notify_team_member_request_status_update,
 )
+from dashboard.daftar_tamu.queries import (
+    PANBERS_ASSIGNMENT_NOTIFICATION_CATEGORY,
+    PANBERS_REOPEN_NOTIFICATION_CATEGORY,
+    PANBERS_TEAM_MEMBER_NOTIFICATION_CATEGORY,
+    USER_APP_NOTIFICATION_CATEGORIES,
+    create_user_notifications,
+    fetch_user_notification_summary,
+    list_user_notifications,
+    mark_user_notifications_read,
+)
 
 
 def _get_room_aspects(room_id: int) -> list[dict]:
@@ -476,6 +486,203 @@ def _fetch_reopen_request(request_id: int) -> dict | None:
         )
         row = cur.fetchone()
         return dict(row) if row else None
+
+
+def _truncate_notification_text(value: object, max_length: int = 220) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    if len(text) <= max_length:
+        return text
+    return text[: max_length - 3].rstrip() + "..."
+
+
+def _build_status_label(status: str) -> str:
+    value = (status or "").strip().lower()
+    if value == "approved":
+        return "Disetujui"
+    if value == "rejected":
+        return "Ditolak"
+    if value == "pending":
+        return "Menunggu"
+    return "Diperbarui"
+
+
+def _notify_panbers_reopen_status_change(
+    *,
+    request_id: int,
+    assessment_id: int,
+    status: str,
+    actor: Optional[dict],
+    assessment: Optional[dict] = None,
+    reopen_request: Optional[dict] = None,
+    reviewer_note: Optional[str] = None,
+) -> None:
+    safe_status = (status or "").strip().lower()
+    if safe_status not in {"approved", "rejected"}:
+        return
+
+    request_row = reopen_request or _fetch_reopen_request(request_id) or {}
+    recipient_ids: list[int] = []
+    if request_row.get("staff_id"):
+        try:
+            recipient_ids.append(int(request_row.get("staff_id")))
+        except (TypeError, ValueError):
+            pass
+    if not recipient_ids:
+        return
+
+    school_name = (assessment or {}).get("school_name") or "sekolah"
+    status_label = _build_status_label(safe_status)
+    actor_name = (actor or {}).get("full_name") or (actor or {}).get("email") or "Admin"
+    note_text = _truncate_notification_text(reviewer_note)
+
+    message = f"Permintaan reopen penilaian {school_name} {status_label.lower()}."
+    if note_text:
+        message += f" Catatan: {note_text}"
+
+    create_user_notifications(
+        recipient_ids=recipient_ids,
+        category=PANBERS_REOPEN_NOTIFICATION_CATEGORY,
+        title=f"Reopen Penilaian {status_label}",
+        message=message,
+        link=url_for("portal.view_assessment", assessment_id=assessment_id),
+        reference_table="portal_assessment_reopen_requests",
+        reference_id=request_id,
+        metadata={
+            "status": safe_status,
+            "actor_name": actor_name,
+            "request_id": int(request_id),
+            "assessment_id": int(assessment_id),
+            "school_name": school_name,
+            "reviewer_note": note_text or None,
+            "feature": "panbers_reopen",
+        },
+    )
+
+
+def _notify_panbers_assignment_status_change(
+    *,
+    request_row: dict,
+    status: str,
+    actor: Optional[dict],
+    reviewer_note: Optional[str] = None,
+    school_name: Optional[str] = None,
+    staff_name: Optional[str] = None,
+    coordinator_name: Optional[str] = None,
+    period_name: Optional[str] = None,
+) -> None:
+    safe_status = (status or "").strip().lower()
+    if safe_status not in {"approved", "rejected"}:
+        return
+
+    recipient_ids: list[int] = []
+    for key in ("coordinator_id", "staff_id"):
+        raw_id = request_row.get(key)
+        try:
+            parsed_id = int(raw_id)
+        except (TypeError, ValueError):
+            continue
+        if parsed_id > 0:
+            recipient_ids.append(parsed_id)
+    if not recipient_ids:
+        return
+
+    status_label = _build_status_label(safe_status)
+    actor_name = (actor or {}).get("full_name") or (actor or {}).get("email") or "Admin"
+    school_label = (school_name or "").strip() or "sekolah"
+    staff_label = (staff_name or "").strip() or "staf"
+    coordinator_label = (coordinator_name or "").strip()
+    period_label = (period_name or "").strip()
+    note_text = _truncate_notification_text(reviewer_note)
+
+    message_parts = [f"Pengajuan penugasan {staff_label} ke {school_label} {status_label.lower()}."]
+    if period_label:
+        message_parts.append(f"Periode: {period_label}.")
+    if coordinator_label:
+        message_parts.append(f"Diajukan oleh {coordinator_label}.")
+    if note_text:
+        message_parts.append(f"Catatan: {note_text}")
+
+    request_id = int(request_row.get("id") or 0)
+    create_user_notifications(
+        recipient_ids=recipient_ids,
+        category=PANBERS_ASSIGNMENT_NOTIFICATION_CATEGORY,
+        title=f"Pengajuan Penugasan {status_label}",
+        message=" ".join(message_parts).strip(),
+        link=url_for("portal.home"),
+        reference_table="staff_assignment_requests",
+        reference_id=request_id if request_id > 0 else None,
+        metadata={
+            "status": safe_status,
+            "actor_name": actor_name,
+            "request_id": request_id if request_id > 0 else None,
+            "school_name": school_label,
+            "staff_name": staff_label,
+            "coordinator_name": coordinator_label or None,
+            "period_name": period_label or None,
+            "reviewer_note": note_text or None,
+            "feature": "panbers_assignment_request",
+        },
+    )
+
+
+def _notify_panbers_team_member_request_status_change(
+    *,
+    request_row: dict,
+    status: str,
+    actor: Optional[dict],
+    reviewer_note: Optional[str] = None,
+) -> None:
+    safe_status = (status or "").strip().lower()
+    if safe_status not in {"approved", "rejected"}:
+        return
+
+    recipient_ids: list[int] = []
+    for key in ("requested_by", "staff_id"):
+        raw_id = request_row.get(key)
+        try:
+            parsed_id = int(raw_id)
+        except (TypeError, ValueError):
+            continue
+        if parsed_id > 0:
+            recipient_ids.append(parsed_id)
+    if not recipient_ids:
+        return
+
+    status_label = _build_status_label(safe_status)
+    actor_name = (actor or {}).get("full_name") or (actor or {}).get("email") or "Admin"
+    team_name = (request_row.get("team_name") or "").strip() or "Tim Monev"
+    staff_name = (request_row.get("staff_name") or "").strip() or "staf"
+    requester_name = (request_row.get("requested_by_name") or "").strip()
+    note_text = _truncate_notification_text(reviewer_note)
+
+    message_parts = [f"Permintaan anggota tim untuk {staff_name} di {team_name} {status_label.lower()}."]
+    if requester_name:
+        message_parts.append(f"Pengaju: {requester_name}.")
+    if note_text:
+        message_parts.append(f"Catatan: {note_text}")
+
+    request_id = int(request_row.get("id") or 0)
+    create_user_notifications(
+        recipient_ids=recipient_ids,
+        category=PANBERS_TEAM_MEMBER_NOTIFICATION_CATEGORY,
+        title=f"Permintaan Anggota Tim {status_label}",
+        message=" ".join(message_parts).strip(),
+        link=url_for("portal.view_my_team"),
+        reference_table="monev_team_member_requests",
+        reference_id=request_id if request_id > 0 else None,
+        metadata={
+            "status": safe_status,
+            "actor_name": actor_name,
+            "request_id": request_id if request_id > 0 else None,
+            "team_name": team_name,
+            "staff_name": staff_name,
+            "requested_by_name": requester_name or None,
+            "reviewer_note": note_text or None,
+            "feature": "panbers_team_member_request",
+        },
+    )
 
 
 def _normalize_metadata(meta: object | None) -> dict:
@@ -1022,19 +1229,80 @@ def _build_coordinator_contacts(school: dict | None = None, *, area_name: str | 
 @portal_bp.route("/")
 @_portal_access_required
 def home() -> Response:
-    """Staff portal home - list assessments."""
+    """Portal home by role."""
     user = current_user()
     role = user.get("role")
-    
+
     if role == "sekolah":
         return redirect(url_for("portal.sekolah_home"))
-    
+
     if role == "admin":
         return redirect(url_for("portal.admin_stats"))
-    
+
+    if role == "staff":
+        cards = [
+            {
+                "title": "PANBERSS",
+                "description": "Akses tugas Monev dan proses penilaian PANBERSS.",
+                "icon": "bi-building",
+                "href": url_for("portal.staff_assignments"),
+                "col_class": "col-md-6 col-12",
+            },
+            {
+                "title": "Buku Tamu",
+                "description": "Lihat riwayat buku tamu yang pernah melibatkan Anda.",
+                "icon": "bi-person-vcard",
+                "href": url_for("daftar_tamu.user_guestbook_history"),
+                "col_class": "col-md-6 col-12",
+            },
+        ]
+        return render_template(
+            "role_selection.html",
+            page_title="Pilih Layanan Staff - ASKA Portal",
+            page_description="Pilih layanan untuk Staff",
+            header_title="Selamat Datang, Staff",
+            header_subtitle="Silakan pilih layanan yang ingin Anda akses",
+            cards=cards,
+            default_col_class="col-md-6 col-12",
+            show_logout=True,
+        )
+
     if role == "coordinator":
-        return redirect(url_for("portal.coordinator_dashboard"))
-    
+        cards = [
+            {
+                "title": "PANBERSS",
+                "description": "Akses statistik dan monitoring PANBERSS tim Anda.",
+                "icon": "bi-building",
+                "href": url_for("portal.coordinator_stats"),
+                "col_class": "col-md-6 col-12",
+            },
+            {
+                "title": "Buku Tamu",
+                "description": "Lihat riwayat buku tamu yang pernah melibatkan Anda.",
+                "icon": "bi-person-vcard",
+                "href": url_for("daftar_tamu.user_guestbook_history"),
+                "col_class": "col-md-6 col-12",
+            },
+        ]
+        return render_template(
+            "role_selection.html",
+            page_title="Pilih Layanan Koordinator - ASKA Portal",
+            page_description="Pilih layanan untuk Koordinator",
+            header_title="Selamat Datang, Koordinator",
+            header_subtitle="Silakan pilih layanan yang ingin Anda akses",
+            cards=cards,
+            default_col_class="col-md-6 col-12",
+            show_logout=True,
+        )
+
+    return redirect(url_for("portal.staff_oss_home"))
+
+
+@portal_bp.route("/staff/oss")
+@role_required("staff")
+def staff_oss_home() -> Response:
+    """Staff OSS home - list staff assessments."""
+    user = current_user()
     assessments = list_staff_assessments(user["id"])
     return render_template(
         "portal/staff/home.html",
@@ -1909,6 +2177,18 @@ def approve_reopen(assessment_id: int) -> Response:
                 )
             except Exception:
                 current_app.logger.exception("Gagal mengirim notifikasi Telegram status reopen.")
+            try:
+                _notify_panbers_reopen_status_change(
+                    request_id=request_id,
+                    assessment_id=assessment_id,
+                    status="approved",
+                    actor=current_user(),
+                    assessment=assessment,
+                    reopen_request=req,
+                    reviewer_note=note,
+                )
+            except Exception:
+                current_app.logger.exception("Gagal menyimpan notifikasi aplikasi status reopen.")
             flash("Reopen disetujui dan penilaian dibuka kembali.", "success")
             success = True
         else:
@@ -1995,6 +2275,18 @@ def reject_reopen(assessment_id: int) -> Response:
                 )
             except Exception:
                 current_app.logger.exception("Gagal mengirim notifikasi Telegram status reopen.")
+            try:
+                _notify_panbers_reopen_status_change(
+                    request_id=request_id,
+                    assessment_id=assessment_id,
+                    status="rejected",
+                    actor=current_user(),
+                    assessment=assessment,
+                    reopen_request=req,
+                    reviewer_note=note,
+                )
+            except Exception:
+                current_app.logger.exception("Gagal menyimpan notifikasi aplikasi status reopen.")
             flash("Permintaan reopen ditolak.", "info")
         else:
             flash("Gagal menolak reopen.", "danger")
@@ -3383,6 +3675,157 @@ def admin_pending_preview() -> Response:
                 "reopen_requests": [],
             }
         )
+
+
+def _format_user_notification_created_label(value: object) -> str:
+    if not isinstance(value, datetime):
+        return ""
+    local_dt = value
+    if value.tzinfo is None:
+        local_dt = value.replace(tzinfo=timezone.utc)
+    local_dt = local_dt.astimezone(JAKARTA_TZ)
+    now_dt = datetime.now(JAKARTA_TZ)
+    delta_seconds = int((now_dt - local_dt).total_seconds())
+    if delta_seconds < 60:
+        return "Baru saja"
+    if delta_seconds < 3600:
+        return f"{max(1, delta_seconds // 60)} menit lalu"
+    if delta_seconds < 86400:
+        return f"{max(1, delta_seconds // 3600)} jam lalu"
+    return local_dt.strftime("%d %b %Y, %H:%M WIB")
+
+
+def _serialize_user_app_notification(row: dict, fallback_link: str) -> dict:
+    notification_id = int(row.get("id") or 0)
+    category = (row.get("category") or "").strip()
+    status_value = (row.get("status") or "").strip().lower() or "unread"
+
+    metadata = row.get("metadata")
+    if not isinstance(metadata, dict):
+        metadata = {}
+    status_key = str(metadata.get("status") or "").strip().lower()
+
+    icon = "bi-bell-fill"
+    if category == PANBERS_REOPEN_NOTIFICATION_CATEGORY:
+        icon = "bi-arrow-counterclockwise"
+    elif category == PANBERS_ASSIGNMENT_NOTIFICATION_CATEGORY:
+        icon = "bi-diagram-3-fill"
+    elif category == PANBERS_TEAM_MEMBER_NOTIFICATION_CATEGORY:
+        icon = "bi-people-fill"
+    elif category == "daftar_tamu_status":
+        icon = "bi-journal-check"
+
+    tone = "secondary"
+    if status_key == "approved":
+        tone = "success"
+    elif status_key == "rejected":
+        tone = "danger"
+    elif status_key == "pending":
+        tone = "warning"
+
+    created_at = row.get("created_at")
+    created_at_iso = created_at.isoformat(timespec="seconds") if isinstance(created_at, datetime) else ""
+
+    return {
+        "id": notification_id,
+        "category": category,
+        "title": (row.get("title") or "").strip() or "Notifikasi",
+        "message": (row.get("message") or "").strip(),
+        "status": status_value,
+        "is_unread": status_value == "unread",
+        "link": (row.get("link") or "").strip() or fallback_link,
+        "icon": icon,
+        "tone": tone,
+        "created_at": created_at_iso,
+        "created_label": _format_user_notification_created_label(created_at),
+        "reference_id": int(row.get("reference_id") or 0),
+    }
+
+
+@portal_bp.route("/saya/notifikasi")
+@role_required("staff", "coordinator", "sekolah")
+def user_app_notifications() -> Response:
+    user = current_user()
+    user_id = int(user.get("id"))
+    limit = max(1, min(request.args.get("limit", type=int) or 8, 30))
+    if user.get("role") == "sekolah":
+        fallback_link = url_for("daftar_tamu.sekolah_riwayat")
+    else:
+        fallback_link = url_for("portal.home")
+    categories = list(USER_APP_NOTIFICATION_CATEGORIES)
+
+    try:
+        summary = fetch_user_notification_summary(user_id=user_id, categories=categories)
+        rows = list_user_notifications(user_id=user_id, limit=limit, categories=categories)
+    except Exception:
+        current_app.logger.exception("Gagal mengambil notifikasi aplikasi pengguna.")
+        return jsonify(
+            {
+                "success": False,
+                "items": [],
+                "unread_count": 0,
+                "total_count": 0,
+                "generated_at": datetime.now(JAKARTA_TZ).isoformat(timespec="seconds"),
+            }
+        )
+
+    return jsonify(
+        {
+            "success": True,
+            "items": [_serialize_user_app_notification(row, fallback_link) for row in rows],
+            "unread_count": int(summary.get("unread_count") or 0),
+            "total_count": int(summary.get("total_count") or 0),
+            "generated_at": datetime.now(JAKARTA_TZ).isoformat(timespec="seconds"),
+        }
+    )
+
+
+@portal_bp.route("/saya/notifikasi/tandai-dibaca", methods=["POST"])
+@role_required("staff", "coordinator", "sekolah")
+def user_app_notifications_mark_read() -> Response:
+    user = current_user()
+    user_id = int(user.get("id"))
+    payload = request.get_json(silent=True) if request.is_json else {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    mark_all_raw = payload.get("all", request.form.get("all"))
+    mark_all = str(mark_all_raw or "").strip().lower() in {"1", "true", "yes", "on"}
+
+    raw_ids = payload.get("ids")
+    if not isinstance(raw_ids, list):
+        raw_ids = request.form.getlist("ids") or request.form.getlist("notification_ids")
+    if not raw_ids and request.form.get("id"):
+        raw_ids = [request.form.get("id")]
+
+    safe_ids: list[int] = []
+    for raw_id in raw_ids or []:
+        try:
+            safe_ids.append(int(raw_id))
+        except (TypeError, ValueError):
+            continue
+
+    categories = list(USER_APP_NOTIFICATION_CATEGORIES)
+    try:
+        updated_count = mark_user_notifications_read(
+            user_id=user_id,
+            notification_ids=safe_ids,
+            mark_all=mark_all,
+            categories=categories,
+        )
+        summary = fetch_user_notification_summary(user_id=user_id, categories=categories)
+    except Exception:
+        current_app.logger.exception("Gagal memperbarui status baca notifikasi aplikasi pengguna.")
+        return jsonify({"success": False, "message": "Gagal memperbarui notifikasi."}), 500
+
+    return jsonify(
+        {
+            "success": True,
+            "updated_count": int(updated_count or 0),
+            "unread_count": int(summary.get("unread_count") or 0),
+            "total_count": int(summary.get("total_count") or 0),
+        }
+    )
 
 
 @portal_bp.route("/admin/periods", methods=["GET", "POST"])
@@ -5177,6 +5620,19 @@ def admin_approve_assignment_request(request_id: int) -> Response:
             )
         except Exception:
             current_app.logger.exception("Gagal mengirim notifikasi Telegram status assignment request.")
+        try:
+            _notify_panbers_assignment_status_change(
+                request_row=req,
+                status="approved",
+                actor=user,
+                reviewer_note=reviewer_note,
+                school_name=school.get("name") if school else None,
+                staff_name=staff_info.get("full_name") if staff_info else None,
+                coordinator_name=coordinator_info.get("full_name") if coordinator_info else None,
+                period_name=period_info.get("name") if period_info else None,
+            )
+        except Exception:
+            current_app.logger.exception("Gagal menyimpan notifikasi aplikasi status assignment request.")
     except Exception as exc:
         current_app.logger.exception("Error assigning after approval")
         return jsonify({"success": False, "message": str(exc)}), 500
@@ -5247,6 +5703,19 @@ def admin_reject_assignment_request(request_id: int) -> Response:
         )
     except Exception:
         current_app.logger.exception("Gagal mengirim notifikasi Telegram status assignment request.")
+    try:
+        _notify_panbers_assignment_status_change(
+            request_row=req,
+            status="rejected",
+            actor=user,
+            reviewer_note=reviewer_note,
+            school_name=school.get("name") if school else None,
+            staff_name=staff_info.get("full_name") if staff_info else None,
+            coordinator_name=coordinator_info.get("full_name") if coordinator_info else None,
+            period_name=period_info.get("name") if period_info else None,
+        )
+    except Exception:
+        current_app.logger.exception("Gagal menyimpan notifikasi aplikasi status assignment request.")
     return jsonify({"success": True, "request": req})
 
 
@@ -5364,11 +5833,23 @@ def inject_permissions():
         "pending_guestbook": 0,
         "total": 0,
     }
+    user_app_notifications = {
+        "unread_count": 0,
+        "total_count": 0,
+    }
     if user.get("role") == "admin":
         try:
             admin_pending = fetch_admin_pending_summary()
         except Exception:
             current_app.logger.exception("Failed to load admin pending summary")
+    elif user.get("role") in {"staff", "coordinator", "sekolah"}:
+        try:
+            user_app_notifications = fetch_user_notification_summary(
+                user_id=int(user.get("id")),
+                categories=list(USER_APP_NOTIFICATION_CATEGORIES),
+            )
+        except Exception:
+            user_app_notifications = {"unread_count": 0, "total_count": 0}
 
     return {
         'permissions': get_permission_summary(user),
@@ -5377,6 +5858,7 @@ def inject_permissions():
         'user_school': user_school,
         'area_contacts': area_contacts,
         'admin_pending': admin_pending,
+        'user_app_notifications': user_app_notifications,
     }
 
 
@@ -5826,6 +6308,17 @@ def manage_monev_teams() -> Response:
                             current_app.logger.exception(
                                 "Gagal mengirim notifikasi Telegram status permintaan anggota tim."
                             )
+                        try:
+                            _notify_panbers_team_member_request_status_change(
+                                request_row=req,
+                                status="approved",
+                                actor=current_user(),
+                                reviewer_note=reviewer_note,
+                            )
+                        except Exception:
+                            current_app.logger.exception(
+                                "Gagal menyimpan notifikasi aplikasi status permintaan anggota tim."
+                            )
                     added = add_team_member(req["team_id"], req["staff_id"], admin_id)
                     if added:
                         member_info = _fetch_monev_member_by_pair(req["team_id"], req["staff_id"])
@@ -5905,6 +6398,17 @@ def manage_monev_teams() -> Response:
                         except Exception:
                             current_app.logger.exception(
                                 "Gagal mengirim notifikasi Telegram status permintaan anggota tim."
+                            )
+                        try:
+                            _notify_panbers_team_member_request_status_change(
+                                request_row=req,
+                                status="rejected",
+                                actor=current_user(),
+                                reviewer_note=reviewer_note,
+                            )
+                        except Exception:
+                            current_app.logger.exception(
+                                "Gagal menyimpan notifikasi aplikasi status permintaan anggota tim."
                             )
                     if wants_json:
                         status_code = 200 if updated_req else 400
