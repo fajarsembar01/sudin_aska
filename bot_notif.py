@@ -28,6 +28,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 async def notif_start(update, context):
     user = update.effective_user
     message_obj = update.effective_message
+    username = None
     if user:
         username = user.username or user.first_name or "admin"
         text = message_obj.text if message_obj else "/start"
@@ -39,6 +40,8 @@ async def notif_start(update, context):
         "Gunakan /register_group di grup untuk mendaftarkan notifikasi."
     )
     await update.effective_message.reply_text(message)
+    if user:
+        save_chat(user.id, username, message, role="aska", topic=None)
 
 
 def _load_token() -> str:

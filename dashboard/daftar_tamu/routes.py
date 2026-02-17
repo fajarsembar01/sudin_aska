@@ -51,6 +51,7 @@ from .queries import (
     list_admin_public_school_summary,
     list_admin_public_transactions,
     list_admin_transactions,
+    list_transaction_previous_single_guest_photos,
     list_guest_candidates,
     list_general_guest_candidates,
     list_general_guests_admin,
@@ -129,6 +130,48 @@ def _parse_guest_ids(raw: Optional[str]) -> list[int]:
         seen.add(val)
         unique_ids.append(val)
     return unique_ids
+
+
+def _notify_guestbook_status_change(
+    *,
+    transaction_id: int,
+    status: str,
+    actor: Optional[dict],
+    is_public: bool = False,
+) -> None:
+    # Do not push Telegram notifications for public-web guestbook flow
+    # or any status change performed by school verifiers.
+    if is_public or (actor or {}).get("role") == "sekolah":
+        return
+
+    normalized_status = (status or "").strip().lower()
+    if normalized_status not in {"approved", "rejected"}:
+        return
+
+    if normalized_status == "approved":
+        status_label = "✅ Disetujui"
+    else:
+        status_label = "❌ Ditolak"
+
+    actor_name = (actor or {}).get("full_name") or (actor or {}).get("email")
+    school_name = None
+    photo_links: list[dict] = []
+
+    detail = get_transaction_detail(transaction_id)
+    if detail:
+        school_name = detail.get("school_name")
+        photo_links = _build_guestbook_photo_links(transaction_id=transaction_id, detail=detail)
+
+    from dashboard.telegram_notifications import notify_guestbook_status_update
+
+    notify_guestbook_status_update(
+        transaction_id=transaction_id,
+        school_name=school_name,
+        status_label=status_label,
+        actor_name=actor_name,
+        actor_username=None,
+        photo_links=photo_links,
+    )
 
 
 def _parse_guest_payload(raw: Optional[str]) -> tuple[list[int], list[int]]:
@@ -461,6 +504,59 @@ def _build_photo_url(photo_path: Optional[str], *, external: bool = False) -> Op
     if not filename:
         return None
     return url_for("portal.uploaded_file", filename=filename, _external=external)
+
+
+def _format_guest_photo_button_label(index: int, guest_name: Optional[str]) -> str:
+    base = f"🕘 Foto Sebelumnya {index}"
+    name = (guest_name or "").strip()
+    if not name:
+        return base
+    name_parts = [part for part in name.split() if part]
+    short_name = " ".join(name_parts[:2]) if name_parts else name
+    label = f"{base}: {short_name}"
+    if len(label) <= 64:
+        return label
+    max_name_len = max(1, 64 - len(base) - 5)
+    return f"{base}: {short_name[:max_name_len]}..."
+
+
+def _build_guestbook_photo_links(
+    *,
+    transaction_id: int,
+    detail: Optional[dict] = None,
+) -> list[dict]:
+    links: list[dict] = []
+    seen_keys: set[tuple[str, str]] = set()
+
+    current_photo_url = None
+    if detail:
+        current_photo_url = _build_photo_url(detail.get("photo_path"), external=True)
+    else:
+        current_detail = get_transaction_detail(transaction_id)
+        current_photo_url = _build_photo_url((current_detail or {}).get("photo_path"), external=True)
+
+    if current_photo_url:
+        key = ("🖼️ Foto Transaksi", current_photo_url)
+        seen_keys.add(key)
+        links.append({"text": key[0], "url": key[1]})
+
+    previous_index = 0
+    for row in list_transaction_previous_single_guest_photos(transaction_id):
+        previous_photo_url = _build_photo_url(row.get("previous_photo_path"), external=True)
+        if not previous_photo_url:
+            continue
+        if current_photo_url and previous_photo_url == current_photo_url:
+            continue
+        next_index = previous_index + 1
+        text = _format_guest_photo_button_label(next_index, row.get("guest_name"))
+        key = (text, previous_photo_url)
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        links.append({"text": text, "url": previous_photo_url})
+        previous_index = next_index
+
+    return links
 
 
 def _format_date_dmy(value: Optional[datetime | date]) -> str:
@@ -1247,6 +1343,15 @@ def admin_transaction_approve(transaction_id: int) -> Response:
         ok = False
     if not ok:
         return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
+    try:
+        _notify_guestbook_status_change(
+            transaction_id=transaction_id,
+            status="approved",
+            actor=user,
+            is_public=False,
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu.")
     return jsonify({"success": True})
 
 
@@ -1268,6 +1373,15 @@ def admin_transaction_reject(transaction_id: int) -> Response:
         ok = False
     if not ok:
         return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
+    try:
+        _notify_guestbook_status_change(
+            transaction_id=transaction_id,
+            status="rejected",
+            actor=user,
+            is_public=False,
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu.")
     return jsonify({"success": True})
 
 
@@ -1319,6 +1433,15 @@ def admin_bulk_approve_transactions() -> Response:
             ok = False
         if ok:
             success_count += 1
+            try:
+                _notify_guestbook_status_change(
+                    transaction_id=tx_id,
+                    status="approved",
+                    actor=user,
+                    is_public=False,
+                )
+            except Exception:
+                current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu.")
 
     if success_count:
         flash(f"{success_count} transaksi berhasil disetujui.", "success")
@@ -1361,6 +1484,15 @@ def admin_bulk_reject_transactions() -> Response:
             ok = False
         if ok:
             success_count += 1
+            try:
+                _notify_guestbook_status_change(
+                    transaction_id=tx_id,
+                    status="rejected",
+                    actor=user,
+                    is_public=False,
+                )
+            except Exception:
+                current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu.")
 
     if success_count:
         flash(f"{success_count} transaksi berhasil ditolak.", "success")
@@ -1674,6 +1806,15 @@ def admin_public_transaction_approve(transaction_id: int) -> Response:
         ok = False
     if not ok:
         return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
+    try:
+        _notify_guestbook_status_change(
+            transaction_id=transaction_id,
+            status="approved",
+            actor=user,
+            is_public=True,
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu umum.")
     return redirect(url_for("daftar_tamu.admin_public_transactions"))
 
 
@@ -1695,6 +1836,15 @@ def admin_public_transaction_reject(transaction_id: int) -> Response:
         ok = False
     if not ok:
         return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
+    try:
+        _notify_guestbook_status_change(
+            transaction_id=transaction_id,
+            status="rejected",
+            actor=user,
+            is_public=True,
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu umum.")
     return redirect(url_for("daftar_tamu.admin_public_transactions"))
 
 
@@ -1827,6 +1977,76 @@ def sekolah_public_web() -> Response:
         public_total_pages=public_total_pages,
         error_message=None,
     )
+
+
+@daftar_tamu_bp.route("/sekolah/umum-web/export")
+@role_required("sekolah")
+def sekolah_public_web_export() -> Response:
+    """Export school public guestbook submissions (verified only)."""
+    user = current_user()
+    school = _fetch_school_for_user(user["id"])
+    if not school:
+        return Response("Akun sekolah belum terhubung dengan data sekolah.", status=400)
+
+    # Verified rows in this workflow are transactions that have been approved.
+    status_filter = "approved"
+    per_page = 100
+    rows, total_rows = list_school_public_transactions(
+        school_id=school["id"],
+        status=status_filter,
+        page=1,
+        per_page=per_page,
+    )
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if total_pages > 1:
+        for page in range(2, total_pages + 1):
+            page_rows, _ = list_school_public_transactions(
+                school_id=school["id"],
+                status=status_filter,
+                page=page,
+                per_page=per_page,
+            )
+            rows.extend(page_rows)
+
+    headers = [
+        "Tanggal Kunjungan",
+        "Jam Kunjungan",
+        "Nama Tamu",
+        "Jumlah Tamu",
+        "Tujuan",
+        "Status Verifikasi",
+        "Catatan Verifikator",
+    ]
+    data_rows: list[list[object]] = []
+    for row in rows:
+        visit_at = row.get("visit_at")
+        visit_date = ""
+        visit_time = ""
+        if isinstance(visit_at, datetime):
+            visit_date = visit_at.strftime("%d/%m/%Y")
+            visit_time = visit_at.strftime("%H:%M")
+        elif isinstance(visit_at, date):
+            visit_date = visit_at.strftime("%d/%m/%Y")
+        data_rows.append(
+            [
+                visit_date,
+                visit_time,
+                row.get("guest_names") or row.get("guest_display") or "",
+                row.get("guest_count") or 0,
+                row.get("purpose") or "",
+                "Disetujui",
+                row.get("reviewer_notes") or "",
+            ]
+        )
+
+    file_format = (request.args.get("format") or "excel").strip().lower()
+    school_npsn = (school.get("npsn") or "sekolah").strip()
+    if file_format in {"excel", "xlsx"}:
+        filename = f"daftar_tamu_umum_terverifikasi_{school_npsn}_{date.today().isoformat()}.xlsx"
+        return _build_xlsx_response(headers, data_rows, filename)
+
+    filename = f"daftar_tamu_umum_terverifikasi_{school_npsn}_{date.today().isoformat()}.csv"
+    return _build_csv_response(headers, data_rows, filename)
 
 
 @daftar_tamu_bp.route("/sekolah/riwayat")
@@ -2049,6 +2269,15 @@ def sekolah_approve_public_transaction(transaction_id: int) -> Response:
     )
     if not success:
         return jsonify({"success": False, "message": "Transaksi tidak ditemukan."}), 404
+    try:
+        _notify_guestbook_status_change(
+            transaction_id=transaction_id,
+            status="approved",
+            actor=user,
+            is_public=True,
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu umum.")
     return redirect(url_for("daftar_tamu.sekolah_public_web", _anchor="publicGuestbook"))
 
 
@@ -2069,6 +2298,15 @@ def sekolah_reject_public_transaction(transaction_id: int) -> Response:
     )
     if not success:
         return jsonify({"success": False, "message": "Transaksi tidak ditemukan."}), 404
+    try:
+        _notify_guestbook_status_change(
+            transaction_id=transaction_id,
+            status="rejected",
+            actor=user,
+            is_public=True,
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu umum.")
     return redirect(url_for("daftar_tamu.sekolah_public_web", _anchor="publicGuestbook"))
 
 
@@ -2107,6 +2345,15 @@ def sekolah_bulk_approve_public_transactions() -> Response:
             ok = False
         if ok:
             success_count += 1
+            try:
+                _notify_guestbook_status_change(
+                    transaction_id=tx_id,
+                    status="approved",
+                    actor=user,
+                    is_public=True,
+                )
+            except Exception:
+                current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu umum.")
 
     if success_count:
         flash(f"{success_count} pengajuan berhasil disetujui.", "success")
@@ -2486,19 +2733,13 @@ def sekolah_create_transaction() -> Response:
             from dashboard.telegram_notifications import notify_guestbook_request
 
             detail = get_transaction_detail(transaction_id)
-            photo_url = None
+            photo_links = _build_guestbook_photo_links(
+                transaction_id=transaction_id,
+                detail=detail,
+            )
             guest_summary = None
 
             if detail:
-                photo_path = detail.get("photo_path")
-                if photo_path:
-                    photo_name = photo_path.split("uploads/portal/")[-1]
-                    photo_url = url_for(
-                        "portal.uploaded_file",
-                        filename=photo_name,
-                        _external=True,
-                    )
-
                 guests = detail.get("guests") or []
                 guest_names = [
                     (g.get("full_name") or "").strip()
@@ -2519,7 +2760,7 @@ def sekolah_create_transaction() -> Response:
                 guest_summary=guest_summary,
                 purpose=purpose or None,
                 notes=notes or None,
-                photo_url=photo_url,
+                photo_links=photo_links,
             )
         except Exception:
             current_app.logger.exception("Gagal mengirim notifikasi buku tamu.")

@@ -15,6 +15,7 @@ from dashboard.queries import (
     update_dashboard_user,
 )
 from dashboard.portal.queries import fetch_activity_logs, get_school_by_id, list_kecamatan, log_activity
+from dashboard.telegram_notifications import notify_verification_status_update
 
 
 def _slugify(value: str) -> str:
@@ -181,6 +182,22 @@ def handle_manage_users(*, actor: Optional[dict], base_template: str) -> Respons
                         if reviewer_note:
                             details["reviewer_note"] = reviewer_note
                         log_activity(actor_id, "UPDATE", "USER", int(user_id), full_name or email, details)
+                        normalized_status = (account_status or "").strip().lower()
+                        if normalized_status in {"approved", "rejected"}:
+                            status_label = "✅ Disetujui" if normalized_status == "approved" else "❌ Ditolak"
+                            actor_name = (actor or {}).get("full_name") or (actor or {}).get("email")
+                            try:
+                                notify_verification_status_update(
+                                    user_id=int(user_id),
+                                    full_name=full_name or None,
+                                    status_label=status_label,
+                                    actor_name=actor_name,
+                                    actor_username=None,
+                                )
+                            except Exception:
+                                current_app.logger.exception(
+                                    "Gagal mengirim notifikasi Telegram untuk update verifikasi akun."
+                                )
                     if wants_json:
                         status_code = 200 if updated else 400
                         return jsonify(

@@ -2046,6 +2046,60 @@ def get_transaction_detail(transaction_id: int) -> Optional[Dict[str, Any]]:
     return detail
 
 
+def list_transaction_previous_single_guest_photos(transaction_id: int) -> List[Dict[str, Any]]:
+    """List previous photo path per current guest, only from single-guest transactions."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH current_guests AS (
+                SELECT
+                    g.user_id,
+                    g.general_guest_id,
+                    MIN(g.id) AS guest_order
+                FROM daftar_tamu_transaction_guests g
+                WHERE g.transaction_id = %s
+                  AND (g.user_id IS NOT NULL OR g.general_guest_id IS NOT NULL)
+                GROUP BY g.user_id, g.general_guest_id
+            )
+            SELECT
+                cg.user_id,
+                cg.general_guest_id,
+                cg.guest_order,
+                COALESCE(u.full_name, gg.full_name, 'Tamu') AS guest_name,
+                prev.photo_path AS previous_photo_path
+            FROM current_guests cg
+            LEFT JOIN dashboard_users u ON u.id = cg.user_id
+            LEFT JOIN daftar_tamu_general_guests gg ON gg.id = cg.general_guest_id
+            LEFT JOIN LATERAL (
+                SELECT t.photo_path
+                FROM daftar_tamu_transactions t
+                JOIN daftar_tamu_transaction_guests g_prev ON g_prev.transaction_id = t.id
+                WHERE t.id <> %s
+                  AND t.photo_path IS NOT NULL
+                  AND (
+                        (cg.user_id IS NOT NULL AND g_prev.user_id = cg.user_id)
+                        OR (
+                            cg.general_guest_id IS NOT NULL
+                            AND g_prev.general_guest_id = cg.general_guest_id
+                        )
+                  )
+                  AND (
+                        SELECT COUNT(*)
+                        FROM daftar_tamu_transaction_guests g_count
+                        WHERE g_count.transaction_id = t.id
+                          AND (g_count.user_id IS NOT NULL OR g_count.general_guest_id IS NOT NULL)
+                  ) = 1
+                ORDER BY t.visit_at DESC, t.id DESC
+                LIMIT 1
+            ) prev ON TRUE
+            ORDER BY cg.guest_order ASC, cg.user_id, cg.general_guest_id
+            """,
+            (transaction_id, transaction_id),
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+    return rows
+
+
 def update_transaction_status(
     *,
     transaction_id: int,

@@ -87,24 +87,30 @@
                         <h2 class="h6 fw-bold mb-0">Pengajuan Tamu Umum (web_aska)</h2>
                         <small class="text-muted">Verifikasi pengajuan tamu umum dari web_aska.</small>
                     </div>
-                    <form method="get" class="d-flex gap-2">
-                        <select name="public_status" class="form-select form-select-sm">
-                            <option value="" {% if public_status=='' %}selected{% endif %}>Semua status</option>
-                            <option value="pending" {% if public_status=='pending' %}selected{% endif %}>Menunggu
-                            </option>
-                            <option value="approved" {% if public_status=='approved' %}selected{% endif %}>Disetujui
-                            </option>
-                            <option value="rejected" {% if public_status=='rejected' %}selected{% endif %}>Ditolak
-                            </option>
-                        </select>
-                        <select name="public_per_page" class="form-select form-select-sm">
-                            {% for size in [5, 10, 20, 50, 100] %}
-                            <option value="{{ size }}" {% if public_per_page==size %}selected{% endif %}>{{ size }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                        <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
-                    </form>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <a class="btn btn-sm btn-outline-success"
+                            href="{{ url_for('daftar_tamu.sekolah_public_web_export', format='excel') }}">
+                            <i class="bi bi-file-earmark-excel me-1"></i>Download Excel (Terverifikasi)
+                        </a>
+                        <form method="get" class="d-flex gap-2">
+                            <select name="public_status" class="form-select form-select-sm">
+                                <option value="" {% if public_status=='' %}selected{% endif %}>Semua status</option>
+                                <option value="pending" {% if public_status=='pending' %}selected{% endif %}>Menunggu
+                                </option>
+                                <option value="approved" {% if public_status=='approved' %}selected{% endif %}>Disetujui
+                                </option>
+                                <option value="rejected" {% if public_status=='rejected' %}selected{% endif %}>Ditolak
+                                </option>
+                            </select>
+                            <select name="public_per_page" class="form-select form-select-sm">
+                                {% for size in [5, 10, 20, 50, 100] %}
+                                <option value="{{ size }}" {% if public_per_page==size %}selected{% endif %}>{{ size }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                        </form>
+                    </div>
                 </div>
                 <form method="post" action="{{ url_for('daftar_tamu.sekolah_bulk_approve_public_transactions') }}"
                     id="bulkApproveForm">

@@ -152,6 +152,42 @@ def notify_verification_status_update(
     )
 
 
+def _normalize_guestbook_photo_links(
+    *,
+    photo_links: Optional[List[Dict[str, str]]] = None,
+    photo_url: Optional[str] = None,
+    previous_photo_url: Optional[str] = None,
+) -> List[Dict[str, str]]:
+    normalized: List[Dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+
+    candidates: list[dict] = []
+    if photo_links:
+        candidates.extend(photo_links)
+    else:
+        if photo_url:
+            candidates.append({"text": "🖼️ Foto Transaksi", "url": photo_url})
+        if previous_photo_url:
+            candidates.append({"text": "🕘 Foto Sebelumnya", "url": previous_photo_url})
+
+    for item in candidates:
+        text = str((item or {}).get("text") or "").strip()
+        url = str((item or {}).get("url") or "").strip()
+        if not url:
+            continue
+        if not text:
+            text = "🖼️ Lihat Foto"
+        if len(text) > 64:
+            text = f"{text[:61]}..."
+        key = (text, url)
+        if key in seen:
+            continue
+        seen.add(key)
+        normalized.append({"text": text, "url": url})
+
+    return normalized
+
+
 def notify_guestbook_status_update(
     *,
     transaction_id: int,
@@ -159,7 +195,9 @@ def notify_guestbook_status_update(
     status_label: str,
     actor_name: Optional[str],
     actor_username: Optional[str],
+    photo_links: Optional[List[Dict[str, str]]] = None,
     photo_url: Optional[str] = None,
+    previous_photo_url: Optional[str] = None,
     exclude_chat_ids: Optional[Set[int]] = None,
 ) -> Dict[str, Any]:
     actor_display = "-"
@@ -184,14 +222,202 @@ def notify_guestbook_status_update(
         lines.append(f"Waktu: {time_label}")
 
     reply_markup = None
-    if photo_url:
-        reply_markup = {"inline_keyboard": [[{"text": "🖼️ Lihat Foto", "url": photo_url}]]}
+    photo_buttons = _normalize_guestbook_photo_links(
+        photo_links=photo_links,
+        photo_url=photo_url,
+        previous_photo_url=previous_photo_url,
+    )
+    if photo_buttons:
+        reply_markup = {"inline_keyboard": [[button] for button in photo_buttons]}
 
     return _broadcast_notification(
         text="\n".join(lines),
         reply_markup=reply_markup,
         exclude_chat_ids=exclude_chat_ids,
     )
+
+
+def _actor_display(actor_name: Optional[str], actor_username: Optional[str]) -> str:
+    if actor_name and actor_username:
+        return f"{actor_name} (@{actor_username})"
+    if actor_name:
+        return actor_name
+    if actor_username:
+        return f"@{actor_username}"
+    return "-"
+
+
+def _time_label() -> str:
+    timestamp = to_jakarta(current_jakarta_time())
+    return timestamp.strftime("%d %b %Y, %H:%M") if timestamp else ""
+
+
+def notify_reopen_request(
+    *,
+    request_id: int,
+    assessment_id: int,
+    school_name: Optional[str],
+    period_name: Optional[str],
+    staff_name: Optional[str],
+    requested_by_name: Optional[str],
+    reason: Optional[str],
+) -> Dict[str, Any]:
+    lines = [
+        "Permintaan reopen penilaian",
+        f"Request ID: {request_id}",
+        f"Assessment ID: {assessment_id}",
+        f"Sekolah: {school_name or '-'}",
+        f"Periode: {period_name or '-'}",
+        f"Pengaju: {requested_by_name or staff_name or '-'}",
+    ]
+    clean_reason = (reason or "").strip()
+    if clean_reason:
+        lines.append(f"Alasan: {clean_reason}")
+    time_label = _time_label()
+    if time_label:
+        lines.append(f"Waktu: {time_label}")
+    return _broadcast_notification(text="\n".join(lines))
+
+
+def notify_reopen_status_update(
+    *,
+    request_id: int,
+    assessment_id: int,
+    school_name: Optional[str],
+    period_name: Optional[str],
+    staff_name: Optional[str],
+    status_label: str,
+    actor_name: Optional[str],
+    actor_username: Optional[str],
+    reviewer_note: Optional[str] = None,
+) -> Dict[str, Any]:
+    lines = [
+        "Update permintaan reopen penilaian",
+        f"Request ID: {request_id}",
+        f"Assessment ID: {assessment_id}",
+        f"Sekolah: {school_name or '-'}",
+        f"Periode: {period_name or '-'}",
+        f"Assessor: {staff_name or '-'}",
+        f"Status: {status_label}",
+        f"Diverifikasi oleh: {_actor_display(actor_name, actor_username)}",
+    ]
+    clean_note = (reviewer_note or "").strip()
+    if clean_note:
+        lines.append(f"Catatan: {clean_note}")
+    time_label = _time_label()
+    if time_label:
+        lines.append(f"Waktu: {time_label}")
+    return _broadcast_notification(text="\n".join(lines))
+
+
+def notify_assignment_request(
+    *,
+    request_id: int,
+    coordinator_name: Optional[str],
+    staff_name: Optional[str],
+    school_name: Optional[str],
+    period_name: Optional[str],
+    note: Optional[str] = None,
+) -> Dict[str, Any]:
+    lines = [
+        "Permintaan penugasan monev",
+        f"Request ID: {request_id}",
+        f"Koordinator: {coordinator_name or '-'}",
+        f"Staff: {staff_name or '-'}",
+        f"Sekolah: {school_name or '-'}",
+        f"Periode: {period_name or '-'}",
+    ]
+    clean_note = (note or "").strip()
+    if clean_note:
+        lines.append(f"Catatan: {clean_note}")
+    time_label = _time_label()
+    if time_label:
+        lines.append(f"Waktu: {time_label}")
+    return _broadcast_notification(text="\n".join(lines))
+
+
+def notify_assignment_request_status_update(
+    *,
+    request_id: int,
+    coordinator_name: Optional[str],
+    staff_name: Optional[str],
+    school_name: Optional[str],
+    period_name: Optional[str],
+    status_label: str,
+    actor_name: Optional[str],
+    actor_username: Optional[str],
+    reviewer_note: Optional[str] = None,
+) -> Dict[str, Any]:
+    lines = [
+        "Update permintaan penugasan monev",
+        f"Request ID: {request_id}",
+        f"Koordinator: {coordinator_name or '-'}",
+        f"Staff: {staff_name or '-'}",
+        f"Sekolah: {school_name or '-'}",
+        f"Periode: {period_name or '-'}",
+        f"Status: {status_label}",
+        f"Diverifikasi oleh: {_actor_display(actor_name, actor_username)}",
+    ]
+    clean_note = (reviewer_note or "").strip()
+    if clean_note:
+        lines.append(f"Catatan: {clean_note}")
+    time_label = _time_label()
+    if time_label:
+        lines.append(f"Waktu: {time_label}")
+    return _broadcast_notification(text="\n".join(lines))
+
+
+def notify_team_member_request(
+    *,
+    request_id: int,
+    team_name: Optional[str],
+    staff_name: Optional[str],
+    requested_by_name: Optional[str],
+    note: Optional[str] = None,
+) -> Dict[str, Any]:
+    lines = [
+        "Permintaan anggota tim monev",
+        f"Request ID: {request_id}",
+        f"Tim: {team_name or '-'}",
+        f"Staff: {staff_name or '-'}",
+        f"Pengaju: {requested_by_name or '-'}",
+    ]
+    clean_note = (note or "").strip()
+    if clean_note:
+        lines.append(f"Catatan: {clean_note}")
+    time_label = _time_label()
+    if time_label:
+        lines.append(f"Waktu: {time_label}")
+    return _broadcast_notification(text="\n".join(lines))
+
+
+def notify_team_member_request_status_update(
+    *,
+    request_id: int,
+    team_name: Optional[str],
+    staff_name: Optional[str],
+    requested_by_name: Optional[str],
+    status_label: str,
+    actor_name: Optional[str],
+    actor_username: Optional[str],
+    reviewer_note: Optional[str] = None,
+) -> Dict[str, Any]:
+    lines = [
+        "Update permintaan anggota tim monev",
+        f"Request ID: {request_id}",
+        f"Tim: {team_name or '-'}",
+        f"Staff: {staff_name or '-'}",
+        f"Pengaju: {requested_by_name or '-'}",
+        f"Status: {status_label}",
+        f"Diverifikasi oleh: {_actor_display(actor_name, actor_username)}",
+    ]
+    clean_note = (reviewer_note or "").strip()
+    if clean_note:
+        lines.append(f"Catatan: {clean_note}")
+    time_label = _time_label()
+    if time_label:
+        lines.append(f"Waktu: {time_label}")
+    return _broadcast_notification(text="\n".join(lines))
 
 
 def _build_verification_keyboard(user_id: int) -> dict:
@@ -207,7 +433,9 @@ def _build_verification_keyboard(user_id: int) -> dict:
 
 def _build_guestbook_keyboard(
     transaction_id: int,
-    photo_url: Optional[str],
+    photo_links: Optional[List[Dict[str, str]]] = None,
+    photo_url: Optional[str] = None,
+    previous_photo_url: Optional[str] = None,
 ) -> Optional[dict]:
     keyboard: list[list[dict]] = []
     if transaction_id:
@@ -217,8 +445,13 @@ def _build_guestbook_keyboard(
                 {"text": "❌ Tolak", "callback_data": f"guestbook:reject:{transaction_id}"},
             ]
         )
-    if photo_url:
-        keyboard.append([{"text": "🖼️ Lihat Foto", "url": photo_url}])
+    photo_buttons = _normalize_guestbook_photo_links(
+        photo_links=photo_links,
+        photo_url=photo_url,
+        previous_photo_url=previous_photo_url,
+    )
+    for button in photo_buttons:
+        keyboard.append([button])
     if not keyboard:
         return None
     return {"inline_keyboard": keyboard}
@@ -364,7 +597,9 @@ def notify_guestbook_request(
     guest_summary: Optional[str],
     purpose: Optional[str],
     notes: Optional[str],
-    photo_url: Optional[str],
+    photo_links: Optional[List[Dict[str, str]]] = None,
+    photo_url: Optional[str] = None,
+    previous_photo_url: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Send Telegram notification for pending guestbook transaction."""
     token = _resolve_bot_token()
@@ -397,7 +632,12 @@ def notify_guestbook_request(
     lines.append("")
     message = "\n".join(lines)
 
-    reply_markup = _build_guestbook_keyboard(transaction_id, photo_url)
+    reply_markup = _build_guestbook_keyboard(
+        transaction_id,
+        photo_links=photo_links,
+        photo_url=photo_url,
+        previous_photo_url=previous_photo_url,
+    )
 
     sent = 0
     missing: List[str] = []

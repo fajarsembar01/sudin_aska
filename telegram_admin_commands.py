@@ -29,6 +29,17 @@ def _normalize_username(username: Optional[str]) -> Optional[str]:
     return cleaned or None
 
 
+def _status_label(status: Optional[str]) -> str:
+    normalized = (status or "").strip().lower()
+    if normalized == "approved":
+        return "✅ Disetujui"
+    if normalized == "rejected":
+        return "❌ Ditolak"
+    if normalized == "pending":
+        return "⏳ Menunggu"
+    return normalized or "-"
+
+
 def _log_command(update: Update, text: str) -> None:
     user = update.effective_user
     if not user:
@@ -37,10 +48,60 @@ def _log_command(update: Update, text: str) -> None:
     save_chat(user.id, username, text, role="user", topic=None)
 
 
+def _log_bot_message(user_id: Optional[int], username: Optional[str], text: Optional[str]) -> None:
+    if user_id is None:
+        return
+    message_text = (text or "").strip()
+    if not message_text:
+        return
+    safe_username = (username or "").strip() or "admin"
+    logger = logging.getLogger("telegram.admin")
+    try:
+        save_chat(user_id, safe_username, message_text, role="aska", topic=None)
+    except Exception:
+        logger.exception("Gagal menyimpan log balasan bot.")
+
+
+def _log_verification_activity(
+    *,
+    admin_user_id: Optional[int],
+    user_id: int,
+    full_name: Optional[str],
+    status: str,
+    reviewer_note: Optional[str] = None,
+) -> None:
+    logger = logging.getLogger("telegram.admin")
+    details = {
+        "account_status": status,
+        "info": "verify",
+        "verification_source": "telegram_bot",
+    }
+    clean_note = (reviewer_note or "").strip()
+    if clean_note:
+        details["reviewer_note"] = clean_note
+    try:
+        from dashboard.portal.queries import log_activity
+
+        log_activity(
+            admin_user_id,
+            "UPDATE",
+            "USER",
+            user_id,
+            full_name or str(user_id),
+            details,
+        )
+    except Exception:
+        logger.exception("Gagal mencatat activity log verifikasi Telegram.")
+
+
 async def _reply(update: Update, text: str) -> None:
     message = update.effective_message
     if message:
         await message.reply_text(text)
+    user = update.effective_user
+    if user:
+        username = user.username or user.first_name or "admin"
+        _log_bot_message(user.id, username, text)
 
 
 async def _finalize_callback(
@@ -55,6 +116,13 @@ async def _finalize_callback(
 ) -> None:
     logger = logging.getLogger("telegram.admin")
     message = query.message
+    callback_user = getattr(query, "from_user", None)
+    callback_user_id = getattr(callback_user, "id", None)
+    callback_username = (
+        getattr(callback_user, "username", None)
+        or getattr(callback_user, "first_name", None)
+        or "admin"
+    )
     if actor_name and actor_username:
         suffix_actor = f" oleh {actor_name} (@{actor_username})"
     elif actor_name:
@@ -77,6 +145,7 @@ async def _finalize_callback(
     if message:
         try:
             await message.reply_text(final_text, reply_markup=reply_markup)
+            _log_bot_message(callback_user_id, callback_username, final_text)
             try:
                 await message.delete()
             except Exception:
@@ -89,6 +158,7 @@ async def _finalize_callback(
     if message and message.text:
         try:
             await query.edit_message_text(final_text, reply_markup=reply_markup)
+            _log_bot_message(callback_user_id, callback_username, final_text)
             return
         except Exception:
             logger.exception("Gagal edit pesan callback.")
@@ -101,6 +171,7 @@ async def _finalize_callback(
         pass
     if message:
         await message.reply_text(final_text, reply_markup=reply_markup)
+        _log_bot_message(callback_user_id, callback_username, final_text)
 
 
 def _extract_photo_button_markup(
@@ -128,20 +199,28 @@ def _extract_photo_button_markup(
     return InlineKeyboardMarkup(photo_rows)
 
 
-def _extract_photo_url(
+def _extract_guestbook_photo_links(
     existing_markup: Optional[InlineKeyboardMarkup],
-) -> Optional[str]:
+) -> list[dict]:
     if not existing_markup:
-        return None
+        return []
+    links: list[dict] = []
+    seen: set[tuple[str, str]] = set()
     for row in existing_markup.inline_keyboard or []:
         for button in row:
             text = (getattr(button, "text", None) or "").strip()
             url = (getattr(button, "url", None) or "").strip()
             if not text or not url:
                 continue
-            if "foto" in text.lower() or "photo" in text.lower():
-                return url
-    return None
+            lowered = text.lower()
+            if "foto" not in lowered and "photo" not in lowered:
+                continue
+            key = (text, url)
+            if key in seen:
+                continue
+            seen.add(key)
+            links.append({"text": text, "url": url})
+    return links
 
 
 def _authorize_admin(update: Update) -> Optional[dict]:
@@ -208,8 +287,12 @@ async def admin_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         await _reply(update, "User tidak ditemukan.")
         return
 
-    if user.get("account_status") == "approved":
-        await _reply(update, "User sudah disetujui sebelumnya.")
+    current_status = (user.get("account_status") or "").strip().lower()
+    if current_status in {"approved", "rejected"}:
+        await _reply(update, f"User sudah diproses sebelumnya ({_status_label(current_status)}).")
+        return
+    if current_status and current_status != "pending":
+        await _reply(update, f"Status user saat ini {_status_label(current_status)}.")
         return
 
     try:
@@ -225,6 +308,32 @@ async def admin_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         return
 
     if updated:
+        actor_username = _normalize_username(getattr(update.effective_user, "username", None))
+        actor_name = admin.get("admin_name") or admin.get("admin_email")
+        source_chat = update.effective_chat
+        exclude_chat_ids = (
+            {int(source_chat.id)}
+            if source_chat and getattr(source_chat, "id", None) is not None
+            else None
+        )
+        try:
+            notify_verification_status_update(
+                user_id=user_id,
+                full_name=user.get("full_name"),
+                status_label="✅ Disetujui",
+                actor_name=actor_name,
+                actor_username=actor_username,
+                exclude_chat_ids=exclude_chat_ids,
+            )
+        except Exception:
+            logger.exception("Gagal mengirim broadcast approve via command.")
+        _log_verification_activity(
+            admin_user_id=admin.get("dashboard_user_id"),
+            user_id=user_id,
+            full_name=user.get("full_name"),
+            status="approved",
+            reviewer_note=note,
+        )
         await _reply(update, f"✅ User {user.get('full_name') or user_id} telah disetujui.")
     else:
         await _reply(update, "Status user tidak berubah.")
@@ -256,8 +365,12 @@ async def admin_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await _reply(update, "User tidak ditemukan.")
         return
 
-    if user.get("account_status") == "rejected":
-        await _reply(update, "User sudah ditolak sebelumnya.")
+    current_status = (user.get("account_status") or "").strip().lower()
+    if current_status in {"approved", "rejected"}:
+        await _reply(update, f"User sudah diproses sebelumnya ({_status_label(current_status)}).")
+        return
+    if current_status and current_status != "pending":
+        await _reply(update, f"Status user saat ini {_status_label(current_status)}.")
         return
 
     try:
@@ -273,6 +386,32 @@ async def admin_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
 
     if updated:
+        actor_username = _normalize_username(getattr(update.effective_user, "username", None))
+        actor_name = admin.get("admin_name") or admin.get("admin_email")
+        source_chat = update.effective_chat
+        exclude_chat_ids = (
+            {int(source_chat.id)}
+            if source_chat and getattr(source_chat, "id", None) is not None
+            else None
+        )
+        try:
+            notify_verification_status_update(
+                user_id=user_id,
+                full_name=user.get("full_name"),
+                status_label="❌ Ditolak",
+                actor_name=actor_name,
+                actor_username=actor_username,
+                exclude_chat_ids=exclude_chat_ids,
+            )
+        except Exception:
+            logger.exception("Gagal mengirim broadcast reject via command.")
+        _log_verification_activity(
+            admin_user_id=admin.get("dashboard_user_id"),
+            user_id=user_id,
+            full_name=user.get("full_name"),
+            status="rejected",
+            reviewer_note=note,
+        )
         await _reply(update, f"❌ User {user.get('full_name') or user_id} telah ditolak.")
     else:
         await _reply(update, "Status user tidak berubah.")
@@ -374,6 +513,32 @@ async def handle_verification_callback(update: Update, context: ContextTypes.DEF
             await query.answer("User tidak ditemukan.", show_alert=True)
             return
 
+        current_status = (user.get("account_status") or "").strip().lower()
+        if current_status in {"approved", "rejected"}:
+            label = _status_label(current_status)
+            await query.answer(f"User sudah {label}.", show_alert=True)
+            await _finalize_callback(
+                query,
+                label,
+                None,
+                None,
+                summary_text=f"Permintaan verifikasi akun ID {user_id} sudah diproses sebelumnya.",
+                detail_lines=[f"Nama: {user.get('full_name') or '-'}"],
+            )
+            return
+        if current_status and current_status != "pending":
+            label = _status_label(current_status)
+            await query.answer("User tidak dalam status pending.", show_alert=True)
+            await _finalize_callback(
+                query,
+                label,
+                None,
+                None,
+                summary_text=f"Permintaan verifikasi akun ID {user_id} tidak bisa diproses.",
+                detail_lines=[f"Nama: {user.get('full_name') or '-'}"],
+            )
+            return
+
         try:
             if action == "approve":
                 updated = update_dashboard_user_verification(
@@ -406,6 +571,14 @@ async def handle_verification_callback(update: Update, context: ContextTypes.DEF
         actor_username = _normalize_username(getattr(query.from_user, "username", None))
         actor_name = admin.get("admin_name") or admin.get("admin_email")
         source_chat_id = getattr(query.message, "chat_id", None)
+        verification_status = "approved" if action == "approve" else "rejected"
+        _log_verification_activity(
+            admin_user_id=admin.get("dashboard_user_id"),
+            user_id=user_id,
+            full_name=user.get("full_name"),
+            status=verification_status,
+            reviewer_note=note,
+        )
         await query.answer(f"{status_label}!", show_alert=False)
         try:
             notify_verification_status_update(
@@ -470,10 +643,21 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
             await query.answer("Transaksi tidak ditemukan.", show_alert=True)
             return
 
+        existing_markup = getattr(query.message, "reply_markup", None)
+        photo_markup = _extract_photo_button_markup(existing_markup)
         current_status = (detail.get("status") or "").strip().lower()
         if current_status in {"approved", "rejected"}:
             label = "✅ Disetujui" if current_status == "approved" else "❌ Ditolak"
             await query.answer(f"Transaksi sudah {label}.", show_alert=True)
+            await _finalize_callback(
+                query,
+                label,
+                None,
+                None,
+                summary_text=f"Permintaan verifikasi buku tamu ID {tx_id} sudah diproses sebelumnya.",
+                detail_lines=[f"Sekolah: {detail.get('school_name') or '-'}"],
+                reply_markup=photo_markup,
+            )
             return
 
         note = None
@@ -512,9 +696,7 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
         actor_username = _normalize_username(getattr(query.from_user, "username", None))
         actor_name = admin.get("admin_name") or admin.get("admin_email")
         source_chat_id = getattr(query.message, "chat_id", None)
-        existing_markup = getattr(query.message, "reply_markup", None)
-        photo_markup = _extract_photo_button_markup(existing_markup)
-        photo_url = _extract_photo_url(existing_markup)
+        photo_links = _extract_guestbook_photo_links(existing_markup)
         await query.answer(f"{status_label}!", show_alert=False)
         try:
             notify_guestbook_status_update(
@@ -523,7 +705,7 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
                 status_label=status_label,
                 actor_name=actor_name,
                 actor_username=actor_username,
-                photo_url=photo_url,
+                photo_links=photo_links,
                 exclude_chat_ids={int(source_chat_id)} if source_chat_id is not None else None,
             )
         except Exception:

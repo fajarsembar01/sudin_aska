@@ -139,6 +139,14 @@ from dashboard.queries import (
     get_team_member_request,
     get_available_staff,
 )
+from dashboard.telegram_notifications import (
+    notify_assignment_request,
+    notify_assignment_request_status_update,
+    notify_reopen_request,
+    notify_reopen_status_update,
+    notify_team_member_request,
+    notify_team_member_request_status_update,
+)
 
 
 def _get_room_aspects(room_id: int) -> list[dict]:
@@ -1814,6 +1822,20 @@ def request_reopen(assessment_id: int) -> Response:
             assessment.get("school_name") or f"Assessment {assessment_id}",
             details,
         )
+        request_row_id = request_row.get("id") if request_row else None
+        if request_row_id is not None:
+            try:
+                notify_reopen_request(
+                    request_id=int(request_row_id),
+                    assessment_id=assessment_id,
+                    school_name=assessment.get("school_name"),
+                    period_name=assessment.get("period_name"),
+                    staff_name=assessment.get("assessor_name"),
+                    requested_by_name=user.get("full_name") or user.get("email"),
+                    reason=reason,
+                )
+            except Exception:
+                current_app.logger.exception("Gagal mengirim notifikasi Telegram permintaan reopen.")
         flash("Permintaan reopen dikirim. Menunggu persetujuan admin.", "success")
     except Exception as e:
         current_app.logger.exception("Error creating reopen request")
@@ -1872,6 +1894,21 @@ def approve_reopen(assessment_id: int) -> Response:
                 assessment.get("school_name") if assessment else f"Assessment {assessment_id}",
                 details,
             )
+            try:
+                actor = current_user() or {}
+                notify_reopen_status_update(
+                    request_id=request_id,
+                    assessment_id=assessment_id,
+                    school_name=assessment.get("school_name") if assessment else None,
+                    period_name=assessment.get("period_name") if assessment else None,
+                    staff_name=assessment.get("assessor_name") if assessment else None,
+                    status_label="✅ Disetujui",
+                    actor_name=actor.get("full_name") or actor.get("email"),
+                    actor_username=None,
+                    reviewer_note=note,
+                )
+            except Exception:
+                current_app.logger.exception("Gagal mengirim notifikasi Telegram status reopen.")
             flash("Reopen disetujui dan penilaian dibuka kembali.", "success")
             success = True
         else:
@@ -1943,6 +1980,21 @@ def reject_reopen(assessment_id: int) -> Response:
                 assessment.get("school_name") if assessment else f"Assessment {assessment_id}",
                 details,
             )
+            try:
+                actor = current_user() or {}
+                notify_reopen_status_update(
+                    request_id=request_id,
+                    assessment_id=assessment_id,
+                    school_name=assessment.get("school_name") if assessment else None,
+                    period_name=assessment.get("period_name") if assessment else None,
+                    staff_name=assessment.get("assessor_name") if assessment else None,
+                    status_label="❌ Ditolak",
+                    actor_name=actor.get("full_name") or actor.get("email"),
+                    actor_username=None,
+                    reviewer_note=note,
+                )
+            except Exception:
+                current_app.logger.exception("Gagal mengirim notifikasi Telegram status reopen.")
             flash("Permintaan reopen ditolak.", "info")
         else:
             flash("Gagal menolak reopen.", "danger")
@@ -5061,6 +5113,8 @@ def admin_approve_assignment_request(request_id: int) -> Response:
     )
     if not req:
         return jsonify({"success": False, "message": "Request tidak ditemukan"}), 404
+    coordinator_info = _fetch_dashboard_user_summary(req["coordinator_id"]) if req.get("coordinator_id") else None
+    period_info = get_period_by_id(req.get("period_id")) if req.get("period_id") else None
     try:
         assignment = assign_staff_to_school(req["staff_id"], req["school_id"], user["id"], req.get("note"))
         staff_info = _fetch_dashboard_user_summary(req["staff_id"])
@@ -5109,6 +5163,20 @@ def admin_approve_assignment_request(request_id: int) -> Response:
             school.get("name") if school else f"School {req.get('school_id')}",
             assignment_details,
         )
+        try:
+            notify_assignment_request_status_update(
+                request_id=request_id,
+                coordinator_name=coordinator_info.get("full_name") if coordinator_info else None,
+                staff_name=staff_info.get("full_name") if staff_info else None,
+                school_name=school.get("name") if school else None,
+                period_name=period_info.get("name") if period_info else None,
+                status_label="✅ Disetujui",
+                actor_name=user.get("full_name") or user.get("email"),
+                actor_username=None,
+                reviewer_note=reviewer_note,
+            )
+        except Exception:
+            current_app.logger.exception("Gagal mengirim notifikasi Telegram status assignment request.")
     except Exception as exc:
         current_app.logger.exception("Error assigning after approval")
         return jsonify({"success": False, "message": str(exc)}), 500
@@ -5138,6 +5206,8 @@ def admin_reject_assignment_request(request_id: int) -> Response:
     if not req:
         return jsonify({"success": False, "message": "Request tidak ditemukan"}), 404
     staff_info = _fetch_dashboard_user_summary(req["staff_id"])
+    coordinator_info = _fetch_dashboard_user_summary(req["coordinator_id"]) if req.get("coordinator_id") else None
+    period_info = get_period_by_id(req.get("period_id")) if req.get("period_id") else None
     school = get_school_by_id(req["school_id"])
     details = {
         "status": "rejected",
@@ -5163,6 +5233,20 @@ def admin_reject_assignment_request(request_id: int) -> Response:
         staff_info.get("full_name") if staff_info else f"Request {request_id}",
         details,
     )
+    try:
+        notify_assignment_request_status_update(
+            request_id=request_id,
+            coordinator_name=coordinator_info.get("full_name") if coordinator_info else None,
+            staff_name=staff_info.get("full_name") if staff_info else None,
+            school_name=school.get("name") if school else None,
+            period_name=period_info.get("name") if period_info else None,
+            status_label="❌ Ditolak",
+            actor_name=user.get("full_name") or user.get("email"),
+            actor_username=None,
+            reviewer_note=reviewer_note,
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mengirim notifikasi Telegram status assignment request.")
     return jsonify({"success": True, "request": req})
 
 
@@ -5391,6 +5475,20 @@ def coordinator_request_member() -> Response:
     elif status == "pending":
         flash("Permintaan serupa masih menunggu persetujuan admin.", "info")
     elif status == "created":
+        created_request = result.get("request") or {}
+        created_request_id = created_request.get("id")
+        if created_request_id is not None:
+            try:
+                staff_info = _fetch_dashboard_user_summary(staff_id)
+                notify_team_member_request(
+                    request_id=int(created_request_id),
+                    team_name=my_team.get("name") or my_team.get("kecamatan_name"),
+                    staff_name=staff_info.get("full_name") if staff_info else None,
+                    requested_by_name=user.get("full_name") or user.get("email"),
+                    note=note,
+                )
+            except Exception:
+                current_app.logger.exception("Gagal mengirim notifikasi Telegram permintaan anggota tim.")
         flash("Permintaan tambah anggota dikirim ke admin untuk verifikasi.", "success")
     else:
         flash("Gagal mengirim permintaan.", "danger")
@@ -5712,6 +5810,22 @@ def manage_monev_teams() -> Response:
                             req.get("staff_name") or req.get("team_name"),
                             details,
                         )
+                        try:
+                            actor = current_user() or {}
+                            notify_team_member_request_status_update(
+                                request_id=request_id,
+                                team_name=req.get("team_name"),
+                                staff_name=req.get("staff_name"),
+                                requested_by_name=req.get("requested_by_name"),
+                                status_label="✅ Disetujui",
+                                actor_name=actor.get("full_name") or actor.get("email"),
+                                actor_username=None,
+                                reviewer_note=reviewer_note,
+                            )
+                        except Exception:
+                            current_app.logger.exception(
+                                "Gagal mengirim notifikasi Telegram status permintaan anggota tim."
+                            )
                     added = add_team_member(req["team_id"], req["staff_id"], admin_id)
                     if added:
                         member_info = _fetch_monev_member_by_pair(req["team_id"], req["staff_id"])
@@ -5776,6 +5890,22 @@ def manage_monev_teams() -> Response:
                             req.get("staff_name") or req.get("team_name"),
                             details,
                         )
+                        try:
+                            actor = current_user() or {}
+                            notify_team_member_request_status_update(
+                                request_id=request_id,
+                                team_name=req.get("team_name"),
+                                staff_name=req.get("staff_name"),
+                                requested_by_name=req.get("requested_by_name"),
+                                status_label="❌ Ditolak",
+                                actor_name=actor.get("full_name") or actor.get("email"),
+                                actor_username=None,
+                                reviewer_note=reviewer_note,
+                            )
+                        except Exception:
+                            current_app.logger.exception(
+                                "Gagal mengirim notifikasi Telegram status permintaan anggota tim."
+                            )
                     if wants_json:
                         status_code = 200 if updated_req else 400
                         return jsonify(
@@ -6050,6 +6180,36 @@ def coordinator_assignment_requests() -> Response:
     schools = list_portal_schools()
     periods = list_periods()
     active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
+    staff_name_map = {}
+    for member in staff_options:
+        staff_value = member.get("staff_id")
+        if staff_value is None:
+            continue
+        try:
+            staff_key = int(staff_value)
+        except (TypeError, ValueError):
+            continue
+        staff_name_map[staff_key] = member.get("full_name")
+    school_name_map = {}
+    for school in schools:
+        school_value = school.get("id")
+        if school_value is None:
+            continue
+        try:
+            school_key = int(school_value)
+        except (TypeError, ValueError):
+            continue
+        school_name_map[school_key] = school.get("name")
+    period_name_map = {}
+    for period in periods:
+        period_value = period.get("id")
+        if period_value is None:
+            continue
+        try:
+            period_key = int(period_value)
+        except (TypeError, ValueError):
+            continue
+        period_name_map[period_key] = period.get("name")
 
     if request.method == "POST":
         if request.is_json:
@@ -6071,8 +6231,31 @@ def coordinator_assignment_requests() -> Response:
             errors = []
             for sid in school_ids:
                 try:
-                    create_assignment_request(user["id"], int(staff_id), int(sid), note, period_id)
+                    created_row = create_assignment_request(user["id"], int(staff_id), int(sid), note, period_id)
                     created += 1
+                    created_row_id = created_row.get("id") if created_row else None
+                    if created_row_id is not None:
+                        try:
+                            staff_key = int(staff_id)
+                        except (TypeError, ValueError):
+                            staff_key = None
+                        try:
+                            school_key = int(sid)
+                        except (TypeError, ValueError):
+                            school_key = None
+                        try:
+                            notify_assignment_request(
+                                request_id=int(created_row_id),
+                                coordinator_name=user.get("full_name") or user.get("email"),
+                                staff_name=staff_name_map.get(staff_key or -1),
+                                school_name=school_name_map.get(school_key or -1),
+                                period_name=period_name_map.get(period_id) if period_id is not None else None,
+                                note=note,
+                            )
+                        except Exception:
+                            current_app.logger.exception(
+                                "Gagal mengirim notifikasi Telegram permintaan assignment."
+                            )
                 except Exception as exc:
                     errors.append(str(exc))
             return jsonify(success=created > 0, created=created, errors=errors)
@@ -6088,7 +6271,20 @@ def coordinator_assignment_requests() -> Response:
             flash("Staff tidak ada di tim Anda.", "danger")
         else:
             try:
-                create_assignment_request(user["id"], staff_id, school_id, note, period_id)
+                created_row = create_assignment_request(user["id"], staff_id, school_id, note, period_id)
+                created_row_id = created_row.get("id") if created_row else None
+                if created_row_id is not None:
+                    try:
+                        notify_assignment_request(
+                            request_id=int(created_row_id),
+                            coordinator_name=user.get("full_name") or user.get("email"),
+                            staff_name=staff_name_map.get(staff_id),
+                            school_name=school_name_map.get(school_id),
+                            period_name=period_name_map.get(period_id) if period_id is not None else None,
+                            note=note,
+                        )
+                    except Exception:
+                        current_app.logger.exception("Gagal mengirim notifikasi Telegram permintaan assignment.")
                 flash("Permintaan penugasan dikirim ke admin.", "success")
             except Exception as exc:
                 flash(f"Gagal mengirim permintaan: {exc}", "danger")
