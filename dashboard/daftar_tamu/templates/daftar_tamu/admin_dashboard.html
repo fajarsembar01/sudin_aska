@@ -1,5 +1,5 @@
 {% extends "daftar_tamu/base_daftar_tamu.html" %}
-{% set page_title = "Dashboard Daftar Tamu" %}
+{% set page_title = "Dashboard Tamu Kedinasan" %}
 {% set sort_visits = "visits_asc" if sort == "visits_desc" else "visits_desc" %}
 {% set sort_last_visit = "last_visit_asc" if sort == "last_visit_desc" else "last_visit_desc" %}
 {% set sort_name = "name_desc" if sort == "name_asc" else "name_asc" %}
@@ -100,7 +100,7 @@
                         <i class="bi bi-person-vcard"></i>
                     </span>
                     <div>
-                        <h1 class="h3 fw-bold page-title mb-1">Dashboard Daftar Tamu</h1>
+                        <h1 class="h3 fw-bold page-title mb-1">Dashboard Tamu Kedinasan</h1>
                         <p class="page-subtitle mb-0">Monitoring kunjungan tamu sudin/lembaga ke sekolah.</p>
                     </div>
                 </div>
@@ -109,7 +109,7 @@
                         <i class="bi bi-clipboard-check me-1"></i>Validasi Tamu
                     </a>
                     <a href="{{ url_for('daftar_tamu.admin_public_transactions') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-people me-1"></i>Tamu Umum Web
+                        <i class="bi bi-people me-1"></i>Tamu Umum
                     </a>
                     <a href="{{ url_for('daftar_tamu.admin_purpose_keywords') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-lightbulb me-1"></i>Suggest Tujuan
@@ -634,7 +634,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div>
-                    <h5 class="modal-title mb-0">Riwayat Kunjungan Sekolah</h5>
+                    <h5 class="modal-title mb-0">Riwayat Tamu Kedinasan Sekolah</h5>
                     <div class="small text-muted" id="schoolVisitModalMeta">-</div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -682,7 +682,7 @@
                         </thead>
                         <tbody id="schoolVisitRows">
                             <tr>
-                                <td colspan="4" class="text-center text-muted py-4">Pilih kunjungan untuk melihat riwayat.</td>
+                                <td colspan="4" class="text-center text-muted py-4">Pilih kunjungan untuk melihat riwayat tamu kedinasan.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -705,7 +705,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div>
-                    <h5 class="modal-title mb-0">Riwayat Kunjungan</h5>
+                    <h5 class="modal-title mb-0">Riwayat Tamu Kedinasan</h5>
                     <div class="small text-muted" id="userVisitModalMeta">-</div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -753,7 +753,7 @@
                         </thead>
                         <tbody id="userVisitRows">
                             <tr>
-                                <td colspan="4" class="text-center text-muted py-4">Pilih kunjungan untuk melihat riwayat.</td>
+                                <td colspan="4" class="text-center text-muted py-4">Pilih kunjungan untuk melihat riwayat tamu kedinasan.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -1019,14 +1019,14 @@
             fetch(currentUrl + '?' + params.toString())
                 .then(function (res) { return res.json(); })
                 .then(function (data) {
-                    if (!data.success) throw new Error(data.message || 'Gagal memuat riwayat.');
+                    if (!data.success) throw new Error(data.message || 'Gagal memuat riwayat tamu kedinasan.');
                     renderRows(data.rows || []);
                     renderSummary(data.page || state.page, data.per_page || state.per_page, data.total_rows || 0, (data.rows || []).length);
                     renderPagination(data.total_pages || 1);
                 })
                 .catch(function (err) {
                     rowsEl.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4">'
-                        + escapeHtml(err.message || 'Gagal memuat riwayat.') + '</td></tr>';
+                        + escapeHtml(err.message || 'Gagal memuat riwayat tamu kedinasan.') + '</td></tr>';
                     summaryEl.textContent = '-';
                     paginationEl.innerHTML = '';
                 });
@@ -1250,14 +1250,14 @@
             fetch(currentUrl + '?' + params.toString())
                 .then(function (res) { return res.json(); })
                 .then(function (data) {
-                    if (!data.success) throw new Error(data.message || 'Gagal memuat riwayat.');
+                    if (!data.success) throw new Error(data.message || 'Gagal memuat riwayat tamu kedinasan.');
                     renderRows(data.rows || []);
                     renderSummary(data.page || state.page, data.per_page || state.per_page, data.total_rows || 0, (data.rows || []).length);
                     renderPagination(data.total_pages || 1);
                 })
                 .catch(function (err) {
                     rowsEl.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4">'
-                        + escapeHtml(err.message || 'Gagal memuat riwayat.') + '</td></tr>';
+                        + escapeHtml(err.message || 'Gagal memuat riwayat tamu kedinasan.') + '</td></tr>';
                     summaryEl.textContent = '-';
                     paginationEl.innerHTML = '';
                 });

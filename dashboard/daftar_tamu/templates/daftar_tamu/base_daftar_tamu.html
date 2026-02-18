@@ -65,7 +65,7 @@
                         <li>
                             <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_public_transactions' %}active{% endif %}"
                                 href="{{ url_for('daftar_tamu.admin_public_transactions') }}">
-                                <i class="bi bi-globe2 me-2"></i>Tamu Umum Web
+                                <i class="bi bi-globe2 me-2"></i>Tamu Umum
                             </a>
                         </li>
                         <li>
@@ -230,8 +230,8 @@
                         <a class="notification-item{% if pending_guestbook == 0 %} d-none{% endif %}"
                             id="adminPendingGuestbookItem" href="{{ url_for('daftar_tamu.admin_validation') }}">
                             <div>
-                                <div class="fw-semibold">Verifikasi daftar tamu</div>
-                                <small>Transaksi buku tamu menunggu validasi</small>
+                                <div class="fw-semibold">Verifikasi tamu kedinasan</div>
+                                <small>Transaksi tamu kedinasan menunggu validasi</small>
                             </div>
                             <span class="badge bg-success" id="adminPendingGuestbookCount"
                                 data-count="{{ pending_guestbook }}">{{ pending_guestbook }}</span>
@@ -356,7 +356,7 @@
         function buildItemHtml(item) {
             var id = parseInt(item && item.id ? item.id : 0, 10);
             var href = (item && item.link) ? item.link : historyUrl;
-            var title = escapeHtml(item && item.title ? item.title : 'Notifikasi buku tamu');
+            var title = escapeHtml(item && item.title ? item.title : 'Notifikasi tamu kedinasan');
             var message = escapeHtml(item && item.message ? item.message : '');
             var icon = escapeHtml(item && item.icon ? item.icon : 'bi-info-circle-fill');
             var tone = escapeHtml(item && item.tone ? item.tone : 'secondary');
