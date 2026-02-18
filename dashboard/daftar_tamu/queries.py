@@ -56,6 +56,7 @@ USER_APP_NOTIFICATION_CATEGORIES = (
     PANBERS_TEAM_MEMBER_NOTIFICATION_CATEGORY,
 )
 _NOTIFICATION_SCHEMA_READY = False
+_HAS_DASHBOARD_USER_PROFILE_PHOTO_PATH: Optional[bool] = None
 
 _GUEST_SCOPE_WHERE = """
       AND (
@@ -110,6 +111,35 @@ _PUBLIC_GUEST_COUNT_SUBQUERY = """
     FROM daftar_tamu_general_transaction_guests g
     WHERE g.transaction_id = {tx_ref}
 """
+
+
+def _has_dashboard_user_profile_photo_path() -> bool:
+    """Return True if dashboard_users.profile_photo_path exists in active schemas."""
+    global _HAS_DASHBOARD_USER_PROFILE_PHOTO_PATH
+    if _HAS_DASHBOARD_USER_PROFILE_PHOTO_PATH is not None:
+        return _HAS_DASHBOARD_USER_PROFILE_PHOTO_PATH
+
+    exists = False
+    try:
+        with get_cursor() as cur:
+            cur.execute(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_schema = ANY (current_schemas(TRUE))
+                      AND table_name = 'dashboard_users'
+                      AND column_name = 'profile_photo_path'
+                ) AS exists
+                """
+            )
+            row = cur.fetchone() or {}
+            exists = bool(row.get("exists"))
+    except Exception:
+        exists = False
+
+    _HAS_DASHBOARD_USER_PROFILE_PHOTO_PATH = exists
+    return exists
 
 _ROLLUP_CTE = (
     """
@@ -2364,6 +2394,11 @@ def list_admin_public_school_summary(
 
 
 def get_transaction_detail(transaction_id: int) -> Optional[Dict[str, Any]]:
+    profile_photo_select = (
+        "u.profile_photo_path AS profile_photo_path"
+        if _has_dashboard_user_profile_photo_path()
+        else "NULL::TEXT AS profile_photo_path"
+    )
     with get_cursor() as cur:
         cur.execute(
             """
@@ -2387,12 +2422,24 @@ def get_transaction_detail(transaction_id: int) -> Optional[Dict[str, Any]]:
                 k.name AS kecamatan,
                 l.name AS kelurahan,
                 reviewer.full_name AS reviewer_name,
+                reviewer_tg.telegram_username AS reviewer_telegram_username,
+                reviewer_tg.telegram_user_id AS reviewer_telegram_user_id,
                 creator.full_name AS created_by_name
             FROM daftar_tamu_transactions t
             JOIN portal_schools s ON s.id = t.school_id
             LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
             LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
             LEFT JOIN dashboard_users reviewer ON reviewer.id = t.reviewed_by
+            LEFT JOIN LATERAL (
+                SELECT
+                    ta.telegram_username,
+                    tu.telegram_user_id
+                FROM telegram_admin_accounts ta
+                LEFT JOIN telegram_users tu ON LOWER(tu.username) = LOWER(ta.telegram_username)
+                WHERE ta.dashboard_user_id = reviewer.id
+                ORDER BY ta.id DESC
+                LIMIT 1
+            ) reviewer_tg ON TRUE
             LEFT JOIN dashboard_users creator ON creator.id = t.created_by
             WHERE t.id = %s
             """,
@@ -2404,7 +2451,7 @@ def get_transaction_detail(transaction_id: int) -> Optional[Dict[str, Any]]:
         detail = dict(row)
 
         cur.execute(
-            """
+            f"""
             SELECT
                 u.id AS id,
                 'sudin' AS guest_type,
@@ -2415,6 +2462,7 @@ def get_transaction_detail(transaction_id: int) -> Optional[Dict[str, Any]]:
                 u.jabatan,
                 u.degree_prefix,
                 u.degree_suffix,
+                {profile_photo_select},
                 NULL::TEXT AS instansi,
                 NULL::TEXT AS phone,
                 NULL::BOOLEAN AS is_verified
@@ -2433,6 +2481,7 @@ def get_transaction_detail(transaction_id: int) -> Optional[Dict[str, Any]]:
                 gg.jabatan,
                 NULL::TEXT AS degree_prefix,
                 NULL::TEXT AS degree_suffix,
+                NULL::TEXT AS profile_photo_path,
                 gg.instansi,
                 gg.phone,
                 gg.is_verified
@@ -2451,9 +2500,14 @@ def get_transaction_detail(transaction_id: int) -> Optional[Dict[str, Any]]:
 
 def list_transaction_previous_single_guest_photos(transaction_id: int) -> List[Dict[str, Any]]:
     """List previous photo path per current guest, only from single-guest transactions."""
+    profile_photo_select = (
+        "u.profile_photo_path AS profile_photo_path"
+        if _has_dashboard_user_profile_photo_path()
+        else "NULL::TEXT AS profile_photo_path"
+    )
     with get_cursor() as cur:
         cur.execute(
-            """
+            f"""
             WITH current_guests AS (
                 SELECT
                     g.user_id,
@@ -2469,7 +2523,7 @@ def list_transaction_previous_single_guest_photos(transaction_id: int) -> List[D
                 cg.general_guest_id,
                 cg.guest_order,
                 COALESCE(u.full_name, gg.full_name, 'Tamu') AS guest_name,
-                u.profile_photo_path AS profile_photo_path,
+                {profile_photo_select},
                 prev.photo_path AS previous_photo_path
             FROM current_guests cg
             LEFT JOIN dashboard_users u ON u.id = cg.user_id

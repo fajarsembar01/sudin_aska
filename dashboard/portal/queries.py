@@ -24,6 +24,81 @@ _MONTH_NAMES_ID = (
     "Desember",
 )
 
+PORTAL_UNDO_WINDOW_DEFAULT_SECONDS = 7
+PORTAL_UNDO_WINDOW_MIN_SECONDS = 1
+PORTAL_UNDO_WINDOW_MAX_SECONDS = 60
+
+
+def normalize_portal_undo_window_seconds(
+    value: Any,
+    *,
+    fallback: int = PORTAL_UNDO_WINDOW_DEFAULT_SECONDS,
+) -> int:
+    """Normalize undo delay (seconds) into configured safe range."""
+    safe_fallback = PORTAL_UNDO_WINDOW_DEFAULT_SECONDS
+    try:
+        safe_fallback = int(fallback)
+    except (TypeError, ValueError):
+        safe_fallback = PORTAL_UNDO_WINDOW_DEFAULT_SECONDS
+    safe_fallback = max(PORTAL_UNDO_WINDOW_MIN_SECONDS, min(PORTAL_UNDO_WINDOW_MAX_SECONDS, safe_fallback))
+
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        parsed = safe_fallback
+    return max(PORTAL_UNDO_WINDOW_MIN_SECONDS, min(PORTAL_UNDO_WINDOW_MAX_SECONDS, parsed))
+
+
+def fetch_portal_undo_window_seconds() -> int:
+    """Return global undo waiting window (seconds) used across Portal."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT undo_window_seconds
+            FROM portal_ui_settings
+            WHERE id = 1
+            """
+        )
+        row = cur.fetchone()
+    if not row:
+        return PORTAL_UNDO_WINDOW_DEFAULT_SECONDS
+    if isinstance(row, dict):
+        raw_value = row.get("undo_window_seconds")
+    elif isinstance(row, (list, tuple)) and row:
+        raw_value = row[0]
+    else:
+        raw_value = None
+    return normalize_portal_undo_window_seconds(raw_value, fallback=PORTAL_UNDO_WINDOW_DEFAULT_SECONDS)
+
+
+def upsert_portal_undo_window_seconds(seconds: int, updated_by: Optional[int]) -> int:
+    """Persist global undo waiting window and return saved value."""
+    normalized = normalize_portal_undo_window_seconds(seconds)
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO portal_ui_settings (id, undo_window_seconds, updated_at, updated_by)
+            VALUES (1, %s, NOW(), %s)
+            ON CONFLICT (id)
+            DO UPDATE SET
+                undo_window_seconds = EXCLUDED.undo_window_seconds,
+                updated_at = NOW(),
+                updated_by = EXCLUDED.updated_by
+            RETURNING undo_window_seconds
+            """,
+            (normalized, updated_by),
+        )
+        row = cur.fetchone()
+    if not row:
+        return normalized
+    if isinstance(row, dict):
+        raw_value = row.get("undo_window_seconds")
+    elif isinstance(row, (list, tuple)) and row:
+        raw_value = row[0]
+    else:
+        raw_value = normalized
+    return normalize_portal_undo_window_seconds(raw_value, fallback=normalized)
+
 
 def list_portal_schools(
     search: Optional[str] = None,

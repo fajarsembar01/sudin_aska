@@ -317,6 +317,16 @@ WHERE NOT EXISTS (
 );
 """
 
+_PORTAL_UI_SETTINGS_SQL = """
+CREATE TABLE IF NOT EXISTS portal_ui_settings (
+    id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    undo_window_seconds INTEGER NOT NULL DEFAULT 7 CHECK (undo_window_seconds BETWEEN 1 AND 60),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+"""
+
 _PORTAL_SCHOOLS_SQL = """
 CREATE TABLE IF NOT EXISTS portal_schools (
     id SERIAL PRIMARY KEY,
@@ -801,6 +811,7 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE portal_kontak ADD COLUMN IF NOT EXISTS nama_2 TEXT",
         "ALTER TABLE portal_kontak ADD COLUMN IF NOT EXISTS kontak_2 TEXT",
         "ALTER TABLE portal_kontak ADD COLUMN IF NOT EXISTS kontak_2_active BOOLEAN NOT NULL DEFAULT TRUE",
+        _PORTAL_UI_SETTINGS_SQL,
         _PORTAL_SCHOOLS_SQL,
         _PORTAL_SCHOOLS_INDEX_SQL,
         _PORTAL_ROOMS_SQL,

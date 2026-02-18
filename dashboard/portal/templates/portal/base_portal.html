@@ -695,6 +695,17 @@
             flex-wrap: wrap;
         }
 
+        .notification-quick-actions .btn.icon-only {
+            width: 1.9rem;
+            height: 1.9rem;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            line-height: 1;
+        }
+
         .admin-confirm-details {
             margin-top: 0.75rem;
             padding: 0.75rem;
@@ -751,6 +762,13 @@
 
         .admin-undo-toast .btn {
             border-radius: 999px;
+        }
+
+        .admin-undo-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex-wrap: nowrap;
         }
 
         .admin-undo-container {
@@ -1104,10 +1122,12 @@
                             <div class="notification-divider" id="adminPendingQuickDivider"></div>
                             <div class="notification-quick" id="adminPendingQuickList"
                                 data-users-url="{{ url_for('portal.manage_users') }}"
+                                data-user-verify-url="{{ url_for('portal.manage_users') }}"
                                 data-assignment-url="{{ url_for('portal.admin_manage_staff') }}"
                                 data-team-url="{{ url_for('portal.manage_monev_teams') }}"
                                 data-reopen-url="{{ url_for('portal.admin_reopen_requests') }}"
                                 data-guestbook-url="{{ url_for('daftar_tamu.admin_validation') }}"
+                                data-undo-window-seconds="{{ undo_window_seconds | default(7) }}"
                                 data-approve-assignment="{{ url_for('portal.admin_approve_assignment_request', request_id=0) }}"
                                 data-reject-assignment="{{ url_for('portal.admin_reject_assignment_request', request_id=0) }}"
                                 data-approve-reopen="{{ url_for('portal.approve_reopen', assessment_id=0) }}"
@@ -1368,6 +1388,7 @@
             var quickConfig = elements.quickList ? {
                 previewUrl: elements.quickList.dataset.previewUrl,
                 usersUrl: elements.quickList.dataset.usersUrl,
+                userVerifyUrl: elements.quickList.dataset.userVerifyUrl,
                 assignmentUrl: elements.quickList.dataset.assignmentUrl,
                 teamUrl: elements.quickList.dataset.teamUrl,
                 reopenUrl: elements.quickList.dataset.reopenUrl,
@@ -1377,8 +1398,17 @@
                 approveReopenUrl: elements.quickList.dataset.approveReopen,
                 rejectReopenUrl: elements.quickList.dataset.rejectReopen,
                 approveGuestbookUrl: elements.quickList.dataset.approveGuestbook,
-                rejectGuestbookUrl: elements.quickList.dataset.rejectGuestbook
+                rejectGuestbookUrl: elements.quickList.dataset.rejectGuestbook,
+                undoWindowSeconds: elements.quickList.dataset.undoWindowSeconds
             } : {};
+            var configuredUndoSeconds = parseInt(
+                quickConfig.undoWindowSeconds || '{{ undo_window_seconds | default(7) }}',
+                10
+            );
+            if (!Number.isFinite(configuredUndoSeconds) || configuredUndoSeconds < 1) {
+                configuredUndoSeconds = 7;
+            }
+            var defaultUndoDelayMs = configuredUndoSeconds * 1000;
             var confirmModalEl = document.getElementById('adminQuickConfirmModal');
             var confirmTitleEl = document.getElementById('adminQuickConfirmTitle');
             var confirmTextEl = document.getElementById('adminQuickConfirmText');
@@ -1418,7 +1448,7 @@
                 toast.remove();
             }
 
-            function createUndoToast(action, expiresAt, onUndo) {
+            function createUndoToast(action, expiresAt, onUndo, onSkip) {
                 if (!undoContainer) return null;
                 var toast = document.createElement('div');
                 toast.className = 'admin-undo-toast';
@@ -1455,8 +1485,25 @@
                     }
                 });
 
+                var skipBtn = document.createElement('button');
+                skipBtn.type = 'button';
+                skipBtn.className = 'btn btn-sm btn-light';
+                skipBtn.textContent = 'Skip';
+                skipBtn.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (typeof onSkip === 'function') {
+                        onSkip();
+                    }
+                });
+
+                var actionWrap = document.createElement('div');
+                actionWrap.className = 'admin-undo-actions';
+                actionWrap.appendChild(undoBtn);
+                actionWrap.appendChild(skipBtn);
+
                 toast.appendChild(textWrap);
-                toast.appendChild(undoBtn);
+                toast.appendChild(actionWrap);
                 undoContainer.appendChild(toast);
                 return toast;
             }
@@ -1467,7 +1514,8 @@
 
             function scheduleAdminAction(action) {
                 if (!action) return null;
-                var delayMs = typeof action.delayMs === 'number' ? action.delayMs : 7000;
+                var delayMs = typeof action.delayMs === 'number' ? action.delayMs : defaultUndoDelayMs;
+                delayMs = Math.max(0, delayMs);
                 var actionId = action.id || ('admin-action-' + Date.now() + '-' + Math.random().toString(16).slice(2));
                 if (!action.execute) {
                     action.execute = function () {
@@ -1482,6 +1530,8 @@
                 var expiresAt = Date.now() + delayMs;
                 var toast = createUndoToast(action, expiresAt, function () {
                     undoAdminAction(actionId);
+                }, function () {
+                    skipAdminAction(actionId);
                 });
 
                 var timer = setTimeout(function () {
@@ -1536,6 +1586,13 @@
                 if (typeof entry.action.onUndo === 'function') {
                     entry.action.onUndo();
                 }
+            }
+
+            function skipAdminAction(actionId) {
+                var entry = pendingActions.get(actionId);
+                if (!entry) return;
+                clearTimeout(entry.timer);
+                commitAdminAction(actionId);
             }
 
             function undoLastAdminAction() {
@@ -1728,8 +1785,14 @@
                     action.contextRow = row;
                     var btn = document.createElement('button');
                     btn.type = 'button';
-                    btn.className = 'btn btn-sm ' + action.buttonClass;
-                    btn.textContent = action.label;
+                    btn.className = 'btn btn-sm ' + action.buttonClass + (action.icon ? ' icon-only' : '');
+                    if (action.icon) {
+                        btn.innerHTML = '<i class="bi ' + action.icon + '" aria-hidden="true"></i>';
+                        btn.setAttribute('aria-label', action.label || 'Aksi');
+                        btn.setAttribute('title', action.label || 'Aksi');
+                    } else {
+                        btn.textContent = action.label;
+                    }
                     btn.addEventListener('click', function (event) {
                         event.preventDefault();
                         event.stopPropagation();
@@ -1775,7 +1838,59 @@
                     var title = item.full_name || item.email || 'User';
                     var subtitle = [item.email, item.role].filter(Boolean).join(' • ');
                     var timeText = formatPendingDate(item.created_at);
-                    return buildQuickItem(title, subtitle, timeText, []);
+                    var details = [
+                        { label: 'Nama', value: item.full_name || '-' },
+                        { label: 'Email', value: item.email || '-' },
+                        { label: 'Role', value: item.role || '-' },
+                        { label: 'No WhatsApp', value: item.whatsapp_number || '-' },
+                        { label: 'Kecamatan Pengajuan', value: item.kecamatan_name || '-' },
+                        { label: 'Sekolah', value: item.school_name || '-' },
+                        { label: 'NPSN', value: item.school_npsn || '-' },
+                        { label: 'Jenjang', value: item.school_jenjang || '-' },
+                        { label: 'Kecamatan Sekolah', value: item.school_kecamatan_name || '-' },
+                        { label: 'Diajukan', value: timeText || '-' }
+                    ];
+                    var verifyUrl = quickConfig.userVerifyUrl || quickConfig.usersUrl;
+                    return buildQuickItem(title, subtitle, timeText, [
+                        {
+                            label: 'Setujui',
+                            icon: 'bi-check-lg',
+                            buttonClass: 'btn-success',
+                            confirmTitle: 'Setujui User',
+                            confirmText: 'Setujui user ' + (item.full_name || item.email || 'ini') + '?',
+                            details: details,
+                            url: verifyUrl,
+                            noteKey: 'reviewer_note',
+                            payload: {
+                                action: 'verify',
+                                user_id: item.id,
+                                account_status: 'approved',
+                                full_name: item.full_name || '',
+                                role: item.role || 'viewer',
+                            },
+                            deltaKey: 'users',
+                            toastMessage: 'User disetujui.'
+                        },
+                        {
+                            label: 'Tolak',
+                            icon: 'bi-x-lg',
+                            buttonClass: 'btn-outline-danger',
+                            confirmTitle: 'Tolak User',
+                            confirmText: 'Tolak user ' + (item.full_name || item.email || 'ini') + '?',
+                            details: details,
+                            url: verifyUrl,
+                            noteKey: 'reviewer_note',
+                            payload: {
+                                action: 'verify',
+                                user_id: item.id,
+                                account_status: 'rejected',
+                                full_name: item.full_name || '',
+                                role: item.role || 'viewer',
+                            },
+                            deltaKey: 'users',
+                            toastMessage: 'User ditolak.'
+                        }
+                    ]);
                 });
 
                 addGroup('Permintaan penugasan', quickConfig.assignmentUrl, preview.assignment_requests, function (item) {
@@ -1797,6 +1912,7 @@
                     return buildQuickItem(title, subtitle, timeText, [
                         {
                             label: 'Setujui',
+                            icon: 'bi-check-lg',
                             buttonClass: 'btn-success',
                             confirmTitle: 'Setujui Penugasan',
                             confirmText: 'Setujui penugasan ' + (item.staff_name || 'staff') + ' ke ' + (item.school_name || 'sekolah') + '?',
@@ -1809,6 +1925,7 @@
                         },
                         {
                             label: 'Tolak',
+                            icon: 'bi-x-lg',
                             buttonClass: 'btn-outline-danger',
                             confirmTitle: 'Tolak Penugasan',
                             confirmText: 'Tolak penugasan ' + (item.staff_name || 'staff') + ' ke ' + (item.school_name || 'sekolah') + '?',
@@ -1839,6 +1956,7 @@
                     return buildQuickItem(title, subtitle, timeText, [
                         {
                             label: 'Setujui',
+                            icon: 'bi-check-lg',
                             buttonClass: 'btn-success',
                             confirmTitle: 'Setujui Anggota',
                             confirmText: 'Setujui ' + (item.staff_name || 'staff') + ' untuk tim ' + (item.team_name || 'ini') + '?',
@@ -1854,6 +1972,7 @@
                         },
                         {
                             label: 'Tolak',
+                            icon: 'bi-x-lg',
                             buttonClass: 'btn-outline-danger',
                             confirmTitle: 'Tolak Anggota',
                             confirmText: 'Tolak ' + (item.staff_name || 'staff') + ' untuk tim ' + (item.team_name || 'ini') + '?',
@@ -1886,6 +2005,7 @@
                     return buildQuickItem(title, subtitle, timeText, [
                         {
                             label: 'Setujui',
+                            icon: 'bi-check-lg',
                             buttonClass: 'btn-success',
                             confirmTitle: 'Setujui Reopen',
                             confirmText: 'Setujui reopen untuk ' + (item.school_name || 'sekolah') + '?',
@@ -1898,6 +2018,7 @@
                         },
                         {
                             label: 'Tolak',
+                            icon: 'bi-x-lg',
                             buttonClass: 'btn-outline-danger',
                             confirmTitle: 'Tolak Reopen',
                             confirmText: 'Tolak reopen untuk ' + (item.school_name || 'sekolah') + '?',
@@ -1933,6 +2054,7 @@
                     return buildQuickItem(title, subtitle, timeText, [
                         {
                             label: 'Setujui',
+                            icon: 'bi-check-lg',
                             buttonClass: 'btn-success',
                             confirmTitle: 'Setujui Daftar Tamu',
                             confirmText: 'Setujui transaksi daftar tamu untuk ' + (item.school_name || 'sekolah') + '?',
@@ -1945,6 +2067,7 @@
                         },
                         {
                             label: 'Tolak',
+                            icon: 'bi-x-lg',
                             buttonClass: 'btn-outline-danger',
                             confirmTitle: 'Tolak Daftar Tamu',
                             confirmText: 'Tolak transaksi daftar tamu untuk ' + (item.school_name || 'sekolah') + '?',

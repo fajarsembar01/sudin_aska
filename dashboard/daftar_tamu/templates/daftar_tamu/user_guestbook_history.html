@@ -2046,6 +2046,11 @@
         var csrfMetaEl = document.querySelector('meta[name="csrf-token"]');
         var csrfToken = csrfMetaEl ? (csrfMetaEl.getAttribute('content') || '') : '';
         var themeColorMetaEl = document.querySelector('meta[name="theme-color"]');
+        var undoWindowSeconds = parseInt('{{ undo_window_seconds | default(7) }}', 10);
+        if (!Number.isFinite(undoWindowSeconds) || undoWindowSeconds < 1) {
+            undoWindowSeconds = 7;
+        }
+        var undoWindowDelayMs = undoWindowSeconds * 1000;
 
         function syncThemeColorMeta() {
             if (!themeColorMetaEl) {
@@ -2891,8 +2896,9 @@
             var toastEl = document.createElement('div');
             toastEl.className = 'history-undo-toast';
             toastEl.setAttribute('data-undo-transaction', String(transactionId));
-            toastEl.innerHTML = '<span class="history-sync-dot" aria-hidden="true"></span><span>Catatan disimpan.</span><button type="button" class="btn btn-sm btn-outline-light">Undo 5s</button>';
-            var undoBtn = toastEl.querySelector('button');
+            toastEl.innerHTML = '<span class="history-sync-dot" aria-hidden="true"></span><span>Catatan disimpan.</span><div class="d-inline-flex align-items-center gap-2"><button type="button" class="btn btn-sm btn-outline-light" data-undo-btn="1">Undo ' + undoWindowSeconds + 's</button><button type="button" class="btn btn-sm btn-light" data-skip-btn="1">Skip</button></div>';
+            var undoBtn = toastEl.querySelector('[data-undo-btn="1"]');
+            var skipBtn = toastEl.querySelector('[data-skip-btn="1"]');
             if (undoBtn) {
                 undoBtn.addEventListener('click', async function () {
                     clearUndoToast(transactionId);
@@ -2915,10 +2921,16 @@
                     }
                 });
             }
+            if (skipBtn) {
+                skipBtn.addEventListener('click', function () {
+                    clearUndoToast(transactionId);
+                    trackUX('note_undo_skip');
+                });
+            }
             undoContainer.appendChild(toastEl);
             activeUndoTimers[transactionId] = window.setTimeout(function () {
                 clearUndoToast(transactionId);
-            }, 5000);
+            }, undoWindowDelayMs);
         }
 
         async function submitStaffNoteAjax(event) {
