@@ -37,12 +37,17 @@
                 <h2 class="h6 fw-bold mb-0">Riwayat Tamu Kedinasan</h2>
                 <small class="text-muted">Status validasi admin akan muncul di sini.</small>
             </div>
-            <form method="get" class="d-flex gap-2">
+            <form method="get" class="d-flex flex-wrap gap-2">
                 <select name="status" class="form-select form-select-sm">
                     <option value="" {% if status=='' %}selected{% endif %}>Semua status</option>
                     <option value="pending" {% if status=='pending' %}selected{% endif %}>Menunggu</option>
                     <option value="approved" {% if status=='approved' %}selected{% endif %}>Disetujui</option>
                     <option value="rejected" {% if status=='rejected' %}selected{% endif %}>Ditolak</option>
+                </select>
+                <select name="guest_scope" class="form-select form-select-sm">
+                    <option value="all" {% if guest_scope=='all' %}selected{% endif %}>Semua tipe tamu</option>
+                    <option value="sudin" {% if guest_scope=='sudin' %}selected{% endif %}>Sudindik JU 2</option>
+                    <option value="umum" {% if guest_scope=='umum' %}selected{% endif %}>Instansi Pemerintah Lainnya</option>
                 </select>
                 <select name="per_page" class="form-select form-select-sm">
                     {% for size in [10, 20, 50, 100] %}
@@ -74,6 +79,11 @@
                         <td>
                             <div class="fw-semibold">{{ row.guest_display or '-' }}</div>
                             <div class="small text-muted">{{ row.guest_count or 0 }} tamu</div>
+                            {% if row.guest_type == 'sudin' %}
+                            <span class="badge text-bg-primary-subtle text-primary-emphasis">Sudindik JU 2</span>
+                            {% else %}
+                            <span class="badge text-bg-success-subtle text-success-emphasis">Instansi Pemerintah Lainnya</span>
+                            {% endif %}
                             {% if row.purpose %}
                             <div class="small text-muted">Tujuan: {{ row.purpose }}</div>
                             {% endif %}
@@ -117,20 +127,20 @@
         {% set start_row = ((page - 1) * per_page) + 1 if total_rows else 0 %}
         {% set end_row = ((page - 1) * per_page) + (rows|length) if total_rows else 0 %}
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
-            <small class="text-muted">Menampilkan {{ start_row }}-{{ end_row }} dari {{ total_rows }} transaksi</small>
+            <small class="text-muted">Menampilkan {{ start_row }}-{{ end_row }} dari {{ total_rows }} baris riwayat</small>
             <ul class="pagination pagination-sm mb-0">
                 <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('daftar_tamu.sekolah_riwayat', status=status, per_page=per_page, page=page-1) }}">Prev</a>
+                    <a class="page-link" href="{{ url_for('daftar_tamu.sekolah_riwayat', status=status, guest_scope=guest_scope, per_page=per_page, page=page-1) }}">Prev</a>
                 </li>
                 {% set start_page = 1 if page - 2 < 1 else page - 2 %}
                 {% set end_page = total_pages if page + 2 > total_pages else page + 2 %}
                 {% for p in range(start_page, end_page + 1) %}
                 <li class="page-item {% if p == page %}active{% endif %}">
-                    <a class="page-link" href="{{ url_for('daftar_tamu.sekolah_riwayat', status=status, per_page=per_page, page=p) }}">{{ p }}</a>
+                    <a class="page-link" href="{{ url_for('daftar_tamu.sekolah_riwayat', status=status, guest_scope=guest_scope, per_page=per_page, page=p) }}">{{ p }}</a>
                 </li>
                 {% endfor %}
                 <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('daftar_tamu.sekolah_riwayat', status=status, per_page=per_page, page=page+1) }}">Next</a>
+                    <a class="page-link" href="{{ url_for('daftar_tamu.sekolah_riwayat', status=status, guest_scope=guest_scope, per_page=per_page, page=page+1) }}">Next</a>
                 </li>
             </ul>
         </div>

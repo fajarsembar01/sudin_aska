@@ -1569,6 +1569,7 @@ def list_school_transactions(
     *,
     school_id: int,
     status: Optional[str] = None,
+    guest_scope: Optional[str] = None,
     page: int = 1,
     per_page: int = 10,
 ) -> Tuple[List[Dict[str, Any]], int]:
@@ -1578,54 +1579,134 @@ def list_school_transactions(
     status_value = (status or "").strip().lower()
     if status_value and status_value not in TRANSACTION_STATUSES:
         status_value = ""
+    scope = _normalize_guest_scope(guest_scope)
 
-    count_query = """
-        SELECT COUNT(*) AS total
-        FROM daftar_tamu_transactions t
-        WHERE t.school_id = %s
-          AND (%s = '' OR t.status = %s)
+    split_rows_cte = """
+        WITH base AS (
+            SELECT
+                t.id,
+                t.visit_at,
+                t.status,
+                t.purpose,
+                t.notes,
+                t.photo_path,
+                t.photo_raw_path,
+                t.latitude,
+                t.longitude,
+                t.created_at,
+                t.reviewer_notes,
+                t.reviewed_at,
+                reviewer.full_name AS reviewer_name,
+                creator.full_name AS created_by_name
+            FROM daftar_tamu_transactions t
+            LEFT JOIN dashboard_users reviewer ON reviewer.id = t.reviewed_by
+            LEFT JOIN dashboard_users creator ON creator.id = t.created_by
+            WHERE t.school_id = %s
+              AND (%s = '' OR t.status = %s)
+        ),
+        split_rows AS (
+            SELECT
+                b.*,
+                'sudin'::TEXT AS guest_type,
+                (
+                    SELECT STRING_AGG(u.full_name, ', ' ORDER BY u.full_name)
+                    FROM daftar_tamu_transaction_guests g
+                    JOIN dashboard_users u ON u.id = g.user_id
+                    WHERE g.transaction_id = b.id
+                      AND g.user_id IS NOT NULL
+                      AND (g.guest_type = 'sudin' OR g.guest_type IS NULL)
+                ) AS guest_names,
+                (
+                    SELECT COUNT(*)
+                    FROM daftar_tamu_transaction_guests g
+                    WHERE g.transaction_id = b.id
+                      AND g.user_id IS NOT NULL
+                      AND (g.guest_type = 'sudin' OR g.guest_type IS NULL)
+                ) AS guest_count
+            FROM base b
+            WHERE (%s = 'all' OR %s = 'sudin')
+              AND EXISTS (
+                    SELECT 1
+                    FROM daftar_tamu_transaction_guests g
+                    WHERE g.transaction_id = b.id
+                      AND g.user_id IS NOT NULL
+                      AND (g.guest_type = 'sudin' OR g.guest_type IS NULL)
+                )
+            UNION ALL
+            SELECT
+                b.*,
+                'umum'::TEXT AS guest_type,
+                (
+                    SELECT STRING_AGG(gg.full_name, ', ' ORDER BY gg.full_name)
+                    FROM daftar_tamu_transaction_guests g
+                    JOIN daftar_tamu_general_guests gg ON gg.id = g.general_guest_id
+                    WHERE g.transaction_id = b.id
+                      AND g.general_guest_id IS NOT NULL
+                      AND g.guest_type = 'umum'
+                ) AS guest_names,
+                (
+                    SELECT COUNT(*)
+                    FROM daftar_tamu_transaction_guests g
+                    WHERE g.transaction_id = b.id
+                      AND g.general_guest_id IS NOT NULL
+                      AND g.guest_type = 'umum'
+                ) AS guest_count
+            FROM base b
+            WHERE (%s = 'all' OR %s = 'umum')
+              AND EXISTS (
+                    SELECT 1
+                    FROM daftar_tamu_transaction_guests g
+                    WHERE g.transaction_id = b.id
+                      AND g.general_guest_id IS NOT NULL
+                      AND g.guest_type = 'umum'
+                )
+        )
     """
-    data_query = """
+
+    count_query = split_rows_cte + """
+        SELECT COUNT(*) AS total
+        FROM split_rows
+    """
+    data_query = split_rows_cte + """
         SELECT
-            t.id,
-            t.visit_at,
-            t.status,
-            t.purpose,
-            t.notes,
-            t.photo_path,
-            t.photo_raw_path,
-            t.latitude,
-            t.longitude,
-            t.created_at,
-            t.reviewer_notes,
-            t.reviewed_at,
-            reviewer.full_name AS reviewer_name,
-            creator.full_name AS created_by_name,
-            (
-                {guest_names}
-            ) AS guest_names,
-            (
-                {guest_count}
-            ) AS guest_count
-        FROM daftar_tamu_transactions t
-        LEFT JOIN dashboard_users reviewer ON reviewer.id = t.reviewed_by
-        LEFT JOIN dashboard_users creator ON creator.id = t.created_by
-        WHERE t.school_id = %s
-          AND (%s = '' OR t.status = %s)
-        ORDER BY t.visit_at DESC, t.id DESC
+            id,
+            visit_at,
+            status,
+            purpose,
+            notes,
+            photo_path,
+            photo_raw_path,
+            latitude,
+            longitude,
+            created_at,
+            reviewer_notes,
+            reviewed_at,
+            reviewer_name,
+            created_by_name,
+            guest_type,
+            guest_names,
+            guest_count
+        FROM split_rows
+        ORDER BY visit_at DESC, id DESC, CASE WHEN guest_type = 'sudin' THEN 0 ELSE 1 END
         LIMIT %s OFFSET %s
-    """.format(
-        guest_names=_GUEST_NAMES_SUBQUERY.format(tx_ref="t.id"),
-        guest_count=_GUEST_COUNT_SUBQUERY.format(tx_ref="t.id"),
-    )
+    """
+    common_params: List[Any] = [
+        school_id,
+        status_value,
+        status_value,
+        scope,
+        scope,
+        scope,
+        scope,
+    ]
 
     with get_cursor() as cur:
-        cur.execute(count_query, [school_id, status_value, status_value])
+        cur.execute(count_query, common_params)
         total_rows = int((cur.fetchone() or {}).get("total") or 0)
 
         cur.execute(
             data_query,
-            [school_id, status_value, status_value, safe_per_page, offset],
+            common_params + [safe_per_page, offset],
         )
         rows = [dict(row) for row in cur.fetchall()]
 
@@ -1646,6 +1727,10 @@ def list_school_transactions(
             display = None
         row["guest_display"] = display
         row["guest_count"] = guest_count
+        row["guest_type"] = (row.get("guest_type") or "").strip().lower() or "sudin"
+        row["guest_type_label"] = (
+            "Sudindik JU 2" if row["guest_type"] == "sudin" else "Instansi Pemerintah Lainnya"
+        )
 
     return rows, total_rows
 

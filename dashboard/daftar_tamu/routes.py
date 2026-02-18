@@ -2377,6 +2377,7 @@ def sekolah_riwayat() -> Response:
         )
 
     status = (request.args.get("status") or "").strip().lower()
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"), default="all")
     per_page = _to_int(request.args.get("per_page"), 10)
     per_page = max(5, min(per_page, 100))
     page = _to_int(request.args.get("page"), 1)
@@ -2385,6 +2386,7 @@ def sekolah_riwayat() -> Response:
     rows, total_rows = list_school_transactions(
         school_id=school["id"],
         status=status,
+        guest_scope=guest_scope,
         page=page,
         per_page=per_page,
     )
@@ -2394,6 +2396,7 @@ def sekolah_riwayat() -> Response:
         rows, total_rows = list_school_transactions(
             school_id=school["id"],
             status=status,
+            guest_scope=guest_scope,
             page=page,
             per_page=per_page,
         )
@@ -2404,6 +2407,7 @@ def sekolah_riwayat() -> Response:
         user_school=school,
         rows=rows,
         status=status,
+        guest_scope=guest_scope,
         page=page,
         per_page=per_page,
         total_rows=total_rows,
