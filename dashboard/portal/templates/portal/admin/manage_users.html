@@ -1,7 +1,8 @@
 {% set base_template = base_template or 'portal/base_portal.html' %}
 {% extends base_template %}
-{% set page_title = "Manajemen User" %}
-{% block title %}Manajemen User{% endblock %}
+{% set read_only = read_only or false %}
+{% set page_title = "Preview Akun" if read_only else "Manajemen User" %}
+{% block title %}{{ "Preview Akun" if read_only else "Manajemen User" }}{% endblock %}
 
 {% macro render_body() %}
 
@@ -11,13 +12,26 @@
             <i class="bi bi-people"></i>
         </span>
         <div>
-            <h1 class="h4 fw-bold page-title mb-0">Manajemen User</h1>
-            <p class="page-subtitle">Tambahkan anggota tim dan kelola hak akses dashboard ASKA.</p>
+            <h1 class="h4 fw-bold page-title mb-0">{{ "Preview Akun" if read_only else "Manajemen User" }}</h1>
+            <p class="page-subtitle">
+                {% if read_only %}
+                Lihat data akun admin, sekolah, staff, dan koordinator tanpa edit.
+                {% else %}
+                Tambahkan anggota tim dan kelola hak akses dashboard ASKA.
+                {% endif %}
+            </p>
         </div>
     </div>
 </section>
 
+{% if read_only %}
+<div class="alert alert-info border-0 shadow-sm">
+    <i class="bi bi-eye me-2"></i>Mode preview aktif. Aksi edit user dinonaktifkan.
+</div>
+{% endif %}
+
 <div class="row g-4">
+    {% if not read_only %}
     <!-- Left Column: Form (Sticky) -->
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm" style="position: sticky; top: 20px; z-index: 100;">
@@ -181,9 +195,10 @@
         </div>
 
     </div>
+    {% endif %}
 
     <!-- Right Column: List -->
-    <div class="col-lg-8">
+    <div class="{{ 'col-lg-12' if read_only else 'col-lg-8' }}">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-3">
@@ -264,18 +279,17 @@
                                         <th>Role</th>
                                         <th>Status</th>
                                         <th>Info</th>
-                                        <th class="text-end">Aksi</th>
+                                        <th class="text-end">{{ "Preview" if read_only else "Aksi" }}</th>
                                     </tr>
                                 </thead>
                                 <tbody id="userTableBody">
                                     {% set active_users = users | selectattr('account_status', 'ne', 'pending') | list
                                     %}
                                     {% for user in active_users %}
-                                    <tr style="cursor: pointer;" data-user-row="true"
+                                    <tr {% if not read_only %}style="cursor: pointer;" onclick='editUser({{ user|tojson }})'{% endif %} data-user-row="true"
                                         data-role="{{ user.role or '' }}"
                                         data-status="{{ user.account_status or '' }}"
-                                        data-search="{{ (user.full_name or '') ~ ' ' ~ (user.email or '') ~ ' ' ~ (user.role or '') ~ ' ' ~ (user.account_status or '') ~ ' ' ~ (user.kecamatan_name or '') ~ ' ' ~ (user.jabatan or '') ~ ' ' ~ (user.whatsapp_number or '') ~ ' ' ~ (user.get('school_npsn') or '') ~ ' ' ~ (user.get('school_name') or '') }}"
-                                        onclick='editUser({{ user|tojson }})'>
+                                        data-search="{{ (user.full_name or '') ~ ' ' ~ (user.email or '') ~ ' ' ~ (user.role or '') ~ ' ' ~ (user.account_status or '') ~ ' ' ~ (user.kecamatan_name or '') ~ ' ' ~ (user.jabatan or '') ~ ' ' ~ (user.whatsapp_number or '') ~ ' ' ~ (user.get('school_npsn') or '') ~ ' ' ~ (user.get('school_name') or '') }}">
                                         <td>
                                             <div class="fw-bold">{{ user.full_name }}</div>
                                             <div class="small text-muted">{{ user.email }}</div>
@@ -314,11 +328,18 @@
                                                 {% endif %}
                                             </div>
                                         </td>
-                                        <td class="text-end" onclick="event.stopPropagation()">
+                                        <td class="text-end" {% if not read_only %}onclick="event.stopPropagation()"{% endif %}>
+                                            {% if read_only %}
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                onclick='viewUserPreview({{ user|tojson }})'>
+                                                <i class="bi bi-eye me-1"></i>Preview
+                                            </button>
+                                            {% else %}
                                             <button class="btn btn-sm btn-outline-primary"
                                                 onclick='editUser({{ user|tojson }})'>
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
+                                            {% endif %}
                                         </td>
                                     </tr>
                                     {% else %}
@@ -337,6 +358,7 @@
                     <!-- Tab Verifikasi User (Pending) -->
                     <div class="tab-pane fade" id="verify-pane" role="tabpanel" aria-labelledby="verify-tab"
                         tabindex="0">
+                        {% if not read_only %}
                         <div class="d-flex flex-wrap align-items-center gap-2 mb-2" id="pendingUsersBulkBar">
                             <div class="text-muted small">
                                 Terpilih: <span class="fw-semibold" id="pendingUsersSelectedCount">0</span>
@@ -356,20 +378,27 @@
                                 Shortcut: Shift+A setujui, Shift+R tolak, Ctrl+Z undo.
                             </div>
                         </div>
+                        {% else %}
+                        <div class="text-muted small mb-2">
+                            Mode preview: verifikasi user dinonaktifkan.
+                        </div>
+                        {% endif %}
                         <div class="table-responsive">
                             <table class="table align-middle table-hover">
                                 <thead class="table-light">
                                     <tr>
+                                        {% if not read_only %}
                                         <th style="width: 36px;">
                                             <input class="form-check-input" type="checkbox" id="pendingUsersSelectAll"
                                                 aria-label="Pilih semua">
                                         </th>
+                                        {% endif %}
                                         <th>User</th>
                                         <th>Role</th>
                                         <th>Request Area</th>
                                         <th>Kontak</th>
                                         <th>Tanggal Pengajuan</th>
-                                        <th class="text-end" style="min-width: 100px;">Aksi</th>
+                                        <th class="text-end" style="min-width: 100px;">{{ "Status" if read_only else "Aksi" }}</th>
                                     </tr>
                                 </thead>
                                 <tbody id="pendingUsersBody">
@@ -392,11 +421,13 @@
                                         data-user-school-npsn="{{ user.school_npsn or '' }}"
                                         data-user-school-jenjang="{{ user.school_jenjang or '' }}"
                                         data-user-school-kecamatan="{{ user.school_kecamatan_name or '' }}"
-                                        style="cursor: pointer;" onclick='editUser({{ user|tojson }})'>
+                                        {% if not read_only %}style="cursor: pointer;" onclick='editUser({{ user|tojson }})'{% endif %}>
+                                        {% if not read_only %}
                                         <td onclick="event.stopPropagation()">
                                             <input class="form-check-input pending-user-select" type="checkbox"
                                                 data-user-id="{{ user.id }}" aria-label="Pilih user">
                                         </td>
+                                        {% endif %}
                                         <td>
                                             <div class="fw-bold">{{ user.full_name }}</div>
                                             <div class="small text-muted">{{ user.email }}</div>
@@ -428,7 +459,13 @@
                                                 '-' }}
                                             </small>
                                         </td>
-                                        <td class="text-end" onclick="event.stopPropagation()">
+                                        <td class="text-end" {% if not read_only %}onclick="event.stopPropagation()"{% endif %}>
+                                            {% if read_only %}
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                onclick='viewUserPreview({{ user|tojson }})'>
+                                                <i class="bi bi-eye me-1"></i>Preview
+                                            </button>
+                                            {% else %}
                                             <div class="btn-group btn-group-sm">
                                                 <form method="post" class="verify-user-form" data-account-status="approved"
                                                     style="display:inline;">
@@ -455,11 +492,12 @@
                                                     </button>
                                                 </form>
                                             </div>
+                                            {% endif %}
                                         </td>
                                     </tr>
                                     {% endfor %}
                                     <tr id="pendingUsersEmpty"{% if pending_users %} class="d-none"{% endif %}>
-                                        <td colspan="7" class="text-center text-muted">Tidak ada user menunggu
+                                        <td colspan="{{ 6 if read_only else 7 }}" class="text-center text-muted">Tidak ada user menunggu
                                             verifikasi.</td>
                                     </tr>
                                 </tbody>
@@ -474,6 +512,74 @@
                         {% include 'portal/admin/_activity_log_table.html' %}
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="userPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-eye me-2"></i>Preview Akun
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-1">Nama</label>
+                        <div class="fw-semibold" id="previewFullName">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-1">Email</label>
+                        <div class="fw-semibold" id="previewEmail">-</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-muted small mb-1">Role</label>
+                        <div id="previewRole">-</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-muted small mb-1">Status</label>
+                        <div id="previewStatus">-</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-muted small mb-1">Kecamatan</label>
+                        <div id="previewKecamatan">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-1">Jabatan</label>
+                        <div id="previewJabatan">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-1">WhatsApp</label>
+                        <div id="previewWhatsapp">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-1">NIP</label>
+                        <div id="previewNip">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-1">NRK</label>
+                        <div id="previewNrk">-</div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-muted small mb-1">Sekolah</label>
+                        <div id="previewSchool">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-1">Terdaftar</label>
+                        <div id="previewCreatedAt">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-1">Update Terakhir</label>
+                        <div id="previewUpdatedAt">-</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -507,6 +613,49 @@
     let mergeNewSearch;
     let mergeOldSelect;
     let mergeNewSelect;
+    let userPreviewModal;
+
+    function _previewValue(value) {
+        if (value === null || value === undefined) return '-';
+        const text = String(value).trim();
+        return text || '-';
+    }
+
+    function viewUserPreview(user) {
+        if (!user) return;
+
+        const schoolParts = [
+            user.school_name,
+            user.school_npsn ? `NPSN ${user.school_npsn}` : null,
+            user.school_jenjang,
+            user.school_kecamatan_name
+        ].filter(Boolean);
+
+        const setText = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = _previewValue(value);
+        };
+
+        setText('previewFullName', user.full_name);
+        setText('previewEmail', user.email);
+        setText('previewRole', user.role);
+        setText('previewStatus', user.account_status);
+        setText('previewKecamatan', user.kecamatan_name);
+        setText('previewJabatan', user.jabatan);
+        setText('previewWhatsapp', user.whatsapp_number);
+        setText('previewNip', user.nip);
+        setText('previewNrk', user.nrk);
+        setText('previewSchool', schoolParts.join(' • '));
+        setText('previewCreatedAt', user.created_at);
+        setText('previewUpdatedAt', user.updated_at);
+
+        if (!userPreviewModal) {
+            const modalEl = document.getElementById('userPreviewModal');
+            if (!modalEl || !window.bootstrap || !window.bootstrap.Modal) return;
+            userPreviewModal = new window.bootstrap.Modal(modalEl);
+        }
+        userPreviewModal.show();
+    }
 
     function toggleSchoolField(forceShow) {
         if (!schoolField) return;

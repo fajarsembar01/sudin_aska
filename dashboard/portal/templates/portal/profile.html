@@ -17,6 +17,55 @@
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
+                    {% if current_user and current_user.role in ['staff', 'coordinator'] %}
+                    <div class="mb-4 pb-3 border-bottom">
+                        <h6 class="fw-semibold mb-3"><i class="bi bi-camera-fill me-2"></i>Foto Profil</h6>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="user-avatar user-avatar--image" style="width:64px;height:64px;">
+                                {% if profile.profile_photo_url %}
+                                <img src="{{ profile.profile_photo_url }}" alt="Foto profil" style="width:100%;height:100%;object-fit:cover;">
+                                {% else %}
+                                <span class="d-inline-flex align-items-center justify-content-center w-100 h-100 text-muted bg-light">
+                                    <i class="bi bi-person-circle fs-3"></i>
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex flex-wrap gap-2">
+                                    <form method="post" action="{{ url_for('portal.upload_profile_photo') }}"
+                                        enctype="multipart/form-data" id="profilePhotoCameraForm">
+                                        <input type="file" name="photo" id="profilePhotoCameraInput" accept="image/*" capture="user" class="d-none">
+                                        <button type="button" class="btn btn-sm btn-primary" id="profilePhotoCameraBtn">
+                                            <i class="bi bi-camera me-1"></i>Kamera
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{{ url_for('portal.upload_profile_photo') }}"
+                                        enctype="multipart/form-data" id="profilePhotoGalleryForm">
+                                        <input type="file" name="photo" id="profilePhotoGalleryInput" accept="image/*" class="d-none">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="profilePhotoGalleryBtn">
+                                            <i class="bi bi-image me-1"></i>Folder
+                                        </button>
+                                    </form>
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                    Gunakan foto wajah yang jelas untuk memudahkan verifikasi buku tamu.
+                                </small>
+                                <div class="mt-3 d-none" id="profilePhotoCameraPanel">
+                                    <video id="profilePhotoCameraStream" class="w-100 rounded-3 mb-2" autoplay playsinline muted></video>
+                                    <canvas id="profilePhotoCameraCanvas" class="d-none"></canvas>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-sm btn-success w-50" id="profilePhotoTakeBtn">
+                                            <i class="bi bi-camera-fill me-1"></i>Ambil Foto
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-light w-50" id="profilePhotoCancelBtn">
+                                            Batal
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                     <h6 class="fw-semibold mb-3"><i class="bi bi-person-lines-fill me-2"></i>Data Profil</h6>
                     <form method="post">
                         <input type="hidden" name="form_type" value="profile">
@@ -136,6 +185,180 @@
                 this.setAttribute('aria-label', isHidden ? 'Sembunyikan password' : 'Tampilkan password');
             });
         });
+
+        const cameraBtn = document.getElementById('profilePhotoCameraBtn');
+        const cameraInput = document.getElementById('profilePhotoCameraInput');
+        const cameraForm = document.getElementById('profilePhotoCameraForm');
+        const galleryBtn = document.getElementById('profilePhotoGalleryBtn');
+        const galleryInput = document.getElementById('profilePhotoGalleryInput');
+        const galleryForm = document.getElementById('profilePhotoGalleryForm');
+        const cameraPanel = document.getElementById('profilePhotoCameraPanel');
+        const cameraStreamEl = document.getElementById('profilePhotoCameraStream');
+        const cameraCanvasEl = document.getElementById('profilePhotoCameraCanvas');
+        const takeBtn = document.getElementById('profilePhotoTakeBtn');
+        const cancelBtn = document.getElementById('profilePhotoCancelBtn');
+        let activeStream = null;
+        let uploading = false;
+
+        function setPhotoButtonsDisabled(disabled) {
+            if (cameraBtn) cameraBtn.disabled = disabled;
+            if (galleryBtn) galleryBtn.disabled = disabled;
+            if (takeBtn) takeBtn.disabled = disabled;
+            if (cancelBtn) cancelBtn.disabled = disabled;
+        }
+
+        function isCameraDirectSupported() {
+            return !!(
+                navigator.mediaDevices
+                && typeof navigator.mediaDevices.getUserMedia === 'function'
+            );
+        }
+
+        function stopDirectCamera() {
+            if (activeStream && activeStream.getTracks) {
+                activeStream.getTracks().forEach(function (track) {
+                    try {
+                        track.stop();
+                    } catch (error) { }
+                });
+            }
+            activeStream = null;
+            if (cameraStreamEl) {
+                cameraStreamEl.pause();
+                cameraStreamEl.srcObject = null;
+            }
+            if (cameraPanel) {
+                cameraPanel.classList.add('d-none');
+            }
+        }
+
+        function startDirectCamera() {
+            if (uploading) return;
+            if (!isCameraDirectSupported()) {
+                if (cameraInput) cameraInput.click();
+                return;
+            }
+            stopDirectCamera();
+            navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user' },
+                audio: false
+            })
+                .then(function (stream) {
+                    activeStream = stream;
+                    if (cameraStreamEl) {
+                        cameraStreamEl.srcObject = stream;
+                    }
+                    if (cameraPanel) {
+                        cameraPanel.classList.remove('d-none');
+                    }
+                })
+                .catch(function () {
+                    if (cameraInput) {
+                        cameraInput.click();
+                    }
+                });
+        }
+
+        function uploadCapturedPhoto(file) {
+            if (!cameraForm || !file || uploading) return;
+            const uploadUrl = cameraForm.getAttribute('action');
+            if (!uploadUrl) return;
+
+            uploading = true;
+            setPhotoButtonsDisabled(true);
+
+            const formData = new FormData();
+            formData.append('photo', file, file.name || 'profile-camera.jpg');
+
+            fetch(uploadUrl, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+                .then(function (response) {
+                    return response.json().catch(function () { return {}; }).then(function (data) {
+                        if (!response.ok || !data.success) {
+                            throw new Error(data.message || 'Gagal mengunggah foto profil.');
+                        }
+                        return data;
+                    });
+                })
+                .then(function () {
+                    if (typeof showToast === 'function') {
+                        showToast('Foto profil berhasil diperbarui.');
+                    }
+                    window.location.reload();
+                })
+                .catch(function (error) {
+                    alert(error.message || 'Gagal mengunggah foto profil.');
+                    uploading = false;
+                    setPhotoButtonsDisabled(false);
+                });
+        }
+
+        function takeDirectPhoto() {
+            if (!cameraStreamEl || !cameraCanvasEl) return;
+            const width = cameraStreamEl.videoWidth || 720;
+            const height = cameraStreamEl.videoHeight || 960;
+            if (width <= 0 || height <= 0) {
+                alert('Kamera belum siap. Coba lagi.');
+                return;
+            }
+            cameraCanvasEl.width = width;
+            cameraCanvasEl.height = height;
+            const ctx = cameraCanvasEl.getContext('2d');
+            if (!ctx) {
+                alert('Gagal memproses foto dari kamera.');
+                return;
+            }
+            ctx.drawImage(cameraStreamEl, 0, 0, width, height);
+            cameraCanvasEl.toBlob(function (blob) {
+                if (!blob) {
+                    alert('Gagal mengambil foto.');
+                    return;
+                }
+                stopDirectCamera();
+                uploadCapturedPhoto(new File([blob], 'profile-camera.jpg', { type: 'image/jpeg' }));
+            }, 'image/jpeg', 0.9);
+        }
+
+        if (cameraBtn && cameraInput) {
+            cameraBtn.addEventListener('click', function () {
+                startDirectCamera();
+            });
+        }
+        if (takeBtn) {
+            takeBtn.addEventListener('click', function () {
+                takeDirectPhoto();
+            });
+        }
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function () {
+                stopDirectCamera();
+            });
+        }
+        if (cameraInput && cameraForm) {
+            cameraInput.addEventListener('change', function () {
+                if (!cameraInput.files || !cameraInput.files.length) return;
+                cameraForm.submit();
+            });
+        }
+        if (galleryBtn && galleryInput) {
+            galleryBtn.addEventListener('click', function () {
+                galleryInput.click();
+            });
+        }
+        if (galleryInput && galleryForm) {
+            galleryInput.addEventListener('change', function () {
+                if (!galleryInput.files || !galleryInput.files.length) return;
+                galleryForm.submit();
+            });
+        }
+
+        window.addEventListener('beforeunload', stopDirectCamera);
     });
 </script>
 {% endblock %}

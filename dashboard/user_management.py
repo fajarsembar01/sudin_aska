@@ -5,7 +5,7 @@ from typing import Optional
 from uuid import uuid4
 import secrets
 
-from flask import Response, current_app, flash, jsonify, render_template, request
+from flask import Response, current_app, flash, jsonify, redirect, render_template, request
 from werkzeug.security import generate_password_hash
 
 from dashboard.queries import (
@@ -29,14 +29,21 @@ def _build_unregistered_email(full_name: str) -> str:
     return f"unregistered+{_slugify(full_name)}-{token}@aska.local"
 
 
-def handle_manage_users(*, actor: Optional[dict], base_template: str) -> Response:
+def handle_manage_users(*, actor: Optional[dict], base_template: str, read_only: bool = False) -> Response:
     """Shared handler for dashboard user management across apps."""
     actor_id = actor.get("id") if actor else None
 
     if request.method == "POST":
+        wants_json = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        if read_only:
+            message = "Mode Preview Akun aktif. Aksi edit dinonaktifkan untuk admin."
+            if wants_json:
+                return jsonify({"success": False, "message": message}), 403
+            flash(message, "warning")
+            return redirect(request.url)
+
         action = request.form.get("action", "create")
         user_id = request.form.get("user_id")
-        wants_json = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
         email = (request.form.get("email") or "").strip().lower()
         full_name = (request.form.get("full_name") or "").strip()
@@ -241,4 +248,5 @@ def handle_manage_users(*, actor: Optional[dict], base_template: str) -> Respons
         kecamatan_list=kecamatan_list,
         activity_logs=activity_logs,
         base_template=base_template,
+        read_only=read_only,
     )

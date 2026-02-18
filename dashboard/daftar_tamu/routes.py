@@ -24,6 +24,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    session,
     send_file,
     stream_with_context,
     url_for,
@@ -117,6 +118,48 @@ daftar_tamu_bp = Blueprint(
     template_folder="templates",
     static_folder="static",
 )
+
+_PREVIEW_ADMIN_SESSION_KEY = "preview_admin_user"
+_PREVIEW_TARGET_SESSION_KEY = "preview_target_user"
+_PREVIEW_READ_ONLY_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+
+
+def _is_preview_read_only_session() -> bool:
+    preview_admin = session.get(_PREVIEW_ADMIN_SESSION_KEY)
+    preview_target = session.get(_PREVIEW_TARGET_SESSION_KEY)
+    return (
+        isinstance(preview_admin, dict)
+        and preview_admin.get("role") == "admin"
+        and isinstance(preview_target, dict)
+        and bool(preview_target.get("id"))
+    )
+
+
+def _preview_read_only_block_response(*, fallback_url: str) -> Response:
+    message = "Mode preview aktif. Aksi edit dinonaktifkan."
+    accept_header = (request.headers.get("Accept") or "").lower()
+    content_type = (request.content_type or "").lower()
+    wants_json = (
+        request.is_json
+        or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or "application/json" in accept_header
+        or "application/json" in content_type
+    )
+    if wants_json:
+        return jsonify({"success": False, "message": message, "preview_read_only": True}), 403
+
+    flash(message, "warning")
+    target_url = (request.referrer or "").strip() or fallback_url
+    return redirect(target_url, code=303)
+
+
+@daftar_tamu_bp.before_request
+def _enforce_preview_read_only_mode() -> Response | None:
+    if request.method not in _PREVIEW_READ_ONLY_METHODS:
+        return None
+    if not _is_preview_read_only_session():
+        return None
+    return _preview_read_only_block_response(fallback_url=url_for("portal.preview_accounts"))
 
 
 def _parse_iso_date(value: Optional[str]) -> Optional[date]:
@@ -629,18 +672,29 @@ def _build_photo_thumb_url(
     )
 
 
-def _format_guest_photo_button_label(index: int, guest_name: Optional[str]) -> str:
-    base = f"🕘 Foto Sebelumnya {index}"
+def _format_guest_reference_button_label(
+    *,
+    kind: str,
+    index: int,
+    total_items: int,
+    guest_name: Optional[str],
+) -> str:
+    base = "Foto Profil" if kind == "profile" else "Foto Sebelumnya"
+    if total_items <= 1:
+        return base
+
+    base_with_index = f"{base} {index}"
     name = (guest_name or "").strip()
     if not name:
-        return base
+        return base_with_index
+
     name_parts = [part for part in name.split() if part]
     short_name = " ".join(name_parts[:2]) if name_parts else name
-    label = f"{base}: {short_name}"
+    label = f"{base_with_index}: {short_name}"
     if len(label) <= 64:
         return label
-    max_name_len = max(1, 64 - len(base) - 5)
-    return f"{base}: {short_name[:max_name_len]}..."
+    max_name_len = max(1, 64 - len(base_with_index) - 5)
+    return f"{base_with_index}: {short_name[:max_name_len]}..."
 
 
 def _build_guestbook_photo_links(
@@ -659,25 +713,49 @@ def _build_guestbook_photo_links(
         current_photo_url = _build_photo_url((current_detail or {}).get("photo_path"), external=True)
 
     if current_photo_url:
-        key = ("🖼️ Foto Transaksi", current_photo_url)
+        key = ("Foto Transaksi", current_photo_url)
         seen_keys.add(key)
         links.append({"text": key[0], "url": key[1]})
 
-    previous_index = 0
+    preferred_refs: list[dict] = []
     for row in list_transaction_previous_single_guest_photos(transaction_id):
+        profile_photo_url = _build_photo_url(row.get("profile_photo_path"), external=True)
         previous_photo_url = _build_photo_url(row.get("previous_photo_path"), external=True)
-        if not previous_photo_url:
+        selected_url: Optional[str] = None
+        selected_kind: Optional[str] = None
+        if profile_photo_url:
+            selected_url = profile_photo_url
+            selected_kind = "profile"
+        elif previous_photo_url:
+            selected_url = previous_photo_url
+            selected_kind = "previous"
+
+        if not selected_url or not selected_kind:
             continue
-        if current_photo_url and previous_photo_url == current_photo_url:
+        if current_photo_url and selected_url == current_photo_url:
             continue
-        next_index = previous_index + 1
-        text = _format_guest_photo_button_label(next_index, row.get("guest_name"))
-        key = (text, previous_photo_url)
+
+        preferred_refs.append(
+            {
+                "kind": selected_kind,
+                "url": selected_url,
+                "guest_name": row.get("guest_name"),
+            }
+        )
+
+    total_refs = len(preferred_refs)
+    for idx, row in enumerate(preferred_refs, start=1):
+        text = _format_guest_reference_button_label(
+            kind=row.get("kind") or "previous",
+            index=idx,
+            total_items=total_refs,
+            guest_name=row.get("guest_name"),
+        )
+        key = (text, row["url"])
         if key in seen_keys:
             continue
         seen_keys.add(key)
-        links.append({"text": text, "url": previous_photo_url})
-        previous_index = next_index
+        links.append({"text": text, "url": row["url"]})
 
     return links
 
@@ -1348,10 +1426,10 @@ def admin_school_visits_export(school_id: int) -> Response:
 @daftar_tamu_bp.route("/settings/users", methods=["GET", "POST"])
 @role_required("admin")
 def manage_users() -> Response:
-    """Manage dashboard users from Daftar Tamu app."""
+    """Preview dashboard users from Daftar Tamu app (read-only)."""
     from dashboard.user_management import handle_manage_users
 
-    return handle_manage_users(actor=current_user(), base_template="daftar_tamu/base_daftar_tamu.html")
+    return handle_manage_users(actor=current_user(), base_template="daftar_tamu/base_daftar_tamu.html", read_only=True)
 
 
 @daftar_tamu_bp.route("/admin/map-data")

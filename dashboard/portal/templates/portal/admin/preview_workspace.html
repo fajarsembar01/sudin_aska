@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light" data-bs-theme="light">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Preview Akun - PANBERSS</title>
+    <meta name="description" content="Mode preview akun staff, koordinator, dan sekolah untuk admin.">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='logo/logo.png') }}" type="image/png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <script>
+        (function () {
+            try {
+                var storageKey = 'theme';
+                var storedTheme = localStorage.getItem(storageKey);
+                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var theme = storedTheme || (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+                document.documentElement.setAttribute('data-bs-theme', theme);
+            } catch (error) {
+                document.documentElement.setAttribute('data-theme', 'light');
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+        })();
+    </script>
+    <style>
+        :root {
+            --preview-shell-bg: #f4f6fb;
+            --preview-sidebar-bg: #ffffff;
+            --preview-card-bg: #ffffff;
+            --preview-border: #dce3ef;
+            --preview-muted: #6b7280;
+            --preview-active: #0d6efd;
+            --preview-avatar-bg: #e9eefc;
+            --preview-text-main: #111827;
+            --preview-item-bg: #ffffff;
+            --preview-item-hover: #f8faff;
+            --preview-item-active-bg: rgba(13, 110, 253, 0.08);
+            --preview-avatar-text: #1d4ed8;
+            --preview-frame-border: #dbe4f3;
+        }
+
+        html[data-theme="dark"] {
+            --preview-shell-bg: #0b1220;
+            --preview-sidebar-bg: #111827;
+            --preview-card-bg: #111827;
+            --preview-border: #2b3648;
+            --preview-muted: #9ca3af;
+            --preview-active: #60a5fa;
+            --preview-avatar-bg: #1f2937;
+            --preview-text-main: #e5e7eb;
+            --preview-item-bg: #0f172a;
+            --preview-item-hover: #172033;
+            --preview-item-active-bg: rgba(96, 165, 250, 0.16);
+            --preview-avatar-text: #93c5fd;
+            --preview-frame-border: #334155;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--preview-shell-bg);
+            color: var(--preview-text-main);
+            font-family: "Plus Jakarta Sans", sans-serif;
+        }
+
+        .preview-shell {
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            gap: 0;
+            height: 100vh;
+        }
+
+        .preview-shell.sidebar-collapsed {
+            grid-template-columns: 78px minmax(0, 1fr);
+        }
+
+        .preview-sidebar {
+            border-right: 1px solid var(--preview-border);
+            background: var(--preview-sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .preview-sidebar-head {
+            padding: 16px 14px 10px;
+            border-bottom: 1px solid var(--preview-border);
+        }
+
+        .preview-sidebar-head h1 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .preview-sidebar-head .sidebar-toggle-btn {
+            padding: 0.2rem 0.35rem;
+            line-height: 1;
+        }
+
+        .preview-sidebar-head p {
+            margin: 4px 0 0;
+            font-size: 0.78rem;
+            color: var(--preview-muted);
+        }
+
+        .preview-search {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--preview-border);
+        }
+
+        .preview-list {
+            overflow-y: auto;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1 1 auto;
+            min-height: 0;
+            overscroll-behavior-y: contain;
+        }
+
+        .account-item {
+            border: 1px solid transparent;
+            background: var(--preview-item-bg);
+            border-radius: 10px;
+            padding: 9px 10px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            transition: 0.15s ease;
+        }
+
+        .account-item:hover {
+            border-color: var(--preview-border);
+            background: var(--preview-item-hover);
+        }
+
+        .account-item.active {
+            border-color: rgba(13, 110, 253, 0.35);
+            background: var(--preview-item-active-bg);
+        }
+
+        .account-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--preview-avatar-text);
+            background: var(--preview-avatar-bg);
+            flex: 0 0 auto;
+        }
+
+        .account-avatar.account-avatar-image {
+            overflow: hidden;
+            padding: 0;
+            background: transparent;
+        }
+
+        .account-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .preview-shell.sidebar-collapsed .preview-sidebar-head {
+            padding: 12px 8px 8px;
+        }
+
+        .preview-shell.sidebar-collapsed .preview-sidebar-head p,
+        .preview-shell.sidebar-collapsed .preview-search,
+        .preview-shell.sidebar-collapsed .account-meta {
+            display: none;
+        }
+
+        .preview-shell.sidebar-collapsed .preview-sidebar-head h1 .title-text {
+            display: none;
+        }
+
+        .preview-shell.sidebar-collapsed .preview-sidebar-head h1 i {
+            margin-right: 0 !important;
+            font-size: 1rem;
+        }
+
+        .preview-shell.sidebar-collapsed .account-item {
+            justify-content: center;
+            padding: 8px;
+        }
+
+        .account-meta {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        .account-name {
+            font-size: 0.86rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .account-subtitle {
+            margin-top: 2px;
+            font-size: 0.73rem;
+            color: var(--preview-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .preview-main {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .preview-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--preview-border);
+            background: var(--preview-card-bg);
+            flex-wrap: wrap;
+        }
+
+        .preview-toolbar .selected-user {
+            margin-right: auto;
+            min-width: 220px;
+            font-size: 0.82rem;
+            color: var(--preview-muted);
+        }
+
+        .preview-toolbar .selected-user strong {
+            color: var(--preview-text-main);
+            font-size: 0.9rem;
+        }
+
+        .preview-body {
+            padding: 12px;
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .preview-frame-shell {
+            background: var(--preview-card-bg);
+            border: 1px solid var(--preview-border);
+            border-radius: 14px;
+            padding: 10px;
+            height: calc(100vh - 92px);
+            min-height: 520px;
+            display: none;
+            overflow: auto;
+            overscroll-behavior-y: contain;
+        }
+
+        .preview-frame-shell.show {
+            display: block;
+        }
+
+        .preview-frame-shell iframe {
+            width: 100%;
+            height: 100%;
+            border: 1px solid var(--preview-frame-border);
+            border-radius: 10px;
+            background: var(--preview-card-bg);
+        }
+
+        .preview-frame-shell.mobile iframe {
+            width: 390px;
+            max-width: 100%;
+            margin: 0 auto;
+            display: block;
+            border-radius: 22px;
+            border-width: 8px;
+            height: 760px;
+            background: #fff;
+        }
+
+        .empty-state {
+            border: 1px dashed var(--preview-border);
+            border-radius: 14px;
+            background: var(--preview-card-bg);
+            height: calc(100vh - 92px);
+            min-height: 520px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--preview-muted);
+            text-align: center;
+            padding: 20px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 992px) {
+            .preview-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-sidebar {
+                min-height: auto;
+                border-right: 0;
+                border-bottom: 1px solid var(--preview-border);
+            }
+
+            .preview-list {
+                max-height: 220px;
+            }
+
+            .preview-frame-shell,
+            .empty-state {
+                height: 70vh;
+                min-height: 380px;
+            }
+
+            .preview-shell.sidebar-collapsed {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <input type="hidden" id="csrfToken" value="{{ csrf_token() }}">
+    <div class="preview-shell" id="previewShell">
+        <aside class="preview-sidebar">
+            <div class="preview-sidebar-head">
+                <div class="d-flex align-items-center justify-content-between gap-2">
+                    <h1><i class="bi bi-eye me-2"></i><span class="title-text">Preview Akun</span></h1>
+                    <button type="button" class="btn btn-sm btn-outline-secondary sidebar-toggle-btn"
+                        id="sidebarToggleBtn" aria-label="Toggle sidebar">
+                        <i class="bi bi-layout-sidebar-inset"></i>
+                    </button>
+                </div>
+                <p>Login virtual untuk cek bug akun staff, koordinator, dan sekolah.</p>
+            </div>
+            <div class="preview-search">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="accountSearch" placeholder="Cari nama / email">
+                </div>
+            </div>
+            <div class="preview-list" id="accountList">
+                {% for user in preview_users %}
+                {% set initials = ((user.full_name or user.email or '?') | trim)[:1] | upper %}
+                <button
+                    type="button"
+                    class="account-item{% if preview_target and preview_target.id == user.id %} active{% endif %}"
+                    data-user-id="{{ user.id }}"
+                    data-user-name="{{ user.full_name or user.email or '-' }}"
+                    data-user-role="{{ user.role or '-' }}"
+                    data-search="{{ ((user.full_name or '') ~ ' ' ~ (user.email or '') ~ ' ' ~ (user.role or '') ~ ' ' ~ (user.kecamatan_name or '') ~ ' ' ~ (user.school_name or '')) | lower }}">
+                    {% if user.role == 'sekolah' and user.school_logo_url %}
+                    <span class="account-avatar account-avatar-image">
+                        <img src="{{ user.school_logo_url }}" alt="Logo sekolah {{ user.school_name or user.full_name or user.email }}">
+                    </span>
+                    {% elif user.role in ['staff', 'coordinator'] and user.profile_photo_url %}
+                    <span class="account-avatar account-avatar-image">
+                        <img src="{{ user.profile_photo_url }}" alt="Foto profil {{ user.full_name or user.email }}">
+                    </span>
+                    {% else %}
+                    <span class="account-avatar">{{ initials }}</span>
+                    {% endif %}
+                    <span class="account-meta">
+                        <span class="account-name">{{ user.full_name or user.email }}</span>
+                        <span class="account-subtitle">{{ user.role|upper }} • {{ user.account_status or '-' }}</span>
+                    </span>
+                </button>
+                {% else %}
+                <div class="text-muted small p-2">Belum ada akun yang bisa dipreview.</div>
+                {% endfor %}
+            </div>
+        </aside>
+
+        <main class="preview-main">
+            <div class="preview-toolbar">
+                <div class="selected-user">
+                    {% if preview_target %}
+                    Sedang preview:<br>
+                    <strong id="selectedUserLabel">{{ preview_target.full_name or preview_target.email }} ({{ preview_target.role|upper }})</strong>
+                    {% else %}
+                    <strong id="selectedUserLabel">Pilih akun di panel kiri untuk mulai preview.</strong>
+                    {% endif %}
+                </div>
+                <div class="btn-group btn-group-sm" id="appModeButtons">
+                    <button type="button"
+                        class="btn {% if preview_selected_app == 'portal' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                        data-app="portal">PANBERSS</button>
+                    <button type="button"
+                        class="btn {% if preview_selected_app == 'daftar_tamu' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                        data-app="daftar_tamu">Daftar Tamu</button>
+                </div>
+                <div class="btn-group btn-group-sm" id="deviceModeButtons">
+                    <button type="button" class="btn btn-secondary" data-view="desktop">Browser</button>
+                    <button type="button" class="btn btn-outline-secondary" data-view="mobile">HP</button>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="previewThemeToggle"
+                    title="Ganti tema">
+                    <i class="bi bi-moon-stars"></i>
+                </button>
+                <a href="{{ url_for('portal.preview_stop', next=url_for('portal.preview_accounts')) }}"
+                    class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-box-arrow-left me-1"></i>Keluar Preview
+                </a>
+            </div>
+            <div class="preview-body">
+                <div class="preview-frame-shell{% if preview_url %} show{% endif %}" id="previewFrameShell">
+                    <iframe id="previewFrame" title="Virtual Browser Preview"
+                        src="{{ preview_url or 'about:blank' }}"></iframe>
+                </div>
+                <div class="empty-state{% if preview_url %} hidden{% endif %}" id="previewEmptyState">
+                    <div>
+                        <div class="fw-semibold mb-2">Belum ada akun yang dipreview</div>
+                        <div class="small">Klik akun di kiri. Tampilan kanan akan meniru login akun tersebut secara langsung.</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function () {
+            var previewShell = document.getElementById('previewShell');
+            var accountList = document.getElementById('accountList');
+            var accountSearch = document.getElementById('accountSearch');
+            var frameShell = document.getElementById('previewFrameShell');
+            var frame = document.getElementById('previewFrame');
+            var emptyState = document.getElementById('previewEmptyState');
+            var selectedUserLabel = document.getElementById('selectedUserLabel');
+            var csrfToken = document.getElementById('csrfToken');
+            var appButtons = Array.from(document.querySelectorAll('#appModeButtons [data-app]'));
+            var viewButtons = Array.from(document.querySelectorAll('#deviceModeButtons [data-view]'));
+            var sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+            var previewThemeToggle = document.getElementById('previewThemeToggle');
+            var selectedApp = "{{ preview_selected_app or 'portal' }}";
+            var selectedUserId = {{ preview_target.id if preview_target else 'null' }};
+
+            function applyTheme(theme) {
+                var normalized = theme === 'dark' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', normalized);
+                document.documentElement.setAttribute('data-bs-theme', normalized);
+                if (previewThemeToggle) {
+                    if (normalized === 'dark') {
+                        previewThemeToggle.innerHTML = '<i class="bi bi-sun"></i>';
+                        previewThemeToggle.setAttribute('title', 'Tema terang');
+                    } else {
+                        previewThemeToggle.innerHTML = '<i class="bi bi-moon-stars"></i>';
+                        previewThemeToggle.setAttribute('title', 'Tema gelap');
+                    }
+                }
+            }
+
+            function getStoredTheme() {
+                try {
+                    var stored = localStorage.getItem('theme');
+                    if (stored === 'dark' || stored === 'light') {
+                        return stored;
+                    }
+                } catch (err) {
+                    // ignore
+                }
+                return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+            }
+
+            function setSidebarCollapsed(collapsed) {
+                if (!previewShell) return;
+                previewShell.classList.toggle('sidebar-collapsed', collapsed);
+                if (sidebarToggleBtn) {
+                    sidebarToggleBtn.innerHTML = collapsed
+                        ? '<i class="bi bi-layout-sidebar"></i>'
+                        : '<i class="bi bi-layout-sidebar-inset"></i>';
+                }
+                try {
+                    localStorage.setItem('preview_sidebar_collapsed', collapsed ? '1' : '0');
+                } catch (err) {
+                    // ignore storage issues
+                }
+            }
+
+            function setAppButtonState() {
+                appButtons.forEach(function (button) {
+                    var active = button.dataset.app === selectedApp;
+                    button.classList.toggle('btn-primary', active);
+                    button.classList.toggle('btn-outline-primary', !active);
+                });
+            }
+
+            function setViewMode(viewMode) {
+                if (!frameShell) return;
+                var isMobile = viewMode === 'mobile';
+                frameShell.classList.toggle('mobile', isMobile);
+                viewButtons.forEach(function (button) {
+                    var active = button.dataset.view === viewMode;
+                    button.classList.toggle('btn-secondary', active);
+                    button.classList.toggle('btn-outline-secondary', !active);
+                });
+            }
+
+            function setSelectedUserVisual(targetId) {
+                var buttons = accountList ? Array.from(accountList.querySelectorAll('.account-item[data-user-id]')) : [];
+                buttons.forEach(function (button) {
+                    var isActive = Number(button.dataset.userId) === Number(targetId);
+                    button.classList.toggle('active', isActive);
+                });
+            }
+
+            function setSelectedUserLabel(text) {
+                if (selectedUserLabel) {
+                    selectedUserLabel.textContent = text;
+                }
+            }
+
+            function showFrame(urlValue) {
+                if (frame) {
+                    frame.src = urlValue;
+                }
+                if (frameShell) {
+                    frameShell.classList.add('show');
+                }
+                if (emptyState) {
+                    emptyState.classList.add('hidden');
+                }
+            }
+
+            async function activatePreview(userId) {
+                if (!userId) return;
+                var payload = new URLSearchParams();
+                payload.set('csrf_token', csrfToken ? csrfToken.value : '');
+                payload.set('app', selectedApp);
+                try {
+                    var response = await fetch("{{ url_for('portal.preview_start', user_id=0) }}".replace('/0', '/' + userId), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        },
+                        body: payload.toString()
+                    });
+                    var data = await response.json();
+                    if (!response.ok || !data.success) {
+                        window.alert(data.message || 'Gagal memulai preview akun.');
+                        return;
+                    }
+                    selectedUserId = Number(userId);
+                    setSelectedUserVisual(selectedUserId);
+                    setSelectedUserLabel((data.target && (data.target.full_name || data.target.email) || 'Akun') + ' (' + ((data.target && data.target.role) || '-').toUpperCase() + ')');
+                    if (data.preview_url) {
+                        showFrame(data.preview_url);
+                    }
+                } catch (err) {
+                    window.alert('Gagal memulai preview akun.');
+                }
+            }
+
+            if (accountList) {
+                accountList.addEventListener('click', function (event) {
+                    var button = event.target.closest('.account-item[data-user-id]');
+                    if (!button) return;
+                    var userId = Number(button.dataset.userId);
+                    activatePreview(userId);
+                });
+            }
+
+            if (accountSearch) {
+                accountSearch.addEventListener('input', function () {
+                    var keyword = (accountSearch.value || '').trim().toLowerCase();
+                    var buttons = accountList ? Array.from(accountList.querySelectorAll('.account-item[data-user-id]')) : [];
+                    buttons.forEach(function (button) {
+                        var haystack = (button.dataset.search || '').toLowerCase();
+                        var matched = !keyword || haystack.indexOf(keyword) >= 0;
+                        button.classList.toggle('hidden', !matched);
+                    });
+                });
+            }
+
+            appButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    selectedApp = button.dataset.app || 'portal';
+                    setAppButtonState();
+                    if (selectedUserId) {
+                        activatePreview(selectedUserId);
+                    }
+                });
+            });
+
+            viewButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    setViewMode(button.dataset.view || 'desktop');
+                });
+            });
+
+            if (sidebarToggleBtn) {
+                sidebarToggleBtn.addEventListener('click', function () {
+                    if (!previewShell) return;
+                    setSidebarCollapsed(!previewShell.classList.contains('sidebar-collapsed'));
+                });
+            }
+
+            if (previewThemeToggle) {
+                previewThemeToggle.addEventListener('click', function () {
+                    var currentTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+                    var nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    applyTheme(nextTheme);
+                    try {
+                        localStorage.setItem('theme', nextTheme);
+                    } catch (err) {
+                        // ignore storage issues
+                    }
+                });
+            }
+
+            try {
+                setSidebarCollapsed(localStorage.getItem('preview_sidebar_collapsed') === '1');
+            } catch (err) {
+                setSidebarCollapsed(false);
+            }
+
+            setAppButtonState();
+            setViewMode('desktop');
+            applyTheme(getStoredTheme());
+            if (selectedUserId) {
+                setSelectedUserVisual(selectedUserId);
+            }
+        })();
+    </script>
+</body>
+
+</html>

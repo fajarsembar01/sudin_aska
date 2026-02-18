@@ -1,9 +1,15 @@
 {% if current_user %}
+{% set user_photo_url = current_user.profile_photo_url if current_user.profile_photo_url else '' %}
 <div class="dropdown user-menu">
     <button class="user-menu-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown">
         {% if current_user.role == 'sekolah' and user_school and user_school.logo_url %}
         <span class="user-avatar user-avatar--image">
             <img src="{{ user_school.logo_url }}" alt="Logo sekolah" width="38" height="38"
+                style="border-radius: 50%; object-fit: cover;">
+        </span>
+        {% elif user_photo_url %}
+        <span class="user-avatar user-avatar--image">
+            <img src="{{ user_photo_url }}" alt="Foto profil" width="38" height="38"
                 style="border-radius: 50%; object-fit: cover;">
         </span>
         {% else %}

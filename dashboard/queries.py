@@ -1692,6 +1692,7 @@ def get_user_by_email(email: str) -> Optional[DictRow]:
                 jabatan,
                 degree_prefix,
                 degree_suffix,
+                profile_photo_path,
                 no_tester_enabled,
                 assigned_class_id,
                 last_login_at,
@@ -1719,6 +1720,7 @@ def list_dashboard_users() -> List[Dict[str, Any]]:
                 u.jabatan,
                 u.degree_prefix,
                 u.degree_suffix,
+                u.profile_photo_path,
                 u.no_tester_enabled,
                 u.assigned_class_id,
                 u.school_id,
@@ -1734,6 +1736,7 @@ def list_dashboard_users() -> List[Dict[str, Any]]:
                 s.npsn as school_npsn,
                 s.name as school_name,
                 s.jenjang as school_jenjang,
+                s.logo_url as school_logo_url,
                 sk.name as school_kecamatan_name
             FROM dashboard_users u
             LEFT JOIN portal_kecamatan k ON u.requested_kecamatan = k.id

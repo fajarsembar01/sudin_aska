@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS dashboard_users (
     jabatan TEXT,
     degree_prefix TEXT,
     degree_suffix TEXT,
+    profile_photo_path TEXT,
     no_tester_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     last_login_at TIMESTAMPTZ
@@ -867,6 +868,7 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS jabatan TEXT",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS degree_prefix TEXT",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS degree_suffix TEXT",
+        "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS profile_photo_path TEXT",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS merged_to INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS merged_at TIMESTAMPTZ",
         "ALTER TABLE bullying_reports ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'general'",

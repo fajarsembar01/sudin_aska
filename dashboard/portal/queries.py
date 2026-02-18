@@ -3209,6 +3209,7 @@ def get_dashboard_user_profile(user_id: int) -> Optional[Dict[str, Any]]:
                 nrk,
                 jabatan,
                 whatsapp_number,
+                profile_photo_path,
                 password_hash
             FROM dashboard_users
             WHERE id = %s
@@ -3260,6 +3261,24 @@ def update_dashboard_user_profile(
     query = f"UPDATE dashboard_users SET {', '.join(updates)} WHERE id = %s"
     with get_cursor(commit=True) as cur:
         cur.execute(query, params)
+        return cur.rowcount > 0
+
+
+def update_dashboard_user_profile_photo(
+    user_id: int,
+    *,
+    photo_path: Optional[str],
+) -> bool:
+    """Update profile photo path for a dashboard user."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE dashboard_users
+            SET profile_photo_path = %s
+            WHERE id = %s
+            """,
+            (photo_path, user_id),
+        )
         return cur.rowcount > 0
 
 

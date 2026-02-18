@@ -166,9 +166,9 @@ def _normalize_guestbook_photo_links(
         candidates.extend(photo_links)
     else:
         if photo_url:
-            candidates.append({"text": "🖼️ Foto Transaksi", "url": photo_url})
+            candidates.append({"text": "Foto Transaksi", "url": photo_url})
         if previous_photo_url:
-            candidates.append({"text": "🕘 Foto Sebelumnya", "url": previous_photo_url})
+            candidates.append({"text": "Foto Sebelumnya", "url": previous_photo_url})
 
     for item in candidates:
         text = str((item or {}).get("text") or "").strip()

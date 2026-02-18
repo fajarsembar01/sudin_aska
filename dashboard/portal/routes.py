@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path, PurePosixPath
 from urllib.parse import quote_plus
 import subprocess
@@ -110,6 +111,7 @@ from .queries import (
     delete_period,
     get_dashboard_user_profile,
     update_dashboard_user_profile,
+    update_dashboard_user_profile_photo,
     # Classroom configuration
     list_school_classrooms,
     create_school_classroom,
@@ -138,6 +140,7 @@ from dashboard.queries import (
     update_team_member_request_status,
     get_team_member_request,
     get_available_staff,
+    list_dashboard_users,
 )
 from dashboard.telegram_notifications import (
     notify_assignment_request,
@@ -185,6 +188,52 @@ portal_bp = Blueprint(
 UPLOAD_FOLDER = Path(__file__).parent.parent.parent / "uploads" / "portal"
 PHOTO_REQUIRED_PCT = 90.0
 JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
+_PREVIEW_ALLOWED_ROLES = {"staff", "coordinator", "sekolah"}
+_PREVIEW_ADMIN_SESSION_KEY = "preview_admin_user"
+_PREVIEW_TARGET_SESSION_KEY = "preview_target_user"
+_PREVIEW_APP_SESSION_KEY = "preview_selected_app"
+_PREVIEW_READ_ONLY_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+_PREVIEW_READ_ONLY_EXEMPT_ENDPOINTS = {"portal.preview_start"}
+
+
+def _is_preview_read_only_session() -> bool:
+    preview_admin = session.get(_PREVIEW_ADMIN_SESSION_KEY)
+    preview_target = session.get(_PREVIEW_TARGET_SESSION_KEY)
+    return (
+        isinstance(preview_admin, dict)
+        and preview_admin.get("role") == "admin"
+        and isinstance(preview_target, dict)
+        and bool(preview_target.get("id"))
+    )
+
+
+def _preview_read_only_block_response(*, fallback_url: str) -> Response:
+    message = "Mode preview aktif. Aksi edit dinonaktifkan."
+    accept_header = (request.headers.get("Accept") or "").lower()
+    content_type = (request.content_type or "").lower()
+    wants_json = (
+        request.is_json
+        or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or "application/json" in accept_header
+        or "application/json" in content_type
+    )
+    if wants_json:
+        return jsonify({"success": False, "message": message, "preview_read_only": True}), 403
+
+    flash(message, "warning")
+    target_url = (request.referrer or "").strip() or fallback_url
+    return redirect(target_url, code=303)
+
+
+@portal_bp.before_request
+def _enforce_preview_read_only_mode() -> Response | None:
+    if request.method not in _PREVIEW_READ_ONLY_METHODS:
+        return None
+    if request.endpoint in _PREVIEW_READ_ONLY_EXEMPT_ENDPOINTS:
+        return None
+    if not _is_preview_read_only_session():
+        return None
+    return _preview_read_only_block_response(fallback_url=url_for("portal.preview_accounts"))
 
 
 def _get_low_score_rooms_missing_photos(
@@ -335,6 +384,13 @@ def _normalize_photo_rel_path(value: str | None) -> str | None:
     if rel.parts and rel.parts[0] == "logos":
         return None
     return rel.as_posix()
+
+
+def _build_profile_photo_url(photo_path: str | None) -> str | None:
+    rel = _normalize_photo_rel_path(photo_path)
+    if not rel:
+        return None
+    return url_for("portal.uploaded_file", filename=rel)
 
 
 def _portal_access_required(view):
@@ -5816,6 +5872,14 @@ def inject_permissions():
     user = current_user()
     if not user:
         return {}
+
+    if user.get("profile_photo_path") and not user.get("profile_photo_url"):
+        computed_photo_url = _build_profile_photo_url(user.get("profile_photo_path"))
+        if computed_photo_url:
+            user["profile_photo_url"] = computed_photo_url
+            session_user = session.get("user") or {}
+            session_user["profile_photo_url"] = computed_photo_url
+            session["user"] = session_user
     
     from .permissions import get_permission_summary
     user_school = None
@@ -5851,6 +5915,14 @@ def inject_permissions():
         except Exception:
             user_app_notifications = {"unread_count": 0, "total_count": 0}
 
+    role_value = (user.get("role") or "").strip().lower()
+    has_profile_photo = bool((user.get("profile_photo_url") or "").strip())
+    require_profile_photo_upload = (
+        role_value in {"staff", "coordinator"}
+        and not has_profile_photo
+        and not _is_preview_read_only_session()
+    )
+
     return {
         'permissions': get_permission_summary(user),
         'is_superadmin': is_superadmin(user),
@@ -5859,6 +5931,7 @@ def inject_permissions():
         'area_contacts': area_contacts,
         'admin_pending': admin_pending,
         'user_app_notifications': user_app_notifications,
+        'require_profile_photo_upload': require_profile_photo_upload,
     }
 
 
@@ -5982,6 +6055,95 @@ def coordinator_request_member() -> Response:
 # User Profile (admin/coordinator/staff)
 # =====================================================
 
+@portal_bp.route("/profile/photo", methods=["POST"])
+@role_required("staff", "coordinator")
+def upload_profile_photo() -> Response:
+    """Upload/update profile photo for staff and coordinator users."""
+    user = current_user()
+    if not user:
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+
+    wants_json = (
+        request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or request.accept_mimetypes.best == "application/json"
+    )
+    file_storage = request.files.get("photo")
+    if not file_storage or not file_storage.filename:
+        message = "Pilih foto profil terlebih dahulu."
+        if wants_json:
+            return jsonify({"success": False, "message": message}), 400
+        flash(message, "warning")
+        return redirect(url_for("portal.user_profile_settings"))
+
+    if not _allowed_file(file_storage.filename):
+        message = "Format foto tidak didukung. Gunakan JPG, JPEG, PNG, atau WEBP."
+        if wants_json:
+            return jsonify({"success": False, "message": message}), 400
+        flash(message, "warning")
+        return redirect(url_for("portal.user_profile_settings"))
+
+    ext = file_storage.filename.rsplit(".", 1)[1].lower()
+    upload_dir = UPLOAD_FOLDER / "profile"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
+    generated_name = f"user_{int(user['id'])}_{timestamp}_{uuid.uuid4().hex[:8]}.{ext}"
+    abs_path = upload_dir / generated_name
+    rel_path = f"profile/{generated_name}"
+    db_photo_path = f"uploads/portal/{rel_path}"
+
+    previous_profile = get_dashboard_user_profile(int(user["id"])) or {}
+    previous_rel = _normalize_photo_rel_path(previous_profile.get("profile_photo_path"))
+
+    try:
+        file_storage.save(abs_path)
+        updated = update_dashboard_user_profile_photo(
+            user_id=int(user["id"]),
+            photo_path=db_photo_path,
+        )
+        if not updated:
+            raise RuntimeError("Gagal menyimpan foto profil ke database.")
+
+        if previous_rel and previous_rel.startswith("profile/") and previous_rel != rel_path:
+            old_abs_path = UPLOAD_FOLDER / previous_rel
+            if old_abs_path.exists() and old_abs_path.is_file():
+                try:
+                    old_abs_path.unlink()
+                except OSError:
+                    current_app.logger.warning(
+                        "Gagal menghapus foto profil lama: %s",
+                        old_abs_path.as_posix(),
+                    )
+
+        session_user = session.get("user") or {}
+        session_user["profile_photo_path"] = db_photo_path
+        session_user["profile_photo_url"] = url_for("portal.uploaded_file", filename=rel_path)
+        session["user"] = session_user
+    except Exception as exc:
+        if abs_path.exists():
+            try:
+                abs_path.unlink()
+            except OSError:
+                pass
+        current_app.logger.exception("Gagal mengunggah foto profil pengguna.")
+        message = f"Gagal mengunggah foto profil: {exc}"
+        if wants_json:
+            return jsonify({"success": False, "message": message}), 500
+        flash(message, "danger")
+        return redirect(url_for("portal.user_profile_settings"))
+
+    success_message = "Foto profil berhasil diperbarui."
+    if wants_json:
+        return jsonify(
+            {
+                "success": True,
+                "message": success_message,
+                "photo_url": url_for("portal.uploaded_file", filename=rel_path),
+            }
+        )
+    flash(success_message, "success")
+    return redirect(url_for("portal.user_profile_settings"))
+
 @portal_bp.route("/profile", methods=["GET", "POST"])
 @role_required("admin", "coordinator", "staff")
 def user_profile_settings() -> Response:
@@ -5992,6 +6154,7 @@ def user_profile_settings() -> Response:
         flash("Profil tidak ditemukan.", "danger")
         return redirect(url_for("portal.home"))
     profile_view = {k: v for k, v in profile.items() if k != "password_hash"}
+    profile_view["profile_photo_url"] = _build_profile_photo_url(profile.get("profile_photo_path"))
 
     if request.method == "POST":
         form_type = (request.form.get("form_type") or "profile").strip().lower()
@@ -6065,6 +6228,7 @@ def user_profile_settings() -> Response:
                 flash("Profil berhasil diperbarui.", "success")
                 profile = get_dashboard_user_profile(user["id"])
                 profile_view = {k: v for k, v in profile.items() if k != "password_hash"}
+                profile_view["profile_photo_url"] = _build_profile_photo_url(profile.get("profile_photo_path"))
             except Exception as exc:
                 current_app.logger.error(f"Gagal memperbarui profil: {exc}")
                 flash("Gagal memperbarui profil.", "danger")
@@ -6076,13 +6240,196 @@ def user_profile_settings() -> Response:
 # User Management & Monev Teams (Portal Integration)
 # =====================================================
 
+def _preview_admin_actor() -> dict | None:
+    """Return admin actor from active session or preview session."""
+    preview_admin = session.get(_PREVIEW_ADMIN_SESSION_KEY)
+    if isinstance(preview_admin, dict) and preview_admin.get("role") == "admin":
+        return preview_admin
+    user = current_user()
+    if isinstance(user, dict) and user.get("role") == "admin":
+        return user
+    return None
+
+
+def _preview_access_required(view):
+    """Allow access for logged-in admin and active preview-admin sessions."""
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        actor = _preview_admin_actor()
+        if actor:
+            return view(*args, **kwargs)
+        if not current_user():
+            flash("Silakan login terlebih dahulu.", "warning")
+            return redirect(url_for("auth.login", next=request.path))
+        flash("Halaman ini hanya untuk admin.", "danger")
+        return redirect(url_for("portal.home"))
+    return wrapper
+
+
+def _normalize_preview_app(raw: str | None) -> str:
+    app = (raw or "").strip().lower()
+    if app in {"guestbook", "daftar_tamu", "daftar-tamu"}:
+        return "daftar_tamu"
+    return "portal"
+
+
+def _build_preview_entry_url(*, role: str, app: str) -> str:
+    role_value = (role or "").strip().lower()
+    app_value = _normalize_preview_app(app)
+    if app_value == "daftar_tamu":
+        if role_value == "sekolah":
+            return url_for("daftar_tamu.sekolah_guestbook")
+        return url_for("daftar_tamu.user_guestbook_history")
+    if role_value == "sekolah":
+        return url_for("portal.sekolah_home")
+    return url_for("portal.home")
+
+
+def _build_session_user_payload(row: dict) -> dict:
+    raw_assigned_class = row.get("assigned_class_id")
+    assigned_class_id = None
+    if raw_assigned_class is not None:
+        try:
+            assigned_class_id = int(raw_assigned_class)
+        except (TypeError, ValueError):
+            assigned_class_id = None
+    profile_photo_path = row.get("profile_photo_path")
+    profile_photo_url = _build_profile_photo_url(profile_photo_path)
+    return {
+        "id": row.get("id"),
+        "email": (row.get("email") or "").strip().lower(),
+        "full_name": row.get("full_name"),
+        "role": row.get("role"),
+        "profile_photo_path": profile_photo_path,
+        "profile_photo_url": profile_photo_url,
+        "no_tester_enabled": bool(row.get("no_tester_enabled")),
+        "assigned_class_id": assigned_class_id,
+    }
+
+
+def _serialize_preview_target(row: dict) -> dict:
+    return {
+        "id": row.get("id"),
+        "email": row.get("email"),
+        "full_name": row.get("full_name"),
+        "role": row.get("role"),
+        "account_status": row.get("account_status"),
+    }
+
+
+def _list_preview_accounts() -> list[dict]:
+    rows = []
+    for user in list_dashboard_users():
+        role = (user.get("role") or "").strip().lower()
+        if role not in _PREVIEW_ALLOWED_ROLES:
+            continue
+        if user.get("merged_to"):
+            continue
+        row = dict(user)
+        row["profile_photo_url"] = _build_profile_photo_url(row.get("profile_photo_path"))
+        rows.append(row)
+    return rows
+
+
+def _find_preview_target(user_id: int) -> dict | None:
+    for row in _list_preview_accounts():
+        if int(row.get("id") or 0) == int(user_id):
+            return row
+    return None
+
+
 @portal_bp.route("/settings/users", methods=["GET", "POST"])
-@role_required("admin")
+@_preview_access_required
 def manage_users() -> Response:
     """Manage dashboard users from Portal app."""
     from dashboard.user_management import handle_manage_users
 
-    return handle_manage_users(actor=current_user(), base_template="portal/base_portal.html")
+    return handle_manage_users(
+        actor=_preview_admin_actor(),
+        base_template="portal/base_portal.html",
+        read_only=_is_preview_read_only_session(),
+    )
+
+
+@portal_bp.route("/settings/preview-akun", methods=["GET"])
+@_preview_access_required
+def preview_accounts() -> Response:
+    """Admin preview workspace for target accounts."""
+    preview_users = _list_preview_accounts()
+    selected_target = session.get(_PREVIEW_TARGET_SESSION_KEY)
+    selected_app = _normalize_preview_app(session.get(_PREVIEW_APP_SESSION_KEY))
+    preview_url = None
+    if isinstance(selected_target, dict):
+        selected_id = int(selected_target.get("id") or 0)
+        still_exists = any(int(user.get("id") or 0) == selected_id for user in preview_users)
+        if still_exists:
+            preview_url = _build_preview_entry_url(
+                role=(selected_target.get("role") or ""),
+                app=selected_app,
+            )
+        else:
+            session.pop(_PREVIEW_TARGET_SESSION_KEY, None)
+            session.pop(_PREVIEW_APP_SESSION_KEY, None)
+            selected_target = None
+
+    return render_template(
+        "portal/admin/preview_workspace.html",
+        preview_users=preview_users,
+        preview_target=selected_target,
+        preview_selected_app=selected_app,
+        preview_url=preview_url,
+    )
+
+
+@portal_bp.route("/preview/start/<int:user_id>", methods=["POST"])
+@_preview_access_required
+def preview_start(user_id: int) -> Response:
+    """Activate preview mode as selected target user."""
+    target = _find_preview_target(user_id)
+    if not target:
+        return jsonify({"success": False, "message": "Akun target tidak ditemukan."}), 404
+
+    role = (target.get("role") or "").strip().lower()
+    if role not in _PREVIEW_ALLOWED_ROLES:
+        return jsonify({"success": False, "message": "Role akun tidak didukung untuk preview."}), 400
+
+    actor = _preview_admin_actor()
+    if not actor:
+        return jsonify({"success": False, "message": "Hanya admin yang dapat memulai preview."}), 403
+
+    session[_PREVIEW_ADMIN_SESSION_KEY] = actor
+    session["user"] = _build_session_user_payload(target)
+    session[_PREVIEW_TARGET_SESSION_KEY] = _serialize_preview_target(target)
+
+    app_name = _normalize_preview_app(request.form.get("app") or request.args.get("app"))
+    session[_PREVIEW_APP_SESSION_KEY] = app_name
+    preview_url = _build_preview_entry_url(role=role, app=app_name)
+
+    return jsonify(
+        {
+            "success": True,
+            "preview_url": preview_url,
+            "target": session.get(_PREVIEW_TARGET_SESSION_KEY),
+            "app": app_name,
+        }
+    )
+
+
+@portal_bp.route("/preview/stop")
+@_preview_access_required
+def preview_stop() -> Response:
+    """Stop preview mode and restore original admin session."""
+    admin_session_user = session.get(_PREVIEW_ADMIN_SESSION_KEY)
+    if isinstance(admin_session_user, dict) and admin_session_user.get("role") == "admin":
+        session["user"] = admin_session_user
+        flash("Mode preview dihentikan. Anda kembali ke akun admin.", "info")
+
+    session.pop(_PREVIEW_ADMIN_SESSION_KEY, None)
+    session.pop(_PREVIEW_TARGET_SESSION_KEY, None)
+    session.pop(_PREVIEW_APP_SESSION_KEY, None)
+
+    next_url = (request.args.get("next") or "").strip() or url_for("portal.preview_accounts")
+    return redirect(next_url)
 
 
 @portal_bp.route("/settings/monev-teams", methods=["GET", "POST"])

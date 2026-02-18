@@ -2417,6 +2417,7 @@ def list_transaction_previous_single_guest_photos(transaction_id: int) -> List[D
                 cg.general_guest_id,
                 cg.guest_order,
                 COALESCE(u.full_name, gg.full_name, 'Tamu') AS guest_name,
+                u.profile_photo_path AS profile_photo_path,
                 prev.photo_path AS previous_photo_path
             FROM current_guests cg
             LEFT JOIN dashboard_users u ON u.id = cg.user_id

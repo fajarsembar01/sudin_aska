@@ -1,5 +1,6 @@
 ﻿import os
 import secrets
+from pathlib import PurePosixPath
 from functools import wraps
 from typing import Callable, Optional
 
@@ -48,6 +49,26 @@ oauth = OAuth()
 
 GMAIL_ALLOWED_DOMAINS = {"gmail.com", "googlemail.com"}
 _OAUTH_REGISTERED = False
+
+
+def _normalize_profile_photo_path(photo_path: Optional[str]) -> Optional[str]:
+    if not photo_path:
+        return None
+    normalized = str(photo_path).replace("\\", "/").strip()
+    if normalized.startswith("uploads/portal/"):
+        normalized = normalized[len("uploads/portal/") :]
+    normalized = normalized.lstrip("/")
+    rel = PurePosixPath(normalized)
+    if rel.is_absolute() or ".." in rel.parts:
+        return None
+    return rel.as_posix() if rel.as_posix() else None
+
+
+def _build_profile_photo_url(photo_path: Optional[str]) -> Optional[str]:
+    rel_path = _normalize_profile_photo_path(photo_path)
+    if not rel_path:
+        return None
+    return url_for("portal.uploaded_file", filename=rel_path)
 
 
 def init_oauth(app) -> None:
@@ -128,12 +149,16 @@ def _establish_session(user: dict, *, remember: bool = False, email_override: Op
             assigned_class_id = None
 
     email_value = (email_override or user.get("email") or "").strip().lower()
+    profile_photo_path = user.get("profile_photo_path")
+    profile_photo_url = _build_profile_photo_url(profile_photo_path)
 
     session["user"] = {
         "id": user["id"],
         "email": email_value,
         "full_name": user.get("full_name"),
         "role": user.get("role"),
+        "profile_photo_path": profile_photo_path,
+        "profile_photo_url": profile_photo_url,
         "no_tester_enabled": bool(user.get("no_tester_enabled")),
         "assigned_class_id": assigned_class_id,
     }
@@ -525,7 +550,7 @@ def google_callback() -> Response:
 def manage_users() -> Response:
     from dashboard.user_management import handle_manage_users
 
-    return handle_manage_users(actor=current_user(), base_template="base.html")
+    return handle_manage_users(actor=current_user(), base_template="base.html", read_only=True)
 
 
 @auth_bp.route("/settings/monev-teams", methods=["GET", "POST"])

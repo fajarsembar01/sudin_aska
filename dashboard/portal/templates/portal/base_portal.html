@@ -764,6 +764,30 @@
             align-items: center;
             pointer-events: none;
         }
+
+        .profile-photo-required-modal .modal-content {
+            border: 0;
+            border-radius: 1rem;
+        }
+
+        .profile-photo-preview {
+            width: 132px;
+            height: 132px;
+            border-radius: 50%;
+            border: 2px dashed var(--border-soft);
+            background: var(--bg-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+
+        .profile-photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
     </style>
     {% block head_extra %}{% endblock %}
 </head>
@@ -879,10 +903,9 @@
                             <i class="bi bi-building nav-icon"></i>Sekolah
                         </a>
                     </li>
-
                     <!-- Admin dropdown with new Kelola Staff -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'admin' in request.endpoint or request.endpoint == 'portal.portal_kontak_wilayah' %}active{% endif %}"
+                        <a class="nav-link dropdown-toggle {% if 'admin' in request.endpoint or request.endpoint in ['portal.portal_kontak_wilayah', 'portal.manage_users', 'portal.preview_accounts'] %}active{% endif %}"
                             href="#" data-bs-toggle="dropdown">
                             <i class="bi bi-gear nav-icon"></i>Admin
                         </a>
@@ -912,8 +935,15 @@
                                 <hr class="dropdown-divider">
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{{ url_for('portal.manage_users') }}">
+                                <a class="dropdown-item {% if request.endpoint == 'portal.manage_users' %}active{% endif %}"
+                                    href="{{ url_for('portal.manage_users') }}">
                                     <i class="bi bi-people me-2"></i>User Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'portal.preview_accounts' %}active{% endif %}"
+                                    href="{{ url_for('portal.preview_accounts') }}">
+                                    <i class="bi bi-eye me-2"></i>Preview Akun
                                 </a>
                             </li>
                             <li>
@@ -1180,6 +1210,48 @@
             </div>
         </div>
     </div>
+
+    {% if require_profile_photo_upload %}
+    <div class="modal fade profile-photo-required-modal" id="profilePhotoRequiredModal" tabindex="-1" aria-hidden="true"
+        data-upload-url="{{ url_for('portal.upload_profile_photo') }}">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title"><i class="bi bi-camera-fill me-2 text-primary"></i>Tambahkan Foto Profil</h5>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Tambahkan foto profil untuk memudahkan verifikasi buku tamu.</p>
+                    <div class="profile-photo-preview mb-3" id="requiredProfilePhotoPreview">
+                        <i class="bi bi-person-circle fs-1 text-muted"></i>
+                    </div>
+                    <video id="requiredProfileCameraStream" class="w-100 rounded-3 d-none mb-2" autoplay playsinline muted></video>
+                    <canvas id="requiredProfileCameraCanvas" class="d-none"></canvas>
+                    <div class="d-grid gap-2 mb-2 d-none" id="requiredProfileCameraActions">
+                        <button type="button" class="btn btn-success" id="requiredProfileTakePhotoBtn">
+                            <i class="bi bi-camera-fill me-1"></i>Ambil Foto
+                        </button>
+                        <button type="button" class="btn btn-light" id="requiredProfileCancelCameraBtn">
+                            Batal Kamera
+                        </button>
+                    </div>
+                    <input type="file" id="requiredProfilePhotoCameraInput" class="d-none" accept="image/*" capture="user">
+                    <input type="file" id="requiredProfilePhotoGalleryInput" class="d-none" accept="image/*">
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-primary" id="requiredProfilePhotoCameraBtn">
+                            <i class="bi bi-camera me-1"></i>Ambil dari Kamera
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" id="requiredProfilePhotoGalleryBtn">
+                            <i class="bi bi-image me-1"></i>Pilih dari Folder
+                        </button>
+                    </div>
+                    <div class="small text-muted mt-3" id="requiredProfilePhotoStatus">
+                        Foto profil wajib diisi untuk melanjutkan akses OSS.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     {% include "portal/components/_area_contact_modal.html" %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -1703,53 +1775,7 @@
                     var title = item.full_name || item.email || 'User';
                     var subtitle = [item.email, item.role].filter(Boolean).join(' • ');
                     var timeText = formatPendingDate(item.created_at);
-                    var details = [
-                        { label: 'Nama', value: item.full_name || '-' },
-                        { label: 'Email', value: item.email || '-' },
-                        { label: 'Role', value: item.role || '-' },
-                        { label: 'WhatsApp', value: item.whatsapp_number || '-' },
-                        { label: 'Kecamatan', value: item.kecamatan_name || '-' },
-                        { label: 'Sekolah', value: [item.school_name, item.school_npsn && ('NPSN ' + item.school_npsn), item.school_jenjang, item.school_kecamatan_name].filter(Boolean).join(' • ') || '-' },
-                        { label: 'Diajukan', value: timeText || '-' }
-                    ];
-                    return buildQuickItem(title, subtitle, timeText, [
-                        {
-                            label: 'Setujui',
-                            buttonClass: 'btn-success',
-                            confirmTitle: 'Setujui User',
-                            confirmText: 'Setujui user ' + title + '?',
-                            details: details,
-                            url: quickConfig.usersUrl,
-                            noteKey: 'reviewer_note',
-                            payload: {
-                                action: 'verify',
-                                user_id: item.id,
-                                account_status: 'approved',
-                                full_name: item.full_name || '',
-                                role: item.role || ''
-                            },
-                            deltaKey: 'users',
-                            toastMessage: 'User disetujui.'
-                        },
-                        {
-                            label: 'Tolak',
-                            buttonClass: 'btn-outline-danger',
-                            confirmTitle: 'Tolak User',
-                            confirmText: 'Tolak user ' + title + '?',
-                            details: details,
-                            url: quickConfig.usersUrl,
-                            noteKey: 'reviewer_note',
-                            payload: {
-                                action: 'verify',
-                                user_id: item.id,
-                                account_status: 'rejected',
-                                full_name: item.full_name || '',
-                                role: item.role || ''
-                            },
-                            deltaKey: 'users',
-                            toastMessage: 'User ditolak.'
-                        }
-                    ]);
+                    return buildQuickItem(title, subtitle, timeText, []);
                 });
 
                 addGroup('Permintaan penugasan', quickConfig.assignmentUrl, preview.assignment_requests, function (item) {
@@ -2471,6 +2497,241 @@
                 if (document.hidden) return;
                 fetchNotifications(false);
             }, 45000);
+        })();
+    </script>
+    <script>
+        (function () {
+            var mustUpload = {{ 'true' if require_profile_photo_upload else 'false' }};
+            if (!mustUpload || !window.bootstrap) return;
+
+            var modalEl = document.getElementById('profilePhotoRequiredModal');
+            if (!modalEl) return;
+
+            var uploadUrl = modalEl.getAttribute('data-upload-url') || '';
+            var previewEl = document.getElementById('requiredProfilePhotoPreview');
+            var statusEl = document.getElementById('requiredProfilePhotoStatus');
+            var cameraBtn = document.getElementById('requiredProfilePhotoCameraBtn');
+            var galleryBtn = document.getElementById('requiredProfilePhotoGalleryBtn');
+            var cameraInput = document.getElementById('requiredProfilePhotoCameraInput');
+            var galleryInput = document.getElementById('requiredProfilePhotoGalleryInput');
+            var cameraStreamEl = document.getElementById('requiredProfileCameraStream');
+            var cameraCanvasEl = document.getElementById('requiredProfileCameraCanvas');
+            var cameraActionsEl = document.getElementById('requiredProfileCameraActions');
+            var takePhotoBtn = document.getElementById('requiredProfileTakePhotoBtn');
+            var cancelCameraBtn = document.getElementById('requiredProfileCancelCameraBtn');
+            var uploading = false;
+            var activeStream = null;
+
+            var requiredModal = bootstrap.Modal.getOrCreateInstance(modalEl, {
+                backdrop: 'static',
+                keyboard: false
+            });
+
+            function setStatus(message, tone) {
+                if (!statusEl) return;
+                statusEl.textContent = message || '';
+                statusEl.className = 'small mt-3';
+                if (tone === 'danger') {
+                    statusEl.classList.add('text-danger');
+                } else if (tone === 'success') {
+                    statusEl.classList.add('text-success');
+                } else {
+                    statusEl.classList.add('text-muted');
+                }
+            }
+
+            function setLoadingState(isLoading) {
+                uploading = !!isLoading;
+                if (cameraBtn) cameraBtn.disabled = uploading;
+                if (galleryBtn) galleryBtn.disabled = uploading;
+                if (takePhotoBtn) takePhotoBtn.disabled = uploading;
+                if (cancelCameraBtn) cancelCameraBtn.disabled = uploading;
+            }
+
+            function renderPreview(file) {
+                if (!previewEl || !file) return;
+                var imageUrl = URL.createObjectURL(file);
+                previewEl.innerHTML = '<img src="' + imageUrl + '" alt="Preview foto profil">';
+                previewEl.classList.remove('d-none');
+            }
+
+            function isCameraDirectSupported() {
+                return !!(
+                    navigator.mediaDevices
+                    && typeof navigator.mediaDevices.getUserMedia === 'function'
+                );
+            }
+
+            function stopDirectCamera() {
+                if (activeStream && activeStream.getTracks) {
+                    activeStream.getTracks().forEach(function (track) {
+                        try {
+                            track.stop();
+                        } catch (error) { }
+                    });
+                }
+                activeStream = null;
+                if (cameraStreamEl) {
+                    cameraStreamEl.pause();
+                    cameraStreamEl.srcObject = null;
+                    cameraStreamEl.classList.add('d-none');
+                }
+                if (cameraActionsEl) {
+                    cameraActionsEl.classList.add('d-none');
+                }
+                if (previewEl) {
+                    previewEl.classList.remove('d-none');
+                }
+            }
+
+            function startDirectCamera() {
+                if (uploading) return;
+                if (!isCameraDirectSupported()) {
+                    if (cameraInput) {
+                        setStatus('Kamera langsung tidak didukung browser ini, membuka pilihan file kamera.', 'muted');
+                        cameraInput.click();
+                    }
+                    return;
+                }
+                stopDirectCamera();
+                navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user' },
+                    audio: false
+                })
+                    .then(function (stream) {
+                        activeStream = stream;
+                        if (cameraStreamEl) {
+                            cameraStreamEl.srcObject = stream;
+                            cameraStreamEl.classList.remove('d-none');
+                        }
+                        if (cameraActionsEl) {
+                            cameraActionsEl.classList.remove('d-none');
+                        }
+                        if (previewEl) {
+                            previewEl.classList.add('d-none');
+                        }
+                        setStatus('Arahkan wajah Anda, lalu klik "Ambil Foto".', 'muted');
+                    })
+                    .catch(function () {
+                        setStatus('Tidak dapat mengakses kamera langsung. Gunakan pilihan file.', 'danger');
+                        if (cameraInput) {
+                            cameraInput.click();
+                        }
+                    });
+            }
+
+            function takeDirectPhoto() {
+                if (!cameraStreamEl || !cameraCanvasEl) return;
+                var width = cameraStreamEl.videoWidth || 720;
+                var height = cameraStreamEl.videoHeight || 960;
+                if (width <= 0 || height <= 0) {
+                    setStatus('Kamera belum siap. Coba lagi.', 'danger');
+                    return;
+                }
+
+                cameraCanvasEl.width = width;
+                cameraCanvasEl.height = height;
+                var ctx = cameraCanvasEl.getContext('2d');
+                if (!ctx) {
+                    setStatus('Gagal memproses foto dari kamera.', 'danger');
+                    return;
+                }
+                ctx.drawImage(cameraStreamEl, 0, 0, width, height);
+                cameraCanvasEl.toBlob(function (blob) {
+                    if (!blob) {
+                        setStatus('Gagal mengambil foto. Silakan coba lagi.', 'danger');
+                        return;
+                    }
+                    stopDirectCamera();
+                    var file = new File([blob], 'profile-camera.jpg', { type: 'image/jpeg' });
+                    uploadFile(file);
+                }, 'image/jpeg', 0.9);
+            }
+
+            function uploadFile(file) {
+                if (!file || !uploadUrl || uploading) return;
+                renderPreview(file);
+                setLoadingState(true);
+                setStatus('Mengunggah foto profil...', 'muted');
+
+                var formData = new FormData();
+                formData.append('photo', file, file.name || 'profile.jpg');
+
+                fetch(uploadUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                })
+                    .then(function (response) {
+                        return response.json().catch(function () { return {}; }).then(function (data) {
+                            if (!response.ok || !data.success) {
+                                throw new Error(data.message || 'Gagal mengunggah foto profil.');
+                            }
+                            return data;
+                        });
+                    })
+                    .then(function () {
+                        setStatus('Foto profil berhasil disimpan. Memuat ulang halaman...', 'success');
+                        setTimeout(function () {
+                            window.location.reload();
+                        }, 500);
+                    })
+                    .catch(function (error) {
+                        setStatus(error.message || 'Gagal mengunggah foto profil.', 'danger');
+                        setLoadingState(false);
+                    });
+            }
+
+            function bindInput(inputEl) {
+                if (!inputEl) return;
+                inputEl.addEventListener('change', function () {
+                    var file = inputEl.files && inputEl.files[0] ? inputEl.files[0] : null;
+                    if (!file) return;
+                    uploadFile(file);
+                    inputEl.value = '';
+                });
+            }
+
+            if (cameraBtn && cameraInput) {
+                cameraBtn.addEventListener('click', function () {
+                    if (uploading) return;
+                    startDirectCamera();
+                });
+            }
+            if (takePhotoBtn) {
+                takePhotoBtn.addEventListener('click', function () {
+                    if (uploading) return;
+                    takeDirectPhoto();
+                });
+            }
+            if (cancelCameraBtn) {
+                cancelCameraBtn.addEventListener('click', function () {
+                    stopDirectCamera();
+                    setStatus('Kamera dibatalkan.', 'muted');
+                });
+            }
+            if (galleryBtn && galleryInput) {
+                galleryBtn.addEventListener('click', function () {
+                    if (uploading) return;
+                    galleryInput.click();
+                });
+            }
+            bindInput(cameraInput);
+            bindInput(galleryInput);
+
+            modalEl.addEventListener('hide.bs.modal', function (event) {
+                if (mustUpload) {
+                    event.preventDefault();
+                }
+            });
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                stopDirectCamera();
+            });
+
+            requiredModal.show();
         })();
     </script>
     {% block portal_scripts %}{% endblock %}
