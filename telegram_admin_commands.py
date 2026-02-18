@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable, Optional
 import logging
+import urllib.parse
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
@@ -293,15 +294,41 @@ def _button_label_with_icon(text: Optional[str], *, default_label: str) -> str:
     return label
 
 
+def _infer_detail_url_from_photo_links(
+    *,
+    transaction_id: Optional[int],
+    photo_links: Optional[list[dict]],
+) -> Optional[str]:
+    if not transaction_id:
+        return None
+    for item in photo_links or []:
+        raw_url = str((item or {}).get("url") or "").strip()
+        if not raw_url:
+            continue
+        parsed = urllib.parse.urlsplit(raw_url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            continue
+        base_url = urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, "", "", "")).rstrip("/")
+        if not base_url:
+            continue
+        return f"{base_url}/daftar-tamu/public/detail/{int(transaction_id)}"
+    return None
+
+
 def _build_guestbook_followup_markup(
     *,
     transaction_id: Optional[int] = None,
     existing_markup: Optional[InlineKeyboardMarkup],
 ) -> Optional[InlineKeyboardMarkup]:
     detail_url = _extract_guestbook_detail_url(existing_markup)
+    photo_links = _extract_guestbook_photo_links(existing_markup)
     if not detail_url and transaction_id:
         detail_url = _build_guestbook_detail_url(int(transaction_id), status="history")
-    photo_links = _extract_guestbook_photo_links(existing_markup)
+    if not detail_url:
+        detail_url = _infer_detail_url_from_photo_links(
+            transaction_id=transaction_id,
+            photo_links=photo_links,
+        )
 
     has_profile = any(
         "foto profil" in str((item or {}).get("text") or "").strip().lower()

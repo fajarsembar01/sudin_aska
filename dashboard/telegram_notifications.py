@@ -437,6 +437,27 @@ def _build_guestbook_detail_url(
     return f"{base_url}/daftar-tamu/public/detail/{int(transaction_id)}"
 
 
+def _infer_guestbook_detail_url_from_photo_links(
+    *,
+    transaction_id: int,
+    photo_links: Optional[List[Dict[str, str]]],
+) -> Optional[str]:
+    if not transaction_id:
+        return None
+    for item in photo_links or []:
+        raw_url = str((item or {}).get("url") or "").strip()
+        if not raw_url:
+            continue
+        parsed = urllib.parse.urlsplit(raw_url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            continue
+        base_url = urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, "", "", "")).rstrip("/")
+        if not base_url:
+            continue
+        return f"{base_url}/daftar-tamu/public/detail/{int(transaction_id)}"
+    return None
+
+
 def _compact_text(value: Optional[str], limit: int = 96) -> str:
     text = str(value or "").strip()
     if len(text) <= limit:
@@ -568,6 +589,11 @@ def notify_guestbook_status_update(
         transaction_id,
         status="history",
     )
+    if not resolved_detail_url:
+        resolved_detail_url = _infer_guestbook_detail_url_from_photo_links(
+            transaction_id=transaction_id,
+            photo_links=photo_buttons,
+        )
     keyboard = _build_detail_photo_rows(
         detail_url=resolved_detail_url,
         photo_buttons=photo_buttons,
@@ -805,6 +831,11 @@ def _build_guestbook_keyboard(
             transaction_id,
             status="pending",
         )
+        if not resolved_detail_url:
+            resolved_detail_url = _infer_guestbook_detail_url_from_photo_links(
+                transaction_id=transaction_id,
+                photo_links=photo_buttons,
+            )
         keyboard.extend(
             _build_detail_photo_rows(
                 detail_url=resolved_detail_url,
