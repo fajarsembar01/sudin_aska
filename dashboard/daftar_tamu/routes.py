@@ -3290,6 +3290,10 @@ def create_general_guest() -> Response:
     auto_verify = user.get("role") == "admin"
     if not full_name:
         return jsonify({"success": False, "message": "Nama tamu wajib diisi."}), 400
+    if not instansi:
+        return jsonify({"success": False, "message": "Instansi wajib diisi."}), 400
+    if not jabatan:
+        return jsonify({"success": False, "message": "Jabatan wajib diisi."}), 400
     if phone:
         phone = _sanitize_phone(phone)
 
@@ -3345,6 +3349,10 @@ def admin_update_general_guest(guest_id: int) -> Response:
 
     if not full_name:
         return jsonify({"success": False, "message": "Nama tamu wajib diisi."}), 400
+    if not instansi:
+        return jsonify({"success": False, "message": "Instansi wajib diisi."}), 400
+    if not jabatan:
+        return jsonify({"success": False, "message": "Jabatan wajib diisi."}), 400
     if phone:
         phone = _sanitize_phone(phone)
 
