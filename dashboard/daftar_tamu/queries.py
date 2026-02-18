@@ -1608,58 +1608,38 @@ def list_school_transactions(
             SELECT
                 b.*,
                 'sudin'::TEXT AS guest_type,
-                (
-                    SELECT STRING_AGG(u.full_name, ', ' ORDER BY u.full_name)
-                    FROM daftar_tamu_transaction_guests g
-                    JOIN dashboard_users u ON u.id = g.user_id
-                    WHERE g.transaction_id = b.id
-                      AND g.user_id IS NOT NULL
-                      AND (g.guest_type = 'sudin' OR g.guest_type IS NULL)
-                ) AS guest_names,
+                u.full_name AS guest_names,
                 (
                     SELECT COUNT(*)
-                    FROM daftar_tamu_transaction_guests g
-                    WHERE g.transaction_id = b.id
-                      AND g.user_id IS NOT NULL
-                      AND (g.guest_type = 'sudin' OR g.guest_type IS NULL)
+                    FROM daftar_tamu_transaction_guests g_count
+                    WHERE g_count.transaction_id = b.id
+                      AND (g_count.user_id IS NOT NULL OR g_count.general_guest_id IS NOT NULL)
                 ) AS guest_count
             FROM base b
+            JOIN daftar_tamu_transaction_guests g
+              ON g.transaction_id = b.id
+             AND g.user_id IS NOT NULL
+             AND (g.guest_type = 'sudin' OR g.guest_type IS NULL)
+            JOIN dashboard_users u ON u.id = g.user_id
             WHERE (%s = 'all' OR %s = 'sudin')
-              AND EXISTS (
-                    SELECT 1
-                    FROM daftar_tamu_transaction_guests g
-                    WHERE g.transaction_id = b.id
-                      AND g.user_id IS NOT NULL
-                      AND (g.guest_type = 'sudin' OR g.guest_type IS NULL)
-                )
             UNION ALL
             SELECT
                 b.*,
                 'umum'::TEXT AS guest_type,
-                (
-                    SELECT STRING_AGG(gg.full_name, ', ' ORDER BY gg.full_name)
-                    FROM daftar_tamu_transaction_guests g
-                    JOIN daftar_tamu_general_guests gg ON gg.id = g.general_guest_id
-                    WHERE g.transaction_id = b.id
-                      AND g.general_guest_id IS NOT NULL
-                      AND g.guest_type = 'umum'
-                ) AS guest_names,
+                gg.full_name AS guest_names,
                 (
                     SELECT COUNT(*)
-                    FROM daftar_tamu_transaction_guests g
-                    WHERE g.transaction_id = b.id
-                      AND g.general_guest_id IS NOT NULL
-                      AND g.guest_type = 'umum'
+                    FROM daftar_tamu_transaction_guests g_count
+                    WHERE g_count.transaction_id = b.id
+                      AND (g_count.user_id IS NOT NULL OR g_count.general_guest_id IS NOT NULL)
                 ) AS guest_count
             FROM base b
+            JOIN daftar_tamu_transaction_guests g
+              ON g.transaction_id = b.id
+             AND g.general_guest_id IS NOT NULL
+             AND g.guest_type = 'umum'
+            JOIN daftar_tamu_general_guests gg ON gg.id = g.general_guest_id
             WHERE (%s = 'all' OR %s = 'umum')
-              AND EXISTS (
-                    SELECT 1
-                    FROM daftar_tamu_transaction_guests g
-                    WHERE g.transaction_id = b.id
-                      AND g.general_guest_id IS NOT NULL
-                      AND g.guest_type = 'umum'
-                )
         )
     """
 
@@ -1687,7 +1667,7 @@ def list_school_transactions(
             guest_names,
             guest_count
         FROM split_rows
-        ORDER BY visit_at DESC, id DESC, CASE WHEN guest_type = 'sudin' THEN 0 ELSE 1 END
+        ORDER BY visit_at DESC, id DESC, CASE WHEN guest_type = 'sudin' THEN 0 ELSE 1 END, guest_names ASC
         LIMIT %s OFFSET %s
     """
     common_params: List[Any] = [
@@ -1711,22 +1691,9 @@ def list_school_transactions(
         rows = [dict(row) for row in cur.fetchall()]
 
     for row in rows:
-        names_raw = row.get("guest_names") or ""
-        names = [n.strip() for n in names_raw.split(",") if n.strip()]
-        guest_count = int(row.get("guest_count") or 0)
-        if not guest_count:
-            guest_count = len(names)
-        if names:
-            if len(names) > 2:
-                display = f"{names[0]} +{len(names) - 1}"
-            elif len(names) == 2:
-                display = f"{names[0]} & {names[1]}"
-            else:
-                display = names[0]
-        else:
-            display = None
-        row["guest_display"] = display
-        row["guest_count"] = guest_count
+        guest_name = (row.get("guest_names") or "").strip()
+        row["guest_display"] = guest_name or None
+        row["guest_count"] = int(row.get("guest_count") or (1 if guest_name else 0))
         row["guest_type"] = (row.get("guest_type") or "").strip().lower() or "sudin"
         row["guest_type_label"] = (
             "Sudindik JU 2" if row["guest_type"] == "sudin" else "Instansi Pemerintah Lainnya"

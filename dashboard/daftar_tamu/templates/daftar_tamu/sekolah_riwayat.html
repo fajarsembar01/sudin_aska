@@ -55,6 +55,14 @@
                     {% endfor %}
                 </select>
                 <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                <a class="btn btn-sm btn-outline-success"
+                    href="{{ url_for('daftar_tamu.sekolah_riwayat_export', format='excel', status=status, guest_scope=guest_scope) }}">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Download Excel
+                </a>
+                <a class="btn btn-sm btn-outline-secondary"
+                    href="{{ url_for('daftar_tamu.sekolah_riwayat_export', format='csv', status=status, guest_scope=guest_scope) }}">
+                    <i class="bi bi-filetype-csv me-1"></i>Download CSV
+                </a>
             </form>
         </div>
 
@@ -78,7 +86,6 @@
                         </td>
                         <td>
                             <div class="fw-semibold">{{ row.guest_display or '-' }}</div>
-                            <div class="small text-muted">{{ row.guest_count or 0 }} tamu</div>
                             {% if row.guest_type == 'sudin' %}
                             <span class="badge text-bg-primary-subtle text-primary-emphasis">Sudindik JU 2</span>
                             {% else %}
