@@ -114,13 +114,13 @@
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'daftar_tamu.sekolah_guestbook' %}active{% endif %}"
                         href="{{ url_for('daftar_tamu.sekolah_guestbook') }}">
-                        <i class="bi bi-journal-text nav-icon"></i>Buku Tamu
+                        <i class="bi bi-journal-text nav-icon"></i>Tamu Kedinasan
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'daftar_tamu.sekolah_public_web' %}active{% endif %}"
                         href="{{ url_for('daftar_tamu.sekolah_public_web') }}">
-                        <i class="bi bi-globe2 nav-icon"></i>Tamu Umum Web
+                        <i class="bi bi-globe2 nav-icon"></i>Tamu Umum
                         {% if pending_public %}
                         <span class="badge rounded-pill text-bg-danger ms-2">{{ pending_public }}</span>
                         {% endif %}
@@ -129,7 +129,7 @@
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'daftar_tamu.sekolah_riwayat' %}active{% endif %}"
                         href="{{ url_for('daftar_tamu.sekolah_riwayat') }}">
-                        <i class="bi bi-clock-history nav-icon"></i>Riwayat
+                        <i class="bi bi-clock-history nav-icon"></i>Riwayat Tamu Kedinasan
                         {% if pending_sudin %}
                         <span class="badge rounded-pill text-bg-danger ms-2">{{ pending_sudin }}</span>
                         {% endif %}

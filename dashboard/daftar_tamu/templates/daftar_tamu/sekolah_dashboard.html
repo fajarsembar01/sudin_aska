@@ -1,5 +1,5 @@
 {% extends "daftar_tamu/base_daftar_tamu.html" %}
-{% set page_title = "Buku Tamu Sekolah" %}
+{% set page_title = "Tamu Kedinasan Sekolah" %}
 
 {% block head_extra %}
 <style>
@@ -85,7 +85,7 @@
                         <i class="bi bi-journal-text"></i>
                     </span>
                     <div>
-                        <h1 class="h3 fw-bold page-title mb-1">Buku Tamu Sekolah</h1>
+                        <h1 class="h3 fw-bold page-title mb-1">Tamu Kedinasan Sekolah</h1>
                         {% if school %}
                         <p class="page-subtitle mb-0">
                             {{ school.name }} &bull; NPSN {{ school.npsn }}
@@ -108,7 +108,7 @@
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
-                <h2 class="h6 fw-bold mb-3">Input Buku Tamu</h2>
+                <h2 class="h6 fw-bold mb-3">Input Tamu Kedinasan</h2>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Cari Tamu</label>
                     <ul class="nav nav-pills gap-2" id="guestTypeTabs" role="tablist">
@@ -228,7 +228,7 @@
                 </div>
                 <div class="d-grid">
                     <button type="button" class="btn btn-success" id="submitTransactionBtn" disabled>
-                        <i class="bi bi-send-check me-1"></i>Simpan Buku Tamu
+                        <i class="bi bi-send-check me-1"></i>Simpan Tamu Kedinasan
                     </button>
                 </div>
                 <div class="small text-muted mt-2">
@@ -944,7 +944,7 @@
                     .catch(function (err) {
                         alert(err.message || 'Gagal mengirim transaksi.');
                         submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<i class="bi bi-send-check me-1"></i>Simpan Buku Tamu';
+                        submitBtn.innerHTML = '<i class="bi bi-send-check me-1"></i>Simpan Tamu Kedinasan';
                     });
             });
         }

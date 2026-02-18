@@ -1,5 +1,5 @@
 {% extends "daftar_tamu/base_daftar_tamu.html" %}
-{% set page_title = "Riwayat Buku Tamu" %}
+{% set page_title = "Riwayat Tamu Kedinasan" %}
 
 {% block portal_content %}
 <section class="mb-4">
@@ -11,7 +11,7 @@
                         <i class="bi bi-clock-history"></i>
                     </span>
                     <div>
-                        <h1 class="h3 fw-bold page-title mb-1">Riwayat Transaksi</h1>
+                        <h1 class="h3 fw-bold page-title mb-1">Riwayat Tamu Kedinasan</h1>
                         {% if school %}
                         <p class="page-subtitle mb-0">
                             {{ school.name }} &bull; NPSN {{ school.npsn }}
@@ -34,7 +34,7 @@
     <div class="card-body">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <div>
-                <h2 class="h6 fw-bold mb-0">Riwayat Transaksi</h2>
+                <h2 class="h6 fw-bold mb-0">Riwayat Tamu Kedinasan</h2>
                 <small class="text-muted">Status validasi admin akan muncul di sini.</small>
             </div>
             <form method="get" class="d-flex gap-2">
