@@ -7,6 +7,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 from db import save_chat
+from utils import current_jakarta_time, to_jakarta
 from dashboard.queries import (
     fetch_dashboard_user_basic,
     fetch_pending_dashboard_users,
@@ -17,6 +18,7 @@ from dashboard.queries import (
 )
 from dashboard.daftar_tamu.queries import get_transaction_detail, update_transaction_status
 from dashboard.telegram_notifications import (
+    _build_guestbook_detail_url,
     notify_guestbook_status_update,
     notify_verification_status_update,
 )
@@ -38,6 +40,70 @@ def _status_label(status: Optional[str]) -> str:
     if normalized == "pending":
         return "⏳ Menunggu"
     return normalized or "-"
+
+
+def _compact_text(value: Optional[str], limit: int = 96) -> str:
+    text = str(value or "").strip()
+    if len(text) <= limit:
+        return text
+    return f"{text[: max(1, limit - 1)].rstrip()}…"
+
+
+def _compact_note_text(value: Optional[str], limit: int = 55) -> str:
+    safe_limit = max(1, int(limit))
+    text = " ".join(str(value or "").split())
+    if len(text) <= safe_limit:
+        return text
+
+    preview = text[:safe_limit].rstrip()
+    if safe_limit < len(text) and not text[safe_limit].isspace():
+        last_space = preview.rfind(" ")
+        if last_space > 0:
+            preview = preview[:last_space].rstrip()
+
+    if not preview:
+        preview = text[:safe_limit].rstrip()
+    return f"{preview}..."
+
+
+def _status_label_with_icon(status_label: Optional[str]) -> str:
+    raw_label = str(status_label or "").strip()
+    if not raw_label:
+        return "-"
+
+    label = raw_label
+    for prefix in ("✅", "❌", "⏳"):
+        if label.startswith(prefix):
+            label = label[len(prefix) :].strip()
+            break
+
+    lowered = label.lower()
+    if any(keyword in lowered for keyword in ("disetujui", "terverifikasi", "verified", "approved", "acc")):
+        return "✅ Terverifikasi"
+    if any(keyword in lowered for keyword in ("ditolak", "tolak", "rejected", "invalid")):
+        return "❌ Ditolak"
+    if any(keyword in lowered for keyword in ("pending", "menunggu", "review")):
+        return "⏳ Menunggu Verifikasi"
+    return label
+
+
+def _build_guest_preview(guest_names: Optional[list[str]]) -> str:
+    cleaned_names: list[str] = []
+    seen_names: set[str] = set()
+    for raw_name in guest_names or []:
+        name = str(raw_name or "").strip()
+        if not name:
+            continue
+        key = name.casefold()
+        if key in seen_names:
+            continue
+        seen_names.add(key)
+        cleaned_names.append(name)
+    if not cleaned_names:
+        return ""
+    if len(cleaned_names) == 1:
+        return cleaned_names[0]
+    return f"{cleaned_names[0]}, ..."
 
 
 def _log_command(update: Update, text: str) -> None:
@@ -113,6 +179,7 @@ async def _finalize_callback(
     summary_text: Optional[str] = None,
     detail_lines: Optional[Iterable[str]] = None,
     reply_markup: Optional[InlineKeyboardMarkup] = None,
+    include_status_line: bool = True,
 ) -> None:
     logger = logging.getLogger("telegram.admin")
     message = query.message
@@ -135,12 +202,14 @@ async def _finalize_callback(
     lines = []
     if summary_text:
         lines.append(summary_text.strip())
-    lines.append(f"Status: {status_label}{suffix_actor}")
+    if include_status_line:
+        lines.append(f"Status: {status_label}{suffix_actor}")
     for raw in detail_lines or []:
         clean = (raw or "").strip()
         if clean:
             lines.append(clean)
-    final_text = "\n".join(lines).strip() or f"Status: {status_label}{suffix_actor}"
+    default_text = f"Status: {status_label}{suffix_actor}" if include_status_line else "Status diperbarui."
+    final_text = "\n".join(lines).strip() or default_text
 
     if message:
         try:
@@ -174,31 +243,6 @@ async def _finalize_callback(
         _log_bot_message(callback_user_id, callback_username, final_text)
 
 
-def _extract_photo_button_markup(
-    existing_markup: Optional[InlineKeyboardMarkup],
-) -> Optional[InlineKeyboardMarkup]:
-    if not existing_markup:
-        return None
-
-    photo_rows = []
-    for row in existing_markup.inline_keyboard or []:
-        photo_buttons = []
-        for button in row:
-            text = (getattr(button, "text", None) or "").strip()
-            url = (getattr(button, "url", None) or "").strip()
-            if not text or not url:
-                continue
-            if "foto" not in text.lower() and "photo" not in text.lower():
-                continue
-            photo_buttons.append(InlineKeyboardButton(text=text, url=url))
-        if photo_buttons:
-            photo_rows.append(photo_buttons)
-
-    if not photo_rows:
-        return None
-    return InlineKeyboardMarkup(photo_rows)
-
-
 def _extract_guestbook_photo_links(
     existing_markup: Optional[InlineKeyboardMarkup],
 ) -> list[dict]:
@@ -221,6 +265,134 @@ def _extract_guestbook_photo_links(
             seen.add(key)
             links.append({"text": text, "url": url})
     return links
+
+
+def _extract_guestbook_detail_url(existing_markup: Optional[InlineKeyboardMarkup]) -> Optional[str]:
+    if not existing_markup:
+        return None
+    for row in existing_markup.inline_keyboard or []:
+        for button in row:
+            text = (getattr(button, "text", None) or "").strip().lower()
+            url = (getattr(button, "url", None) or "").strip()
+            if not url:
+                continue
+            if "detail" in text:
+                return url
+    return None
+
+
+def _button_label_with_icon(text: Optional[str], *, default_label: str) -> str:
+    label = str(text or "").strip() or default_label
+    if label.startswith(("📄", "🖼️", "✅", "❌", "⏳")):
+        return label
+    lowered = label.lower()
+    if "detail" in lowered:
+        return f"📄 {label}"
+    if "foto" in lowered or "photo" in lowered:
+        return f"🖼️ {label}"
+    return label
+
+
+def _build_guestbook_followup_markup(
+    *,
+    transaction_id: Optional[int] = None,
+    existing_markup: Optional[InlineKeyboardMarkup],
+) -> Optional[InlineKeyboardMarkup]:
+    detail_url = _extract_guestbook_detail_url(existing_markup)
+    if not detail_url and transaction_id:
+        detail_url = _build_guestbook_detail_url(int(transaction_id), status="history")
+    photo_links = _extract_guestbook_photo_links(existing_markup)
+
+    has_profile = any(
+        "foto profil" in str((item or {}).get("text") or "").strip().lower()
+        for item in photo_links
+    )
+
+    photo_buttons: list[InlineKeyboardButton] = []
+    seen_keys: set[tuple[str, str]] = set()
+    for item in photo_links:
+        url = str((item or {}).get("url") or "").strip()
+        if not url:
+            continue
+        label = str((item or {}).get("text") or "").strip()
+        lowered = label.lower()
+        if "foto transaksi" in lowered:
+            continue
+        if has_profile and "foto sebelumnya" in lowered:
+            continue
+        safe_label = _button_label_with_icon(label, default_label="🖼️ Foto")
+        if len(safe_label) > 64:
+            safe_label = f"{safe_label[:61]}..."
+        key = (safe_label, url)
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        photo_buttons.append(InlineKeyboardButton(text=safe_label, url=url))
+
+    rows: list[list[InlineKeyboardButton]] = []
+    detail_button = None
+    if detail_url:
+        detail_button = InlineKeyboardButton(
+            text=_button_label_with_icon("Detail", default_label="📄 Detail"),
+            url=detail_url,
+        )
+
+    if detail_button and photo_buttons:
+        rows.append([detail_button, photo_buttons.pop(0)])
+    elif detail_button:
+        rows.append([detail_button])
+
+    for button in photo_buttons:
+        rows.append([button])
+
+    if not rows:
+        return None
+    return InlineKeyboardMarkup(rows)
+
+
+def _build_guestbook_callback_message(
+    *,
+    transaction_id: int,
+    detail: dict,
+    status_label: str,
+    actor_name: Optional[str],
+) -> str:
+    guests = (detail or {}).get("guests") or []
+    guest_names: list[str] = []
+    seen_guest_names: set[str] = set()
+    for row in guests:
+        guest_name = str((row or {}).get("full_name") or "").strip()
+        if not guest_name:
+            continue
+        key = guest_name.casefold()
+        if key in seen_guest_names:
+            continue
+        seen_guest_names.add(key)
+        guest_names.append(guest_name)
+
+    guest_preview = _build_guest_preview(guest_names)
+    reviewer_name = str(actor_name or "").strip() or str(detail.get("reviewer_name") or "").strip() or "-"
+    lines = [
+        f"📘 Buku Tamu • {_status_label_with_icon(status_label)}",
+        f"#{transaction_id} • {_compact_text(detail.get('school_name') or '-', 72)}",
+        f"Verifikator: {_compact_text(reviewer_name, 64)}",
+    ]
+    if guest_preview:
+        lines.append(f"Tamu: {_compact_text(guest_preview, 72)}")
+
+    purpose = str(detail.get("purpose") or "").strip()
+    if purpose:
+        lines.append(f"Keperluan: {_compact_text(purpose, 84)}")
+
+    notes = str(detail.get("notes") or "").strip()
+    if notes:
+        lines.append(f"Catatan: {_compact_note_text(notes, 55)}")
+
+    reviewed_at = detail.get("reviewed_at")
+    timestamp = to_jakarta(reviewed_at) if reviewed_at else to_jakarta(current_jakarta_time())
+    if timestamp:
+        lines.append(f"🕒 {timestamp.strftime('%d %b %Y, %H:%M')}")
+    return "\n".join(lines)
 
 
 def _authorize_admin(update: Update) -> Optional[dict]:
@@ -644,19 +816,28 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
             return
 
         existing_markup = getattr(query.message, "reply_markup", None)
-        photo_markup = _extract_photo_button_markup(existing_markup)
+        followup_markup = _build_guestbook_followup_markup(
+            transaction_id=tx_id,
+            existing_markup=existing_markup,
+        )
         current_status = (detail.get("status") or "").strip().lower()
         if current_status in {"approved", "rejected"}:
             label = "✅ Disetujui" if current_status == "approved" else "❌ Ditolak"
             await query.answer(f"Transaksi sudah {label}.", show_alert=True)
+            final_text = _build_guestbook_callback_message(
+                transaction_id=tx_id,
+                detail=detail,
+                status_label=label,
+                actor_name=detail.get("reviewer_name"),
+            )
             await _finalize_callback(
                 query,
                 label,
                 None,
                 None,
-                summary_text=f"Permintaan verifikasi buku tamu ID {tx_id} sudah diproses sebelumnya.",
-                detail_lines=[f"Sekolah: {detail.get('school_name') or '-'}"],
-                reply_markup=photo_markup,
+                summary_text=final_text,
+                reply_markup=followup_markup,
+                include_status_line=False,
             )
             return
 
@@ -697,6 +878,17 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
         actor_name = admin.get("admin_name") or admin.get("admin_email")
         source_chat_id = getattr(query.message, "chat_id", None)
         photo_links = _extract_guestbook_photo_links(existing_markup)
+        guest_names: list[str] = []
+        seen_guest_names: set[str] = set()
+        for row in (detail or {}).get("guests") or []:
+            guest_name = str((row or {}).get("full_name") or "").strip()
+            if not guest_name:
+                continue
+            guest_key = guest_name.casefold()
+            if guest_key in seen_guest_names:
+                continue
+            seen_guest_names.add(guest_key)
+            guest_names.append(guest_name)
         await query.answer(f"{status_label}!", show_alert=False)
         try:
             notify_guestbook_status_update(
@@ -705,19 +897,26 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
                 status_label=status_label,
                 actor_name=actor_name,
                 actor_username=actor_username,
+                guest_names=guest_names,
                 photo_links=photo_links,
                 exclude_chat_ids={int(source_chat_id)} if source_chat_id is not None else None,
             )
         except Exception:
             logger.exception("Gagal mengirim broadcast update buku tamu.")
+        final_text = _build_guestbook_callback_message(
+            transaction_id=tx_id,
+            detail=detail,
+            status_label=status_label,
+            actor_name=actor_name,
+        )
         await _finalize_callback(
             query,
             status_label,
-            actor_name,
-            actor_username,
-            summary_text=f"Permintaan verifikasi buku tamu ID {tx_id} telah diproses.",
-            detail_lines=[f"Sekolah: {detail.get('school_name') or '-'}"],
-            reply_markup=photo_markup,
+            None,
+            None,
+            summary_text=final_text,
+            reply_markup=followup_markup,
+            include_status_line=False,
         )
     except Exception:
         logger.exception("Error tidak terduga pada guestbook callback.")

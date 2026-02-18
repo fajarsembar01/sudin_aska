@@ -242,6 +242,45 @@
                     </div>
                 </div>
             </div>
+
+            <div class="card border-0 shadow-sm mt-3" id="undo-settings">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <span class="icon-badge section-icon text-info">
+                            <i class="bi bi-hourglass-split"></i>
+                        </span>
+                        <h2 class="h6 fw-bold mb-0">Pengaturan Undo Global</h2>
+                    </div>
+                    <p class="text-muted small mb-3">
+                        Durasi ini dipakai seragam untuk semua aksi dengan waktu tunggu undo.
+                    </p>
+                    <form method="POST" action="{{ url_for('portal.admin_update_undo_window') }}" class="row g-2 align-items-end">
+                        <div class="col-7">
+                            <label for="undoWindowSecondsInput" class="form-label small mb-1">Durasi (detik)</label>
+                            <input
+                                type="number"
+                                id="undoWindowSecondsInput"
+                                name="undo_window_seconds"
+                                class="form-control form-control-sm"
+                                min="{{ undo_window_min_seconds | default(1) }}"
+                                max="{{ undo_window_max_seconds | default(60) }}"
+                                step="1"
+                                required
+                                value="{{ undo_window_seconds | default(7) }}"
+                            >
+                        </div>
+                        <div class="col-5">
+                            <button type="submit" class="btn btn-info btn-sm w-100 text-white">
+                                <i class="bi bi-save me-1"></i>Simpan
+                            </button>
+                        </div>
+                    </form>
+                    <div class="form-text mt-2">
+                        Batas: {{ undo_window_min_seconds | default(1) }}-{{ undo_window_max_seconds | default(60) }}
+                        detik. Tombol <strong>Skip</strong> akan langsung mengeksekusi aksi tanpa menunggu timer.
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="col-lg-8" style="max-height: calc(100vh - 120px); overflow-y: auto;">

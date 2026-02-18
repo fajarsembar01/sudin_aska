@@ -39,11 +39,15 @@ from dashboard.db_access import get_cursor
 from dashboard.portal.permissions import can_access_aska, get_permission_summary, is_superadmin
 from dashboard.portal.queries import (
     fetch_admin_pending_summary,
+    fetch_portal_undo_window_seconds,
     get_staff_assigned_schools,
     get_user_kecamatan_details,
     get_user_kecamatan_ids,
     list_portal_kontak,
     list_schools_by_kecamatan,
+    PORTAL_UNDO_WINDOW_DEFAULT_SECONDS,
+    PORTAL_UNDO_WINDOW_MIN_SECONDS,
+    PORTAL_UNDO_WINDOW_MAX_SECONDS,
 )
 from utils import current_jakarta_time, to_jakarta
 
@@ -252,11 +256,13 @@ def _notify_guestbook_status_change(
     actor_name = (actor or {}).get("full_name") or (actor or {}).get("email")
     school_name = None
     photo_links: list[dict] = []
+    guest_names: list[str] = []
 
     detail = get_transaction_detail(transaction_id)
     if detail:
         school_name = detail.get("school_name")
         photo_links = _build_guestbook_photo_links(transaction_id=transaction_id, detail=detail)
+        guest_names = _extract_guest_names_from_detail(detail)
 
     from dashboard.telegram_notifications import notify_guestbook_status_update
 
@@ -266,6 +272,9 @@ def _notify_guestbook_status_change(
         status_label=status_label,
         actor_name=actor_name,
         actor_username=None,
+        purpose=(detail or {}).get("purpose"),
+        notes=(detail or {}).get("notes"),
+        guest_names=guest_names,
         photo_links=photo_links,
     )
 
@@ -760,6 +769,21 @@ def _build_guestbook_photo_links(
     return links
 
 
+def _extract_guest_names_from_detail(detail: Optional[dict]) -> list[str]:
+    names: list[str] = []
+    seen: set[str] = set()
+    for row in (detail or {}).get("guests") or []:
+        full_name = str((row or {}).get("full_name") or "").strip()
+        if not full_name:
+            continue
+        dedupe_key = full_name.casefold()
+        if dedupe_key in seen:
+            continue
+        seen.add(dedupe_key)
+        names.append(full_name)
+    return names
+
+
 def _format_date_dmy(value: Optional[datetime | date]) -> str:
     if not value:
         return ""
@@ -914,6 +938,7 @@ def inject_daftar_tamu_context() -> dict:
         "unread_count": 0,
         "total_count": 0,
     }
+    undo_window_seconds = PORTAL_UNDO_WINDOW_DEFAULT_SECONDS
     if user.get("role") == "admin":
         try:
             admin_pending = fetch_admin_pending_summary()
@@ -927,6 +952,10 @@ def inject_daftar_tamu_context() -> dict:
             )
         except Exception:
             user_app_notifications = {"unread_count": 0, "total_count": 0}
+    try:
+        undo_window_seconds = fetch_portal_undo_window_seconds()
+    except Exception:
+        undo_window_seconds = PORTAL_UNDO_WINDOW_DEFAULT_SECONDS
 
     context = {
         "permissions": get_permission_summary(user),
@@ -934,6 +963,9 @@ def inject_daftar_tamu_context() -> dict:
         "can_access_aska": can_access_aska(user),
         "admin_pending": admin_pending,
         "user_app_notifications": user_app_notifications,
+        "undo_window_seconds": undo_window_seconds,
+        "undo_window_min_seconds": PORTAL_UNDO_WINDOW_MIN_SECONDS,
+        "undo_window_max_seconds": PORTAL_UNDO_WINDOW_MAX_SECONDS,
     }
     if user.get("role") == "sekolah":
         school = _fetch_school_for_user(user.get("id"))
@@ -1533,6 +1565,8 @@ def admin_validation() -> Response:
 
     page = _to_int(request.args.get("page"), 1)
     page = max(1, page)
+    detail_param = _to_int(request.args.get("detail"), 0)
+    open_transaction_id = detail_param if detail_param > 0 else None
 
     rows, total_rows = list_admin_transactions(
         status=status,
@@ -1573,6 +1607,7 @@ def admin_validation() -> Response:
         date_from_str=date_from_str,
         date_to_str=date_to_str,
         today_str=date.today().isoformat(),
+        open_transaction_id=open_transaction_id,
     )
 
 
@@ -1584,6 +1619,71 @@ def admin_transaction_detail(transaction_id: int) -> Response:
         return jsonify({"success": False, "message": "Transaksi tidak ditemukan"}), 404
 
     return jsonify({"success": True, "transaction": detail})
+
+
+def _guestbook_status_label(status: Optional[str]) -> str:
+    normalized = (status or "").strip().lower()
+    if normalized == "approved":
+        return "✅ Disetujui"
+    if normalized == "rejected":
+        return "❌ Ditolak"
+    return "⏳ Menunggu Verifikasi"
+
+
+@daftar_tamu_bp.route("/public/detail/<int:transaction_id>")
+def public_transaction_detail(transaction_id: int) -> Response:
+    detail = get_transaction_detail(transaction_id)
+    if not detail:
+        return Response("Detail transaksi tidak ditemukan.", status=404)
+
+    visit_at = to_jakarta(detail.get("visit_at"))
+    reviewed_at = to_jakarta(detail.get("reviewed_at"))
+    photo_url = _build_photo_url(detail.get("photo_path"), external=False)
+
+    reviewer_name = (detail.get("reviewer_name") or "").strip() or "-"
+    reviewer_telegram_username = (detail.get("reviewer_telegram_username") or "").strip().lstrip("@")
+    reviewer_telegram_user_id = str(detail.get("reviewer_telegram_user_id") or "").strip()
+    reviewer_telegram_parts: list[str] = []
+    if reviewer_telegram_username:
+        reviewer_telegram_parts.append(f"@{reviewer_telegram_username}")
+    if reviewer_telegram_user_id:
+        reviewer_telegram_parts.append(reviewer_telegram_user_id)
+
+    gps_label = "-"
+    raw_lat = detail.get("latitude")
+    raw_lon = detail.get("longitude")
+    if raw_lat is not None and raw_lon is not None:
+        try:
+            gps_label = f"{float(raw_lat):.5f}, {float(raw_lon):.5f}"
+        except (TypeError, ValueError):
+            gps_label = "-"
+
+    guests = []
+    for row in detail.get("guests") or []:
+        guest_item = dict(row)
+        guest_item["profile_photo_url"] = _build_photo_url(guest_item.get("profile_photo_path"), external=False)
+        guests.append(guest_item)
+    return render_template(
+        "daftar_tamu/public_transaction_detail.html",
+        transaction_id=transaction_id,
+        school_name=detail.get("school_name") or "-",
+        npsn=detail.get("npsn") or "-",
+        jenjang=detail.get("jenjang") or "-",
+        kecamatan=detail.get("kecamatan") or "-",
+        kelurahan=detail.get("kelurahan") or "-",
+        visit_at_label=visit_at.strftime("%d %b %Y, %H:%M") if visit_at else "-",
+        purpose=detail.get("purpose") or "-",
+        notes=detail.get("notes") or "-",
+        status_label=_guestbook_status_label(detail.get("status")),
+        created_by_name=detail.get("created_by_name") or "-",
+        reviewer_name=reviewer_name,
+        reviewer_telegram_label=" • ".join(reviewer_telegram_parts) if reviewer_telegram_parts else "-",
+        reviewed_at_label=reviewed_at.strftime("%d %b %Y, %H:%M") if reviewed_at else "-",
+        reviewer_notes=detail.get("reviewer_notes") or "-",
+        gps_label=gps_label,
+        photo_url=photo_url,
+        guests=guests,
+    )
 
 
 @daftar_tamu_bp.route("/admin/transactions/<int:transaction_id>/approve", methods=["POST"])
@@ -3896,30 +3996,19 @@ def sekolah_create_transaction() -> Response:
                 transaction_id=transaction_id,
                 detail=detail,
             )
-            guest_summary = None
-
-            if detail:
-                guests = detail.get("guests") or []
-                guest_names = [
-                    (g.get("full_name") or "").strip()
-                    for g in guests
-                    if (g.get("full_name") or "").strip()
-                ]
-                if guest_names:
-                    if len(guest_names) > 3:
-                        guest_summary = f"{', '.join(guest_names[:3])} +{len(guest_names) - 3}"
-                    else:
-                        guest_summary = ", ".join(guest_names)
+            guest_names = _extract_guest_names_from_detail(detail)
 
             notify_guestbook_request(
                 transaction_id=transaction_id,
                 school_name=school.get("name") or "Sekolah",
-                npsn=school.get("npsn"),
+                npsn=None,
                 visit_at=visit_at,
-                guest_summary=guest_summary,
+                guest_summary=None,
+                guest_names=guest_names,
                 purpose=purpose or None,
                 notes=notes or None,
                 photo_links=photo_links,
+                photo_file_path=(detail or {}).get("photo_path"),
             )
         except Exception:
             current_app.logger.exception("Gagal mengirim notifikasi buku tamu.")

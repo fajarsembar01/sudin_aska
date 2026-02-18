@@ -337,6 +337,10 @@
                                 <div class="small text-muted">Reviewer</div>
                                 <div id="detailReviewer" class="fw-semibold">-</div>
                             </div>
+                            <div class="mt-3 d-none" id="detailReviewerTelegramWrap">
+                                <div class="small text-muted">Telegram Verifikator</div>
+                                <div id="detailReviewerTelegram" class="fw-semibold">-</div>
+                            </div>
                         </div>
                         <div class="col-md-5">
                             <div class="border rounded-3 p-2 bg-light">
@@ -405,6 +409,7 @@
         var detailModal = new bootstrap.Modal(document.getElementById('transactionDetailModal'));
         var historyModal = new bootstrap.Modal(document.getElementById('guestHistoryModal'));
         var activeStatusFilter = '{{ status }}';
+        var openTransactionId = {{ open_transaction_id if open_transaction_id else 'null' }};
         var currentTransactionId = null;
         var currentRow = null;
         var uploadBase = "{{ url_for('portal.uploaded_file', filename='__FILE__') }}";
@@ -420,13 +425,13 @@
             el.className = 'badge';
             if (status === 'approved') {
                 el.classList.add('text-bg-success');
-                el.textContent = 'Disetujui';
+                el.textContent = '✅ Disetujui';
             } else if (status === 'rejected') {
                 el.classList.add('text-bg-danger');
-                el.textContent = 'Ditolak';
+                el.textContent = '❌ Ditolak';
             } else {
                 el.classList.add('text-bg-warning');
-                el.textContent = 'Menunggu';
+                el.textContent = '⏳ Menunggu';
             }
         }
 
@@ -501,10 +506,22 @@
                     document.getElementById('detailGps').textContent = (hasLat && hasLon) ? (Number(trx.latitude).toFixed(5) + ', ' + Number(trx.longitude).toFixed(5)) : '-';
                     document.getElementById('detailNotes').textContent = trx.notes || '-';
                     document.getElementById('detailPurpose').textContent = trx.purpose || '-';
-                    var statusMap = { pending: 'Menunggu', approved: 'Disetujui', rejected: 'Ditolak' };
+                    var statusMap = { pending: '⏳ Menunggu', approved: '✅ Disetujui', rejected: '❌ Ditolak' };
                     document.getElementById('detailStatus').textContent = statusMap[trx.status] || trx.status || '-';
                     document.getElementById('detailReviewer').textContent = trx.reviewer_name || '-';
                     document.getElementById('detailReviewerWrap').classList.toggle('d-none', !trx.reviewer_name);
+                    var reviewerTelegramParts = [];
+                    var reviewerTelegramUsername = String(trx.reviewer_telegram_username || '').trim();
+                    if (reviewerTelegramUsername) {
+                        reviewerTelegramParts.push('@' + reviewerTelegramUsername.replace(/^@+/, ''));
+                    }
+                    var reviewerTelegramUserId = String(trx.reviewer_telegram_user_id || '').trim();
+                    if (reviewerTelegramUserId) {
+                        reviewerTelegramParts.push(reviewerTelegramUserId);
+                    }
+                    var reviewerTelegramText = reviewerTelegramParts.join(' • ');
+                    document.getElementById('detailReviewerTelegram').textContent = reviewerTelegramText || '-';
+                    document.getElementById('detailReviewerTelegramWrap').classList.toggle('d-none', !reviewerTelegramText);
                     document.getElementById('detailAdminNote').value = trx.reviewer_notes || '';
 
                     var guestWrap = document.getElementById('detailGuests');
@@ -525,8 +542,17 @@
                                 if (guest.jabatan) metaParts.push(guest.jabatan);
                                 if (guest.nrk) metaParts.push('NRK ' + guest.nrk);
                             }
-                            btn.innerHTML = '<div class="fw-semibold">' + (guest.full_name || 'Tamu') + badge + '</div>'
-                                + '<div class="small text-muted">' + metaParts.join(' • ') + '</div>';
+                            var guestProfilePhotoUrl = buildPhotoUrl(guest.profile_photo_path || '');
+                            var profilePhotoHtml = guestProfilePhotoUrl
+                                ? '<img src="' + guestProfilePhotoUrl + '" alt="Foto profil" class="rounded border" style="width:44px;height:44px;object-fit:cover;">'
+                                : '';
+                            btn.innerHTML = '<div class="d-flex align-items-start gap-2">'
+                                + profilePhotoHtml
+                                + '<div class="pe-1 flex-grow-1">'
+                                + '<div class="fw-semibold">' + (guest.full_name || 'Tamu') + badge + '</div>'
+                                + '<div class="small text-muted">' + metaParts.join(' • ') + '</div>'
+                                + '</div>'
+                                + '</div>';
                             if (guest.id) {
                                 btn.addEventListener('click', function () {
                                     loadGuestHistory(guest.id, guest.full_name || 'Tamu');
@@ -566,7 +592,8 @@
                         data.history.forEach(function (row) {
                             var tr = document.createElement('tr');
                             var dt = row.visit_at ? new Date(row.visit_at) : null;
-                            var statusLabel = row.status || '-';
+                            var statusLabelMap = { pending: '⏳ Menunggu', approved: '✅ Disetujui', rejected: '❌ Ditolak' };
+                            var statusLabel = statusLabelMap[row.status] || row.status || '-';
                             tr.innerHTML = '<td>' + (dt ? dt.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '-') + '</td>'
                                 + '<td>' + [row.school_name, row.npsn].filter(Boolean).join(' • ') + '</td>'
                                 + '<td>' + statusLabel + '</td>';
@@ -739,6 +766,11 @@
         document.getElementById('detailPendingBtn').addEventListener('click', function () {
             submitDecision('pending');
         });
+
+        if (openTransactionId) {
+            var matchedRow = document.querySelector('tr[data-transaction-id="' + String(openTransactionId) + '"]');
+            loadTransactionDetail(openTransactionId, matchedRow || null);
+        }
 
         (function () {
             var selectAll = document.getElementById('selectAllAdmin');

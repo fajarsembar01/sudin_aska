@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Detail Buku Tamu #{{ transaction_id }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f5f7fb; }
+        .card-soft { border: 0; border-radius: 14px; box-shadow: 0 8px 28px rgba(15, 23, 42, .08); }
+        .label { font-size: .78rem; color: #6b7280; margin-bottom: .12rem; }
+        .value { font-weight: 600; color: #0f172a; }
+        .photo-wrap { background: #f8fafc; border-radius: 12px; padding: .5rem; }
+        .guest-item { border: 1px solid #e5e7eb; border-radius: 10px; padding: .55rem .65rem; background: #fff; }
+    </style>
+</head>
+<body>
+<main class="container py-3 py-md-4">
+    <div class="card card-soft">
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                <div>
+                    <div class="label">Transaksi</div>
+                    <div class="h5 mb-0">#{{ transaction_id }}</div>
+                </div>
+                <span class="badge text-bg-light border">{{ status_label }}</span>
+            </div>
+
+            <div class="row g-3 mt-1">
+                <div class="col-lg-7">
+                    <div class="mb-2">
+                        <div class="label">Sekolah</div>
+                        <div class="value">{{ school_name }}</div>
+                        <div class="small text-muted">{{ npsn }} • {{ jenjang }} • {{ kecamatan }} • {{ kelurahan }}</div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="label">Waktu Kunjungan</div>
+                            <div class="value">{{ visit_at_label }}</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="label">Lokasi GPS</div>
+                            <div class="value">{{ gps_label }}</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <div class="label">Keperluan</div>
+                        <div class="value">{{ purpose }}</div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="label">Catatan Sekolah</div>
+                        <div class="value">{{ notes }}</div>
+                    </div>
+
+                    <div class="mt-3">
+                        <div class="label">Diajukan Oleh</div>
+                        <div class="value">{{ created_by_name }}</div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="label">Reviewer</div>
+                        <div class="value">{{ reviewer_name }}</div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="label">Telegram Verifikator</div>
+                        <div class="value">{{ reviewer_telegram_label }}</div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="label">Waktu Verifikasi</div>
+                        <div class="value">{{ reviewed_at_label }}</div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="label">Catatan Verifikator</div>
+                        <div class="value">{{ reviewer_notes }}</div>
+                    </div>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="photo-wrap mb-3">
+                        {% if photo_url %}
+                            <img src="{{ photo_url }}" alt="Foto transaksi" class="img-fluid rounded-3">
+                        {% else %}
+                            <div class="text-muted small">Foto transaksi tidak tersedia.</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="label">Tamu</div>
+                    {% if guests %}
+                        <div class="d-flex flex-column gap-2">
+                            {% for guest in guests %}
+                                <div class="guest-item">
+                                    <div class="d-flex align-items-start gap-2">
+                                        {% if guest.profile_photo_url %}
+                                            <img src="{{ guest.profile_photo_url }}" alt="Foto profil {{ guest.full_name or 'tamu' }}"
+                                                class="rounded-2 border" style="width:56px;height:56px;object-fit:cover;">
+                                        {% endif %}
+                                        <div class="pe-2 flex-grow-1">
+                                            <div class="fw-semibold">{{ guest.full_name or "Tamu" }}</div>
+                                            <div class="small text-muted">
+                                                {{ guest.guest_type or "-" }}
+                                                {% if guest.jabatan %} • {{ guest.jabatan }}{% endif %}
+                                                {% if guest.nrk %} • NRK {{ guest.nrk }}{% endif %}
+                                                {% if guest.instansi %} • {{ guest.instansi }}{% endif %}
+                                                {% if guest.phone %} • {{ guest.phone }}{% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="small text-muted">Tidak ada data tamu.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

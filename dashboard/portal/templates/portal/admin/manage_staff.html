@@ -737,6 +737,7 @@
         const assignmentMode = "{{ assignment_mode }}";
         const staffAssignmentsUrlTemplate = "{{ staff_assignments_url }}";
         const assignmentSaveUrl = "{{ assignment_save_url }}";
+        const undoWindowSeconds = parseInt('{{ undo_window_seconds | default(7) }}', 10) || 7;
         const saveQueueDefaultHtml = saveQueueBtn ? saveQueueBtn.innerHTML : '';
         const isDirectAssign = assignmentMode === 'direct';
         const availableSchools = {{ available_schools | tojson | safe }};
@@ -1626,7 +1627,7 @@
                         });
                 },
                 onSchedule: function () {
-                    showFeedback('Penghapusan dijadwalkan. Undo tersedia 7 detik.');
+                    showFeedback('Penghapusan dijadwalkan. Undo tersedia ' + undoWindowSeconds + ' detik.');
                 },
                 onUndo: function () {
                     showFeedback('Penghapusan dibatalkan.');

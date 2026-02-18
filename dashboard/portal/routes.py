@@ -124,6 +124,7 @@ from .queries import (
     list_reopen_requests,
     fetch_admin_pending_summary,
     fetch_admin_pending_preview,
+    fetch_portal_undo_window_seconds,
     get_optional_rooms_for_schools,
     get_room_with_aspects,
     list_portal_kontak,
@@ -132,6 +133,10 @@ from .queries import (
     update_portal_kontak_status,
     get_portal_kontak_by_wilayah,
     delete_portal_kontak,
+    upsert_portal_undo_window_seconds,
+    PORTAL_UNDO_WINDOW_DEFAULT_SECONDS,
+    PORTAL_UNDO_WINDOW_MIN_SECONDS,
+    PORTAL_UNDO_WINDOW_MAX_SECONDS,
 )
 from dashboard.queries import (
     create_team_member_request,
@@ -4280,6 +4285,42 @@ def admin_setup() -> Response:
     )
 
 
+@portal_bp.route("/admin/setup/undo-window", methods=["POST"])
+@role_required("admin")
+def admin_update_undo_window() -> Response:
+    """Persist global undo waiting window setting."""
+    fallback_url = url_for("portal.admin_setup") + "#undo-settings"
+    raw_value = (request.form.get("undo_window_seconds") or "").strip()
+    try:
+        requested_seconds = int(raw_value)
+    except (TypeError, ValueError):
+        flash("Durasi undo harus berupa angka.", "danger")
+        return redirect(fallback_url)
+
+    if requested_seconds < PORTAL_UNDO_WINDOW_MIN_SECONDS or requested_seconds > PORTAL_UNDO_WINDOW_MAX_SECONDS:
+        flash(
+            f"Durasi undo harus di antara {PORTAL_UNDO_WINDOW_MIN_SECONDS} sampai "
+            f"{PORTAL_UNDO_WINDOW_MAX_SECONDS} detik.",
+            "danger",
+        )
+        return redirect(fallback_url)
+
+    actor = current_user() or {}
+    try:
+        actor_id = int(actor.get("id")) if actor.get("id") is not None else None
+    except (TypeError, ValueError):
+        actor_id = None
+    try:
+        saved_seconds = upsert_portal_undo_window_seconds(requested_seconds, actor_id)
+    except Exception:
+        current_app.logger.exception("Failed to save portal undo window settings")
+        flash("Gagal menyimpan pengaturan undo.", "danger")
+        return redirect(fallback_url)
+
+    flash(f"Durasi undo diperbarui menjadi {saved_seconds} detik.", "success")
+    return redirect(fallback_url)
+
+
 @portal_bp.route("/admin/knowledge/refresh", methods=["POST"])
 @role_required("admin")
 def admin_refresh_knowledge() -> Response:
@@ -5901,6 +5942,7 @@ def inject_permissions():
         "unread_count": 0,
         "total_count": 0,
     }
+    undo_window_seconds = PORTAL_UNDO_WINDOW_DEFAULT_SECONDS
     if user.get("role") == "admin":
         try:
             admin_pending = fetch_admin_pending_summary()
@@ -5914,6 +5956,11 @@ def inject_permissions():
             )
         except Exception:
             user_app_notifications = {"unread_count": 0, "total_count": 0}
+    try:
+        undo_window_seconds = fetch_portal_undo_window_seconds()
+    except Exception:
+        current_app.logger.exception("Failed to load portal undo window settings")
+        undo_window_seconds = PORTAL_UNDO_WINDOW_DEFAULT_SECONDS
 
     role_value = (user.get("role") or "").strip().lower()
     has_profile_photo = bool((user.get("profile_photo_url") or "").strip())
@@ -5931,6 +5978,9 @@ def inject_permissions():
         'area_contacts': area_contacts,
         'admin_pending': admin_pending,
         'user_app_notifications': user_app_notifications,
+        'undo_window_seconds': undo_window_seconds,
+        'undo_window_min_seconds': PORTAL_UNDO_WINDOW_MIN_SECONDS,
+        'undo_window_max_seconds': PORTAL_UNDO_WINDOW_MAX_SECONDS,
         'require_profile_photo_upload': require_profile_photo_upload,
     }
 
