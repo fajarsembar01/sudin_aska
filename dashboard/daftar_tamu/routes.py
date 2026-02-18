@@ -2477,6 +2477,7 @@ def sekolah_riwayat() -> Response:
         )
 
     status = (request.args.get("status") or "").strip().lower()
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"), default="all")
     per_page = _to_int(request.args.get("per_page"), 10)
     per_page = max(5, min(per_page, 100))
     page = _to_int(request.args.get("page"), 1)
@@ -2485,6 +2486,7 @@ def sekolah_riwayat() -> Response:
     rows, total_rows = list_school_transactions(
         school_id=school["id"],
         status=status,
+        guest_scope=guest_scope,
         page=page,
         per_page=per_page,
     )
@@ -2494,6 +2496,7 @@ def sekolah_riwayat() -> Response:
         rows, total_rows = list_school_transactions(
             school_id=school["id"],
             status=status,
+            guest_scope=guest_scope,
             page=page,
             per_page=per_page,
         )
@@ -2504,12 +2507,108 @@ def sekolah_riwayat() -> Response:
         user_school=school,
         rows=rows,
         status=status,
+        guest_scope=guest_scope,
         page=page,
         per_page=per_page,
         total_rows=total_rows,
         total_pages=total_pages,
         error_message=None,
     )
+
+
+@daftar_tamu_bp.route("/sekolah/riwayat/export")
+@role_required("sekolah")
+def sekolah_riwayat_export() -> Response:
+    """Export school kedinasan history with active filters (status + guest scope)."""
+    user = current_user()
+    school = _fetch_school_for_user(user["id"])
+    if not school:
+        return Response("Akun sekolah belum terhubung dengan data sekolah.", status=400)
+
+    status = (request.args.get("status") or "").strip().lower()
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"), default="all")
+
+    per_page = 100
+    rows, total_rows = list_school_transactions(
+        school_id=school["id"],
+        status=status,
+        guest_scope=guest_scope,
+        page=1,
+        per_page=per_page,
+    )
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if total_pages > 1:
+        for page in range(2, total_pages + 1):
+            page_rows, _ = list_school_transactions(
+                school_id=school["id"],
+                status=status,
+                guest_scope=guest_scope,
+                page=page,
+                per_page=per_page,
+            )
+            rows.extend(page_rows)
+
+    headers = [
+        "Tanggal Kunjungan",
+        "Jam Kunjungan",
+        "Tipe Tamu",
+        "Nama Tamu",
+        "Tujuan",
+        "Status Verifikasi",
+        "Catatan Verifikator",
+        "Nama Verifikator",
+        "Link Foto",
+    ]
+    data_rows: list[list[object]] = []
+    for row in rows:
+        visit_at = row.get("visit_at")
+        visit_date = ""
+        visit_time = ""
+        if isinstance(visit_at, datetime):
+            visit_date = visit_at.strftime("%d/%m/%Y")
+            visit_time = visit_at.strftime("%H:%M")
+        elif isinstance(visit_at, date):
+            visit_date = visit_at.strftime("%d/%m/%Y")
+
+        status_value = (row.get("status") or "").strip().lower()
+        if status_value == "approved":
+            status_label = "Disetujui"
+        elif status_value == "rejected":
+            status_label = "Ditolak"
+        else:
+            status_label = "Menunggu"
+
+        photo_link = ""
+        photo_path = (row.get("photo_path") or "").strip()
+        if photo_path:
+            photo_name = photo_path.split("uploads/portal/")[-1]
+            photo_link = url_for("portal.uploaded_file", filename=photo_name, _external=True)
+
+        guest_type = (row.get("guest_type") or "").strip().lower()
+        guest_type_label = "Sudindik JU 2" if guest_type == "sudin" else "Instansi Pemerintah Lainnya"
+
+        data_rows.append(
+            [
+                visit_date,
+                visit_time,
+                guest_type_label,
+                row.get("guest_names") or row.get("guest_display") or "",
+                row.get("purpose") or "",
+                status_label,
+                row.get("reviewer_notes") or "",
+                row.get("reviewer_name") or "",
+                photo_link,
+            ]
+        )
+
+    file_format = (request.args.get("format") or "excel").strip().lower()
+    school_npsn = (school.get("npsn") or "sekolah").strip()
+    if file_format in {"excel", "xlsx"}:
+        filename = f"riwayat_tamu_kedinasan_{school_npsn}_{date.today().isoformat()}.xlsx"
+        return _build_xlsx_response(headers, data_rows, filename)
+
+    filename = f"riwayat_tamu_kedinasan_{school_npsn}_{date.today().isoformat()}.csv"
+    return _build_csv_response(headers, data_rows, filename)
 
 
 def _extract_user_staff_note(metadata_value: object, user_id: int) -> tuple[str, str, str]:
@@ -3386,6 +3485,10 @@ def create_general_guest() -> Response:
     auto_verify = user.get("role") == "admin"
     if not full_name:
         return jsonify({"success": False, "message": "Nama tamu wajib diisi."}), 400
+    if not instansi:
+        return jsonify({"success": False, "message": "Instansi wajib diisi."}), 400
+    if not jabatan:
+        return jsonify({"success": False, "message": "Jabatan wajib diisi."}), 400
     if phone:
         phone = _sanitize_phone(phone)
 
@@ -3441,6 +3544,10 @@ def admin_update_general_guest(guest_id: int) -> Response:
 
     if not full_name:
         return jsonify({"success": False, "message": "Nama tamu wajib diisi."}), 400
+    if not instansi:
+        return jsonify({"success": False, "message": "Instansi wajib diisi."}), 400
+    if not jabatan:
+        return jsonify({"success": False, "message": "Jabatan wajib diisi."}), 400
     if phone:
         phone = _sanitize_phone(phone)
 

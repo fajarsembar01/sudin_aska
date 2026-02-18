@@ -1599,6 +1599,7 @@ def list_school_transactions(
     *,
     school_id: int,
     status: Optional[str] = None,
+    guest_scope: Optional[str] = None,
     page: int = 1,
     per_page: int = 10,
 ) -> Tuple[List[Dict[str, Any]], int]:
@@ -1608,74 +1609,125 @@ def list_school_transactions(
     status_value = (status or "").strip().lower()
     if status_value and status_value not in TRANSACTION_STATUSES:
         status_value = ""
+    scope = _normalize_guest_scope(guest_scope)
 
-    count_query = """
-        SELECT COUNT(*) AS total
-        FROM daftar_tamu_transactions t
-        WHERE t.school_id = %s
-          AND (%s = '' OR t.status = %s)
+    split_rows_cte = """
+        WITH base AS (
+            SELECT
+                t.id,
+                t.visit_at,
+                t.status,
+                t.purpose,
+                t.notes,
+                t.photo_path,
+                t.photo_raw_path,
+                t.latitude,
+                t.longitude,
+                t.created_at,
+                t.reviewer_notes,
+                t.reviewed_at,
+                reviewer.full_name AS reviewer_name,
+                creator.full_name AS created_by_name
+            FROM daftar_tamu_transactions t
+            LEFT JOIN dashboard_users reviewer ON reviewer.id = t.reviewed_by
+            LEFT JOIN dashboard_users creator ON creator.id = t.created_by
+            WHERE t.school_id = %s
+              AND (%s = '' OR t.status = %s)
+        ),
+        split_rows AS (
+            SELECT
+                b.*,
+                'sudin'::TEXT AS guest_type,
+                u.full_name AS guest_names,
+                (
+                    SELECT COUNT(*)
+                    FROM daftar_tamu_transaction_guests g_count
+                    WHERE g_count.transaction_id = b.id
+                      AND (g_count.user_id IS NOT NULL OR g_count.general_guest_id IS NOT NULL)
+                ) AS guest_count
+            FROM base b
+            JOIN daftar_tamu_transaction_guests g
+              ON g.transaction_id = b.id
+             AND g.user_id IS NOT NULL
+             AND (g.guest_type = 'sudin' OR g.guest_type IS NULL)
+            JOIN dashboard_users u ON u.id = g.user_id
+            WHERE (%s = 'all' OR %s = 'sudin')
+            UNION ALL
+            SELECT
+                b.*,
+                'umum'::TEXT AS guest_type,
+                gg.full_name AS guest_names,
+                (
+                    SELECT COUNT(*)
+                    FROM daftar_tamu_transaction_guests g_count
+                    WHERE g_count.transaction_id = b.id
+                      AND (g_count.user_id IS NOT NULL OR g_count.general_guest_id IS NOT NULL)
+                ) AS guest_count
+            FROM base b
+            JOIN daftar_tamu_transaction_guests g
+              ON g.transaction_id = b.id
+             AND g.general_guest_id IS NOT NULL
+             AND g.guest_type = 'umum'
+            JOIN daftar_tamu_general_guests gg ON gg.id = g.general_guest_id
+            WHERE (%s = 'all' OR %s = 'umum')
+        )
     """
-    data_query = """
+
+    count_query = split_rows_cte + """
+        SELECT COUNT(*) AS total
+        FROM split_rows
+    """
+    data_query = split_rows_cte + """
         SELECT
-            t.id,
-            t.visit_at,
-            t.status,
-            t.purpose,
-            t.notes,
-            t.photo_path,
-            t.photo_raw_path,
-            t.latitude,
-            t.longitude,
-            t.created_at,
-            t.reviewer_notes,
-            t.reviewed_at,
-            reviewer.full_name AS reviewer_name,
-            creator.full_name AS created_by_name,
-            (
-                {guest_names}
-            ) AS guest_names,
-            (
-                {guest_count}
-            ) AS guest_count
-        FROM daftar_tamu_transactions t
-        LEFT JOIN dashboard_users reviewer ON reviewer.id = t.reviewed_by
-        LEFT JOIN dashboard_users creator ON creator.id = t.created_by
-        WHERE t.school_id = %s
-          AND (%s = '' OR t.status = %s)
-        ORDER BY t.visit_at DESC, t.id DESC
+            id,
+            visit_at,
+            status,
+            purpose,
+            notes,
+            photo_path,
+            photo_raw_path,
+            latitude,
+            longitude,
+            created_at,
+            reviewer_notes,
+            reviewed_at,
+            reviewer_name,
+            created_by_name,
+            guest_type,
+            guest_names,
+            guest_count
+        FROM split_rows
+        ORDER BY visit_at DESC, id DESC, CASE WHEN guest_type = 'sudin' THEN 0 ELSE 1 END, guest_names ASC
         LIMIT %s OFFSET %s
-    """.format(
-        guest_names=_GUEST_NAMES_SUBQUERY.format(tx_ref="t.id"),
-        guest_count=_GUEST_COUNT_SUBQUERY.format(tx_ref="t.id"),
-    )
+    """
+    common_params: List[Any] = [
+        school_id,
+        status_value,
+        status_value,
+        scope,
+        scope,
+        scope,
+        scope,
+    ]
 
     with get_cursor() as cur:
-        cur.execute(count_query, [school_id, status_value, status_value])
+        cur.execute(count_query, common_params)
         total_rows = int((cur.fetchone() or {}).get("total") or 0)
 
         cur.execute(
             data_query,
-            [school_id, status_value, status_value, safe_per_page, offset],
+            common_params + [safe_per_page, offset],
         )
         rows = [dict(row) for row in cur.fetchall()]
 
     for row in rows:
-        names_raw = row.get("guest_names") or ""
-        names = [n.strip() for n in names_raw.split(",") if n.strip()]
-        guest_count = int(row.get("guest_count") or 0)
-        if not guest_count:
-            guest_count = len(names)
-        if names:
-            if len(names) > 2:
-                display = f"{names[0]} +{len(names) - 1}"
-            elif len(names) == 2:
-                display = f"{names[0]} & {names[1]}"
-            else:
-                display = names[0]
-        else:
-            display = None
-        row["guest_display"] = display
-        row["guest_count"] = guest_count
+        guest_name = (row.get("guest_names") or "").strip()
+        row["guest_display"] = guest_name or None
+        row["guest_count"] = int(row.get("guest_count") or (1 if guest_name else 0))
+        row["guest_type"] = (row.get("guest_type") or "").strip().lower() or "sudin"
+        row["guest_type_label"] = (
+            "Sudindik JU 2" if row["guest_type"] == "sudin" else "Instansi Pemerintah Lainnya"
+        )
 
     return rows, total_rows
 

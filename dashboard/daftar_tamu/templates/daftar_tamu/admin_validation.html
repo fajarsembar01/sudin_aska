@@ -1,5 +1,5 @@
 {% extends "daftar_tamu/base_daftar_tamu.html" %}
-{% set page_title = "Validasi Daftar Tamu" %}
+{% set page_title = "Validasi Tamu Kedinasan" %}
 
 {% block portal_content %}
 <section class="mb-4">
@@ -11,8 +11,8 @@
                         <i class="bi bi-clipboard-check"></i>
                     </span>
                     <div>
-                        <h1 class="h3 fw-bold page-title mb-1">Validasi Daftar Tamu</h1>
-                        <p class="page-subtitle mb-0">Verifikasi transaksi buku tamu dari sekolah.</p>
+                        <h1 class="h3 fw-bold page-title mb-1">Validasi Tamu Kedinasan</h1>
+                        <p class="page-subtitle mb-0">Verifikasi transaksi tamu kedinasan dari sekolah.</p>
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
@@ -38,7 +38,7 @@
                 <input type="hidden" name="status" value="pending">
                 {% else %}
                 <select name="status" class="form-select">
-                    <option value="history" {% if status=='history' %}selected{% endif %}>Semua Riwayat</option>
+                    <option value="history" {% if status=='history' %}selected{% endif %}>Semua Riwayat Tamu Kedinasan</option>
                     <option value="approved" {% if status=='approved' %}selected{% endif %}>Disetujui</option>
                     <option value="rejected" {% if status=='rejected' %}selected{% endif %}>Ditolak</option>
                 </select>
@@ -87,7 +87,7 @@
             <li class="nav-item">
                 <a class="nav-link {% if status != 'pending' %}active{% endif %}"
                     href="{{ url_for('daftar_tamu.admin_validation', status=history_status, q=search_query, staff_note_level=staff_note_level, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str) }}">
-                    Riwayat
+                    Riwayat Tamu Kedinasan
                 </a>
             </li>
         </ul>
@@ -372,7 +372,7 @@
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Riwayat Tamu</h5>
+                <h5 class="modal-title">Riwayat Tamu Kedinasan</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -585,7 +585,7 @@
             fetch('/daftar-tamu/admin/guests/' + userId + '/history?limit=20')
                 .then(function (res) { return res.json(); })
                 .then(function (data) {
-                    if (!data.success) throw new Error(data.message || 'Gagal memuat riwayat');
+                    if (!data.success) throw new Error(data.message || 'Gagal memuat riwayat tamu kedinasan');
                     var body = document.getElementById('guestHistoryRows');
                     body.innerHTML = '';
                     if (Array.isArray(data.history) && data.history.length) {
@@ -601,7 +601,7 @@
                         });
                     } else {
                         var empty = document.createElement('tr');
-                        empty.innerHTML = '<td colspan="3" class="text-center text-muted">Belum ada riwayat.</td>';
+                        empty.innerHTML = '<td colspan="3" class="text-center text-muted">Belum ada riwayat tamu kedinasan.</td>';
                         body.appendChild(empty);
                     }
                     document.getElementById('guestHistoryLoading').classList.add('d-none');
@@ -609,7 +609,7 @@
                     historyModal.show();
                 })
                 .catch(function (err) {
-                    alert(err.message || 'Gagal memuat riwayat tamu.');
+                    alert(err.message || 'Gagal memuat riwayat tamu kedinasan.');
                 });
         }
 
