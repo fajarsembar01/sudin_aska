@@ -1,4 +1,4 @@
-﻿import os
+import os
 import secrets
 from pathlib import PurePosixPath
 from functools import wraps
@@ -240,11 +240,29 @@ def register() -> Response:
             if not all([full_name, email, password, whatsapp, nip]):
                 flash("Mohon lengkapi semua data wajib.", "warning")
                 # Fallback list if DB fails or query not ready
-                return render_template("register.html", kecamatan_list=[])
+                kecamatan_list = []
+                try:
+                    from dashboard.db_access import get_cursor
+                    with get_cursor() as cur:
+                        cur.execute("SELECT id, name FROM portal_kecamatan ORDER BY name")
+                        kecamatan_list = [dict(row) for row in cur.fetchall()]
+                except Exception:
+                    pass
+                coordinator_contacts = _build_login_contact_list()
+                return render_template("register.html", kecamatan_list=kecamatan_list, coordinator_contacts=coordinator_contacts)
                 
             if password != confirm_password:
                 flash("Password tidak cocok.", "warning")
-                return render_template("register.html", kecamatan_list=[])
+                kecamatan_list = []
+                try:
+                    from dashboard.db_access import get_cursor
+                    with get_cursor() as cur:
+                        cur.execute("SELECT id, name FROM portal_kecamatan ORDER BY name")
+                        kecamatan_list = [dict(row) for row in cur.fetchall()]
+                except Exception:
+                    pass
+                coordinator_contacts = _build_login_contact_list()
+                return render_template("register.html", kecamatan_list=kecamatan_list, coordinator_contacts=coordinator_contacts)
                 
             # Check existing user
             from dashboard.queries import get_user_by_email
@@ -307,8 +325,10 @@ def register() -> Response:
             kecamatan_list = [dict(row) for row in cur.fetchall()]
     except Exception:
         pass
+    
+    coordinator_contacts = _build_login_contact_list()
         
-    return render_template("register.html", kecamatan_list=kecamatan_list)
+    return render_template("register.html", kecamatan_list=kecamatan_list, coordinator_contacts=coordinator_contacts)
 
 
 @auth_bp.route("/registration-status/<int:user_id>")
