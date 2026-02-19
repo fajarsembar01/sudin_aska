@@ -1449,13 +1449,13 @@ def list_guest_candidates(search_query: Optional[str], limit: int = 20) -> List[
             degree_suffix
         FROM dashboard_users
         WHERE account_status IN ('approved', 'not_registered')
+          AND LOWER(COALESCE(role, '')) IN ('staff', 'coordinator', 'admin')
           AND (
             %s = ''
             OR full_name ILIKE %s
             OR email ILIKE %s
             OR COALESCE(nip, '') ILIKE %s
             OR COALESCE(nrk, '') ILIKE %s
-            OR COALESCE(role, '') ILIKE %s
         )
         ORDER BY (account_status = 'approved') DESC, full_name ASC
         LIMIT %s
@@ -1463,7 +1463,7 @@ def list_guest_candidates(search_query: Optional[str], limit: int = 20) -> List[
     with get_cursor() as cur:
         cur.execute(
             query,
-            [query_text, like_query, like_query, like_query, like_query, like_query, safe_limit],
+            [query_text, like_query, like_query, like_query, like_query, safe_limit],
         )
         return [dict(row) for row in cur.fetchall()]
 
