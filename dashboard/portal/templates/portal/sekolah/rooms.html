@@ -1104,13 +1104,13 @@
                                     {% include "portal/shared/_logo_upload_field.html" %}
                                 {% endwith %}
                                 <div class="col-12">
-                                    <label class="form-label fw-semibold">Alamat Sekolah *</label>
+                                    <label class="form-label fw-semibold">Alamat Sekolah <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <textarea class="form-control" id="modalAlamat" rows="2"
                                         required>{{ (school_profile.alamat if school_profile else '') or '' }}</textarea>
                                     <div class="invalid-feedback" id="modalAlamat-error"></div>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Kecamatan *</label>
+                                    <label class="form-label fw-semibold">Kecamatan <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <select class="form-select" id="modalKecamatan">
                                         <option value="">-- Pilih Kecamatan --</option>
                                         {% for k in kecamatan_list %}
@@ -1121,7 +1121,7 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Kelurahan *</label>
+                                    <label class="form-label fw-semibold">Kelurahan <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <select class="form-select" id="modalKelurahan" required>
                                         <option value="">-- Pilih Kelurahan --</option>
                                         {% for l in kelurahan_list %}
@@ -1132,28 +1132,28 @@
                                     </select>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label fw-semibold">RT *</label>
+                                    <label class="form-label fw-semibold">RT <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <input type="text" class="form-control" id="modalRT" maxlength="3"
                                         pattern="[0-9]{3}" placeholder="001"
                                         value="{{ (school_profile.metadata.rt if school_profile else '') or '' }}">
                                     <div class="invalid-feedback" id="modalRT-error"></div>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label fw-semibold">RW *</label>
+                                    <label class="form-label fw-semibold">RW <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <input type="text" class="form-control" id="modalRW" maxlength="3"
                                         pattern="[0-9]{3}" placeholder="001"
                                         value="{{ (school_profile.metadata.rw if school_profile else '') or '' }}">
                                     <div class="invalid-feedback" id="modalRW-error"></div>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Kode Pos *</label>
+                                    <label class="form-label fw-semibold">Kode Pos <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <input type="text" class="form-control" id="modalPostalCode" maxlength="5"
                                         pattern="[0-9]{5}" placeholder="14xxx"
                                         value="{{ (school_profile.metadata.postal_code if school_profile else '') or '' }}">
                                     <div class="invalid-feedback" id="modalPostalCode-error"></div>
                                 </div>
                                 <div class="col-md-12">
-                                    <label class="form-label fw-semibold">Link Google Maps *</label>
+                                    <label class="form-label fw-semibold">Link Google Maps <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <input type="url" class="form-control" id="modalGmaps"
                                         placeholder="https://maps.app.goo.gl/..."
                                         value="{{ (school_profile.metadata.gmaps_url if school_profile else '') or '' }}">
@@ -1164,26 +1164,26 @@
                         <div class="carousel-item">
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Jumlah Siswa *</label>
+                                    <label class="form-label fw-semibold">Jumlah Siswa <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <input type="number" min="0" class="form-control" id="modalStudents"
                                         value="{{ (school_profile.metadata.student_count if school_profile else '') or '' }}">
                                     <div class="invalid-feedback" id="modalStudents-error"></div>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Jumlah Siswa Inklusi *</label>
+                                    <label class="form-label fw-semibold">Jumlah Siswa Inklusi <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <input type="number" min="0" class="form-control" id="modalInclusionStudents"
                                         value="{{ (school_profile.metadata.inclusion_student_count if school_profile else '') or '' }}">
                                     <div class="invalid-feedback" id="modalInclusionStudents-error"></div>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Jumlah Rombel *</label>
+                                    <label class="form-label fw-semibold">Jumlah Rombel <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <input type="number" min="0" class="form-control" id="modalRombel"
                                         value="{{ (school_profile.metadata.rombel_count if school_profile else '') or '' }}">
                                     <div class="invalid-feedback" id="modalRombel-error"></div>
                                 </div>
                                 {% if grade_levels %}
                                 <div class="col-12">
-                                    <label class="form-label fw-semibold">Jumlah Bangku Kosong per Kelas *</label>
+                                    <label class="form-label fw-semibold">Jumlah Bangku Kosong per Kelas <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <div class="row g-2">
                                         {% for g in grade_levels %}
                                         <div class="col-md-4">
@@ -1210,20 +1210,20 @@
                                 </div>
                                 {% else %}
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Jumlah Bangku Kosong *</label>
+                                    <label class="form-label fw-semibold">Jumlah Bangku Kosong <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <input type="number" min="0" class="form-control" id="modalEmpty"
                                         value="{{ (school_profile.metadata.empty_seats if school_profile else 0) or 0 }}">
                                     <div class="invalid-feedback" id="modalEmpty-error"></div>
                                 </div>
                                 {% endif %}
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Jumlah Guru *</label>
+                                    <label class="form-label fw-semibold">Jumlah Guru <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <input type="number" min="0" class="form-control" id="modalTeachers"
                                         value="{{ (school_profile.metadata.teacher_count if school_profile else '') or '' }}">
                                     <div class="invalid-feedback" id="modalTeachers-error"></div>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Jumlah Tenaga Kependidikan *</label>
+                                    <label class="form-label fw-semibold">Jumlah Tenaga Kependidikan <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <input type="number" min="0" class="form-control" id="modalStaff"
                                         value="{{ (school_profile.metadata.staff_count if school_profile else '') or '' }}">
                                     <div class="invalid-feedback" id="modalStaff-error"></div>
@@ -1233,7 +1233,7 @@
                         <div class="carousel-item">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Nomor Telepon Sekolah *</label>
+                                    <label class="form-label fw-semibold">Nomor Telepon Sekolah <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <input type="text" class="form-control" id="modalSchoolPhone"
                                         value="{{ (school_profile.metadata.school_phone if school_profile else '') or '' }}">
                                     <div class="invalid-feedback" id="modalSchoolPhone-error"></div>
@@ -1245,13 +1245,13 @@
                                     <div class="invalid-feedback" id="modalFax-error"></div>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Nomor Operator Sekolah *</label>
+                                    <label class="form-label fw-semibold">Nomor Operator Sekolah <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <input type="text" class="form-control" id="modalCoordinatorPhone"
                                         value="{{ (school_profile.metadata.coordinator_phone if school_profile else '') or '' }}">
                                     <div class="invalid-feedback" id="modalCoordinatorPhone-error"></div>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Email Sekolah (CS) *</label>
+                                    <label class="form-label fw-semibold">Email Sekolah (CS) <span style="color: #dc3545; font-weight: 100;">*</span></label>
                                     <input type="email" class="form-control" id="modalCsEmail"
                                         value="{{ (school_profile.metadata.cs_email if school_profile else '') or '' }}">
                                     <div class="invalid-feedback" id="modalCsEmail-error"></div>
@@ -1269,17 +1269,19 @@
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Telegram (Opsional)</label>
                                     <input type="text" class="form-control" id="modalTelegram"
-                                        placeholder="@sekolah atau https://t.me/..."
+                                        placeholder="@username atau https://t.me/..."
                                         value="{{ (school_profile.metadata.telegram if school_profile else '') or '' }}">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Instagram (Opsional)</label>
                                     <input type="text" class="form-control" id="modalInstagram"
+                                        placeholder="@username"
                                         value="{{ (school_profile.metadata.instagram if school_profile else '') or '' }}">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">TikTok (Opsional)</label>
                                     <input type="text" class="form-control" id="modalTiktok"
+                                        placeholder="@username"
                                         value="{{ (school_profile.metadata.tiktok if school_profile else '') or '' }}">
                                 </div>
                                 <div class="col-md-6">

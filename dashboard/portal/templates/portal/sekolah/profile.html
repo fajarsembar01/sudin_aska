@@ -60,12 +60,12 @@
                         </div>
                         {% endif %}
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Alamat Sekolah *</label>
+                            <label class="form-label fw-semibold">Alamat Sekolah <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <textarea name="alamat" class="form-control" rows="2"
                                 required>{{ school.alamat or meta.alamat or '' }}</textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Kecamatan *</label>
+                            <label class="form-label fw-semibold">Kecamatan <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <select name="kecamatan_id" id="profileKecamatan" class="form-select">
                                 <option value="">-- Pilih Kecamatan --</option>
                                 {% for k in kecamatan_list %}
@@ -75,7 +75,7 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Kelurahan *</label>
+                            <label class="form-label fw-semibold">Kelurahan <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <select name="kelurahan_id" id="profileKelurahan" class="form-select" required>
                                 <option value="">-- Pilih Kelurahan --</option>
                                 {% for l in kelurahan_list %}
@@ -85,43 +85,43 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">RT *</label>
+                            <label class="form-label fw-semibold">RT <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <input type="text" name="rt" id="profileRT" class="form-control" required maxlength="3"
                                 pattern="[0-9]{3}" value="{{ meta.rt or '' }}" placeholder="001">
                             <div class="invalid-feedback" id="profileRT-error"></div>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">RW *</label>
+                            <label class="form-label fw-semibold">RW <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <input type="text" name="rw" id="profileRW" class="form-control" required maxlength="3"
                                 pattern="[0-9]{3}" value="{{ meta.rw or '' }}" placeholder="001">
                             <div class="invalid-feedback" id="profileRW-error"></div>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">Kode Pos *</label>
+                            <label class="form-label fw-semibold">Kode Pos <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <input type="text" name="postal_code" id="profilePostalCode" class="form-control" required
                                 maxlength="5" pattern="[0-9]{5}" value="{{ meta.postal_code or '' }}"
                                 placeholder="14xxx">
                             <div class="invalid-feedback" id="profilePostalCode-error"></div>
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Link Google Maps *</label>
+                            <label class="form-label fw-semibold">Link Google Maps <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <input type="url" name="gmaps_url" id="profileGmaps" class="form-control" required
                                 value="{{ meta.gmaps_url or '' }}" placeholder="https://maps.app.goo.gl/...">
                             <div class="invalid-feedback" id="profileGmaps-error"></div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Jumlah Siswa *</label>
+                            <label class="form-label fw-semibold">Jumlah Siswa <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <input type="number" min="0" name="student_count" class="form-control" required
                                 value="{{ meta.get('student_count') if meta.get('student_count') is not none else '' }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Jumlah Siswa Inklusi *</label>
+                            <label class="form-label fw-semibold">Jumlah Siswa Inklusi <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <input type="number" min="0" name="inclusion_student_count" class="form-control" required
                                 value="{{ meta.get('inclusion_student_count') if meta.get('inclusion_student_count') is not none else '' }}">
                         </div>
                         {% if grade_levels %}
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Jumlah Bangku Kosong per Kelas *</label>
+                            <label class="form-label fw-semibold">Jumlah Bangku Kosong per Kelas <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <input type="hidden" name="empty_seats_by_grade" id="emptySeatsByGrade">
                             <input type="hidden" name="empty_seats" id="emptySeatsTotal">
                             <div class="row g-2">
@@ -152,28 +152,28 @@
                         </div>
                         {% else %}
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Jumlah Bangku Kosong *</label>
+                            <label class="form-label fw-semibold">Jumlah Bangku Kosong <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <input type="number" min="0" name="empty_seats" class="form-control" required
                                 value="{{ meta.get('empty_seats') if meta.get('empty_seats') is not none else '' }}">
                         </div>
                         {% endif %}
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Jumlah Guru *</label>
+                            <label class="form-label fw-semibold">Jumlah Guru <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <input type="number" min="0" name="teacher_count" class="form-control" required
                                 value="{{ meta.get('teacher_count') if meta.get('teacher_count') is not none else '' }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Jumlah Tenaga Kependidikan *</label>
+                            <label class="form-label fw-semibold">Jumlah Tenaga Kependidikan <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <input type="number" min="0" name="staff_count" class="form-control" required
                                 value="{{ meta.get('staff_count') if meta.get('staff_count') is not none else '' }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Jumlah Rombel *</label>
+                            <label class="form-label fw-semibold">Jumlah Rombel <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <input type="number" min="0" name="rombel_count" class="form-control" required
                                 value="{{ meta.get('rombel_count') if meta.get('rombel_count') is not none else '' }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Nomor Telepon Sekolah *</label>
+                            <label class="form-label fw-semibold">Nomor Telepon Sekolah <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <input type="text" name="school_phone" class="form-control" required pattern="^[0-9]+$"
                                 value="{{ meta.school_phone or '' }}" placeholder="Hanya angka">
                         </div>
@@ -183,12 +183,12 @@
                                 placeholder="021-xxxxxxx">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Nomor Operator Sekolah *</label>
+                            <label class="form-label fw-semibold">Nomor Operator Sekolah <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <input type="text" name="coordinator_phone" class="form-control" required pattern="^[0-9]+$"
                                 value="{{ meta.coordinator_phone or '' }}" placeholder="Hanya angka">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Email Sekolah (CS) *</label>
+                            <label class="form-label fw-semibold">Email Sekolah (CS) <span style="color: #dc3545; font-weight: 100;">*</span></label>
                             <input type="email" name="cs_email" class="form-control" required
                                 value="{{ meta.cs_email or '' }}" placeholder="cs@sekolah.sch.id">
                         </div>
@@ -206,17 +206,17 @@
                                         <label class="form-label small text-muted">Telegram (Opsional)</label>
                                         <input type="text" name="telegram" class="form-control"
                                             value="{{ meta.telegram or '' }}"
-                                            placeholder="@sekolah atau https://t.me/...">
+                                            placeholder="@username atau https://t.me/...">
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label small text-muted">Instagram (Opsional)</label>
                                         <input type="text" name="instagram" class="form-control"
-                                            value="{{ meta.instagram or '' }}" placeholder="@sekolah">
+                                            value="{{ meta.instagram or '' }}" placeholder="@username">
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label small text-muted">TikTok (Opsional)</label>
                                         <input type="text" name="tiktok" class="form-control"
-                                            value="{{ meta.tiktok or '' }}" placeholder="@sekolah">
+                                            value="{{ meta.tiktok or '' }}" placeholder="@username">
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label small text-muted">YouTube (Opsional)</label>
