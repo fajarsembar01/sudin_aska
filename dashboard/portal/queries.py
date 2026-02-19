@@ -1787,6 +1787,73 @@ def list_recent_assessments(
         columns = [desc[0] for desc in cur.description]
         return [dict(zip(columns, row)) for row in cur.fetchall()]
 
+
+def list_staff_latest_assessments(
+    period_id: Optional[int] = None,
+    staff_ids: Optional[List[int]] = None,
+    limit: int = 100,
+) -> List[Dict[str, Any]]:
+    """List staff/coordinator members with their latest submitted assessment."""
+    if staff_ids is not None and len(staff_ids) == 0:
+        return []
+
+    latest_filters = ["a.staff_id = u.id", "a.status IN ('submitted', 'verified')"]
+    latest_params: List[Any] = []
+    if period_id:
+        latest_filters.append("a.period_id = %s")
+        latest_params.append(period_id)
+    latest_where = " AND ".join(latest_filters)
+
+    staff_where = "WHERE u.role IN ('staff', 'coordinator') AND u.account_status = 'approved'"
+    staff_params: List[Any] = []
+    if staff_ids:
+        placeholders = ",".join(["%s"] * len(staff_ids))
+        staff_where += f" AND u.id IN ({placeholders})"
+        staff_params.extend(staff_ids)
+
+    query = f"""
+        SELECT
+            u.id AS staff_id,
+            u.full_name AS staff_name,
+            u.jabatan,
+            visited.total_visited_schools,
+            latest.assessment_id AS last_assessment_id,
+            latest.school_name AS last_school_name,
+            latest.total_score AS last_total_score,
+            latest.submitted_at AS last_submitted_at,
+            latest.kecamatan_name AS last_kecamatan_name
+        FROM dashboard_users u
+        LEFT JOIN LATERAL (
+            SELECT COUNT(DISTINCT a.school_id) AS total_visited_schools
+            FROM portal_assessments a
+            WHERE {latest_where}
+        ) visited ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT
+                a.id AS assessment_id,
+                s.name AS school_name,
+                a.total_score,
+                a.submitted_at,
+                k.name AS kecamatan_name
+            FROM portal_assessments a
+            JOIN portal_schools s ON s.id = a.school_id
+            LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            WHERE {latest_where}
+            ORDER BY a.submitted_at DESC NULLS LAST, a.id DESC
+            LIMIT 1
+        ) latest ON TRUE
+        {staff_where}
+        ORDER BY latest.submitted_at DESC NULLS LAST, u.full_name ASC
+        LIMIT %s
+    """
+    params = [*latest_params, *staff_params, limit]
+
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
 def fetch_school_avg_scores(
     period_id: Optional[int] = None,
     staff_ids: Optional[List[int]] = None,

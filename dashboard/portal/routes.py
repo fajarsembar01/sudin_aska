@@ -62,6 +62,7 @@ from .queries import (
     list_staff_assessments,
     fetch_portal_stats,
     list_recent_assessments,
+    list_staff_latest_assessments,
     fetch_top_schools,
     create_room,
     create_aspect,
@@ -3171,6 +3172,11 @@ def admin_stats() -> Response:
         order=order,
         staff_ids=staff_ids,
     )
+    staff_latest_assessments = list_staff_latest_assessments(
+        period_id=period_id,
+        staff_ids=staff_ids,
+        limit=100,
+    )
     if staff_ids:
         top_schools = fetch_team_top_schools(staff_ids, period_id=period_id, limit=10)
         bottom_schools = fetch_team_bottom_schools(staff_ids, period_id=period_id, limit=10)
@@ -3213,6 +3219,7 @@ def admin_stats() -> Response:
         all_schools=all_schools,
         all_staff=all_staff,
         monev_teams=monev_teams,
+        staff_latest_assessments=staff_latest_assessments,
     )
 
 
@@ -5903,6 +5910,32 @@ def admin_remove_assignment() -> Response:
         current_app.logger.exception("Error removing assignment")
         return jsonify({"success": False, "message": str(e)}), 500
 
+
+
+@portal_bp.route("/admin/staff/<int:staff_id>/assigned-schools")
+@role_required("admin")
+def admin_staff_assigned_schools(staff_id: int) -> Response:
+    """Admin page to view all schools assigned to a specific staff member."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, full_name, email, role, jabatan
+            FROM dashboard_users
+            WHERE id = %s AND role IN ('staff', 'coordinator')
+            """,
+            (staff_id,),
+        )
+        row = cur.fetchone()
+    if not row:
+        abort(404)
+
+    staff = dict(row)
+    assignments = get_staff_assigned_schools(staff_id)
+    return render_template(
+        "portal/admin/staff_assigned_schools.html",
+        staff=staff,
+        assignments=assignments,
+    )
 
 
 @portal_bp.route("/admin/staff/<int:staff_id>/assignments")
