@@ -3490,6 +3490,8 @@ def sekolah_guest_search() -> Response:
     query = (request.args.get("q") or "").strip()
     limit = _to_int(request.args.get("limit"), 20)
     results = list_guest_candidates(query, limit=limit)
+    for item in results:
+        item["profile_photo_url"] = _build_photo_url(item.get("profile_photo_path"), external=False)
     return jsonify({"success": True, "results": results})
 
 

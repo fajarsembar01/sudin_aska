@@ -14,10 +14,15 @@
         font-size: 0.85rem;
     }
 
-    .guest-chip button {
+    .guest-chip-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .guest-chip-btn-photo,
+    .guest-chip-btn-remove {
         border: none;
-        background: #f8d7da;
-        color: #b02a37;
         border-radius: 999px;
         padding: 2px 8px;
         font-size: 0.75rem;
@@ -25,7 +30,21 @@
         cursor: pointer;
     }
 
-    .guest-chip button:hover {
+    .guest-chip-btn-photo {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .guest-chip-btn-photo:hover {
+        background: #badbcc;
+    }
+
+    .guest-chip-btn-remove {
+        background: #f8d7da;
+        color: #b02a37;
+    }
+
+    .guest-chip-btn-remove:hover {
         background: #f5c2c7;
     }
 
@@ -61,6 +80,86 @@
 
     .guest-result:hover {
         background: rgba(13, 110, 253, 0.06);
+    }
+
+    .guest-result-layout {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .guest-result-text {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .guest-result-text .small {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .guest-result-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 1px solid var(--border-soft);
+        background: var(--bg-surface-alt, #f8f9fa);
+        color: var(--text-muted);
+        flex: 0 0 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .guest-result-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .guest-photo-modal .modal-content {
+        border: 0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 18px 36px rgba(0, 0, 0, 0.25);
+    }
+
+    .guest-photo-modal .modal-header {
+        border-bottom: 1px solid var(--border-soft);
+    }
+
+    .guest-photo-modal .modal-body {
+        padding: 0;
+        background: #f8f9fa;
+    }
+
+    .guest-photo-view {
+        position: relative;
+        width: 100%;
+        min-height: 280px;
+        max-height: 70vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f3f5;
+    }
+
+    .guest-photo-view img {
+        width: 100%;
+        height: 100%;
+        max-height: 70vh;
+        object-fit: contain;
+        display: block;
+    }
+
+    .guest-photo-fallback {
+        padding: 28px 20px;
+        text-align: center;
+        color: #6c757d;
     }
 
     .selected-guests-field {
@@ -241,6 +340,29 @@
         </div>
     </div>
 </section>
+
+<div class="modal fade guest-photo-modal" id="guestProfilePhotoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title d-flex align-items-center gap-2">
+                    <i class="bi bi-person-bounding-box text-primary"></i>
+                    <span id="guestProfilePhotoTitle">Foto Profil Tamu</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <div class="guest-photo-view">
+                    <img id="guestProfilePhotoImage" src="" alt="Foto profil tamu" class="d-none">
+                    <div id="guestProfilePhotoFallback" class="guest-photo-fallback d-none">
+                        <i class="bi bi-image fs-2 d-block mb-2"></i>
+                        Foto profil tidak tersedia.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endif %}
 
 {% endblock %}
@@ -257,6 +379,10 @@
         var selectedError = document.getElementById('selectedGuestsError');
         var searchInput = document.getElementById('guestSearchInput');
         var generalSearchInput = document.getElementById('generalSearchInput');
+        var guestPhotoModalEl = document.getElementById('guestProfilePhotoModal');
+        var guestPhotoTitleEl = document.getElementById('guestProfilePhotoTitle');
+        var guestPhotoImageEl = document.getElementById('guestProfilePhotoImage');
+        var guestPhotoFallbackEl = document.getElementById('guestProfilePhotoFallback');
         var addGeneralGuestBtn = document.getElementById('addGeneralGuestBtn');
         var generalNameInput = document.getElementById('generalNameInput');
         var generalInstansiInput = document.getElementById('generalInstansiInput');
@@ -288,6 +414,7 @@
         var currentLatitude = null;
         var currentLongitude = null;
         var currentAccuracy = null;
+        var guestPhotoModal = null;
         var hasSudinResultsVisible = false;
         var hasGeneralResultsVisible = false;
 
@@ -304,6 +431,55 @@
         function setInputInvalidState(inputEl, errorEl, isInvalid) {
             if (inputEl) inputEl.classList.toggle('is-invalid', !!isInvalid);
             if (errorEl) errorEl.classList.toggle('d-none', !isInvalid);
+        }
+
+        function ensureGuestPhotoModal() {
+            if (!guestPhotoModal && guestPhotoModalEl && window.bootstrap) {
+                guestPhotoModal = bootstrap.Modal.getOrCreateInstance(guestPhotoModalEl, {
+                    backdrop: true,
+                    keyboard: true
+                });
+            }
+            return guestPhotoModal;
+        }
+
+        function showGuestPhotoFallback(show) {
+            if (guestPhotoImageEl) guestPhotoImageEl.classList.toggle('d-none', !!show);
+            if (guestPhotoFallbackEl) guestPhotoFallbackEl.classList.toggle('d-none', !show);
+        }
+
+        function openGuestPhotoModal(guest) {
+            if (!guest || !guest.profile_photo_url || !guestPhotoModalEl) return;
+            var modal = ensureGuestPhotoModal();
+            if (!modal) return;
+
+            if (guestPhotoTitleEl) {
+                guestPhotoTitleEl.textContent = guest.name ? ('Foto Profil - ' + guest.name) : 'Foto Profil Tamu';
+            }
+
+            showGuestPhotoFallback(false);
+            if (guestPhotoImageEl) {
+                guestPhotoImageEl.src = guest.profile_photo_url;
+                guestPhotoImageEl.alt = guest.name ? ('Foto profil ' + guest.name) : 'Foto profil tamu';
+                guestPhotoImageEl.onerror = function () {
+                    showGuestPhotoFallback(true);
+                };
+                guestPhotoImageEl.onload = function () {
+                    showGuestPhotoFallback(false);
+                };
+            } else {
+                showGuestPhotoFallback(true);
+            }
+            modal.show();
+        }
+
+        if (guestPhotoModalEl) {
+            guestPhotoModalEl.addEventListener('hidden.bs.modal', function () {
+                if (guestPhotoImageEl) {
+                    guestPhotoImageEl.src = '';
+                }
+                showGuestPhotoFallback(true);
+            });
         }
 
         function updateSubmitState() {
@@ -345,8 +521,10 @@
             selectedGuests.set(key, {
                 id: payload.id,
                 type: payload.type,
+                name: payload.name || label,
                 label: label,
                 normalized_name: normalizeName(payload.name || label),
+                profile_photo_url: payload.profile_photo_url || '',
             });
             renderSelectedGuests();
         }
@@ -365,16 +543,35 @@
                 var labelSpan = document.createElement('span');
                 labelSpan.textContent = guest.label;
                 chip.appendChild(labelSpan);
-                var btn = document.createElement('button');
-                btn.type = 'button';
-                btn.innerHTML = '<i class="bi bi-x"></i><span class="ms-1">Hapus</span>';
-                btn.setAttribute('aria-label', 'Hapus tamu');
-                btn.title = 'Hapus tamu';
-                btn.addEventListener('click', function () {
+
+                var actions = document.createElement('span');
+                actions.className = 'guest-chip-actions';
+
+                if (guest.type === 'sudin' && guest.profile_photo_url) {
+                    var photoBtn = document.createElement('button');
+                    photoBtn.type = 'button';
+                    photoBtn.className = 'guest-chip-btn-photo';
+                    photoBtn.innerHTML = '<i class="bi bi-image"></i>';
+                    photoBtn.setAttribute('aria-label', 'Lihat foto profil tamu');
+                    photoBtn.title = 'Lihat foto profil';
+                    photoBtn.addEventListener('click', function () {
+                        openGuestPhotoModal(guest);
+                    });
+                    actions.appendChild(photoBtn);
+                }
+
+                var removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'guest-chip-btn-remove';
+                removeBtn.innerHTML = '<i class="bi bi-x"></i><span class="ms-1">Hapus</span>';
+                removeBtn.setAttribute('aria-label', 'Hapus tamu');
+                removeBtn.title = 'Hapus tamu';
+                removeBtn.addEventListener('click', function () {
                     selectedGuests.delete(id);
                     renderSelectedGuests();
                 });
-                chip.appendChild(btn);
+                actions.appendChild(removeBtn);
+                chip.appendChild(actions);
                 selectedContainer.appendChild(chip);
             });
             updateSubmitState();
@@ -446,6 +643,35 @@
             });
         }
 
+        function buildGuestResultAvatar(item) {
+            var avatar = document.createElement('span');
+            avatar.className = 'guest-result-avatar';
+
+            function setFallbackIcon() {
+                avatar.innerHTML = '';
+                var icon = document.createElement('i');
+                icon.className = 'bi bi-person-circle';
+                icon.setAttribute('aria-hidden', 'true');
+                avatar.appendChild(icon);
+            }
+
+            var photoUrl = (item && item.profile_photo_url) ? String(item.profile_photo_url).trim() : '';
+            if (!photoUrl) {
+                setFallbackIcon();
+                return avatar;
+            }
+
+            var img = document.createElement('img');
+            var fullName = item.full_name || item.email || 'Tamu';
+            img.src = photoUrl;
+            img.alt = 'Foto ' + fullName;
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            img.addEventListener('error', setFallbackIcon);
+            avatar.appendChild(img);
+            return avatar;
+        }
+
         function renderGuestResults(items) {
             guestResults.innerHTML = '';
             if (!items || items.length === 0) {
@@ -456,17 +682,38 @@
             items.forEach(function (item) {
                 var row = document.createElement('div');
                 row.className = 'guest-result';
+
+                var layout = document.createElement('div');
+                layout.className = 'guest-result-layout';
+
+                var textCol = document.createElement('div');
+                textCol.className = 'guest-result-text';
+
+                var titleRow = document.createElement('div');
+                titleRow.className = 'fw-semibold';
+                titleRow.appendChild(document.createTextNode(item.full_name || item.email || ''));
+
                 var meta = [];
                 if (item.jabatan) meta.push(item.jabatan);
                 if (item.nrk) meta.push('NRK ' + item.nrk);
-                var statusBadge = '';
+
                 if (item.account_status === 'not_registered') {
-                    statusBadge = '<span class="badge text-bg-secondary ms-2">Not Register</span>';
+                    var statusBadge = document.createElement('span');
+                    statusBadge.className = 'badge text-bg-secondary ms-2';
+                    statusBadge.textContent = 'Not Register';
+                    titleRow.appendChild(statusBadge);
                 }
-                var title = escapeHtml(item.full_name || item.email || '');
-                var metaText = escapeHtml(meta.join(' • '));
-                row.innerHTML = '<div class="fw-semibold">' + title + statusBadge + '</div>'
-                    + '<div class="small text-muted">' + metaText + '</div>';
+
+                var metaRow = document.createElement('div');
+                metaRow.className = 'small text-muted';
+                metaRow.textContent = meta.join(' • ');
+
+                textCol.appendChild(titleRow);
+                textCol.appendChild(metaRow);
+                layout.appendChild(textCol);
+                layout.appendChild(buildGuestResultAvatar(item));
+                row.appendChild(layout);
+
                 row.addEventListener('click', function () {
                     var statusLabel = item.account_status === 'not_registered' ? 'Not Register' : '';
                     var label = (item.full_name || item.email || 'Tamu')
@@ -477,6 +724,7 @@
                         type: 'sudin',
                         name: item.full_name || item.email || 'Tamu',
                         label: label,
+                        profile_photo_url: item.profile_photo_url || '',
                     });
                     searchInput.value = '';
                     guestResults.innerHTML = '';

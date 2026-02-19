@@ -1436,6 +1436,11 @@ def fetch_recent_visits(
 def list_guest_candidates(search_query: Optional[str], limit: int = 20) -> List[Dict[str, Any]]:
     query_text, like_query = _build_search(search_query)
     safe_limit = max(1, min(limit, 50))
+    profile_photo_select = (
+        "profile_photo_path"
+        if _has_dashboard_user_profile_photo_path()
+        else "NULL::TEXT AS profile_photo_path"
+    )
     query = """
         SELECT
             id,
@@ -1445,6 +1450,7 @@ def list_guest_candidates(search_query: Optional[str], limit: int = 20) -> List[
             nrk,
             jabatan,
             account_status,
+            {profile_photo_select},
             degree_prefix,
             degree_suffix
         FROM dashboard_users
@@ -1459,7 +1465,7 @@ def list_guest_candidates(search_query: Optional[str], limit: int = 20) -> List[
         )
         ORDER BY (account_status = 'approved') DESC, full_name ASC
         LIMIT %s
-    """
+    """.format(profile_photo_select=profile_photo_select)
     with get_cursor() as cur:
         cur.execute(
             query,
