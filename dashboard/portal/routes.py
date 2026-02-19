@@ -125,6 +125,10 @@ from .queries import (
     fetch_admin_pending_summary,
     fetch_admin_pending_preview,
     fetch_portal_undo_window_seconds,
+    list_preview_pins,
+    is_preview_pin,
+    add_preview_pin,
+    remove_preview_pin,
     get_optional_rooms_for_schools,
     get_room_with_aspects,
     list_portal_kontak,
@@ -198,7 +202,7 @@ _PREVIEW_ADMIN_SESSION_KEY = "preview_admin_user"
 _PREVIEW_TARGET_SESSION_KEY = "preview_target_user"
 _PREVIEW_APP_SESSION_KEY = "preview_selected_app"
 _PREVIEW_READ_ONLY_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
-_PREVIEW_READ_ONLY_EXEMPT_ENDPOINTS = {"portal.preview_start"}
+_PREVIEW_READ_ONLY_EXEMPT_ENDPOINTS = {"portal.preview_start", "portal.preview_pin"}
 
 
 def _is_preview_read_only_session() -> bool:
@@ -6400,18 +6404,38 @@ def _serialize_preview_target(row: dict) -> dict:
     }
 
 
-def _list_preview_accounts() -> list[dict]:
+def _list_preview_accounts(pinned_ids: list[int] | None = None) -> list[dict]:
+    pinned_ids = pinned_ids or []
+    pinned_set = set()
+    for value in pinned_ids:
+        try:
+            pinned_set.add(int(value))
+        except (TypeError, ValueError):
+            continue
     rows = []
-    for user in list_dashboard_users():
+    for index, user in enumerate(list_dashboard_users()):
         role = (user.get("role") or "").strip().lower()
         if role not in _PREVIEW_ALLOWED_ROLES:
+            continue
+        account_status = (user.get("account_status") or "").strip().lower()
+        if account_status != "approved":
             continue
         if user.get("merged_to"):
             continue
         row = dict(user)
         row["profile_photo_url"] = _build_profile_photo_url(row.get("profile_photo_path"))
+        row["preview_index"] = index
+        try:
+            row_id = int(row.get("id") or 0)
+        except (TypeError, ValueError):
+            row_id = 0
+        row["is_pinned"] = row_id in pinned_set
         rows.append(row)
-    return rows
+    if not pinned_set:
+        return rows
+    pinned_rows = [row for row in rows if row.get("is_pinned")]
+    unpinned_rows = [row for row in rows if not row.get("is_pinned")]
+    return pinned_rows + unpinned_rows
 
 
 def _find_preview_target(user_id: int) -> dict | None:
@@ -6438,7 +6462,14 @@ def manage_users() -> Response:
 @_preview_access_required
 def preview_accounts() -> Response:
     """Admin preview workspace for target accounts."""
-    preview_users = _list_preview_accounts()
+    actor = _preview_admin_actor()
+    pinned_ids: list[int] = []
+    if actor and actor.get("id"):
+        try:
+            pinned_ids = list_preview_pins(int(actor["id"]))
+        except (TypeError, ValueError):
+            pinned_ids = []
+    preview_users = _list_preview_accounts(pinned_ids)
     selected_target = session.get(_PREVIEW_TARGET_SESSION_KEY)
     selected_app = _normalize_preview_app(session.get(_PREVIEW_APP_SESSION_KEY))
     preview_url = None
@@ -6458,6 +6489,7 @@ def preview_accounts() -> Response:
     return render_template(
         "portal/admin/preview_workspace.html",
         preview_users=preview_users,
+        preview_pinned_ids=pinned_ids,
         preview_target=selected_target,
         preview_selected_app=selected_app,
         preview_url=preview_url,
@@ -6496,6 +6528,42 @@ def preview_start(user_id: int) -> Response:
             "app": app_name,
         }
     )
+
+
+@portal_bp.route("/settings/preview-akun/pin/<int:user_id>", methods=["POST"])
+@_preview_access_required
+def preview_pin(user_id: int) -> Response:
+    """Pin/unpin preview target accounts per admin."""
+    actor = _preview_admin_actor()
+    if not actor or not actor.get("id"):
+        return jsonify({"success": False, "message": "Hanya admin yang dapat menyematkan akun."}), 403
+
+    target = _find_preview_target(user_id)
+    if not target:
+        return jsonify({"success": False, "message": "Akun target tidak ditemukan."}), 404
+
+    try:
+        admin_id = int(actor["id"])
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "message": "Admin tidak valid."}), 400
+
+    action = (request.form.get("action") or "").strip().lower()
+    pinned = False
+    if action == "pin":
+        add_preview_pin(admin_id, user_id)
+        pinned = True
+    elif action == "unpin":
+        remove_preview_pin(admin_id, user_id)
+        pinned = False
+    else:
+        if is_preview_pin(admin_id, user_id):
+            remove_preview_pin(admin_id, user_id)
+            pinned = False
+        else:
+            add_preview_pin(admin_id, user_id)
+            pinned = True
+
+    return jsonify({"success": True, "user_id": user_id, "pinned": pinned})
 
 
 @portal_bp.route("/preview/stop")

@@ -319,10 +319,60 @@
         </div>
 
         <p class="footer-text">
-            <a href="{{ url_for('auth.login') }}" class="text-decoration-none text-muted">
-                <i class="bi bi-arrow-left me-1"></i>Kembali ke Login
-            </a>
+            <button type="button" class="btn btn-link btn-sm text-muted p-0" data-bs-toggle="modal"
+                data-bs-target="#helpModal">
+                <i class="bi bi-question-circle me-1"></i>Butuh bantuan? Hubungi admin wilayah
+            </button>
         </p>
+    </div>
+
+    <!-- Help Modal - Admin Wilayah -->
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="helpModalLabel">
+                        <i class="bi bi-telephone-outbound me-2 text-success"></i>Hubungi Admin Wilayah
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Butuh bantuan? Silakan hubungi admin wilayah berikut:</p>
+                    <div class="list-group">
+                        {% if coordinator_contacts %}
+                        {% for group in coordinator_contacts|groupby('area') %}
+                        <div class="list-group-item">
+                            <div class="fw-semibold">{{ group.grouper }}</div>
+                            <div class="mt-2 d-flex flex-column gap-2">
+                                {% for c in group.list %}
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="text-muted small">{{ c.name }} • {{ c.phone }}</div>
+                                    {% if c.is_active %}
+                                    <a class="btn btn-success btn-sm d-inline-flex align-items-center gap-2"
+                                        href="{{ c.wa_link }}" target="_blank" rel="noopener">
+                                        <i class="bi bi-whatsapp"></i><span>WhatsApp</span>
+                                    </a>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Inaktif</span>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="list-group-item text-center text-muted small">
+                            Kontak admin belum tersedia.
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="alert alert-info mt-3 mb-0 small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Admin wilayah siap membantu reset password atau verifikasi akun Anda.
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
