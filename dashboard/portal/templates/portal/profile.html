@@ -34,6 +34,7 @@
                                 <div class="d-flex flex-wrap gap-2">
                                     <form method="post" action="{{ url_for('portal.upload_profile_photo') }}"
                                         enctype="multipart/form-data" id="profilePhotoCameraForm">
+                                        <input type="hidden" name="redirect_to" value="{{ url_for('portal.user_profile_settings') }}">
                                         <input type="file" name="photo" id="profilePhotoCameraInput" accept="image/*" capture="user" class="d-none">
                                         <button type="button" class="btn btn-sm btn-primary" id="profilePhotoCameraBtn">
                                             <i class="bi bi-camera me-1"></i>Kamera
@@ -41,6 +42,7 @@
                                     </form>
                                     <form method="post" action="{{ url_for('portal.upload_profile_photo') }}"
                                         enctype="multipart/form-data" id="profilePhotoGalleryForm">
+                                        <input type="hidden" name="redirect_to" value="{{ url_for('portal.user_profile_settings') }}">
                                         <input type="file" name="photo" id="profilePhotoGalleryInput" accept="image/*" class="d-none">
                                         <button type="button" class="btn btn-sm btn-outline-primary" id="profilePhotoGalleryBtn">
                                             <i class="bi bi-image me-1"></i>Folder
@@ -269,6 +271,7 @@
 
             const formData = new FormData();
             formData.append('photo', file, file.name || 'profile-camera.jpg');
+            formData.append('redirect_to', {{ url_for('portal.user_profile_settings')|tojson }});
 
             fetch(uploadUrl, {
                 method: 'POST',
@@ -286,11 +289,12 @@
                         return data;
                     });
                 })
-                .then(function () {
+                .then(function (data) {
+                    var redirectUrl = (data && data.redirect_url) ? data.redirect_url : {{ url_for('portal.user_profile_settings')|tojson }};
                     if (typeof showToast === 'function') {
                         showToast('Foto profil berhasil diperbarui.');
                     }
-                    window.location.reload();
+                    window.location.href = redirectUrl;
                 })
                 .catch(function (error) {
                     alert(error.message || 'Gagal mengunggah foto profil.');
