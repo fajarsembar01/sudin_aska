@@ -137,6 +137,7 @@
             gap: 10px;
             width: 100%;
             transition: 0.15s ease;
+            cursor: pointer;
         }
 
         .account-item:hover {
@@ -147,6 +148,11 @@
         .account-item.active {
             border-color: rgba(13, 110, 253, 0.35);
             background: var(--preview-item-active-bg);
+        }
+
+        .account-item:focus-visible {
+            outline: 2px solid rgba(13, 110, 253, 0.4);
+            outline-offset: 2px;
         }
 
         .account-avatar {
@@ -186,6 +192,10 @@
             display: none;
         }
 
+        .preview-shell.sidebar-collapsed .account-pin-btn {
+            display: none;
+        }
+
         .preview-shell.sidebar-collapsed .preview-sidebar-head h1 .title-text {
             display: none;
         }
@@ -220,6 +230,36 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        .account-pin-btn {
+            margin-left: auto;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--preview-muted);
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.15s ease;
+            flex: 0 0 auto;
+        }
+
+        .account-pin-btn:hover {
+            border-color: var(--preview-border);
+            color: var(--preview-active);
+            background: var(--preview-item-hover);
+        }
+
+        .account-pin-btn:focus-visible {
+            outline: 2px solid rgba(13, 110, 253, 0.4);
+            outline-offset: 2px;
+        }
+
+        .account-item.pinned .account-pin-btn {
+            color: var(--preview-active);
         }
 
         .preview-main {
@@ -363,15 +403,18 @@
                     <input type="text" class="form-control" id="accountSearch" placeholder="Cari nama / email">
                 </div>
             </div>
-            <div class="preview-list" id="accountList">
+            <div class="preview-list" id="accountList" data-pin-url-template="{{ url_for('portal.preview_pin', user_id=0) }}">
                 {% for user in preview_users %}
                 {% set initials = ((user.full_name or user.email or '?') | trim)[:1] | upper %}
-                <button
-                    type="button"
-                    class="account-item{% if preview_target and preview_target.id == user.id %} active{% endif %}"
+                <div
+                    class="account-item{% if preview_target and preview_target.id == user.id %} active{% endif %}{% if user.is_pinned %} pinned{% endif %}"
+                    role="button"
+                    tabindex="0"
                     data-user-id="{{ user.id }}"
                     data-user-name="{{ user.full_name or user.email or '-' }}"
                     data-user-role="{{ user.role or '-' }}"
+                    data-pinned="{{ 1 if user.is_pinned else 0 }}"
+                    data-index="{{ user.preview_index or 0 }}"
                     data-search="{{ ((user.full_name or '') ~ ' ' ~ (user.email or '') ~ ' ' ~ (user.role or '') ~ ' ' ~ (user.kecamatan_name or '') ~ ' ' ~ (user.school_name or '')) | lower }}">
                     {% if user.role == 'sekolah' and user.school_logo_url %}
                     <span class="account-avatar account-avatar-image">
@@ -386,9 +429,25 @@
                     {% endif %}
                     <span class="account-meta">
                         <span class="account-name">{{ user.full_name or user.email }}</span>
-                        <span class="account-subtitle">{{ user.role|upper }} • {{ user.account_status or '-' }}</span>
+                        {% set role_value = (user.role or '') | lower %}
+                        {% set hide_status_for_staff = (role_value == 'staff') and ((user.account_status or '') | lower == 'approved') %}
+                        <span class="account-subtitle">
+                            {{ user.role|upper }}
+                            {% if role_value == 'sekolah' %}
+                            - {{ (user.school_status or '-') | title }}
+                            {% elif not hide_status_for_staff %}
+                            - {{ user.account_status or '-' }}
+                            {% endif %}
+                        </span>
                     </span>
-                </button>
+                    <button type="button"
+                        class="account-pin-btn"
+                        data-pin-toggle
+                        aria-label="{% if user.is_pinned %}Lepas pin akun{% else %}Pin akun{% endif %}"
+                        title="{% if user.is_pinned %}Lepas pin akun{% else %}Pin akun{% endif %}">
+                        <i class="bi {% if user.is_pinned %}bi-star-fill{% else %}bi-star{% endif %}"></i>
+                    </button>
+                </div>
                 {% else %}
                 <div class="text-muted small p-2">Belum ada akun yang bisa dipreview.</div>
                 {% endfor %}
@@ -457,6 +516,7 @@
             var previewThemeToggle = document.getElementById('previewThemeToggle');
             var selectedApp = "{{ preview_selected_app or 'portal' }}";
             var selectedUserId = {{ preview_target.id if preview_target else 'null' }};
+            var pinUrlTemplate = accountList ? accountList.dataset.pinUrlTemplate : null;
 
             function applyTheme(theme) {
                 var normalized = theme === 'dark' ? 'dark' : 'light';
@@ -545,6 +605,72 @@
                 }
             }
 
+            function setPinnedState(item, pinned) {
+                if (!item) return;
+                var isPinned = Boolean(pinned);
+                item.dataset.pinned = isPinned ? '1' : '0';
+                item.classList.toggle('pinned', isPinned);
+                var pinButton = item.querySelector('[data-pin-toggle]');
+                if (!pinButton) return;
+                var label = isPinned ? 'Lepas pin akun' : 'Pin akun';
+                pinButton.setAttribute('aria-label', label);
+                pinButton.setAttribute('title', label);
+                var icon = pinButton.querySelector('i');
+                if (icon) {
+                    icon.classList.toggle('bi-star-fill', isPinned);
+                    icon.classList.toggle('bi-star', !isPinned);
+                }
+            }
+
+            function sortAccountList() {
+                if (!accountList) return;
+                var items = Array.from(accountList.querySelectorAll('.account-item[data-user-id]'));
+                items.sort(function (a, b) {
+                    var aPinned = a.dataset.pinned === '1';
+                    var bPinned = b.dataset.pinned === '1';
+                    if (aPinned !== bPinned) {
+                        return aPinned ? -1 : 1;
+                    }
+                    var aIndex = Number(a.dataset.index || 0);
+                    var bIndex = Number(b.dataset.index || 0);
+                    return aIndex - bIndex;
+                });
+                items.forEach(function (item) {
+                    accountList.appendChild(item);
+                });
+            }
+
+            async function togglePin(item) {
+                if (!item || !pinUrlTemplate) return;
+                var userId = Number(item.dataset.userId || 0);
+                if (!userId) return;
+                var isPinned = item.dataset.pinned === '1';
+                var action = isPinned ? 'unpin' : 'pin';
+                var payload = new URLSearchParams();
+                payload.set('csrf_token', csrfToken ? csrfToken.value : '');
+                payload.set('action', action);
+                try {
+                    var response = await fetch(pinUrlTemplate.replace('/0', '/' + userId), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        },
+                        body: payload.toString()
+                    });
+                    var data = await response.json();
+                    if (!response.ok || !data.success) {
+                        window.alert(data.message || 'Gagal menyimpan pin akun.');
+                        return;
+                    }
+                    setPinnedState(item, Boolean(data.pinned));
+                    sortAccountList();
+                } catch (err) {
+                    window.alert('Gagal menyimpan pin akun.');
+                }
+            }
+
             async function activatePreview(userId) {
                 if (!userId) return;
                 var payload = new URLSearchParams();
@@ -578,8 +704,29 @@
 
             if (accountList) {
                 accountList.addEventListener('click', function (event) {
+                    var pinButton = event.target.closest('[data-pin-toggle]');
+                    if (pinButton) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        var pinnedItem = pinButton.closest('.account-item[data-user-id]');
+                        if (pinnedItem) {
+                            togglePin(pinnedItem);
+                        }
+                        return;
+                    }
                     var button = event.target.closest('.account-item[data-user-id]');
                     if (!button) return;
+                    var userId = Number(button.dataset.userId);
+                    activatePreview(userId);
+                });
+
+                accountList.addEventListener('keydown', function (event) {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    var pinButton = event.target.closest('[data-pin-toggle]');
+                    if (pinButton) return;
+                    var button = event.target.closest('.account-item[data-user-id]');
+                    if (!button) return;
+                    event.preventDefault();
                     var userId = Number(button.dataset.userId);
                     activatePreview(userId);
                 });

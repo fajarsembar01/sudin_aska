@@ -62,6 +62,7 @@ from .queries import (
     list_staff_assessments,
     fetch_portal_stats,
     list_recent_assessments,
+    list_staff_latest_assessments,
     fetch_top_schools,
     create_room,
     create_aspect,
@@ -125,6 +126,10 @@ from .queries import (
     fetch_admin_pending_summary,
     fetch_admin_pending_preview,
     fetch_portal_undo_window_seconds,
+    list_preview_pins,
+    is_preview_pin,
+    add_preview_pin,
+    remove_preview_pin,
     get_optional_rooms_for_schools,
     get_room_with_aspects,
     list_portal_kontak,
@@ -198,7 +203,7 @@ _PREVIEW_ADMIN_SESSION_KEY = "preview_admin_user"
 _PREVIEW_TARGET_SESSION_KEY = "preview_target_user"
 _PREVIEW_APP_SESSION_KEY = "preview_selected_app"
 _PREVIEW_READ_ONLY_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
-_PREVIEW_READ_ONLY_EXEMPT_ENDPOINTS = {"portal.preview_start"}
+_PREVIEW_READ_ONLY_EXEMPT_ENDPOINTS = {"portal.preview_start", "portal.preview_pin"}
 
 
 def _is_preview_read_only_session() -> bool:
@@ -415,6 +420,34 @@ def _portal_access_required(view):
         return view(*args, **kwargs)
 
     return wrapper
+
+
+def _needs_profile_photo_completion(user: dict | None) -> bool:
+    """Return True when staff/coordinator must complete profile photo first."""
+    if not isinstance(user, dict):
+        return False
+    role_value = (user.get("role") or "").strip().lower()
+    if role_value not in {"staff", "coordinator"}:
+        return False
+    if _is_preview_read_only_session():
+        return False
+    return not bool((user.get("profile_photo_path") or "").strip())
+
+
+def _require_profile_photo_redirect(user: dict | None) -> Response | None:
+    """Redirect to profile page when photo completion is mandatory."""
+    if not _needs_profile_photo_completion(user):
+        return None
+    flash("Foto profil wajib diisi untuk melanjutkan akses OSS.", "warning")
+    return redirect(url_for("portal.user_profile_settings"))
+
+
+def _resolve_profile_upload_redirect(default_target: str) -> str:
+    """Resolve safe redirect target for profile photo upload responses."""
+    target = (request.form.get("redirect_to") or "").strip()
+    if target.startswith("/") and not target.startswith("//"):
+        return target
+    return default_target
 
 
 def _sanitize_phone(phone: str) -> str:
@@ -1293,6 +1326,9 @@ def home() -> Response:
     """Portal home by role."""
     user = current_user()
     role = user.get("role")
+    photo_redirect = _require_profile_photo_redirect(user)
+    if photo_redirect:
+        return photo_redirect
 
     if role == "sekolah":
         return redirect(url_for("portal.sekolah_home"))
@@ -2616,6 +2652,9 @@ def delete_draft_route(assessment_id: int) -> Response:
 def staff_assignments() -> Response:
     """Staff view their assigned schools."""
     user = current_user()
+    photo_redirect = _require_profile_photo_redirect(user)
+    if photo_redirect:
+        return photo_redirect
     
     if user.get("role") != "staff":
         flash("Halaman ini hanya untuk staf.", "warning")
@@ -3035,6 +3074,9 @@ def coordinator_stats() -> Response:
     )
     
     user = current_user()
+    photo_redirect = _require_profile_photo_redirect(user)
+    if photo_redirect:
+        return photo_redirect
     user_id = user.get("id")
     period_id = request.args.get("period_id", type=int)
     jenjang_filter = request.args.get("jenjang") or None
@@ -3130,6 +3172,11 @@ def admin_stats() -> Response:
         order=order,
         staff_ids=staff_ids,
     )
+    staff_latest_assessments = list_staff_latest_assessments(
+        period_id=period_id,
+        staff_ids=staff_ids,
+        limit=100,
+    )
     if staff_ids:
         top_schools = fetch_team_top_schools(staff_ids, period_id=period_id, limit=10)
         bottom_schools = fetch_team_bottom_schools(staff_ids, period_id=period_id, limit=10)
@@ -3172,6 +3219,7 @@ def admin_stats() -> Response:
         all_schools=all_schools,
         all_staff=all_staff,
         monev_teams=monev_teams,
+        staff_latest_assessments=staff_latest_assessments,
     )
 
 
@@ -5864,6 +5912,32 @@ def admin_remove_assignment() -> Response:
 
 
 
+@portal_bp.route("/admin/staff/<int:staff_id>/assigned-schools")
+@role_required("admin")
+def admin_staff_assigned_schools(staff_id: int) -> Response:
+    """Admin page to view all schools assigned to a specific staff member."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, full_name, email, role, jabatan
+            FROM dashboard_users
+            WHERE id = %s AND role IN ('staff', 'coordinator')
+            """,
+            (staff_id,),
+        )
+        row = cur.fetchone()
+    if not row:
+        abort(404)
+
+    staff = dict(row)
+    assignments = get_staff_assigned_schools(staff_id)
+    return render_template(
+        "portal/admin/staff_assigned_schools.html",
+        staff=staff,
+        assignments=assignments,
+    )
+
+
 @portal_bp.route("/admin/staff/<int:staff_id>/assignments")
 @role_required("admin")
 def get_staff_assignments_api(staff_id: int) -> Response:
@@ -5962,13 +6036,7 @@ def inject_permissions():
         current_app.logger.exception("Failed to load portal undo window settings")
         undo_window_seconds = PORTAL_UNDO_WINDOW_DEFAULT_SECONDS
 
-    role_value = (user.get("role") or "").strip().lower()
-    has_profile_photo = bool((user.get("profile_photo_url") or "").strip())
-    require_profile_photo_upload = (
-        role_value in {"staff", "coordinator"}
-        and not has_profile_photo
-        and not _is_preview_read_only_session()
-    )
+    require_profile_photo_upload = _needs_profile_photo_completion(user)
 
     return {
         'permissions': get_permission_summary(user),
@@ -6183,16 +6251,18 @@ def upload_profile_photo() -> Response:
         return redirect(url_for("portal.user_profile_settings"))
 
     success_message = "Foto profil berhasil diperbarui."
+    success_redirect_url = _resolve_profile_upload_redirect(url_for("portal.home"))
     if wants_json:
         return jsonify(
             {
                 "success": True,
                 "message": success_message,
                 "photo_url": url_for("portal.uploaded_file", filename=rel_path),
+                "redirect_url": success_redirect_url,
             }
         )
     flash(success_message, "success")
-    return redirect(url_for("portal.user_profile_settings"))
+    return redirect(success_redirect_url)
 
 @portal_bp.route("/profile", methods=["GET", "POST"])
 @role_required("admin", "coordinator", "staff")
@@ -6367,18 +6437,38 @@ def _serialize_preview_target(row: dict) -> dict:
     }
 
 
-def _list_preview_accounts() -> list[dict]:
+def _list_preview_accounts(pinned_ids: list[int] | None = None) -> list[dict]:
+    pinned_ids = pinned_ids or []
+    pinned_set = set()
+    for value in pinned_ids:
+        try:
+            pinned_set.add(int(value))
+        except (TypeError, ValueError):
+            continue
     rows = []
-    for user in list_dashboard_users():
+    for index, user in enumerate(list_dashboard_users()):
         role = (user.get("role") or "").strip().lower()
         if role not in _PREVIEW_ALLOWED_ROLES:
+            continue
+        account_status = (user.get("account_status") or "").strip().lower()
+        if account_status != "approved":
             continue
         if user.get("merged_to"):
             continue
         row = dict(user)
         row["profile_photo_url"] = _build_profile_photo_url(row.get("profile_photo_path"))
+        row["preview_index"] = index
+        try:
+            row_id = int(row.get("id") or 0)
+        except (TypeError, ValueError):
+            row_id = 0
+        row["is_pinned"] = row_id in pinned_set
         rows.append(row)
-    return rows
+    if not pinned_set:
+        return rows
+    pinned_rows = [row for row in rows if row.get("is_pinned")]
+    unpinned_rows = [row for row in rows if not row.get("is_pinned")]
+    return pinned_rows + unpinned_rows
 
 
 def _find_preview_target(user_id: int) -> dict | None:
@@ -6405,7 +6495,14 @@ def manage_users() -> Response:
 @_preview_access_required
 def preview_accounts() -> Response:
     """Admin preview workspace for target accounts."""
-    preview_users = _list_preview_accounts()
+    actor = _preview_admin_actor()
+    pinned_ids: list[int] = []
+    if actor and actor.get("id"):
+        try:
+            pinned_ids = list_preview_pins(int(actor["id"]))
+        except (TypeError, ValueError):
+            pinned_ids = []
+    preview_users = _list_preview_accounts(pinned_ids)
     selected_target = session.get(_PREVIEW_TARGET_SESSION_KEY)
     selected_app = _normalize_preview_app(session.get(_PREVIEW_APP_SESSION_KEY))
     preview_url = None
@@ -6425,6 +6522,7 @@ def preview_accounts() -> Response:
     return render_template(
         "portal/admin/preview_workspace.html",
         preview_users=preview_users,
+        preview_pinned_ids=pinned_ids,
         preview_target=selected_target,
         preview_selected_app=selected_app,
         preview_url=preview_url,
@@ -6463,6 +6561,42 @@ def preview_start(user_id: int) -> Response:
             "app": app_name,
         }
     )
+
+
+@portal_bp.route("/settings/preview-akun/pin/<int:user_id>", methods=["POST"])
+@_preview_access_required
+def preview_pin(user_id: int) -> Response:
+    """Pin/unpin preview target accounts per admin."""
+    actor = _preview_admin_actor()
+    if not actor or not actor.get("id"):
+        return jsonify({"success": False, "message": "Hanya admin yang dapat menyematkan akun."}), 403
+
+    target = _find_preview_target(user_id)
+    if not target:
+        return jsonify({"success": False, "message": "Akun target tidak ditemukan."}), 404
+
+    try:
+        admin_id = int(actor["id"])
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "message": "Admin tidak valid."}), 400
+
+    action = (request.form.get("action") or "").strip().lower()
+    pinned = False
+    if action == "pin":
+        add_preview_pin(admin_id, user_id)
+        pinned = True
+    elif action == "unpin":
+        remove_preview_pin(admin_id, user_id)
+        pinned = False
+    else:
+        if is_preview_pin(admin_id, user_id):
+            remove_preview_pin(admin_id, user_id)
+            pinned = False
+        else:
+            add_preview_pin(admin_id, user_id)
+            pinned = True
+
+    return jsonify({"success": True, "user_id": user_id, "pinned": pinned})
 
 
 @portal_bp.route("/preview/stop")
