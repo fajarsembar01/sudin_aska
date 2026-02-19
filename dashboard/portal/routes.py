@@ -417,6 +417,34 @@ def _portal_access_required(view):
     return wrapper
 
 
+def _needs_profile_photo_completion(user: dict | None) -> bool:
+    """Return True when staff/coordinator must complete profile photo first."""
+    if not isinstance(user, dict):
+        return False
+    role_value = (user.get("role") or "").strip().lower()
+    if role_value not in {"staff", "coordinator"}:
+        return False
+    if _is_preview_read_only_session():
+        return False
+    return not bool((user.get("profile_photo_path") or "").strip())
+
+
+def _require_profile_photo_redirect(user: dict | None) -> Response | None:
+    """Redirect to profile page when photo completion is mandatory."""
+    if not _needs_profile_photo_completion(user):
+        return None
+    flash("Foto profil wajib diisi untuk melanjutkan akses OSS.", "warning")
+    return redirect(url_for("portal.user_profile_settings"))
+
+
+def _resolve_profile_upload_redirect(default_target: str) -> str:
+    """Resolve safe redirect target for profile photo upload responses."""
+    target = (request.form.get("redirect_to") or "").strip()
+    if target.startswith("/") and not target.startswith("//"):
+        return target
+    return default_target
+
+
 def _sanitize_phone(phone: str) -> str:
     """Normalize phone string to digits only for wa.me/api.whatsapp links."""
     digits_only = "".join(ch for ch in phone if ch.isdigit())
@@ -1293,6 +1321,9 @@ def home() -> Response:
     """Portal home by role."""
     user = current_user()
     role = user.get("role")
+    photo_redirect = _require_profile_photo_redirect(user)
+    if photo_redirect:
+        return photo_redirect
 
     if role == "sekolah":
         return redirect(url_for("portal.sekolah_home"))
@@ -2616,6 +2647,9 @@ def delete_draft_route(assessment_id: int) -> Response:
 def staff_assignments() -> Response:
     """Staff view their assigned schools."""
     user = current_user()
+    photo_redirect = _require_profile_photo_redirect(user)
+    if photo_redirect:
+        return photo_redirect
     
     if user.get("role") != "staff":
         flash("Halaman ini hanya untuk staf.", "warning")
@@ -3035,6 +3069,9 @@ def coordinator_stats() -> Response:
     )
     
     user = current_user()
+    photo_redirect = _require_profile_photo_redirect(user)
+    if photo_redirect:
+        return photo_redirect
     user_id = user.get("id")
     period_id = request.args.get("period_id", type=int)
     jenjang_filter = request.args.get("jenjang") or None
@@ -5962,13 +5999,7 @@ def inject_permissions():
         current_app.logger.exception("Failed to load portal undo window settings")
         undo_window_seconds = PORTAL_UNDO_WINDOW_DEFAULT_SECONDS
 
-    role_value = (user.get("role") or "").strip().lower()
-    has_profile_photo = bool((user.get("profile_photo_url") or "").strip())
-    require_profile_photo_upload = (
-        role_value in {"staff", "coordinator"}
-        and not has_profile_photo
-        and not _is_preview_read_only_session()
-    )
+    require_profile_photo_upload = _needs_profile_photo_completion(user)
 
     return {
         'permissions': get_permission_summary(user),
@@ -6183,16 +6214,18 @@ def upload_profile_photo() -> Response:
         return redirect(url_for("portal.user_profile_settings"))
 
     success_message = "Foto profil berhasil diperbarui."
+    success_redirect_url = _resolve_profile_upload_redirect(url_for("portal.home"))
     if wants_json:
         return jsonify(
             {
                 "success": True,
                 "message": success_message,
                 "photo_url": url_for("portal.uploaded_file", filename=rel_path),
+                "redirect_url": success_redirect_url,
             }
         )
     flash(success_message, "success")
-    return redirect(url_for("portal.user_profile_settings"))
+    return redirect(success_redirect_url)
 
 @portal_bp.route("/profile", methods=["GET", "POST"])
 @role_required("admin", "coordinator", "staff")

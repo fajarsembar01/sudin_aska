@@ -1263,6 +1263,9 @@
                         <button type="button" class="btn btn-outline-primary" id="requiredProfilePhotoGalleryBtn">
                             <i class="bi bi-image me-1"></i>Pilih dari Folder
                         </button>
+                        <button type="button" class="btn btn-success" id="requiredProfileSubmitBtn" disabled>
+                            <i class="bi bi-upload me-1"></i>Submit Foto
+                        </button>
                     </div>
                     <div class="small text-muted mt-3" id="requiredProfilePhotoStatus">
                         Foto profil wajib diisi untuk melanjutkan akses OSS.
@@ -2642,8 +2645,10 @@
             var cameraActionsEl = document.getElementById('requiredProfileCameraActions');
             var takePhotoBtn = document.getElementById('requiredProfileTakePhotoBtn');
             var cancelCameraBtn = document.getElementById('requiredProfileCancelCameraBtn');
+            var submitBtn = document.getElementById('requiredProfileSubmitBtn');
             var uploading = false;
             var activeStream = null;
+            var selectedFile = null;
 
             var requiredModal = bootstrap.Modal.getOrCreateInstance(modalEl, {
                 backdrop: 'static',
@@ -2669,6 +2674,9 @@
                 if (galleryBtn) galleryBtn.disabled = uploading;
                 if (takePhotoBtn) takePhotoBtn.disabled = uploading;
                 if (cancelCameraBtn) cancelCameraBtn.disabled = uploading;
+                if (submitBtn) {
+                    submitBtn.disabled = uploading || !selectedFile;
+                }
             }
 
             function renderPreview(file) {
@@ -2676,6 +2684,16 @@
                 var imageUrl = URL.createObjectURL(file);
                 previewEl.innerHTML = '<img src="' + imageUrl + '" alt="Preview foto profil">';
                 previewEl.classList.remove('d-none');
+            }
+
+            function setSelectedFile(file) {
+                if (!file) return;
+                selectedFile = file;
+                renderPreview(file);
+                if (submitBtn && !uploading) {
+                    submitBtn.disabled = false;
+                }
+                setStatus('Foto siap diunggah. Klik "Submit Foto" untuk melanjutkan.', 'muted');
             }
 
             function isCameraDirectSupported() {
@@ -2767,7 +2785,7 @@
                     }
                     stopDirectCamera();
                     var file = new File([blob], 'profile-camera.jpg', { type: 'image/jpeg' });
-                    uploadFile(file);
+                    setSelectedFile(file);
                 }, 'image/jpeg', 0.9);
             }
 
@@ -2796,10 +2814,11 @@
                             return data;
                         });
                     })
-                    .then(function () {
-                        setStatus('Foto profil berhasil disimpan. Memuat ulang halaman...', 'success');
+                    .then(function (data) {
+                        var redirectUrl = (data && data.redirect_url) ? data.redirect_url : {{ url_for('portal.home')|tojson }};
+                        setStatus('Foto profil berhasil disimpan. Mengarahkan ke portal...', 'success');
                         setTimeout(function () {
-                            window.location.reload();
+                            window.location.href = redirectUrl;
                         }, 500);
                     })
                     .catch(function (error) {
@@ -2813,7 +2832,7 @@
                 inputEl.addEventListener('change', function () {
                     var file = inputEl.files && inputEl.files[0] ? inputEl.files[0] : null;
                     if (!file) return;
-                    uploadFile(file);
+                    setSelectedFile(file);
                     inputEl.value = '';
                 });
             }
@@ -2840,6 +2859,16 @@
                 galleryBtn.addEventListener('click', function () {
                     if (uploading) return;
                     galleryInput.click();
+                });
+            }
+            if (submitBtn) {
+                submitBtn.addEventListener('click', function () {
+                    if (uploading) return;
+                    if (!selectedFile) {
+                        setStatus('Pilih atau ambil foto terlebih dahulu.', 'danger');
+                        return;
+                    }
+                    uploadFile(selectedFile);
                 });
             }
             bindInput(cameraInput);

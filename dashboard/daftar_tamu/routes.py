@@ -182,6 +182,26 @@ def _to_int(value: Optional[str], default: int) -> int:
         return default
 
 
+def _needs_profile_photo_completion(user: dict | None) -> bool:
+    """Return True when staff/coordinator must complete profile photo first."""
+    if not isinstance(user, dict):
+        return False
+    role_value = (user.get("role") or "").strip().lower()
+    if role_value not in {"staff", "coordinator"}:
+        return False
+    if _is_preview_read_only_session():
+        return False
+    return not bool((user.get("profile_photo_path") or "").strip())
+
+
+def _require_profile_photo_redirect(user: dict | None) -> Response | None:
+    """Redirect to profile page when photo completion is mandatory."""
+    if not _needs_profile_photo_completion(user):
+        return None
+    flash("Foto profil wajib diisi untuk melanjutkan akses OSS.", "warning")
+    return redirect(url_for("portal.user_profile_settings"))
+
+
 def _parse_guest_scope(value: Optional[str], default: str = "sudin") -> str:
     scope = (value or "").strip().lower()
     if scope == "semua":
@@ -3106,6 +3126,9 @@ def user_guestbook_notifications_mark_read() -> Response:
 def user_guestbook_history() -> Response:
     """Show current user guestbook history with mobile-first home + detail tabs."""
     user = current_user()
+    photo_redirect = _require_profile_photo_redirect(user)
+    if photo_redirect:
+        return photo_redirect
     context = _build_user_guestbook_history_context(user, request.args)
     return render_template("daftar_tamu/user_guestbook_history.html", **context)
 
@@ -3115,6 +3138,9 @@ def user_guestbook_history() -> Response:
 def user_guestbook_history_feed() -> Response:
     """Return JSON feed chunk for super-app timeline."""
     user = current_user()
+    photo_redirect = _require_profile_photo_redirect(user)
+    if photo_redirect:
+        return photo_redirect
     user_id = int(user.get("id"))
     params = _parse_user_guestbook_history_args(request.args)
 
@@ -3165,6 +3191,9 @@ def user_guestbook_history_feed() -> Response:
 def user_guestbook_history_stream() -> Response:
     """Server-Sent Events for realtime row updates in super-app history."""
     user = current_user()
+    photo_redirect = _require_profile_photo_redirect(user)
+    if photo_redirect:
+        return photo_redirect
     user_id = int(user.get("id"))
     params = _parse_user_guestbook_history_args(request.args)
     poll_limit = 40
