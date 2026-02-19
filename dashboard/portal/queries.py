@@ -100,6 +100,77 @@ def upsert_portal_undo_window_seconds(seconds: int, updated_by: Optional[int]) -
     return normalize_portal_undo_window_seconds(raw_value, fallback=normalized)
 
 
+def list_preview_pins(admin_user_id: int) -> List[int]:
+    """Return pinned target user ids for preview workspace."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT target_user_id
+            FROM portal_preview_pins
+            WHERE admin_user_id = %s
+            ORDER BY created_at DESC, id DESC
+            """,
+            (admin_user_id,),
+        )
+        rows = cur.fetchall()
+    pinned_ids: List[int] = []
+    for row in rows or []:
+        target_id = None
+        if isinstance(row, dict):
+            target_id = row.get("target_user_id")
+        elif isinstance(row, (list, tuple)) and row:
+            target_id = row[0]
+        if target_id is None:
+            continue
+        try:
+            pinned_ids.append(int(target_id))
+        except (TypeError, ValueError):
+            continue
+    return pinned_ids
+
+
+def is_preview_pin(admin_user_id: int, target_user_id: int) -> bool:
+    """Check if target user is pinned for preview workspace."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT 1
+            FROM portal_preview_pins
+            WHERE admin_user_id = %s AND target_user_id = %s
+            LIMIT 1
+            """,
+            (admin_user_id, target_user_id),
+        )
+        row = cur.fetchone()
+    return bool(row)
+
+
+def add_preview_pin(admin_user_id: int, target_user_id: int) -> None:
+    """Pin a target account for preview workspace."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO portal_preview_pins (admin_user_id, target_user_id, created_at)
+            VALUES (%s, %s, NOW())
+            ON CONFLICT (admin_user_id, target_user_id)
+            DO NOTHING
+            """,
+            (admin_user_id, target_user_id),
+        )
+
+
+def remove_preview_pin(admin_user_id: int, target_user_id: int) -> None:
+    """Unpin a target account for preview workspace."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            DELETE FROM portal_preview_pins
+            WHERE admin_user_id = %s AND target_user_id = %s
+            """,
+            (admin_user_id, target_user_id),
+        )
+
+
 def list_portal_schools(
     search: Optional[str] = None,
     jenjang: Optional[str] = None,

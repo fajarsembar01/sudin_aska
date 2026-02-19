@@ -1736,6 +1736,7 @@ def list_dashboard_users() -> List[Dict[str, Any]]:
                 s.npsn as school_npsn,
                 s.name as school_name,
                 s.jenjang as school_jenjang,
+                s.status as school_status,
                 s.logo_url as school_logo_url,
                 sk.name as school_kecamatan_name
             FROM dashboard_users u

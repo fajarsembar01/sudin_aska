@@ -327,6 +327,21 @@ CREATE TABLE IF NOT EXISTS portal_ui_settings (
 );
 """
 
+_PORTAL_PREVIEW_PINS_SQL = """
+CREATE TABLE IF NOT EXISTS portal_preview_pins (
+    id SERIAL PRIMARY KEY,
+    admin_user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    target_user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (admin_user_id, target_user_id)
+);
+"""
+
+_PORTAL_PREVIEW_PINS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_portal_preview_pins_admin
+ON portal_preview_pins (admin_user_id);
+"""
+
 _PORTAL_SCHOOLS_SQL = """
 CREATE TABLE IF NOT EXISTS portal_schools (
     id SERIAL PRIMARY KEY,
@@ -812,6 +827,8 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE portal_kontak ADD COLUMN IF NOT EXISTS kontak_2 TEXT",
         "ALTER TABLE portal_kontak ADD COLUMN IF NOT EXISTS kontak_2_active BOOLEAN NOT NULL DEFAULT TRUE",
         _PORTAL_UI_SETTINGS_SQL,
+        _PORTAL_PREVIEW_PINS_SQL,
+        _PORTAL_PREVIEW_PINS_INDEX_SQL,
         _PORTAL_SCHOOLS_SQL,
         _PORTAL_SCHOOLS_INDEX_SQL,
         _PORTAL_ROOMS_SQL,
