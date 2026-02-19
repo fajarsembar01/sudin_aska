@@ -1,6 +1,58 @@
 {% extends "daftar_tamu/base_daftar_tamu.html" %}
 {% set page_title = "Validasi Tamu Kedinasan" %}
 
+{% block head_extra %}
+<style>
+    .detail-guest-trigger {
+        transition: transform .16s ease, box-shadow .16s ease;
+    }
+
+    .detail-guest-trigger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0.35rem 0.65rem rgba(0, 0, 0, 0.1);
+    }
+
+    .guest-profile-photo-modal .modal-content {
+        border: 0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 18px 36px rgba(0, 0, 0, 0.25);
+    }
+
+    .guest-profile-photo-modal .modal-header {
+        border-bottom: 1px solid var(--border-soft);
+    }
+
+    .guest-profile-photo-modal .modal-body {
+        padding: 0;
+        background: #f8f9fa;
+    }
+
+    .guest-profile-photo-view {
+        min-height: 280px;
+        max-height: 70vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f3f5;
+    }
+
+    .guest-profile-photo-view img {
+        width: 100%;
+        height: 100%;
+        max-height: 70vh;
+        object-fit: contain;
+        display: block;
+    }
+
+    .guest-profile-photo-fallback {
+        padding: 28px 20px;
+        text-align: center;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
 {% block portal_content %}
 <section class="mb-4">
     <div class="card portal-hero border-0 shadow-sm">
@@ -367,31 +419,22 @@
     </div>
 </div>
 
-<!-- Guest History Modal -->
-<div class="modal fade" id="guestHistoryModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+<div class="modal fade guest-profile-photo-modal" id="guestProfilePhotoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Riwayat Tamu Kedinasan</h5>
+                <h5 class="modal-title d-flex align-items-center gap-2">
+                    <i class="bi bi-person-bounding-box text-primary"></i>
+                    <span id="guestProfilePhotoTitle">Foto Profil Tamu</span>
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div id="guestHistoryLoading" class="text-center py-4">
-                    <div class="spinner-border"></div>
-                </div>
-                <div id="guestHistoryContent" class="d-none">
-                    <div class="fw-semibold mb-2" id="guestHistoryName">-</div>
-                    <div class="table-responsive">
-                        <table class="table table-sm align-middle">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th>Waktu</th>
-                                    <th>Sekolah</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="guestHistoryRows"></tbody>
-                        </table>
+                <div class="guest-profile-photo-view">
+                    <img id="guestProfilePhotoImage" src="" alt="Foto profil tamu" class="d-none">
+                    <div id="guestProfilePhotoFallback" class="guest-profile-photo-fallback d-none">
+                        <i class="bi bi-image fs-2 d-block mb-2"></i>
+                        Foto profil tidak tersedia.
                     </div>
                 </div>
             </div>
@@ -407,7 +450,11 @@
 <script>
     (function () {
         var detailModal = new bootstrap.Modal(document.getElementById('transactionDetailModal'));
-        var historyModal = new bootstrap.Modal(document.getElementById('guestHistoryModal'));
+        var guestPhotoModalEl = document.getElementById('guestProfilePhotoModal');
+        var guestPhotoModal = new bootstrap.Modal(guestPhotoModalEl);
+        var guestPhotoTitleEl = document.getElementById('guestProfilePhotoTitle');
+        var guestPhotoImageEl = document.getElementById('guestProfilePhotoImage');
+        var guestPhotoFallbackEl = document.getElementById('guestProfilePhotoFallback');
         var activeStatusFilter = '{{ status }}';
         var openTransactionId = {{ open_transaction_id if open_transaction_id else 'null' }};
         var currentTransactionId = null;
@@ -418,6 +465,32 @@
             if (!path) return '';
             var rel = String(path).split('uploads/portal/').pop();
             return uploadBase.replace('__FILE__', rel);
+        }
+
+        function showGuestPhotoFallback(show) {
+            if (guestPhotoImageEl) guestPhotoImageEl.classList.toggle('d-none', !!show);
+            if (guestPhotoFallbackEl) guestPhotoFallbackEl.classList.toggle('d-none', !show);
+        }
+
+        function openGuestProfilePhoto(name, photoUrl) {
+            if (!photoUrl) return;
+            if (guestPhotoTitleEl) {
+                guestPhotoTitleEl.textContent = name ? ('Foto Profil - ' + name) : 'Foto Profil Tamu';
+            }
+            showGuestPhotoFallback(false);
+            if (guestPhotoImageEl) {
+                guestPhotoImageEl.src = photoUrl;
+                guestPhotoImageEl.alt = name ? ('Foto profil ' + name) : 'Foto profil tamu';
+                guestPhotoImageEl.onerror = function () {
+                    showGuestPhotoFallback(true);
+                };
+                guestPhotoImageEl.onload = function () {
+                    showGuestPhotoFallback(false);
+                };
+            } else {
+                showGuestPhotoFallback(true);
+            }
+            guestPhotoModal.show();
         }
 
         function setStatusBadge(el, status) {
@@ -528,9 +601,7 @@
                     guestWrap.innerHTML = '';
                     if (Array.isArray(trx.guests) && trx.guests.length > 0) {
                         trx.guests.forEach(function (guest) {
-                            var btn = document.createElement('button');
-                            btn.type = 'button';
-                            btn.className = 'btn btn-sm btn-outline-primary text-start';
+                            var isSudin = guest.guest_type !== 'umum';
                             var metaParts = [];
                             var badge = '';
                             if (guest.guest_type === 'umum') {
@@ -542,25 +613,35 @@
                                 if (guest.jabatan) metaParts.push(guest.jabatan);
                                 if (guest.nrk) metaParts.push('NRK ' + guest.nrk);
                             }
-                            var guestProfilePhotoUrl = buildPhotoUrl(guest.profile_photo_path || '');
+                            var guestName = guest.full_name || 'Tamu';
+                            var guestProfilePhotoUrl = isSudin ? buildPhotoUrl(guest.profile_photo_path || '') : '';
+                            var canOpenProfilePhoto = isSudin && !!guestProfilePhotoUrl;
+                            var guestEl = document.createElement(canOpenProfilePhoto ? 'button' : 'div');
+                            if (canOpenProfilePhoto) {
+                                guestEl.type = 'button';
+                                guestEl.className = 'btn btn-sm btn-outline-primary text-start detail-guest-trigger';
+                            } else {
+                                guestEl.className = 'border rounded-2 bg-light p-2 text-start';
+                            }
                             var profilePhotoHtml = guestProfilePhotoUrl
                                 ? '<img src="' + guestProfilePhotoUrl + '" alt="Foto profil" class="rounded border" style="width:44px;height:44px;object-fit:cover;">'
                                 : '';
-                            btn.innerHTML = '<div class="d-flex align-items-start gap-2">'
+                            var clickHintHtml = canOpenProfilePhoto
+                                ? '<span class="badge text-bg-primary ms-2"><i class="bi bi-image"></i></span>'
+                                : '';
+                            guestEl.innerHTML = '<div class="d-flex align-items-start gap-2">'
                                 + profilePhotoHtml
                                 + '<div class="pe-1 flex-grow-1">'
-                                + '<div class="fw-semibold">' + (guest.full_name || 'Tamu') + badge + '</div>'
+                                + '<div class="fw-semibold">' + guestName + badge + clickHintHtml + '</div>'
                                 + '<div class="small text-muted">' + metaParts.join(' • ') + '</div>'
                                 + '</div>'
                                 + '</div>';
-                            if (guest.id) {
-                                btn.addEventListener('click', function () {
-                                    loadGuestHistory(guest.id, guest.full_name || 'Tamu');
+                            if (canOpenProfilePhoto) {
+                                guestEl.addEventListener('click', function () {
+                                    openGuestProfilePhoto(guestName, guestProfilePhotoUrl);
                                 });
-                            } else {
-                                btn.disabled = true;
                             }
-                            guestWrap.appendChild(btn);
+                            guestWrap.appendChild(guestEl);
                         });
                     } else {
                         guestWrap.textContent = 'Tidak ada tamu.';
@@ -578,39 +659,11 @@
                 });
         }
 
-        function loadGuestHistory(userId, name) {
-            document.getElementById('guestHistoryName').textContent = name || 'Tamu';
-            document.getElementById('guestHistoryLoading').classList.remove('d-none');
-            document.getElementById('guestHistoryContent').classList.add('d-none');
-            fetch('/daftar-tamu/admin/guests/' + userId + '/history?limit=20')
-                .then(function (res) { return res.json(); })
-                .then(function (data) {
-                    if (!data.success) throw new Error(data.message || 'Gagal memuat riwayat tamu kedinasan');
-                    var body = document.getElementById('guestHistoryRows');
-                    body.innerHTML = '';
-                    if (Array.isArray(data.history) && data.history.length) {
-                        data.history.forEach(function (row) {
-                            var tr = document.createElement('tr');
-                            var dt = row.visit_at ? new Date(row.visit_at) : null;
-                            var statusLabelMap = { pending: '⏳ Menunggu', approved: '✅ Disetujui', rejected: '❌ Ditolak' };
-                            var statusLabel = statusLabelMap[row.status] || row.status || '-';
-                            tr.innerHTML = '<td>' + (dt ? dt.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '-') + '</td>'
-                                + '<td>' + [row.school_name, row.npsn].filter(Boolean).join(' • ') + '</td>'
-                                + '<td>' + statusLabel + '</td>';
-                            body.appendChild(tr);
-                        });
-                    } else {
-                        var empty = document.createElement('tr');
-                        empty.innerHTML = '<td colspan="3" class="text-center text-muted">Belum ada riwayat tamu kedinasan.</td>';
-                        body.appendChild(empty);
-                    }
-                    document.getElementById('guestHistoryLoading').classList.add('d-none');
-                    document.getElementById('guestHistoryContent').classList.remove('d-none');
-                    historyModal.show();
-                })
-                .catch(function (err) {
-                    alert(err.message || 'Gagal memuat riwayat tamu kedinasan.');
-                });
+        if (guestPhotoModalEl) {
+            guestPhotoModalEl.addEventListener('hidden.bs.modal', function () {
+                if (guestPhotoImageEl) guestPhotoImageEl.src = '';
+                showGuestPhotoFallback(true);
+            });
         }
 
         function updateRowStatus(rowEl, status) {
