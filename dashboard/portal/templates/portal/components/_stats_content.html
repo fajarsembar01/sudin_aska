@@ -776,12 +776,13 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                 <td>
                   <div class="fw-semibold">{{ row.staff_name or '-' }}</div>
                   <div class="small text-muted">
-                    {% if row.jabatan and row.last_kecamatan_name %}
-                    {{ row.jabatan }} • {{ row.last_kecamatan_name }}
+                    {% set lokasi_staff = row.placement_kecamatan_name or row.last_kecamatan_name %}
+                    {% if row.jabatan and lokasi_staff %}
+                    {{ row.jabatan }} • {{ lokasi_staff }}
                     {% elif row.jabatan %}
                     {{ row.jabatan }}
-                    {% elif row.last_kecamatan_name %}
-                    {{ row.last_kecamatan_name }}
+                    {% elif lokasi_staff %}
+                    {{ lokasi_staff }}
                     {% else %}
                     -
                     {% endif %}

@@ -1816,6 +1816,7 @@ def list_staff_latest_assessments(
             u.id AS staff_id,
             u.full_name AS staff_name,
             u.jabatan,
+            uk.name AS placement_kecamatan_name,
             visited.total_visited_schools,
             latest.assessment_id AS last_assessment_id,
             latest.school_name AS last_school_name,
@@ -1823,6 +1824,7 @@ def list_staff_latest_assessments(
             latest.submitted_at AS last_submitted_at,
             latest.kecamatan_name AS last_kecamatan_name
         FROM dashboard_users u
+        LEFT JOIN portal_kecamatan uk ON uk.id = u.requested_kecamatan
         LEFT JOIN LATERAL (
             SELECT COUNT(DISTINCT a.school_id) AS total_visited_schools
             FROM portal_assessments a
