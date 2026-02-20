@@ -5,7 +5,7 @@
 {% set logo_wrapper_class = logo_wrapper_class|default('col-12') %}
 
 <div class="{{ logo_wrapper_class }}">
-    <label class="form-label fw-semibold">{{ logo_label }} *</label>
+    <label class="form-label fw-semibold">{{ logo_label }} <span class="text-danger" style="font-weight: 100;">*</span></label>
     <div class="d-flex align-items-center gap-3">
         <div class="logo-preview-wrapper"
             style="width: 80px; height: 80px; border: 2px dashed #dee2e6; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f8f9fa;">
