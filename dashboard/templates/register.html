@@ -218,9 +218,9 @@
                     <!-- Email -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
-                            <i class="bi bi-envelope me-1"></i>Email <span class="text-danger">*</span>
+                            <i class="bi bi-envelope me-1"></i>Email Pribadi <span class="text-danger">*</span>
                         </label>
-                        <input type="email" class="form-control" name="email" required placeholder="nama@example.com">
+                        <input type="email" class="form-control" name="email" required placeholder="email@domain.com">
                         <small class="text-muted">Email akan digunakan untuk login</small>
                     </div>
 
@@ -254,13 +254,13 @@
                         </div>
                     </div>
 
-                    <!-- Kecamatan only (role defaults to staff) -->
+                    <!-- Kecamatan (Lokasi Unit Kerja) only (role defaults to staff) -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
-                            <i class="bi bi-geo-alt me-1"></i>Kecamatan <span class="text-danger">*</span>
+                            <i class="bi bi-geo-alt me-1"></i>Lokasi Unit Kerja <span class="text-danger">*</span>
                         </label>
                         <select class="form-select" name="kecamatan_id" required>
-                            <option value="">-- Pilih Kecamatan --</option>
+                            <option value="">-- Pilih Lokasi Unit Kerja --</option>
                             {% for kec in kecamatan_list %}
                             <option value="{{ kec.id }}">{{ kec.name }}</option>
                             {% endfor %}
@@ -294,8 +294,9 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-black">Jabatan <span>(Opsional)</span></label>
-                        <input type="text" class="form-control" name="jabatan" placeholder="Jabatan di Sudin">
+                        <label class="form-label fw-semibold text-black">
+                            <i class="bi bi-briefcase me-1"></i>Jabatan <span>(Opsional)</span></label>
+                        <input type="text" class="form-control" name="jabatan" placeholder="Jabatan di Unit Kerja">
                     </div>
 
                     <!-- Info Box -->

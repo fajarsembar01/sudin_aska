@@ -84,6 +84,7 @@
                             <option value="coordinator">Coordinator</option>
                             <option value="sekolah">Sekolah</option>
                         </select>
+                        <small class="text-muted">Pilih Sekolah untuk role Sekolah.</small>
                     </div>
                     <div class="mb-3 d-none" id="schoolField">
                         <label class="form-label">Sekolah (NPSN / Nama)</label>
@@ -112,17 +113,17 @@
                             <input class="form-check-input" type="checkbox" id="schoolNullToggle">
                             <label class="form-check-label" for="schoolNullToggle">Tidak ada sekolah (null)</label>
                         </div>
-                        <small class="text-muted">Pilih sekolah untuk role Sekolah.</small>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Kecamatan</label>
+                        <label class="form-label">Lokasi Unit Kerja</label>
                         <select class="form-select" name="requested_kecamatan" id="requestedKecamatan">
-                            <option value="">-- Pilih Kecamatan --</option>
+                            <option value="">-- Pilih Lokasi Unit Kerja --</option>
                             {% for k in kecamatan_list %}
                             <option value="{{ k.id }}">{{ k.name }}</option>
                             {% endfor %}
                         </select>
-                        <small class="text-muted">Opsional untuk akun staff/coordinator.</small>
+                        <!-- Lokasi Unit Kerja hanya untuk staff/coordinator. Untuk Sekolah ubah pada menu Setup Data Sekolah berupa ubah kecamatan/kelurahan -->
+                        <small class="text-muted">Hanya untuk role Staff/Coordinator.</small>
                     </div>
                     <div class="mb-3" id="statusField" style="display:none;">
                         <label class="form-label">Status Akun</label>
@@ -545,7 +546,7 @@
                         <div id="previewStatus">-</div>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label text-muted small mb-1">Kecamatan</label>
+                        <label class="form-label text-muted small mb-1">Lokasi Unit Kerja</label>
                         <div id="previewKecamatan">-</div>
                     </div>
                     <div class="col-md-6">
