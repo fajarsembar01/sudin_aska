@@ -142,17 +142,17 @@
                 if (targetId) {
                     push('Buka Ruangan', '/portal/admin/setup#room-' + targetId);
                 } else {
-                    push('Setup Data', '/portal/admin/setup');
+                    push('Setup Data Sekolah', '/portal/admin/setup');
                 }
             } else if (targetType === 'ASPECT') {
                 var roomId = details.room_id || details.roomId;
                 if (roomId) {
                     push('Buka Ruangan', '/portal/admin/setup#room-' + roomId);
                 } else {
-                    push('Setup Data', '/portal/admin/setup');
+                    push('Setup Data Sekolah', '/portal/admin/setup');
                 }
             } else if (targetType === 'SCHOOL') {
-                push('Setup Data', '/portal/admin/setup');
+                push('Setup Data Sekolah', '/portal/admin/setup');
             } else if (targetType === 'USER') {
                 push('Manajemen User', '/portal/settings/users');
             } else if (targetType === 'MONEV_TEAM' || targetType === 'MONEV_TEAM_MEMBER' || targetType === 'MONEV_MEMBER_REQUEST') {
