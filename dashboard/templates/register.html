@@ -220,8 +220,9 @@
                         <label class="form-label fw-semibold">
                             <i class="bi bi-envelope me-1"></i>Email Pribadi <span class="text-danger">*</span>
                         </label>
-                        <input type="email" class="form-control" name="email" required placeholder="email@domain.com">
+                        <input type="email" class="form-control" name="email" required id="emailInput" placeholder="email@domain.com">
                         <small class="text-muted">Email akan digunakan untuk login</small>
+                        <div id="emailError" class="invalid-feedback"></div>
                     </div>
 
                     <!-- Password -->
@@ -237,6 +238,7 @@
                                 <i class="bi bi-eye"></i>
                             </button>
                         </div>
+                        <div id="passwordStrength" class="form-text"></div>
                     </div>
 
                     <!-- Confirm Password -->
@@ -252,6 +254,7 @@
                                 <i class="bi bi-eye"></i>
                             </button>
                         </div>
+                        <div id="passwordMatch" class="form-text"></div>
                     </div>
 
                     <!-- Kecamatan (Lokasi Unit Kerja) only (role defaults to staff) -->
@@ -369,7 +372,7 @@
                     </div>
                     <div class="alert alert-info mt-3 mb-0 small">
                         <i class="bi bi-info-circle me-1"></i>
-                        Admin wilayah siap membantu reset password atau verifikasi akun Anda.
+                        Admin wilayah siap membantu pendaftaran atau verifikasi akun Anda.
                     </div>
                 </div>
             </div>
@@ -454,17 +457,123 @@
             }
         }
 
-        // Password match validation
-        document.getElementById('registerForm').addEventListener('submit', function (e) {
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
+        // Email validation
+        const emailInput = document.getElementById('emailInput');
+        const emailError = document.getElementById('emailError');
 
-            if (password !== confirmPassword) {
-                e.preventDefault();
-                alert('Password dan konfirmasi password tidak cocok!');
+        function validateEmail() {
+            if (!emailInput) {
+                return true;
+            }
+            const email = emailInput.value.trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (email && !emailRegex.test(email)) {
+                emailInput.classList.add('is-invalid');
+                if (emailError) {
+                    emailError.textContent = 'Format email tidak valid';
+                }
                 return false;
             }
-        });
+
+            emailInput.classList.remove('is-invalid');
+            if (emailError) {
+                emailError.textContent = '';
+            }
+            return true;
+        }
+
+        if (emailInput) {
+            emailInput.addEventListener('blur', validateEmail);
+            emailInput.addEventListener('input', function () {
+                if (emailInput.classList.contains('is-invalid')) {
+                    validateEmail();
+                }
+            });
+        }
+
+        // Password strength indicator
+        const passwordInput = document.getElementById('password');
+        const passwordStrength = document.getElementById('passwordStrength');
+
+        function updatePasswordStrength() {
+            if (!passwordInput || !passwordStrength) {
+                return;
+            }
+
+            const password = passwordInput.value;
+            let strength = 0;
+            let text = '';
+            let color = '';
+
+            if (password.length >= 8) strength++;
+            if (password.length >= 12) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+            if (password.length === 0) {
+                text = '';
+                color = '';
+            } else if (password.length < 8) {
+                text = '<i class="bi bi-x-circle text-danger"></i> Minimal 8 karakter';
+                color = 'text-danger';
+            } else if (strength <= 2) {
+                text = '<i class="bi bi-shield-exclamation text-warning"></i> Password lemah';
+                color = 'text-warning';
+            } else if (strength <= 3) {
+                text = '<i class="bi bi-shield-check text-info"></i> Password cukup';
+                color = 'text-info';
+            } else {
+                text = '<i class="bi bi-shield-fill-check text-success"></i> Password kuat';
+                color = 'text-success';
+            }
+
+            passwordStrength.innerHTML = text;
+            passwordStrength.className = 'form-text ' + color;
+        }
+
+        if (passwordInput) {
+            passwordInput.addEventListener('input', updatePasswordStrength);
+        }
+
+        // Confirm password match
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const passwordMatch = document.getElementById('passwordMatch');
+
+        function checkPasswordMatch() {
+            if (!confirmPasswordInput || !passwordMatch || !passwordInput) {
+                return true;
+            }
+            const password = passwordInput.value;
+            const confirm = confirmPasswordInput.value;
+
+            if (confirm.length === 0) {
+                passwordMatch.innerHTML = '';
+                confirmPasswordInput.classList.remove('is-invalid', 'is-valid');
+                return false;
+            }
+            if (password !== confirm) {
+                passwordMatch.innerHTML = '<i class="bi bi-x-circle"></i> Password tidak cocok';
+                passwordMatch.className = 'form-text text-danger';
+                confirmPasswordInput.classList.add('is-invalid');
+                confirmPasswordInput.classList.remove('is-valid');
+                return false;
+            }
+
+            passwordMatch.innerHTML = '<i class="bi bi-check-circle"></i> Password cocok';
+            passwordMatch.className = 'form-text text-success';
+            confirmPasswordInput.classList.remove('is-invalid');
+            confirmPasswordInput.classList.add('is-valid');
+            return true;
+        }
+
+        if (confirmPasswordInput) {
+            confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+        }
+        if (passwordInput) {
+            passwordInput.addEventListener('input', checkPasswordMatch);
+        }
     </script>
 </body>
 

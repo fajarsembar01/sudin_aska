@@ -100,6 +100,29 @@ def create_app() -> Flask:
         except Exception:
             return ""
 
+    @app.template_filter("mask_email")
+    def mask_email(value, first=2, last=1):
+        if value is None:
+            return ""
+        
+        email = str(value)
+        name, domain = email.split("@", 1)
+        if not name:
+            return "@" + domain
+        
+        # Logic jika nama email terlalu pendek, berlaku untuk first = 2 dan last = 1
+        if len(name) <= first + last:
+            if len(name) == 1:
+                masked_name = name[0] + 7 * "*" + name[0]
+            elif len(name) == 2:
+                masked_name = name[0] + 7 * "*" + name[1]
+            else:
+                masked_name = name[:first] + 7 * "*" + name[-last:]
+        else:
+            masked_name = name[:first] + 7 * "*" + name[-last:]
+        
+        return masked_name + "@" + domain
+
     atexit.register(shutdown_pool)
 
     return app
