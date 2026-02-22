@@ -1405,6 +1405,24 @@ set current_team_id = selected_team_id if selected_team_id is not none else
     align-items: center;
     justify-content: center;
     box-shadow: var(--shadow-soft);
+    background: rgba(17, 24, 39, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.58);
+    color: #fff;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .photo-nav-btn:hover,
+  .photo-nav-btn:focus-visible {
+    background: rgba(17, 24, 39, 0.75);
+    border-color: rgba(255, 255, 255, 0.82);
+    color: #fff;
+  }
+
+  .photo-nav-btn:active {
+    background: rgba(17, 24, 39, 0.88) !important;
+    border-color: rgba(255, 255, 255, 0.9) !important;
+    color: #fff !important;
   }
 
   .photo-nav-left {
@@ -1422,21 +1440,80 @@ set current_team_id = selected_team_id if selected_team_id is not none else
     padding-left: 0.35rem;
     padding-right: 0.35rem;
   }
+
+  .photo-modal-tools {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding-right: 2.5rem;
+  }
+
+  .photo-modal-tools .input-group {
+    width: 132px;
+    flex: 0 0 auto;
+  }
+
+  .photo-modal-tools .badge {
+    max-width: 100%;
+    white-space: nowrap;
+  }
+
+  .photo-nav-top {
+    display: inline-flex;
+  }
+
+  @media (max-width: 767.98px) {
+    #photoModal .modal-dialog {
+      margin: 0.4rem;
+      max-width: calc(100vw - 0.8rem);
+    }
+
+    .photo-modal-header {
+      --photo-modal-pad: 0.75rem;
+      padding-right: calc(var(--photo-modal-pad) + 2.2rem);
+    }
+
+    .photo-nav-top {
+      display: none !important;
+    }
+
+    .photo-viewport {
+      height: 62vh;
+      max-height: 62vh;
+    }
+
+    .photo-nav-btn {
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.62);
+      border-color: rgba(255, 255, 255, 0.84);
+    }
+
+    .photo-nav-left {
+      left: 8px;
+    }
+
+    .photo-nav-right {
+      right: 8px;
+    }
+  }
 </style>
 
 <div class="modal fade" id="photoModal" tabindex="-1">
   <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content">
       <div
-        class="modal-header photo-modal-header d-flex flex-column align-items-start row-gap: 20px"
+        class="modal-header photo-modal-header d-flex flex-column align-items-start gap-2"
       >
-        <div class="d-flex d-flex flex-column>">
+        <div class="d-flex flex-column">
           <h5 class="modal-title" id="photoModalTitle">Foto</h5>
         </div>
         <div>
           <span id="photoModalSubtitle" class="text-primary">Sekolah</span>
         </div>
-        <div class="d-flex align-items-center gap-2">
+        <div class="photo-modal-tools">
           <span class="badge bg-primary" id="photoModalScore">-</span>
           <span class="badge bg-secondary" id="photoModalMeta"></span>
           <div
@@ -1507,22 +1584,24 @@ set current_team_id = selected_team_id if selected_team_id is not none else
               <i class="bi bi-arrow-clockwise"></i>
             </button>
           </div>
-          <button
-            type="button"
-            class="btn btn-outline-secondary btn-sm"
-            id="photoPrevBtnTop"
-            title="Foto Sebelumnya"
-          >
-            <i class="bi bi-chevron-left"></i>
-          </button>
-          <button
-            type="button"
-            class="btn btn-outline-secondary btn-sm"
-            id="photoNextBtnTop"
-            title="Foto Selanjutnya"
-          >
-            <i class="bi bi-chevron-right"></i>
-          </button>
+          <div class="btn-group btn-group-sm photo-nav-top" role="group" aria-label="Navigasi foto">
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              id="photoPrevBtnTop"
+              title="Foto Sebelumnya"
+            >
+              <i class="bi bi-chevron-left"></i>
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              id="photoNextBtnTop"
+              title="Foto Selanjutnya"
+            >
+              <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
         </div>
         <button
           type="button"
@@ -1610,6 +1689,10 @@ set current_team_id = selected_team_id if selected_team_id is not none else
     var dragStartY = 0;
     var panStartX = 0;
     var panStartY = 0;
+    var activePointers = new Map();
+    var isPinching = false;
+    var pinchStartDistance = 0;
+    var pinchStartZoom = 1;
 
     modalImg.setAttribute("draggable", "false");
     modalImg.addEventListener("dragstart", function (e) {
@@ -1685,6 +1768,12 @@ set current_team_id = selected_team_id if selected_team_id is not none else
       baseHeight = 0;
       panX = 0;
       panY = 0;
+      isDragging = false;
+      isPinching = false;
+      pinchStartDistance = 0;
+      pinchStartZoom = zoomLevel;
+      activePointers.clear();
+      if (viewportEl) viewportEl.classList.remove("is-grabbing");
       applyTransform();
     }
 
@@ -1720,9 +1809,28 @@ set current_team_id = selected_team_id if selected_team_id is not none else
       return { x: e.clientX, y: e.clientY };
     }
 
+    function getPointerDistance(p1, p2) {
+      var dx = p1.x - p2.x;
+      var dy = p1.y - p2.y;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
     function startDrag(e) {
       if (!viewportEl) return;
       if (e.type === "mousedown" && e.button !== 0) return;
+      if (e.pointerId !== undefined) {
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      }
+      if (activePointers.size >= 2) {
+        var pinchPoints = Array.from(activePointers.values());
+        pinchStartDistance = getPointerDistance(pinchPoints[0], pinchPoints[1]) || 1;
+        pinchStartZoom = zoomLevel;
+        isPinching = true;
+        isDragging = false;
+        viewportEl.classList.remove("is-grabbing");
+        e.preventDefault();
+        return;
+      }
       var pos = getPointerPosition(e);
       isDragging = true;
       dragStartX = pos.x;
@@ -1737,6 +1845,22 @@ set current_team_id = selected_team_id if selected_team_id is not none else
     }
 
     function dragMove(e) {
+      if (e.pointerId !== undefined && activePointers.has(e.pointerId)) {
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      }
+      if (activePointers.size >= 2 || isPinching) {
+        var pinchPoints = Array.from(activePointers.values());
+        if (pinchPoints.length >= 2) {
+          var currentDistance = getPointerDistance(pinchPoints[0], pinchPoints[1]);
+          if (currentDistance > 0 && pinchStartDistance > 0) {
+            var pinchFactor = currentDistance / pinchStartDistance;
+            zoomLevel = clampZoom(pinchStartZoom * pinchFactor);
+            applyTransform();
+          }
+        }
+        e.preventDefault();
+        return;
+      }
       if (!isDragging) return;
       var pos = getPointerPosition(e);
       panX = panStartX + (pos.x - dragStartX);
@@ -1746,16 +1870,36 @@ set current_team_id = selected_team_id if selected_team_id is not none else
     }
 
     function endDrag(e) {
+      if (e && e.pointerId !== undefined) {
+        activePointers.delete(e.pointerId);
+      }
+      if (isPinching && activePointers.size < 2) {
+        isPinching = false;
+        pinchStartDistance = 0;
+        pinchStartZoom = zoomLevel;
+      }
       if (!isDragging) return;
-      isDragging = false;
-      if (viewportEl) viewportEl.classList.remove("is-grabbing");
+      if (activePointers.size === 0) {
+        isDragging = false;
+        if (viewportEl) viewportEl.classList.remove("is-grabbing");
+      } else {
+        var remaining = Array.from(activePointers.values())[0];
+        dragStartX = remaining.x;
+        dragStartY = remaining.y;
+        panStartX = panX;
+        panStartY = panY;
+      }
       if (
         viewportEl &&
         viewportEl.releasePointerCapture &&
         e &&
         e.pointerId !== undefined
       ) {
-        viewportEl.releasePointerCapture(e.pointerId);
+        try {
+          viewportEl.releasePointerCapture(e.pointerId);
+        } catch (_err) {
+          // Ignore release errors when pointer already ended.
+        }
       }
     }
 
@@ -1804,13 +1948,15 @@ set current_team_id = selected_team_id if selected_team_id is not none else
       modalScore.textContent = score;
       var metaText = "";
       if (date) {
-        var d = new Date(date);
-        metaText += d.toLocaleString("id-ID", {
-          day: "2-digit",
-          month: "short",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
+        var parsedDate = new Date(date);
+        if (!isNaN(parsedDate.getTime())) {
+          metaText += parsedDate.toLocaleString("id-ID", {
+            day: "2-digit",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        }
       }
       if (lat && lon) {
         if (metaText) metaText += " • ";
