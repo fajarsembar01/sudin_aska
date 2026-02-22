@@ -17,7 +17,7 @@
             role="button" tabindex="0" data-index="{{ loop_idx }}" data-photo-url="{{ photo_url }}"
             data-school="{{ p.school_name }}" data-school-id="{{ p.school_id }}"
             data-assessment-id="{{ p.assessment_id }}" data-room="{{ p.room_name }}" data-room-id="{{ p.room_id }}"
-            data-score="{{ '%.1f'|format(score_pct) }}" data-date="{{ (p.captured_at or '') }}"
+            data-score="{{ '%.1f'|format(score_pct) }}" data-date="{{ p.captured_at.isoformat() if p.captured_at else '' }}"
             data-lat="{{ p.latitude }}" data-lon="{{ p.longitude }}"
             onclick="window.PANBERSS_OPEN_GALLERY && PANBERSS_OPEN_GALLERY(this)"
             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.PANBERSS_OPEN_GALLERY && PANBERSS_OPEN_GALLERY(this);}">
