@@ -14,7 +14,7 @@
 
             <div class="col-md-9">
                 <label class="form-label">Pilih Koordinator</label>
-                <select class="form-select" name="coordinator_id">
+                <select class="form-select js-monev-select" name="coordinator_id">
                     <option value="">-- Belum Ada Koordinator --</option>
                     {% for staff in available_staff %}
                     <option value="{{ staff.id }}" {% if team.coordinator_id==staff.id %}selected{% endif %}>
@@ -108,7 +108,7 @@
 
                     <div class="col-md-9">
                         <label class="form-label">Pilih Staff</label>
-                        <select class="form-select" name="staff_id" required>
+                        <select class="form-select js-monev-select" name="staff_id" required>
                             <option value="">-- Pilih Staff --</option>
                             {% for staff in available_staff %}
                             {% set is_member = team.members|selectattr('staff_id', 'equalto', staff.id)|list|length > 0
