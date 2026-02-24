@@ -1,19 +1,16 @@
-{# Shared stats content component - expects stats_role variable ('admin' or
-'coordinator') #} {# Set defaults if not provided #} {% set is_admin =
-(stats_role == 'admin') %} {% set title = stats_title or ('Dashboard PANBERSS'
-if is_admin else 'Statistik Tim ' ~ (team.name or team.kecamatan_name or
-'Koordinator')) %} {% set subtitle = stats_subtitle or ('Ringkasan data
-penilaian sekolah' if is_admin else 'Data penilaian oleh anggota tim Anda') %}
-{% set map_data_endpoint = 'portal.admin_map_data' if is_admin else
-'portal.coordinator_map_data' %} {% set stats_endpoint = 'portal.admin_stats' if
-is_admin else 'portal.coordinator_stats' %} {% set photos_endpoint =
-'portal.admin_photos_partial' if is_admin else
-'portal.coordinator_photos_partial' %} {% set related_photos_endpoint =
-'portal.admin_related_photos' if is_admin else
-'portal.coordinator_related_photos' %} {% set ranking_endpoint =
-'portal.api_rankings' if is_admin else 'portal.coordinator_api_rankings' %} {%
-set current_team_id = selected_team_id if selected_team_id is not none else
-(team.id if team else None) %} {% set teams = monev_teams|default([]) %}
+{# Shared stats content component - expects stats_role variable ('admin' or 'coordinator') #}
+{# Set defaults if not provided #}
+{% set is_admin = (stats_role == 'admin') %}
+{% set title = stats_title or ('Dashboard PANBERSS' if is_admin else 'Statistik Tim ' ~ (team.name or team.kecamatan_name or 'Koordinator')) %}
+{% set subtitle = stats_subtitle or ('Ringkasan data penilaian sekolah' if is_admin else 'Data penilaian oleh anggota tim Anda') %}
+{% set map_data_endpoint = 'portal.admin_map_data' if is_admin else 'portal.coordinator_map_data' %}
+{% set stats_endpoint = 'portal.admin_stats' if is_admin else 'portal.coordinator_stats' %}
+{% set photos_endpoint = 'portal.admin_photos_partial' if is_admin else 'portal.coordinator_photos_partial' %}
+{% set related_photos_endpoint = 'portal.admin_related_photos' if is_admin else 'portal.coordinator_related_photos' %}
+{% set ranking_endpoint = 'portal.api_rankings' if is_admin else 'portal.coordinator_api_rankings' %}
+{% set current_team_id = selected_team_id if selected_team_id is not none else (team.id if team else None) %}
+{% set teams = monev_teams|default([]) %}
+{% from "portal/components/_color_macros.html" import get_score_bootstrap_class %}
 
 <section class="mb-4">
   <div class="card portal-hero border-0 shadow-sm">
@@ -159,11 +156,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
 
         {% if kecamatan_stats %}
         <div class="d-flex justify-content-between align-items-end mt-2">
-          {% for k in kecamatan_stats[:3] %} {# Set badge class based on score
-          threshold #} {% set badge_class = 'bg-success text-white' if
-          k.avg_score_pct >= 85 else ('bg-warning text-dark' if k.avg_score_pct
-          >= 70 else ('bg-danger text-white' if k.avg_score_pct >= 55 else
-          'bg-dark text-white')) %}
+          {% for k in kecamatan_stats[:3] %} {% set badge_class = get_score_bootstrap_class(k.avg_score_pct) %}
           <div class="text-center flex-fill">
             <span
               class="badge {{ badge_class }} rounded-pill mb-1"
@@ -198,15 +191,15 @@ set current_team_id = selected_team_id if selected_team_id is not none else
           >
         </div>
         <h2 class="display-6 fw-bold mb-1">
-          {% if stats.assessments.avg_score %} {{
-          "%.1f"|format(stats.assessments.avg_score / 3 * 100) }}% {% else %} -
-          {% endif %}
+          {% if stats.assessments.avg_score_pct is not none %} {{
+          "%.1f"|format(stats.assessments.avg_score_pct) }}% {% else %} - {%
+          endif %}
         </h2>
         <p class="text-muted small mb-0">
-          {% if stats.assessments.avg_score %} {{
-          "%.2f"|format(stats.assessments.avg_score) }}/3 dari {{
-          stats.assessments.submitted or 0 }} penilaian {% else %} dari {{
-          stats.assessments.submitted or 0 }} penilaian {% endif %}
+          {% if stats.assessments.avg_score_pct is not none %} Basis
+          normalisasi skala dari {{ stats.assessments.submitted or 0 }}
+          penilaian {% else %} dari {{ stats.assessments.submitted or 0 }}
+          penilaian {% endif %}
         </p>
       </div>
     </div>
@@ -377,7 +370,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                     </div>
                   </div>
                 </div>
-                {% set pct = ((s['total_score'] or 0) / 3 * 100) %}
+                {% set pct = s.get('score_pct') if s.get('score_pct') is not none else 0 %}
                 <span class="badge bg-primary text-white rounded-pill"
                   >{{ "%.1f"|format(pct) }}</span
                 >
@@ -415,7 +408,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                     </div>
                   </div>
                 </div>
-                {% set pct = ((s['total_score'] or 0) / 3 * 100) %}
+                {% set pct = s.get('score_pct') if s.get('score_pct') is not none else 0 %}
                 <span class="badge bg-danger text-white rounded-pill"
                   >{{ "%.1f"|format(pct) }}</span
                 >
@@ -615,7 +608,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                   </div>
                 </td>
                 {% set staff_total = a['total_staff'] or 0 %} {% set avg_raw =
-                (school_avg_map.get(a['school_id'], 0) or 0) / 3 * 100 %}
+                school_avg_map.get(a['school_id'], 0) or 0 %}
                 <td class="fw-bold text-primary">{{ staff_total }}</td>
                 <td class="fw-bold text-primary">
                   {{ "%.1f"|format(avg_raw) }}
@@ -793,9 +786,8 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                 </td>
                 <td>{{ row.last_school_name or '-' }}</td>
                 <td class="fw-bold text-primary">
-                  {% if row.last_total_score is not none %} {{
-                  "%.1f"|format((row.last_total_score or 0) / 3 * 100) }} {%
-                  else %} - {% endif %}
+                  {% if row.last_score_pct is not none %} {{
+                  "%.1f"|format(row.last_score_pct) }}% {% else %} - {% endif %}
                 </td>
                 <td class="small text-muted">
                   {{ row.last_submitted_at.strftime('%d %b %Y') if
@@ -877,8 +869,10 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                   const markerCounts = { excellent: 0, good: 0, poor: 0, critical: 0 };
 
                   data.forEach(school => {
-                      let rawScore = school.total_score ? parseFloat(school.total_score) : 0;
-                      let score = (rawScore / 3.0) * 100;
+                      let score = school.score_pct !== null && school.score_pct !== undefined
+                          ? parseFloat(school.score_pct)
+                          : 0;
+                      if (!Number.isFinite(score)) score = 0;
 
                       // Use centralized color config
                       const colorInfo = getScoreColor(score);
@@ -902,7 +896,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                       // Store marker level
                       marker._markerLevel = level;
 
-                      marker.bindTooltip(`${school.name} (${score.toFixed(0)})`, {
+                      marker.bindTooltip(`${school.name} (${score.toFixed(0)}%)`, {
                           permanent: false, direction: 'top', className: 'fw-bold'
                       });
 
@@ -913,7 +907,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                       marker.bindPopup(`
                           <strong class="d-block mb-1">${school.name}</strong>
                           <div class="small mb-1">${school.jenjang} - ${school.kecamatan || '-'}</div>
-                          <div class="fw-bold" style="color:${color}">Nilai: ${score.toFixed(0)}</div>
+                          <div class="fw-bold" style="color:${color}">Nilai: ${score.toFixed(0)}%</div>
                       `);
 
                       group.addLayer(marker);
@@ -1086,8 +1080,9 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                       const listGroup = document.querySelector(`#${containerId} .list-group`);
 
                       data.forEach((school, index) => {
-                          const score = school.total_score ? parseFloat(school.total_score) : 0;
-                          const pct = (score / 3 * 100).toFixed(1);
+                          const pct = school.score_pct !== null && school.score_pct !== undefined
+                              ? parseFloat(school.score_pct).toFixed(1)
+                              : '0.0';
                           const badgeClass = type === 'best' ? 'bg-primary' : 'bg-danger';
 
                           const itemHtml = `

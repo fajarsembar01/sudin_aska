@@ -27,6 +27,42 @@ _MONTH_NAMES_ID = (
 PORTAL_UNDO_WINDOW_DEFAULT_SECONDS = 7
 PORTAL_UNDO_WINDOW_MIN_SECONDS = 1
 PORTAL_UNDO_WINDOW_MAX_SECONDS = 60
+PORTAL_LEGACY_SCORE_SCALE_MAX = 3
+PORTAL_NEW_SCORE_SCALE_MAX = 5
+PORTAL_NEW_SCORE_MIN = 1
+PORTAL_LEGACY_SCORE_MIN = 0
+
+
+def _normalize_score_scale_max(value: Any) -> int:
+    """Normalize score scale marker to supported values."""
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        parsed = PORTAL_LEGACY_SCORE_SCALE_MAX
+    if parsed == PORTAL_NEW_SCORE_SCALE_MAX:
+        return PORTAL_NEW_SCORE_SCALE_MAX
+    return PORTAL_LEGACY_SCORE_SCALE_MAX
+
+
+def _normalize_score_pct(score: Any, scale_max: Any) -> float:
+    """Convert raw score to 0-100 percentage using assessment scale."""
+    try:
+        score_value = float(score)
+    except (TypeError, ValueError):
+        return 0.0
+    normalized_scale = _normalize_score_scale_max(scale_max)
+    if normalized_scale <= 0:
+        return 0.0
+    return (score_value / normalized_scale) * 100.0
+
+
+def _score_pct_sql(score_expr: str, scale_expr: str) -> str:
+    """Build SQL expression that normalizes raw score to 0-100 percentage."""
+    return (
+        f"(CASE WHEN COALESCE({scale_expr}, {PORTAL_LEGACY_SCORE_SCALE_MAX}) = {PORTAL_NEW_SCORE_SCALE_MAX} "
+        f"THEN ({score_expr})::DECIMAL / {PORTAL_NEW_SCORE_SCALE_MAX}.0 * 100.0 "
+        f"ELSE ({score_expr})::DECIMAL / {PORTAL_LEGACY_SCORE_SCALE_MAX}.0 * 100.0 END)"
+    )
 
 
 def normalize_portal_undo_window_seconds(
@@ -363,7 +399,7 @@ def create_assessment(
         # Avoid duplicate drafts for the same staff/school/period
         cur.execute(
             """
-            SELECT id, school_id, staff_id, status, created_at, period_id
+            SELECT id, school_id, staff_id, status, created_at, period_id, score_scale_max
             FROM portal_assessments
             WHERE school_id = %s
               AND staff_id = %s
@@ -385,11 +421,11 @@ def create_assessment(
 
         cur.execute(
             """
-            INSERT INTO portal_assessments (school_id, staff_id, period_id, status)
-            VALUES (%s, %s, %s, 'draft')
-            RETURNING id, school_id, staff_id, status, created_at, period_id
+            INSERT INTO portal_assessments (school_id, staff_id, period_id, status, score_scale_max)
+            VALUES (%s, %s, %s, 'draft', %s)
+            RETURNING id, school_id, staff_id, status, created_at, period_id, score_scale_max
             """,
-            (school_id, staff_id, period_id),
+            (school_id, staff_id, period_id, PORTAL_NEW_SCORE_SCALE_MAX),
         )
         # creator_email retained for backward compatibility (not stored yet)
         data = dict(cur.fetchone())
@@ -439,7 +475,11 @@ def get_assessment_by_id(assessment_id: int) -> Optional[Dict[str, Any]]:
             a.id, a.school_id, a.staff_id, a.assessment_date,
             a.status, a.total_score, a.notes, a.submitted_at,
             a.created_at, a.updated_at,
-            a.period_id,
+            a.period_id, a.score_scale_max,
+            CASE
+                WHEN a.total_score IS NULL THEN NULL
+                ELSE {score_pct_expr}
+            END AS score_pct,
             p.name AS period_name,
             p.start_date AS period_start_date,
             p.end_date AS period_end_date,
@@ -450,7 +490,7 @@ def get_assessment_by_id(assessment_id: int) -> Optional[Dict[str, Any]]:
         LEFT JOIN portal_assessment_periods p ON p.id = a.period_id
         LEFT JOIN dashboard_users u ON u.id = a.staff_id
         WHERE a.id = %s
-    """
+    """.format(score_pct_expr=_score_pct_sql("a.total_score", "a.score_scale_max"))
     with get_cursor() as cur:
         cur.execute(query, (assessment_id,))
         row = cur.fetchone()
@@ -737,7 +777,7 @@ def get_or_create_draft_assessment(school_id: int, staff_id: int) -> Dict[str, A
         # Check for existing draft
         cur.execute(
             """
-            SELECT id, school_id, staff_id, assessment_date, status, total_score, notes
+            SELECT id, school_id, staff_id, assessment_date, status, total_score, notes, score_scale_max
             FROM portal_assessments
             WHERE school_id = %s AND staff_id = %s AND status = 'draft'
             ORDER BY created_at DESC
@@ -753,11 +793,11 @@ def get_or_create_draft_assessment(school_id: int, staff_id: int) -> Dict[str, A
         # Create new draft
         cur.execute(
             """
-            INSERT INTO portal_assessments (school_id, staff_id, status)
-            VALUES (%s, %s, 'draft')
-            RETURNING id, school_id, staff_id, assessment_date, status, total_score, notes
+            INSERT INTO portal_assessments (school_id, staff_id, status, score_scale_max)
+            VALUES (%s, %s, 'draft', %s)
+            RETURNING id, school_id, staff_id, assessment_date, status, total_score, notes, score_scale_max
             """,
-            (school_id, staff_id),
+            (school_id, staff_id, PORTAL_NEW_SCORE_SCALE_MAX),
         )
         return dict(cur.fetchone())
 
@@ -1004,11 +1044,11 @@ def assign_assessment(school_id: int, staff_id: int, period_id: Optional[int] = 
 
         cur.execute(
             """
-            INSERT INTO portal_assessments (school_id, staff_id, period_id, status)
-            VALUES (%s, %s, %s, 'draft')
+            INSERT INTO portal_assessments (school_id, staff_id, period_id, status, score_scale_max)
+            VALUES (%s, %s, %s, 'draft', %s)
             RETURNING id
             """,
-            (school_id, staff_id, period_id),
+            (school_id, staff_id, period_id, PORTAL_NEW_SCORE_SCALE_MAX),
         )
         return dict(cur.fetchone())
 
@@ -1031,7 +1071,7 @@ def fetch_random_photos(
     """Fetch photos for stats gallery, with room score summary.
     
     Returns one photo per unique school+room combination.
-    Score is the average of all aspect scores for that room.
+    Score is normalized to percentage (0-100) using each assessment scale.
     """
     order = (order or "random").strip().lower()
     allowed_orders = {"random", "newest", "lowest"}
@@ -1053,7 +1093,9 @@ def fetch_random_photos(
         params.extend(staff_ids)
     where = "WHERE " + " AND ".join(clauses)
     
-    # Use subquery to get one photo per school+room combo with avg score
+    score_pct_expr = _score_pct_sql("sc2.score", "a.score_scale_max")
+
+    # Use subquery to get one photo per school+room combo with normalized score
     query = f"""
         SELECT * FROM (
             SELECT DISTINCT ON (s.id, r.id)
@@ -1061,6 +1103,7 @@ def fetch_random_photos(
                 s.name as school_name, 
                 s.id as school_id,
                 a.id as assessment_id,
+                a.score_scale_max,
                 r.name as room_name,
                 r.id as room_id,
                 p.captured_at,
@@ -1069,9 +1112,13 @@ def fetch_random_photos(
                 (
                     SELECT COALESCE(AVG(sc2.score), 0)::DECIMAL(5,2)
                     FROM portal_assessment_scores sc2
-                    JOIN portal_school_rooms sr2 ON sc2.school_room_id = sr2.id
-                    WHERE sr2.school_id = s.id AND sr2.room_id = r.id
-                ) AS room_score
+                    WHERE sc2.assessment_id = a.id AND sc2.school_room_id = sr.id
+                ) AS room_score,
+                (
+                    SELECT COALESCE(AVG({score_pct_expr}), 0)::DECIMAL(5,2)
+                    FROM portal_assessment_scores sc2
+                    WHERE sc2.assessment_id = a.id AND sc2.school_room_id = sr.id
+                ) AS room_score_pct
             FROM portal_assessment_photos p
             JOIN portal_assessments a ON p.assessment_id = a.id
             JOIN portal_schools s ON a.school_id = s.id
@@ -1084,9 +1131,9 @@ def fetch_random_photos(
     
     order_clause = "ORDER BY RANDOM()"
     if order == "newest":
-        order_clause = "ORDER BY captured_at DESC NULLS LAST, room_score ASC NULLS LAST, school_name, room_name"
+        order_clause = "ORDER BY captured_at DESC NULLS LAST, room_score_pct ASC NULLS LAST, school_name, room_name"
     elif order == "lowest":
-        order_clause = "ORDER BY room_score ASC NULLS LAST, captured_at DESC NULLS LAST, school_name, room_name"
+        order_clause = "ORDER BY room_score_pct ASC NULLS LAST, captured_at DESC NULLS LAST, school_name, room_name"
     
     query += f" {order_clause} LIMIT %s"
     params.append(limit)
@@ -1191,9 +1238,11 @@ def get_assessment_room_score_pct(assessment_id: int, school_room_id: int) -> fl
     query = """
         SELECT
             COUNT(a.id) AS total_aspects,
-            COALESCE(SUM(COALESCE(s.score, 0)), 0) AS total_score
+            COALESCE(SUM(COALESCE(s.score, 0)), 0) AS total_score,
+            COALESCE(MAX(pa.score_scale_max), 3) AS score_scale_max
         FROM portal_school_rooms sr
         JOIN portal_rooms r ON r.id = sr.room_id
+        JOIN portal_assessments pa ON pa.id = %s
         LEFT JOIN portal_aspects a
             ON a.room_id = r.id
             AND a.active = TRUE
@@ -1212,29 +1261,43 @@ def get_assessment_room_score_pct(assessment_id: int, school_room_id: int) -> fl
         WHERE sr.id = %s
     """
     with get_cursor() as cur:
-        cur.execute(query, (assessment_id, school_room_id))
+        cur.execute(query, (assessment_id, assessment_id, school_room_id))
         row = cur.fetchone()
         if not row:
             return 0.0
         total_aspects = row.get("total_aspects") or 0
         total_score = row.get("total_score") or 0
+        score_scale_max = row.get("score_scale_max") or PORTAL_LEGACY_SCORE_SCALE_MAX
         if total_aspects <= 0:
             return 0.0
         avg = total_score / total_aspects
-        return float((avg / 3) * 100)
+        return float(_normalize_score_pct(avg, score_scale_max))
 
 
 def submit_assessment(assessment_id: int) -> bool:
     """Submit an assessment and calculate total score.
     
-    If any aspect hasn't been scored, it defaults to 0 (Rusak).
+    Missing aspects are auto-filled with scale baseline:
+    legacy scale=3 -> 0, new scale=5 -> 1.
     """
     with get_cursor(commit=True) as cur:
-        # 1. Fill missing scores with default 0
+        cur.execute(
+            """
+            SELECT COALESCE(score_scale_max, %s) AS score_scale_max
+            FROM portal_assessments
+            WHERE id = %s
+            """,
+            (PORTAL_LEGACY_SCORE_SCALE_MAX, assessment_id),
+        )
+        assessment = cur.fetchone() or {}
+        score_scale_max = _normalize_score_scale_max(assessment.get("score_scale_max"))
+        default_score = PORTAL_NEW_SCORE_MIN if score_scale_max == PORTAL_NEW_SCORE_SCALE_MAX else PORTAL_LEGACY_SCORE_MIN
+
+        # 1. Fill missing scores with scale-aware default
         cur.execute(
             """
             INSERT INTO portal_assessment_scores (assessment_id, school_room_id, aspect_id, score, created_at, updated_at)
-            SELECT %s, sr.id, pa.id, 0, NOW(), NOW()
+            SELECT %s, sr.id, pa.id, %s, NOW(), NOW()
             FROM portal_school_rooms sr
             JOIN portal_assessments a ON a.id = %s
             JOIN portal_aspects pa ON pa.room_id = sr.room_id
@@ -1247,7 +1310,7 @@ def submit_assessment(assessment_id: int) -> bool:
                     AND s.aspect_id = pa.id
               )
             """,
-            (assessment_id, assessment_id, assessment_id),
+            (assessment_id, default_score, assessment_id, assessment_id),
         )
 
         # 2. Calculate average score
@@ -1297,7 +1360,13 @@ def list_staff_assessments(
     query = f"""
         SELECT 
             a.id, a.school_id, a.assessment_date, a.status,
-            a.total_score, a.submitted_at, a.created_at,
+            a.total_score,
+            a.score_scale_max,
+            CASE
+                WHEN a.total_score IS NULL THEN NULL
+                ELSE {_score_pct_sql("a.total_score", "a.score_scale_max")}
+            END AS score_pct,
+            a.submitted_at, a.created_at,
             s.name as school_name, s.npsn, s.jenjang
         FROM portal_assessments a
         JOIN portal_schools s ON s.id = a.school_id
@@ -1355,6 +1424,7 @@ def fetch_portal_stats(
                 "drafts": 0,
                 "submitted": 0,
                 "avg_score": None,
+                "avg_score_pct": None,
             },
         }
     
@@ -1406,7 +1476,9 @@ def fetch_portal_stats(
                 COUNT(*) as total,
                 COUNT(*) FILTER (WHERE status = 'draft') as drafts,
                 COUNT(*) FILTER (WHERE status IN ('submitted', 'verified')) as submitted,
-                AVG(total_score) FILTER (WHERE status IN ('submitted', 'verified')) as avg_score
+                AVG(total_score) FILTER (WHERE status IN ('submitted', 'verified')) as avg_score,
+                AVG({_score_pct_sql("a.total_score", "a.score_scale_max")})
+                    FILTER (WHERE status IN ('submitted', 'verified') AND total_score IS NOT NULL) as avg_score_pct
             FROM portal_assessments a
             {where_clause}
             """,
@@ -1441,7 +1513,7 @@ def fetch_score_distribution(
         params.extend(staff_ids)
         
     where_clause = "WHERE " + " AND ".join(conditions)
-    query = f"SELECT total_score FROM portal_assessments {where_clause}"
+    query = f"SELECT total_score, score_scale_max FROM portal_assessments {where_clause}"
     
     distribution = [0] * 9  # 9 Buckets
     
@@ -1454,7 +1526,7 @@ def fetch_score_distribution(
             if score is None:
                 continue
             
-            score_100 = (float(score) / 3.0) * 100
+            score_100 = _normalize_score_pct(score, row.get("score_scale_max"))
             
             if score_100 < 60:
                 idx = 0
@@ -1496,6 +1568,7 @@ def fetch_map_data(
         params.extend(staff_ids)
     
     filter_clause = "WHERE " + " AND ".join(conditions)
+    score_pct_expr = _score_pct_sql("a2.total_score", "a2.score_scale_max")
     
     # Subquery to get most recent photo with GPS per school
     query = f"""
@@ -1517,6 +1590,12 @@ def fetch_map_data(
                 WHERE a2.school_id = s.id 
                   AND a2.total_score IS NOT NULL
             ) AS school_avg_score,
+            (
+                SELECT AVG({score_pct_expr})::DECIMAL(5,2)
+                FROM filtered a2
+                WHERE a2.school_id = s.id 
+                  AND a2.total_score IS NOT NULL
+            ) AS school_avg_score_pct,
             -- Get latest status
             (
                 SELECT a3.status 
@@ -1569,6 +1648,10 @@ def fetch_map_data(
                 item["total_score"] = float(item["school_avg_score"])
             else:
                 item["total_score"] = None
+            if item.get("school_avg_score_pct") is not None:
+                item["score_pct"] = float(item["school_avg_score_pct"])
+            else:
+                item["score_pct"] = None
             data.append(item)
         return data
 
@@ -1590,13 +1673,15 @@ def fetch_top_schools(limit: int = 5, offset: int = 0, period_id: Optional[int] 
                     s.name,
                     s.jenjang,
                     a.total_score,
+                    a.score_scale_max,
+                    {_score_pct_sql("a.total_score", "a.score_scale_max")} AS score_pct,
                     a.submitted_at
                 FROM portal_assessments a
                 JOIN portal_schools s ON a.school_id = s.id
                 {where}
                 ORDER BY a.school_id, a.submitted_at DESC
             ) sub
-            ORDER BY total_score DESC
+            ORDER BY score_pct DESC NULLS LAST
             LIMIT %s OFFSET %s
             """
             
@@ -1694,13 +1779,15 @@ def fetch_bottom_schools(limit: int = 5, offset: int = 0, period_id: Optional[in
                     s.name,
                     s.jenjang,
                     a.total_score,
+                    a.score_scale_max,
+                    {_score_pct_sql("a.total_score", "a.score_scale_max")} AS score_pct,
                     a.submitted_at
                 FROM portal_assessments a
                 JOIN portal_schools s ON a.school_id = s.id
                 {where}
                 ORDER BY a.school_id, a.submitted_at DESC
             ) sub
-            ORDER BY total_score ASC NULLS LAST
+            ORDER BY score_pct ASC NULLS LAST
             LIMIT %s OFFSET %s
             """
             
@@ -1737,9 +1824,9 @@ def list_recent_assessments(
 
     order_clause = "submitted_at DESC"
     if order == "score_desc":
-        order_clause = "total_score DESC NULLS LAST"
+        order_clause = "score_pct DESC NULLS LAST"
     elif order == "score_asc":
-        order_clause = "total_score ASC NULLS LAST"
+        order_clause = "score_pct ASC NULLS LAST"
     elif order == "staff_desc":
         order_clause = "COALESCE(total_staff,0) DESC, submitted_at DESC"
     elif order == "staff_asc":
@@ -1763,6 +1850,11 @@ def list_recent_assessments(
                 s.jenjang,
                 a.status,
                 a.total_score,
+                a.score_scale_max,
+                CASE
+                    WHEN a.total_score IS NULL THEN NULL
+                    ELSE {_score_pct_sql("a.total_score", "a.score_scale_max")}
+                END AS score_pct,
                 COALESCE(staff_counts.total_staff, 0) AS total_staff,
                 a.submitted_at,
                 u.full_name as assessor_name
@@ -1821,6 +1913,8 @@ def list_staff_latest_assessments(
             latest.assessment_id AS last_assessment_id,
             latest.school_name AS last_school_name,
             latest.total_score AS last_total_score,
+            latest.score_scale_max AS last_score_scale_max,
+            latest.score_pct AS last_score_pct,
             latest.submitted_at AS last_submitted_at,
             latest.kecamatan_name AS last_kecamatan_name
         FROM dashboard_users u
@@ -1835,6 +1929,11 @@ def list_staff_latest_assessments(
                 a.id AS assessment_id,
                 s.name AS school_name,
                 a.total_score,
+                a.score_scale_max,
+                CASE
+                    WHEN a.total_score IS NULL THEN NULL
+                    ELSE {_score_pct_sql("a.total_score", "a.score_scale_max")}
+                END AS score_pct,
                 a.submitted_at,
                 k.name AS kecamatan_name
             FROM portal_assessments a
@@ -1860,7 +1959,7 @@ def fetch_school_avg_scores(
     period_id: Optional[int] = None,
     staff_ids: Optional[List[int]] = None,
 ) -> Dict[int, float]:
-    """Return map {school_id: avg_score} for submitted assessments."""
+    """Return map {school_id: avg_score_pct} for submitted assessments."""
     if staff_ids is not None and len(staff_ids) == 0:
         return {}
     
@@ -1876,14 +1975,18 @@ def fetch_school_avg_scores(
     where = "WHERE " + " AND ".join(where_clauses)
     
     query = f"""
-        SELECT school_id, AVG(total_score)::DECIMAL(5,2) as avg_score
+        SELECT school_id,
+               AVG({_score_pct_sql("total_score", "score_scale_max")})::DECIMAL(5,2) as avg_score_pct
         FROM portal_assessments
         {where}
         GROUP BY school_id
     """
     with get_cursor() as cur:
         cur.execute(query, params)
-        return {row["school_id"]: float(row["avg_score"]) if row["avg_score"] is not None else 0.0 for row in cur.fetchall()}
+        return {
+            row["school_id"]: float(row["avg_score_pct"]) if row["avg_score_pct"] is not None else 0.0
+            for row in cur.fetchall()
+        }
 
 def delete_assessment(assessment_id: int) -> bool:
     """Delete an assessment and cascaded children."""
@@ -1928,6 +2031,7 @@ def fetch_related_photos(
         params.extend(staff_ids)
     
     where_clause = " AND ".join(conditions)
+    room_score_pct_expr = _score_pct_sql("sc.score", "a.score_scale_max")
     
     query = f"""
         SELECT 
@@ -1941,7 +2045,9 @@ def fetch_related_photos(
             p.longitude,
             u.full_name AS uploader_name,
             a.id AS assessment_id,
-            COALESCE(AVG(sc.score), 0)::DECIMAL(5,2) AS room_score
+            a.score_scale_max,
+            COALESCE(AVG(sc.score), 0)::DECIMAL(5,2) AS room_score,
+            COALESCE(AVG({room_score_pct_expr}), 0)::DECIMAL(5,2) AS room_score_pct
         FROM portal_assessment_photos p
         JOIN portal_assessments a ON p.assessment_id = a.id
         LEFT JOIN dashboard_users u ON a.staff_id = u.id
@@ -1952,7 +2058,18 @@ def fetch_related_photos(
             ON sc.assessment_id = p.assessment_id 
            AND sc.school_room_id = p.school_room_id
         WHERE {where_clause}
-        GROUP BY p.photo_path, s.name, s.id, r.name, r.id, p.captured_at, p.latitude, p.longitude
+        GROUP BY
+            p.photo_path,
+            s.name,
+            s.id,
+            r.name,
+            r.id,
+            p.captured_at,
+            p.latitude,
+            p.longitude,
+            u.full_name,
+            a.id,
+            a.score_scale_max
         ORDER BY p.captured_at DESC NULLS LAST
         LIMIT %s
     """
@@ -2608,76 +2725,59 @@ def list_kelurahan_by_urgency(period_id: Optional[int] = None) -> List[Dict[str,
     """List kelurahan sorted by urgency (lowest average school score first).
     
     Returns kelurahan with:
-    - Average score of all schools in that kelurahan
-    - Count of schools with low scores (<70)
+    - Average score percentage of all schools in that kelurahan
+    - Count of schools with low scores (<60)
     - Order by urgency (lowest score first)
     """
-    # Build period filter as string to avoid parameter count issues with subqueries
+    params: List[Any] = []
     period_cond = ""
     if period_id:
-        period_cond = f"AND a2.period_id = {int(period_id)}"
+        period_cond = "AND a.period_id = %s"
+        params.append(period_id)
     
     query = f"""
+        WITH school_scores AS (
+            SELECT
+                s.id AS school_id,
+                s.kelurahan_id,
+                AVG({_score_pct_sql("a.total_score", "a.score_scale_max")})::DECIMAL(5,2) AS school_avg_pct
+            FROM portal_schools s
+            JOIN portal_assessments a ON a.school_id = s.id
+            WHERE s.active = TRUE
+              AND a.status IN ('submitted', 'verified')
+              AND a.total_score IS NOT NULL
+              {period_cond}
+            GROUP BY s.id, s.kelurahan_id
+        )
         SELECT 
             l.id,
             l.name,
             k.name as kecamatan_name,
             k.id as kecamatan_id,
-            -- Only count schools that have submitted assessments
-            COUNT(DISTINCT s.id) FILTER (
-                WHERE EXISTS (
-                    SELECT 1 FROM portal_assessments a4
-                    WHERE a4.school_id = s.id AND a4.status IN ('submitted', 'verified')
-                )
-            ) as school_count,
-            -- Average score of schools in this kelurahan
-            COALESCE(AVG(
-                (SELECT AVG(a2.total_score)
-                 FROM portal_assessments a2
-                 WHERE a2.school_id = s.id 
-                   AND a2.status IN ('submitted', 'verified')
-                   AND a2.total_score IS NOT NULL
-                   {period_cond})
-            ), 0)::DECIMAL(5,2) as avg_score,
-            -- Count schools with low score (<2.1 on 0-3 scale = <70%)
-            COUNT(DISTINCT s.id) FILTER (
-                WHERE (SELECT AVG(a3.total_score)
-                       FROM portal_assessments a3
-                       WHERE a3.school_id = s.id 
-                         AND a3.status IN ('submitted', 'verified')
-                         AND a3.total_score IS NOT NULL
-                         {period_cond}) < 2.1
-            ) as low_score_count
+            COUNT(ss.school_id) as school_count,
+            COALESCE(AVG(ss.school_avg_pct), 0)::DECIMAL(5,2) as avg_score_pct,
+            COUNT(ss.school_id) FILTER (WHERE ss.school_avg_pct < 60) as low_score_count
         FROM portal_kelurahan l
         JOIN portal_kecamatan k ON l.kecamatan_id = k.id
-        LEFT JOIN portal_schools s ON s.kelurahan_id = l.id AND s.active = TRUE
+        LEFT JOIN school_scores ss ON ss.kelurahan_id = l.id
         GROUP BY l.id, l.name, k.name, k.id
-        HAVING COUNT(DISTINCT s.id) FILTER (
-            WHERE EXISTS (
-                SELECT 1 FROM portal_assessments a5
-                WHERE a5.school_id = s.id AND a5.status IN ('submitted', 'verified')
-            )
-        ) > 0
-        ORDER BY avg_score ASC NULLS LAST, low_score_count DESC
+        HAVING COUNT(ss.school_id) > 0
+        ORDER BY avg_score_pct ASC NULLS LAST, low_score_count DESC
     """
     
     with get_cursor() as cur:
-        cur.execute(query)
+        cur.execute(query, params)
         results = []
         for row in cur.fetchall():
             item = dict(row)
-            # Convert avg_score to percentage
-            if item.get("avg_score"):
-                item["avg_score_pct"] = round(float(item["avg_score"]) / 3 * 100, 1)
-            else:
-                item["avg_score_pct"] = 0
+            item["avg_score_pct"] = round(float(item.get("avg_score_pct") or 0), 1)
             results.append(item)
         return results
 
 
 def fetch_schools_for_sidak(
     kelurahan_id: int,
-    max_score_pct: float = 70.0,
+    max_score_pct: float = 60.0,
     period_id: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch schools with low scores and GPS in specific kelurahan for sidak planning."""
@@ -2694,11 +2794,12 @@ def fetch_schools_for_sidak(
             s.jenjang,
             l.name as kelurahan_name,
             k.name as kecamatan_name,
-            (SELECT AVG(a.total_score)::DECIMAL(5,2)
+            (SELECT AVG({_score_pct_sql("a.total_score", "a.score_scale_max")})::DECIMAL(5,2)
              FROM portal_assessments a
              WHERE a.school_id = s.id 
                AND a.status IN ('submitted', 'verified')
-               {period_cond}) as avg_score,
+               AND a.total_score IS NOT NULL
+               {period_cond}) as avg_score_pct,
             (SELECT p.latitude
              FROM portal_assessment_photos p
              JOIN portal_assessments a ON p.assessment_id = a.id
@@ -2717,8 +2818,9 @@ def fetch_schools_for_sidak(
              JOIN portal_rooms r ON sr.room_id = r.id
              JOIN portal_assessments a ON sc.assessment_id = a.id
              WHERE a.school_id = s.id AND a.status IN ('submitted', 'verified')
+               {period_cond}
              GROUP BY r.id, r.name
-             ORDER BY AVG(sc.score) ASC
+             ORDER BY AVG({_score_pct_sql("sc.score", "a.score_scale_max")}) ASC
              LIMIT 1) as worst_room
         FROM portal_schools s
         LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
@@ -2727,9 +2829,11 @@ def fetch_schools_for_sidak(
           AND s.active = TRUE
           AND EXISTS (
               SELECT 1 FROM portal_assessments a
-              WHERE a.school_id = s.id AND a.status IN ('submitted', 'verified')
+              WHERE a.school_id = s.id
+                AND a.status IN ('submitted', 'verified')
+                {period_cond}
           )
-        ORDER BY avg_score ASC NULLS LAST
+        ORDER BY avg_score_pct ASC NULLS LAST
     """
     
     with get_cursor() as cur:
@@ -2737,10 +2841,7 @@ def fetch_schools_for_sidak(
         results = []
         for row in cur.fetchall():
             item = dict(row)
-            if item.get("avg_score"):
-                item["score_pct"] = round(float(item["avg_score"]) / 3 * 100, 1)
-            else:
-                item["score_pct"] = 0
+            item["score_pct"] = round(float(item.get("avg_score_pct") or 0), 1)
             if item.get("latitude"):
                 item["latitude"] = float(item["latitude"])
             if item.get("longitude"):
@@ -2774,7 +2875,7 @@ def fetch_kecamatan_avg_scores(
         SELECT 
             k.name,
             AVG(a.total_score) as avg_score_raw,
-            (AVG(a.total_score) / 3.0 * 100)::DECIMAL(5,1) as avg_score_pct,
+            AVG({_score_pct_sql("a.total_score", "a.score_scale_max")})::DECIMAL(5,1) as avg_score_pct,
             COUNT(a.id) as assessment_count
         FROM portal_assessments a
         JOIN portal_schools s ON a.school_id = s.id
@@ -3950,6 +4051,7 @@ def get_optional_rooms_for_schools(school_ids: list[int]) -> dict:
             SELECT 
                 r.id as room_id,
                 r.name as room_name,
+                r.category as room_category,
                 s.id as school_id,
                 s.jenjang,
                 sr.id as is_selected
@@ -3968,6 +4070,7 @@ def get_optional_rooms_for_schools(school_ids: list[int]) -> dict:
     result = {}
     for row in rows:
         jenjang, room_id, room_name = row['jenjang'], row['room_id'], row['room_name']
+        room_category = row.get('room_category')
         is_selected = row['is_selected'] is not None
         
         if jenjang not in result:
@@ -3975,6 +4078,7 @@ def get_optional_rooms_for_schools(school_ids: list[int]) -> dict:
         if room_id not in result[jenjang]:
             result[jenjang][room_id] = {
                 'room_name': room_name,
+                'room_category': room_category,
                 'selected_by_schools': [],
                 'total_schools': 0,
             }
@@ -4078,6 +4182,7 @@ def fetch_coordinator_team_stats(staff_ids: List[int], period_id: Optional[int] 
             "total_assessments": 0,
             "schools_assessed": 0,
             "avg_score": 0,
+            "avg_score_pct": 0,
             "verified_count": 0,
             "submitted_count": 0,
         }
@@ -4095,6 +4200,7 @@ def fetch_coordinator_team_stats(staff_ids: List[int], period_id: Optional[int] 
                 COUNT(*) as total_assessments,
                 COUNT(DISTINCT school_id) as schools_assessed,
                 ROUND(AVG(total_score)::numeric, 1) as avg_score,
+                ROUND(AVG({_score_pct_sql("total_score", "score_scale_max")})::numeric, 1) as avg_score_pct,
                 COUNT(*) FILTER (WHERE status = 'verified') as verified_count,
                 COUNT(*) FILTER (WHERE status = 'submitted') as submitted_count
             FROM portal_assessments
@@ -4108,6 +4214,7 @@ def fetch_coordinator_team_stats(staff_ids: List[int], period_id: Optional[int] 
             "total_assessments": row['total_assessments'] or 0,
             "schools_assessed": row['schools_assessed'] or 0,
             "avg_score": float(row['avg_score']) if row['avg_score'] else 0,
+            "avg_score_pct": float(row['avg_score_pct']) if row['avg_score_pct'] else 0,
             "verified_count": row['verified_count'] or 0,
             "submitted_count": row['submitted_count'] or 0,
         }
@@ -4146,6 +4253,11 @@ def list_team_assessments(
                 s.jenjang,
                 a.status,
                 a.total_score,
+                a.score_scale_max,
+                CASE
+                    WHEN a.total_score IS NULL THEN NULL
+                    ELSE {_score_pct_sql("a.total_score", "a.score_scale_max")}
+                END AS score_pct,
                 a.submitted_at,
                 u.full_name as assessor_name,
                 u.id as assessor_id
@@ -4181,22 +4293,34 @@ def fetch_team_top_schools(
             params.append(period_id)
         params.extend([limit, offset])
         
-        cur.execute(f"""
-            SELECT 
-                s.id, s.name, s.npsn, s.jenjang,
-                MAX(a.total_score) as score,
-                u.full_name as assessor_name
-            FROM portal_assessments a
-            JOIN portal_schools s ON a.school_id = s.id
-            LEFT JOIN dashboard_users u ON a.staff_id = u.id
-            WHERE a.staff_id IN ({placeholders})
-              AND a.status IN ('submitted', 'verified')
-              AND a.total_score IS NOT NULL
-              {period_filter}
-            GROUP BY s.id, s.name, s.npsn, s.jenjang, u.full_name
-            ORDER BY score DESC
+        cur.execute(
+            f"""
+            WITH latest AS (
+                SELECT DISTINCT ON (a.school_id)
+                    s.id,
+                    s.name,
+                    s.npsn,
+                    s.jenjang,
+                    a.total_score,
+                    a.score_scale_max,
+                    {_score_pct_sql("a.total_score", "a.score_scale_max")} AS score_pct,
+                    a.submitted_at,
+                    u.full_name AS assessor_name
+                FROM portal_assessments a
+                JOIN portal_schools s ON a.school_id = s.id
+                LEFT JOIN dashboard_users u ON a.staff_id = u.id
+                WHERE a.staff_id IN ({placeholders})
+                  AND a.status IN ('submitted', 'verified')
+                  AND a.total_score IS NOT NULL
+                  {period_filter}
+                ORDER BY a.school_id, a.submitted_at DESC NULLS LAST, a.id DESC
+            )
+            SELECT * FROM latest
+            ORDER BY score_pct DESC NULLS LAST
             LIMIT %s OFFSET %s
-        """, params)
+            """,
+            params,
+        )
         
         return [dict(row) for row in cur.fetchall()]
 
@@ -4220,21 +4344,33 @@ def fetch_team_bottom_schools(
             params.append(period_id)
         params.extend([limit, offset])
         
-        cur.execute(f"""
-            SELECT 
-                s.id, s.name, s.npsn, s.jenjang,
-                MIN(a.total_score) as score,
-                u.full_name as assessor_name
-            FROM portal_assessments a
-            JOIN portal_schools s ON a.school_id = s.id
-            LEFT JOIN dashboard_users u ON a.staff_id = u.id
-            WHERE a.staff_id IN ({placeholders})
-              AND a.status IN ('submitted', 'verified')
-              AND a.total_score IS NOT NULL
-              {period_filter}
-            GROUP BY s.id, s.name, s.npsn, s.jenjang, u.full_name
-            ORDER BY score ASC
+        cur.execute(
+            f"""
+            WITH latest AS (
+                SELECT DISTINCT ON (a.school_id)
+                    s.id,
+                    s.name,
+                    s.npsn,
+                    s.jenjang,
+                    a.total_score,
+                    a.score_scale_max,
+                    {_score_pct_sql("a.total_score", "a.score_scale_max")} AS score_pct,
+                    a.submitted_at,
+                    u.full_name AS assessor_name
+                FROM portal_assessments a
+                JOIN portal_schools s ON a.school_id = s.id
+                LEFT JOIN dashboard_users u ON a.staff_id = u.id
+                WHERE a.staff_id IN ({placeholders})
+                  AND a.status IN ('submitted', 'verified')
+                  AND a.total_score IS NOT NULL
+                  {period_filter}
+                ORDER BY a.school_id, a.submitted_at DESC NULLS LAST, a.id DESC
+            )
+            SELECT * FROM latest
+            ORDER BY score_pct ASC NULLS LAST
             LIMIT %s OFFSET %s
-        """, params)
+            """,
+            params,
+        )
         
         return [dict(row) for row in cur.fetchall()]

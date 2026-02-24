@@ -173,6 +173,38 @@
             background: #198754;
         }
 
+        .score-btn[data-score="4"].selected {
+            background: #157347;
+        }
+
+        .score-btn[data-score="5"].selected {
+            background: #0f5132;
+        }
+
+        /* Scale-specific color ramp: 1->5 from red to green */
+        .score-group[data-scale-max="5"] .score-btn[data-score="1"].selected {
+            background: #dc3545;
+        }
+
+        .score-group[data-scale-max="5"] .score-btn[data-score="2"].selected {
+            background: #fd7e14;
+        }
+
+        .score-group[data-scale-max="5"] .score-btn[data-score="3"].selected {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .score-group[data-scale-max="5"] .score-btn[data-score="4"].selected {
+            background: #8bc34a;
+            color: #1f2a1f;
+        }
+
+        .score-group[data-scale-max="5"] .score-btn[data-score="5"].selected {
+            background: #198754;
+            color: #ffffff;
+        }
+
         /* Room list */
         .room-item {
             margin-bottom: 1rem;

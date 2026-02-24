@@ -1,5 +1,6 @@
 {% extends "portal/base_portal.html" %}
 {% set page_title = "Hasil Penilaian" %}
+{% from "portal/components/_color_macros.html" import get_aspect_badge_class, get_score_bootstrap_class %}
 
 {% block portal_content %}
 <section class="mb-4">
@@ -28,10 +29,12 @@
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-body">
                     <div class="score-summary">
-                        {% set pct_total = ((assessment.total_score or 0) / 3 * 100) if assessment.total_score is not
-                        none else 0 %}
+                        {% set pct_total = assessment.score_pct if assessment.score_pct is not none else ((assessment.total_score or 0) / score_scale.max * 100) %}
                         <div class="big-score">{{ "%.1f"|format(pct_total) }}</div>
                         <div class="score-label">Skor Rata-rata (0-100)</div>
+                        {% if assessment.total_score is not none %}
+                        <div class="small text-muted">{{ "%.2f"|format(assessment.total_score or 0) }} / {{ score_scale.max }} (raw)</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -89,6 +92,10 @@
                         <tr>
                             <td class="text-muted">Status</td>
                             <td class="text-end">{{ assessment.status|capitalize }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Skala</td>
+                            <td class="text-end">{{ score_scale.min }}-{{ score_scale.max }}</td>
                         </tr>
                     </table>
                 </div>
@@ -205,9 +212,8 @@
                     <div class="alert alert-info d-flex flex-wrap align-items-center gap-3">
                         <div>
                             <div class="fw-semibold mb-0">Rata-rata semua penilaian sekolah ini</div>
-                            {% set pct_school_avg = ((school_avg or 0) / 3 * 100) if school_avg is not none else 0 %}
-                            <div class="text-muted small">{{ "%.2f"|format(school_avg or 0) }} / {{
-                                "%.1f"|format(pct_school_avg) }}</div>
+                            {% set pct_school_avg = school_avg if school_avg is not none else 0 %}
+                            <div class="text-muted small">{{ "%.1f"|format(pct_school_avg) }}%</div>
                         </div>
                         {% if other_assessments %}
                         <div class="ms-auto">
@@ -235,10 +241,14 @@
                                             <span class="badge bg-primary">Sedang Dilihat</span>
                                             {% endif %}
                                         </div>
-                                        {% set other_pct = ((other.total_score or 0) / 3 * 100) if other.total_score is
-                                        not none else 0 %}
-                                        <span class="badge bg-primary rounded-pill">{{ other.total_score or '-' }} / {{
-                                            "%.1f"|format(other_pct) }}</span>
+                                        {% set other_pct = other.score_pct if other.score_pct is not none else 0 %}
+                                        <span class="badge {{ get_score_bootstrap_class(other_pct) }} rounded-pill">
+                                            {% if other.total_score is not none %}
+                                            {{ "%.2f"|format(other.total_score) }}/{{ other.score_scale_max or 3 }} • {{ "%.1f"|format(other_pct) }}%
+                                            {% else %}
+                                            -
+                                            {% endif %}
+                                        </span>
                                     </a>
                                     {% endfor %}
                                 </div>
@@ -255,9 +265,9 @@
                             <h5><i class="bi bi-door-open me-2"></i>{{ room.room_name }}</h5>
                             {% set room_avg = (room.scores|map(attribute='score')|list|sum) / (room.scores|length or 1)
                             %}
-                            {% set room_pct = (room_avg / 3 * 100) if room_avg is not none else 0 %}
-                            <span class="badge bg-light text-dark">{{ "%.1f"|format(room_avg) }} / {{
-                                "%.0f"|format(room_pct) }}</span>
+                            {% set room_pct = (room_avg / score_scale.max * 100) if room_avg is not none else 0 %}
+                            <span class="badge bg-light text-dark">{{ "%.1f"|format(room_avg) }}/{{ score_scale.max }} • {{
+                                "%.0f"|format(room_pct) }}%</span>
                         </div>
                         <div class="room-body">
                             <table class="table table-sm mb-3">
@@ -265,8 +275,7 @@
                                 <tr>
                                     <td>{{ s.aspect_name }}</td>
                                     <td class="text-end">
-                                        <span
-                                            class="badge {% if s.score == 3 %}bg-success{% elif s.score == 2 %}bg-warning text-dark{% elif s.score == 1 %}bg-danger{% else %}bg-dark{% endif %}">
+                                        <span class="badge {{ get_aspect_badge_class(s.score, score_scale.max) }}">
                                             {{ s.score }}
                                         </span>
                                     </td>

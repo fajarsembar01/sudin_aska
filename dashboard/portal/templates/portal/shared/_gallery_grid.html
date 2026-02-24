@@ -1,3 +1,4 @@
+{% from "portal/components/_color_macros.html" import get_score_badge_class %}
 {% macro photo_item(p, loop_idx, is_clone=false) %}
 {% set filename = (p.photo_path or '').split('/')[-1] %}
 {% if p.photo_path and p.photo_path.startswith('http') %}
@@ -6,13 +7,17 @@
 {% set photo_url = url_for('portal.uploaded_file', filename=filename) if filename else
 'https://placehold.co/200x200?text=No+Image' %}
 {% endif %}
+{% set score_scale_max = p.score_scale_max if p.score_scale_max in [3, 5] else 3 %}
 {% set score_base = p.room_score or 0 %}
-{% set score_pct = (score_base / 3 * 100) if score_base is not none else 0 %}
-{# Using centralized threshold: >=85 green, >=70 yellow, >=55 orange, <55 red #} {% if score_pct>= 85 %}{% set
-    score_class="badge-score-green" %}
-    {% elif score_pct >= 70 %}{% set score_class="badge-score-yellow" %}
-    {% elif score_pct >= 55 %}{% set score_class="badge-score-orange" %}
-    {% else %}{% set score_class="badge-score-red" %}{% endif %} <div class="gallery-item">
+{% if p.room_score_pct is not none %}
+{% set score_pct = p.room_score_pct %}
+{% elif p.score_pct is not none %}
+{% set score_pct = p.score_pct %}
+{% else %}
+{% set score_pct = (score_base / score_scale_max * 100) %}
+{% endif %}
+{% set score_class = get_score_badge_class(score_pct) %}
+<div class="gallery-item">
         <div class="ratio ratio-1x1 rounded overflow-hidden shadow-sm position-relative gallery-thumb{% if not is_clone %} gallery-thumb-original{% endif %}"
             role="button" tabindex="0" data-index="{{ loop_idx }}" data-photo-url="{{ photo_url }}"
             data-school="{{ p.school_name }}" data-school-id="{{ p.school_id }}"

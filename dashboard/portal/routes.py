@@ -204,6 +204,67 @@ _PREVIEW_TARGET_SESSION_KEY = "preview_target_user"
 _PREVIEW_APP_SESSION_KEY = "preview_selected_app"
 _PREVIEW_READ_ONLY_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 _PREVIEW_READ_ONLY_EXEMPT_ENDPOINTS = {"portal.preview_start", "portal.preview_pin"}
+_LEGACY_SCORE_SCALE_MAX = 3
+_NEW_SCORE_SCALE_MAX = 5
+
+
+def _normalize_assessment_scale_max(scale_max: int | None) -> int:
+    try:
+        parsed = int(scale_max) if scale_max is not None else _LEGACY_SCORE_SCALE_MAX
+    except (TypeError, ValueError):
+        parsed = _LEGACY_SCORE_SCALE_MAX
+    return _NEW_SCORE_SCALE_MAX if parsed == _NEW_SCORE_SCALE_MAX else _LEGACY_SCORE_SCALE_MAX
+
+
+def _assessment_score_min(scale_max: int) -> int:
+    return 1 if scale_max == _NEW_SCORE_SCALE_MAX else 0
+
+
+def _assessment_submit_baseline(scale_max: int) -> int:
+    return 1 if scale_max == _NEW_SCORE_SCALE_MAX else 0
+
+
+def _score_pct_from_raw(score: float | int | None, scale_max: int) -> float:
+    try:
+        score_value = float(score or 0)
+    except (TypeError, ValueError):
+        return 0.0
+    normalized_scale = _normalize_assessment_scale_max(scale_max)
+    if normalized_scale <= 0:
+        return 0.0
+    return (score_value / normalized_scale) * 100.0
+
+
+def _build_assessment_score_config(assessment: dict | None) -> dict:
+    scale_max = _normalize_assessment_scale_max((assessment or {}).get("score_scale_max"))
+    score_min = _assessment_score_min(scale_max)
+    score_baseline = _assessment_submit_baseline(scale_max)
+    options = list(range(score_min, scale_max + 1))
+    if scale_max == _NEW_SCORE_SCALE_MAX:
+        legend = [
+            {"value": 1, "label": "sangat kurang"},
+            {"value": 2, "label": "kurang"},
+            {"value": 3, "label": "cukup"},
+            {"value": 4, "label": "baik"},
+            {"value": 5, "label": "sangat baik"},
+        ]
+    else:
+        legend = [
+            {"value": 0, "label": "rusak"},
+            {"value": 1, "label": "kurang baik"},
+            {"value": 2, "label": "baik"},
+            {"value": 3, "label": "sangat baik"},
+        ]
+    default_label = next((item["label"] for item in legend if item["value"] == score_min), "")
+    return {
+        "min": score_min,
+        "max": scale_max,
+        "default": score_min,
+        "default_label": default_label,
+        "baseline": score_baseline,
+        "options": options,
+        "legend": legend,
+    }
 
 
 def _is_preview_read_only_session() -> bool:
@@ -252,6 +313,11 @@ def _get_low_score_rooms_missing_photos(
     threshold_pct: float = PHOTO_REQUIRED_PCT,
 ) -> list[dict]:
     """Return rooms with score below threshold that don't have photos yet."""
+    assessment = get_assessment_by_id(assessment_id) or {}
+    score_config = _build_assessment_score_config(assessment)
+    scale_max = score_config["max"]
+    missing_default = score_config["default"]
+
     rooms = list_school_rooms(school_id)
     if not rooms:
         return []
@@ -277,17 +343,17 @@ def _get_low_score_rooms_missing_photos(
             aspect_id = aspect.get("id")
             score_val = score_map.get((room_id, aspect_id))
             if score_val is None:
-                score_val = 3
+                score_val = missing_default
             try:
                 total += float(score_val)
             except (TypeError, ValueError):
-                total += 3.0
+                total += float(missing_default)
             count += 1
 
         if count == 0:
             continue
 
-        pct = (total / count) / 3 * 100
+        pct = _score_pct_from_raw(total / count, scale_max)
         if pct < threshold_pct and room_id not in rooms_with_photos:
             missing.append(
                 {
@@ -1668,6 +1734,7 @@ def assess(school_id: int) -> Response:
             return redirect(url_for("portal.schools"))
             
     assessment_id = assessment["id"]
+    score_scale = _build_assessment_score_config(assessment)
     _sync_assessment_period_to_active(assessment)
     
     # Ensure classroom variants are materialized as rooms for this school
@@ -1727,6 +1794,7 @@ def assess(school_id: int) -> Response:
         "portal/assessments/assessment.html",
         school=school,
         assessment=assessment,
+        score_scale=score_scale,
         rooms=rooms,
         scores_map=scores_map,
         photos_map=photos_map,
@@ -1773,8 +1841,13 @@ def save_score(school_id: int) -> Response:
         if assessment["staff_id"] != user["id"] and user["role"] != "admin":
             return jsonify({"success": False, "message": "Unauthorized access to this assessment"}), 403
 
-        if not (0 <= score <= 3):
-            return jsonify({"success": False, "message": "Invalid score"}), 400
+        score_config = _build_assessment_score_config(assessment)
+        min_score = score_config["min"]
+        max_score = score_config["max"]
+        if not (min_score <= score <= max_score):
+            if max_score == _NEW_SCORE_SCALE_MAX:
+                return jsonify({"success": False, "message": "Nilai harus dalam rentang 1-5"}), 400
+            return jsonify({"success": False, "message": "Nilai harus dalam rentang 0-3"}), 400
 
         _sync_assessment_period_to_active(assessment)
 
@@ -1994,6 +2067,10 @@ def submit(school_id: int) -> Response:
             return redirect(url_for("portal.staff_assignments"))
 
     try:
+        score_config = _build_assessment_score_config(assessment)
+        baseline = score_config["baseline"]
+        default_score = score_config["default"]
+
         all_rooms = list_school_rooms(school_id)
         rooms = _filter_assessment_rooms(all_rooms)
         existing_scores = get_assessment_scores(assessment_id_int)
@@ -2034,13 +2111,15 @@ def submit(school_id: int) -> Response:
             aspects = room.get("aspects") or []
             if not room_id or not aspects:
                 continue
-            has_non_zero = False
+            has_meaningful_score = False
             for aspect in aspects:
-                score_val = scores_map.get((room_id, aspect.get("id"))) or 0
-                if score_val > 0:
-                    has_non_zero = True
+                score_val = scores_map.get((room_id, aspect.get("id")))
+                if score_val is None:
+                    score_val = default_score
+                if int(score_val) > baseline:
+                    has_meaningful_score = True
                     break
-            if not has_non_zero:
+            if not has_meaningful_score:
                 missing_messages.append("Terdapat ruangan yang masih belum dinilai.")
                 break
 
@@ -2419,6 +2498,8 @@ def view_assessment(assessment_id: int) -> Response:
     if assessment["staff_id"] != user["id"] and user["role"] != "admin":
         flash("Anda tidak memiliki akses untuk melihat penilaian ini.", "danger")
         return redirect(url_for("portal.home"))
+
+    score_scale = _build_assessment_score_config(assessment)
     
     scores = get_assessment_scores(assessment_id)
     photos = get_assessment_photos(assessment_id)
@@ -2437,7 +2518,12 @@ def view_assessment(assessment_id: int) -> Response:
                 """
                 SELECT 
                     a.id, 
-                    a.total_score, 
+                    a.total_score,
+                    a.score_scale_max,
+                    CASE
+                        WHEN a.total_score IS NULL THEN NULL
+                        ELSE (a.total_score::DECIMAL / NULLIF(COALESCE(a.score_scale_max, 3), 0) * 100)
+                    END AS score_pct,
                     a.submitted_at, 
                     a.staff_id, 
                     u.full_name as assessor_name,
@@ -2445,8 +2531,8 @@ def view_assessment(assessment_id: int) -> Response:
                     (a.id = %s) AS is_current
                 FROM portal_assessments a
                 LEFT JOIN dashboard_users u ON u.id = a.staff_id
-                WHERE a.school_id = %s AND a.status = 'submitted'
-                ORDER BY a.submitted_at DESC
+                WHERE a.school_id = %s AND a.status IN ('submitted', 'verified')
+                ORDER BY a.submitted_at DESC, a.id DESC
                 """,
                 (assessment_id, assessment["school_id"]),
             )
@@ -2483,6 +2569,7 @@ def view_assessment(assessment_id: int) -> Response:
     return render_template(
         "portal/assessments/view.html",
         assessment=assessment,
+        score_scale=score_scale,
         user=user,
         photos_by_room=photos_by_room,
         room_notes=room_notes,
@@ -3039,14 +3126,20 @@ def _serialize_related_photos(school_id: int | None, room_id: int | None, staff_
         else:
             photo_url = url_for("portal.uploaded_file", filename=filename) if filename else None
         
-        score_base = float(p.get("room_score") or 0)
-        score_pct = (score_base / 3 * 100) if score_base else 0
+        raw_score_pct = p.get("room_score_pct")
+        if raw_score_pct is None:
+            score_base = float(p.get("room_score") or 0)
+            score_scale_max = _normalize_assessment_scale_max(p.get("score_scale_max"))
+            score_pct = _score_pct_from_raw(score_base, score_scale_max)
+        else:
+            score_pct = float(raw_score_pct)
         
         result.append({
             "photo_url": photo_url,
             "school_name": p.get("school_name"),
             "room_name": p.get("room_name"),
             "score": round(score_pct, 1),
+            "score_pct": round(score_pct, 1),
             "captured_at": p["captured_at"].isoformat() if p.get("captured_at") else None,
             "latitude": float(p["latitude"]) if p.get("latitude") else None,
             "longitude": float(p["longitude"]) if p.get("longitude") else None,
@@ -5183,7 +5276,7 @@ def generate_sidak_route() -> Response:
     # Get schools for sidak
     schools = fetch_schools_for_sidak(
         kelurahan_id=kelurahan_id,
-        max_score_pct=100,  # Get all schools, we'll filter in frontend
+        max_score_pct=60,
         period_id=period_id,
     )
     
@@ -5255,9 +5348,17 @@ def get_school_room_details(school_id: int) -> Response:
             a.id as assessment_id,
             u.full_name as staff_name,
             u.id as staff_id,
-            -- Average score for this room (0-3 scale, convert to 0-100)
+            -- Average score for this room in raw and normalized scale-aware percentage
             COALESCE(AVG(sc.score), 0)::DECIMAL(5,2) as avg_score_raw,
-            ROUND(COALESCE(AVG(sc.score), 0) / 3 * 100, 1) as avg_score_pct,
+            ROUND(
+                COALESCE(
+                    AVG(
+                        sc.score::DECIMAL / NULLIF(COALESCE(a.score_scale_max, 3), 0) * 100
+                    ),
+                    0
+                ),
+                1
+            ) as avg_score_pct,
             -- Photo path
             (SELECT p.photo_path FROM portal_assessment_photos p 
              WHERE p.assessment_id = a.id AND p.school_room_id = sr.id 
@@ -5273,10 +5374,10 @@ def get_school_room_details(school_id: int) -> Response:
         LEFT JOIN portal_assessment_scores sc 
             ON sc.assessment_id = a.id AND sc.school_room_id = sr.id
         WHERE sr.school_id = %s
-          AND a.status = 'submitted'
+          AND a.status IN ('submitted', 'verified')
         GROUP BY r.id, r.name, sr.id, a.id, u.full_name, u.id
         HAVING AVG(sc.score) IS NOT NULL
-        ORDER BY AVG(sc.score) ASC, r.name, u.full_name
+        ORDER BY avg_score_pct ASC, r.name, u.full_name
     """
     
     with get_cursor() as cur:

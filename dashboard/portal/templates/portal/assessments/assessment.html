@@ -61,13 +61,16 @@
                     aria-controls="scoreLegendDetails">
                     Show
                 </button>
-                <span>Tap skor 0-3 untuk setiap aspek. Default skor: 0 (rusak). Perubahan tersimpan otomatis.</span>
+                <span>
+                    Tap skor {{ score_scale.min }}-{{ score_scale.max }} untuk setiap aspek.
+                    Default skor: {{ score_scale.default }} ({{ score_scale.default_label }}).
+                    Perubahan tersimpan otomatis.
+                </span>
                 <div class="collapse mt-2" id="scoreLegendDetails">
                     <div class="small text-muted">
-                        <div><strong>0</strong> apabila rusak</div>
-                        <div><strong>1</strong> apabila ada tetapi kondisi kurang baik</div>
-                        <div><strong>2</strong> apabila ada kondisi baik</div>
-                        <div><strong>3</strong> apabila ada kondisi sangat baik</div>
+                        {% for item in score_scale.legend %}
+                        <div><strong>{{ item.value }}</strong> {{ item.label }}</div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -91,9 +94,9 @@
                 {% set sum_scores = sum_scores + (current if current is not none else 0) %}
                 {% endfor %}
                 {% set room_avg = (sum_scores / total_aspects_room) if total_aspects_room > 0 else 0 %}
-                {% set room_pct = (room_avg / 3 * 100) %}
-                {% if room_pct <= 25 %} {% set room_score_class="score-badge-red" %} {% elif room_pct <=50 %} {% set
-                    room_score_class="score-badge-orange" %} {% elif room_pct <=75 %} {% set
+                {% set room_pct = (room_avg / score_scale.max * 100) %}
+                {% if room_pct < 55 %} {% set room_score_class="score-badge-red" %} {% elif room_pct < 70 %} {% set
+                    room_score_class="score-badge-orange" %} {% elif room_pct < 85 %} {% set
                     room_score_class="score-badge-yellow" %} {% else %} {% set room_score_class="score-badge-green" %}
                     {% endif %} <div class="room-item shadow-sm" data-room-name="{{ room.room_name|lower }}"
                     data-school-room-id="{{ room.school_room_id }}">
@@ -136,10 +139,11 @@
                                     </div>
                                     <div class="score-group flex-shrink-0"
                                         data-school-room-id="{{ room.school_room_id }}"
-                                        data-aspect-id="{{ aspect.id }}">
-                                        {% for score in [0, 1, 2, 3] %}
+                                        data-aspect-id="{{ aspect.id }}"
+                                        data-scale-max="{{ score_scale.max }}">
+                                        {% for score in score_scale.options %}
                                         <button type="button"
-                                            class="score-btn {% if scores_map.get((room.school_room_id, aspect.id)) == score %}selected{% elif scores_map.get((room.school_room_id, aspect.id)) is none and score == 0 %}selected{% endif %}"
+                                            class="score-btn {% if scores_map.get((room.school_room_id, aspect.id)) == score %}selected{% elif scores_map.get((room.school_room_id, aspect.id)) is none and score == score_scale.default %}selected{% endif %}"
                                             data-score="{{ score }}" onclick="selectScore(this)">
                                             {{ score }}
                                         </button>
@@ -158,14 +162,28 @@
                                 <div id="photoPreview{{ room.school_room_id }}" class="mt-2">
                                     {% if photos_map.get(room.school_room_id) %}
                                     {% set photo = photos_map.get(room.school_room_id) %}
-                                    <div class="position-relative mt-2">
-                                        <img src="{{ photo.url or url_for('portal.uploaded_file', filename=photo.photo_path.split('/')[-1]) }}"
-                                            style="width: 100%; border-radius: 8px;" alt="Foto ruangan">
-                                        <button type="button"
-                                            class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
-                                            onclick="deletePhoto({{ photo.id }}, {{ room.school_room_id }})">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                                    <div class="room-photo-wrapper mt-2">
+                                        <div class="position-relative room-photo-frame">
+                                            <img id="roomPhotoImg{{ room.school_room_id }}" class="room-photo-image"
+                                                data-rotation="0"
+                                                src="{{ photo.url or url_for('portal.uploaded_file', filename=photo.photo_path.split('/')[-1]) }}"
+                                                alt="Foto ruangan">
+                                            <button type="button"
+                                                class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
+                                                onclick="deletePhoto({{ photo.id }}, {{ room.school_room_id }})">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                        <div class="photo-rotate-controls mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                onclick="rotateRoomPhoto({{ room.school_room_id }}, -90)">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Putar Kiri
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                onclick="rotateRoomPhoto({{ room.school_room_id }}, 90)">
+                                                <i class="bi bi-arrow-clockwise"></i> Putar Kanan
+                                            </button>
+                                        </div>
                                         <div class="small text-muted mt-1">
                                             <i class="bi bi-calendar-event"></i>
                                             {{ photo.captured_at.strftime('%d %b %Y %H:%M') if photo.captured_at else ''
@@ -266,7 +284,8 @@
     {% if rooms_list %}
     {% set unselected_rooms = [] %}
     {% for room in rooms_list %}
-    {% if room.selection_count == 0 %}
+    {% set room_category = (room.room_category or '')|lower %}
+    {% if room.selection_count == 0 and room_category == 'umum' %}
     {% set _ = unselected_rooms.append(room) %}
     {% endif %}
     {% endfor %}
@@ -277,7 +296,7 @@
             <i class="bi bi-info-circle fs-5"></i>
             <div class="flex-grow-1">
                 <strong>Ruangan yang Belum Dipilih</strong>
-                <p class="mb-2 small">Sekolah ini belum memilih ruangan berikut:</p>
+                <p class="mb-2 small">Sekolah ini belum memilih ruangan umum berikut:</p>
                 <div class="list-group list-group-flush">
                     {% for room in unselected_rooms %}
                     <div class="list-group-item d-flex justify-content-between align-items-center px-0">
@@ -397,7 +416,6 @@
     </div>
 </div>
 <canvas id="photoCanvas" style="display: none;"></canvas>
-<input type="file" accept="image/*" capture="environment" id="filePhotoInput" class="d-none">
 
 <!-- Add Room Modal -->
 <div class="modal fade" id="addRoomModal" tabindex="-1">
@@ -539,6 +557,35 @@
         background: #198754;
         color: #fff;
         border-color: transparent;
+    }
+
+    .room-photo-frame {
+        background: rgba(15, 23, 42, 0.25);
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .room-photo-image {
+        width: 100%;
+        border-radius: 8px;
+        display: block;
+        margin: 0 auto;
+        transform: rotate(0deg);
+        transform-origin: center center;
+        transition: transform 0.2s ease, width 0.2s ease;
+    }
+
+    .photo-rotate-controls {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .photo-rotate-controls .btn {
+        flex: 1;
     }
 
     /* Tighten spacing between room cards */
@@ -723,6 +770,10 @@
     var requiredPhotoCount = {{ photo_min_required }};
     var maxPhotoCount = {{ photo_max_allowed }};
     var totalRoomCount = {{ rooms|length }};
+    var scoreScaleMin = {{ score_scale.min }};
+    var scoreScaleMax = {{ score_scale.max }};
+    var scoreBaseline = {{ score_scale.baseline }};
+    var scoreDefault = {{ score_scale.default }};
     var photoRoomSet = new Set({{ photo_room_ids|tojson }});
     var pendingUploadBlob = null;
     var uploadInProgress = false;
@@ -800,20 +851,152 @@
         }
     }
 
+    function stopCameraStream() {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(function (track) { track.stop(); });
+            cameraStream = null;
+        }
+    }
+
+    function formatPhotoCapturedAt(rawCapturedAt) {
+        if (!rawCapturedAt) {
+            return new Date().toLocaleString('id-ID', {
+                day: '2-digit',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        var parsed = new Date(rawCapturedAt);
+        if (!Number.isNaN(parsed.getTime())) {
+            return parsed.toLocaleString('id-ID', {
+                day: '2-digit',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        return String(rawCapturedAt);
+    }
+
+    function createRoomPhotoMeta(photoData) {
+        var meta = document.createElement('div');
+        meta.className = 'small text-muted mt-1';
+        var dateText = formatPhotoCapturedAt(photoData && photoData.captured_at ? photoData.captured_at : '');
+        var rawLat = photoData ? photoData.latitude : null;
+        var rawLon = photoData ? photoData.longitude : null;
+        var hasLat = rawLat !== null && rawLat !== undefined && rawLat !== '';
+        var hasLon = rawLon !== null && rawLon !== undefined && rawLon !== '';
+        var lat = hasLat ? Number(rawLat) : NaN;
+        var lon = hasLon ? Number(rawLon) : NaN;
+        var hasGps = hasLat && hasLon && !Number.isNaN(lat) && !Number.isNaN(lon);
+        var gpsText = hasGps ? (lat.toFixed(4) + ', ' + lon.toFixed(4)) : 'GPS tidak ada';
+        meta.innerHTML = '<i class="bi bi-calendar-event"></i> ' + dateText +
+            ' &nbsp; <i class="bi bi-geo-alt"></i> ' + gpsText;
+        return meta;
+    }
+
+    function applyRoomPhotoRotation(img, rotationDeg) {
+        var normalized = ((rotationDeg % 360) + 360) % 360;
+        img.dataset.rotation = String(normalized);
+        img.style.transform = 'rotate(' + normalized + 'deg)';
+        var quarterTurn = normalized % 180 !== 0;
+        if (quarterTurn && img.naturalWidth > 0 && img.naturalHeight > 0) {
+            var ratio = img.naturalHeight / img.naturalWidth;
+            var widthPct = ratio > 1 ? Math.max(55, Math.min(100, 100 / ratio)) : 100;
+            img.style.width = widthPct.toFixed(2) + '%';
+        } else {
+            img.style.width = '100%';
+        }
+    }
+
+    function rotateRoomPhoto(roomId, delta) {
+        var img = document.getElementById('roomPhotoImg' + roomId);
+        if (!img) return;
+        var current = parseInt(img.dataset.rotation || '0', 10);
+        if (Number.isNaN(current)) current = 0;
+        var next = current + delta;
+        applyRoomPhotoRotation(img, next);
+    }
+
+    function renderRoomPhotoPreview(roomId, photoData, fallbackBlob) {
+        var preview = document.getElementById('photoPreview' + roomId);
+        if (!preview) return;
+        var photoUrl = (photoData && photoData.url) ? photoData.url : (fallbackBlob ? URL.createObjectURL(fallbackBlob) : '');
+        if (!photoUrl) {
+            preview.innerHTML = '';
+            return;
+        }
+
+        var wrapper = document.createElement('div');
+        wrapper.className = 'room-photo-wrapper mt-2';
+
+        var frame = document.createElement('div');
+        frame.className = 'position-relative room-photo-frame';
+
+        var img = document.createElement('img');
+        img.id = 'roomPhotoImg' + roomId;
+        img.className = 'room-photo-image';
+        img.alt = 'Foto ruangan';
+        img.src = photoUrl;
+        img.dataset.rotation = '0';
+        img.addEventListener('load', function () {
+            applyRoomPhotoRotation(img, 0);
+        });
+
+        frame.appendChild(img);
+
+        var photoId = Number(photoData && photoData.id);
+        if (!Number.isNaN(photoId) && photoId > 0) {
+            var delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'btn btn-sm btn-danger position-absolute top-0 end-0 m-2';
+            delBtn.innerHTML = '<i class="bi bi-trash"></i>';
+            delBtn.onclick = function () { deletePhoto(photoId, roomId); };
+            frame.appendChild(delBtn);
+        }
+
+        wrapper.appendChild(frame);
+
+        var controls = document.createElement('div');
+        controls.className = 'photo-rotate-controls mt-2';
+
+        var rotateLeftBtn = document.createElement('button');
+        rotateLeftBtn.type = 'button';
+        rotateLeftBtn.className = 'btn btn-sm btn-outline-secondary';
+        rotateLeftBtn.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i> Putar Kiri';
+        rotateLeftBtn.onclick = function () { rotateRoomPhoto(roomId, -90); };
+
+        var rotateRightBtn = document.createElement('button');
+        rotateRightBtn.type = 'button';
+        rotateRightBtn.className = 'btn btn-sm btn-outline-secondary';
+        rotateRightBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Putar Kanan';
+        rotateRightBtn.onclick = function () { rotateRoomPhoto(roomId, 90); };
+
+        controls.appendChild(rotateLeftBtn);
+        controls.appendChild(rotateRightBtn);
+        wrapper.appendChild(controls);
+        wrapper.appendChild(createRoomPhotoMeta(photoData));
+
+        preview.innerHTML = '';
+        preview.appendChild(wrapper);
+    }
+
 
     function hasUnscoredRoom() {
         var rooms = document.querySelectorAll('.room-item');
         for (var i = 0; i < rooms.length; i++) {
             var groups = rooms[i].querySelectorAll('.score-group');
             if (!groups.length) continue;
-            var hasNonZero = false;
+            var hasMeaningfulScore = false;
             groups.forEach(function (g) {
                 var selected = g.querySelector('.score-btn.selected');
-                if (selected && parseInt(selected.dataset.score, 10) > 0) {
-                    hasNonZero = true;
+                var score = selected ? parseInt(selected.dataset.score, 10) : scoreDefault;
+                if (!Number.isNaN(score) && score > scoreBaseline) {
+                    hasMeaningfulScore = true;
                 }
             });
-            if (!hasNonZero) return true;
+            if (!hasMeaningfulScore) return true;
         }
         return false;
     }
@@ -969,9 +1152,9 @@
             scoredCount++;
         });
 
-        // Convert 0-3 scale to 0-100 scale
+        // Convert active score scale to 0-100 scale
         var avg = scoredCount > 0 ? (totalScore / scoredCount) : 0;
-        var finalScore = (avg / 3) * 100;
+        var finalScore = (avg / scoreScaleMax) * 100;
 
         // Format with comma, 1 decimal place (e.g. 91,1)
         var formatted = finalScore.toFixed(1).replace('.', ',');
@@ -1050,27 +1233,21 @@
         }
 
         var avg = totalScore / totalAspects;
-        var pct = (avg / 3) * 100;
+        var pct = (avg / scoreScaleMax) * 100;
         scoreDisplay.textContent = pct.toFixed(1);
 
         // Update color class
         scoreDisplay.classList.remove('score-badge-red', 'score-badge-orange', 'score-badge-yellow', 'score-badge-green');
-        if (pct <= 25) {
+        if (pct < 55) {
             scoreDisplay.classList.add('score-badge-red');
-        } else if (pct <= 50) {
+        } else if (pct < 70) {
             scoreDisplay.classList.add('score-badge-orange');
-        } else if (pct <= 75) {
+        } else if (pct < 85) {
             scoreDisplay.classList.add('score-badge-yellow');
         } else {
             scoreDisplay.classList.add('score-badge-green');
         }
 
-    }
-
-    function roomHasPhoto(roomId) {
-        var preview = document.getElementById('photoPreview' + roomId);
-        if (!preview) return false;
-        return !!preview.querySelector('img');
     }
 
     function roomHasPhoto(roomId) {
@@ -1253,19 +1430,20 @@
     function openCameraModal(roomId) {
         currentRoomId = roomId;
         currentAddress = null; // Reset address
+        stopCameraStream();
 
         ensureLocation(); // trigger permission as early as possible
 
         // Start camera
-        var modal = new bootstrap.Modal(document.getElementById('cameraModal'));
+        var modalEl = document.getElementById('cameraModal');
+        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
 
         var constraints = { video: { facingMode: { ideal: useFrontCamera ? 'user' : 'environment' } }, audio: false };
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             if (!window.isSecureContext) {
-                showToast('Akses kamera butuh HTTPS di Safari/Browser ini. Gunakan upload file atau buka lewat HTTPS.');
+                showToast('Akses kamera live wajib HTTPS. Upload dari folder dinonaktifkan.');
                 modal.hide();
-                document.getElementById('filePhotoInput').click();
                 return;
             }
             var startStream = function (stream) {
@@ -1277,7 +1455,7 @@
                 }
             };
             var handleCameraError = function (err) {
-                var msg = 'Tidak bisa mengakses kamera, gunakan upload file.';
+                var msg = 'Tidak bisa mengakses kamera live. Upload dari folder dinonaktifkan.';
                 if (err && err.name) {
                     if (err.name === 'NotAllowedError') msg = 'Izin kamera ditolak. Aktifkan izin kamera di browser lalu coba lagi.';
                     else if (err.name === 'NotFoundError') msg = 'Kamera tidak ditemukan di perangkat ini.';
@@ -1287,7 +1465,6 @@
                 }
                 showToast(msg);
                 modal.hide();
-                document.getElementById('filePhotoInput').click();
             };
             navigator.mediaDevices.getUserMedia(constraints)
                 .then(startStream)
@@ -1301,7 +1478,8 @@
                     handleCameraError(err);
                 });
         } else {
-            document.getElementById('filePhotoInput').click();
+            showToast('Browser tidak mendukung kamera live. Upload dari folder dinonaktifkan.');
+            modal.hide();
         }
     }
 
@@ -1370,48 +1548,23 @@
     }
 
     document.getElementById('cameraModal').addEventListener('hidden.bs.modal', function () {
-        if (cameraStream) {
-            cameraStream.getTracks().forEach(function (track) { track.stop(); });
-            cameraStream = null;
-        }
+        stopCameraStream();
     });
 
     document.getElementById('switchCameraBtn').addEventListener('click', function () {
         useFrontCamera = !useFrontCamera;
-        if (cameraStream) {
-            cameraStream.getTracks().forEach(function (t) { t.stop(); });
-            cameraStream = null;
-        }
+        stopCameraStream();
         openCameraModal(currentRoomId || 0);
-    });
-
-    document.getElementById('filePhotoInput').addEventListener('change', function (e) {
-        ensureLocation();
-        var file = e.target.files[0];
-        if (!file) return;
-        var reader = new FileReader();
-        reader.onload = function (ev) {
-            var img = new Image();
-            img.onload = function () {
-                var canvas = document.getElementById('photoCanvas');
-                var ctx = canvas.getContext('2d');
-                var size = Math.min(img.width, img.height);
-                canvas.width = size;
-                canvas.height = size;
-                var sx = (img.width - size) / 2;
-                var sy = (img.height - size) / 2;
-                ctx.drawImage(img, sx, sy, size, size, 0, 0, size, size);
-                compressAndUpload(canvas, 0.8);
-            };
-            img.src = ev.target.result;
-        };
-        reader.readAsDataURL(file);
     });
 
     function takePhoto() {
         var video = document.getElementById('cameraPreview');
         var canvas = document.getElementById('photoCanvas');
         var ctx = canvas.getContext('2d');
+        if (!video || !video.videoWidth || !video.videoHeight) {
+            showToast('Kamera belum siap');
+            return;
+        }
 
         var size = Math.min(video.videoWidth, video.videoHeight);
         canvas.width = size;
@@ -1420,7 +1573,6 @@
         var sy = (video.videoHeight - size) / 2;
         ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
 
-        // Compress and Upload
         compressAndUpload(canvas, 0.8);
     }
 
@@ -1463,6 +1615,12 @@
     async function uploadBlob(blob) {
         if (uploadInProgress) return;
         uploadInProgress = true;
+        var roomIdForUpload = Number(currentRoomId || 0);
+        if (!roomIdForUpload) {
+            showToast('Ruangan tidak valid untuk upload foto');
+            uploadInProgress = false;
+            return;
+        }
         var latVal = normalizeCoord(currentLatitude);
         var lonVal = normalizeCoord(currentLongitude);
         var hasAny = latVal !== null || lonVal !== null;
@@ -1484,12 +1642,17 @@
         var formData = new FormData();
         formData.append('photo', blob, 'photo.jpg');
         formData.append('assessment_id', assessmentId);
-        formData.append('school_room_id', currentRoomId);
+        formData.append('school_room_id', roomIdForUpload);
         formData.append('latitude', latVal === null ? '' : latVal);
         formData.append('longitude', lonVal === null ? '' : lonVal);
 
         // Show uploading state
-        var previewInit = document.getElementById('photoPreview' + currentRoomId);
+        var previewInit = document.getElementById('photoPreview' + roomIdForUpload);
+        if (!previewInit) {
+            showToast('Container preview foto tidak ditemukan');
+            uploadInProgress = false;
+            return;
+        }
         previewInit.innerHTML = '<div class="text-center small text-muted my-2"><div class="spinner-border spinner-border-sm me-1"></div>Mengupload ' + (blob.size / 1024).toFixed(0) + 'KB...</div>';
 
         fetch('/portal/assess/' + schoolId + '/photo', {
@@ -1500,34 +1663,8 @@
             .then(function (data) {
                 if (data.success) {
                     showToast('Foto tersimpan (' + (blob.size / 1024).toFixed(0) + 'KB)');
-                    var img = document.createElement('img');
-                    img.src = data.photo.url || URL.createObjectURL(blob);
-                    img.style.cssText = 'width: 100%; border-radius: 8px;';
-                    var meta = document.createElement('div');
-                    meta.className = 'small text-muted mt-1';
-                    var dateText = data.photo.captured_at || '';
-                    if (dateText) {
-                        var d = new Date(dateText);
-                        dateText = d.toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-                    } else {
-                        var now = new Date();
-                        dateText = now.toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-                    }
-                    var gpsText = (data.photo.latitude && data.photo.longitude) ? `${Number(data.photo.latitude).toFixed(4)}, ${Number(data.photo.longitude).toFixed(4)}` : 'GPS tidak ada';
-                    meta.innerHTML = `<i class="bi bi-calendar-event"></i> ${dateText} &nbsp; <i class="bi bi-geo-alt"></i> ${gpsText}`;
-                    var wrapper = document.createElement('div');
-                    wrapper.className = 'position-relative mt-2';
-                    var delBtn = document.createElement('button');
-                    delBtn.type = 'button';
-                    delBtn.className = 'btn btn-sm btn-danger position-absolute top-0 end-0 m-2';
-                    delBtn.innerHTML = '<i class="bi bi-trash"></i>';
-                    delBtn.onclick = function () { deletePhoto(data.photo.id, currentRoomId); };
-                    wrapper.appendChild(img);
-                    wrapper.appendChild(delBtn);
-                    previewInit.innerHTML = '';
-                    previewInit.appendChild(wrapper);
-                    previewInit.appendChild(meta);
-                    photoRoomSet.add(Number(currentRoomId));
+                    renderRoomPhotoPreview(roomIdForUpload, data.photo, blob);
+                    photoRoomSet.add(roomIdForUpload);
                     updatePhotoRequirementUI();
                 } else {
                     showToast('Gagal: ' + data.message);
@@ -1543,7 +1680,11 @@
             });
 
         // Close modal
-        bootstrap.Modal.getInstance(document.getElementById('cameraModal')).hide();
+        var cameraModalEl = document.getElementById('cameraModal');
+        if (cameraModalEl && window.bootstrap) {
+            var cameraModal = bootstrap.Modal.getInstance(cameraModalEl);
+            if (cameraModal) cameraModal.hide();
+        }
     }
 
     // Floating score toggle

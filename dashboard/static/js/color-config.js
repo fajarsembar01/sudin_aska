@@ -16,7 +16,7 @@ const PANBERSS_COLORS = {
     // Nilai ini bisa diubah via localStorage untuk sesi pengguna
     THRESHOLDS: {
         EXCELLENT: 85,   // Nilai >= 85 = HIJAU (Sangat Baik)
-        GOOD: 70,        // Nilai >= 70 = KUNING (Baik)  
+        GOOD: 70,        // Nilai >= 70 = KUNING (Baik)
         POOR: 55,        // Nilai >= 55 = ORANYE (Kurang)
         // Nilai < 55 = MERAH GELAP (Kritis)
     },
@@ -66,20 +66,65 @@ const PANBERSS_COLORS = {
     }
 };
 
+const PANBERSS_THRESHOLD_DEFAULTS = Object.freeze({
+    EXCELLENT: 85,
+    GOOD: 70,
+    POOR: 55,
+});
+
+const PANBERSS_THRESHOLD_LEGACY_DEFAULTS = Object.freeze({
+    EXCELLENT: 80,
+    GOOD: 60,
+    POOR: 40,
+});
+
+function applyThresholds(excellent, good, poor) {
+    PANBERSS_COLORS.THRESHOLDS.EXCELLENT = excellent;
+    PANBERSS_COLORS.THRESHOLDS.GOOD = good;
+    PANBERSS_COLORS.THRESHOLDS.POOR = poor;
+}
+
 /**
  * Load thresholds dari localStorage jika ada
  */
 function loadStoredThresholds() {
+    const defaults = PANBERSS_THRESHOLD_DEFAULTS;
     try {
         const stored = localStorage.getItem('panberss_thresholds');
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            PANBERSS_COLORS.THRESHOLDS.EXCELLENT = parsed.excellent || 85;
-            PANBERSS_COLORS.THRESHOLDS.GOOD = parsed.good || 70;
-            PANBERSS_COLORS.THRESHOLDS.POOR = parsed.poor || 55;
+        if (!stored) {
+            applyThresholds(defaults.EXCELLENT, defaults.GOOD, defaults.POOR);
+            return;
         }
+
+        const parsed = JSON.parse(stored);
+        const excellent = Number(parsed.excellent);
+        const good = Number(parsed.good);
+        const poor = Number(parsed.poor);
+
+        const resolvedExcellent = Number.isFinite(excellent) ? excellent : defaults.EXCELLENT;
+        const resolvedGood = Number.isFinite(good) ? good : defaults.GOOD;
+        const resolvedPoor = Number.isFinite(poor) ? poor : defaults.POOR;
+
+        const legacy = PANBERSS_THRESHOLD_LEGACY_DEFAULTS;
+        const usesLegacyDefaults =
+            resolvedExcellent === legacy.EXCELLENT &&
+            resolvedGood === legacy.GOOD &&
+            resolvedPoor === legacy.POOR;
+
+        if (usesLegacyDefaults) {
+            applyThresholds(defaults.EXCELLENT, defaults.GOOD, defaults.POOR);
+            localStorage.setItem('panberss_thresholds', JSON.stringify({
+                excellent: defaults.EXCELLENT,
+                good: defaults.GOOD,
+                poor: defaults.POOR,
+            }));
+            return;
+        }
+
+        applyThresholds(resolvedExcellent, resolvedGood, resolvedPoor);
     } catch (e) {
         console.warn('Failed to load stored thresholds:', e);
+        applyThresholds(defaults.EXCELLENT, defaults.GOOD, defaults.POOR);
     }
 }
 
@@ -88,9 +133,7 @@ function loadStoredThresholds() {
  */
 function saveThresholds(excellent, good, poor) {
     try {
-        PANBERSS_COLORS.THRESHOLDS.EXCELLENT = excellent;
-        PANBERSS_COLORS.THRESHOLDS.GOOD = good;
-        PANBERSS_COLORS.THRESHOLDS.POOR = poor;
+        applyThresholds(excellent, good, poor);
         localStorage.setItem('panberss_thresholds', JSON.stringify({
             excellent: excellent,
             good: good,
@@ -108,9 +151,11 @@ function saveThresholds(excellent, good, poor) {
  */
 function resetThresholds() {
     localStorage.removeItem('panberss_thresholds');
-    PANBERSS_COLORS.THRESHOLDS.EXCELLENT = 85;
-    PANBERSS_COLORS.THRESHOLDS.GOOD = 70;
-    PANBERSS_COLORS.THRESHOLDS.POOR = 55;
+    applyThresholds(
+        PANBERSS_THRESHOLD_DEFAULTS.EXCELLENT,
+        PANBERSS_THRESHOLD_DEFAULTS.GOOD,
+        PANBERSS_THRESHOLD_DEFAULTS.POOR,
+    );
 }
 
 /**

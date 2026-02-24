@@ -39,7 +39,7 @@ Usage:
                                 <div class="text-muted" style="font-size: 0.7rem">{{ s['jenjang'] }}</div>
                             </div>
                         </div>
-                        {% set pct = ((s['total_score'] or 0) / 3 * 100) %}
+                        {% set pct = s.get('score_pct') if s.get('score_pct') is not none else 0 %}
                         <span class="badge bg-primary text-white rounded-pill">{{ "%.1f"|format(pct) }}</span>
                     </div>
                     {% endfor %}
@@ -61,7 +61,7 @@ Usage:
                                 <div class="text-muted" style="font-size: 0.7rem">{{ s['jenjang'] }}</div>
                             </div>
                         </div>
-                        {% set pct = ((s['total_score'] or 0) / 3 * 100) %}
+                        {% set pct = s.get('score_pct') if s.get('score_pct') is not none else 0 %}
                         <span class="badge bg-danger text-white rounded-pill">{{ "%.1f"|format(pct) }}</span>
                     </div>
                     {% endfor %}

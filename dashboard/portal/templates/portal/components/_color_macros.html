@@ -60,16 +60,25 @@ Edit nilai di bawah ini untuk mengubah batas skor:
 {%- endif -%}
 {%- endmacro %}
 
-{# Macro khusus untuk badge aspek (skor mentah 0-3) #}
-{# Rule: 0=hitam, 1=merah, 2=kuning, 3=hijau #}
-{% macro get_aspect_badge_class(score_raw) -%}
-{%- if score_raw == 3 -%}
-bg-success
-{%- elif score_raw == 2 -%}
-bg-warning text-dark
-{%- elif score_raw == 1 -%}
-bg-danger
-{%- else -%}
+{# Macro badge aspek untuk skor mentah skala 0-3 (legacy) maupun 1-5 (baru) #}
+{% macro get_aspect_badge_class(score_raw, score_scale_max=3) -%}
+{%- set _raw = score_raw|default(0)|float -%}
+{%- set _scale = score_scale_max|default(3)|int -%}
+{%- if _scale not in [3, 5] -%}
+{%- set _scale = 3 -%}
+{%- endif -%}
+{%- if _raw <= 0 and _scale == 3 -%}
 bg-dark
+{%- else -%}
+{%- set _pct = (_raw / _scale * 100) if _scale > 0 else 0 -%}
+{%- if _pct >= COLOR_THRESHOLDS.excellent -%}
+bg-success
+{%- elif _pct >= COLOR_THRESHOLDS.good -%}
+bg-warning text-dark
+{%- elif _pct >= COLOR_THRESHOLDS.poor -%}
+bg-orange text-white
+{%- else -%}
+bg-danger
+{%- endif -%}
 {%- endif -%}
 {%- endmacro %}
