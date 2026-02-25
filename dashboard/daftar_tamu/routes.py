@@ -4128,6 +4128,7 @@ def sekolah_create_transaction() -> Response:
     if status_value == "pending" and transaction_id:
         try:
             from dashboard.telegram_notifications import notify_guestbook_request
+            import threading
 
             detail = get_transaction_detail(transaction_id)
             photo_links = _build_guestbook_photo_links(
@@ -4135,20 +4136,31 @@ def sekolah_create_transaction() -> Response:
                 detail=detail,
             )
             guest_names = _extract_guest_names_from_detail(detail)
+            
+            # Use current_app.app_context() inside the thread
+            app = current_app._get_current_object()
 
-            notify_guestbook_request(
-                transaction_id=transaction_id,
-                school_name=school.get("name") or "Sekolah",
-                npsn=None,
-                visit_at=visit_at,
-                guest_summary=None,
-                guest_names=guest_names,
-                purpose=purpose or None,
-                notes=notes or None,
-                photo_links=photo_links,
-                photo_file_path=(detail or {}).get("photo_path"),
-            )
+            def _send_notification():
+                with app.app_context():
+                    try:
+                        notify_guestbook_request(
+                            transaction_id=transaction_id,
+                            school_name=school.get("name") or "Sekolah",
+                            npsn=None,
+                            visit_at=visit_at,
+                            guest_summary=None,
+                            guest_names=guest_names,
+                            purpose=purpose or None,
+                            notes=notes or None,
+                            photo_links=photo_links,
+                            photo_file_path=(detail or {}).get("photo_path"),
+                        )
+                    except Exception:
+                        app.logger.exception("Gagal mengirim notifikasi buku tamu di background thread.")
+
+            threading.Thread(target=_send_notification, daemon=True).start()
+
         except Exception:
-            current_app.logger.exception("Gagal mengirim notifikasi buku tamu.")
+            current_app.logger.exception("Gagal menyiapkan notifikasi buku tamu.")
 
     return jsonify({"success": True, "transaction_id": transaction_id})
