@@ -6089,8 +6089,24 @@ def inject_permissions():
     if not user:
         return {}
 
-    if user.get("profile_photo_path") and not user.get("profile_photo_url"):
-        computed_photo_url = _build_profile_photo_url(user.get("profile_photo_path"))
+    # Keep session photo state in sync with DB so modal rules reflect latest admin changes.
+    session_photo_path = user.get("profile_photo_path")
+    latest_photo_path = session_photo_path
+    try:
+        latest_profile = get_dashboard_user_profile(int(user.get("id"))) or {}
+        latest_photo_path = latest_profile.get("profile_photo_path")
+    except Exception:
+        current_app.logger.exception("Failed to sync profile photo state from DB")
+    if latest_photo_path != session_photo_path:
+        computed_photo_url = _build_profile_photo_url(latest_photo_path)
+        user["profile_photo_path"] = latest_photo_path
+        user["profile_photo_url"] = computed_photo_url
+        session_user = session.get("user") or {}
+        session_user["profile_photo_path"] = latest_photo_path
+        session_user["profile_photo_url"] = computed_photo_url
+        session["user"] = session_user
+    elif session_photo_path and not user.get("profile_photo_url"):
+        computed_photo_url = _build_profile_photo_url(session_photo_path)
         if computed_photo_url:
             user["profile_photo_url"] = computed_photo_url
             session_user = session.get("user") or {}
