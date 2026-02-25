@@ -2747,15 +2747,20 @@ def staff_assignments() -> Response:
         flash("Halaman ini hanya untuk staf.", "warning")
         return redirect(url_for("portal.home"))
     
-    assigned_schools = get_staff_assigned_schools(user["id"])
     periods = list_periods()
     active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
-    
+    selected_period_id = request.args.get("period_id", type=int)
+    if selected_period_id is None:
+        selected_period_id = active_period_id
+
+    assigned_schools = get_staff_assigned_schools(user["id"], period_id=selected_period_id)
+
     return render_template(
         "portal/staff/assignments.html",
         assigned_schools=assigned_schools,
         periods=periods,
         active_period_id=active_period_id,
+        selected_period_id=selected_period_id,
         user=user,
     )
 

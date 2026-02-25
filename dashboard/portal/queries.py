@@ -3110,8 +3110,11 @@ def assign_staff_to_school(
         return dict(cur.fetchone())
 
 
-def get_staff_assigned_schools(staff_id: int) -> List[Dict[str, Any]]:
-    """Get all schools assigned to a staff member."""
+def get_staff_assigned_schools(staff_id: int, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    """Get all schools assigned to a staff member.
+
+    If ``period_id`` is provided, draft/last assessment status is scoped to that period.
+    """
     with get_cursor() as cur:
         cur.execute(
             """
@@ -3131,14 +3134,18 @@ def get_staff_assigned_schools(staff_id: int) -> List[Dict[str, Any]]:
                 (
                     SELECT a.status
                     FROM portal_assessments a
-                    WHERE a.school_id = s.id AND a.staff_id = %s
+                    WHERE a.school_id = s.id
+                      AND a.staff_id = %s
+                      AND (%s IS NULL OR a.period_id = %s)
                     ORDER BY a.created_at DESC
                     LIMIT 1
                 ) as last_assessment_status,
                 (
                     SELECT a.id
                     FROM portal_assessments a
-                    WHERE a.school_id = s.id AND a.staff_id = %s
+                    WHERE a.school_id = s.id
+                      AND a.staff_id = %s
+                      AND (%s IS NULL OR a.period_id = %s)
                     ORDER BY a.created_at DESC
                     LIMIT 1
                 ) as last_assessment_id,
@@ -3148,6 +3155,7 @@ def get_staff_assigned_schools(staff_id: int) -> List[Dict[str, Any]]:
                     WHERE a.school_id = s.id 
                       AND a.staff_id = %s 
                       AND a.status = 'draft'
+                      AND (%s IS NULL OR a.period_id = %s)
                     ORDER BY a.created_at DESC
                     LIMIT 1
                 ) as draft_assessment_id,
@@ -3157,6 +3165,7 @@ def get_staff_assigned_schools(staff_id: int) -> List[Dict[str, Any]]:
                     WHERE a.school_id = s.id 
                       AND a.staff_id = %s 
                       AND a.status = 'draft'
+                      AND (%s IS NULL OR a.period_id = %s)
                     ORDER BY a.created_at DESC
                     LIMIT 1
                 ) as draft_period_id,
@@ -3169,6 +3178,7 @@ def get_staff_assigned_schools(staff_id: int) -> List[Dict[str, Any]]:
                         WHERE a.school_id = s.id 
                           AND a.staff_id = %s 
                           AND a.status = 'draft'
+                          AND (%s IS NULL OR a.period_id = %s)
                         ORDER BY a.created_at DESC
                         LIMIT 1
                     )
@@ -3176,17 +3186,28 @@ def get_staff_assigned_schools(staff_id: int) -> List[Dict[str, Any]]:
                 (
                     SELECT a.period_id
                     FROM portal_assessments a
-                    WHERE a.school_id = s.id AND a.staff_id = %s
+                    WHERE a.school_id = s.id
+                      AND a.staff_id = %s
+                      AND (%s IS NULL OR a.period_id = %s)
                     ORDER BY a.created_at DESC
                     LIMIT 1
                 ) as last_period_id,
+                (
+                    SELECT COUNT(*)
+                    FROM portal_assessments a
+                    WHERE a.school_id = s.id
+                      AND a.staff_id = %s
+                      AND a.status IN ('submitted', 'verified')
+                ) as total_assessment_count,
                 (
                     SELECT p.name
                     FROM portal_assessment_periods p
                     WHERE p.id = (
                         SELECT a.period_id
                         FROM portal_assessments a
-                        WHERE a.school_id = s.id AND a.staff_id = %s
+                        WHERE a.school_id = s.id
+                          AND a.staff_id = %s
+                          AND (%s IS NULL OR a.period_id = %s)
                         ORDER BY a.created_at DESC
                         LIMIT 1
                     )
@@ -3199,7 +3220,31 @@ def get_staff_assigned_schools(staff_id: int) -> List[Dict[str, Any]]:
             WHERE ssa.staff_id = %s AND s.active = TRUE
             ORDER BY k.name, s.name
             """,
-            (staff_id, staff_id, staff_id, staff_id, staff_id, staff_id, staff_id, staff_id)
+            (
+                staff_id,
+                period_id,
+                period_id,
+                staff_id,
+                period_id,
+                period_id,
+                staff_id,
+                period_id,
+                period_id,
+                staff_id,
+                period_id,
+                period_id,
+                staff_id,
+                period_id,
+                period_id,
+                staff_id,
+                period_id,
+                period_id,
+                staff_id,
+                staff_id,
+                period_id,
+                period_id,
+                staff_id,
+            )
         )
         return [dict(row) for row in cur.fetchall()]
 

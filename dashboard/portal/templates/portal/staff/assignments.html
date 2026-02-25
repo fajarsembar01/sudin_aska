@@ -88,10 +88,10 @@
                                     for="periodSelect">Periode penilaian</label>
                                 <select id="periodSelect" class="form-select form-select-sm"
                                     aria-label="Periode penilaian">
-                                    <option value="">{% if active_period_id %}Periode aktif (default){% else %}-- Pilih
+                                    <option value="" {% if not selected_period_id %}selected{% endif %}>{% if active_period_id %}Periode aktif (default){% else %}-- Pilih
                                         periode (boleh periode mendatang) --{% endif %}</option>
                                     {% for p in periods %}
-                                    <option value="{{ p.id }}" {% if active_period_id and active_period_id==p.id
+                                    <option value="{{ p.id }}" {% if selected_period_id and selected_period_id==p.id
                                         %}selected{% endif %}>{{ p.name }}</option>
                                     {% endfor %}
                                 </select>
@@ -161,6 +161,7 @@
                                             </span>
                                             {% endif %}
                                         </div>
+                                        <div class="small text-muted mt-1">Total penilaian (semua periode): <strong>{{ school.total_assessment_count or 0 }}</strong></div>
                                         {% if not (school.draft_period_name or school.last_period_name) %}
                                         <div class="small text-muted mt-1">Mengikuti periode aktif saat dibuat</div>
                                         {% endif %}
@@ -252,6 +253,7 @@
                                             <i class="bi bi-circle"></i> Belum Dinilai
                                         </span>
                                         {% endif %}
+                                        <div class="small text-muted mt-1">Total penilaian: {{ school.total_assessment_count or 0 }}</div>
                                     </td>
                                     <td>
                                         {% if school.draft_assessment_id %}
@@ -321,6 +323,23 @@
         const clearBtn = document.getElementById('assignmentSearchClear');
         const emptyState = document.getElementById('assignmentEmptySearch');
         const assignmentItems = Array.from(document.querySelectorAll('.assignment-item'));
+
+        if (periodSelect) {
+            periodSelect.addEventListener('change', function () {
+                try {
+                    const url = new URL(window.location.href);
+                    const pid = (this.value || '').trim();
+                    if (pid) {
+                        url.searchParams.set('period_id', pid);
+                    } else {
+                        url.searchParams.delete('period_id');
+                    }
+                    window.location.href = url.toString();
+                } catch (err) {
+                    console.warn('Gagal mengganti periode', err);
+                }
+            });
+        }
 
         document.querySelectorAll('.start-assessment-btn').forEach(btn => {
             btn.addEventListener('click', function (e) {
