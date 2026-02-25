@@ -601,6 +601,7 @@ def fetch_user_rankings(
         WHERE u.account_status = 'approved'
           AND (u.role IS NULL OR u.role <> 'sekolah')
         GROUP BY u.id, u.full_name, u.email, u.role
+        HAVING COUNT(ut.transaction_id) > 0
     )
     """
     )
@@ -651,7 +652,8 @@ def fetch_user_rankings(
         r.last_visit_date,
         latest.school_name AS last_school_name,
         latest.school_npsn,
-        latest.school_kecamatan
+        latest.school_kecamatan,
+        history.visit_history_text
     FROM user_rollup r
     LEFT JOIN LATERAL (
         SELECT
@@ -668,6 +670,32 @@ def fetch_user_rankings(
         ORDER BY ft.visit_at DESC, ft.id DESC
         LIMIT 1
     ) latest ON TRUE
+    LEFT JOIN LATERAL (
+        SELECT STRING_AGG(hist.label, E'\n' ORDER BY hist.visit_seq) AS visit_history_text
+        FROM (
+            SELECT
+                visit_seq,
+                CONCAT(
+                    'Kunjungan ke-',
+                    visit_seq,
+                    ': ',
+                    school_name,
+                    ' (',
+                    visit_date_label,
+                    ')'
+                ) AS label
+            FROM (
+                SELECT
+                    ROW_NUMBER() OVER (ORDER BY ft.visit_at ASC, ft.id ASC) AS visit_seq,
+                    s.name AS school_name,
+                    TO_CHAR(ft.visit_at, 'DD Mon YYYY') AS visit_date_label
+                FROM user_transactions ut
+                JOIN filtered_transactions ft ON ft.id = ut.transaction_id
+                JOIN portal_schools s ON s.id = ft.school_id
+                WHERE ut.user_id = r.user_id
+            ) numbered
+        ) hist
+    ) history ON TRUE
     """
         + search_clause
         + f"""
@@ -911,12 +939,16 @@ def fetch_user_visit_history(
         ft.id AS transaction_id,
         ft.visit_at,
         ft.purpose,
+        ft.notes,
         ft.photo_path,
         s.name AS school_name,
-        s.npsn AS school_npsn
+        s.npsn AS school_npsn,
+        k.name AS school_kecamatan
     FROM user_transactions ut
     JOIN filtered_transactions ft ON ft.id = ut.transaction_id
     JOIN portal_schools s ON s.id = ft.school_id
+    LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+    LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
     WHERE ut.user_id = %s
     """
         + search_clause

@@ -53,8 +53,10 @@ from utils import current_jakarta_time, to_jakarta
 
 from .media import stamp_guestbook_photo
 from .queries import (
+    DEFAULT_USER_SORT,
     DEFAULT_SORT,
     SORT_OPTIONS,
+    USER_SORT_OPTIONS,
     ensure_daftar_tamu_seed_data,
     fetch_dashboard_summary,
     fetch_guest_history,
@@ -1558,6 +1560,127 @@ def export_rankings() -> Response:
         return _build_xlsx_response(headers, data_rows, filename)
 
     filename = f"ranking_daftar_tamu_{date.today().isoformat()}.csv"
+    return _build_csv_response(headers, data_rows, filename)
+
+
+@daftar_tamu_bp.route("/admin/export/users")
+@role_required("admin")
+def export_user_rankings() -> Response:
+    """Export user rankings in CSV/Excel."""
+    ensure_daftar_tamu_seed_data()
+
+    user_search_query = (request.args.get("user_q") or request.args.get("q") or "").strip()
+    user_sort = (request.args.get("user_sort") or DEFAULT_USER_SORT).strip().lower()
+    if user_sort not in USER_SORT_OPTIONS:
+        user_sort = DEFAULT_USER_SORT
+
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+
+    per_page = 100
+    rows, total_rows = fetch_user_rankings(
+        page=1,
+        per_page=per_page,
+        sort_key=user_sort,
+        search_query=user_search_query,
+        date_from=None,
+        date_to=None,
+        guest_scope=guest_scope,
+    )
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if total_pages > 1:
+        for page in range(2, total_pages + 1):
+            page_rows, _ = fetch_user_rankings(
+                page=page,
+                per_page=per_page,
+                sort_key=user_sort,
+                search_query=user_search_query,
+                date_from=None,
+                date_to=None,
+                guest_scope=guest_scope,
+            )
+            rows.extend(page_rows)
+
+    headers = [
+        "Peringkat",
+        "Nama User",
+        "Email",
+        "Role",
+        "Kunjungan Ke",
+        "Tanggal Kunjungan",
+        "Nama Sekolah",
+        "NPSN",
+        "Kecamatan",
+        "Tujuan",
+        "Link Foto",
+        "Catatan Sekolah (opsional)",
+    ]
+    data_rows: list[list[object]] = []
+    visit_page_size = 100
+    for row in rows:
+        user_id = int(row.get("user_id") or 0)
+        if user_id <= 0:
+            continue
+
+        visit_rows, visit_total_rows = fetch_user_visit_history(
+            user_id=user_id,
+            page=1,
+            per_page=visit_page_size,
+            sort_key="date_asc",
+            search_query="",
+            date_from=None,
+            date_to=None,
+            guest_scope=guest_scope,
+        )
+        visit_total_pages = max(1, math.ceil(visit_total_rows / visit_page_size)) if visit_total_rows else 1
+        if visit_total_pages > 1:
+            for visit_page in range(2, visit_total_pages + 1):
+                page_rows, _ = fetch_user_visit_history(
+                    user_id=user_id,
+                    page=visit_page,
+                    per_page=visit_page_size,
+                    sort_key="date_asc",
+                    search_query="",
+                    date_from=None,
+                    date_to=None,
+                    guest_scope=guest_scope,
+                )
+                visit_rows.extend(page_rows)
+
+        for visit_index, visit in enumerate(visit_rows, start=1):
+            photo_url = _build_photo_url(visit.get("photo_path"), external=True) or ""
+            data_rows.append(
+                [
+                    row.get("rank"),
+                    row.get("full_name"),
+                    row.get("email"),
+                    row.get("role"),
+                    visit_index,
+                    _format_date_dmy(visit.get("visit_at")),
+                    visit.get("school_name") or "",
+                    visit.get("school_npsn") or "",
+                    visit.get("school_kecamatan") or "",
+                    visit.get("purpose") or "",
+                    photo_url,
+                    visit.get("notes") or "",
+                ]
+            )
+
+    file_format = (request.args.get("format") or "excel").strip().lower()
+    if file_format in {"excel", "xlsx"}:
+        excel_rows: list[list[object]] = []
+        for row in data_rows:
+            excel_row = list(row)
+            photo_url = str(excel_row[10] or "").strip()
+            if photo_url:
+                safe_url = photo_url.replace('"', '""')
+                excel_row[10] = f'=HYPERLINK("{safe_url}","Foto")'
+            else:
+                excel_row[10] = ""
+            excel_rows.append(excel_row)
+        filename = f"ranking_user_kunjungan_{date.today().isoformat()}.xlsx"
+        return _build_xlsx_response(headers, excel_rows, filename)
+
+    filename = f"ranking_user_kunjungan_{date.today().isoformat()}.csv"
     return _build_csv_response(headers, data_rows, filename)
 
 
