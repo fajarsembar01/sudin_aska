@@ -383,12 +383,6 @@
                     <img id="photoResult" class="camera-preview d-none" alt="Foto hasil">
                 </div>
                 <div class="d-flex flex-wrap gap-2 mb-3">
-                    <button type="button" class="btn btn-outline-primary" id="startCameraBtn">
-                        <i class="bi bi-camera-video me-1"></i>Aktifkan Kamera
-                    </button>
-                    <button type="button" class="btn btn-primary" id="capturePhotoBtn" disabled>
-                        <i class="bi bi-camera me-1"></i>Ambil Foto
-                    </button>
                     <button type="button" class="btn btn-outline-secondary" id="retakePhotoBtn" disabled>
                         <i class="bi bi-arrow-counterclockwise me-1"></i>Ulangi
                     </button>
@@ -512,8 +506,6 @@
     var cameraPreview = document.getElementById('cameraPreview');
     var photoResult = document.getElementById('photoResult');
     var photoCanvas = document.getElementById('photoCanvas');
-    var startCameraBtn = document.getElementById('startCameraBtn');
-    var capturePhotoBtn = document.getElementById('capturePhotoBtn');
     var retakePhotoBtn = document.getElementById('retakePhotoBtn');
     var submitBtn = document.getElementById('submitTransactionBtn');
     var gpsStatus = document.getElementById('gpsStatus');
@@ -1223,23 +1215,78 @@
         }
     }
 
+    function requestUserMedia(constraints) {
+        if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+            return navigator.mediaDevices.getUserMedia(constraints);
+        }
+        var legacyGetUserMedia = navigator.getUserMedia
+            || navigator.webkitGetUserMedia
+            || navigator.mozGetUserMedia
+            || navigator.msGetUserMedia;
+        if (!legacyGetUserMedia) {
+            return Promise.reject({ name: 'NotSupportedError' });
+        }
+        return new Promise(function (resolve, reject) {
+            legacyGetUserMedia.call(navigator, constraints, resolve, reject);
+        });
+    }
+
+    function resolveCameraErrorMessage(err) {
+        if (!err || !err.name) {
+            return 'Tidak bisa mengakses kamera. Pastikan izin kamera diaktifkan.';
+        }
+        if (err.name === 'NotAllowedError') {
+            return 'Izin kamera ditolak. Aktifkan izin kamera di browser lalu coba lagi.';
+        }
+        if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+            return 'Kamera tidak ditemukan di perangkat ini.';
+        }
+        if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+            return 'Kamera sedang dipakai aplikasi lain.';
+        }
+        if (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError') {
+            return 'Mode kamera yang diminta tidak tersedia di perangkat ini.';
+        }
+        if (err.name === 'SecurityError') {
+            return 'Akses kamera membutuhkan HTTPS atau localhost.';
+        }
+        if (err.name === 'NotSupportedError') {
+            return 'Browser ini belum mendukung akses kamera live.';
+        }
+        return 'Tidak bisa mengakses kamera. Pastikan izin kamera diaktifkan.';
+    }
+
+    function applyCameraStream(stream) {
+        cameraStream = stream;
+        cameraPreview.srcObject = stream;
+        cameraPreview.classList.remove('d-none');
+        photoResult.classList.add('d-none');
+        if (retakePhotoBtn) retakePhotoBtn.disabled = true;
+        if (typeof cameraPreview.play === 'function') {
+            cameraPreview.play().catch(function () { });
+        }
+        ensureLocation();
+    }
+
     function startCamera() {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            alert('Kamera tidak tersedia di perangkat ini.');
+        if (window.isSecureContext === false) {
+            alert('Kamera live butuh HTTPS. Buka halaman via HTTPS atau localhost pada perangkat yang sama.');
             return;
         }
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
-            .then(function (stream) {
-                cameraStream = stream;
-                cameraPreview.srcObject = stream;
-                cameraPreview.classList.remove('d-none');
-                photoResult.classList.add('d-none');
-                capturePhotoBtn.disabled = false;
-                retakePhotoBtn.disabled = true;
-                ensureLocation();
-            })
-            .catch(function () {
-                alert('Tidak bisa mengakses kamera. Pastikan izin kamera diaktifkan.');
+        requestUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+            .then(applyCameraStream)
+            .catch(function (err) {
+                if (err && (err.name === 'OverconstrainedError'
+                    || err.name === 'ConstraintNotSatisfiedError'
+                    || err.name === 'NotFoundError')) {
+                    requestUserMedia({ video: true, audio: false })
+                        .then(applyCameraStream)
+                        .catch(function (fallbackErr) {
+                            alert(resolveCameraErrorMessage(fallbackErr));
+                        });
+                    return;
+                }
+                alert(resolveCameraErrorMessage(err));
             });
     }
 
@@ -1268,8 +1315,7 @@
             photoResult.src = URL.createObjectURL(blob);
             photoResult.classList.remove('d-none');
             cameraPreview.classList.add('d-none');
-            capturePhotoBtn.disabled = true;
-            retakePhotoBtn.disabled = false;
+            if (retakePhotoBtn) retakePhotoBtn.disabled = false;
             updateSubmitState();
         }, 'image/jpeg', quality);
     }
@@ -1291,18 +1337,11 @@
         compressAndStore(photoCanvas, 0.85);
     }
 
-    if (startCameraBtn) {
-        startCameraBtn.addEventListener('click', startCamera);
-    }
-    if (capturePhotoBtn) {
-        capturePhotoBtn.addEventListener('click', capturePhoto);
-    }
     if (retakePhotoBtn) {
         retakePhotoBtn.addEventListener('click', function () {
             photoBlob = null;
             photoResult.classList.add('d-none');
             cameraPreview.classList.remove('d-none');
-            capturePhotoBtn.disabled = false;
             retakePhotoBtn.disabled = true;
             updateSubmitState();
         });
@@ -1313,18 +1352,16 @@
             var hasPhoto = !!photoBlob;
             if (!cameraStream) {
                 e.preventDefault();
-                if (startCameraBtn) {
-                    startCameraBtn.click();
-                    setTimeout(function () {
-                        if (cameraPreview) {
-                            cameraPreview.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }
-                    }, 100);
-                }
+                startCamera();
+                setTimeout(function () {
+                    if (cameraPreview) {
+                        cameraPreview.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 100);
                 return;
             } else if (cameraStream && !hasPhoto) {
                 e.preventDefault();
-                if (capturePhotoBtn) capturePhotoBtn.click();
+                capturePhoto();
                 return;
             }
 
