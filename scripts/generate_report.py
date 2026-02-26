@@ -37,10 +37,10 @@ doc.add_paragraph('Rata-rata skor dari seluruh penilaian yang telah disubmit', s
 # Peta Interaktif
 doc.add_heading('Peta Interaktif (Map):', level=2)
 doc.add_paragraph('Menampilkan lokasi sekolah dengan warna berbeda berdasarkan skor:', style='List Bullet')
-doc.add_paragraph('🟢 Hijau = Skor ≥85 (Baik)', style='List Bullet 2')
-doc.add_paragraph('🟡 Kuning = Skor 70-84 (Cukup)', style='List Bullet 2')
-doc.add_paragraph('🔴 Merah = Skor 55-69 (Kurang)', style='List Bullet 2')
-doc.add_paragraph('⚫ Hitam = Skor <55 (Sangat Kurang)', style='List Bullet 2')
+doc.add_paragraph('🟢 Hijau = Skor ≥80 (Sangat Baik)', style='List Bullet 2')
+doc.add_paragraph('🟡 Kuning = Skor 60-79 (Baik)', style='List Bullet 2')
+doc.add_paragraph('🟠 Oranye = Skor 40-59 (Kurang)', style='List Bullet 2')
+doc.add_paragraph('🔴 Merah = Skor <40 (Kritis)', style='List Bullet 2')
 doc.add_paragraph('Terdapat fitur Heatmap (Radius Rawan) yang dapat ditampilkan/sembunyikan untuk mengidentifikasi area dengan konsentrasi sekolah skor rendah', style='List Bullet')
 
 note1 = doc.add_paragraph()
@@ -173,28 +173,31 @@ doc.add_paragraph('Periode Penilaian: Sistem mendukung multiple periode penilaia
 # Score System
 score_para = doc.add_paragraph(style='List Number')
 score_para.add_run('Sistem Skor: ').bold = True
-score_para.add_run('Skor dinilai dalam skala 0-3 per aspek:')
+score_para.add_run('Skor dinilai per assessment dengan dual-scale kompatibel data lama:')
 
 # Score table
-score_table = doc.add_table(rows=5, cols=2)
+score_table = doc.add_table(rows=3, cols=2)
 score_table.style = 'Table Grid'
 score_table.alignment = WD_TABLE_ALIGNMENT.CENTER
 
 score_hdr = score_table.rows[0].cells
-score_hdr[0].text = 'Skor'
+score_hdr[0].text = 'Skala'
 score_hdr[1].text = 'Keterangan'
 for cell in score_hdr:
     cell.paragraphs[0].runs[0].bold = True
 
-scores = [('0', 'Buruk'), ('1', 'Kurang'), ('2', 'Cukup'), ('3', 'Baik (nilai default jika belum dinilai)')]
+scores = [
+    ('Legacy 0-3', '0 Buruk, 1 Kurang, 2 Cukup, 3 Baik'),
+    ('Baru 1-5', '1 Sangat Kurang, 2 Kurang, 3 Cukup, 4 Baik, 5 Sangat Baik'),
+]
 for i, (skor, ket) in enumerate(scores, 1):
     score_table.rows[i].cells[0].text = skor
     score_table.rows[i].cells[1].text = ket
 
 doc.add_paragraph()
 formula = doc.add_paragraph()
-formula.add_run('Skor kemudian dikonversi ke persentase 0-100% dengan rumus: ').italic = True
-formula.add_run('(skor / 3) × 100').bold = True
+formula.add_run('Skor dikonversi ke persentase 0-100% sesuai skala assessment: ').italic = True
+formula.add_run('Legacy: (skor / 3) × 100; Baru: (skor / 5) × 100').bold = True
 
 # Closing
 doc.add_paragraph()

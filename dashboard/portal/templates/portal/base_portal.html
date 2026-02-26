@@ -173,6 +173,38 @@
             background: #198754;
         }
 
+        .score-btn[data-score="4"].selected {
+            background: #157347;
+        }
+
+        .score-btn[data-score="5"].selected {
+            background: #0f5132;
+        }
+
+        /* Scale-specific color ramp: 1->5 from red to green */
+        .score-group[data-scale-max="5"] .score-btn[data-score="1"].selected {
+            background: #dc3545;
+        }
+
+        .score-group[data-scale-max="5"] .score-btn[data-score="2"].selected {
+            background: #fd7e14;
+        }
+
+        .score-group[data-scale-max="5"] .score-btn[data-score="3"].selected {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .score-group[data-scale-max="5"] .score-btn[data-score="4"].selected {
+            background: #8bc34a;
+            color: #1f2a1f;
+        }
+
+        .score-group[data-scale-max="5"] .score-btn[data-score="5"].selected {
+            background: #198754;
+            color: #ffffff;
+        }
+
         /* Room list */
         .room-item {
             margin-bottom: 1rem;
@@ -1060,8 +1092,7 @@
                     {% set pending_guestbook = admin_pending.pending_guestbook if admin_pending else 0 %}
                     <div class="dropdown notification-menu">
                         <button class="notification-toggle" type="button" data-bs-toggle="dropdown"
-                            id="adminNotificationToggle"
-                            aria-expanded="false" aria-label="Notifikasi admin">
+                            id="adminNotificationToggle" aria-expanded="false" aria-label="Notifikasi admin">
                             <i class="bi bi-bell"></i>
                             <span class="notification-badge{% if pending_total == 0 %} d-none{% endif %}"
                                 id="adminPendingTotalBadge" data-count="{{ pending_total }}">{{ pending_total }}</span>
@@ -1074,8 +1105,10 @@
                                         id="adminPendingRefresh" title="Perbarui">
                                         <i class="bi bi-arrow-clockwise"></i>
                                     </button>
-                                    <span class="badge bg-danger-subtle text-danger{% if pending_total == 0 %} d-none{% endif %}"
-                                        id="adminPendingTotalLabel" data-count="{{ pending_total }}">{{ pending_total }}</span>
+                                    <span
+                                        class="badge bg-danger-subtle text-danger{% if pending_total == 0 %} d-none{% endif %}"
+                                        id="adminPendingTotalLabel" data-count="{{ pending_total }}">{{ pending_total
+                                        }}</span>
                                 </div>
                             </div>
                             <div id="adminPendingEmpty"
@@ -1150,8 +1183,7 @@
 
                     {% if current_user and current_user.role in ['staff', 'coordinator', 'sekolah'] %}
                     {% set user_notif_unread = user_app_notifications.unread_count if user_app_notifications else 0 %}
-                    <div class="dropdown notification-menu"
-                        id="userGuestbookNotifRoot"
+                    <div class="dropdown notification-menu" id="userGuestbookNotifRoot"
                         data-list-url="{{ url_for('portal.user_app_notifications') }}"
                         data-read-url="{{ url_for('portal.user_app_notifications_mark_read') }}"
                         data-history-url="{% if current_user.role == 'sekolah' %}{{ url_for('daftar_tamu.sekolah_riwayat') }}{% else %}{{ url_for('portal.home') }}{% endif %}">
@@ -1159,7 +1191,8 @@
                             id="userGuestbookNotifToggle" aria-expanded="false" aria-label="Notifikasi pengguna">
                             <i class="bi bi-bell"></i>
                             <span class="notification-badge{% if user_notif_unread == 0 %} d-none{% endif %}"
-                                id="userGuestbookNotifBadge" data-count="{{ user_notif_unread }}">{{ user_notif_unread }}</span>
+                                id="userGuestbookNotifBadge" data-count="{{ user_notif_unread }}">{{ user_notif_unread
+                                }}</span>
                         </button>
                         <div class="dropdown-menu dropdown-menu-end notification-dropdown">
                             <div class="notification-header">
@@ -1170,11 +1203,14 @@
                                         <i class="bi bi-arrow-clockwise"></i>
                                     </button>
                                     <button type="button" class="btn btn-link btn-sm text-decoration-none px-0"
-                                        id="userGuestbookNotifMarkAll"{% if user_notif_unread == 0 %} disabled{% endif %}>
+                                        id="userGuestbookNotifMarkAll" {% if user_notif_unread==0 %} disabled{% endif
+                                        %}>
                                         Tandai semua
                                     </button>
-                                    <span class="badge bg-info-subtle text-info-emphasis{% if user_notif_unread == 0 %} d-none{% endif %}"
-                                        id="userGuestbookNotifUnreadLabel" data-count="{{ user_notif_unread }}">{{ user_notif_unread }}</span>
+                                    <span
+                                        class="badge bg-info-subtle text-info-emphasis{% if user_notif_unread == 0 %} d-none{% endif %}"
+                                        id="userGuestbookNotifUnreadLabel" data-count="{{ user_notif_unread }}">{{
+                                        user_notif_unread }}</span>
                                 </div>
                             </div>
                             <div id="userGuestbookNotifEmpty"
@@ -1223,7 +1259,8 @@
                         <dl class="admin-confirm-details-list" id="adminQuickConfirmDetailsList"></dl>
                     </div>
                     <div class="mt-3" id="adminQuickConfirmNoteWrap">
-                        <label for="adminQuickConfirmNote" class="form-label small text-muted">Catatan (opsional)</label>
+                        <label for="adminQuickConfirmNote" class="form-label small text-muted">Catatan
+                            (opsional)</label>
                         <textarea class="form-control" id="adminQuickConfirmNote" rows="3"
                             placeholder="Tulis catatan singkat untuk audit."></textarea>
                         <div class="form-text" id="adminQuickConfirmNoteHelp">
@@ -1245,14 +1282,16 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title"><i class="bi bi-camera-fill me-2 text-primary"></i>Tambahkan Foto Profil</h5>
+                    <h5 class="modal-title"><i class="bi bi-camera-fill me-2 text-primary"></i>Tambahkan Foto Profil
+                    </h5>
                 </div>
                 <div class="modal-body">
                     <p class="text-muted mb-3">Tambahkan foto profil untuk memudahkan verifikasi buku tamu.</p>
                     <div class="profile-photo-preview mb-3" id="requiredProfilePhotoPreview">
                         <i class="bi bi-person-circle fs-1 text-muted"></i>
                     </div>
-                    <video id="requiredProfileCameraStream" class="w-100 rounded-3 d-none mb-2" autoplay playsinline muted></video>
+                    <video id="requiredProfileCameraStream" class="w-100 rounded-3 d-none mb-2" autoplay playsinline
+                        muted></video>
                     <canvas id="requiredProfileCameraCanvas" class="d-none"></canvas>
                     <div class="d-grid gap-2 mb-2 d-none" id="requiredProfileCameraActions">
                         <button type="button" class="btn btn-success" id="requiredProfileTakePhotoBtn">
@@ -1262,7 +1301,8 @@
                             Batal Kamera
                         </button>
                     </div>
-                    <input type="file" id="requiredProfilePhotoCameraInput" class="d-none" accept="image/*" capture="user">
+                    <input type="file" id="requiredProfilePhotoCameraInput" class="d-none" accept="image/*"
+                        capture="user">
                     <input type="file" id="requiredProfilePhotoGalleryInput" class="d-none" accept="image/*">
                     <div class="d-grid gap-2">
                         <button type="button" class="btn btn-primary" id="requiredProfilePhotoCameraBtn">
@@ -1365,1535 +1405,1599 @@
     </script>
     <script>
         (function () {
-            var isAdmin = {{ 'true' if current_user and current_user.role == 'admin' else 'false' }};
-            if (!isAdmin) return;
+            var isAdmin = {{ 'true' if current_user and current_user.role == 'admin' else 'false'
+        }};
+        if (!isAdmin) return;
 
-            var elements = {
-                totalBadge: document.getElementById('adminPendingTotalBadge'),
-                totalLabel: document.getElementById('adminPendingTotalLabel'),
-                emptyState: document.getElementById('adminPendingEmpty'),
-                quickDivider: document.getElementById('adminPendingQuickDivider'),
-                quickList: document.getElementById('adminPendingQuickList'),
-                users: {
-                    item: document.getElementById('adminPendingUsersItem'),
-                    count: document.getElementById('adminPendingUsersCount')
-                },
-                assignment: {
-                    item: document.getElementById('adminPendingAssignmentItem'),
-                    count: document.getElementById('adminPendingAssignmentCount')
-                },
-                team: {
-                    item: document.getElementById('adminPendingTeamItem'),
-                    count: document.getElementById('adminPendingTeamCount')
-                },
-                reopen: {
-                    item: document.getElementById('adminPendingReopenItem'),
-                    count: document.getElementById('adminPendingReopenCount')
-                },
-                guestbook: {
-                    item: document.getElementById('adminPendingGuestbookItem'),
-                    count: document.getElementById('adminPendingGuestbookCount')
+        var elements = {
+            totalBadge: document.getElementById('adminPendingTotalBadge'),
+            totalLabel: document.getElementById('adminPendingTotalLabel'),
+            emptyState: document.getElementById('adminPendingEmpty'),
+            quickDivider: document.getElementById('adminPendingQuickDivider'),
+            quickList: document.getElementById('adminPendingQuickList'),
+            users: {
+                item: document.getElementById('adminPendingUsersItem'),
+                count: document.getElementById('adminPendingUsersCount')
+            },
+            assignment: {
+                item: document.getElementById('adminPendingAssignmentItem'),
+                count: document.getElementById('adminPendingAssignmentCount')
+            },
+            team: {
+                item: document.getElementById('adminPendingTeamItem'),
+                count: document.getElementById('adminPendingTeamCount')
+            },
+            reopen: {
+                item: document.getElementById('adminPendingReopenItem'),
+                count: document.getElementById('adminPendingReopenCount')
+            },
+            guestbook: {
+                item: document.getElementById('adminPendingGuestbookItem'),
+                count: document.getElementById('adminPendingGuestbookCount')
+            }
+        };
+        var hasPendingUI = !!document.getElementById('adminNotificationToggle');
+        var quickConfig = elements.quickList ? {
+            previewUrl: elements.quickList.dataset.previewUrl,
+            usersUrl: elements.quickList.dataset.usersUrl,
+            userVerifyUrl: elements.quickList.dataset.userVerifyUrl,
+            assignmentUrl: elements.quickList.dataset.assignmentUrl,
+            teamUrl: elements.quickList.dataset.teamUrl,
+            reopenUrl: elements.quickList.dataset.reopenUrl,
+            guestbookUrl: elements.quickList.dataset.guestbookUrl,
+            approveAssignmentUrl: elements.quickList.dataset.approveAssignment,
+            rejectAssignmentUrl: elements.quickList.dataset.rejectAssignment,
+            approveReopenUrl: elements.quickList.dataset.approveReopen,
+            rejectReopenUrl: elements.quickList.dataset.rejectReopen,
+            approveGuestbookUrl: elements.quickList.dataset.approveGuestbook,
+            rejectGuestbookUrl: elements.quickList.dataset.rejectGuestbook,
+            undoWindowSeconds: elements.quickList.dataset.undoWindowSeconds
+        } : {};
+        var configuredUndoSeconds = parseInt(
+            quickConfig.undoWindowSeconds || '{{ undo_window_seconds | default(7) }}',
+            10
+        );
+        if (!Number.isFinite(configuredUndoSeconds) || configuredUndoSeconds < 1) {
+            configuredUndoSeconds = 7;
+        }
+        var defaultUndoDelayMs = configuredUndoSeconds * 1000;
+        var confirmModalEl = document.getElementById('adminQuickConfirmModal');
+        var confirmTitleEl = document.getElementById('adminQuickConfirmTitle');
+        var confirmTextEl = document.getElementById('adminQuickConfirmText');
+        var confirmDetailsWrapEl = document.getElementById('adminQuickConfirmDetails');
+        var confirmDetailsListEl = document.getElementById('adminQuickConfirmDetailsList');
+        var confirmNoteEl = document.getElementById('adminQuickConfirmNote');
+        var confirmNoteWrapEl = document.getElementById('adminQuickConfirmNoteWrap');
+        var confirmBtnEl = document.getElementById('adminQuickConfirmBtn');
+        var confirmModal = confirmModalEl ? new bootstrap.Modal(confirmModalEl) : null;
+        var pendingAction = null;
+        var pendingActions = new Map();
+        var pendingOrder = [];
+        var undoContainer = document.getElementById('adminUndoToastContainer');
+        if (!undoContainer) {
+            undoContainer = document.createElement('div');
+            undoContainer.id = 'adminUndoToastContainer';
+            undoContainer.className = 'admin-undo-container';
+            document.body.appendChild(undoContainer);
+        }
+
+        function isEditableTarget(target) {
+            if (!target) return false;
+            var tag = target.tagName ? target.tagName.toLowerCase() : '';
+            return (
+                tag === 'input'
+                || tag === 'textarea'
+                || tag === 'select'
+                || target.isContentEditable
+            );
+        }
+
+        function cleanupUndoToast(toast) {
+            if (!toast) return;
+            if (toast._countdownTimer) {
+                clearInterval(toast._countdownTimer);
+            }
+            toast.remove();
+        }
+
+        function createUndoToast(action, expiresAt, onUndo, onSkip) {
+            if (!undoContainer) return null;
+            var toast = document.createElement('div');
+            toast.className = 'admin-undo-toast';
+
+            var textWrap = document.createElement('div');
+            var title = document.createElement('div');
+            title.className = 'fw-semibold';
+            title.textContent = action.undoLabel || action.confirmTitle || 'Aksi dijadwalkan';
+
+            var subtitle = document.createElement('small');
+            subtitle.innerHTML = 'Undo dalam <span class="admin-undo-countdown"></span> detik';
+            var countdownEl = subtitle.querySelector('.admin-undo-countdown');
+
+            function updateCountdown() {
+                var remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+                countdownEl.textContent = remaining.toString();
+            }
+
+            updateCountdown();
+            toast._countdownTimer = setInterval(updateCountdown, 1000);
+
+            textWrap.appendChild(title);
+            textWrap.appendChild(subtitle);
+
+            var undoBtn = document.createElement('button');
+            undoBtn.type = 'button';
+            undoBtn.className = 'btn btn-sm btn-outline-light';
+            undoBtn.textContent = 'Undo';
+            undoBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (typeof onUndo === 'function') {
+                    onUndo();
+                }
+            });
+
+            var skipBtn = document.createElement('button');
+            skipBtn.type = 'button';
+            skipBtn.className = 'btn btn-sm btn-light';
+            skipBtn.textContent = 'Skip';
+            skipBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (typeof onSkip === 'function') {
+                    onSkip();
+                }
+            });
+
+            var actionWrap = document.createElement('div');
+            actionWrap.className = 'admin-undo-actions';
+            actionWrap.appendChild(undoBtn);
+            actionWrap.appendChild(skipBtn);
+
+            toast.appendChild(textWrap);
+            toast.appendChild(actionWrap);
+            undoContainer.appendChild(toast);
+            return toast;
+        }
+
+        function removePendingId(actionId) {
+            pendingOrder = pendingOrder.filter(function (id) { return id !== actionId; });
+        }
+
+        function scheduleAdminAction(action) {
+            if (!action) return null;
+            var delayMs = typeof action.delayMs === 'number' ? action.delayMs : defaultUndoDelayMs;
+            delayMs = Math.max(0, delayMs);
+            var actionId = action.id || ('admin-action-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+            if (!action.execute) {
+                action.execute = function () {
+                    return executeAction(action);
+                };
+            }
+
+            if (typeof action.onSchedule === 'function') {
+                action.onSchedule();
+            }
+
+            var expiresAt = Date.now() + delayMs;
+            var toast = createUndoToast(action, expiresAt, function () {
+                undoAdminAction(actionId);
+            }, function () {
+                skipAdminAction(actionId);
+            });
+
+            var timer = setTimeout(function () {
+                commitAdminAction(actionId);
+            }, delayMs);
+
+            pendingActions.set(actionId, {
+                id: actionId,
+                action: action,
+                timer: timer,
+                toast: toast,
+            });
+            pendingOrder.push(actionId);
+            return actionId;
+        }
+
+        function commitAdminAction(actionId) {
+            var entry = pendingActions.get(actionId);
+            if (!entry) return;
+            pendingActions.delete(actionId);
+            removePendingId(actionId);
+            cleanupUndoToast(entry.toast);
+
+            entry.action.execute()
+                .then(function (data) {
+                    if (typeof entry.action.onSuccess === 'function') {
+                        entry.action.onSuccess(data);
+                    }
+                    if (entry.action.toastMessage && typeof showToast === 'function') {
+                        showToast(entry.action.toastMessage);
+                    }
+                })
+                .catch(function (err) {
+                    if (typeof entry.action.onFailure === 'function') {
+                        entry.action.onFailure(err);
+                        return;
+                    }
+                    if (typeof entry.action.onUndo === 'function') {
+                        entry.action.onUndo();
+                    }
+                    alert(err.message || 'Gagal memproses permintaan.');
+                });
+        }
+
+        function undoAdminAction(actionId) {
+            var entry = pendingActions.get(actionId);
+            if (!entry) return;
+            pendingActions.delete(actionId);
+            removePendingId(actionId);
+            clearTimeout(entry.timer);
+            cleanupUndoToast(entry.toast);
+            if (typeof entry.action.onUndo === 'function') {
+                entry.action.onUndo();
+            }
+        }
+
+        function skipAdminAction(actionId) {
+            var entry = pendingActions.get(actionId);
+            if (!entry) return;
+            clearTimeout(entry.timer);
+            commitAdminAction(actionId);
+        }
+
+        function undoLastAdminAction() {
+            var lastId = pendingOrder[pendingOrder.length - 1];
+            if (!lastId) return;
+            undoAdminAction(lastId);
+        }
+
+        document.addEventListener('keydown', function (event) {
+            if (!event.ctrlKey || event.key.toLowerCase() !== 'z') return;
+            if (isEditableTarget(event.target)) return;
+            event.preventDefault();
+            undoLastAdminAction();
+        });
+
+        function getCount(el) {
+            if (!el) return 0;
+            var raw = el.dataset.count || el.textContent || '0';
+            var value = parseInt(raw, 10);
+            return Number.isNaN(value) ? 0 : value;
+        }
+
+        function setCount(el, value) {
+            if (!el) return;
+            el.dataset.count = value;
+            el.textContent = value;
+        }
+
+        function toggle(el, show) {
+            if (!el) return;
+            if (show) {
+                el.classList.remove('d-none');
+            } else {
+                el.classList.add('d-none');
+            }
+        }
+
+        function normalizeDetails(details) {
+            if (!details) return [];
+            if (Array.isArray(details)) return details;
+            if (typeof details === 'object') {
+                return Object.keys(details).map(function (key) {
+                    return { label: key, value: details[key] };
+                });
+            }
+            return [];
+        }
+
+        function formatDetailValue(value) {
+            if (Array.isArray(value)) {
+                var items = value.filter(function (item) {
+                    return item !== null && item !== undefined && String(item).trim() !== '';
+                });
+                return items.length ? items.join(', ') : '-';
+            }
+            if (value === null || value === undefined) return '-';
+            if (typeof value === 'string') {
+                var trimmed = value.trim();
+                return trimmed ? trimmed : '-';
+            }
+            return String(value);
+        }
+
+        function renderConfirmDetails(details) {
+            if (!confirmDetailsWrapEl || !confirmDetailsListEl) return;
+            confirmDetailsListEl.innerHTML = '';
+            var items = normalizeDetails(details).filter(function (item) {
+                return item && item.label;
+            });
+            if (!items.length) {
+                toggle(confirmDetailsWrapEl, false);
+                return;
+            }
+            items.forEach(function (item) {
+                var dt = document.createElement('dt');
+                dt.textContent = String(item.label);
+                var dd = document.createElement('dd');
+                dd.textContent = formatDetailValue(item.value);
+                confirmDetailsListEl.appendChild(dt);
+                confirmDetailsListEl.appendChild(dd);
+            });
+            toggle(confirmDetailsWrapEl, true);
+        }
+
+        function setItem(key, value) {
+            var cfg = elements[key];
+            if (!cfg || !cfg.count || !cfg.item) return;
+            setCount(cfg.count, value);
+            toggle(cfg.item, value > 0);
+        }
+
+        function updateTotals() {
+            var total = getCount(elements.users.count)
+                + getCount(elements.assignment.count)
+                + getCount(elements.team.count)
+                + getCount(elements.reopen.count)
+                + getCount(elements.guestbook.count);
+
+            setCount(elements.totalBadge, total);
+            setCount(elements.totalLabel, total);
+            toggle(elements.totalBadge, total > 0);
+            toggle(elements.totalLabel, total > 0);
+            toggle(elements.emptyState, total === 0);
+        }
+
+        window.updateAdminPendingCounts = function (delta) {
+            if (!delta) return;
+            Object.keys(delta).forEach(function (key) {
+                if (!elements[key] || !elements[key].count) return;
+                var next = Math.max(0, getCount(elements[key].count) + delta[key]);
+                setItem(key, next);
+            });
+            updateTotals();
+        };
+
+        window.setAdminPendingSummary = function (summary) {
+            if (!summary) return;
+            setItem('users', summary.pending_users || 0);
+            setItem('assignment', summary.pending_assignment_requests || 0);
+            setItem('team', summary.pending_team_member_requests || 0);
+            setItem('reopen', summary.pending_reopen_requests || 0);
+            setItem('guestbook', summary.pending_guestbook || 0);
+            updateTotals();
+        };
+
+        function replaceId(url, id) {
+            if (!url) return '';
+            return url.replace('/0/', '/' + id + '/');
+        }
+
+        function formatPendingDate(value) {
+            if (!value) return '';
+            var raw = value;
+            if (typeof raw === 'string') {
+                raw = raw.trim();
+                if (!raw) return '';
+                if (raw.indexOf('T') === -1 && raw.indexOf(' ') !== -1) {
+                    raw = raw.replace(' ', 'T');
+                }
+                if (/^\\d{4}-\\d{2}-\\d{2}$/.test(raw)) {
+                    raw = raw + 'T00:00:00';
+                }
+            }
+            var date = raw instanceof Date ? raw : new Date(raw);
+            if (Number.isNaN(date.getTime())) return '';
+            var now = new Date();
+            var options = {
+                day: '2-digit',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            };
+            if (date.getFullYear() !== now.getFullYear()) {
+                options.year = 'numeric';
+            }
+            var locale = document.documentElement.lang || 'id-ID';
+            return new Intl.DateTimeFormat(locale, options).format(date);
+        }
+
+        function buildQuickItem(title, subtitle, timeText, actions) {
+            var row = document.createElement('div');
+            row.className = 'notification-quick-item';
+
+            var meta = document.createElement('div');
+            meta.className = 'notification-quick-meta';
+
+            var titleEl = document.createElement('div');
+            titleEl.className = 'fw-semibold';
+            titleEl.textContent = title || '-';
+
+            var subtitleEl = document.createElement('small');
+            subtitleEl.textContent = subtitle || '';
+
+            meta.appendChild(titleEl);
+            if (subtitle) {
+                meta.appendChild(subtitleEl);
+            }
+            if (timeText) {
+                var timeEl = document.createElement('div');
+                timeEl.className = 'notification-quick-time';
+                timeEl.textContent = timeText;
+                meta.appendChild(timeEl);
+            }
+
+            var actionWrap = document.createElement('div');
+            actionWrap.className = 'notification-quick-actions';
+
+            actions.forEach(function (action) {
+                action.contextRow = row;
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn btn-sm ' + action.buttonClass + (action.icon ? ' icon-only' : '');
+                if (action.icon) {
+                    btn.innerHTML = '<i class="bi ' + action.icon + '" aria-hidden="true"></i>';
+                    btn.setAttribute('aria-label', action.label || 'Aksi');
+                    btn.setAttribute('title', action.label || 'Aksi');
+                } else {
+                    btn.textContent = action.label;
+                }
+                btn.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openConfirm(action);
+                });
+                actionWrap.appendChild(btn);
+            });
+
+            row.appendChild(meta);
+            row.appendChild(actionWrap);
+            return row;
+        }
+
+        function renderQuickList(preview) {
+            if (!elements.quickList) return;
+            elements.quickList.innerHTML = '';
+            var hasAny = false;
+
+            function addGroup(label, viewUrl, items, renderItem) {
+                if (!items || items.length === 0) return;
+                hasAny = true;
+                var title = document.createElement('div');
+                title.className = 'notification-group-title';
+
+                var labelEl = document.createElement('span');
+                labelEl.textContent = label;
+
+                var linkEl = document.createElement('a');
+                linkEl.href = viewUrl || '#';
+                linkEl.className = 'small text-decoration-none';
+                linkEl.textContent = 'Lihat semua';
+
+                title.appendChild(labelEl);
+                title.appendChild(linkEl);
+                elements.quickList.appendChild(title);
+
+                items.forEach(function (item) {
+                    elements.quickList.appendChild(renderItem(item));
+                });
+            }
+
+            addGroup('User baru', quickConfig.usersUrl, preview.users, function (item) {
+                var title = item.full_name || item.email || 'User';
+                var subtitle = [item.email, item.role].filter(Boolean).join(' • ');
+                var timeText = formatPendingDate(item.created_at);
+                var details = [
+                    { label: 'Nama', value: item.full_name || '-' },
+                    { label: 'Email', value: item.email || '-' },
+                    { label: 'Role', value: item.role || '-' },
+                    { label: 'No WhatsApp', value: item.whatsapp_number || '-' },
+                    { label: 'Kecamatan Pengajuan', value: item.kecamatan_name || '-' },
+                    { label: 'Sekolah', value: item.school_name || '-' },
+                    { label: 'NPSN', value: item.school_npsn || '-' },
+                    { label: 'Jenjang', value: item.school_jenjang || '-' },
+                    { label: 'Kecamatan Sekolah', value: item.school_kecamatan_name || '-' },
+                    { label: 'Diajukan', value: timeText || '-' }
+                ];
+                var verifyUrl = quickConfig.userVerifyUrl || quickConfig.usersUrl;
+                return buildQuickItem(title, subtitle, timeText, [
+                    {
+                        label: 'Setujui',
+                        icon: 'bi-check-lg',
+                        buttonClass: 'btn-success',
+                        confirmTitle: 'Setujui User',
+                        confirmText: 'Setujui user ' + (item.full_name || item.email || 'ini') + '?',
+                        details: details,
+                        url: verifyUrl,
+                        noteKey: 'reviewer_note',
+                        payload: {
+                            action: 'verify',
+                            user_id: item.id,
+                            account_status: 'approved',
+                            full_name: item.full_name || '',
+                            role: item.role || 'viewer',
+                        },
+                        deltaKey: 'users',
+                        toastMessage: 'User disetujui.'
+                    },
+                    {
+                        label: 'Tolak',
+                        icon: 'bi-x-lg',
+                        buttonClass: 'btn-outline-danger',
+                        confirmTitle: 'Tolak User',
+                        confirmText: 'Tolak user ' + (item.full_name || item.email || 'ini') + '?',
+                        details: details,
+                        url: verifyUrl,
+                        noteKey: 'reviewer_note',
+                        payload: {
+                            action: 'verify',
+                            user_id: item.id,
+                            account_status: 'rejected',
+                            full_name: item.full_name || '',
+                            role: item.role || 'viewer',
+                        },
+                        deltaKey: 'users',
+                        toastMessage: 'User ditolak.'
+                    }
+                ]);
+            });
+
+            addGroup('Permintaan penugasan', quickConfig.assignmentUrl, preview.assignment_requests, function (item) {
+                var title = (item.staff_name || 'Staff') + ' • ' + (item.school_name || 'Sekolah');
+                var subtitle = [item.coordinator_name, item.school_npsn].filter(Boolean).join(' • ');
+                var timeText = formatPendingDate(item.created_at);
+                var periodLabel = item.period_name || 'Periode aktif';
+                var details = [
+                    { label: 'Koordinator', value: item.coordinator_name || '-' },
+                    { label: 'Staff', value: item.staff_name || '-' },
+                    { label: 'Email Staff', value: item.staff_email || '-' },
+                    { label: 'Sekolah', value: item.school_name || '-' },
+                    { label: 'NPSN', value: item.school_npsn || '-' },
+                    { label: 'Kecamatan', value: item.kecamatan_name || '-' },
+                    { label: 'Periode', value: periodLabel },
+                    { label: 'Catatan', value: item.note || '-' },
+                    { label: 'Diajukan', value: timeText || '-' }
+                ];
+                return buildQuickItem(title, subtitle, timeText, [
+                    {
+                        label: 'Setujui',
+                        icon: 'bi-check-lg',
+                        buttonClass: 'btn-success',
+                        confirmTitle: 'Setujui Penugasan',
+                        confirmText: 'Setujui penugasan ' + (item.staff_name || 'staff') + ' ke ' + (item.school_name || 'sekolah') + '?',
+                        details: details,
+                        url: replaceId(quickConfig.approveAssignmentUrl, item.id),
+                        noteKey: 'reviewer_note',
+                        payload: null,
+                        deltaKey: 'assignment',
+                        toastMessage: 'Penugasan disetujui.'
+                    },
+                    {
+                        label: 'Tolak',
+                        icon: 'bi-x-lg',
+                        buttonClass: 'btn-outline-danger',
+                        confirmTitle: 'Tolak Penugasan',
+                        confirmText: 'Tolak penugasan ' + (item.staff_name || 'staff') + ' ke ' + (item.school_name || 'sekolah') + '?',
+                        details: details,
+                        url: replaceId(quickConfig.rejectAssignmentUrl, item.id),
+                        noteKey: 'reviewer_note',
+                        payload: null,
+                        deltaKey: 'assignment',
+                        toastMessage: 'Penugasan ditolak.'
+                    }
+                ]);
+            });
+
+            addGroup('Permintaan anggota tim', quickConfig.teamUrl, preview.team_member_requests, function (item) {
+                var title = (item.staff_name || 'Staff') + ' • ' + (item.team_name || 'Tim');
+                var subtitle = item.requested_by_name ? 'Diajukan oleh ' + item.requested_by_name : '';
+                var timeText = formatPendingDate(item.created_at);
+                var details = [
+                    { label: 'Tim', value: item.team_name || '-' },
+                    { label: 'Tipe', value: item.team_type || '-' },
+                    { label: 'Kecamatan', value: item.kecamatan_name || '-' },
+                    { label: 'Staff', value: item.staff_name || '-' },
+                    { label: 'Email Staff', value: item.staff_email || '-' },
+                    { label: 'Diajukan oleh', value: item.requested_by_name || '-' },
+                    { label: 'Catatan', value: item.note || '-' },
+                    { label: 'Diajukan', value: timeText || '-' }
+                ];
+                return buildQuickItem(title, subtitle, timeText, [
+                    {
+                        label: 'Setujui',
+                        icon: 'bi-check-lg',
+                        buttonClass: 'btn-success',
+                        confirmTitle: 'Setujui Anggota',
+                        confirmText: 'Setujui ' + (item.staff_name || 'staff') + ' untuk tim ' + (item.team_name || 'ini') + '?',
+                        details: details,
+                        url: quickConfig.teamUrl,
+                        noteKey: 'reviewer_note',
+                        payload: {
+                            action: 'approve_request',
+                            request_id: item.id
+                        },
+                        deltaKey: 'team',
+                        toastMessage: 'Permintaan anggota disetujui.'
+                    },
+                    {
+                        label: 'Tolak',
+                        icon: 'bi-x-lg',
+                        buttonClass: 'btn-outline-danger',
+                        confirmTitle: 'Tolak Anggota',
+                        confirmText: 'Tolak ' + (item.staff_name || 'staff') + ' untuk tim ' + (item.team_name || 'ini') + '?',
+                        details: details,
+                        url: quickConfig.teamUrl,
+                        noteKey: 'reviewer_note',
+                        payload: {
+                            action: 'reject_request',
+                            request_id: item.id
+                        },
+                        deltaKey: 'team',
+                        toastMessage: 'Permintaan anggota ditolak.'
+                    }
+                ]);
+            });
+
+            addGroup('Permintaan reopen', quickConfig.reopenUrl, preview.reopen_requests, function (item) {
+                var title = (item.school_name || 'Sekolah') + ' • ' + (item.staff_name || 'Staff');
+                var subtitle = item.npsn ? 'NPSN ' + item.npsn : '';
+                var timeText = formatPendingDate(item.created_at);
+                var details = [
+                    { label: 'Sekolah', value: item.school_name || '-' },
+                    { label: 'NPSN', value: item.npsn || '-' },
+                    { label: 'Staff', value: item.staff_name || '-' },
+                    { label: 'Email Staff', value: item.staff_email || '-' },
+                    { label: 'Assessment ID', value: item.assessment_id || '-' },
+                    { label: 'Alasan', value: item.reason || '-' },
+                    { label: 'Diajukan', value: timeText || '-' }
+                ];
+                return buildQuickItem(title, subtitle, timeText, [
+                    {
+                        label: 'Setujui',
+                        icon: 'bi-check-lg',
+                        buttonClass: 'btn-success',
+                        confirmTitle: 'Setujui Reopen',
+                        confirmText: 'Setujui reopen untuk ' + (item.school_name || 'sekolah') + '?',
+                        details: details,
+                        url: replaceId(quickConfig.approveReopenUrl, item.assessment_id),
+                        noteKey: 'reviewer_note',
+                        payload: { request_id: item.id },
+                        deltaKey: 'reopen',
+                        toastMessage: 'Reopen disetujui.'
+                    },
+                    {
+                        label: 'Tolak',
+                        icon: 'bi-x-lg',
+                        buttonClass: 'btn-outline-danger',
+                        confirmTitle: 'Tolak Reopen',
+                        confirmText: 'Tolak reopen untuk ' + (item.school_name || 'sekolah') + '?',
+                        details: details,
+                        url: replaceId(quickConfig.rejectReopenUrl, item.assessment_id),
+                        noteKey: 'reviewer_note',
+                        payload: { request_id: item.id },
+                        deltaKey: 'reopen',
+                        toastMessage: 'Reopen ditolak.'
+                    }
+                ]);
+            });
+
+            addGroup('Daftar tamu menunggu validasi', quickConfig.guestbookUrl, preview.guestbook_transactions, function (item) {
+                var guestCount = Number(item.guest_count || 0);
+                var guestLabel = item.guest_names || '';
+                var title = (item.school_name || 'Sekolah') + (guestLabel ? ' • ' + guestLabel : '');
+                var subtitleParts = [];
+                if (item.npsn) subtitleParts.push('NPSN ' + item.npsn);
+                if (guestCount) subtitleParts.push(guestCount + ' tamu');
+                var subtitle = subtitleParts.join(' • ');
+                var timeText = formatPendingDate(item.visit_at || item.created_at);
+                var details = [
+                    { label: 'Sekolah', value: item.school_name || '-' },
+                    { label: 'NPSN', value: item.npsn || '-' },
+                    { label: 'Jenjang', value: item.jenjang || '-' },
+                    { label: 'Kecamatan', value: item.kecamatan_name || '-' },
+                    { label: 'Kelurahan', value: item.kelurahan_name || '-' },
+                    { label: 'Tamu', value: guestLabel || '-' },
+                    { label: 'Jumlah tamu', value: guestCount || '-' },
+                    { label: 'Waktu', value: timeText || '-' }
+                ];
+                return buildQuickItem(title, subtitle, timeText, [
+                    {
+                        label: 'Setujui',
+                        icon: 'bi-check-lg',
+                        buttonClass: 'btn-success',
+                        confirmTitle: 'Setujui Daftar Tamu',
+                        confirmText: 'Setujui transaksi daftar tamu untuk ' + (item.school_name || 'sekolah') + '?',
+                        details: details,
+                        url: replaceId(quickConfig.approveGuestbookUrl, item.id),
+                        noteKey: 'reviewer_note',
+                        payload: null,
+                        deltaKey: 'guestbook',
+                        toastMessage: 'Transaksi daftar tamu disetujui.'
+                    },
+                    {
+                        label: 'Tolak',
+                        icon: 'bi-x-lg',
+                        buttonClass: 'btn-outline-danger',
+                        confirmTitle: 'Tolak Daftar Tamu',
+                        confirmText: 'Tolak transaksi daftar tamu untuk ' + (item.school_name || 'sekolah') + '?',
+                        details: details,
+                        url: replaceId(quickConfig.rejectGuestbookUrl, item.id),
+                        noteKey: 'reviewer_note',
+                        payload: null,
+                        deltaKey: 'guestbook',
+                        toastMessage: 'Transaksi daftar tamu ditolak.'
+                    }
+                ]);
+            });
+
+            if (!hasAny) {
+                var empty = document.createElement('div');
+                empty.className = 'text-muted small';
+                empty.textContent = 'Tidak ada aksi cepat.';
+                elements.quickList.appendChild(empty);
+            }
+
+            toggle(elements.quickDivider, hasAny);
+        }
+
+        function hideQuickRow(row) {
+            if (!row) return;
+            row.classList.add('d-none');
+            row.dataset.pendingHidden = 'true';
+        }
+
+        function showQuickRow(row) {
+            if (!row) return;
+            row.classList.remove('d-none');
+            delete row.dataset.pendingHidden;
+        }
+
+        function applyNoteToAction(action, note) {
+            if (!action || !note) return;
+            if (action.noteKey) {
+                if (action.payload instanceof FormData) {
+                    action.payload.set(action.noteKey, note);
+                } else if (action.payload && typeof action.payload === 'object') {
+                    action.payload[action.noteKey] = note;
+                } else {
+                    action.payload = {};
+                    action.payload[action.noteKey] = note;
+                }
+            }
+            action.note = note;
+        }
+
+        function prepareActionDefaults(action) {
+            if (!action) return;
+            var deltaKey = action.deltaKey;
+            if (!action.onSchedule) {
+                action.onSchedule = function () {
+                    if (action.contextRow) {
+                        hideQuickRow(action.contextRow);
+                    }
+                    if (deltaKey && window.updateAdminPendingCounts) {
+                        var delta = {};
+                        delta[deltaKey] = -1;
+                        window.updateAdminPendingCounts(delta);
+                    }
+                };
+            }
+            if (!action.onUndo) {
+                action.onUndo = function () {
+                    if (action.contextRow) {
+                        showQuickRow(action.contextRow);
+                    }
+                    if (deltaKey && window.updateAdminPendingCounts) {
+                        var delta = {};
+                        delta[deltaKey] = 1;
+                        window.updateAdminPendingCounts(delta);
+                    }
+                    if (window.refreshAdminPendingSummary) {
+                        window.refreshAdminPendingSummary();
+                    }
+                };
+            }
+            if (!action.onSuccess) {
+                action.onSuccess = function () {
+                    if (action.contextRow) {
+                        action.contextRow.remove();
+                    }
+                    if (window.refreshAdminPendingSummary) {
+                        window.refreshAdminPendingSummary();
+                    }
+                };
+            }
+            if (!action.onFailure && action.onUndo) {
+                action.onFailure = function (err) {
+                    action.onUndo();
+                    alert((err && err.message) || 'Gagal memproses permintaan.');
+                };
+            }
+        }
+
+        function openConfirm(action) {
+            if (!confirmModal || !confirmBtnEl) return;
+            pendingAction = action;
+            prepareActionDefaults(pendingAction);
+            if (confirmTitleEl) {
+                confirmTitleEl.textContent = action.confirmTitle || 'Konfirmasi';
+            }
+            if (confirmTextEl) {
+                confirmTextEl.textContent = action.confirmText || 'Lanjutkan tindakan ini?';
+            }
+            renderConfirmDetails(action.details);
+            if (confirmNoteWrapEl) {
+                var showNote = !!(action.noteKey || action.allowNote);
+                toggle(confirmNoteWrapEl, showNote);
+            }
+            if (confirmNoteEl) {
+                confirmNoteEl.value = '';
+                confirmNoteEl.placeholder = action.notePlaceholder || 'Tulis catatan singkat untuk audit.';
+            }
+            confirmBtnEl.textContent = action.label || 'Lanjutkan';
+            confirmBtnEl.className = 'btn ' + (action.buttonClass || 'btn-primary');
+            confirmModal.show();
+        }
+
+        function executeAction(action) {
+            if (!action || !action.url) return Promise.resolve();
+            var options = {
+                method: action.method || 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
                 }
             };
-            var hasPendingUI = !!document.getElementById('adminNotificationToggle');
-            var quickConfig = elements.quickList ? {
-                previewUrl: elements.quickList.dataset.previewUrl,
-                usersUrl: elements.quickList.dataset.usersUrl,
-                userVerifyUrl: elements.quickList.dataset.userVerifyUrl,
-                assignmentUrl: elements.quickList.dataset.assignmentUrl,
-                teamUrl: elements.quickList.dataset.teamUrl,
-                reopenUrl: elements.quickList.dataset.reopenUrl,
-                guestbookUrl: elements.quickList.dataset.guestbookUrl,
-                approveAssignmentUrl: elements.quickList.dataset.approveAssignment,
-                rejectAssignmentUrl: elements.quickList.dataset.rejectAssignment,
-                approveReopenUrl: elements.quickList.dataset.approveReopen,
-                rejectReopenUrl: elements.quickList.dataset.rejectReopen,
-                approveGuestbookUrl: elements.quickList.dataset.approveGuestbook,
-                rejectGuestbookUrl: elements.quickList.dataset.rejectGuestbook,
-                undoWindowSeconds: elements.quickList.dataset.undoWindowSeconds
-            } : {};
-            var configuredUndoSeconds = parseInt(
-                quickConfig.undoWindowSeconds || '{{ undo_window_seconds | default(7) }}',
-                10
-            );
-            if (!Number.isFinite(configuredUndoSeconds) || configuredUndoSeconds < 1) {
-                configuredUndoSeconds = 7;
-            }
-            var defaultUndoDelayMs = configuredUndoSeconds * 1000;
-            var confirmModalEl = document.getElementById('adminQuickConfirmModal');
-            var confirmTitleEl = document.getElementById('adminQuickConfirmTitle');
-            var confirmTextEl = document.getElementById('adminQuickConfirmText');
-            var confirmDetailsWrapEl = document.getElementById('adminQuickConfirmDetails');
-            var confirmDetailsListEl = document.getElementById('adminQuickConfirmDetailsList');
-            var confirmNoteEl = document.getElementById('adminQuickConfirmNote');
-            var confirmNoteWrapEl = document.getElementById('adminQuickConfirmNoteWrap');
-            var confirmBtnEl = document.getElementById('adminQuickConfirmBtn');
-            var confirmModal = confirmModalEl ? new bootstrap.Modal(confirmModalEl) : null;
-            var pendingAction = null;
-            var pendingActions = new Map();
-            var pendingOrder = [];
-            var undoContainer = document.getElementById('adminUndoToastContainer');
-            if (!undoContainer) {
-                undoContainer = document.createElement('div');
-                undoContainer.id = 'adminUndoToastContainer';
-                undoContainer.className = 'admin-undo-container';
-                document.body.appendChild(undoContainer);
-            }
-
-            function isEditableTarget(target) {
-                if (!target) return false;
-                var tag = target.tagName ? target.tagName.toLowerCase() : '';
-                return (
-                    tag === 'input'
-                    || tag === 'textarea'
-                    || tag === 'select'
-                    || target.isContentEditable
-                );
-            }
-
-            function cleanupUndoToast(toast) {
-                if (!toast) return;
-                if (toast._countdownTimer) {
-                    clearInterval(toast._countdownTimer);
-                }
-                toast.remove();
-            }
-
-            function createUndoToast(action, expiresAt, onUndo, onSkip) {
-                if (!undoContainer) return null;
-                var toast = document.createElement('div');
-                toast.className = 'admin-undo-toast';
-
-                var textWrap = document.createElement('div');
-                var title = document.createElement('div');
-                title.className = 'fw-semibold';
-                title.textContent = action.undoLabel || action.confirmTitle || 'Aksi dijadwalkan';
-
-                var subtitle = document.createElement('small');
-                subtitle.innerHTML = 'Undo dalam <span class="admin-undo-countdown"></span> detik';
-                var countdownEl = subtitle.querySelector('.admin-undo-countdown');
-
-                function updateCountdown() {
-                    var remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
-                    countdownEl.textContent = remaining.toString();
-                }
-
-                updateCountdown();
-                toast._countdownTimer = setInterval(updateCountdown, 1000);
-
-                textWrap.appendChild(title);
-                textWrap.appendChild(subtitle);
-
-                var undoBtn = document.createElement('button');
-                undoBtn.type = 'button';
-                undoBtn.className = 'btn btn-sm btn-outline-light';
-                undoBtn.textContent = 'Undo';
-                undoBtn.addEventListener('click', function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    if (typeof onUndo === 'function') {
-                        onUndo();
-                    }
+            if (action.headers) {
+                Object.keys(action.headers).forEach(function (key) {
+                    options.headers[key] = action.headers[key];
                 });
-
-                var skipBtn = document.createElement('button');
-                skipBtn.type = 'button';
-                skipBtn.className = 'btn btn-sm btn-light';
-                skipBtn.textContent = 'Skip';
-                skipBtn.addEventListener('click', function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    if (typeof onSkip === 'function') {
-                        onSkip();
-                    }
+            }
+            if (action.payload) {
+                if (action.payload instanceof FormData) {
+                    options.body = action.payload;
+                } else if (action.payloadType === 'json') {
+                    options.headers['Content-Type'] = 'application/json';
+                    options.body = JSON.stringify(action.payload);
+                } else {
+                    var formData = new FormData();
+                    Object.keys(action.payload).forEach(function (key) {
+                        if (action.payload[key] !== undefined && action.payload[key] !== null) {
+                            formData.append(key, action.payload[key]);
+                        }
+                    });
+                    options.body = formData;
+                }
+            }
+            return fetch(action.url, options)
+                .then(function (response) {
+                    return response.json().catch(function () { return null; }).then(function (data) {
+                        if (!response.ok || !data || !data.success) {
+                            var message = (data && data.message) ? data.message : 'Gagal memproses permintaan.';
+                            throw new Error(message);
+                        }
+                        return data;
+                    });
                 });
+        }
 
-                var actionWrap = document.createElement('div');
-                actionWrap.className = 'admin-undo-actions';
-                actionWrap.appendChild(undoBtn);
-                actionWrap.appendChild(skipBtn);
-
-                toast.appendChild(textWrap);
-                toast.appendChild(actionWrap);
-                undoContainer.appendChild(toast);
-                return toast;
-            }
-
-            function removePendingId(actionId) {
-                pendingOrder = pendingOrder.filter(function (id) { return id !== actionId; });
-            }
-
-            function scheduleAdminAction(action) {
-                if (!action) return null;
-                var delayMs = typeof action.delayMs === 'number' ? action.delayMs : defaultUndoDelayMs;
-                delayMs = Math.max(0, delayMs);
-                var actionId = action.id || ('admin-action-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+        if (confirmBtnEl) {
+            confirmBtnEl.addEventListener('click', function () {
+                if (!pendingAction) return;
+                confirmBtnEl.disabled = true;
+                var action = pendingAction;
+                pendingAction = null;
+                var note = confirmNoteEl ? confirmNoteEl.value.trim() : '';
+                if (confirmNoteEl) {
+                    confirmNoteEl.value = '';
+                }
+                if (note) {
+                    applyNoteToAction(action, note);
+                }
                 if (!action.execute) {
                     action.execute = function () {
                         return executeAction(action);
                     };
                 }
-
-                if (typeof action.onSchedule === 'function') {
-                    action.onSchedule();
+                if (confirmModal) {
+                    confirmModal.hide();
                 }
-
-                var expiresAt = Date.now() + delayMs;
-                var toast = createUndoToast(action, expiresAt, function () {
-                    undoAdminAction(actionId);
-                }, function () {
-                    skipAdminAction(actionId);
-                });
-
-                var timer = setTimeout(function () {
-                    commitAdminAction(actionId);
-                }, delayMs);
-
-                pendingActions.set(actionId, {
-                    id: actionId,
-                    action: action,
-                    timer: timer,
-                    toast: toast,
-                });
-                pendingOrder.push(actionId);
-                return actionId;
-            }
-
-            function commitAdminAction(actionId) {
-                var entry = pendingActions.get(actionId);
-                if (!entry) return;
-                pendingActions.delete(actionId);
-                removePendingId(actionId);
-                cleanupUndoToast(entry.toast);
-
-                entry.action.execute()
-                    .then(function (data) {
-                        if (typeof entry.action.onSuccess === 'function') {
-                            entry.action.onSuccess(data);
-                        }
-                        if (entry.action.toastMessage && typeof showToast === 'function') {
-                            showToast(entry.action.toastMessage);
-                        }
-                    })
-                    .catch(function (err) {
-                        if (typeof entry.action.onFailure === 'function') {
-                            entry.action.onFailure(err);
-                            return;
-                        }
-                        if (typeof entry.action.onUndo === 'function') {
-                            entry.action.onUndo();
-                        }
-                        alert(err.message || 'Gagal memproses permintaan.');
-                    });
-            }
-
-            function undoAdminAction(actionId) {
-                var entry = pendingActions.get(actionId);
-                if (!entry) return;
-                pendingActions.delete(actionId);
-                removePendingId(actionId);
-                clearTimeout(entry.timer);
-                cleanupUndoToast(entry.toast);
-                if (typeof entry.action.onUndo === 'function') {
-                    entry.action.onUndo();
-                }
-            }
-
-            function skipAdminAction(actionId) {
-                var entry = pendingActions.get(actionId);
-                if (!entry) return;
-                clearTimeout(entry.timer);
-                commitAdminAction(actionId);
-            }
-
-            function undoLastAdminAction() {
-                var lastId = pendingOrder[pendingOrder.length - 1];
-                if (!lastId) return;
-                undoAdminAction(lastId);
-            }
-
-            document.addEventListener('keydown', function (event) {
-                if (!event.ctrlKey || event.key.toLowerCase() !== 'z') return;
-                if (isEditableTarget(event.target)) return;
-                event.preventDefault();
-                undoLastAdminAction();
+                scheduleAdminAction(action);
+                confirmBtnEl.disabled = false;
             });
+        }
 
-            function getCount(el) {
-                if (!el) return 0;
-                var raw = el.dataset.count || el.textContent || '0';
-                var value = parseInt(raw, 10);
-                return Number.isNaN(value) ? 0 : value;
+        window.confirmAdminAction = openConfirm;
+        window.scheduleAdminAction = scheduleAdminAction;
+        window.executeAdminAction = executeAction;
+        window.undoLastAdminAction = undoLastAdminAction;
+
+        function isDeleteLikeForm(form) {
+            if (!form) return false;
+            if (form.dataset.undoSkip === 'true') return false;
+            if ((form.getAttribute('method') || '').toUpperCase() !== 'POST') return false;
+            var actionUrl = (form.getAttribute('action') || '').toLowerCase();
+            var actionInput = form.querySelector('input[name="action"]');
+            var actionValue = actionInput ? (actionInput.value || '').toLowerCase() : '';
+            if (form.dataset.undoDelete === 'true') return true;
+            return actionUrl.includes('delete')
+                || actionUrl.includes('remove')
+                || actionValue.includes('delete')
+                || actionValue.includes('remove');
+        }
+
+        function extractInlineConfirmText(form) {
+            if (!form) return '';
+            if (form.dataset.confirmText) return form.dataset.confirmText;
+            var inline = form.getAttribute('onsubmit') || '';
+            var match = inline.match(/confirm\\((['"])(.*?)\\1\\)/);
+            return match ? match[2] : '';
+        }
+
+        function resolveSubmitLabel(form) {
+            var btn = form.querySelector('button[type="submit"]');
+            if (btn) {
+                var text = (btn.textContent || '').trim();
+                if (text) return text;
+            }
+            return 'Hapus';
+        }
+
+        function toggleFormButtons(form, disabled) {
+            if (!form) return;
+            form.querySelectorAll('button[type="submit"]').forEach(function (btn) {
+                btn.disabled = disabled;
+            });
+        }
+
+        document.addEventListener('submit', function (event) {
+            if (!isAdmin) return;
+            var form = event.target;
+            if (!(form instanceof HTMLFormElement)) return;
+            if (!isDeleteLikeForm(form)) return;
+            if (form.dataset.undoReady === 'true') {
+                delete form.dataset.undoReady;
+                return;
             }
 
-            function setCount(el, value) {
-                if (!el) return;
-                el.dataset.count = value;
-                el.textContent = value;
-            }
+            event.preventDefault();
+            event.stopPropagation();
 
-            function toggle(el, show) {
-                if (!el) return;
-                if (show) {
-                    el.classList.remove('d-none');
-                } else {
-                    el.classList.add('d-none');
+            var confirmText = extractInlineConfirmText(form) || 'Hapus item ini?';
+            var confirmTitle = form.dataset.confirmTitle || 'Konfirmasi Hapus';
+            var label = form.dataset.confirmLabel || resolveSubmitLabel(form);
+            var modalEl = form.closest('.modal');
+            var action = {
+                confirmTitle: confirmTitle,
+                confirmText: confirmText,
+                label: label,
+                buttonClass: 'btn-danger',
+                allowNote: false,
+                undoLabel: 'Penghapusan dijadwalkan',
+                execute: function () {
+                    form.dataset.undoReady = 'true';
+                    form.submit();
+                    return Promise.resolve({ success: true });
+                },
+                onSchedule: function () {
+                    toggleFormButtons(form, true);
+                    if (modalEl && window.bootstrap) {
+                        var modalInstance = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl);
+                        modalInstance.hide();
+                    }
+                },
+                onUndo: function () {
+                    toggleFormButtons(form, false);
                 }
-            }
-
-            function normalizeDetails(details) {
-                if (!details) return [];
-                if (Array.isArray(details)) return details;
-                if (typeof details === 'object') {
-                    return Object.keys(details).map(function (key) {
-                        return { label: key, value: details[key] };
-                    });
-                }
-                return [];
-            }
-
-            function formatDetailValue(value) {
-                if (Array.isArray(value)) {
-                    var items = value.filter(function (item) {
-                        return item !== null && item !== undefined && String(item).trim() !== '';
-                    });
-                    return items.length ? items.join(', ') : '-';
-                }
-                if (value === null || value === undefined) return '-';
-                if (typeof value === 'string') {
-                    var trimmed = value.trim();
-                    return trimmed ? trimmed : '-';
-                }
-                return String(value);
-            }
-
-            function renderConfirmDetails(details) {
-                if (!confirmDetailsWrapEl || !confirmDetailsListEl) return;
-                confirmDetailsListEl.innerHTML = '';
-                var items = normalizeDetails(details).filter(function (item) {
-                    return item && item.label;
-                });
-                if (!items.length) {
-                    toggle(confirmDetailsWrapEl, false);
-                    return;
-                }
-                items.forEach(function (item) {
-                    var dt = document.createElement('dt');
-                    dt.textContent = String(item.label);
-                    var dd = document.createElement('dd');
-                    dd.textContent = formatDetailValue(item.value);
-                    confirmDetailsListEl.appendChild(dt);
-                    confirmDetailsListEl.appendChild(dd);
-                });
-                toggle(confirmDetailsWrapEl, true);
-            }
-
-            function setItem(key, value) {
-                var cfg = elements[key];
-                if (!cfg || !cfg.count || !cfg.item) return;
-                setCount(cfg.count, value);
-                toggle(cfg.item, value > 0);
-            }
-
-            function updateTotals() {
-                var total = getCount(elements.users.count)
-                    + getCount(elements.assignment.count)
-                    + getCount(elements.team.count)
-                    + getCount(elements.reopen.count)
-                    + getCount(elements.guestbook.count);
-
-                setCount(elements.totalBadge, total);
-                setCount(elements.totalLabel, total);
-                toggle(elements.totalBadge, total > 0);
-                toggle(elements.totalLabel, total > 0);
-                toggle(elements.emptyState, total === 0);
-            }
-
-            window.updateAdminPendingCounts = function (delta) {
-                if (!delta) return;
-                Object.keys(delta).forEach(function (key) {
-                    if (!elements[key] || !elements[key].count) return;
-                    var next = Math.max(0, getCount(elements[key].count) + delta[key]);
-                    setItem(key, next);
-                });
-                updateTotals();
             };
 
-            window.setAdminPendingSummary = function (summary) {
-                if (!summary) return;
-                setItem('users', summary.pending_users || 0);
-                setItem('assignment', summary.pending_assignment_requests || 0);
-                setItem('team', summary.pending_team_member_requests || 0);
-                setItem('reopen', summary.pending_reopen_requests || 0);
-                setItem('guestbook', summary.pending_guestbook || 0);
-                updateTotals();
-            };
-
-            function replaceId(url, id) {
-                if (!url) return '';
-                return url.replace('/0/', '/' + id + '/');
+            if (modalEl) {
+                scheduleAdminAction(action);
+            } else if (window.confirmAdminAction) {
+                window.confirmAdminAction(action);
+            } else {
+                scheduleAdminAction(action);
             }
+        }, true);
 
-            function formatPendingDate(value) {
-                if (!value) return '';
-                var raw = value;
-                if (typeof raw === 'string') {
-                    raw = raw.trim();
-                    if (!raw) return '';
-                    if (raw.indexOf('T') === -1 && raw.indexOf(' ') !== -1) {
-                        raw = raw.replace(' ', 'T');
+        function fetchSummary() {
+            if (!hasPendingUI) {
+                return Promise.resolve();
+            }
+            var previewUrl = quickConfig.previewUrl || "{{ url_for('portal.admin_pending_preview') }}";
+            var requestUrl = previewUrl + '?limit=3';
+            return fetch(requestUrl, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(function (response) {
+                    if (!response.ok) return null;
+                    return response.json();
+                })
+                .then(function (data) {
+                    if (data && data.summary) {
+                        window.setAdminPendingSummary(data.summary);
+                        renderQuickList(data);
                     }
-                    if (/^\\d{4}-\\d{2}-\\d{2}$/.test(raw)) {
-                        raw = raw + 'T00:00:00';
-                    }
-                }
-                var date = raw instanceof Date ? raw : new Date(raw);
-                if (Number.isNaN(date.getTime())) return '';
-                var now = new Date();
-                var options = {
-                    day: '2-digit',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                };
-                if (date.getFullYear() !== now.getFullYear()) {
-                    options.year = 'numeric';
-                }
-                var locale = document.documentElement.lang || 'id-ID';
-                return new Intl.DateTimeFormat(locale, options).format(date);
-            }
+                })
+                .catch(function () { });
+        }
 
-            function buildQuickItem(title, subtitle, timeText, actions) {
-                var row = document.createElement('div');
-                row.className = 'notification-quick-item';
+        window.refreshAdminPendingSummary = function () {
+            return fetchSummary();
+        };
 
-                var meta = document.createElement('div');
-                meta.className = 'notification-quick-meta';
-
-                var titleEl = document.createElement('div');
-                titleEl.className = 'fw-semibold';
-                titleEl.textContent = title || '-';
-
-                var subtitleEl = document.createElement('small');
-                subtitleEl.textContent = subtitle || '';
-
-                meta.appendChild(titleEl);
-                if (subtitle) {
-                    meta.appendChild(subtitleEl);
-                }
-                if (timeText) {
-                    var timeEl = document.createElement('div');
-                    timeEl.className = 'notification-quick-time';
-                    timeEl.textContent = timeText;
-                    meta.appendChild(timeEl);
-                }
-
-                var actionWrap = document.createElement('div');
-                actionWrap.className = 'notification-quick-actions';
-
-                actions.forEach(function (action) {
-                    action.contextRow = row;
-                    var btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'btn btn-sm ' + action.buttonClass + (action.icon ? ' icon-only' : '');
-                    if (action.icon) {
-                        btn.innerHTML = '<i class="bi ' + action.icon + '" aria-hidden="true"></i>';
-                        btn.setAttribute('aria-label', action.label || 'Aksi');
-                        btn.setAttribute('title', action.label || 'Aksi');
-                    } else {
-                        btn.textContent = action.label;
-                    }
-                    btn.addEventListener('click', function (event) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        openConfirm(action);
-                    });
-                    actionWrap.appendChild(btn);
-                });
-
-                row.appendChild(meta);
-                row.appendChild(actionWrap);
-                return row;
-            }
-
-            function renderQuickList(preview) {
-                if (!elements.quickList) return;
-                elements.quickList.innerHTML = '';
-                var hasAny = false;
-
-                function addGroup(label, viewUrl, items, renderItem) {
-                    if (!items || items.length === 0) return;
-                    hasAny = true;
-                    var title = document.createElement('div');
-                    title.className = 'notification-group-title';
-
-                    var labelEl = document.createElement('span');
-                    labelEl.textContent = label;
-
-                    var linkEl = document.createElement('a');
-                    linkEl.href = viewUrl || '#';
-                    linkEl.className = 'small text-decoration-none';
-                    linkEl.textContent = 'Lihat semua';
-
-                    title.appendChild(labelEl);
-                    title.appendChild(linkEl);
-                    elements.quickList.appendChild(title);
-
-                    items.forEach(function (item) {
-                        elements.quickList.appendChild(renderItem(item));
-                    });
-                }
-
-                addGroup('User baru', quickConfig.usersUrl, preview.users, function (item) {
-                    var title = item.full_name || item.email || 'User';
-                    var subtitle = [item.email, item.role].filter(Boolean).join(' • ');
-                    var timeText = formatPendingDate(item.created_at);
-                    var details = [
-                        { label: 'Nama', value: item.full_name || '-' },
-                        { label: 'Email', value: item.email || '-' },
-                        { label: 'Role', value: item.role || '-' },
-                        { label: 'No WhatsApp', value: item.whatsapp_number || '-' },
-                        { label: 'Kecamatan Pengajuan', value: item.kecamatan_name || '-' },
-                        { label: 'Sekolah', value: item.school_name || '-' },
-                        { label: 'NPSN', value: item.school_npsn || '-' },
-                        { label: 'Jenjang', value: item.school_jenjang || '-' },
-                        { label: 'Kecamatan Sekolah', value: item.school_kecamatan_name || '-' },
-                        { label: 'Diajukan', value: timeText || '-' }
-                    ];
-                    var verifyUrl = quickConfig.userVerifyUrl || quickConfig.usersUrl;
-                    return buildQuickItem(title, subtitle, timeText, [
-                        {
-                            label: 'Setujui',
-                            icon: 'bi-check-lg',
-                            buttonClass: 'btn-success',
-                            confirmTitle: 'Setujui User',
-                            confirmText: 'Setujui user ' + (item.full_name || item.email || 'ini') + '?',
-                            details: details,
-                            url: verifyUrl,
-                            noteKey: 'reviewer_note',
-                            payload: {
-                                action: 'verify',
-                                user_id: item.id,
-                                account_status: 'approved',
-                                full_name: item.full_name || '',
-                                role: item.role || 'viewer',
-                            },
-                            deltaKey: 'users',
-                            toastMessage: 'User disetujui.'
-                        },
-                        {
-                            label: 'Tolak',
-                            icon: 'bi-x-lg',
-                            buttonClass: 'btn-outline-danger',
-                            confirmTitle: 'Tolak User',
-                            confirmText: 'Tolak user ' + (item.full_name || item.email || 'ini') + '?',
-                            details: details,
-                            url: verifyUrl,
-                            noteKey: 'reviewer_note',
-                            payload: {
-                                action: 'verify',
-                                user_id: item.id,
-                                account_status: 'rejected',
-                                full_name: item.full_name || '',
-                                role: item.role || 'viewer',
-                            },
-                            deltaKey: 'users',
-                            toastMessage: 'User ditolak.'
-                        }
-                    ]);
-                });
-
-                addGroup('Permintaan penugasan', quickConfig.assignmentUrl, preview.assignment_requests, function (item) {
-                    var title = (item.staff_name || 'Staff') + ' • ' + (item.school_name || 'Sekolah');
-                    var subtitle = [item.coordinator_name, item.school_npsn].filter(Boolean).join(' • ');
-                    var timeText = formatPendingDate(item.created_at);
-                    var periodLabel = item.period_name || 'Periode aktif';
-                    var details = [
-                        { label: 'Koordinator', value: item.coordinator_name || '-' },
-                        { label: 'Staff', value: item.staff_name || '-' },
-                        { label: 'Email Staff', value: item.staff_email || '-' },
-                        { label: 'Sekolah', value: item.school_name || '-' },
-                        { label: 'NPSN', value: item.school_npsn || '-' },
-                        { label: 'Kecamatan', value: item.kecamatan_name || '-' },
-                        { label: 'Periode', value: periodLabel },
-                        { label: 'Catatan', value: item.note || '-' },
-                        { label: 'Diajukan', value: timeText || '-' }
-                    ];
-                    return buildQuickItem(title, subtitle, timeText, [
-                        {
-                            label: 'Setujui',
-                            icon: 'bi-check-lg',
-                            buttonClass: 'btn-success',
-                            confirmTitle: 'Setujui Penugasan',
-                            confirmText: 'Setujui penugasan ' + (item.staff_name || 'staff') + ' ke ' + (item.school_name || 'sekolah') + '?',
-                            details: details,
-                            url: replaceId(quickConfig.approveAssignmentUrl, item.id),
-                            noteKey: 'reviewer_note',
-                            payload: null,
-                            deltaKey: 'assignment',
-                            toastMessage: 'Penugasan disetujui.'
-                        },
-                        {
-                            label: 'Tolak',
-                            icon: 'bi-x-lg',
-                            buttonClass: 'btn-outline-danger',
-                            confirmTitle: 'Tolak Penugasan',
-                            confirmText: 'Tolak penugasan ' + (item.staff_name || 'staff') + ' ke ' + (item.school_name || 'sekolah') + '?',
-                            details: details,
-                            url: replaceId(quickConfig.rejectAssignmentUrl, item.id),
-                            noteKey: 'reviewer_note',
-                            payload: null,
-                            deltaKey: 'assignment',
-                            toastMessage: 'Penugasan ditolak.'
-                        }
-                    ]);
-                });
-
-                addGroup('Permintaan anggota tim', quickConfig.teamUrl, preview.team_member_requests, function (item) {
-                    var title = (item.staff_name || 'Staff') + ' • ' + (item.team_name || 'Tim');
-                    var subtitle = item.requested_by_name ? 'Diajukan oleh ' + item.requested_by_name : '';
-                    var timeText = formatPendingDate(item.created_at);
-                    var details = [
-                        { label: 'Tim', value: item.team_name || '-' },
-                        { label: 'Tipe', value: item.team_type || '-' },
-                        { label: 'Kecamatan', value: item.kecamatan_name || '-' },
-                        { label: 'Staff', value: item.staff_name || '-' },
-                        { label: 'Email Staff', value: item.staff_email || '-' },
-                        { label: 'Diajukan oleh', value: item.requested_by_name || '-' },
-                        { label: 'Catatan', value: item.note || '-' },
-                        { label: 'Diajukan', value: timeText || '-' }
-                    ];
-                    return buildQuickItem(title, subtitle, timeText, [
-                        {
-                            label: 'Setujui',
-                            icon: 'bi-check-lg',
-                            buttonClass: 'btn-success',
-                            confirmTitle: 'Setujui Anggota',
-                            confirmText: 'Setujui ' + (item.staff_name || 'staff') + ' untuk tim ' + (item.team_name || 'ini') + '?',
-                            details: details,
-                            url: quickConfig.teamUrl,
-                            noteKey: 'reviewer_note',
-                            payload: {
-                                action: 'approve_request',
-                                request_id: item.id
-                            },
-                            deltaKey: 'team',
-                            toastMessage: 'Permintaan anggota disetujui.'
-                        },
-                        {
-                            label: 'Tolak',
-                            icon: 'bi-x-lg',
-                            buttonClass: 'btn-outline-danger',
-                            confirmTitle: 'Tolak Anggota',
-                            confirmText: 'Tolak ' + (item.staff_name || 'staff') + ' untuk tim ' + (item.team_name || 'ini') + '?',
-                            details: details,
-                            url: quickConfig.teamUrl,
-                            noteKey: 'reviewer_note',
-                            payload: {
-                                action: 'reject_request',
-                                request_id: item.id
-                            },
-                            deltaKey: 'team',
-                            toastMessage: 'Permintaan anggota ditolak.'
-                        }
-                    ]);
-                });
-
-                addGroup('Permintaan reopen', quickConfig.reopenUrl, preview.reopen_requests, function (item) {
-                    var title = (item.school_name || 'Sekolah') + ' • ' + (item.staff_name || 'Staff');
-                    var subtitle = item.npsn ? 'NPSN ' + item.npsn : '';
-                    var timeText = formatPendingDate(item.created_at);
-                    var details = [
-                        { label: 'Sekolah', value: item.school_name || '-' },
-                        { label: 'NPSN', value: item.npsn || '-' },
-                        { label: 'Staff', value: item.staff_name || '-' },
-                        { label: 'Email Staff', value: item.staff_email || '-' },
-                        { label: 'Assessment ID', value: item.assessment_id || '-' },
-                        { label: 'Alasan', value: item.reason || '-' },
-                        { label: 'Diajukan', value: timeText || '-' }
-                    ];
-                    return buildQuickItem(title, subtitle, timeText, [
-                        {
-                            label: 'Setujui',
-                            icon: 'bi-check-lg',
-                            buttonClass: 'btn-success',
-                            confirmTitle: 'Setujui Reopen',
-                            confirmText: 'Setujui reopen untuk ' + (item.school_name || 'sekolah') + '?',
-                            details: details,
-                            url: replaceId(quickConfig.approveReopenUrl, item.assessment_id),
-                            noteKey: 'reviewer_note',
-                            payload: { request_id: item.id },
-                            deltaKey: 'reopen',
-                            toastMessage: 'Reopen disetujui.'
-                        },
-                        {
-                            label: 'Tolak',
-                            icon: 'bi-x-lg',
-                            buttonClass: 'btn-outline-danger',
-                            confirmTitle: 'Tolak Reopen',
-                            confirmText: 'Tolak reopen untuk ' + (item.school_name || 'sekolah') + '?',
-                            details: details,
-                            url: replaceId(quickConfig.rejectReopenUrl, item.assessment_id),
-                            noteKey: 'reviewer_note',
-                            payload: { request_id: item.id },
-                            deltaKey: 'reopen',
-                            toastMessage: 'Reopen ditolak.'
-                        }
-                    ]);
-                });
-
-                addGroup('Daftar tamu menunggu validasi', quickConfig.guestbookUrl, preview.guestbook_transactions, function (item) {
-                    var guestCount = Number(item.guest_count || 0);
-                    var guestLabel = item.guest_names || '';
-                    var title = (item.school_name || 'Sekolah') + (guestLabel ? ' • ' + guestLabel : '');
-                    var subtitleParts = [];
-                    if (item.npsn) subtitleParts.push('NPSN ' + item.npsn);
-                    if (guestCount) subtitleParts.push(guestCount + ' tamu');
-                    var subtitle = subtitleParts.join(' • ');
-                    var timeText = formatPendingDate(item.visit_at || item.created_at);
-                    var details = [
-                        { label: 'Sekolah', value: item.school_name || '-' },
-                        { label: 'NPSN', value: item.npsn || '-' },
-                        { label: 'Jenjang', value: item.jenjang || '-' },
-                        { label: 'Kecamatan', value: item.kecamatan_name || '-' },
-                        { label: 'Kelurahan', value: item.kelurahan_name || '-' },
-                        { label: 'Tamu', value: guestLabel || '-' },
-                        { label: 'Jumlah tamu', value: guestCount || '-' },
-                        { label: 'Waktu', value: timeText || '-' }
-                    ];
-                    return buildQuickItem(title, subtitle, timeText, [
-                        {
-                            label: 'Setujui',
-                            icon: 'bi-check-lg',
-                            buttonClass: 'btn-success',
-                            confirmTitle: 'Setujui Daftar Tamu',
-                            confirmText: 'Setujui transaksi daftar tamu untuk ' + (item.school_name || 'sekolah') + '?',
-                            details: details,
-                            url: replaceId(quickConfig.approveGuestbookUrl, item.id),
-                            noteKey: 'reviewer_note',
-                            payload: null,
-                            deltaKey: 'guestbook',
-                            toastMessage: 'Transaksi daftar tamu disetujui.'
-                        },
-                        {
-                            label: 'Tolak',
-                            icon: 'bi-x-lg',
-                            buttonClass: 'btn-outline-danger',
-                            confirmTitle: 'Tolak Daftar Tamu',
-                            confirmText: 'Tolak transaksi daftar tamu untuk ' + (item.school_name || 'sekolah') + '?',
-                            details: details,
-                            url: replaceId(quickConfig.rejectGuestbookUrl, item.id),
-                            noteKey: 'reviewer_note',
-                            payload: null,
-                            deltaKey: 'guestbook',
-                            toastMessage: 'Transaksi daftar tamu ditolak.'
-                        }
-                    ]);
-                });
-
-                if (!hasAny) {
-                    var empty = document.createElement('div');
-                    empty.className = 'text-muted small';
-                    empty.textContent = 'Tidak ada aksi cepat.';
-                    elements.quickList.appendChild(empty);
-                }
-
-                toggle(elements.quickDivider, hasAny);
-            }
-
-            function hideQuickRow(row) {
-                if (!row) return;
-                row.classList.add('d-none');
-                row.dataset.pendingHidden = 'true';
-            }
-
-            function showQuickRow(row) {
-                if (!row) return;
-                row.classList.remove('d-none');
-                delete row.dataset.pendingHidden;
-            }
-
-            function applyNoteToAction(action, note) {
-                if (!action || !note) return;
-                if (action.noteKey) {
-                    if (action.payload instanceof FormData) {
-                        action.payload.set(action.noteKey, note);
-                    } else if (action.payload && typeof action.payload === 'object') {
-                        action.payload[action.noteKey] = note;
-                    } else {
-                        action.payload = {};
-                        action.payload[action.noteKey] = note;
-                    }
-                }
-                action.note = note;
-            }
-
-            function prepareActionDefaults(action) {
-                if (!action) return;
-                var deltaKey = action.deltaKey;
-                if (!action.onSchedule) {
-                    action.onSchedule = function () {
-                        if (action.contextRow) {
-                            hideQuickRow(action.contextRow);
-                        }
-                        if (deltaKey && window.updateAdminPendingCounts) {
-                            var delta = {};
-                            delta[deltaKey] = -1;
-                            window.updateAdminPendingCounts(delta);
-                        }
-                    };
-                }
-                if (!action.onUndo) {
-                    action.onUndo = function () {
-                        if (action.contextRow) {
-                            showQuickRow(action.contextRow);
-                        }
-                        if (deltaKey && window.updateAdminPendingCounts) {
-                            var delta = {};
-                            delta[deltaKey] = 1;
-                            window.updateAdminPendingCounts(delta);
-                        }
-                        if (window.refreshAdminPendingSummary) {
-                            window.refreshAdminPendingSummary();
-                        }
-                    };
-                }
-                if (!action.onSuccess) {
-                    action.onSuccess = function () {
-                        if (action.contextRow) {
-                            action.contextRow.remove();
-                        }
-                        if (window.refreshAdminPendingSummary) {
-                            window.refreshAdminPendingSummary();
-                        }
-                    };
-                }
-                if (!action.onFailure && action.onUndo) {
-                    action.onFailure = function (err) {
-                        action.onUndo();
-                        alert((err && err.message) || 'Gagal memproses permintaan.');
-                    };
-                }
-            }
-
-            function openConfirm(action) {
-                if (!confirmModal || !confirmBtnEl) return;
-                pendingAction = action;
-                prepareActionDefaults(pendingAction);
-                if (confirmTitleEl) {
-                    confirmTitleEl.textContent = action.confirmTitle || 'Konfirmasi';
-                }
-                if (confirmTextEl) {
-                    confirmTextEl.textContent = action.confirmText || 'Lanjutkan tindakan ini?';
-                }
-                renderConfirmDetails(action.details);
-                if (confirmNoteWrapEl) {
-                    var showNote = !!(action.noteKey || action.allowNote);
-                    toggle(confirmNoteWrapEl, showNote);
-                }
-                if (confirmNoteEl) {
-                    confirmNoteEl.value = '';
-                    confirmNoteEl.placeholder = action.notePlaceholder || 'Tulis catatan singkat untuk audit.';
-                }
-                confirmBtnEl.textContent = action.label || 'Lanjutkan';
-                confirmBtnEl.className = 'btn ' + (action.buttonClass || 'btn-primary');
-                confirmModal.show();
-            }
-
-            function executeAction(action) {
-                if (!action || !action.url) return Promise.resolve();
-                var options = {
-                    method: action.method || 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    }
-                };
-                if (action.headers) {
-                    Object.keys(action.headers).forEach(function (key) {
-                        options.headers[key] = action.headers[key];
-                    });
-                }
-                if (action.payload) {
-                    if (action.payload instanceof FormData) {
-                        options.body = action.payload;
-                    } else if (action.payloadType === 'json') {
-                        options.headers['Content-Type'] = 'application/json';
-                        options.body = JSON.stringify(action.payload);
-                    } else {
-                        var formData = new FormData();
-                        Object.keys(action.payload).forEach(function (key) {
-                            if (action.payload[key] !== undefined && action.payload[key] !== null) {
-                                formData.append(key, action.payload[key]);
-                            }
-                        });
-                        options.body = formData;
-                    }
-                }
-                return fetch(action.url, options)
-                    .then(function (response) {
-                        return response.json().catch(function () { return null; }).then(function (data) {
-                            if (!response.ok || !data || !data.success) {
-                                var message = (data && data.message) ? data.message : 'Gagal memproses permintaan.';
-                                throw new Error(message);
-                            }
-                            return data;
-                        });
-                    });
-            }
-
-            if (confirmBtnEl) {
-                confirmBtnEl.addEventListener('click', function () {
-                    if (!pendingAction) return;
-                    confirmBtnEl.disabled = true;
-                    var action = pendingAction;
-                    pendingAction = null;
-                    var note = confirmNoteEl ? confirmNoteEl.value.trim() : '';
-                    if (confirmNoteEl) {
-                        confirmNoteEl.value = '';
-                    }
-                    if (note) {
-                        applyNoteToAction(action, note);
-                    }
-                    if (!action.execute) {
-                        action.execute = function () {
-                            return executeAction(action);
-                        };
-                    }
-                    if (confirmModal) {
-                        confirmModal.hide();
-                    }
-                    scheduleAdminAction(action);
-                    confirmBtnEl.disabled = false;
-                });
-            }
-
-            window.confirmAdminAction = openConfirm;
-            window.scheduleAdminAction = scheduleAdminAction;
-            window.executeAdminAction = executeAction;
-            window.undoLastAdminAction = undoLastAdminAction;
-
-            function isDeleteLikeForm(form) {
-                if (!form) return false;
-                if (form.dataset.undoSkip === 'true') return false;
-                if ((form.getAttribute('method') || '').toUpperCase() !== 'POST') return false;
-                var actionUrl = (form.getAttribute('action') || '').toLowerCase();
-                var actionInput = form.querySelector('input[name="action"]');
-                var actionValue = actionInput ? (actionInput.value || '').toLowerCase() : '';
-                if (form.dataset.undoDelete === 'true') return true;
-                return actionUrl.includes('delete')
-                    || actionUrl.includes('remove')
-                    || actionValue.includes('delete')
-                    || actionValue.includes('remove');
-            }
-
-            function extractInlineConfirmText(form) {
-                if (!form) return '';
-                if (form.dataset.confirmText) return form.dataset.confirmText;
-                var inline = form.getAttribute('onsubmit') || '';
-                var match = inline.match(/confirm\\((['"])(.*?)\\1\\)/);
-                return match ? match[2] : '';
-            }
-
-            function resolveSubmitLabel(form) {
-                var btn = form.querySelector('button[type="submit"]');
-                if (btn) {
-                    var text = (btn.textContent || '').trim();
-                    if (text) return text;
-                }
-                return 'Hapus';
-            }
-
-            function toggleFormButtons(form, disabled) {
-                if (!form) return;
-                form.querySelectorAll('button[type="submit"]').forEach(function (btn) {
-                    btn.disabled = disabled;
-                });
-            }
-
-            document.addEventListener('submit', function (event) {
-                if (!isAdmin) return;
-                var form = event.target;
-                if (!(form instanceof HTMLFormElement)) return;
-                if (!isDeleteLikeForm(form)) return;
-                if (form.dataset.undoReady === 'true') {
-                    delete form.dataset.undoReady;
-                    return;
-                }
-
+        var refreshBtn = document.getElementById('adminPendingRefresh');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function (event) {
                 event.preventDefault();
                 event.stopPropagation();
-
-                var confirmText = extractInlineConfirmText(form) || 'Hapus item ini?';
-                var confirmTitle = form.dataset.confirmTitle || 'Konfirmasi Hapus';
-                var label = form.dataset.confirmLabel || resolveSubmitLabel(form);
-                var modalEl = form.closest('.modal');
-                var action = {
-                    confirmTitle: confirmTitle,
-                    confirmText: confirmText,
-                    label: label,
-                    buttonClass: 'btn-danger',
-                    allowNote: false,
-                    undoLabel: 'Penghapusan dijadwalkan',
-                    execute: function () {
-                        form.dataset.undoReady = 'true';
-                        form.submit();
-                        return Promise.resolve({ success: true });
-                    },
-                    onSchedule: function () {
-                        toggleFormButtons(form, true);
-                        if (modalEl && window.bootstrap) {
-                            var modalInstance = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl);
-                            modalInstance.hide();
-                        }
-                    },
-                    onUndo: function () {
-                        toggleFormButtons(form, false);
-                    }
-                };
-
-                if (modalEl) {
-                    scheduleAdminAction(action);
-                } else if (window.confirmAdminAction) {
-                    window.confirmAdminAction(action);
-                } else {
-                    scheduleAdminAction(action);
-                }
-            }, true);
-
-            function fetchSummary() {
-                if (!hasPendingUI) {
-                    return Promise.resolve();
-                }
-                var previewUrl = quickConfig.previewUrl || "{{ url_for('portal.admin_pending_preview') }}";
-                var requestUrl = previewUrl + '?limit=3';
-                return fetch(requestUrl, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                    .then(function (response) {
-                        if (!response.ok) return null;
-                        return response.json();
-                    })
-                    .then(function (data) {
-                        if (data && data.summary) {
-                            window.setAdminPendingSummary(data.summary);
-                            renderQuickList(data);
-                        }
-                    })
-                    .catch(function () { });
-            }
-
-            window.refreshAdminPendingSummary = function () {
-                return fetchSummary();
-            };
-
-            var refreshBtn = document.getElementById('adminPendingRefresh');
-            if (refreshBtn) {
-                refreshBtn.addEventListener('click', function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    fetchSummary();
-                });
-            }
-
-            var dropdownToggle = document.getElementById('adminNotificationToggle');
-            if (dropdownToggle) {
-                dropdownToggle.addEventListener('shown.bs.dropdown', function () {
-                    fetchSummary();
-                });
-            }
-
-            document.addEventListener('visibilitychange', function () {
-                if (!document.hidden && hasPendingUI) {
-                    fetchSummary();
-                }
-            });
-
-            fetchSummary();
-
-            setInterval(function () {
-                if (document.hidden) return;
                 fetchSummary();
-            }, 600000);
-        })();
+            });
+        }
+
+        var dropdownToggle = document.getElementById('adminNotificationToggle');
+        if (dropdownToggle) {
+            dropdownToggle.addEventListener('shown.bs.dropdown', function () {
+                fetchSummary();
+            });
+        }
+
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden && hasPendingUI) {
+                fetchSummary();
+            }
+        });
+
+        fetchSummary();
+
+        setInterval(function () {
+            if (document.hidden) return;
+            fetchSummary();
+        }, 600000);
+        }) ();
     </script>
-        <script>
+    <script>
         (function () {
             var isUnifiedNotifRole = {{ 'true' if current_user and current_user.role in ['staff', 'coordinator', 'sekolah'] else 'false' }};
-            if (!isUnifiedNotifRole) return;
-            if (window.__askaUnifiedNotifInit) return;
-            window.__askaUnifiedNotifInit = true;
+        if (!isUnifiedNotifRole) return;
+        if (window.__askaUnifiedNotifInit) return;
+        window.__askaUnifiedNotifInit = true;
 
-            var root = document.getElementById('userGuestbookNotifRoot');
-            if (!root) return;
+        var root = document.getElementById('userGuestbookNotifRoot');
+        if (!root) return;
 
-            var listUrl = root.getAttribute('data-list-url');
-            var readUrl = root.getAttribute('data-read-url');
-            var historyUrl = root.getAttribute('data-history-url') || '';
-            var listEl = document.getElementById('userGuestbookNotifList');
-            var emptyEl = document.getElementById('userGuestbookNotifEmpty');
-            var badgeEl = document.getElementById('userGuestbookNotifBadge');
-            var unreadLabelEl = document.getElementById('userGuestbookNotifUnreadLabel');
-            var refreshBtn = document.getElementById('userGuestbookNotifRefresh');
-            var markAllBtn = document.getElementById('userGuestbookNotifMarkAll');
-            var toggleBtn = document.getElementById('userGuestbookNotifToggle');
-            var csrfMeta = document.querySelector('meta[name="csrf-token"]');
-            var csrfToken = csrfMeta ? (csrfMeta.getAttribute('content') || '') : '';
+        var listUrl = root.getAttribute('data-list-url');
+        var readUrl = root.getAttribute('data-read-url');
+        var historyUrl = root.getAttribute('data-history-url') || '';
+        var listEl = document.getElementById('userGuestbookNotifList');
+        var emptyEl = document.getElementById('userGuestbookNotifEmpty');
+        var badgeEl = document.getElementById('userGuestbookNotifBadge');
+        var unreadLabelEl = document.getElementById('userGuestbookNotifUnreadLabel');
+        var refreshBtn = document.getElementById('userGuestbookNotifRefresh');
+        var markAllBtn = document.getElementById('userGuestbookNotifMarkAll');
+        var toggleBtn = document.getElementById('userGuestbookNotifToggle');
+        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        var csrfToken = csrfMeta ? (csrfMeta.getAttribute('content') || '') : '';
 
-            var isLoading = false;
-            var lastRequestAt = 0;
+        var isLoading = false;
+        var lastRequestAt = 0;
 
-            function escapeHtml(value) {
-                return String(value || '')
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#39;');
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function parseCount(value) {
+            var parsed = parseInt(value || '0', 10);
+            return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+        }
+
+        function setUnreadCount(count) {
+            var safeCount = parseCount(count);
+            if (badgeEl) {
+                badgeEl.textContent = safeCount;
+                badgeEl.dataset.count = String(safeCount);
+                badgeEl.classList.toggle('d-none', safeCount <= 0);
             }
-
-            function parseCount(value) {
-                var parsed = parseInt(value || '0', 10);
-                return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+            if (unreadLabelEl) {
+                unreadLabelEl.textContent = safeCount;
+                unreadLabelEl.dataset.count = String(safeCount);
+                unreadLabelEl.classList.toggle('d-none', safeCount <= 0);
             }
-
-            function setUnreadCount(count) {
-                var safeCount = parseCount(count);
-                if (badgeEl) {
-                    badgeEl.textContent = safeCount;
-                    badgeEl.dataset.count = String(safeCount);
-                    badgeEl.classList.toggle('d-none', safeCount <= 0);
-                }
-                if (unreadLabelEl) {
-                    unreadLabelEl.textContent = safeCount;
-                    unreadLabelEl.dataset.count = String(safeCount);
-                    unreadLabelEl.classList.toggle('d-none', safeCount <= 0);
-                }
-                if (markAllBtn) {
-                    markAllBtn.disabled = safeCount <= 0;
-                }
+            if (markAllBtn) {
+                markAllBtn.disabled = safeCount <= 0;
             }
+        }
 
-            function buildItemHtml(item) {
-                var id = parseInt(item && item.id ? item.id : 0, 10);
-                var href = (item && item.link) ? item.link : historyUrl;
-                var title = escapeHtml(item && item.title ? item.title : 'Notifikasi');
-                var message = escapeHtml(item && item.message ? item.message : '');
-                var icon = escapeHtml(item && item.icon ? item.icon : 'bi-bell-fill');
-                var tone = escapeHtml(item && item.tone ? item.tone : 'secondary');
-                var createdLabel = escapeHtml(item && item.created_label ? item.created_label : '');
-                var isUnread = !!(item && item.is_unread);
+        function buildItemHtml(item) {
+            var id = parseInt(item && item.id ? item.id : 0, 10);
+            var href = (item && item.link) ? item.link : historyUrl;
+            var title = escapeHtml(item && item.title ? item.title : 'Notifikasi');
+            var message = escapeHtml(item && item.message ? item.message : '');
+            var icon = escapeHtml(item && item.icon ? item.icon : 'bi-bell-fill');
+            var tone = escapeHtml(item && item.tone ? item.tone : 'secondary');
+            var createdLabel = escapeHtml(item && item.created_label ? item.created_label : '');
+            var isUnread = !!(item && item.is_unread);
 
-                return [
-                    '<a class="notification-quick-item' + (isUnread ? '' : ' opacity-75') + '"',
-                    ' href="' + escapeHtml(href) + '"',
-                    ' data-notif-link="1"',
-                    ' data-notif-id="' + String(id || 0) + '"',
-                    ' data-notif-unread="' + (isUnread ? '1' : '0') + '">',
-                    '<div class="notification-quick-meta">',
-                    '<div class="fw-semibold text-' + tone + '"><i class="bi ' + icon + ' me-1"></i>' + title + '</div>',
-                    '<small>' + message + '</small>',
-                    '</div>',
-                    '<div class="notification-quick-time">' + createdLabel + '</div>',
-                    '</a>'
-                ].join('');
+            return [
+                '<a class="notification-quick-item' + (isUnread ? '' : ' opacity-75') + '"',
+                ' href="' + escapeHtml(href) + '"',
+                ' data-notif-link="1"',
+                ' data-notif-id="' + String(id || 0) + '"',
+                ' data-notif-unread="' + (isUnread ? '1' : '0') + '">',
+                '<div class="notification-quick-meta">',
+                '<div class="fw-semibold text-' + tone + '"><i class="bi ' + icon + ' me-1"></i>' + title + '</div>',
+                '<small>' + message + '</small>',
+                '</div>',
+                '<div class="notification-quick-time">' + createdLabel + '</div>',
+                '</a>'
+            ].join('');
+        }
+
+        function renderItems(items) {
+            var safeItems = Array.isArray(items) ? items : [];
+            if (!listEl || !emptyEl) return;
+            if (!safeItems.length) {
+                listEl.innerHTML = '';
+                emptyEl.classList.remove('d-none');
+                return;
             }
+            emptyEl.classList.add('d-none');
+            listEl.innerHTML = safeItems.map(buildItemHtml).join('');
+        }
 
-            function renderItems(items) {
-                var safeItems = Array.isArray(items) ? items : [];
-                if (!listEl || !emptyEl) return;
-                if (!safeItems.length) {
-                    listEl.innerHTML = '';
-                    emptyEl.classList.remove('d-none');
-                    return;
-                }
-                emptyEl.classList.add('d-none');
-                listEl.innerHTML = safeItems.map(buildItemHtml).join('');
+        function markRead(payload) {
+            if (!readUrl) return Promise.resolve(null);
+            var headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            };
+            if (csrfToken) {
+                headers['X-CSRFToken'] = csrfToken;
             }
-
-            function markRead(payload) {
-                if (!readUrl) return Promise.resolve(null);
-                var headers = {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                };
-                if (csrfToken) {
-                    headers['X-CSRFToken'] = csrfToken;
-                }
-                return fetch(readUrl, {
-                    method: 'POST',
-                    headers: headers,
-                    body: JSON.stringify(payload || {})
+            return fetch(readUrl, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(payload || {})
+            })
+                .then(function (response) {
+                    if (!response.ok) return null;
+                    return response.json();
                 })
-                    .then(function (response) {
-                        if (!response.ok) return null;
-                        return response.json();
-                    })
-                    .then(function (data) {
-                        if (data && data.success) {
-                            setUnreadCount(data.unread_count || 0);
-                        }
-                        return data;
+                .then(function (data) {
+                    if (data && data.success) {
+                        setUnreadCount(data.unread_count || 0);
+                    }
+                    return data;
+                })
+                .catch(function () {
+                    return null;
+                });
+        }
+
+        function fetchNotifications(force) {
+            if (!listUrl || isLoading) return Promise.resolve(null);
+            var now = Date.now();
+            if (!force && now - lastRequestAt < 800) {
+                return Promise.resolve(null);
+            }
+            isLoading = true;
+            lastRequestAt = now;
+
+            return fetch(listUrl + '?limit=8', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(function (response) {
+                    if (!response.ok) return null;
+                    return response.json();
+                })
+                .then(function (data) {
+                    if (!data || !data.success) return;
+                    setUnreadCount(data.unread_count || 0);
+                    renderItems(data.items || []);
+                })
+                .catch(function () { })
+                .finally(function () {
+                    isLoading = false;
+                });
+        }
+
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                fetchNotifications(true);
+            });
+        }
+
+        if (markAllBtn) {
+            markAllBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (markAllBtn.disabled) return;
+                markRead({ all: true }).then(function () {
+                    fetchNotifications(true);
+                });
+            });
+        }
+
+        if (listEl) {
+            listEl.addEventListener('click', function (event) {
+                var linkEl = event.target && event.target.closest ? event.target.closest('[data-notif-link="1"]') : null;
+                if (!linkEl) return;
+
+                var href = linkEl.getAttribute('href');
+                var notifId = parseInt(linkEl.getAttribute('data-notif-id') || '0', 10);
+                var isUnread = linkEl.getAttribute('data-notif-unread') === '1';
+                if (!href || !notifId || !isUnread) return;
+
+                event.preventDefault();
+                markRead({ ids: [notifId] })
+                    .then(function () {
+                        window.location.href = href;
                     })
                     .catch(function () {
-                        return null;
+                        window.location.href = href;
                     });
-            }
-
-            function fetchNotifications(force) {
-                if (!listUrl || isLoading) return Promise.resolve(null);
-                var now = Date.now();
-                if (!force && now - lastRequestAt < 800) {
-                    return Promise.resolve(null);
-                }
-                isLoading = true;
-                lastRequestAt = now;
-
-                return fetch(listUrl + '?limit=8', {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                    .then(function (response) {
-                        if (!response.ok) return null;
-                        return response.json();
-                    })
-                    .then(function (data) {
-                        if (!data || !data.success) return;
-                        setUnreadCount(data.unread_count || 0);
-                        renderItems(data.items || []);
-                    })
-                    .catch(function () { })
-                    .finally(function () {
-                        isLoading = false;
-                    });
-            }
-
-            if (refreshBtn) {
-                refreshBtn.addEventListener('click', function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    fetchNotifications(true);
-                });
-            }
-
-            if (markAllBtn) {
-                markAllBtn.addEventListener('click', function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    if (markAllBtn.disabled) return;
-                    markRead({ all: true }).then(function () {
-                        fetchNotifications(true);
-                    });
-                });
-            }
-
-            if (listEl) {
-                listEl.addEventListener('click', function (event) {
-                    var linkEl = event.target && event.target.closest ? event.target.closest('[data-notif-link="1"]') : null;
-                    if (!linkEl) return;
-
-                    var href = linkEl.getAttribute('href');
-                    var notifId = parseInt(linkEl.getAttribute('data-notif-id') || '0', 10);
-                    var isUnread = linkEl.getAttribute('data-notif-unread') === '1';
-                    if (!href || !notifId || !isUnread) return;
-
-                    event.preventDefault();
-                    markRead({ ids: [notifId] })
-                        .then(function () {
-                            window.location.href = href;
-                        })
-                        .catch(function () {
-                            window.location.href = href;
-                        });
-                });
-            }
-
-            if (toggleBtn) {
-                toggleBtn.addEventListener('shown.bs.dropdown', function () {
-                    fetchNotifications(true);
-                });
-            }
-
-            document.addEventListener('visibilitychange', function () {
-                if (document.hidden) return;
-                fetchNotifications(false);
             });
+        }
 
-            fetchNotifications(true);
-            setInterval(function () {
-                if (document.hidden) return;
-                fetchNotifications(false);
-            }, 45000);
-        })();
+        if (toggleBtn) {
+            toggleBtn.addEventListener('shown.bs.dropdown', function () {
+                fetchNotifications(true);
+            });
+        }
+
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) return;
+            fetchNotifications(false);
+        });
+
+        fetchNotifications(true);
+        setInterval(function () {
+            if (document.hidden) return;
+            fetchNotifications(false);
+        }, 45000);
+        }) ();
     </script>
     <script>
         (function () {
             var mustUpload = {{ 'true' if require_profile_photo_upload else 'false' }};
-            if (!mustUpload || !window.bootstrap) return;
+        if (!mustUpload || !window.bootstrap) return;
 
-            var modalEl = document.getElementById('profilePhotoRequiredModal');
-            if (!modalEl) return;
+        var modalEl = document.getElementById('profilePhotoRequiredModal');
+        if (!modalEl) return;
 
-            var uploadUrl = modalEl.getAttribute('data-upload-url') || '';
-            var previewEl = document.getElementById('requiredProfilePhotoPreview');
-            var statusEl = document.getElementById('requiredProfilePhotoStatus');
-            var cameraBtn = document.getElementById('requiredProfilePhotoCameraBtn');
-            var galleryBtn = document.getElementById('requiredProfilePhotoGalleryBtn');
-            var cameraInput = document.getElementById('requiredProfilePhotoCameraInput');
-            var galleryInput = document.getElementById('requiredProfilePhotoGalleryInput');
-            var cameraStreamEl = document.getElementById('requiredProfileCameraStream');
-            var cameraCanvasEl = document.getElementById('requiredProfileCameraCanvas');
-            var cameraActionsEl = document.getElementById('requiredProfileCameraActions');
-            var takePhotoBtn = document.getElementById('requiredProfileTakePhotoBtn');
-            var cancelCameraBtn = document.getElementById('requiredProfileCancelCameraBtn');
-            var submitBtn = document.getElementById('requiredProfileSubmitBtn');
-            var uploading = false;
-            var activeStream = null;
-            var selectedFile = null;
+        var uploadUrl = modalEl.getAttribute('data-upload-url') || '';
+        var previewEl = document.getElementById('requiredProfilePhotoPreview');
+        var statusEl = document.getElementById('requiredProfilePhotoStatus');
+        var cameraBtn = document.getElementById('requiredProfilePhotoCameraBtn');
+        var galleryBtn = document.getElementById('requiredProfilePhotoGalleryBtn');
+        var cameraInput = document.getElementById('requiredProfilePhotoCameraInput');
+        var galleryInput = document.getElementById('requiredProfilePhotoGalleryInput');
+        var cameraStreamEl = document.getElementById('requiredProfileCameraStream');
+        var cameraCanvasEl = document.getElementById('requiredProfileCameraCanvas');
+        var cameraActionsEl = document.getElementById('requiredProfileCameraActions');
+        var takePhotoBtn = document.getElementById('requiredProfileTakePhotoBtn');
+        var cancelCameraBtn = document.getElementById('requiredProfileCancelCameraBtn');
+        var submitBtn = document.getElementById('requiredProfileSubmitBtn');
+        var uploading = false;
+        var activeStream = null;
+        var selectedFile = null;
 
-            var requiredModal = bootstrap.Modal.getOrCreateInstance(modalEl, {
-                backdrop: 'static',
-                keyboard: false
-            });
+        var requiredModal = bootstrap.Modal.getOrCreateInstance(modalEl, {
+            backdrop: 'static',
+            keyboard: false
+        });
 
-            function setStatus(message, tone) {
-                if (!statusEl) return;
-                statusEl.textContent = message || '';
-                statusEl.className = 'small mt-3';
-                if (tone === 'danger') {
-                    statusEl.classList.add('text-danger');
-                } else if (tone === 'success') {
-                    statusEl.classList.add('text-success');
-                } else {
-                    statusEl.classList.add('text-muted');
-                }
+        function setStatus(message, tone) {
+            if (!statusEl) return;
+            statusEl.textContent = message || '';
+            statusEl.className = 'small mt-3';
+            if (tone === 'danger') {
+                statusEl.classList.add('text-danger');
+            } else if (tone === 'success') {
+                statusEl.classList.add('text-success');
+            } else {
+                statusEl.classList.add('text-muted');
             }
+        }
 
-            function setLoadingState(isLoading) {
-                uploading = !!isLoading;
-                if (cameraBtn) cameraBtn.disabled = uploading;
-                if (galleryBtn) galleryBtn.disabled = uploading;
-                if (takePhotoBtn) takePhotoBtn.disabled = uploading;
-                if (cancelCameraBtn) cancelCameraBtn.disabled = uploading;
-                if (submitBtn) {
-                    submitBtn.disabled = uploading || !selectedFile;
-                }
+        function setLoadingState(isLoading) {
+            uploading = !!isLoading;
+            if (cameraBtn) cameraBtn.disabled = uploading;
+            if (galleryBtn) galleryBtn.disabled = uploading;
+            if (takePhotoBtn) takePhotoBtn.disabled = uploading;
+            if (cancelCameraBtn) cancelCameraBtn.disabled = uploading;
+            if (submitBtn) {
+                submitBtn.disabled = uploading || !selectedFile;
             }
+        }
 
-            function renderPreview(file) {
-                if (!previewEl || !file) return;
-                var imageUrl = URL.createObjectURL(file);
-                previewEl.innerHTML = '<img src="' + imageUrl + '" alt="Preview foto profil">';
+        function renderPreview(file) {
+            if (!previewEl || !file) return;
+            var imageUrl = URL.createObjectURL(file);
+            previewEl.innerHTML = '<img src="' + imageUrl + '" alt="Preview foto profil">';
+            previewEl.classList.remove('d-none');
+        }
+
+        function setSelectedFile(file) {
+            if (!file) return;
+            selectedFile = file;
+            renderPreview(file);
+            if (submitBtn && !uploading) {
+                submitBtn.disabled = false;
+            }
+            setStatus('Foto siap diunggah. Klik "Submit Foto" untuk melanjutkan.', 'muted');
+        }
+
+        function isCameraDirectSupported() {
+            return !!(
+                navigator.mediaDevices
+                && typeof navigator.mediaDevices.getUserMedia === 'function'
+            );
+        }
+
+        function stopDirectCamera() {
+            if (activeStream && activeStream.getTracks) {
+                activeStream.getTracks().forEach(function (track) {
+                    try {
+                        track.stop();
+                    } catch (error) { }
+                });
+            }
+            activeStream = null;
+            if (cameraStreamEl) {
+                cameraStreamEl.pause();
+                cameraStreamEl.srcObject = null;
+                cameraStreamEl.classList.add('d-none');
+            }
+            if (cameraActionsEl) {
+                cameraActionsEl.classList.add('d-none');
+            }
+            if (previewEl) {
                 previewEl.classList.remove('d-none');
             }
+        }
 
-            function setSelectedFile(file) {
-                if (!file) return;
-                selectedFile = file;
-                renderPreview(file);
-                if (submitBtn && !uploading) {
-                    submitBtn.disabled = false;
+        function startDirectCamera() {
+            if (uploading) return;
+            if (!isCameraDirectSupported()) {
+                if (cameraInput) {
+                    setStatus('Kamera langsung tidak didukung browser ini, membuka pilihan file kamera.', 'muted');
+                    cameraInput.click();
                 }
-                setStatus('Foto siap diunggah. Klik "Submit Foto" untuk melanjutkan.', 'muted');
+                return;
             }
-
-            function isCameraDirectSupported() {
-                return !!(
-                    navigator.mediaDevices
-                    && typeof navigator.mediaDevices.getUserMedia === 'function'
-                );
-            }
-
-            function stopDirectCamera() {
-                if (activeStream && activeStream.getTracks) {
-                    activeStream.getTracks().forEach(function (track) {
-                        try {
-                            track.stop();
-                        } catch (error) { }
-                    });
-                }
-                activeStream = null;
-                if (cameraStreamEl) {
-                    cameraStreamEl.pause();
-                    cameraStreamEl.srcObject = null;
-                    cameraStreamEl.classList.add('d-none');
-                }
-                if (cameraActionsEl) {
-                    cameraActionsEl.classList.add('d-none');
-                }
-                if (previewEl) {
-                    previewEl.classList.remove('d-none');
-                }
-            }
-
-            function startDirectCamera() {
-                if (uploading) return;
-                if (!isCameraDirectSupported()) {
+            stopDirectCamera();
+            navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user' },
+                audio: false
+            })
+                .then(function (stream) {
+                    activeStream = stream;
+                    if (cameraStreamEl) {
+                        cameraStreamEl.srcObject = stream;
+                        cameraStreamEl.classList.remove('d-none');
+                    }
+                    if (cameraActionsEl) {
+                        cameraActionsEl.classList.remove('d-none');
+                    }
+                    if (previewEl) {
+                        previewEl.classList.add('d-none');
+                    }
+                    setStatus('Arahkan wajah Anda, lalu klik "Ambil Foto".', 'muted');
+                })
+                .catch(function () {
+                    setStatus('Tidak dapat mengakses kamera langsung. Gunakan pilihan file.', 'danger');
                     if (cameraInput) {
-                        setStatus('Kamera langsung tidak didukung browser ini, membuka pilihan file kamera.', 'muted');
                         cameraInput.click();
                     }
-                    return;
-                }
-                stopDirectCamera();
-                navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'user' },
-                    audio: false
-                })
-                    .then(function (stream) {
-                        activeStream = stream;
-                        if (cameraStreamEl) {
-                            cameraStreamEl.srcObject = stream;
-                            cameraStreamEl.classList.remove('d-none');
-                        }
-                        if (cameraActionsEl) {
-                            cameraActionsEl.classList.remove('d-none');
-                        }
-                        if (previewEl) {
-                            previewEl.classList.add('d-none');
-                        }
-                        setStatus('Arahkan wajah Anda, lalu klik "Ambil Foto".', 'muted');
-                    })
-                    .catch(function () {
-                        setStatus('Tidak dapat mengakses kamera langsung. Gunakan pilihan file.', 'danger');
-                        if (cameraInput) {
-                            cameraInput.click();
-                        }
-                    });
+                });
+        }
+
+        function takeDirectPhoto() {
+            if (!cameraStreamEl || !cameraCanvasEl) return;
+            var width = cameraStreamEl.videoWidth || 720;
+            var height = cameraStreamEl.videoHeight || 960;
+            if (width <= 0 || height <= 0) {
+                setStatus('Kamera belum siap. Coba lagi.', 'danger');
+                return;
             }
 
-            function takeDirectPhoto() {
-                if (!cameraStreamEl || !cameraCanvasEl) return;
-                var width = cameraStreamEl.videoWidth || 720;
-                var height = cameraStreamEl.videoHeight || 960;
-                if (width <= 0 || height <= 0) {
-                    setStatus('Kamera belum siap. Coba lagi.', 'danger');
-                    return;
-                }
+            cameraCanvasEl.width = width;
+            cameraCanvasEl.height = height;
+            var ctx = cameraCanvasEl.getContext('2d');
+            if (!ctx) {
+                setStatus('Gagal memproses foto dari kamera.', 'danger');
+                return;
+            }
+            ctx.drawImage(cameraStreamEl, 0, 0, width, height);
 
-                cameraCanvasEl.width = width;
-                cameraCanvasEl.height = height;
-                var ctx = cameraCanvasEl.getContext('2d');
-                if (!ctx) {
-                    setStatus('Gagal memproses foto dari kamera.', 'danger');
-                    return;
-                }
-                ctx.drawImage(cameraStreamEl, 0, 0, width, height);
+            function compress(quality) {
+                var MAX_SIZE = 200 * 1024; // 200KB
                 cameraCanvasEl.toBlob(function (blob) {
                     if (!blob) {
                         setStatus('Gagal mengambil foto. Silakan coba lagi.', 'danger');
                         return;
                     }
-                    stopDirectCamera();
-                    var file = new File([blob], 'profile-camera.jpg', { type: 'image/jpeg' });
-                    setSelectedFile(file);
-                }, 'image/jpeg', 0.9);
+                    if (blob.size > MAX_SIZE && Math.round(quality * 10) > 1) {
+                        compress(quality - 0.1);
+                    } else {
+                        stopDirectCamera();
+                        var file = new File([blob], 'profile-camera.jpg', { type: 'image/jpeg' });
+                        setSelectedFile(file);
+                    }
+                }, 'image/jpeg', quality);
             }
+            compress(0.9);
+        }
 
-            function uploadFile(file) {
-                if (!file || !uploadUrl || uploading) return;
-                renderPreview(file);
-                setLoadingState(true);
-                setStatus('Mengunggah foto profil...', 'muted');
+        function uploadFile(file) {
+            if (!file || !uploadUrl || uploading) return;
+            renderPreview(file);
+            setLoadingState(true);
+            setStatus('Mengunggah foto profil...', 'muted');
 
                 var formData = new FormData();
                 formData.append('photo', file, file.name || 'profile.jpg');
                 formData.append('redirect_to', window.location.pathname + window.location.search + window.location.hash);
 
-                fetch(uploadUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: formData
-                })
-                    .then(function (response) {
-                        return response.json().catch(function () { return {}; }).then(function (data) {
-                            if (!response.ok || !data.success) {
-                                throw new Error(data.message || 'Gagal mengunggah foto profil.');
-                            }
-                            return data;
-                        });
-                    })
-                    .then(function (data) {
-                        var redirectUrl = (data && data.redirect_url) ? data.redirect_url : {{ url_for('portal.home')|tojson }};
-                        setStatus('Foto profil berhasil disimpan. Mengarahkan ke portal...', 'success');
-                        setTimeout(function () {
-                            window.location.href = redirectUrl;
-                        }, 500);
-                    })
-                    .catch(function (error) {
-                        setStatus(error.message || 'Gagal mengunggah foto profil.', 'danger');
-                        setLoadingState(false);
+            fetch(uploadUrl, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+                .then(function (response) {
+                    return response.json().catch(function () { return {}; }).then(function (data) {
+                        if (!response.ok || !data.success) {
+                            throw new Error(data.message || 'Gagal mengunggah foto profil.');
+                        }
+                        return data;
                     });
+                })
+                .then(function (data) {
+                    var redirectUrl = (data && data.redirect_url) ? data.redirect_url : {{ url_for('portal.home') | tojson
+                }};
+        setStatus('Foto profil berhasil disimpan. Mengarahkan ke portal...', 'success');
+        setTimeout(function () {
+            window.location.href = redirectUrl;
+        }, 500);
+                    })
+                    .catch (function (error) {
+            setStatus(error.message || 'Gagal mengunggah foto profil.', 'danger');
+            setLoadingState(false);
+        });
             }
 
-            function bindInput(inputEl) {
-                if (!inputEl) return;
-                inputEl.addEventListener('change', function () {
-                    var file = inputEl.files && inputEl.files[0] ? inputEl.files[0] : null;
-                    if (!file) return;
-                    setSelectedFile(file);
-                    inputEl.value = '';
-                });
-            }
+        function bindInput(inputEl) {
+            if (!inputEl) return;
+            inputEl.addEventListener('change', function () {
+                var file = inputEl.files && inputEl.files[0] ? inputEl.files[0] : null;
+                if (!file) return;
 
-            if (cameraBtn && cameraInput) {
-                cameraBtn.addEventListener('click', function () {
-                    if (uploading) return;
-                    startDirectCamera();
-                });
-            }
-            if (takePhotoBtn) {
-                takePhotoBtn.addEventListener('click', function () {
-                    if (uploading) return;
-                    takeDirectPhoto();
-                });
-            }
-            if (cancelCameraBtn) {
-                cancelCameraBtn.addEventListener('click', function () {
-                    stopDirectCamera();
-                    setStatus('Kamera dibatalkan.', 'muted');
-                });
-            }
-            if (galleryBtn && galleryInput) {
-                galleryBtn.addEventListener('click', function () {
-                    if (uploading) return;
-                    galleryInput.click();
-                });
-            }
-            if (submitBtn) {
-                submitBtn.addEventListener('click', function () {
-                    if (uploading) return;
-                    if (!selectedFile) {
-                        setStatus('Pilih atau ambil foto terlebih dahulu.', 'danger');
-                        return;
-                    }
-                    uploadFile(selectedFile);
-                });
-            }
-            bindInput(cameraInput);
-            bindInput(galleryInput);
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    var img = new Image();
+                    img.onload = function () {
+                        var canvas = document.createElement('canvas');
+                        var ctx = canvas.getContext('2d');
+                        var MAX_DIM = 1200;
+                        var width = img.width;
+                        var height = img.height;
 
-            modalEl.addEventListener('hide.bs.modal', function (event) {
-                if (mustUpload) {
-                    event.preventDefault();
-                }
+                        if (width > height) {
+                            if (width > MAX_DIM) {
+                                height *= MAX_DIM / width;
+                                width = MAX_DIM;
+                            }
+                        } else {
+                            if (height > MAX_DIM) {
+                                width *= MAX_DIM / height;
+                                height = MAX_DIM;
+                            }
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        function compress(quality) {
+                            var MAX_SIZE = 200 * 1024;
+                            canvas.toBlob(function (blob) {
+                                if (!blob) {
+                                    setStatus('Gagal memproses gambar.', 'danger');
+                                    return;
+                                }
+                                if (blob.size > MAX_SIZE && Math.round(quality * 10) > 1) {
+                                    compress(quality - 0.1);
+                                } else {
+                                    var filename = file.name || 'profile.jpg';
+                                    if (!filename.toLowerCase().endsWith('.jpg') && !filename.toLowerCase().endsWith('.jpeg')) {
+                                        filename = filename.replace(/\.[^/.]+$/, "") + '.jpg';
+                                    }
+                                    var newFile = new File([blob], filename, { type: 'image/jpeg' });
+                                    setSelectedFile(newFile);
+                                }
+                            }, 'image/jpeg', quality);
+                        }
+                        compress(0.9);
+                    };
+                    img.onerror = function () {
+                        setStatus('File tidak valid.', 'danger');
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+
+                inputEl.value = '';
             });
-            modalEl.addEventListener('hidden.bs.modal', function () {
+        }
+
+        if (cameraBtn && cameraInput) {
+            cameraBtn.addEventListener('click', function () {
+                if (uploading) return;
+                startDirectCamera();
+            });
+        }
+        if (takePhotoBtn) {
+            takePhotoBtn.addEventListener('click', function () {
+                if (uploading) return;
+                takeDirectPhoto();
+            });
+        }
+        if (cancelCameraBtn) {
+            cancelCameraBtn.addEventListener('click', function () {
                 stopDirectCamera();
+                setStatus('Kamera dibatalkan.', 'muted');
             });
+        }
+        if (galleryBtn && galleryInput) {
+            galleryBtn.addEventListener('click', function () {
+                if (uploading) return;
+                galleryInput.click();
+            });
+        }
+        if (submitBtn) {
+            submitBtn.addEventListener('click', function () {
+                if (uploading) return;
+                if (!selectedFile) {
+                    setStatus('Pilih atau ambil foto terlebih dahulu.', 'danger');
+                    return;
+                }
+                uploadFile(selectedFile);
+            });
+        }
+        bindInput(cameraInput);
+        bindInput(galleryInput);
 
-            requiredModal.show();
-        })();
+        modalEl.addEventListener('hide.bs.modal', function (event) {
+            if (mustUpload) {
+                event.preventDefault();
+            }
+        });
+        modalEl.addEventListener('hidden.bs.modal', function () {
+            stopDirectCamera();
+        });
+
+        requiredModal.show();
+        }) ();
     </script>
     {% block portal_scripts %}{% endblock %}
 </body>

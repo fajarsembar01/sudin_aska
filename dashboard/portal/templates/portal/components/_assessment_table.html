@@ -36,9 +36,8 @@ Usage:
                         }}</span>
                     {% endif %}
                 </td>
-                {% set score_pct = (a['total_score'] or 0) / 3 * 100 if a['total_score'] is not none else None %}
-                {% set avg_raw = school_avg_map.get(a['school_id'], 0) %}
-                {% set avg_pct = (avg_raw or 0) / 3 * 100 %}
+                {% set score_pct = a.get('score_pct') %}
+                {% set avg_pct = school_avg_map.get(a['school_id'], 0) or 0 %}
                 <td class="fw-bold text-primary">
                     {% if score_pct is not none %}
                     {{ "%.1f"|format(score_pct) }} / {{ "%.1f"|format(avg_pct) }}

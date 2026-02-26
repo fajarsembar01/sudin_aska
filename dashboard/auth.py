@@ -115,7 +115,7 @@ def role_required(*roles: str) -> Callable:
         def wrapper(*args, **kwargs):
             user = current_user()
             if not user:
-                flash("Silakan login terlebih dahulu.", "warning")
+                # flash("Silakan login terlebih dahulu.", "warning")
                 return redirect(url_for("auth.login", next=request.path))
             
             role = user.get("role")
