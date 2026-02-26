@@ -184,6 +184,10 @@ def _to_int(value: Optional[str], default: int) -> int:
         return default
 
 
+def _today_jakarta() -> date:
+    return current_jakarta_time().date()
+
+
 def _needs_profile_photo_completion(user: dict | None) -> bool:
     """Return True when staff/coordinator must complete profile photo first."""
     if not isinstance(user, dict):
@@ -1118,7 +1122,7 @@ def admin_dashboard() -> Response:
         search_query=search_query,
         date_from_str=date_from_str,
         date_to_str=date_to_str,
-        today_str=date.today().isoformat(),
+        today_str=_today_jakarta().isoformat(),
         guest_scope=guest_scope,
     )
 
@@ -1139,7 +1143,7 @@ def admin_user_history(user_id: int) -> Response:
             date_from_str="",
             date_to_str="",
             guest_scope="all",
-            today_str=date.today().isoformat(),
+            today_str=_today_jakarta().isoformat(),
             assigned_schools=[],
             assigned_kecamatan=[],
             unvisited_schools=[],
@@ -1195,7 +1199,7 @@ def admin_user_history(user_id: int) -> Response:
         date_from_str=date_from.isoformat() if date_from else "",
         date_to_str=date_to.isoformat() if date_to else "",
         guest_scope=guest_scope,
-        today_str=date.today().isoformat(),
+        today_str=_today_jakarta().isoformat(),
         assigned_schools=assigned_schools,
         assigned_kecamatan=assigned_kecamatan,
         unvisited_schools=unvisited_schools,
@@ -1398,10 +1402,10 @@ def admin_user_visits_export(user_id: int) -> Response:
 
     file_format = (request.args.get("format") or "excel").strip().lower()
     if file_format in {"excel", "xlsx"}:
-        filename = f"riwayat_kunjungan_user_{user_id}_{date.today().isoformat()}.xlsx"
+        filename = f"riwayat_kunjungan_user_{user_id}_{_today_jakarta().isoformat()}.xlsx"
         return _build_xlsx_response(headers, data_rows, filename)
 
-    filename = f"riwayat_kunjungan_user_{user_id}_{date.today().isoformat()}.csv"
+    filename = f"riwayat_kunjungan_user_{user_id}_{_today_jakarta().isoformat()}.csv"
     return _build_csv_response(headers, data_rows, filename)
 
 
@@ -1470,20 +1474,11 @@ def admin_school_visits_export(school_id: int) -> Response:
 
     file_format = (request.args.get("format") or "excel").strip().lower()
     if file_format in {"excel", "xlsx"}:
-        filename = f"riwayat_kunjungan_sekolah_{school_id}_{date.today().isoformat()}.xlsx"
+        filename = f"riwayat_kunjungan_sekolah_{school_id}_{_today_jakarta().isoformat()}.xlsx"
         return _build_xlsx_response(headers, data_rows, filename)
 
-    filename = f"riwayat_kunjungan_sekolah_{school_id}_{date.today().isoformat()}.csv"
+    filename = f"riwayat_kunjungan_sekolah_{school_id}_{_today_jakarta().isoformat()}.csv"
     return _build_csv_response(headers, data_rows, filename)
-
-
-@daftar_tamu_bp.route("/settings/users", methods=["GET", "POST"])
-@role_required("admin")
-def manage_users() -> Response:
-    """Preview dashboard users from Daftar Tamu app (read-only)."""
-    from dashboard.user_management import handle_manage_users
-
-    return handle_manage_users(actor=current_user(), base_template="daftar_tamu/base_daftar_tamu.html", read_only=True)
 
 
 @daftar_tamu_bp.route("/admin/map-data")
@@ -1556,10 +1551,10 @@ def export_rankings() -> Response:
 
     file_format = (request.args.get("format") or "csv").strip().lower()
     if file_format in {"excel", "xlsx"}:
-        filename = f"ranking_daftar_tamu_{date.today().isoformat()}.xlsx"
+        filename = f"ranking_daftar_tamu_{_today_jakarta().isoformat()}.xlsx"
         return _build_xlsx_response(headers, data_rows, filename)
 
-    filename = f"ranking_daftar_tamu_{date.today().isoformat()}.csv"
+    filename = f"ranking_daftar_tamu_{_today_jakarta().isoformat()}.csv"
     return _build_csv_response(headers, data_rows, filename)
 
 
@@ -1677,10 +1672,10 @@ def export_user_rankings() -> Response:
             else:
                 excel_row[10] = ""
             excel_rows.append(excel_row)
-        filename = f"ranking_user_kunjungan_{date.today().isoformat()}.xlsx"
+        filename = f"ranking_user_kunjungan_{_today_jakarta().isoformat()}.xlsx"
         return _build_xlsx_response(headers, excel_rows, filename)
 
-    filename = f"ranking_user_kunjungan_{date.today().isoformat()}.csv"
+    filename = f"ranking_user_kunjungan_{_today_jakarta().isoformat()}.csv"
     return _build_csv_response(headers, data_rows, filename)
 
 
@@ -1749,7 +1744,7 @@ def admin_validation() -> Response:
         total_pages=total_pages,
         date_from_str=date_from_str,
         date_to_str=date_to_str,
-        today_str=date.today().isoformat(),
+        today_str=_today_jakarta().isoformat(),
         open_transaction_id=open_transaction_id,
     )
 
@@ -2348,62 +2343,34 @@ def admin_contact_priority() -> Response:
     )
 
 
+def _admin_public_verification_locked_response() -> Response:
+    message = "Verifikasi transaksi tamu umum hanya bisa dilakukan oleh sekolah."
+    accept_header = (request.headers.get("Accept") or "").lower()
+    content_type = (request.content_type or "").lower()
+    wants_json = (
+        request.is_json
+        or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or "application/json" in accept_header
+        or "application/json" in content_type
+    )
+    if wants_json:
+        return jsonify({"success": False, "message": message}), 403
+    flash(message, "warning")
+    return redirect(url_for("daftar_tamu.admin_public_transactions"))
+
+
 @daftar_tamu_bp.route("/admin/umum-transactions/<int:transaction_id>/approve", methods=["POST"])
 @role_required("admin")
 def admin_public_transaction_approve(transaction_id: int) -> Response:
-    user = current_user()
-    note = (request.form.get("reviewer_note") or "").strip()
-    try:
-        ok = update_public_transaction_status(
-            transaction_id=transaction_id,
-            status="approved",
-            reviewer_id=user["id"],
-            reviewer_notes=note or None,
-        )
-    except ValueError:
-        ok = False
-    if not ok:
-        return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
-    try:
-        _notify_guestbook_status_change(
-            transaction_id=transaction_id,
-            status="approved",
-            actor=user,
-            is_public=True,
-        )
-    except Exception:
-        current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu umum.")
-    return redirect(url_for("daftar_tamu.admin_public_transactions"))
+    _ = transaction_id
+    return _admin_public_verification_locked_response()
 
 
 @daftar_tamu_bp.route("/admin/umum-transactions/<int:transaction_id>/reject", methods=["POST"])
 @role_required("admin")
 def admin_public_transaction_reject(transaction_id: int) -> Response:
-    user = current_user()
-    note = (request.form.get("reviewer_note") or "").strip()
-    if not note:
-        return jsonify({"success": False, "message": "Catatan penolakan wajib diisi."}), 400
-    try:
-        ok = update_public_transaction_status(
-            transaction_id=transaction_id,
-            status="rejected",
-            reviewer_id=user["id"],
-            reviewer_notes=note,
-        )
-    except ValueError:
-        ok = False
-    if not ok:
-        return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
-    try:
-        _notify_guestbook_status_change(
-            transaction_id=transaction_id,
-            status="rejected",
-            actor=user,
-            is_public=True,
-        )
-    except Exception:
-        current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu umum.")
-    return redirect(url_for("daftar_tamu.admin_public_transactions"))
+    _ = transaction_id
+    return _admin_public_verification_locked_response()
 
 
 @daftar_tamu_bp.route("/admin/umum/<int:guest_id>/verify", methods=["POST"])
@@ -2600,10 +2567,10 @@ def sekolah_public_web_export() -> Response:
     file_format = (request.args.get("format") or "excel").strip().lower()
     school_npsn = (school.get("npsn") or "sekolah").strip()
     if file_format in {"excel", "xlsx"}:
-        filename = f"daftar_tamu_umum_terverifikasi_{school_npsn}_{date.today().isoformat()}.xlsx"
+        filename = f"daftar_tamu_umum_terverifikasi_{school_npsn}_{_today_jakarta().isoformat()}.xlsx"
         return _build_xlsx_response(headers, data_rows, filename)
 
-    filename = f"daftar_tamu_umum_terverifikasi_{school_npsn}_{date.today().isoformat()}.csv"
+    filename = f"daftar_tamu_umum_terverifikasi_{school_npsn}_{_today_jakarta().isoformat()}.csv"
     return _build_csv_response(headers, data_rows, filename)
 
 
@@ -2747,10 +2714,10 @@ def sekolah_riwayat_export() -> Response:
     file_format = (request.args.get("format") or "excel").strip().lower()
     school_npsn = (school.get("npsn") or "sekolah").strip()
     if file_format in {"excel", "xlsx"}:
-        filename = f"riwayat_tamu_kedinasan_{school_npsn}_{date.today().isoformat()}.xlsx"
+        filename = f"riwayat_tamu_kedinasan_{school_npsn}_{_today_jakarta().isoformat()}.xlsx"
         return _build_xlsx_response(headers, data_rows, filename)
 
-    filename = f"riwayat_tamu_kedinasan_{school_npsn}_{date.today().isoformat()}.csv"
+    filename = f"riwayat_tamu_kedinasan_{school_npsn}_{_today_jakarta().isoformat()}.csv"
     return _build_csv_response(headers, data_rows, filename)
 
 
@@ -3124,7 +3091,7 @@ def _build_user_guestbook_history_context(user: dict, source) -> dict:
         "date_from_str": params["date_from_str"],
         "date_to_str": params["date_to_str"],
         "guest_scope": params["guest_scope"],
-        "today_str": date.today().isoformat(),
+        "today_str": _today_jakarta().isoformat(),
         "user_profile": user,
         "history_feed_base_url": feed_base_url,
         "history_stream_url": stream_url,
@@ -3539,7 +3506,7 @@ def admin_guestbook_ux_metrics() -> Response:
         "daftar_tamu/admin_ux_metrics.html",
         days=days,
         summary=summary,
-        today_str=date.today().isoformat(),
+        today_str=_today_jakarta().isoformat(),
     )
 
 

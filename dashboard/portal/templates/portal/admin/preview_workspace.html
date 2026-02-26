@@ -480,7 +480,7 @@
                     title="Ganti tema">
                     <i class="bi bi-moon-stars"></i>
                 </button>
-                <a href="{{ url_for('portal.preview_stop', next=url_for('portal.preview_accounts')) }}"
+                <a href="{{ url_for('portal.preview_stop', next=preview_return_url or url_for('main.admin_select_role')) }}"
                     class="btn btn-sm btn-outline-danger">
                     <i class="bi bi-box-arrow-left me-1"></i>Keluar Preview
                 </a>

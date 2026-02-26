@@ -853,7 +853,7 @@
                     });
 
                     const lastVisit = row.last_visit_date
-                        ? new Date(row.last_visit_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+                        ? new Date(row.last_visit_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' })
                         : 'Belum pernah';
                     const popupHtml = `
                         <div style="min-width:240px;">
@@ -943,7 +943,7 @@
                 const tr = document.createElement('tr');
                 const visitAt = row.visit_at ? new Date(row.visit_at) : null;
                 const visitLabel = visitAt
-                    ? visitAt.toLocaleDateString('id-ID', { dateStyle: 'medium' })
+                    ? visitAt.toLocaleDateString('id-ID', { dateStyle: 'medium', timeZone: 'Asia/Jakarta' })
                     : '-';
                 const purposeLabel = row.purpose ? row.purpose : '-';
                 const photoUrl = row.photo_url ? escapeHtml(row.photo_url) : '';
@@ -1174,7 +1174,7 @@
                 const tr = document.createElement('tr');
                 const visitAt = row.visit_at ? new Date(row.visit_at) : null;
                 const visitLabel = visitAt
-                    ? visitAt.toLocaleDateString('id-ID', { dateStyle: 'medium' })
+                    ? visitAt.toLocaleDateString('id-ID', { dateStyle: 'medium', timeZone: 'Asia/Jakarta' })
                     : '-';
                 const purposeLabel = row.purpose ? row.purpose : '-';
                 const photoUrl = row.photo_url ? escapeHtml(row.photo_url) : '';

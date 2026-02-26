@@ -3,10 +3,27 @@
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from dashboard.db_access import get_cursor
+
+try:
+    from zoneinfo import ZoneInfo
+except (ImportError, ModuleNotFoundError):
+    ZoneInfo = None
+
+if ZoneInfo is not None:
+    try:
+        _JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
+    except Exception:
+        _JAKARTA_TZ = timezone(timedelta(hours=7), name="WIB")
+else:
+    _JAKARTA_TZ = timezone(timedelta(hours=7), name="WIB")
+
+
+def _today_jakarta() -> date:
+    return datetime.now(_JAKARTA_TZ).date()
 
 
 SORT_OPTIONS = {
@@ -357,7 +374,7 @@ def fetch_dashboard_summary(
 ) -> Dict[str, Any]:
     """Fetch top-level summary stats for admin dashboard."""
     scope = _normalize_guest_scope(guest_scope)
-    cutoff = date.today() - timedelta(days=30)
+    cutoff = _today_jakarta() - timedelta(days=30)
     params: List[Any] = [
         date_from,
         date_from,
@@ -509,7 +526,7 @@ def fetch_school_rankings(
         cur.execute(data_query, base_params + search_params + [safe_per_page, offset])
         rows = [dict(row) for row in cur.fetchall()]
 
-    today = date.today()
+    today = _today_jakarta()
     for index, row in enumerate(rows, start=offset + 1):
         row["rank"] = index
         row["visit_count"] = int(row.get("visit_count") or 0)
@@ -729,7 +746,7 @@ def fetch_user_rankings(
         cur.execute(data_query, params_common + [safe_per_page, offset])
         rows = [dict(row) for row in cur.fetchall()]
 
-    today = date.today()
+    today = _today_jakarta()
     for idx, row in enumerate(rows, start=offset + 1):
         row["rank"] = idx
         row["visit_count"] = int(row.get("visit_count") or 0)
@@ -1347,7 +1364,7 @@ def fetch_map_data(
         cur.execute(query, [date_from, date_from, date_to, date_to, scope, scope, scope])
         rows = [dict(row) for row in cur.fetchall()]
 
-    cutoff = date.today() - timedelta(days=30)
+    cutoff = _today_jakarta() - timedelta(days=30)
     payload: List[Dict[str, Any]] = []
     for row in rows:
         lat = row.get("latitude")
@@ -3050,7 +3067,7 @@ def upsert_transaction_staff_note(
             {
                 "note": safe_note,
                 "level": safe_level,
-                "updated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+                "updated_at": datetime.now(_JAKARTA_TZ).isoformat(timespec="seconds"),
             }
         )
         query = """

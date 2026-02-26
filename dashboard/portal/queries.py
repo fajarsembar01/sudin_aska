@@ -3,10 +3,27 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence
-from datetime import datetime, date
+from datetime import datetime, date, timedelta, timezone
 import calendar
 
 from ..db_access import get_cursor
+
+try:
+    from zoneinfo import ZoneInfo
+except (ImportError, ModuleNotFoundError):
+    ZoneInfo = None
+
+if ZoneInfo is not None:
+    try:
+        _JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
+    except Exception:
+        _JAKARTA_TZ = timezone(timedelta(hours=7), name="WIB")
+else:
+    _JAKARTA_TZ = timezone(timedelta(hours=7), name="WIB")
+
+
+def _today_jakarta() -> date:
+    return datetime.now(_JAKARTA_TZ).date()
 
 _AUTO_PERIOD_MONTHS_AHEAD = 36
 _MONTH_NAMES_ID = (
@@ -872,7 +889,7 @@ def _ensure_monthly_periods(cur, months_ahead: int = _AUTO_PERIOD_MONTHS_AHEAD) 
     """Ensure monthly periods exist from current month up to N months ahead."""
     if months_ahead < 0:
         return
-    today = date.today()
+    today = _today_jakarta()
     start = date(today.year, today.month, 1)
     end_month_offset = start.month - 1 + months_ahead
     end_year = start.year + end_month_offset // 12

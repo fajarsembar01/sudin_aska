@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path, PurePosixPath
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urlparse
 import subprocess
 import sys
 import math
@@ -197,11 +197,15 @@ portal_bp = Blueprint(
 
 UPLOAD_FOLDER = Path(__file__).parent.parent.parent / "uploads" / "portal"
 PHOTO_REQUIRED_PCT = 90.0
-JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
+try:
+    JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
+except Exception:
+    JAKARTA_TZ = timezone(timedelta(hours=7), name="WIB")
 _PREVIEW_ALLOWED_ROLES = {"staff", "coordinator", "sekolah"}
 _PREVIEW_ADMIN_SESSION_KEY = "preview_admin_user"
 _PREVIEW_TARGET_SESSION_KEY = "preview_target_user"
 _PREVIEW_APP_SESSION_KEY = "preview_selected_app"
+_PREVIEW_RETURN_URL_SESSION_KEY = "preview_return_url"
 _PREVIEW_READ_ONLY_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 _PREVIEW_READ_ONLY_EXEMPT_ENDPOINTS = {"portal.preview_start", "portal.preview_pin"}
 _LEGACY_SCORE_SCALE_MAX = 3
@@ -3439,7 +3443,7 @@ def export_excel() -> Response:
         
     output.seek(0)
     
-    filename = f"Laporan_Penilaian_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    filename = f"Laporan_Penilaian_{datetime.now(JAKARTA_TZ).strftime('%Y%m%d')}.xlsx"
     
     return send_file(
         output,
@@ -6357,7 +6361,7 @@ def upload_profile_photo() -> Response:
     upload_dir = UPLOAD_FOLDER / "profile"
     upload_dir.mkdir(parents=True, exist_ok=True)
 
-    timestamp = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
+    timestamp = datetime.now(JAKARTA_TZ).strftime("%Y%m%d%H%M%S")
     generated_name = f"user_{int(user['id'])}_{timestamp}_{uuid.uuid4().hex[:8]}.{ext}"
     abs_path = upload_dir / generated_name
     rel_path = f"profile/{generated_name}"
@@ -6546,6 +6550,37 @@ def _normalize_preview_app(raw: str | None) -> str:
     return "portal"
 
 
+def _preview_home_fallback_url() -> str:
+    return url_for("main.admin_select_role")
+
+
+def _sanitize_preview_return_url(raw_url: str | None) -> str | None:
+    if raw_url is None:
+        return None
+    value = str(raw_url).strip()
+    if not value:
+        return None
+
+    parsed = urlparse(value)
+    # Allow relative URLs and same-origin absolute URLs only.
+    if parsed.netloc:
+        host = urlparse(request.host_url).netloc
+        if parsed.netloc != host:
+            return None
+        if parsed.scheme and parsed.scheme not in {"http", "https"}:
+            return None
+
+    path = (parsed.path or "").strip()
+    if not path.startswith("/") or path.startswith("//"):
+        return None
+
+    # Prevent redirect loop back into preview workspace/stop endpoint.
+    if path == url_for("portal.preview_accounts") or path.startswith("/portal/preview/"):
+        return None
+
+    return f"{path}?{parsed.query}" if parsed.query else path
+
+
 def _build_preview_entry_url(*, role: str, app: str) -> str:
     role_value = (role or "").strip().lower()
     app_value = _normalize_preview_app(app)
@@ -6672,6 +6707,12 @@ def preview_accounts() -> Response:
             session.pop(_PREVIEW_APP_SESSION_KEY, None)
             selected_target = None
 
+    # Keep return destination so "Keluar Preview" can go back to previous page.
+    referrer_return_url = _sanitize_preview_return_url(request.referrer)
+    stored_return_url = _sanitize_preview_return_url(session.get(_PREVIEW_RETURN_URL_SESSION_KEY))
+    preview_return_url = referrer_return_url or stored_return_url or _preview_home_fallback_url()
+    session[_PREVIEW_RETURN_URL_SESSION_KEY] = preview_return_url
+
     return render_template(
         "portal/admin/preview_workspace.html",
         preview_users=preview_users,
@@ -6679,6 +6720,7 @@ def preview_accounts() -> Response:
         preview_target=selected_target,
         preview_selected_app=selected_app,
         preview_url=preview_url,
+        preview_return_url=preview_return_url,
     )
 
 
@@ -6756,6 +6798,7 @@ def preview_pin(user_id: int) -> Response:
 @_preview_access_required
 def preview_stop() -> Response:
     """Stop preview mode and restore original admin session."""
+    stored_return_url = _sanitize_preview_return_url(session.get(_PREVIEW_RETURN_URL_SESSION_KEY))
     admin_session_user = session.get(_PREVIEW_ADMIN_SESSION_KEY)
     if isinstance(admin_session_user, dict) and admin_session_user.get("role") == "admin":
         session["user"] = admin_session_user
@@ -6764,8 +6807,13 @@ def preview_stop() -> Response:
     session.pop(_PREVIEW_ADMIN_SESSION_KEY, None)
     session.pop(_PREVIEW_TARGET_SESSION_KEY, None)
     session.pop(_PREVIEW_APP_SESSION_KEY, None)
+    session.pop(_PREVIEW_RETURN_URL_SESSION_KEY, None)
 
-    next_url = (request.args.get("next") or "").strip() or url_for("portal.preview_accounts")
+    next_url = (
+        _sanitize_preview_return_url(request.args.get("next"))
+        or stored_return_url
+        or _preview_home_fallback_url()
+    )
     return redirect(next_url)
 
 

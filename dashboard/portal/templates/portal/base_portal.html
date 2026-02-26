@@ -1796,9 +1796,12 @@
                 month: 'short',
                 hour: '2-digit',
                 minute: '2-digit',
-                hour12: false
+                hour12: false,
+                timeZone: 'Asia/Jakarta'
             };
-            if (date.getFullYear() !== now.getFullYear()) {
+            var dateWibYear = new Intl.DateTimeFormat('en-CA', { year: 'numeric', timeZone: 'Asia/Jakarta' }).format(date);
+            var nowWibYear = new Intl.DateTimeFormat('en-CA', { year: 'numeric', timeZone: 'Asia/Jakarta' }).format(now);
+            if (dateWibYear !== nowWibYear) {
                 options.year = 'numeric';
             }
             var locale = document.documentElement.lang || 'id-ID';
