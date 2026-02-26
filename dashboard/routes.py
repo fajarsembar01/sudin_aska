@@ -274,6 +274,10 @@ def admin_select_role() -> Response:
     if role != "admin":
         flash("Halaman ini hanya untuk admin.", "danger")
         return redirect(url_for("portal.home"))
+    display_name = (user.get("full_name") or user.get("email") or "").strip()
+    header_title = "Selamat Datang"
+    if display_name:
+        header_title = f"Selamat Datang, {display_name}"
     cards = [
         {
             "title": "ASKA Insight",
@@ -301,8 +305,8 @@ def admin_select_role() -> Response:
         "role_selection.html",
         page_title="Pilih Mode Akses - ASKA Portal",
         page_description="Pilih mode akses untuk Admin",
-        header_title="Selamat Datang, Admin",
-        header_subtitle="Silakan pilih dashboard yang ingin Anda akses",
+        header_title=header_title,
+        header_subtitle="Silakan pilih layanan yang ingin Anda akses",
         cards=cards,
         default_col_class="col-md-4 col-12",
         show_logout=True,
