@@ -847,70 +847,75 @@
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container-fluid px-lg-4">
             <a class="navbar-brand"
-                href="{% if current_user and current_user.role == 'admin' %}{{ url_for('portal.admin_stats') }}{% else %}{{ url_for('portal.home') }}{% endif %}">
+                href="{% if current_user and current_user.role == 'admin' %}{{ url_for('portal.admin_stats')}}
+                {% elif current_user and current_user.role == 'staff' %}{{ url_for('portal.staff_assignments')}}
+                {% elif current_user and current_user.role == 'coordinator' %}{{ url_for('portal.coordinator_dashboard')}}
+                {% elif current_user and current_user.role == 'sekolah' %}{{ url_for('portal.sekolah_rooms')}}
+                {% endif %}">
                 <span class="icon-badge brand-icon text-primary">
-                    <i class="bi bi-clipboard2-check"></i>
+                    <i class="bi bi-building"></i>
                 </span>
-                <span class="fw-bold">ASKA Portal</span>
+                <span class="fw-bold">PANBERSS</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#portalNavbar">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="portalNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    {% if not current_user or current_user.role != 'sekolah' %}
-                    {% set home_active_endpoints = ['portal.home', 'portal.coordinator_dashboard',
-                    'portal.staff_oss_home'] %}
+                    {% if not current_user or current_user.role == 'admin' %}
+                    {% set home_active_endpoints = ['portal.admin_stats'] %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint in home_active_endpoints %}active{% endif %}"
                             href="{{ url_for('portal.home') }}">
-                            <i class="bi bi-house nav-icon"></i>Beranda
+                            <i class="bi bi-bar-chart nav-icon"></i>Dashboard
                         </a>
                     </li>
                     {% endif %}
 
                     {% if current_user and current_user.role == 'coordinator' %}
                     {% set coordinator_menu_endpoints = [
-                    'portal.coordinator_stats',
-                    'portal.coordinator_assignment_requests',
+                    'portal.coordinator_dashboard',
                     'portal.view_my_team',
-                    'portal.coordinator_assessments',
-                    'portal.coordinator_team',
-                    'portal.coordinator_request_member'
+                    'coordinator_assignment_requests'
                     ] %}
                     <!-- Coordinator: Kelola Tim dropdown -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'portal.coordinator_stats' %}active{% endif %}"
+                            href="{{ url_for('portal.coordinator_stats') }}">
+                            <i class="bi bi-bar-chart nav-icon"></i>Dashboard
+                        </a>
+                    </li>
+                    
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if request.endpoint in coordinator_menu_endpoints %}active{% endif %}"
                             href="#" data-bs-toggle="dropdown">
-                            <i class="bi bi-people nav-icon"></i>Kelola Tim
+                            <i class="bi bi-people nav-icon"></i>Tim Saya
                         </a>
                         <ul class="dropdown-menu">
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('portal.coordinator_dashboard') }}">
-                                    <i class="bi bi-people me-2"></i>Dashboard Tim
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('portal.coordinator_stats') }}">
-                                    <i class="bi bi-graph-up me-2"></i>Statistik Tim
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('portal.coordinator_assignment_requests') }}">
-                                    <i class="bi bi-send me-2"></i>Pengajuan Penugasan
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('portal.coordinator_assessments') }}">
-                                    <i class="bi bi-clipboard-check me-2"></i>Penilaian Saya
+                                    <i class="bi-people-fill me-2"></i>Ringkasan Tim
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('portal.view_my_team') }}">
-                                    <i class="bi bi-people-fill me-2"></i>Tim Saya
+                                    <i class="bi-person-plus me-2"></i>Penambahan Anggota Tim
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.coordinator_assignment_requests') }}">
+                                    <i class="bi bi-journal-check me-2"></i>Penugasan Anggota Tim
                                 </a>
                             </li>
                         </ul>
+                    </li>
+
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'portal.coordinator_assessments' %}active{% endif %}"
+                            href="{{ url_for('portal.coordinator_assessments') }}">
+                            <i class="bi bi-list-check nav-icon"></i>Penilaian Saya
+                        </a>
                     </li>
                     {% endif %}
 
@@ -930,7 +935,8 @@
                     </li>
                     {% endif %}
 
-                    {% if current_user and current_user.role in ['staff', 'coordinator', 'sekolah'] %}
+                    <!-- Buku Tamu untuk Koordinator, Staff, dan Sekolah tidak diperlukan di halaman PANBERSS supaya fokus user tidak terbagi -->
+                    <!-- {% if current_user and current_user.role in ['staff', 'coordinator', 'sekolah'] %}
                     <li class="nav-item">
                         {% if current_user.role == 'sekolah' %}
                         <a class="nav-link {% if request.blueprint == 'daftar_tamu' %}active{% endif %}"
@@ -944,20 +950,21 @@
                         </a>
                         {% endif %}
                     </li>
-                    {% endif %}
+                    {% endif %} -->
 
                     {% if current_user and current_user.role == 'admin' %}
                     <!-- Admin: Sekolah menu -->
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'portal.schools' %}active{% endif %}"
                             href="{{ url_for('portal.schools') }}">
-                            <i class="bi bi-building nav-icon"></i>Sekolah
+                            <i class="bi bi-mortarboard nav-icon"></i>Sekolah
                         </a>
                     </li>
                     <!-- Admin dropdown with new Kelola Staff -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'admin' in request.endpoint or request.endpoint in ['portal.portal_kontak_wilayah', 'portal.manage_users', 'portal.preview_accounts'] %}active{% endif %}"
-                            href="#" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle {% if ('admin' in request.endpoint and request.endpoint != 'portal.admin_stats') 
+                        or request.endpoint in ['portal.portal_kontak_wilayah', 'portal.manage_users', 'portal.preview_accounts'] %} active {% endif %}"
+                        href="#" data-bs-toggle="dropdown">
                             <i class="bi bi-gear nav-icon"></i>Admin
                         </a>
                         <ul class="dropdown-menu">
@@ -1048,15 +1055,15 @@
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'portal.sekolah_rooms' %}active{% endif %}"
                             href="{{ url_for('portal.sekolah_rooms') }}">
-                            <i class="bi bi-sliders nav-icon"></i>PANBERSS
+                            <i class="bi bi-sliders nav-icon"></i>Konfigurasi Ruangan
                         </a>
                     </li>
-                    <li class="nav-item">
+                    <!-- <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'portal.sekolah_profile' %}active{% endif %}"
                             href="{{ url_for('portal.sekolah_profile') }}">
                             <i class="bi bi-gear nav-icon"></i>Pengaturan
                         </a>
-                    </li>
+                    </li> -->
                     {% endif %}
                 </ul>
 
@@ -2849,8 +2856,9 @@
             setLoadingState(true);
             setStatus('Mengunggah foto profil...', 'muted');
 
-            var formData = new FormData();
-            formData.append('photo', file, file.name || 'profile.jpg');
+                var formData = new FormData();
+                formData.append('photo', file, file.name || 'profile.jpg');
+                formData.append('redirect_to', window.location.pathname + window.location.search + window.location.hash);
 
             fetch(uploadUrl, {
                 method: 'POST',

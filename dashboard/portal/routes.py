@@ -508,7 +508,7 @@ def _require_profile_photo_redirect(user: dict | None) -> Response | None:
     """Redirect to profile page when photo completion is mandatory."""
     if not _needs_profile_photo_completion(user):
         return None
-    flash("Foto profil wajib diisi untuk melanjutkan akses OSS.", "warning")
+    flash("Foto profil wajib diisi untuk melanjutkan akses ke Portal.", "warning")
     return redirect(url_for("portal.user_profile_settings"))
 
 
@@ -1396,6 +1396,10 @@ def home() -> Response:
     """Portal home by role."""
     user = current_user()
     role = user.get("role")
+    display_name = (user.get("full_name") or user.get("email") or "").strip()
+    header_title = "Selamat Datang"
+    if display_name:
+        header_title = f"Selamat Datang, {display_name}"
     photo_redirect = _require_profile_photo_redirect(user)
     if photo_redirect:
         return photo_redirect
@@ -1427,13 +1431,12 @@ def home() -> Response:
             "role_selection.html",
             page_title="Pilih Layanan Staff - ASKA Portal",
             page_description="Pilih layanan untuk Staff",
-            header_title="Selamat Datang, Staff",
+            header_title=header_title,
             header_subtitle="Silakan pilih layanan yang ingin Anda akses",
             cards=cards,
             default_col_class="col-md-6 col-12",
             show_logout=True,
         )
-
     if role == "coordinator":
         cards = [
             {
@@ -1455,7 +1458,7 @@ def home() -> Response:
             "role_selection.html",
             page_title="Pilih Layanan Koordinator - ASKA Portal",
             page_description="Pilih layanan untuk Koordinator",
-            header_title="Selamat Datang, Koordinator",
+            header_title=header_title,
             header_subtitle="Silakan pilih layanan yang ingin Anda akses",
             cards=cards,
             default_col_class="col-md-6 col-12",
@@ -1548,7 +1551,7 @@ def sekolah_home() -> Response:
         "role_selection.html",
         page_title="Pilih Layanan Sekolah - ASKA Portal",
         page_description="Pilih layanan untuk sekolah",
-        header_title="Selamat Datang, Sekolah",
+        header_title="Selamat Datang",
         header_subtitle=subtitle,
         cards=cards,
         default_col_class="col-md-6 col-12",
@@ -3189,7 +3192,35 @@ def coordinator_stats() -> Response:
     
     if not my_team:
         flash("Anda belum ditugaskan sebagai koordinator tim manapun.", "warning")
-        return redirect(url_for("portal.home"))
+        periods = list_periods()
+        empty_stats = {
+            "schools": {"total_schools": 0, "active_schools": 0},
+            "assessments": {
+                "total": 0,
+                "drafts": 0,
+                "submitted": 0,
+                "avg_score": None,
+            },
+        }
+        return render_template(
+            "portal/coordinator/stats.html",
+            team=None,
+            team_members=[],
+            stats=empty_stats,
+            score_dist=[0] * 9,
+            kecamatan_stats=[],
+            recent_assessments=[],
+            top_schools=[],
+            bottom_schools=[],
+            random_photos=[],
+            school_avg_map={},
+            periods=periods,
+            current_period_id=period_id,
+            jenjang_filter=jenjang_filter,
+            order=order,
+            photo_order=photo_order,
+            selected_team_id=None,
+        )
         
     stats = fetch_portal_stats(period_id=period_id, staff_ids=staff_ids)
     score_dist = fetch_score_distribution(period_id=period_id, staff_ids=staff_ids)
