@@ -1392,6 +1392,10 @@ def home() -> Response:
     """Portal home by role."""
     user = current_user()
     role = user.get("role")
+    display_name = (user.get("full_name") or user.get("email") or "").strip()
+    header_title = "Selamat Datang"
+    if display_name:
+        header_title = f"Selamat Datang, {display_name}"
     photo_redirect = _require_profile_photo_redirect(user)
     if photo_redirect:
         return photo_redirect
@@ -1423,7 +1427,7 @@ def home() -> Response:
             "role_selection.html",
             page_title="Pilih Layanan Staff - ASKA Portal",
             page_description="Pilih layanan untuk Staff",
-            header_title="Selamat Datang, Staff",
+            header_title=header_title,
             header_subtitle="Silakan pilih layanan yang ingin Anda akses",
             cards=cards,
             default_col_class="col-md-6 col-12",
@@ -1451,7 +1455,7 @@ def home() -> Response:
             "role_selection.html",
             page_title="Pilih Layanan Koordinator - ASKA Portal",
             page_description="Pilih layanan untuk Koordinator",
-            header_title="Selamat Datang, Koordinator",
+            header_title=header_title,
             header_subtitle="Silakan pilih layanan yang ingin Anda akses",
             cards=cards,
             default_col_class="col-md-6 col-12",
@@ -1544,7 +1548,7 @@ def sekolah_home() -> Response:
         "role_selection.html",
         page_title="Pilih Layanan Sekolah - ASKA Portal",
         page_description="Pilih layanan untuk sekolah",
-        header_title="Selamat Datang, Sekolah",
+        header_title="Selamat Datang",
         header_subtitle=subtitle,
         cards=cards,
         default_col_class="col-md-6 col-12",
