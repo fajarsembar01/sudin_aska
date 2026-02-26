@@ -120,22 +120,7 @@
                         </td>
                         <td class="text-end">
                             {% if row.status == 'pending' %}
-                            <input type="text" class="form-control form-control-sm mb-2"
-                                id="publicAdminNote{{ row.id }}" placeholder="Catatan verifikasi (opsional)">
-                            <div class="d-flex justify-content-end gap-2">
-                                <form method="post"
-                                    action="{{ url_for('daftar_tamu.admin_public_transaction_approve', transaction_id=row.id) }}"
-                                    onsubmit="document.getElementById('adminApproveNote{{ row.id }}').value = document.getElementById('publicAdminNote{{ row.id }}').value;">
-                                    <input type="hidden" name="reviewer_note" id="adminApproveNote{{ row.id }}">
-                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
-                                </form>
-                                <form method="post"
-                                    action="{{ url_for('daftar_tamu.admin_public_transaction_reject', transaction_id=row.id) }}"
-                                    onsubmit="document.getElementById('adminRejectNote{{ row.id }}').value = document.getElementById('publicAdminNote{{ row.id }}').value;">
-                                    <input type="hidden" name="reviewer_note" id="adminRejectNote{{ row.id }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
-                                </form>
-                            </div>
+                            <div class="small text-muted">Verifikasi oleh sekolah</div>
                             {% else %}
                             <div class="small text-muted">Diverifikasi</div>
                             {% endif %}
