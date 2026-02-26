@@ -645,7 +645,7 @@
                     document.getElementById('detailSchoolName').textContent = trx.school_name || '-';
                     document.getElementById('detailSchoolMeta').textContent = [trx.npsn, trx.jenjang, trx.kecamatan, trx.kelurahan].filter(Boolean).join(' • ');
                     var visitAt = trx.visit_at ? new Date(trx.visit_at) : null;
-                    document.getElementById('detailVisitAt').textContent = visitAt ? visitAt.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '-';
+                    document.getElementById('detailVisitAt').textContent = visitAt ? visitAt.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }) : '-';
                     document.getElementById('detailCreatedBy').textContent = trx.created_by_name || '-';
                     var hasLat = typeof trx.latitude === 'number' || typeof trx.latitude === 'string';
                     var hasLon = typeof trx.longitude === 'number' || typeof trx.longitude === 'string';

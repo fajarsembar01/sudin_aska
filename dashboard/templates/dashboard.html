@@ -954,6 +954,11 @@
     const gridColor = getCssVar('--border-soft', 'rgba(148,163,184,0.2)');
     const ticksColor = getCssVar('--text-muted', '#64748b');
     const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const activityDateLabelFormatter = new Intl.DateTimeFormat('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        timeZone: 'Asia/Jakarta'
+    });
 
     const activityCtx = document.getElementById('activityChart');
     const activityRangeLabelEl = document.getElementById('activityRangeLabel');
@@ -982,14 +987,12 @@
     function formatActivityDateLabel(isoDate) {
         if (!isoDate) return '';
         if (isoDate instanceof Date) {
-            const day = String(isoDate.getDate()).padStart(2, '0');
-            return `${day} ${monthLabels[isoDate.getMonth()]}`;
+            return activityDateLabelFormatter.format(isoDate).replace(/\.$/, '');
         }
         if (typeof isoDate !== 'string') return String(isoDate);
         const parsed = new Date(isoDate);
         if (!Number.isNaN(parsed.getTime())) {
-            const day = String(parsed.getDate()).padStart(2, '0');
-            return `${day} ${monthLabels[parsed.getMonth()]}`;
+            return activityDateLabelFormatter.format(parsed).replace(/\.$/, '');
         }
         const parts = isoDate.split('-');
         if (parts.length !== 3) return isoDate;

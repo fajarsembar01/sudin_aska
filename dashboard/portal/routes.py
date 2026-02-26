@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path, PurePosixPath
 from urllib.parse import quote_plus, urlparse
@@ -197,7 +197,10 @@ portal_bp = Blueprint(
 
 UPLOAD_FOLDER = Path(__file__).parent.parent.parent / "uploads" / "portal"
 PHOTO_REQUIRED_PCT = 90.0
-JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
+try:
+    JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
+except Exception:
+    JAKARTA_TZ = timezone(timedelta(hours=7), name="WIB")
 _PREVIEW_ALLOWED_ROLES = {"staff", "coordinator", "sekolah"}
 _PREVIEW_ADMIN_SESSION_KEY = "preview_admin_user"
 _PREVIEW_TARGET_SESSION_KEY = "preview_target_user"
@@ -3409,7 +3412,7 @@ def export_excel() -> Response:
         
     output.seek(0)
     
-    filename = f"Laporan_Penilaian_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    filename = f"Laporan_Penilaian_{datetime.now(JAKARTA_TZ).strftime('%Y%m%d')}.xlsx"
     
     return send_file(
         output,
@@ -6327,7 +6330,7 @@ def upload_profile_photo() -> Response:
     upload_dir = UPLOAD_FOLDER / "profile"
     upload_dir.mkdir(parents=True, exist_ok=True)
 
-    timestamp = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
+    timestamp = datetime.now(JAKARTA_TZ).strftime("%Y%m%d%H%M%S")
     generated_name = f"user_{int(user['id'])}_{timestamp}_{uuid.uuid4().hex[:8]}.{ext}"
     abs_path = upload_dir / generated_name
     rel_path = f"profile/{generated_name}"

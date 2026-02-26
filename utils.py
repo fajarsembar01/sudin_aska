@@ -14,17 +14,19 @@ try:
 except (ImportError, ModuleNotFoundError):
     ZoneInfo = None
 
+WIB_TZ = timezone(timedelta(hours=7), name="WIB")
+
 if ZoneInfo is not None:
     try:
         JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
     except Exception:
-        JAKARTA_TZ = None
+        JAKARTA_TZ = WIB_TZ
     try:
         UTC_TZ = ZoneInfo("UTC")
     except Exception:
         UTC_TZ = timezone.utc
 else:
-    JAKARTA_TZ = None
+    JAKARTA_TZ = WIB_TZ
     UTC_TZ = timezone.utc
 
 
@@ -106,7 +108,7 @@ def remove_trailing_signature(text: Optional[str]) -> str:
 
 
 def now_str():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return current_jakarta_time().strftime("%Y-%m-%d %H:%M:%S")
 
 
 def format_history_for_chain(history: List[Dict[str, Any]]) -> list:
@@ -137,12 +139,7 @@ def coerce_to_text(result_obj):
 
 
 def current_jakarta_time() -> datetime:
-    if JAKARTA_TZ is not None:
-        try:
-            return datetime.now(JAKARTA_TZ)
-        except Exception:
-            pass
-    return datetime.now()
+    return datetime.now(JAKARTA_TZ)
 
 
 def to_jakarta(dt: Optional[datetime]) -> Optional[datetime]:
