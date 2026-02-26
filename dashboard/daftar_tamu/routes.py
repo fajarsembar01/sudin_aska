@@ -1477,15 +1477,6 @@ def admin_school_visits_export(school_id: int) -> Response:
     return _build_csv_response(headers, data_rows, filename)
 
 
-@daftar_tamu_bp.route("/settings/users", methods=["GET", "POST"])
-@role_required("admin")
-def manage_users() -> Response:
-    """Preview dashboard users from Daftar Tamu app (read-only)."""
-    from dashboard.user_management import handle_manage_users
-
-    return handle_manage_users(actor=current_user(), base_template="daftar_tamu/base_daftar_tamu.html", read_only=True)
-
-
 @daftar_tamu_bp.route("/admin/map-data")
 @role_required("admin")
 def admin_map_data() -> Response:

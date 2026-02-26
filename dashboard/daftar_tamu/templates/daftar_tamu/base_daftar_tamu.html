@@ -36,8 +36,8 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'daftar_tamu.manage_users' %}active{% endif %}"
-                        href="{{ url_for('daftar_tamu.manage_users') }}">
+                    <a class="nav-link {% if request.endpoint == 'portal.preview_accounts' %}active{% endif %}"
+                        href="{{ url_for('portal.preview_accounts') }}">
                         <i class="bi bi-eye nav-icon"></i>Preview Akun
                     </a>
                 </li>
@@ -192,7 +192,7 @@
                             Tidak ada permintaan yang menunggu.
                         </div>
                         <a class="notification-item{% if pending_users == 0 %} d-none{% endif %}"
-                            id="adminPendingUsersItem" href="{{ url_for('daftar_tamu.manage_users') }}">
+                            id="adminPendingUsersItem" href="{{ url_for('portal.preview_accounts') }}">
                             <div>
                                 <div class="fw-semibold">User baru</div>
                                 <small>Menunggu verifikasi akun</small>
@@ -238,7 +238,7 @@
                         </a>
                         <div class="notification-divider" id="adminPendingQuickDivider"></div>
                         <div class="notification-quick" id="adminPendingQuickList"
-                            data-users-url="{{ url_for('daftar_tamu.manage_users') }}"
+                            data-users-url="{{ url_for('portal.preview_accounts') }}"
                             data-user-verify-url="{{ url_for('portal.manage_users') }}"
                             data-assignment-url="{{ url_for('portal.admin_manage_staff') }}"
                             data-team-url="{{ url_for('portal.manage_monev_teams') }}"
