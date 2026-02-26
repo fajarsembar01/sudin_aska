@@ -899,9 +899,11 @@
     }
 
     function applyRoomPhotoRotation(img, rotationDeg) {
-        var normalized = ((rotationDeg % 360) + 360) % 360;
-        img.dataset.rotation = String(normalized);
-        img.style.transform = 'rotate(' + normalized + 'deg)';
+        var rawRotation = Number(rotationDeg);
+        if (Number.isNaN(rawRotation)) rawRotation = 0;
+        var normalized = ((rawRotation % 360) + 360) % 360;
+        img.dataset.rotation = String(rawRotation);
+        img.style.transform = 'rotate(' + rawRotation + 'deg)';
         var quarterTurn = normalized % 180 !== 0;
         if (quarterTurn && img.naturalWidth > 0 && img.naturalHeight > 0) {
             var ratio = img.naturalHeight / img.naturalWidth;
