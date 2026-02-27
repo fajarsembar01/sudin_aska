@@ -176,6 +176,9 @@
                                         <div class="position-relative room-photo-frame">
                                             <img id="roomPhotoImg{{ room.school_room_id }}" class="room-photo-image"
                                                 data-rotation="0"
+                                                data-photo-id="{{ photo.id }}"
+                                                data-photo-latitude="{{ photo.latitude if photo.latitude is not none else '' }}"
+                                                data-photo-longitude="{{ photo.longitude if photo.longitude is not none else '' }}"
                                                 src="{{ photo.url or url_for('portal.uploaded_file', filename=photo.photo_path.split('/')[-1]) }}"
                                                 alt="Foto ruangan">
                                             <button type="button"
@@ -258,7 +261,7 @@
                     Maksimal {{ photo_max_allowed }} ruangan (50%).
                 </p>
                 <p class="text-muted small">Pastikan semua aspek sudah dinilai sebelum submit.</p>
-                <form action="{{ url_for('portal.save_draft', school_id=school.id) }}" method="POST" class="mb-2">
+                <form action="{{ url_for('portal.save_draft', school_id=school.id) }}" method="POST" class="mb-2" id="saveDraftForm">
                     <input type="hidden" name="assessment_id" value="{{ assessment.id }}">
                     <button type="submit"
                         class="btn btn-outline-secondary w-100 d-inline-flex align-items-center justify-content-center gap-2">
@@ -795,6 +798,10 @@
     var photoRoomSet = new Set({{ photo_room_ids|tojson }});
     var pendingUploadBlob = null;
     var uploadInProgress = false;
+    var pendingRotationRoomSet = new Set();
+    var rotationPersistPromises = {};
+    var bypassSubmitRotationSync = false;
+    var bypassDraftRotationSync = false;
     var locationRequestInFlight = null;
     var locationWatchId = null;
     var locationWatchTimer = null;
@@ -1005,13 +1012,248 @@
         syncRoomPhotoFrameSize(img);
     }
 
+    function normalizeRotationDegrees(rawRotation) {
+        var parsed = Number(rawRotation);
+        if (Number.isNaN(parsed)) parsed = 0;
+        return ((parsed % 360) + 360) % 360;
+    }
+
+    function setRoomRotationControlsDisabled(roomId, isDisabled) {
+        var preview = document.getElementById('photoPreview' + roomId);
+        if (!preview) return;
+        preview.querySelectorAll('.photo-rotate-controls button').forEach(function (btn) {
+            btn.disabled = !!isDisabled;
+        });
+    }
+
+    function getPendingRotationRoomIds() {
+        var merged = {};
+        pendingRotationRoomSet.forEach(function (roomId) {
+            merged[String(roomId)] = true;
+        });
+        Object.keys(rotationPersistPromises).forEach(function (roomId) {
+            merged[String(roomId)] = true;
+        });
+        return Object.keys(merged)
+            .map(function (roomId) { return Number(roomId); })
+            .filter(function (roomId) { return !Number.isNaN(roomId) && roomId > 0; });
+    }
+
+    function setRoomPhotoDataAttributes(img, photoData) {
+        if (!img) return;
+        var photoIdVal = (photoData && photoData.id !== undefined && photoData.id !== null)
+            ? String(photoData.id)
+            : '';
+        var latVal = (photoData && photoData.latitude !== undefined && photoData.latitude !== null)
+            ? String(photoData.latitude)
+            : '';
+        var lonVal = (photoData && photoData.longitude !== undefined && photoData.longitude !== null)
+            ? String(photoData.longitude)
+            : '';
+
+        img.dataset.photoId = photoIdVal;
+        img.dataset.photoLatitude = latVal;
+        img.dataset.photoLongitude = lonVal;
+    }
+
+    function getRoomPhotoCoordsFromImage(img) {
+        if (!img) {
+            return { latitude: null, longitude: null };
+        }
+        return {
+            latitude: normalizeCoord(img.dataset.photoLatitude),
+            longitude: normalizeCoord(img.dataset.photoLongitude),
+        };
+    }
+
+    function waitForImageReady(img) {
+        return new Promise(function (resolve, reject) {
+            if (!img) {
+                reject(new Error('Foto tidak ditemukan.'));
+                return;
+            }
+            if (img.complete && img.naturalWidth && img.naturalHeight) {
+                resolve(img);
+                return;
+            }
+            var onLoad = function () {
+                cleanup();
+                resolve(img);
+            };
+            var onError = function () {
+                cleanup();
+                reject(new Error('Gagal memuat foto untuk rotasi.'));
+            };
+            var cleanup = function () {
+                img.removeEventListener('load', onLoad);
+                img.removeEventListener('error', onError);
+            };
+            img.addEventListener('load', onLoad);
+            img.addEventListener('error', onError);
+        });
+    }
+
+    function buildRotatedBlobFromImage(img, rotationDeg) {
+        return waitForImageReady(img).then(function (readyImg) {
+            return new Promise(function (resolve, reject) {
+                var naturalW = readyImg.naturalWidth || 0;
+                var naturalH = readyImg.naturalHeight || 0;
+                if (!naturalW || !naturalH) {
+                    reject(new Error('Ukuran foto tidak valid.'));
+                    return;
+                }
+
+                var normalized = normalizeRotationDegrees(rotationDeg);
+                var canvas = document.createElement('canvas');
+                var isQuarterTurn = normalized % 180 !== 0;
+                canvas.width = isQuarterTurn ? naturalH : naturalW;
+                canvas.height = isQuarterTurn ? naturalW : naturalH;
+
+                var ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error('Canvas tidak tersedia.'));
+                    return;
+                }
+
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate(normalized * Math.PI / 180);
+                ctx.drawImage(readyImg, -naturalW / 2, -naturalH / 2, naturalW, naturalH);
+
+                canvas.toBlob(function (blob) {
+                    if (!blob) {
+                        reject(new Error('Gagal membuat file foto hasil rotasi.'));
+                        return;
+                    }
+                    resolve(blob);
+                }, 'image/jpeg', 0.9);
+            });
+        });
+    }
+
+    function postPhotoBlob(roomIdForUpload, blob, latitude, longitude) {
+        var formData = new FormData();
+        formData.append('photo', blob, 'photo.jpg');
+        formData.append('assessment_id', assessmentId);
+        formData.append('school_room_id', roomIdForUpload);
+        formData.append('latitude', latitude === null || latitude === undefined ? '' : latitude);
+        formData.append('longitude', longitude === null || longitude === undefined ? '' : longitude);
+
+        return fetch('/portal/assess/' + schoolId + '/photo', {
+            method: 'POST',
+            body: formData
+        })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (!data || !data.success) {
+                    throw new Error((data && data.message) ? data.message : 'Gagal menyimpan foto.');
+                }
+                return data.photo || {};
+            });
+    }
+
+    function persistRoomPhotoRotation(roomId) {
+        var roomKey = Number(roomId);
+        if (Number.isNaN(roomKey) || roomKey <= 0) {
+            return Promise.resolve(true);
+        }
+
+        var roomToken = String(roomKey);
+        if (rotationPersistPromises[roomToken]) {
+            return rotationPersistPromises[roomToken];
+        }
+
+        var img = document.getElementById('roomPhotoImg' + roomKey);
+        if (!img) {
+            pendingRotationRoomSet.delete(roomKey);
+            return Promise.resolve(true);
+        }
+
+        var currentRotation = parseInt(img.dataset.rotation || '0', 10);
+        if (Number.isNaN(currentRotation)) currentRotation = 0;
+        var normalized = normalizeRotationDegrees(currentRotation);
+        if (normalized === 0) {
+            pendingRotationRoomSet.delete(roomKey);
+            return Promise.resolve(true);
+        }
+
+        setRoomRotationControlsDisabled(roomKey, true);
+
+        var syncPromise = buildRotatedBlobFromImage(img, normalized)
+            .then(async function (blob) {
+                var coords = getRoomPhotoCoordsFromImage(img);
+                var latVal = coords.latitude;
+                var lonVal = coords.longitude;
+                var hasAny = latVal !== null || lonVal !== null;
+
+                if (!hasAny) {
+                    latVal = normalizeCoord(currentLatitude);
+                    lonVal = normalizeCoord(currentLongitude);
+                    hasAny = latVal !== null || lonVal !== null;
+                }
+
+                if (!hasAny) {
+                    await ensureLocation();
+                    latVal = normalizeCoord(currentLatitude);
+                    lonVal = normalizeCoord(currentLongitude);
+                    hasAny = latVal !== null || lonVal !== null;
+                }
+
+                if (!hasAny) {
+                    throw new Error('Lokasi foto tidak tersedia untuk simpan rotasi.');
+                }
+
+                return postPhotoBlob(roomKey, blob, latVal, lonVal);
+            })
+            .then(function (savedPhoto) {
+                pendingRotationRoomSet.delete(roomKey);
+                renderRoomPhotoPreview(roomKey, savedPhoto, null);
+                photoRoomSet.add(roomKey);
+                updatePhotoRequirementUI();
+                return true;
+            })
+            .catch(function (err) {
+                showToast('Gagal menyimpan rotasi foto: ' + err.message);
+                return false;
+            })
+            .finally(function () {
+                delete rotationPersistPromises[roomToken];
+                setRoomRotationControlsDisabled(roomKey, false);
+            });
+
+        rotationPersistPromises[roomToken] = syncPromise;
+        return syncPromise;
+    }
+
+    async function syncPendingPhotoRotationsBeforeForm() {
+        var pendingIds = getPendingRotationRoomIds();
+        if (!pendingIds.length) {
+            return true;
+        }
+        var results = await Promise.all(
+            pendingIds.map(function (roomId) {
+                return persistRoomPhotoRotation(roomId);
+            })
+        );
+        return results.every(function (item) { return item; });
+    }
+
     function rotateRoomPhoto(roomId, delta) {
-        var img = document.getElementById('roomPhotoImg' + roomId);
+        var roomKey = Number(roomId);
+        if (Number.isNaN(roomKey) || roomKey <= 0) return;
+        var img = document.getElementById('roomPhotoImg' + roomKey);
         if (!img) return;
         var current = parseInt(img.dataset.rotation || '0', 10);
         if (Number.isNaN(current)) current = 0;
         var next = current + delta;
         applyRoomPhotoRotation(img, next);
+
+        var normalized = normalizeRotationDegrees(next);
+        if (normalized === 0) {
+            pendingRotationRoomSet.delete(roomKey);
+            return;
+        }
+
+        pendingRotationRoomSet.add(roomKey);
     }
 
     function renderRoomPhotoPreview(roomId, photoData, fallbackBlob) {
@@ -1035,6 +1277,7 @@
         img.alt = 'Foto ruangan';
         img.src = photoUrl;
         img.dataset.rotation = '0';
+        setRoomPhotoDataAttributes(img, photoData);
         img.addEventListener('load', function () {
             applyRoomPhotoRotation(img, 0);
         });
@@ -1075,6 +1318,7 @@
 
         preview.innerHTML = '';
         preview.appendChild(wrapper);
+        pendingRotationRoomSet.delete(Number(roomId));
         updatePhotoZoomSizing();
     }
 
@@ -1131,6 +1375,11 @@
         var submitForm = document.getElementById('submitAssessmentForm');
         if (submitForm) {
             submitForm.addEventListener('submit', function (event) {
+                if (bypassSubmitRotationSync) {
+                    bypassSubmitRotationSync = false;
+                    return;
+                }
+
                 var missingPhoto = requiredPhotoCount > 0 && photoRoomSet.size < requiredPhotoCount;
                 var missingScore = hasUnscoredRoom();
                 if (missingPhoto || missingScore) {
@@ -1168,7 +1417,80 @@
                         fallbackMessages.push('Terdapat ruangan yang masih belum dinilai.');
                     }
                     showToast(fallbackMessages.join(' '));
+                    return;
                 }
+
+                var pendingRotations = getPendingRotationRoomIds();
+                if (!pendingRotations.length) return;
+
+                event.preventDefault();
+                var submitBtn = document.getElementById('submitAssessmentBtn');
+                var submitBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan rotasi foto...';
+                }
+
+                syncPendingPhotoRotationsBeforeForm()
+                    .then(function (ok) {
+                        if (!ok) {
+                            showToast('Ada rotasi foto yang gagal disimpan. Coba lagi sebelum submit.');
+                            return;
+                        }
+                        bypassSubmitRotationSync = true;
+                        if (typeof submitForm.requestSubmit === 'function') {
+                            submitForm.requestSubmit();
+                        } else {
+                            submitForm.submit();
+                        }
+                    })
+                    .finally(function () {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = submitBtnHtml;
+                        }
+                    });
+            });
+        }
+
+        var draftForm = document.getElementById('saveDraftForm');
+        if (draftForm) {
+            draftForm.addEventListener('submit', function (event) {
+                if (bypassDraftRotationSync) {
+                    bypassDraftRotationSync = false;
+                    return;
+                }
+
+                var pendingRotations = getPendingRotationRoomIds();
+                if (!pendingRotations.length) return;
+
+                event.preventDefault();
+                var draftBtn = draftForm.querySelector('button[type="submit"]');
+                var draftBtnHtml = draftBtn ? draftBtn.innerHTML : '';
+                if (draftBtn) {
+                    draftBtn.disabled = true;
+                    draftBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan rotasi foto...';
+                }
+
+                syncPendingPhotoRotationsBeforeForm()
+                    .then(function (ok) {
+                        if (!ok) {
+                            showToast('Ada rotasi foto yang gagal disimpan. Coba lagi sebelum simpan draft.');
+                            return;
+                        }
+                        bypassDraftRotationSync = true;
+                        if (typeof draftForm.requestSubmit === 'function') {
+                            draftForm.requestSubmit();
+                        } else {
+                            draftForm.submit();
+                        }
+                    })
+                    .finally(function () {
+                        if (draftBtn) {
+                            draftBtn.disabled = false;
+                            draftBtn.innerHTML = draftBtnHtml;
+                        }
+                    });
             });
         }
 
@@ -1365,6 +1687,12 @@
 
     function deletePhoto(photoId, roomId) {
         if (!photoId) return;
+        var roomKey = Number(roomId);
+        if (rotationPersistPromises[String(roomKey)]) {
+            showToast('Tunggu proses simpan rotasi selesai sebelum menghapus foto.');
+            return;
+        }
+        pendingRotationRoomSet.delete(roomKey);
         var formData = new FormData();
         formData.append('assessment_id', assessmentId);
         formData.append('school_room_id', roomId);
@@ -1378,6 +1706,7 @@
                     var preview = document.getElementById('photoPreview' + roomId);
                     if (preview) preview.innerHTML = '';
                     photoRoomSet.delete(Number(roomId));
+                    pendingRotationRoomSet.delete(Number(roomId));
                     updatePhotoRequirementUI();
                     showToast('Foto dihapus');
                 } else {
