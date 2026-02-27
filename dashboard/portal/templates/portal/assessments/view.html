@@ -6,7 +6,17 @@
 <section class="mb-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div class="d-flex align-items-center gap-3">
-            <a href="{{ url_for('portal.home') }}" class="btn btn-outline-secondary">
+            {% set back_url = (
+                url_for('portal.staff_assignments') if current_user and current_user.role == 'staff'
+                else (
+                    url_for('portal.coordinator_assessments') if current_user and current_user.role == 'coordinator'
+                    else (
+                        url_for('portal.admin_stats') if current_user and current_user.role == 'admin'
+                        else url_for('portal.home')
+                    )
+                )
+            ) %}
+            <a href="{{ back_url }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i>
             </a>
             <div>

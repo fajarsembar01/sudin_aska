@@ -5,7 +5,17 @@
 <section class="mb-4 assessment-page">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div class="d-flex align-items-center gap-3">
-            <a href="{{ url_for('portal.home') }}" class="btn btn-outline-secondary">
+            {% set back_url = (
+                url_for('portal.staff_assignments') if current_user and current_user.role == 'staff'
+                else (
+                    url_for('portal.coordinator_assessments') if current_user and current_user.role == 'coordinator'
+                    else (
+                        url_for('portal.admin_stats') if current_user and current_user.role == 'admin'
+                        else url_for('portal.home')
+                    )
+                )
+            ) %}
+            <a href="{{ back_url }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i>
             </a>
             <div>
@@ -559,6 +569,10 @@
         border-color: transparent;
     }
 
+    .room-photo-wrapper {
+        width: 100%;
+    }
+
     .room-photo-frame {
         background: rgba(15, 23, 42, 0.25);
         border: 1px solid var(--border-soft);
@@ -567,16 +581,20 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        width: 100%;
     }
 
     .room-photo-image {
         width: 100%;
+        max-width: 100%;
+        height: auto;
         border-radius: 8px;
         display: block;
         margin: 0 auto;
+        object-fit: contain;
         transform: rotate(0deg);
         transform-origin: center center;
-        transition: transform 0.2s ease, width 0.2s ease;
+        transition: transform 0.2s ease;
     }
 
     .photo-rotate-controls {
@@ -780,6 +798,60 @@
     var locationRequestInFlight = null;
     var locationWatchId = null;
     var locationWatchTimer = null;
+    var baseDevicePixelRatio = window.devicePixelRatio || 1;
+    var photoZoomCheckTimer = null;
+    var lastZoomRatio = 1;
+
+    function getPhotoZoomRatio() {
+        var current = window.devicePixelRatio || baseDevicePixelRatio || 1;
+        if (!baseDevicePixelRatio) baseDevicePixelRatio = current || 1;
+        return current / baseDevicePixelRatio;
+    }
+
+    function updatePhotoZoomSizing() {
+        var ratio = getPhotoZoomRatio();
+        var isNormalZoom = Math.abs(ratio - 1) < 0.02;
+        var wrappers = document.querySelectorAll('.room-photo-wrapper');
+        wrappers.forEach(function (wrapper) {
+            var baseWidth = Number(wrapper.dataset.baseWidth || '');
+            if (!baseWidth || Number.isNaN(baseWidth)) {
+                var rectInit = wrapper.getBoundingClientRect();
+                if (!rectInit.width) return;
+                baseWidth = rectInit.width / (ratio || 1);
+                wrapper.dataset.baseWidth = String(baseWidth);
+            }
+
+            if (isNormalZoom || ratio >= 1) {
+                wrapper.style.width = '100%';
+                wrapper.style.maxWidth = '100%';
+                var rectNow = wrapper.getBoundingClientRect();
+                if (rectNow.width) {
+                    wrapper.dataset.baseWidth = String(rectNow.width);
+                }
+            } else {
+                var parent = wrapper.parentElement;
+                var parentWidth = parent ? parent.getBoundingClientRect().width : baseWidth;
+                var targetWidth = baseWidth * ratio;
+                if (parentWidth > 0) {
+                    targetWidth = Math.min(targetWidth, parentWidth);
+                }
+                wrapper.style.maxWidth = '100%';
+                wrapper.style.width = Math.max(0, targetWidth).toFixed(2) + 'px';
+            }
+        });
+        relayoutAllRoomPhotos();
+        lastZoomRatio = ratio;
+    }
+
+    function startPhotoZoomWatcher() {
+        if (photoZoomCheckTimer) return;
+        photoZoomCheckTimer = window.setInterval(function () {
+            var ratio = getPhotoZoomRatio();
+            if (Math.abs(ratio - lastZoomRatio) >= 0.01) {
+                updatePhotoZoomSizing();
+            }
+        }, 250);
+    }
 
     function showPhotoMaxWarning() {
         if (window.bootstrap) {
@@ -898,20 +970,39 @@
         return meta;
     }
 
+    function syncRoomPhotoFrameSize(img) {
+        if (!img) return;
+        var frame = img.closest('.room-photo-frame');
+        if (!frame) return;
+        var nw = img.naturalWidth || 0;
+        var nh = img.naturalHeight || 0;
+        if (!nw || !nh) return;
+        var frameWidth = frame.clientWidth || 0;
+        if (!frameWidth) return;
+
+        var rawRotation = parseInt(img.dataset.rotation || '0', 10);
+        if (Number.isNaN(rawRotation)) rawRotation = 0;
+        var normalized = ((rawRotation % 360) + 360) % 360;
+        var quarterTurn = normalized % 180 !== 0;
+
+        var naturalRatio = nh / nw;
+        var unrotatedHeight = frameWidth * naturalRatio;
+        var targetHeight = quarterTurn ? frameWidth : unrotatedHeight;
+        frame.style.height = targetHeight.toFixed(2) + 'px';
+    }
+
+    function relayoutAllRoomPhotos() {
+        document.querySelectorAll('.room-photo-image').forEach(function (img) {
+            syncRoomPhotoFrameSize(img);
+        });
+    }
+
     function applyRoomPhotoRotation(img, rotationDeg) {
         var rawRotation = Number(rotationDeg);
         if (Number.isNaN(rawRotation)) rawRotation = 0;
-        var normalized = ((rawRotation % 360) + 360) % 360;
         img.dataset.rotation = String(rawRotation);
         img.style.transform = 'rotate(' + rawRotation + 'deg)';
-        var quarterTurn = normalized % 180 !== 0;
-        if (quarterTurn && img.naturalWidth > 0 && img.naturalHeight > 0) {
-            var ratio = img.naturalHeight / img.naturalWidth;
-            var widthPct = ratio > 1 ? Math.max(55, Math.min(100, 100 / ratio)) : 100;
-            img.style.width = widthPct.toFixed(2) + '%';
-        } else {
-            img.style.width = '100%';
-        }
+        syncRoomPhotoFrameSize(img);
     }
 
     function rotateRoomPhoto(roomId, delta) {
@@ -984,6 +1075,7 @@
 
         preview.innerHTML = '';
         preview.appendChild(wrapper);
+        updatePhotoZoomSizing();
     }
 
 
@@ -1010,6 +1102,17 @@
     updatePhotoRequirementUI();
     // Force prompt lokasi saat halaman dibuka
     document.addEventListener('DOMContentLoaded', function () {
+        updatePhotoZoomSizing();
+        startPhotoZoomWatcher();
+        window.addEventListener('resize', updatePhotoZoomSizing);
+        relayoutAllRoomPhotos();
+        var collapses = document.querySelectorAll('#roomAccordion .collapse');
+        collapses.forEach(function (el) {
+            el.addEventListener('shown.bs.collapse', function () {
+                window.setTimeout(updatePhotoZoomSizing, 0);
+            });
+        });
+
         ensureLocation();
         var progressFloating = document.getElementById('photoProgressFloating');
         var progressToggle = document.getElementById('photoProgressToggle');
