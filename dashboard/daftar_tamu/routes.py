@@ -369,6 +369,73 @@ def _parse_guest_payload(raw: Optional[str]) -> tuple[list[int], list[int]]:
     return _dedupe(sudin_ids), _dedupe(umum_ids)
 
 
+def _is_truthy(value: Optional[str]) -> bool:
+    normalized = (value or "").strip().lower()
+    return normalized in {"1", "true", "yes", "on"}
+
+
+def _find_sudin_same_day_approved_duplicates(
+    *,
+    school_id: int,
+    sudin_ids: list[int],
+    visit_at: datetime,
+) -> list[dict]:
+    """Find SUDIN guests already approved at the same school on the same Jakarta date."""
+    if not school_id or not sudin_ids:
+        return []
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                g.user_id AS guest_id,
+                COALESCE(
+                    NULLIF(TRIM(u.full_name), ''),
+                    NULLIF(TRIM(u.email), ''),
+                    CONCAT('ID ', g.user_id::TEXT)
+                ) AS guest_name,
+                COUNT(DISTINCT t.id)::INT AS approved_count
+            FROM daftar_tamu_transactions t
+            JOIN daftar_tamu_transaction_guests g ON g.transaction_id = t.id
+            LEFT JOIN dashboard_users u ON u.id = g.user_id
+            WHERE t.school_id = %s
+              AND t.status = 'approved'
+              AND (g.guest_type = 'sudin' OR g.guest_type IS NULL)
+              AND g.user_id = ANY(%s::INT[])
+              AND DATE(t.visit_at AT TIME ZONE 'Asia/Jakarta') = DATE(%s AT TIME ZONE 'Asia/Jakarta')
+            GROUP BY g.user_id, guest_name
+            HAVING COUNT(DISTINCT t.id) >= 1
+            ORDER BY approved_count DESC, guest_name ASC
+            """,
+            (school_id, sudin_ids, visit_at),
+        )
+        rows = cur.fetchall() or []
+    return [dict(row) for row in rows]
+
+
+def _build_sudin_duplicate_warning_message(*, school_name: Optional[str], duplicate_rows: list[dict]) -> str:
+    guest_names = [
+        str(row.get("guest_name") or "").strip()
+        for row in duplicate_rows
+        if str(row.get("guest_name") or "").strip()
+    ]
+    unique_names: list[str] = []
+    seen: set[str] = set()
+    for name in guest_names:
+        key = name.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_names.append(name)
+
+    guest_text = ", ".join(unique_names) if unique_names else "Tamu terpilih"
+    school_text = (school_name or "sekolah ini").strip() or "sekolah ini"
+    return (
+        f"{guest_text} sudah terverifikasi di {school_text} pada hari ini. "
+        "Yakin ingin menambahkan kunjungan lagi?"
+    )
+
+
 def _web_aska_base_url() -> str:
     base = (
         os.getenv("WEB_ASKA_BASE_URL")
@@ -4108,6 +4175,7 @@ def sekolah_create_transaction() -> Response:
 
     purpose = (request.form.get("purpose") or "").strip()
     notes = (request.form.get("notes") or "").strip()
+    duplicate_confirmed = _is_truthy(request.form.get("duplicate_confirmed"))
 
     latitude_raw = request.form.get("latitude")
     longitude_raw = request.form.get("longitude")
@@ -4129,6 +4197,33 @@ def sekolah_create_transaction() -> Response:
         return jsonify({"success": False, "message": "Foto wajib diunggah."}), 400
 
     visit_at = current_jakarta_time()
+    duplicate_rows = _find_sudin_same_day_approved_duplicates(
+        school_id=int(school["id"]),
+        sudin_ids=sudin_ids,
+        visit_at=visit_at,
+    )
+    duplicate_repeat_count = 0
+    if duplicate_rows:
+        try:
+            duplicate_repeat_count = max(
+                int(row.get("approved_count") or 0) + 1
+                for row in duplicate_rows
+            )
+        except Exception:
+            duplicate_repeat_count = 0
+    if duplicate_rows and not duplicate_confirmed:
+        warning_message = _build_sudin_duplicate_warning_message(
+            school_name=school.get("name"),
+            duplicate_rows=duplicate_rows,
+        )
+        return jsonify(
+            {
+                "success": False,
+                "requires_confirmation": True,
+                "message": warning_message,
+                "duplicate_guest_count": len(duplicate_rows),
+            }
+        ), 409
 
     try:
         stamp_result = stamp_guestbook_photo(
@@ -4240,6 +4335,7 @@ def sekolah_create_transaction() -> Response:
                             visit_at=visit_at,
                             guest_summary=None,
                             guest_names=guest_names,
+                            duplicate_repeat_count=duplicate_repeat_count or None,
                             purpose=purpose or None,
                             notes=notes or None,
                             photo_links=photo_links,

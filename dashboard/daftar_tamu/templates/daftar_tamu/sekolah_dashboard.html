@@ -1431,24 +1431,64 @@
             selectedGuests.forEach(function (guest) {
                 guestPayload.push({ id: guest.id, type: guest.type });
             });
-            var formData = new FormData();
-            formData.append('guest_payload', JSON.stringify(guestPayload));
-            formData.append('purpose', document.getElementById('purposeInput').value.trim());
-            formData.append('notes', document.getElementById('notesInput').value.trim());
-            formData.append('latitude', currentLatitude);
-            formData.append('longitude', currentLongitude);
-            formData.append('accuracy', currentAccuracy || '');
-            formData.append('photo', photoBlob, 'guestbook.jpg');
 
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
 
-            fetch('/daftar-tamu/sekolah/transactions', {
-                method: 'POST',
-                body: formData
-            })
-                .then(function (res) { return res.json(); })
+            function resetSubmitButton() {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-send-check me-1"></i>Simpan Tamu Kedinasan';
+            }
+
+            function buildTransactionFormData(duplicateConfirmed) {
+                var payload = new FormData();
+                payload.append('guest_payload', JSON.stringify(guestPayload));
+                payload.append('purpose', document.getElementById('purposeInput').value.trim());
+                payload.append('notes', document.getElementById('notesInput').value.trim());
+                payload.append('latitude', currentLatitude);
+                payload.append('longitude', currentLongitude);
+                payload.append('accuracy', currentAccuracy || '');
+                payload.append('photo', photoBlob, 'guestbook.jpg');
+                if (duplicateConfirmed) {
+                    payload.append('duplicate_confirmed', '1');
+                }
+                return payload;
+            }
+
+            function postTransaction(duplicateConfirmed) {
+                return fetch('/daftar-tamu/sekolah/transactions', {
+                    method: 'POST',
+                    body: buildTransactionFormData(duplicateConfirmed)
+                }).then(function (res) {
+                    return res.json()
+                        .catch(function () {
+                            return { success: false, message: 'Respon server tidak valid.' };
+                        })
+                        .then(function (data) {
+                            return { ok: res.ok, status: res.status, data: data };
+                        });
+                });
+            }
+
+            postTransaction(false)
+                .then(function (result) {
+                    var data = (result && result.data) || {};
+                    if (data.requires_confirmation) {
+                        var proceed = window.confirm(data.message || 'Tamu yang sama sudah terverifikasi hari ini. Lanjutkan?');
+                        if (!proceed) {
+                            resetSubmitButton();
+                            return null;
+                        }
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
+                        return postTransaction(true).then(function (retryResult) {
+                            return (retryResult && retryResult.data) || {};
+                        });
+                    }
+                    return data;
+                })
                 .then(function (data) {
+                    if (!data) return;
                     if (!data.success) throw new Error(data.message || 'Gagal mengirim transaksi');
                     var modalEl = document.getElementById('guestbookSuccessModal');
                     if (modalEl && window.bootstrap) {
@@ -1477,8 +1517,7 @@
                 })
                 .catch(function (err) {
                     alert(err.message || 'Gagal mengirim transaksi.');
-                    submitBtn.disabled = false;
-                    updateSubmitState();
+                    resetSubmitButton();
                 });
         });
     }

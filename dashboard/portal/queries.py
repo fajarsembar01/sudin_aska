@@ -50,6 +50,19 @@ PORTAL_NEW_SCORE_MIN = 1
 PORTAL_LEGACY_SCORE_MIN = 0
 
 
+def _sync_portal_assessment_periods_sequence(cur) -> None:
+    """Keep portal_assessment_periods.id sequence in sync with existing max(id)."""
+    cur.execute(
+        """
+        SELECT setval(
+            pg_get_serial_sequence('portal_assessment_periods', 'id'),
+            COALESCE((SELECT MAX(id) FROM portal_assessment_periods), 1),
+            EXISTS(SELECT 1 FROM portal_assessment_periods)
+        )
+        """
+    )
+
+
 def _normalize_score_scale_max(value: Any) -> int:
     """Normalize score scale marker to supported values."""
     try:
@@ -874,7 +887,8 @@ def create_period(
         if is_active:
             # Deactivate others
             cur.execute("UPDATE portal_assessment_periods SET is_active = FALSE")
-            
+
+        _sync_portal_assessment_periods_sequence(cur)
         cur.execute(
             """
             INSERT INTO portal_assessment_periods (name, start_date, end_date, is_active)
@@ -889,6 +903,7 @@ def _ensure_monthly_periods(cur, months_ahead: int = _AUTO_PERIOD_MONTHS_AHEAD) 
     """Ensure monthly periods exist from current month up to N months ahead."""
     if months_ahead < 0:
         return
+    _sync_portal_assessment_periods_sequence(cur)
     today = _today_jakarta()
     start = date(today.year, today.month, 1)
     end_month_offset = start.month - 1 + months_ahead
@@ -947,6 +962,7 @@ def _ensure_monthly_period_for_date(cur, target_date: date) -> None:
     )
     if cur.fetchone():
         return
+    _sync_portal_assessment_periods_sequence(cur)
     name = f"{_MONTH_NAMES_ID[target_date.month - 1]} {target_date.year}"
     cur.execute(
         """
