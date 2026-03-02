@@ -112,15 +112,108 @@ def _list_admin_recipients() -> List[Dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
-def _send_telegram_message(
+def _ensure_guestbook_delivery_schema() -> None:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS telegram_guestbook_delivery_messages (
+                transaction_id BIGINT NOT NULL,
+                chat_id BIGINT NOT NULL,
+                message_id BIGINT NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                PRIMARY KEY (transaction_id, chat_id)
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_tg_guestbook_delivery_chat
+            ON telegram_guestbook_delivery_messages (chat_id)
+            """
+        )
+
+
+def upsert_guestbook_delivery_message(
+    *,
+    transaction_id: int,
+    chat_id: int,
+    message_id: int,
+) -> None:
+    if not transaction_id or not chat_id or not message_id:
+        return
+    _ensure_guestbook_delivery_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO telegram_guestbook_delivery_messages (
+                transaction_id,
+                chat_id,
+                message_id
+            )
+            VALUES (%s, %s, %s)
+            ON CONFLICT (transaction_id, chat_id) DO UPDATE
+            SET message_id = EXCLUDED.message_id,
+                updated_at = NOW()
+            """,
+            (int(transaction_id), int(chat_id), int(message_id)),
+        )
+
+
+def list_guestbook_delivery_messages(*, transaction_id: int) -> List[Dict[str, int]]:
+    if not transaction_id:
+        return []
+    _ensure_guestbook_delivery_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT transaction_id, chat_id, message_id
+            FROM telegram_guestbook_delivery_messages
+            WHERE transaction_id = %s
+            ORDER BY chat_id ASC
+            """,
+            (int(transaction_id),),
+        )
+        rows = cur.fetchall() or []
+    output: list[dict] = []
+    for row in rows:
+        data = dict(row)
+        try:
+            output.append(
+                {
+                    "transaction_id": int(data.get("transaction_id")),
+                    "chat_id": int(data.get("chat_id")),
+                    "message_id": int(data.get("message_id")),
+                }
+            )
+        except (TypeError, ValueError):
+            continue
+    return output
+
+
+def delete_guestbook_delivery_message(*, transaction_id: int, chat_id: int) -> None:
+    if not transaction_id or not chat_id:
+        return
+    _ensure_guestbook_delivery_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            DELETE FROM telegram_guestbook_delivery_messages
+            WHERE transaction_id = %s AND chat_id = %s
+            """,
+            (int(transaction_id), int(chat_id)),
+        )
+
+
+def _send_telegram_message_with_meta(
     bot_token: str,
     chat_id: int,
     text: str,
     *,
     reply_markup: Optional[dict] = None,
-) -> bool:
+) -> tuple[bool, Optional[int]]:
     if not bot_token or not chat_id or not text:
-        return False
+        return False, None
     data = {"chat_id": chat_id, "text": text}
     if reply_markup:
         data["reply_markup"] = json.dumps(reply_markup)
@@ -128,7 +221,36 @@ def _send_telegram_message(
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     req = urllib.request.Request(url, data=payload.encode("utf-8"), method="POST")
     with urllib.request.urlopen(req, timeout=8) as resp:  # nosec - external API call
-        return 200 <= resp.status < 300
+        response_body = resp.read()
+        if not (200 <= resp.status < 300):
+            return False, None
+    message_id = None
+    try:
+        parsed = json.loads(response_body.decode("utf-8")) if response_body else {}
+        if isinstance(parsed, dict) and parsed.get("ok") is False:
+            return False, None
+        result = parsed.get("result") if isinstance(parsed, dict) else None
+        if isinstance(result, dict) and result.get("message_id") is not None:
+            message_id = int(result.get("message_id"))
+    except Exception:
+        message_id = None
+    return True, message_id
+
+
+def _send_telegram_message(
+    bot_token: str,
+    chat_id: int,
+    text: str,
+    *,
+    reply_markup: Optional[dict] = None,
+) -> bool:
+    delivered, _ = _send_telegram_message_with_meta(
+        bot_token,
+        chat_id,
+        text,
+        reply_markup=reply_markup,
+    )
+    return delivered
 
 
 def _resolve_local_upload_photo_path(photo_path: Optional[str]) -> Optional[Path]:
@@ -195,9 +317,27 @@ def _send_telegram_photo(
     caption: Optional[str] = None,
     reply_markup: Optional[dict] = None,
 ) -> bool:
+    delivered, _ = _send_telegram_photo_with_meta(
+        bot_token,
+        chat_id,
+        photo_path,
+        caption=caption,
+        reply_markup=reply_markup,
+    )
+    return delivered
+
+
+def _send_telegram_photo_with_meta(
+    bot_token: str,
+    chat_id: int,
+    photo_path: str,
+    *,
+    caption: Optional[str] = None,
+    reply_markup: Optional[dict] = None,
+) -> tuple[bool, Optional[int]]:
     local_photo_path = _resolve_local_upload_photo_path(photo_path)
     if not bot_token or not chat_id or not local_photo_path:
-        return False
+        return False, None
 
     mime_type, _ = mimetypes.guess_type(local_photo_path.name)
     safe_mime_type = mime_type or "application/octet-stream"
@@ -222,7 +362,20 @@ def _send_telegram_photo(
     req = urllib.request.Request(url, data=payload, method="POST")
     req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
     with urllib.request.urlopen(req, timeout=20) as resp:  # nosec - external API call
-        return 200 <= resp.status < 300
+        response_body = resp.read()
+        if not (200 <= resp.status < 300):
+            return False, None
+    message_id = None
+    try:
+        parsed = json.loads(response_body.decode("utf-8")) if response_body else {}
+        if isinstance(parsed, dict) and parsed.get("ok") is False:
+            return False, None
+        result = parsed.get("result") if isinstance(parsed, dict) else None
+        if isinstance(result, dict) and result.get("message_id") is not None:
+            message_id = int(result.get("message_id"))
+    except Exception:
+        message_id = None
+    return True, message_id
 
 
 def _broadcast_notification(
@@ -1092,8 +1245,9 @@ def notify_guestbook_request(
         try:
             target_chat_id = int(telegram_user_id)
             delivered = False
+            delivered_message_id: Optional[int] = None
             if use_photo_message and photo_file_path:
-                delivered = _send_telegram_photo(
+                delivered, delivered_message_id = _send_telegram_photo_with_meta(
                     token,
                     target_chat_id,
                     photo_file_path,
@@ -1101,7 +1255,7 @@ def notify_guestbook_request(
                     reply_markup=reply_markup,
                 )
             if not delivered:
-                delivered = _send_telegram_message(
+                delivered, delivered_message_id = _send_telegram_message_with_meta(
                     token,
                     target_chat_id,
                     message,
@@ -1109,6 +1263,12 @@ def notify_guestbook_request(
                 )
             if delivered:
                 sent += 1
+                if delivered_message_id:
+                    upsert_guestbook_delivery_message(
+                        transaction_id=int(transaction_id),
+                        chat_id=target_chat_id,
+                        message_id=int(delivered_message_id),
+                    )
         except Exception:
             continue
 
@@ -1120,8 +1280,9 @@ def notify_guestbook_request(
         try:
             target_chat_id = int(chat_id)
             delivered = False
+            delivered_message_id: Optional[int] = None
             if use_photo_message and photo_file_path:
-                delivered = _send_telegram_photo(
+                delivered, delivered_message_id = _send_telegram_photo_with_meta(
                     token,
                     target_chat_id,
                     photo_file_path,
@@ -1129,7 +1290,7 @@ def notify_guestbook_request(
                     reply_markup=reply_markup,
                 )
             if not delivered:
-                delivered = _send_telegram_message(
+                delivered, delivered_message_id = _send_telegram_message_with_meta(
                     token,
                     target_chat_id,
                     message,
@@ -1137,6 +1298,12 @@ def notify_guestbook_request(
                 )
             if delivered:
                 group_sent += 1
+                if delivered_message_id:
+                    upsert_guestbook_delivery_message(
+                        transaction_id=int(transaction_id),
+                        chat_id=target_chat_id,
+                        message_id=int(delivered_message_id),
+                    )
         except Exception:
             continue
 
