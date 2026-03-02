@@ -6278,20 +6278,31 @@ def coordinator_team() -> Response:
 @role_required("coordinator")
 def coordinator_request_member() -> Response:
     """Coordinator submits a member addition request for admin approval."""
+    from dashboard.queries import get_monev_teams
+
     user = current_user()
     user_id = user.get("id")
+    team_id = request.form.get("team_id", type=int)
     staff_id = request.form.get("staff_id", type=int)
     note = (request.form.get("note") or "").strip()
-    
-    my_team, _, _ = _get_coordinator_team_context(user_id)
+
+    coordinator_teams = [
+        team for team in get_monev_teams()
+        if team.get("coordinator_id") == user_id
+    ]
+    if team_id is not None:
+        my_team = next((team for team in coordinator_teams if team.get("id") == team_id), None)
+    else:
+        my_team = coordinator_teams[0] if coordinator_teams else None
+
     if not my_team:
         flash("Anda belum memiliki tim.", "warning")
         return redirect(url_for("portal.view_my_team"))
-    
+
     if not staff_id:
         flash("Pilih staff yang ingin diajukan.", "warning")
-        return redirect(url_for("portal.coordinator_team"))
-    
+        return redirect(url_for("portal.view_my_team", _anchor=f"team-{my_team['id']}"))
+
     result = create_team_member_request(
         team_id=my_team["id"],
         staff_id=staff_id,
@@ -6322,8 +6333,8 @@ def coordinator_request_member() -> Response:
         flash("Permintaan tambah anggota dikirim ke admin untuk verifikasi.", "success")
     else:
         flash("Gagal mengirim permintaan.", "danger")
-    
-    return redirect(url_for("portal.coordinator_team"))
+
+    return redirect(url_for("portal.view_my_team", _anchor=f"team-{my_team['id']}"))
 
 
 # =====================================================
@@ -7346,51 +7357,56 @@ def portal_kontak_wilayah() -> Response:
 @portal_bp.route("/my-team")
 @role_required("coordinator", "staff")
 def view_my_team() -> Response:
-    """View monev team for coordinator or staff member (Portal)."""
+    """View all monev teams for coordinator or staff member (Portal)."""
     from dashboard.queries import get_monev_teams, get_team_members
-    
+
     user = current_user()
     user_id = user.get("id")
-    
+
     all_teams = get_monev_teams()
-    
-    my_team = None
-    my_team_role = None
-    
+    my_teams = []
+    all_available_staff = get_available_staff()
+
     for team in all_teams:
+        team_role = None
         if team.get('coordinator_id') == user_id:
-            my_team = team
-            my_team_role = 'coordinator'
-            break
-        
+            team_role = 'coordinator'
+
         members = get_team_members(team['id'])
-        if any(m.get('staff_id') == user_id for m in members):
-            my_team = team
-            my_team_role = 'member'
-            break
-    
-    if my_team:
-        my_team['members'] = get_team_members(my_team['id'])
-        if my_team_role == "coordinator":
-            existing_member_ids = {m["staff_id"] for m in my_team["members"]}
-            available_staff = [
-                s for s in get_available_staff()
-                if s["id"] not in existing_member_ids
+
+        if team_role is None and any(m.get('staff_id') == user_id for m in members):
+            team_role = 'member'
+
+        if team_role is None:
+            continue
+
+        team_data = dict(team)
+        team_data["team_role"] = team_role
+        team_data["members"] = members
+        if team_role == "coordinator":
+            existing_member_ids = {m["staff_id"] for m in members}
+            team_data["available_staff"] = [
+                staff for staff in all_available_staff
+                if staff["id"] not in existing_member_ids
             ]
-            member_requests = list_team_member_requests_for_team(my_team["id"])
+            team_data["member_requests"] = list_team_member_requests_for_team(team["id"])
         else:
-            available_staff = []
-            member_requests = []
-    else:
-        available_staff = []
-        member_requests = []
-    
+            team_data["available_staff"] = []
+            team_data["member_requests"] = []
+        my_teams.append(team_data)
+
+    my_teams.sort(
+        key=lambda row: (
+            0 if row.get("team_role") == "coordinator" else 1,
+            (row.get("team_type") or "").lower(),
+            (row.get("name") or row.get("kecamatan_name") or "").lower(),
+            row.get("id") or 0,
+        )
+    )
+
     return render_template(
         "portal/teams/my_team.html",
-        team=my_team,
-        team_role=my_team_role,
-        available_staff=available_staff,
-        member_requests=member_requests,
+        my_teams=my_teams,
     )
 
 
