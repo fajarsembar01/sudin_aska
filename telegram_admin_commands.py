@@ -9,6 +9,7 @@ from telegram.ext import ContextTypes
 
 from db import save_chat
 from utils import current_jakarta_time, to_jakarta
+from dashboard.db_access import get_cursor
 from dashboard.queries import (
     fetch_dashboard_user_basic,
     fetch_pending_dashboard_users,
@@ -420,6 +421,102 @@ def _build_guestbook_callback_message(
     if timestamp:
         lines.append(f"🕒 {timestamp.strftime('%d %b %Y, %H:%M')}")
     return "\n".join(lines)
+
+
+def _find_guestbook_same_day_approved_guest_names(transaction_id: int) -> list[str]:
+    if not transaction_id:
+        return []
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT DISTINCT
+                COALESCE(
+                    NULLIF(TRIM(u.full_name), ''),
+                    NULLIF(TRIM(u.email), ''),
+                    CONCAT('ID ', g0.user_id::TEXT)
+                ) AS guest_name
+            FROM daftar_tamu_transactions t0
+            JOIN daftar_tamu_transaction_guests g0 ON g0.transaction_id = t0.id
+            LEFT JOIN dashboard_users u ON u.id = g0.user_id
+            JOIN daftar_tamu_transactions t1 ON t1.school_id = t0.school_id
+            JOIN daftar_tamu_transaction_guests g1
+                ON g1.transaction_id = t1.id
+               AND g1.user_id = g0.user_id
+            WHERE t0.id = %s
+              AND (g0.guest_type = 'sudin' OR g0.guest_type IS NULL)
+              AND (g1.guest_type = 'sudin' OR g1.guest_type IS NULL)
+              AND t1.status = 'approved'
+              AND t1.id <> t0.id
+              AND DATE(t1.visit_at AT TIME ZONE 'Asia/Jakarta') = DATE(t0.visit_at AT TIME ZONE 'Asia/Jakarta')
+            ORDER BY guest_name ASC
+            """,
+            (transaction_id,),
+        )
+        rows = cur.fetchall() or []
+    names: list[str] = []
+    seen: set[str] = set()
+    for row in rows:
+        guest_name = str((row or {}).get("guest_name") or "").strip()
+        if not guest_name:
+            continue
+        key = guest_name.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        names.append(guest_name)
+    return names
+
+
+def _build_guestbook_duplicate_warning_text(*, school_name: Optional[str], guest_names: list[str]) -> str:
+    clean_names = [name.strip() for name in guest_names if str(name or "").strip()]
+    if len(clean_names) > 2:
+        guest_text = f"{clean_names[0]}, {clean_names[1]} (+{len(clean_names) - 2} lainnya)"
+    elif clean_names:
+        guest_text = ", ".join(clean_names)
+    else:
+        guest_text = "Tamu terpilih"
+    school_text = (school_name or "sekolah ini").strip() or "sekolah ini"
+    return f"{guest_text} sudah terverifikasi di {school_text} hari ini. Tetap setujui duplikat?"
+
+
+def _build_guestbook_decision_markup(
+    *,
+    transaction_id: int,
+    existing_markup: Optional[InlineKeyboardMarkup],
+) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = [
+        [
+            InlineKeyboardButton(text="✅ Setujui", callback_data=f"guestbook:approve:{transaction_id}"),
+            InlineKeyboardButton(text="❌ Tolak", callback_data=f"guestbook:reject:{transaction_id}"),
+        ]
+    ]
+    for item in _extract_guestbook_photo_links(existing_markup):
+        text = str((item or {}).get("text") or "").strip()
+        url = str((item or {}).get("url") or "").strip()
+        if not text or not url:
+            continue
+        rows.append([InlineKeyboardButton(text=text, url=url)])
+    return InlineKeyboardMarkup(rows)
+
+
+def _build_guestbook_duplicate_confirm_markup(
+    *,
+    transaction_id: int,
+    existing_markup: Optional[InlineKeyboardMarkup],
+) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = [
+        [
+            InlineKeyboardButton(text="✅ Tetap Setujui", callback_data=f"guestbook:approve_force:{transaction_id}"),
+            InlineKeyboardButton(text="↩️ Batal", callback_data=f"guestbook:approve_cancel:{transaction_id}"),
+        ]
+    ]
+    for item in _extract_guestbook_photo_links(existing_markup):
+        text = str((item or {}).get("text") or "").strip()
+        url = str((item or {}).get("url") or "").strip()
+        if not text or not url:
+            continue
+        rows.append([InlineKeyboardButton(text=text, url=url)])
+    return InlineKeyboardMarkup(rows)
 
 
 def _authorize_admin(update: Update) -> Optional[dict]:
@@ -868,12 +965,45 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
             )
             return
 
+        if action == "approve_cancel":
+            await query.answer("Persetujuan dibatalkan.", show_alert=False)
+            try:
+                await query.edit_message_reply_markup(
+                    reply_markup=_build_guestbook_decision_markup(
+                        transaction_id=tx_id,
+                        existing_markup=existing_markup,
+                    )
+                )
+            except Exception:
+                logger.exception("Gagal mengembalikan tombol persetujuan buku tamu.")
+            return
+
+        if action == "approve":
+            duplicate_guest_names = _find_guestbook_same_day_approved_guest_names(tx_id)
+            if duplicate_guest_names:
+                warning_text = _build_guestbook_duplicate_warning_text(
+                    school_name=detail.get("school_name"),
+                    guest_names=duplicate_guest_names,
+                )
+                await query.answer(warning_text, show_alert=True)
+                try:
+                    await query.edit_message_reply_markup(
+                        reply_markup=_build_guestbook_duplicate_confirm_markup(
+                            transaction_id=tx_id,
+                            existing_markup=existing_markup,
+                        )
+                    )
+                except Exception:
+                    logger.exception("Gagal menampilkan konfirmasi duplikat buku tamu.")
+                return
+
+        effective_action = "approve" if action in {"approve", "approve_force"} else action
         note = None
-        if action == "reject":
+        if effective_action == "reject":
             note = "Ditolak via Telegram."
 
         try:
-            if action == "approve":
+            if effective_action == "approve":
                 updated = update_transaction_status(
                     transaction_id=tx_id,
                     status="approved",
@@ -881,7 +1011,7 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
                     reviewer_notes=note,
                 )
                 status_label = "✅ Disetujui"
-            elif action == "reject":
+            elif effective_action == "reject":
                 updated = update_transaction_status(
                     transaction_id=tx_id,
                     status="rejected",

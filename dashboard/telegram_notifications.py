@@ -607,6 +607,39 @@ def notify_guestbook_status_update(
     )
 
 
+def notify_guestbook_duplicate_warning(
+    *,
+    school_name: Optional[str],
+    guest_names: Optional[List[str]],
+    visit_at=None,
+) -> Dict[str, Any]:
+    unique_names: list[str] = []
+    seen: set[str] = set()
+    for raw_name in guest_names or []:
+        clean_name = str(raw_name or "").strip()
+        if not clean_name:
+            continue
+        key = clean_name.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_names.append(clean_name)
+
+    guest_text = ", ".join(unique_names) if unique_names else "-"
+    timestamp = to_jakarta(visit_at) if visit_at else to_jakarta(current_jakarta_time())
+    time_label = timestamp.strftime("%d %b %Y, %H:%M") if timestamp else ""
+
+    lines = [
+        "Peringatan kunjungan ulang tamu SUDIN",
+        f"Sekolah: {school_name or '-'}",
+        f"Tamu: {guest_text}",
+        "Status acuan: hanya data yang sudah terverifikasi hari ini.",
+    ]
+    if time_label:
+        lines.append(f"Waktu input: {time_label}")
+    return _broadcast_notification(text="\n".join(lines))
+
+
 def _actor_display(actor_name: Optional[str], actor_username: Optional[str]) -> str:
     if actor_name and actor_username:
         return f"{actor_name} (@{actor_username})"
@@ -993,6 +1026,7 @@ def notify_guestbook_request(
     visit_at=None,
     guest_summary: Optional[str] = None,
     guest_names: Optional[List[str]] = None,
+    duplicate_repeat_count: Optional[int] = None,
     purpose: Optional[str] = None,
     notes: Optional[str] = None,
     photo_links: Optional[List[Dict[str, str]]] = None,
@@ -1024,6 +1058,12 @@ def notify_guestbook_request(
     ]
     if guest_preview:
         lines.append(f"Tamu: {_compact_text(guest_preview, 72)}")
+    try:
+        repeat_count = int(duplicate_repeat_count or 0)
+    except (TypeError, ValueError):
+        repeat_count = 0
+    if repeat_count >= 2:
+        lines.append(f"Duplikat {repeat_count}X❗️")
     if purpose:
         lines.append(f"Keperluan: {_compact_text(purpose, 84)}")
     if notes:
