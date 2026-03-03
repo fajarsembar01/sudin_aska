@@ -3116,6 +3116,52 @@ def _get_team_staff_ids(team_id: int):
     return staff_ids, team
 
 
+def _build_admin_stats_period_filter(
+    periods: list[dict[str, object]],
+    year: int | None,
+    month: int | None,
+    period_id: int | None = None,
+) -> tuple[int | None, list[int] | None, list[int], int | None, int | None]:
+    """Resolve admin stats period filters from year/month selections."""
+    period_rows: list[tuple[int, int, int]] = []
+    year_set: set[int] = set()
+    for p in periods:
+        pid = p.get("id")
+        start_date = p.get("start_date")
+        if not isinstance(pid, int) or start_date is None:
+            continue
+        y = getattr(start_date, "year", None)
+        m = getattr(start_date, "month", None)
+        if not isinstance(y, int) or not isinstance(m, int):
+            continue
+        year_set.add(y)
+        period_rows.append((pid, y, m))
+
+    selected_year = year if isinstance(year, int) and year in year_set else None
+    selected_month = month if isinstance(month, int) and 1 <= month <= 12 else None
+    if selected_year is None and selected_month is None and isinstance(period_id, int):
+        chosen = next(((pid, y, m) for (pid, y, m) in period_rows if pid == period_id), None)
+        if chosen:
+            selected_year = chosen[1]
+            selected_month = chosen[2]
+    if selected_year is None:
+        selected_month = None
+
+    year_options = sorted(year_set, reverse=True)
+    if selected_year is None:
+        return None, None, year_options, None, None
+
+    year_period_ids = [pid for (pid, y, _m) in period_rows if y == selected_year]
+    if selected_month is None:
+        return None, year_period_ids, year_options, selected_year, None
+
+    matching = [pid for (pid, y, m) in period_rows if y == selected_year and m == selected_month]
+    if not matching:
+        return None, [], year_options, selected_year, selected_month
+    selected_period_id = matching[0]
+    return selected_period_id, [selected_period_id], year_options, selected_year, selected_month
+
+
 def _serialize_related_photos(school_id: int | None, room_id: int | None, staff_ids: list[int] | None = None):
     """Serialize related photos response with optional staff filtering."""
     if not school_id or not room_id:
@@ -3271,7 +3317,16 @@ def admin_stats() -> Response:
     from dashboard.queries import get_monev_teams
     from .queries import fetch_team_top_schools, fetch_team_bottom_schools
 
-    period_id = request.args.get("period_id", type=int)
+    periods = list_periods()
+    selected_year_arg = request.args.get("year", type=int)
+    selected_month_arg = request.args.get("month", type=int)
+    selected_period_arg = request.args.get("period_id", type=int)
+    period_id, period_ids, period_year_options, selected_year, selected_month = _build_admin_stats_period_filter(
+        periods,
+        selected_year_arg,
+        selected_month_arg,
+        selected_period_arg,
+    )
     team_id = request.args.get("team_id", type=int)
     jenjang_filter = request.args.get("jenjang") or None
     order = request.args.get("order") or "recent"
@@ -3296,41 +3351,43 @@ def admin_stats() -> Response:
         if selected_team is None:
             staff_ids = None
     
-    stats = fetch_portal_stats(period_id, staff_ids=staff_ids)
+    stats = fetch_portal_stats(period_id=period_id, period_ids=period_ids, staff_ids=staff_ids)
     from .queries import fetch_score_distribution
-    score_dist = fetch_score_distribution(period_id, staff_ids=staff_ids)
+    score_dist = fetch_score_distribution(period_id=period_id, period_ids=period_ids, staff_ids=staff_ids)
     recent_assessments = list_recent_assessments(
         period_id=period_id,
+        period_ids=period_ids,
         jenjang=jenjang_filter,
         order=order,
         staff_ids=staff_ids,
     )
     staff_latest_assessments = list_staff_latest_assessments(
         period_id=period_id,
+        period_ids=period_ids,
         staff_ids=staff_ids,
         limit=100,
     )
     if staff_ids:
-        top_schools = fetch_team_top_schools(staff_ids, period_id=period_id, limit=10)
-        bottom_schools = fetch_team_bottom_schools(staff_ids, period_id=period_id, limit=10)
+        top_schools = fetch_team_top_schools(staff_ids, period_id=period_id, period_ids=period_ids, limit=10)
+        bottom_schools = fetch_team_bottom_schools(staff_ids, period_id=period_id, period_ids=period_ids, limit=10)
     else:
-        top_schools = fetch_top_schools(period_id=period_id, limit=10)
-        bottom_schools = fetch_bottom_schools(period_id=period_id, limit=10)
+        top_schools = fetch_top_schools(period_id=period_id, period_ids=period_ids, limit=10)
+        bottom_schools = fetch_bottom_schools(period_id=period_id, period_ids=period_ids, limit=10)
     photo_order = request.args.get("photo_order", "random")
     random_photos = fetch_random_photos(
         period_id=period_id,
+        period_ids=period_ids,
         order=photo_order,
         limit=24,
         staff_ids=staff_ids,
     )
-    school_avg_map = fetch_school_avg_scores(period_id=period_id, staff_ids=staff_ids)
-    periods = list_periods()
+    school_avg_map = fetch_school_avg_scores(period_id=period_id, period_ids=period_ids, staff_ids=staff_ids)
     all_schools = list_portal_schools()
     all_staff = list_all_staff()
     monev_teams = get_monev_teams()
     
     from .queries import fetch_kecamatan_avg_scores
-    kecamatan_stats = fetch_kecamatan_avg_scores(period_id, staff_ids=staff_ids)
+    kecamatan_stats = fetch_kecamatan_avg_scores(period_id=period_id, period_ids=period_ids, staff_ids=staff_ids)
     
     return render_template(
         "portal/admin/stats.html",
@@ -3344,6 +3401,9 @@ def admin_stats() -> Response:
         school_avg_map=school_avg_map,
         periods=periods,
         current_period_id=period_id,
+        current_period_year=selected_year,
+        current_period_month=selected_month,
+        period_year_options=period_year_options,
         selected_team_id=team_id,
         selected_team=selected_team,
         jenjang_filter=jenjang_filter,
@@ -3365,7 +3425,16 @@ def api_rankings() -> Response:
     type_ = request.args.get("type", "best")
     limit = request.args.get("limit", 10, type=int)
     offset = request.args.get("offset", 0, type=int)
-    period_id = request.args.get("period_id", type=int) or None
+    periods = list_periods()
+    selected_year_arg = request.args.get("year", type=int)
+    selected_month_arg = request.args.get("month", type=int)
+    selected_period_arg = request.args.get("period_id", type=int)
+    period_id, period_ids, _year_options, _selected_year, _selected_month = _build_admin_stats_period_filter(
+        periods,
+        selected_year_arg,
+        selected_month_arg,
+        selected_period_arg,
+    )
     team_id = request.args.get("team_id", type=int)
     
     staff_ids = None
@@ -3376,14 +3445,14 @@ def api_rankings() -> Response:
     
     if type_ == "best":
         if staff_ids:
-            data = fetch_team_top_schools(staff_ids, period_id=period_id, limit=limit, offset=offset)
+            data = fetch_team_top_schools(staff_ids, period_id=period_id, period_ids=period_ids, limit=limit, offset=offset)
         else:
-            data = fetch_top_schools(limit=limit, offset=offset, period_id=period_id)
+            data = fetch_top_schools(limit=limit, offset=offset, period_id=period_id, period_ids=period_ids)
     else:
         if staff_ids:
-            data = fetch_team_bottom_schools(staff_ids, period_id=period_id, limit=limit, offset=offset)
+            data = fetch_team_bottom_schools(staff_ids, period_id=period_id, period_ids=period_ids, limit=limit, offset=offset)
         else:
-            data = fetch_bottom_schools(limit=limit, offset=offset, period_id=period_id)
+            data = fetch_bottom_schools(limit=limit, offset=offset, period_id=period_id, period_ids=period_ids)
         
     return jsonify(data)
 
@@ -3457,7 +3526,16 @@ def export_excel() -> Response:
 @role_required("admin")
 def admin_map_data() -> Response:
     """Return JSON data for school locations map."""
-    period_id = request.args.get("period_id", type=int)
+    periods = list_periods()
+    selected_year_arg = request.args.get("year", type=int)
+    selected_month_arg = request.args.get("month", type=int)
+    selected_period_arg = request.args.get("period_id", type=int)
+    period_id, period_ids, _year_options, _selected_year, _selected_month = _build_admin_stats_period_filter(
+        periods,
+        selected_year_arg,
+        selected_month_arg,
+        selected_period_arg,
+    )
     team_id = request.args.get("team_id", type=int)
     from .queries import fetch_map_data
     
@@ -3467,7 +3545,7 @@ def admin_map_data() -> Response:
         if team is None:
             staff_ids = None
     
-    data = fetch_map_data(period_id, staff_ids=staff_ids)
+    data = fetch_map_data(period_id=period_id, period_ids=period_ids, staff_ids=staff_ids)
     return jsonify(data)
 
 
@@ -3579,7 +3657,16 @@ def sekolah_change_password() -> Response:
 @role_required("admin")
 def admin_photos_partial() -> Response:
     """Return gallery grid partial for photo order changes (AJAX)."""
-    period_id = request.args.get("period_id", type=int)
+    periods = list_periods()
+    selected_year_arg = request.args.get("year", type=int)
+    selected_month_arg = request.args.get("month", type=int)
+    selected_period_arg = request.args.get("period_id", type=int)
+    period_id, period_ids, _year_options, _selected_year, _selected_month = _build_admin_stats_period_filter(
+        periods,
+        selected_year_arg,
+        selected_month_arg,
+        selected_period_arg,
+    )
     photo_order = request.args.get("photo_order", "random")
     team_id = request.args.get("team_id", type=int)
     
@@ -3593,6 +3680,7 @@ def admin_photos_partial() -> Response:
 
     photos = fetch_random_photos(
         period_id=period_id,
+        period_ids=period_ids,
         order=photo_order,
         limit=24,
         staff_ids=staff_ids,

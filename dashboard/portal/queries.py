@@ -95,6 +95,27 @@ def _score_pct_sql(score_expr: str, scale_expr: str) -> str:
     )
 
 
+def _apply_period_filter(
+    clauses: List[str],
+    params: List[Any],
+    period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
+    column: str = "period_id",
+) -> None:
+    """Append period filter to SQL clause list with matching bind parameters."""
+    if period_ids is not None:
+        if not period_ids:
+            clauses.append("1 = 0")
+            return
+        placeholders = ",".join(["%s"] * len(period_ids))
+        clauses.append(f"{column} IN ({placeholders})")
+        params.extend(period_ids)
+        return
+    if period_id:
+        clauses.append(f"{column} = %s")
+        params.append(period_id)
+
+
 def normalize_portal_undo_window_seconds(
     value: Any,
     *,
@@ -1097,6 +1118,7 @@ def reopen_assessment(assessment_id: int) -> bool:
 def fetch_random_photos(
     limit: int = 6,
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     order: str = "random",
     staff_ids: Optional[List[int]] = None,
     restrict_to_staff: bool = False,
@@ -1117,9 +1139,7 @@ def fetch_random_photos(
     
     clauses = ["a.status = 'submitted'"]
     params: List[Any] = []
-    if period_id:
-        clauses.append("a.period_id = %s")
-        params.append(period_id)
+    _apply_period_filter(clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
     if staff_ids:
         placeholders = ",".join(["%s"] * len(staff_ids))
         clauses.append(f"a.staff_id IN ({placeholders})")
@@ -1443,6 +1463,7 @@ def get_active_assessment(
 
 def fetch_portal_stats(
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
 ) -> Dict[str, Any]:
     """Get aggregate statistics for portal assessments.
@@ -1472,9 +1493,13 @@ def fetch_portal_stats(
         assess_conditions.append(f"a.staff_id IN ({placeholders})")
         assess_params.extend(staff_ids)
     
-    if period_id:
-        assess_conditions.append("a.period_id = %s")
-        assess_params.append(period_id)
+    _apply_period_filter(
+        assess_conditions,
+        assess_params,
+        period_id=period_id,
+        period_ids=period_ids,
+        column="a.period_id",
+    )
     
     where_clause = f"WHERE {' AND '.join(assess_conditions)}" if assess_conditions else ""
 
@@ -1527,6 +1552,7 @@ def fetch_portal_stats(
 
 def fetch_score_distribution(
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
 ) -> List[int]:
     """Calculate score distribution (9 bins: <60, 60-65, ..., 95-100)."""
@@ -1536,9 +1562,7 @@ def fetch_score_distribution(
     conditions = ["status IN ('submitted', 'verified')", "total_score IS NOT NULL"]
     params: List[Any] = []
     
-    if period_id:
-        conditions.append("period_id = %s")
-        params.append(period_id)
+    _apply_period_filter(conditions, params, period_id=period_id, period_ids=period_ids, column="period_id")
     
     if staff_ids:
         placeholders = ",".join(["%s"] * len(staff_ids))
@@ -1577,6 +1601,7 @@ def fetch_score_distribution(
 
 def fetch_map_data(
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch school locations and status for the map.
@@ -1591,9 +1616,7 @@ def fetch_map_data(
     conditions = ["status IN ('submitted', 'verified')"]
     params: List[Any] = []
     
-    if period_id:
-        conditions.append("period_id = %s")
-        params.append(period_id)
+    _apply_period_filter(conditions, params, period_id=period_id, period_ids=period_ids, column="period_id")
     
     if staff_ids:
         placeholders = ",".join(["%s"] * len(staff_ids))
@@ -1689,13 +1712,19 @@ def fetch_map_data(
         return data
 
 
-def fetch_top_schools(limit: int = 5, offset: int = 0, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
+def fetch_top_schools(
+    limit: int = 5,
+    offset: int = 0,
+    period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
+) -> List[Dict[str, Any]]:
     """Fetch top performing schools based on their latest assessment."""
     where = "WHERE a.status IN ('submitted', 'verified')"
     params = []
-    if period_id:
-        where += " AND a.period_id = %s"
-        params.append(period_id)
+    period_clauses: List[str] = []
+    _apply_period_filter(period_clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+    if period_clauses:
+        where += " AND " + " AND ".join(period_clauses)
     
     params.append(limit)
     params.append(offset)
@@ -1795,13 +1824,19 @@ def delete_school(school_id: int) -> bool:
         cur.execute("DELETE FROM portal_schools WHERE id = %s", (school_id,))
         return cur.rowcount > 0
 
-def fetch_bottom_schools(limit: int = 5, offset: int = 0, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
+def fetch_bottom_schools(
+    limit: int = 5,
+    offset: int = 0,
+    period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
+) -> List[Dict[str, Any]]:
     """Fetch lowest performing schools based on their latest assessment."""
     where = "WHERE a.status IN ('submitted', 'verified')"
     params = []
-    if period_id:
-        where += " AND a.period_id = %s"
-        params.append(period_id)
+    period_clauses: List[str] = []
+    _apply_period_filter(period_clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+    if period_clauses:
+        where += " AND " + " AND ".join(period_clauses)
     
     params.append(limit)
     params.append(offset)
@@ -1833,6 +1868,7 @@ def fetch_bottom_schools(limit: int = 5, offset: int = 0, period_id: Optional[in
 def list_recent_assessments(
     limit: int = 50,
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     jenjang: Optional[str] = None,
     order: str = "recent",
     staff_ids: Optional[List[int]] = None,
@@ -1843,9 +1879,10 @@ def list_recent_assessments(
     
     where = "WHERE a.status IN ('submitted', 'verified')"
     params = []
-    if period_id:
-        where += " AND a.period_id = %s"
-        params.append(period_id)
+    period_clauses: List[str] = []
+    _apply_period_filter(period_clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+    if period_clauses:
+        where += " AND " + " AND ".join(period_clauses)
     if jenjang:
         where += " AND s.jenjang = %s"
         params.append(jenjang)
@@ -1915,6 +1952,7 @@ def list_recent_assessments(
 
 def list_staff_latest_assessments(
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
     limit: int = 100,
 ) -> List[Dict[str, Any]]:
@@ -1924,9 +1962,7 @@ def list_staff_latest_assessments(
 
     latest_filters = ["a.staff_id = u.id", "a.status IN ('submitted', 'verified')"]
     latest_params: List[Any] = []
-    if period_id:
-        latest_filters.append("a.period_id = %s")
-        latest_params.append(period_id)
+    _apply_period_filter(latest_filters, latest_params, period_id=period_id, period_ids=period_ids, column="a.period_id")
     latest_where = " AND ".join(latest_filters)
 
     staff_where = "WHERE u.role IN ('staff', 'coordinator') AND u.account_status = 'approved'"
@@ -1992,6 +2028,7 @@ def list_staff_latest_assessments(
 
 def fetch_school_avg_scores(
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
 ) -> Dict[int, float]:
     """Return map {school_id: avg_score_pct} for submitted assessments."""
@@ -2000,9 +2037,7 @@ def fetch_school_avg_scores(
     
     params: List[Any] = []
     where_clauses = ["status IN ('submitted', 'verified')"]
-    if period_id:
-        where_clauses.append("period_id = %s")
-        params.append(period_id)
+    _apply_period_filter(where_clauses, params, period_id=period_id, period_ids=period_ids, column="period_id")
     if staff_ids:
         placeholders = ",".join(["%s"] * len(staff_ids))
         where_clauses.append(f"staff_id IN ({placeholders})")
@@ -2888,6 +2923,7 @@ def fetch_schools_for_sidak(
 
 def fetch_kecamatan_avg_scores(
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch average assessment scores grouped by kecamatan (0-100 scale)."""
@@ -2896,9 +2932,7 @@ def fetch_kecamatan_avg_scores(
     
     conditions = ["a.status IN ('submitted', 'verified')"]
     params: List[Any] = []
-    if period_id:
-        conditions.append("a.period_id = %s")
-        params.append(period_id)
+    _apply_period_filter(conditions, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
     if staff_ids:
         placeholders = ",".join(["%s"] * len(staff_ids))
         conditions.append(f"a.staff_id IN ({placeholders})")
@@ -4357,6 +4391,7 @@ def list_team_assessments(
 def fetch_team_top_schools(
     staff_ids: List[int],
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     limit: int = 5,
     offset: int = 0,
 ) -> List[Dict[str, Any]]:
@@ -4367,10 +4402,9 @@ def fetch_team_top_schools(
     with get_cursor() as cur:
         placeholders = ",".join(["%s"] * len(staff_ids))
         params = list(staff_ids)
-        period_filter = ""
-        if period_id:
-            period_filter = " AND a.period_id = %s"
-            params.append(period_id)
+        period_clauses: List[str] = []
+        _apply_period_filter(period_clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+        period_filter = f" AND {' AND '.join(period_clauses)}" if period_clauses else ""
         params.extend([limit, offset])
         
         cur.execute(
@@ -4408,6 +4442,7 @@ def fetch_team_top_schools(
 def fetch_team_bottom_schools(
     staff_ids: List[int],
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     limit: int = 5,
     offset: int = 0,
 ) -> List[Dict[str, Any]]:
@@ -4418,10 +4453,9 @@ def fetch_team_bottom_schools(
     with get_cursor() as cur:
         placeholders = ",".join(["%s"] * len(staff_ids))
         params = list(staff_ids)
-        period_filter = ""
-        if period_id:
-            period_filter = " AND a.period_id = %s"
-            params.append(period_id)
+        period_clauses: List[str] = []
+        _apply_period_filter(period_clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+        period_filter = f" AND {' AND '.join(period_clauses)}" if period_clauses else ""
         params.extend([limit, offset])
         
         cur.execute(
