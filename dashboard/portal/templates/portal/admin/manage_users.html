@@ -65,9 +65,27 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Password</label>
-                        <input type="password" class="form-control" name="password" id="password" minlength="8"
-                            autocomplete="new-password">
-                        <small class="text-muted" id="passwordHelp">Minimal 8 karakter.</small>
+                        <div class="input-group">
+                            <input type="password" class="form-control" name="password" id="password"
+                                autocomplete="new-password">
+                            <button class="btn btn-outline-secondary toggle-password" type="button"
+                                data-target="password" aria-label="Tampilkan password">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <div id="passwordStrength" class="mt-2 small fw-semibold"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Konfirmasi Password</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" name="confirm_password" id="confirmPassword"
+                                autocomplete="new-password">
+                            <button class="btn btn-outline-secondary toggle-password" type="button"
+                                data-target="confirmPassword" aria-label="Tampilkan konfirmasi password">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <div id="passwordMatch" class="mt-2 small fw-semibold"></div>
                     </div>
                     <div class="form-check form-switch mb-3">
                         <input class="form-check-input" type="checkbox" id="unregisteredToggle" name="is_unregistered"
@@ -84,6 +102,7 @@
                             <option value="coordinator">Coordinator</option>
                             <option value="sekolah">Sekolah</option>
                         </select>
+                        <small class="text-muted">Pilih Sekolah untuk role Sekolah.</small>
                     </div>
                     <div class="mb-3 d-none" id="schoolField">
                         <label class="form-label">Sekolah (NPSN / Nama)</label>
@@ -112,17 +131,17 @@
                             <input class="form-check-input" type="checkbox" id="schoolNullToggle">
                             <label class="form-check-label" for="schoolNullToggle">Tidak ada sekolah (null)</label>
                         </div>
-                        <small class="text-muted">Pilih sekolah untuk role Sekolah.</small>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Kecamatan</label>
+                        <label class="form-label">Lokasi Unit Kerja</label>
                         <select class="form-select" name="requested_kecamatan" id="requestedKecamatan">
-                            <option value="">-- Pilih Kecamatan --</option>
+                            <option value="">-- Pilih Lokasi Unit Kerja --</option>
                             {% for k in kecamatan_list %}
                             <option value="{{ k.id }}">{{ k.name }}</option>
                             {% endfor %}
                         </select>
-                        <small class="text-muted">Opsional untuk akun staff/coordinator.</small>
+                        <!-- Lokasi Unit Kerja hanya untuk staff/coordinator. Untuk Sekolah ubah pada menu Setup Data Sekolah berupa ubah kecamatan/kelurahan -->
+                        <small class="text-muted">Hanya untuk role Staff/Coordinator.</small>
                     </div>
                     <div class="mb-3" id="statusField" style="display:none;">
                         <label class="form-label">Status Akun</label>
@@ -545,7 +564,7 @@
                         <div id="previewStatus">-</div>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label text-muted small mb-1">Kecamatan</label>
+                        <label class="form-label text-muted small mb-1">Lokasi Unit Kerja</label>
                         <div id="previewKecamatan">-</div>
                     </div>
                     <div class="col-md-6">
@@ -832,6 +851,14 @@
         document.getElementById('requestedKecamatan').value = '';
         document.getElementById('jabatan').value = '';
 
+        // Reset password validation indicators
+        const passwordStrength = document.getElementById('passwordStrength');
+        const passwordMatch = document.getElementById('passwordMatch');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        if (passwordStrength) passwordStrength.innerHTML = '';
+        if (passwordMatch) passwordMatch.innerHTML = '';
+        if (confirmPasswordInput) confirmPasswordInput.classList.remove('is-invalid', 'is-valid');
+
         // UI reset
         document.getElementById('formTitle').innerText = 'Tambah User';
         document.getElementById('submitBtn').innerHTML = '<i class="bi bi-save me-2"></i>Simpan User';
@@ -1017,6 +1044,138 @@
         toggleSchoolField();
         bindMergeSearch(mergeOldSearch, mergeOldSelect);
         bindMergeSearch(mergeNewSearch, mergeNewSelect);
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Password validation - copy dari change_password.html
+        const newPasswordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const passwordStrength = document.getElementById('passwordStrength');
+        const passwordMatch = document.getElementById('passwordMatch');
+        const submitBtn = document.getElementById('submitBtn');
+        const roleSelect = document.getElementById('role');
+
+        function getPasswordMinLength() {
+            const role = roleSelect ? roleSelect.value : 'admin';
+            return role === 'sekolah' ? 6 : 8;
+        }
+
+        // Toggle password visibility
+        document.querySelectorAll('.toggle-password').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const targetId = this.dataset.target;
+                const input = document.getElementById(targetId);
+                if (!input) return;
+                const isHidden = input.type === 'password';
+                input.type = isHidden ? 'text' : 'password';
+                const icon = this.querySelector('i');
+                if (icon) {
+                    icon.classList.toggle('bi-eye', !isHidden);
+                    icon.classList.toggle('bi-eye-slash', isHidden);
+                }
+                this.setAttribute('aria-label', isHidden ? 'Sembunyikan password' : 'Tampilkan password');
+            });
+        });
+
+        // Check password strength
+        if (newPasswordInput) {
+            newPasswordInput.addEventListener('input', function () {
+                const password = this.value;
+                const minLen = getPasswordMinLength();
+                let strength = 0;
+                let text = '';
+                let color = '';
+
+                if (password.length >= minLen) strength++;
+                if (password.length >= minLen + 2) strength++;
+                if (/[A-Z]/.test(password)) strength++;
+                if (/[0-9]/.test(password)) strength++;
+                if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+                if (password.length === 0) {
+                    text = '';
+                } else if (password.length < minLen) {
+                    text = `<i class="bi bi-x-circle text-danger"></i> Minimal ${minLen} karakter`;
+                    color = 'text-danger';
+                } else if (strength <= 2) {
+                    text = '<i class="bi bi-shield-exclamation text-warning"></i> Password lemah';
+                    color = 'text-warning';
+                } else if (strength <= 3) {
+                    text = '<i class="bi bi-shield-check text-info"></i> Password cukup';
+                    color = 'text-info';
+                } else {
+                    text = '<i class="bi bi-shield-fill-check text-success"></i> Password kuat';
+                    color = 'text-success';
+                }
+
+                if (passwordStrength) {
+                    passwordStrength.innerHTML = text;
+                    passwordStrength.className = 'mt-2 small fw-semibold ' + color;
+                }
+                checkPasswordMatch();
+                validateForm();
+            });
+        }
+
+        // Check password match
+        function checkPasswordMatch() {
+            const password = newPasswordInput ? newPasswordInput.value : '';
+            const confirm = confirmPasswordInput ? confirmPasswordInput.value : '';
+
+            if (!confirmPasswordInput || !passwordMatch) return;
+
+            if (confirm.length === 0) {
+                passwordMatch.innerHTML = '';
+                confirmPasswordInput.classList.remove('is-invalid', 'is-valid');
+            } else if (password !== confirm) {
+                passwordMatch.innerHTML = '<i class="bi bi-x-circle"></i> Password tidak cocok';
+                passwordMatch.className = 'mt-2 small fw-semibold text-danger';
+                confirmPasswordInput.classList.add('is-invalid');
+                confirmPasswordInput.classList.remove('is-valid');
+            } else {
+                passwordMatch.innerHTML = '<i class="bi bi-check-circle"></i> Password cocok';
+                passwordMatch.className = 'mt-2 small fw-semibold text-success';
+                confirmPasswordInput.classList.remove('is-invalid');
+                confirmPasswordInput.classList.add('is-valid');
+            }
+            validateForm();
+        }
+
+        if (confirmPasswordInput) {
+            confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+        }
+
+        // Overall form validation
+        function validateForm() {
+            if (!submitBtn) return;
+
+            const unregisteredToggle = document.getElementById('unregisteredToggle');
+            const isUnregistered = unregisteredToggle ? unregisteredToggle.checked : false;
+            const password = newPasswordInput ? newPasswordInput.value : '';
+            const confirm = confirmPasswordInput ? confirmPasswordInput.value : '';
+            const minLen = getPasswordMinLength();
+
+            // If unregistered, don't validate password
+            if (isUnregistered) {
+                submitBtn.disabled = false;
+                return;
+            }
+
+            // Password hanya perlu minimal X karakter (6 untuk sekolah, 8 untuk lain) dan cocok
+            const isValid = password.length >= minLen && password === confirm;
+
+            submitBtn.disabled = !isValid;
+        }
+
+        // Role change listener
+        if (roleSelect) {
+            roleSelect.addEventListener('change', function () {
+                if (newPasswordInput) {
+                    newPasswordInput.dispatchEvent(new Event('input'));
+                }
+            });
+        }
     });
 </script>
 <script>

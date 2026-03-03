@@ -1,5 +1,6 @@
 {% extends "portal/base_portal.html" %}
 {% set page_title = "ASKA Sidak Route Planner" %}
+{% from "portal/components/_color_macros.html" import get_score_bootstrap_class %}
 
 {% block head_extra %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -191,24 +192,13 @@
                                                 }} sekolah</div>
                                         </div>
                                         <div class="text-end">
-                                            {# Using centralized threshold: >=85 green, >=70 yellow, >=55 orange, <55
-                                                red #} {% if kel.avg_score_pct>= 85 %}
-                                                <span class="badge bg-success urgency-badge">{{ kel.avg_score_pct
-                                                    }}%</span>
-                                                {% elif kel.avg_score_pct >= 70 %}
-                                                <span class="badge bg-warning text-dark urgency-badge">{{
-                                                    kel.avg_score_pct }}%</span>
-                                                {% elif kel.avg_score_pct >= 55 %}
-                                                <span class="badge text-white urgency-badge"
-                                                    style="background:#fd7e14">{{ kel.avg_score_pct }}%</span>
-                                                {% else %}
-                                                <span class="badge bg-danger urgency-badge">{{ kel.avg_score_pct
-                                                    }}%</span>
-                                                {% endif %}
-                                                {% if kel.low_score_count > 0 %}
-                                                <div class="text-danger small">{{ kel.low_score_count }} rendah
-                                                </div>
-                                                {% endif %}
+                                            <span class="badge {{ get_score_bootstrap_class(kel.avg_score_pct) }} urgency-badge">
+                                                {{ kel.avg_score_pct }}%
+                                            </span>
+                                            {% if kel.low_score_count > 0 %}
+                                            <div class="text-danger small">{{ kel.low_score_count }} rendah
+                                            </div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -522,7 +512,7 @@
                 // Populate school list with Lihat button
                 var listHtml = '';
                 data.schools.forEach(function (school, idx) {
-                    var priorityClass = school.score_pct < 70 ? 'priority' : '';
+                    var priorityClass = school.score_pct < 60 ? 'priority' : '';
                     // Use centralized color config
                     var colorInfo = getScoreColor(school.score_pct);
                     var scoreClass = colorInfo.className;

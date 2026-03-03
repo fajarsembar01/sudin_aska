@@ -33,6 +33,37 @@ ALTER TABLE portal_schools ADD COLUMN IF NOT EXISTS logo_url TEXT;
 ALTER TABLE portal_schools ADD COLUMN IF NOT EXISTS metadata JSONB;
 ALTER TABLE portal_rooms ADD COLUMN IF NOT EXISTS is_required BOOLEAN DEFAULT FALSE;
 ALTER TABLE portal_aspects ADD COLUMN IF NOT EXISTS is_required BOOLEAN DEFAULT FALSE;
+ALTER TABLE portal_assessments ADD COLUMN IF NOT EXISTS score_scale_max INTEGER;
+ALTER TABLE portal_assessments ALTER COLUMN score_scale_max SET DEFAULT 3;
+UPDATE portal_assessments
+SET score_scale_max = 3
+WHERE score_scale_max IS NULL OR score_scale_max NOT IN (3, 5);
+ALTER TABLE portal_assessments ALTER COLUMN score_scale_max SET NOT NULL;
+ALTER TABLE portal_assessments DROP CONSTRAINT IF EXISTS portal_assessments_score_scale_max_check;
+ALTER TABLE portal_assessments
+    ADD CONSTRAINT portal_assessments_score_scale_max_check CHECK (score_scale_max IN (3, 5));
+DO $$
+DECLARE
+    _constraint_name TEXT;
+BEGIN
+    FOR _constraint_name IN
+        SELECT c.conname
+        FROM pg_constraint c
+        JOIN pg_class t ON t.oid = c.conrelid
+        JOIN pg_namespace n ON n.oid = t.relnamespace
+        WHERE n.nspname = 'public'
+          AND t.relname = 'portal_assessment_scores'
+          AND c.contype = 'c'
+          AND pg_get_constraintdef(c.oid) ILIKE '%score%'
+    LOOP
+        EXECUTE format(
+            'ALTER TABLE portal_assessment_scores DROP CONSTRAINT IF EXISTS %I',
+            _constraint_name
+        );
+    END LOOP;
+END $$;
+ALTER TABLE portal_assessment_scores
+    ADD CONSTRAINT portal_assessment_scores_score_check CHECK (((score >= 0) AND (score <= 5)));
 
 -- ====================================================================
 -- PART 2: CORE SCHEMA from portal_export.sql
@@ -1377,8 +1408,10 @@ CREATE TABLE IF NOT EXISTS "portal_assessments" (
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
     "period_id" INTEGER,
+    "score_scale_max" INTEGER NOT NULL DEFAULT 3,
     CONSTRAINT "portal_assessments_pkey" PRIMARY KEY (id),
-    CONSTRAINT "portal_assessments_status_check" CHECK ((status = ANY (ARRAY['draft'::text, 'submitted'::text, 'verified'::text, 'rejected'::text])))
+    CONSTRAINT "portal_assessments_status_check" CHECK ((status = ANY (ARRAY['draft'::text, 'submitted'::text, 'verified'::text, 'rejected'::text]))),
+    CONSTRAINT "portal_assessments_score_scale_max_check" CHECK ((score_scale_max = ANY (ARRAY[3, 5])))
 );
 
 -- Data for table: portal_assessments
@@ -1520,13 +1553,13 @@ CREATE TABLE IF NOT EXISTS "portal_assessment_scores" (
     "assessment_id" INTEGER NOT NULL,
     "school_room_id" INTEGER NOT NULL,
     "aspect_id" INTEGER NOT NULL,
-    "score" INTEGER NOT NULL DEFAULT 3,
+    "score" INTEGER NOT NULL,
     "notes" TEXT,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT "portal_assessment_scores_pkey" PRIMARY KEY (id),
     CONSTRAINT "portal_assessment_scores_assessment_id_school_room_id_aspec_key" UNIQUE (assessment_id, school_room_id, aspect_id),
-    CONSTRAINT "portal_assessment_scores_score_check" CHECK (((score >= 0) AND (score <= 3)))
+    CONSTRAINT "portal_assessment_scores_score_check" CHECK (((score >= 0) AND (score <= 5)))
 );
 
 -- Data for table: portal_assessment_scores
@@ -4964,4 +4997,3 @@ COMMIT;
 
 -- Import completed successfully!
 SELECT 'Import completed successfully!' AS status;
-

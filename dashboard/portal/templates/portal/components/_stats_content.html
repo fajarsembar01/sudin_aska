@@ -1,19 +1,18 @@
-{# Shared stats content component - expects stats_role variable ('admin' or
-'coordinator') #} {# Set defaults if not provided #} {% set is_admin =
-(stats_role == 'admin') %} {% set title = stats_title or ('Dashboard PANBERSS'
-if is_admin else 'Statistik Tim ' ~ (team.name or team.kecamatan_name or
-'Koordinator')) %} {% set subtitle = stats_subtitle or ('Ringkasan data
-penilaian sekolah' if is_admin else 'Data penilaian oleh anggota tim Anda') %}
-{% set map_data_endpoint = 'portal.admin_map_data' if is_admin else
-'portal.coordinator_map_data' %} {% set stats_endpoint = 'portal.admin_stats' if
-is_admin else 'portal.coordinator_stats' %} {% set photos_endpoint =
-'portal.admin_photos_partial' if is_admin else
-'portal.coordinator_photos_partial' %} {% set related_photos_endpoint =
-'portal.admin_related_photos' if is_admin else
-'portal.coordinator_related_photos' %} {% set ranking_endpoint =
-'portal.api_rankings' if is_admin else 'portal.coordinator_api_rankings' %} {%
-set current_team_id = selected_team_id if selected_team_id is not none else
-(team.id if team else None) %} {% set teams = monev_teams|default([]) %}
+{# Shared stats content component - expects stats_role variable ('admin' or 'coordinator') #}
+{# Set defaults if not provided #}
+{% set is_admin = (stats_role == 'admin') %}
+{% set title = stats_title or ('Dashboard PANBERSS' if is_admin else 'Statistik Tim ' ~ (team.name or team.kecamatan_name or 'Koordinator')) %}
+{% set subtitle = stats_subtitle or ('Ringkasan data penilaian sekolah' if is_admin else 'Data penilaian oleh anggota tim Anda') %}
+{% set map_data_endpoint = 'portal.admin_map_data' if is_admin else 'portal.coordinator_map_data' %}
+{% set stats_endpoint = 'portal.admin_stats' if is_admin else 'portal.coordinator_stats' %}
+{% set photos_endpoint = 'portal.admin_photos_partial' if is_admin else 'portal.coordinator_photos_partial' %}
+{% set related_photos_endpoint = 'portal.admin_related_photos' if is_admin else 'portal.coordinator_related_photos' %}
+{% set ranking_endpoint = 'portal.api_rankings' if is_admin else 'portal.coordinator_api_rankings' %}
+{% set current_team_id = selected_team_id if selected_team_id is not none else (team.id if team else None) %}
+{% set teams = monev_teams|default([]) %}
+{% set selected_year = current_period_year|default(None) %}
+{% set selected_month = current_period_month|default(None) %}
+{% from "portal/components/_color_macros.html" import get_score_bootstrap_class %}
 
 <section class="mb-4">
   <div class="card portal-hero border-0 shadow-sm">
@@ -37,7 +36,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
             class="btn btn-outline-primary d-inline-flex align-items-center gap-2"
           >
             <i class="bi bi-tools"></i>
-            <span>Setup Data</span>
+            <span>Setup Data Sekolah</span>
           </a>
           <a
             href="{{ url_for('portal.export_excel', period_id=current_period_id) }}"
@@ -55,23 +54,39 @@ set current_team_id = selected_team_id if selected_team_id is not none else
           </a>
           {% endif %}
           <form method="get" class="d-inline-flex align-items-center gap-2">
+            {% if is_admin %}
             <select
-              name="period_id"
+              name="year"
               class="form-select border-primary text-primary fw-medium"
               onchange="this.form.submit()"
               style="min-width: 150px"
             >
-              <option value="">Semua Periode</option>
-              {% for p in periods %}
+              <option value="">Semua Tahun</option>
+              {% for y in period_year_options|default([]) %}
               <option
-                value="{{ p.id }}"
-                {% if current_period_id==p.id %}selected{% endif %}
+                value="{{ y }}"
+                {% if selected_year==y %}selected{% endif %}
               >
-                {{ p.name }}
+                {{ y }}
               </option>
               {% endfor %}
             </select>
-            {% if is_admin %}
+            <select
+              name="month"
+              class="form-select border-primary text-primary fw-medium"
+              onchange="this.form.submit()"
+              style="min-width: 160px"
+            >
+              <option value="">{% if selected_year %}Semua Bulan{% else %}Pilih Tahun Dulu{% endif %}</option>
+              {% for m in range(1, 13) %}
+              <option
+                value="{{ m }}"
+                {% if selected_month==m %}selected{% endif %}
+              >
+                {{ "%02d"|format(m) }}
+              </option>
+              {% endfor %}
+            </select>
             <select
               name="team_id"
               class="form-select border-primary text-primary fw-medium"
@@ -89,15 +104,25 @@ set current_team_id = selected_team_id if selected_team_id is not none else
               </option>
               {% endfor %}
             </select>
+            {% else %}
+            <select
+              name="period_id"
+              class="form-select border-primary text-primary fw-medium"
+              onchange="this.form.submit()"
+              style="min-width: 150px"
+            >
+              <option value="">Semua Periode</option>
+              {% for p in periods %}
+              <option
+                value="{{ p.id }}"
+                {% if current_period_id==p.id %}selected{% endif %}
+              >
+                {{ p.name }}
+              </option>
+              {% endfor %}
+            </select>
             {% endif %}
           </form>
-          <a
-            href="{{ url_for('portal.home') }}"
-            class="btn btn-primary d-inline-flex align-items-center gap-2"
-          >
-            <i class="bi bi-box-arrow-up-right"></i>
-            <span>Buka Portal</span>
-          </a>
         </div>
       </div>
     </div>
@@ -159,11 +184,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
 
         {% if kecamatan_stats %}
         <div class="d-flex justify-content-between align-items-end mt-2">
-          {% for k in kecamatan_stats[:3] %} {# Set badge class based on score
-          threshold #} {% set badge_class = 'bg-success text-white' if
-          k.avg_score_pct >= 85 else ('bg-warning text-dark' if k.avg_score_pct
-          >= 70 else ('bg-danger text-white' if k.avg_score_pct >= 55 else
-          'bg-dark text-white')) %}
+          {% for k in kecamatan_stats[:3] %} {% set badge_class = get_score_bootstrap_class(k.avg_score_pct) %}
           <div class="text-center flex-fill">
             <span
               class="badge {{ badge_class }} rounded-pill mb-1"
@@ -198,15 +219,15 @@ set current_team_id = selected_team_id if selected_team_id is not none else
           >
         </div>
         <h2 class="display-6 fw-bold mb-1">
-          {% if stats.assessments.avg_score %} {{
-          "%.1f"|format(stats.assessments.avg_score / 3 * 100) }}% {% else %} -
-          {% endif %}
+          {% if stats.assessments.avg_score_pct is not none %} {{
+          "%.1f"|format(stats.assessments.avg_score_pct) }}% {% else %} - {%
+          endif %}
         </h2>
         <p class="text-muted small mb-0">
-          {% if stats.assessments.avg_score %} {{
-          "%.2f"|format(stats.assessments.avg_score) }}/3 dari {{
-          stats.assessments.submitted or 0 }} penilaian {% else %} dari {{
-          stats.assessments.submitted or 0 }} penilaian {% endif %}
+          {% if stats.assessments.avg_score_pct is not none %} Basis
+          normalisasi skala dari {{ stats.assessments.submitted or 0 }}
+          penilaian {% else %} dari {{ stats.assessments.submitted or 0 }}
+          penilaian {% endif %}
         </p>
       </div>
     </div>
@@ -315,10 +336,18 @@ set current_team_id = selected_team_id if selected_team_id is not none else
   <div class="col-lg-4">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
+        {% if is_admin %}
+        <h6 class="fw-bold mb-1">Jumlah Penilaian Sekolah</h6>
+        
+        <div style="height: 300px; position: relative">
+          <canvas id="negeriFrequencyPieChart"></canvas>
+        </div>
+        {% else %}
         <h6 class="fw-bold mb-3">Status Penilaian</h6>
         <div style="height: 300px; position: relative">
           <canvas id="statusPieChart"></canvas>
         </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -377,7 +406,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                     </div>
                   </div>
                 </div>
-                {% set pct = ((s['total_score'] or 0) / 3 * 100) %}
+                {% set pct = s.get('score_pct') if s.get('score_pct') is not none else 0 %}
                 <span class="badge bg-primary text-white rounded-pill"
                   >{{ "%.1f"|format(pct) }}</span
                 >
@@ -415,7 +444,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                     </div>
                   </div>
                 </div>
-                {% set pct = ((s['total_score'] or 0) / 3 * 100) %}
+                {% set pct = s.get('score_pct') if s.get('score_pct') is not none else 0 %}
                 <span class="badge bg-danger text-white rounded-pill"
                   >{{ "%.1f"|format(pct) }}</span
                 >
@@ -527,6 +556,8 @@ set current_team_id = selected_team_id if selected_team_id is not none else
             name="period_id"
             value="{{ current_period_id or '' }}"
           />
+          <input type="hidden" name="year" value="{{ selected_year or '' }}" />
+          <input type="hidden" name="month" value="{{ selected_month or '' }}" />
           {% if current_team_id %}
           <input type="hidden" name="team_id" value="{{ current_team_id }}" />
           {% endif %}
@@ -549,7 +580,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
             </button>
             <a
               class="btn btn-light"
-              href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, _anchor='recent-assessments') }}"
+              href="{{ url_for(stats_endpoint, period_id=current_period_id, year=selected_year, month=selected_month, team_id=current_team_id, _anchor='recent-assessments') }}"
               >Reset</a
             >
           </div>
@@ -569,7 +600,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                 = 'date_asc' if order == 'date_desc' else 'date_desc' %}
                 <th class="border-0 ps-3">
                   <a
-                    href="{{ url_for(stats_endpoint, period_id=base_period, jenjang=base_jenjang, order=name_order, team_id=base_team, _anchor=anchor) }}"
+                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=name_order, team_id=base_team, _anchor=anchor) }}"
                     class="text-decoration-none d-flex align-items-center gap-1"
                   >
                     Sekolah
@@ -580,7 +611,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                 </th>
                 <th class="border-0">
                   <a
-                    href="{{ url_for(stats_endpoint, period_id=base_period, jenjang=base_jenjang, order=staff_order, team_id=base_team, _anchor=anchor) }}"
+                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=staff_order, team_id=base_team, _anchor=anchor) }}"
                     class="text-decoration-none d-flex align-items-center gap-1"
                   >
                     Staff
@@ -591,7 +622,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                 </th>
                 <th class="border-0">
                   <a
-                    href="{{ url_for(stats_endpoint, period_id=base_period, jenjang=base_jenjang, order=avg_order, team_id=base_team, _anchor=anchor) }}"
+                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=avg_order, team_id=base_team, _anchor=anchor) }}"
                     class="text-decoration-none d-flex align-items-center gap-1"
                   >
                     Average
@@ -602,7 +633,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                 </th>
                 <th class="border-0">
                   <a
-                    href="{{ url_for(stats_endpoint, period_id=base_period, jenjang=base_jenjang, order=date_order, team_id=base_team, _anchor=anchor) }}"
+                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=date_order, team_id=base_team, _anchor=anchor) }}"
                     class="text-decoration-none d-flex align-items-center gap-1"
                   >
                     Tanggal
@@ -629,7 +660,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                   </div>
                 </td>
                 {% set staff_total = a['total_staff'] or 0 %} {% set avg_raw =
-                (school_avg_map.get(a['school_id'], 0) or 0) / 3 * 100 %}
+                school_avg_map.get(a['school_id'], 0) or 0 %}
                 <td class="fw-bold text-primary">{{ staff_total }}</td>
                 <td class="fw-bold text-primary">
                   {{ "%.1f"|format(avg_raw) }}
@@ -639,7 +670,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                   else '-' }}
                 </td>
                 <td class="text-end pe-3">
-                  <div class="d-flex justify-content-end gap-2">
+                  <div class="d-flex justify-content-end gap-3">
                     <a
                       href="{{ url_for('portal.view_assessment', assessment_id=a['id']) }}"
                       class="btn btn-sm btn-light rounded-circle"
@@ -790,12 +821,13 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                 <td>
                   <div class="fw-semibold">{{ row.staff_name or '-' }}</div>
                   <div class="small text-muted">
-                    {% if row.jabatan and row.last_kecamatan_name %}
-                    {{ row.jabatan }} • {{ row.last_kecamatan_name }}
+                    {% set lokasi_staff = row.placement_kecamatan_name or row.last_kecamatan_name %}
+                    {% if row.jabatan and lokasi_staff %}
+                    {{ row.jabatan }} • {{ lokasi_staff }}
                     {% elif row.jabatan %}
                     {{ row.jabatan }}
-                    {% elif row.last_kecamatan_name %}
-                    {{ row.last_kecamatan_name }}
+                    {% elif lokasi_staff %}
+                    {{ lokasi_staff }}
                     {% else %}
                     -
                     {% endif %}
@@ -806,9 +838,8 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                 </td>
                 <td>{{ row.last_school_name or '-' }}</td>
                 <td class="fw-bold text-primary">
-                  {% if row.last_total_score is not none %} {{
-                  "%.1f"|format((row.last_total_score or 0) / 3 * 100) }} {%
-                  else %} - {% endif %}
+                  {% if row.last_score_pct is not none %} {{
+                  "%.1f"|format(row.last_score_pct) }}% {% else %} - {% endif %}
                 </td>
                 <td class="small text-muted">
                   {{ row.last_submitted_at.strftime('%d %b %Y') if
@@ -855,6 +886,8 @@ set current_team_id = selected_team_id if selected_team_id is not none else
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
       const CURRENT_PERIOD_ID = "{{ current_period_id or '' }}";
+      const CURRENT_PERIOD_YEAR = "{{ selected_year or '' }}";
+      const CURRENT_PERIOD_MONTH = "{{ selected_month or '' }}";
       const CURRENT_TEAM_ID = "{{ current_team_id if current_team_id is not none else (team.id if team else '') }}";
       // Legend text is now static in the HTML, no dynamic update needed
 
@@ -868,9 +901,13 @@ set current_team_id = selected_team_id if selected_team_id is not none else
 
           // Fetch Data
           const periodId = CURRENT_PERIOD_ID;
+          const periodYear = CURRENT_PERIOD_YEAR;
+          const periodMonth = CURRENT_PERIOD_MONTH;
           const teamId = CURRENT_TEAM_ID;
           const mapParams = new URLSearchParams();
           if (periodId) mapParams.set('period_id', periodId);
+          if (periodYear) mapParams.set('year', periodYear);
+          if (periodMonth) mapParams.set('month', periodMonth);
           if (teamId) mapParams.set('team_id', teamId);
           fetch(`{{ url_for(map_data_endpoint) }}?${mapParams.toString()}`)
               .then(response => response.json())
@@ -890,8 +927,10 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                   const markerCounts = { excellent: 0, good: 0, poor: 0, critical: 0 };
 
                   data.forEach(school => {
-                      let rawScore = school.total_score ? parseFloat(school.total_score) : 0;
-                      let score = (rawScore / 3.0) * 100;
+                      let score = school.score_pct !== null && school.score_pct !== undefined
+                          ? parseFloat(school.score_pct)
+                          : 0;
+                      if (!Number.isFinite(score)) score = 0;
 
                       // Use centralized color config
                       const colorInfo = getScoreColor(score);
@@ -915,7 +954,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                       // Store marker level
                       marker._markerLevel = level;
 
-                      marker.bindTooltip(`${school.name} (${score.toFixed(0)})`, {
+                      marker.bindTooltip(`${school.name} (${score.toFixed(0)}%)`, {
                           permanent: false, direction: 'top', className: 'fw-bold'
                       });
 
@@ -926,7 +965,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                       marker.bindPopup(`
                           <strong class="d-block mb-1">${school.name}</strong>
                           <div class="small mb-1">${school.jenjang} - ${school.kecamatan || '-'}</div>
-                          <div class="fw-bold" style="color:${color}">Nilai: ${score.toFixed(0)}</div>
+                          <div class="fw-bold" style="color:${color}">Nilai: ${score.toFixed(0)}%</div>
                       `);
 
                       group.addLayer(marker);
@@ -1039,7 +1078,64 @@ set current_team_id = selected_team_id if selected_team_id is not none else
               });
           }
 
-      // --- Status Pie Chart ---
+      {% if is_admin %}
+      const negeriDetailBaseUrl = "{{ url_for('portal.admin_stats_negeri_frequency') }}";
+      const negeriFrequencyRows = {{ negeri_assessment_frequency|default([])|tojson }};
+      const negeriCanvas = document.getElementById('negeriFrequencyPieChart');
+      if (negeriCanvas) {
+          const labels = negeriFrequencyRows.map((row) => `Dinilai ${row.count_times}x`);
+          const values = negeriFrequencyRows.map((row) => Number(row.school_count || 0));
+          const counts = negeriFrequencyRows.map((row) => Number(row.count_times || 0));
+          const colors = ['#0d6efd', '#198754', '#fd7e14', '#6f42c1', '#20c997', '#dc3545', '#ffc107', '#6c757d'];
+
+          const negeriChart = new Chart(negeriCanvas.getContext('2d'), {
+              type: 'doughnut',
+              data: {
+                  labels,
+                  datasets: [{
+                      data: values,
+                      backgroundColor: labels.map((_, idx) => colors[idx % colors.length]),
+                      borderWidth: 0,
+                      hoverOffset: 5
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  cutout: '55%',
+                  plugins: {
+                      legend: { position: 'bottom', labels: { usePointStyle: true, padding: 14 } },
+                      tooltip: {
+                          callbacks: {
+                              label: function (ctx) {
+                                  const val = ctx.raw || 0;
+                                  const dataArr = ctx.dataset && Array.isArray(ctx.dataset.data) ? ctx.dataset.data : [];
+                                  const total = dataArr.reduce((acc, n) => acc + (Number(n) || 0), 0);
+                                  const pct = total > 0 ? Math.round((Number(val) / total) * 100) : 0;
+                                  return `${ctx.label}: ${val} sekolah (${pct}%)`;
+                              }
+                          }
+                      }
+                  }
+              }
+          });
+
+          negeriCanvas.addEventListener('dblclick', function (evt) {
+              const points = negeriChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+              if (!points || points.length === 0) return;
+              const idx = points[0].index;
+              const count = counts[idx];
+              const params = new URLSearchParams();
+              if (CURRENT_PERIOD_ID) params.set('period_id', CURRENT_PERIOD_ID);
+              if (CURRENT_PERIOD_YEAR) params.set('year', CURRENT_PERIOD_YEAR);
+              if (CURRENT_PERIOD_MONTH) params.set('month', CURRENT_PERIOD_MONTH);
+              if (CURRENT_TEAM_ID) params.set('team_id', CURRENT_TEAM_ID);
+              if (Number.isFinite(count)) params.set('count', String(count));
+              const targetUrl = `${negeriDetailBaseUrl}?${params.toString()}`;
+              window.open(targetUrl, '_blank', 'noopener');
+          });
+      }
+      {% else %}
       const pieEl = document.getElementById('statusPieChart');
       if (pieEl) {
           new Chart(pieEl.getContext('2d'), {
@@ -1061,6 +1157,7 @@ set current_team_id = selected_team_id if selected_team_id is not none else
               }
           });
       }
+      {% endif %}
   });
 
       // ========================================
@@ -1069,6 +1166,8 @@ set current_team_id = selected_team_id if selected_team_id is not none else
       let rankingOffset = { best: 10, worst: 10 };
       const rankingLimit = 10;
       const periodId = CURRENT_PERIOD_ID;
+      const periodYear = CURRENT_PERIOD_YEAR;
+      const periodMonth = CURRENT_PERIOD_MONTH;
       const teamId = CURRENT_TEAM_ID;
 
       function loadMoreRankings(type) {
@@ -1090,6 +1189,8 @@ set current_team_id = selected_team_id if selected_team_id is not none else
               offset,
           });
           if (periodId) params.set('period_id', periodId);
+          if (periodYear) params.set('year', periodYear);
+          if (periodMonth) params.set('month', periodMonth);
           if (teamId) params.set('team_id', teamId);
 
           fetch(`${rankingsEndpoint}?${params.toString()}`)
@@ -1099,8 +1200,9 @@ set current_team_id = selected_team_id if selected_team_id is not none else
                       const listGroup = document.querySelector(`#${containerId} .list-group`);
 
                       data.forEach((school, index) => {
-                          const score = school.total_score ? parseFloat(school.total_score) : 0;
-                          const pct = (score / 3 * 100).toFixed(1);
+                          const pct = school.score_pct !== null && school.score_pct !== undefined
+                              ? parseFloat(school.score_pct).toFixed(1)
+                              : '0.0';
                           const badgeClass = type === 'best' ? 'bg-primary' : 'bg-danger';
 
                           const itemHtml = `
@@ -1418,6 +1520,24 @@ set current_team_id = selected_team_id if selected_team_id is not none else
     align-items: center;
     justify-content: center;
     box-shadow: var(--shadow-soft);
+    background: rgba(17, 24, 39, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.58);
+    color: #fff;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .photo-nav-btn:hover,
+  .photo-nav-btn:focus-visible {
+    background: rgba(17, 24, 39, 0.75);
+    border-color: rgba(255, 255, 255, 0.82);
+    color: #fff;
+  }
+
+  .photo-nav-btn:active {
+    background: rgba(17, 24, 39, 0.88) !important;
+    border-color: rgba(255, 255, 255, 0.9) !important;
+    color: #fff !important;
   }
 
   .photo-nav-left {
@@ -1435,21 +1555,80 @@ set current_team_id = selected_team_id if selected_team_id is not none else
     padding-left: 0.35rem;
     padding-right: 0.35rem;
   }
+
+  .photo-modal-tools {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding-right: 2.5rem;
+  }
+
+  .photo-modal-tools .input-group {
+    width: 132px;
+    flex: 0 0 auto;
+  }
+
+  .photo-modal-tools .badge {
+    max-width: 100%;
+    white-space: nowrap;
+  }
+
+  .photo-nav-top {
+    display: inline-flex;
+  }
+
+  @media (max-width: 767.98px) {
+    #photoModal .modal-dialog {
+      margin: 0.4rem;
+      max-width: calc(100vw - 0.8rem);
+    }
+
+    .photo-modal-header {
+      --photo-modal-pad: 0.75rem;
+      padding-right: calc(var(--photo-modal-pad) + 2.2rem);
+    }
+
+    .photo-nav-top {
+      display: none !important;
+    }
+
+    .photo-viewport {
+      height: 62vh;
+      max-height: 62vh;
+    }
+
+    .photo-nav-btn {
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.62);
+      border-color: rgba(255, 255, 255, 0.84);
+    }
+
+    .photo-nav-left {
+      left: 8px;
+    }
+
+    .photo-nav-right {
+      right: 8px;
+    }
+  }
 </style>
 
 <div class="modal fade" id="photoModal" tabindex="-1">
   <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content">
       <div
-        class="modal-header photo-modal-header d-flex flex-column align-items-start row-gap: 20px"
+        class="modal-header photo-modal-header d-flex flex-column align-items-start gap-2"
       >
-        <div class="d-flex d-flex flex-column>">
+        <div class="d-flex flex-column">
           <h5 class="modal-title" id="photoModalTitle">Foto</h5>
         </div>
         <div>
           <span id="photoModalSubtitle" class="text-primary">Sekolah</span>
         </div>
-        <div class="d-flex align-items-center gap-2">
+        <div class="photo-modal-tools">
           <span class="badge bg-primary" id="photoModalScore">-</span>
           <span class="badge bg-secondary" id="photoModalMeta"></span>
           <div
@@ -1520,22 +1699,24 @@ set current_team_id = selected_team_id if selected_team_id is not none else
               <i class="bi bi-arrow-clockwise"></i>
             </button>
           </div>
-          <button
-            type="button"
-            class="btn btn-outline-secondary btn-sm"
-            id="photoPrevBtnTop"
-            title="Foto Sebelumnya"
-          >
-            <i class="bi bi-chevron-left"></i>
-          </button>
-          <button
-            type="button"
-            class="btn btn-outline-secondary btn-sm"
-            id="photoNextBtnTop"
-            title="Foto Selanjutnya"
-          >
-            <i class="bi bi-chevron-right"></i>
-          </button>
+          <div class="btn-group btn-group-sm photo-nav-top" role="group" aria-label="Navigasi foto">
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              id="photoPrevBtnTop"
+              title="Foto Sebelumnya"
+            >
+              <i class="bi bi-chevron-left"></i>
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              id="photoNextBtnTop"
+              title="Foto Selanjutnya"
+            >
+              <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
         </div>
         <button
           type="button"
@@ -1623,6 +1804,10 @@ set current_team_id = selected_team_id if selected_team_id is not none else
     var dragStartY = 0;
     var panStartX = 0;
     var panStartY = 0;
+    var activePointers = new Map();
+    var isPinching = false;
+    var pinchStartDistance = 0;
+    var pinchStartZoom = 1;
 
     modalImg.setAttribute("draggable", "false");
     modalImg.addEventListener("dragstart", function (e) {
@@ -1698,6 +1883,12 @@ set current_team_id = selected_team_id if selected_team_id is not none else
       baseHeight = 0;
       panX = 0;
       panY = 0;
+      isDragging = false;
+      isPinching = false;
+      pinchStartDistance = 0;
+      pinchStartZoom = zoomLevel;
+      activePointers.clear();
+      if (viewportEl) viewportEl.classList.remove("is-grabbing");
       applyTransform();
     }
 
@@ -1733,9 +1924,28 @@ set current_team_id = selected_team_id if selected_team_id is not none else
       return { x: e.clientX, y: e.clientY };
     }
 
+    function getPointerDistance(p1, p2) {
+      var dx = p1.x - p2.x;
+      var dy = p1.y - p2.y;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
     function startDrag(e) {
       if (!viewportEl) return;
       if (e.type === "mousedown" && e.button !== 0) return;
+      if (e.pointerId !== undefined) {
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      }
+      if (activePointers.size >= 2) {
+        var pinchPoints = Array.from(activePointers.values());
+        pinchStartDistance = getPointerDistance(pinchPoints[0], pinchPoints[1]) || 1;
+        pinchStartZoom = zoomLevel;
+        isPinching = true;
+        isDragging = false;
+        viewportEl.classList.remove("is-grabbing");
+        e.preventDefault();
+        return;
+      }
       var pos = getPointerPosition(e);
       isDragging = true;
       dragStartX = pos.x;
@@ -1750,6 +1960,22 @@ set current_team_id = selected_team_id if selected_team_id is not none else
     }
 
     function dragMove(e) {
+      if (e.pointerId !== undefined && activePointers.has(e.pointerId)) {
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      }
+      if (activePointers.size >= 2 || isPinching) {
+        var pinchPoints = Array.from(activePointers.values());
+        if (pinchPoints.length >= 2) {
+          var currentDistance = getPointerDistance(pinchPoints[0], pinchPoints[1]);
+          if (currentDistance > 0 && pinchStartDistance > 0) {
+            var pinchFactor = currentDistance / pinchStartDistance;
+            zoomLevel = clampZoom(pinchStartZoom * pinchFactor);
+            applyTransform();
+          }
+        }
+        e.preventDefault();
+        return;
+      }
       if (!isDragging) return;
       var pos = getPointerPosition(e);
       panX = panStartX + (pos.x - dragStartX);
@@ -1759,16 +1985,36 @@ set current_team_id = selected_team_id if selected_team_id is not none else
     }
 
     function endDrag(e) {
+      if (e && e.pointerId !== undefined) {
+        activePointers.delete(e.pointerId);
+      }
+      if (isPinching && activePointers.size < 2) {
+        isPinching = false;
+        pinchStartDistance = 0;
+        pinchStartZoom = zoomLevel;
+      }
       if (!isDragging) return;
-      isDragging = false;
-      if (viewportEl) viewportEl.classList.remove("is-grabbing");
+      if (activePointers.size === 0) {
+        isDragging = false;
+        if (viewportEl) viewportEl.classList.remove("is-grabbing");
+      } else {
+        var remaining = Array.from(activePointers.values())[0];
+        dragStartX = remaining.x;
+        dragStartY = remaining.y;
+        panStartX = panX;
+        panStartY = panY;
+      }
       if (
         viewportEl &&
         viewportEl.releasePointerCapture &&
         e &&
         e.pointerId !== undefined
       ) {
-        viewportEl.releasePointerCapture(e.pointerId);
+        try {
+          viewportEl.releasePointerCapture(e.pointerId);
+        } catch (_err) {
+          // Ignore release errors when pointer already ended.
+        }
       }
     }
 
@@ -1817,13 +2063,16 @@ set current_team_id = selected_team_id if selected_team_id is not none else
       modalScore.textContent = score;
       var metaText = "";
       if (date) {
-        var d = new Date(date);
-        metaText += d.toLocaleString("id-ID", {
-          day: "2-digit",
-          month: "short",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
+        var parsedDate = new Date(date);
+        if (!isNaN(parsedDate.getTime())) {
+          metaText += parsedDate.toLocaleString("id-ID", {
+            day: "2-digit",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "Asia/Jakarta",
+          });
+        }
       }
       if (lat && lon) {
         if (metaText) metaText += " • ";

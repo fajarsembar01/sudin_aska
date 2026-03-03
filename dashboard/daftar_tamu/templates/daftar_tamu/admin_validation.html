@@ -459,12 +459,84 @@
         var openTransactionId = {{ open_transaction_id if open_transaction_id else 'null' }};
         var currentTransactionId = null;
         var currentRow = null;
+        var currentDetailStatus = null;
+        var detailActionBusy = false;
+        var bulkActionSubmitting = false;
         var uploadBase = "{{ url_for('portal.uploaded_file', filename='__FILE__') }}";
 
         function buildPhotoUrl(path) {
             if (!path) return '';
             var rel = String(path).split('uploads/portal/').pop();
             return uploadBase.replace('__FILE__', rel);
+        }
+
+        function setButtonLoading(btn, isLoading, label) {
+            if (!btn) return;
+            if (isLoading) {
+                if (typeof btn.dataset.loadingDefaultHtml === 'undefined') {
+                    btn.dataset.loadingDefaultHtml = btn.innerHTML;
+                }
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>' + (label || 'Memproses...');
+                return;
+            }
+            if (typeof btn.dataset.loadingDefaultHtml !== 'undefined') {
+                btn.innerHTML = btn.dataset.loadingDefaultHtml;
+                delete btn.dataset.loadingDefaultHtml;
+            }
+        }
+
+        function setRowActionLoading(rowEl, triggerBtn, isLoading) {
+            if (!rowEl) return;
+            var actionButtons = Array.prototype.slice.call(rowEl.querySelectorAll('button[data-action]'));
+            actionButtons.forEach(function (btn) {
+                if (isLoading) {
+                    if (typeof btn.dataset.prevDisabled === 'undefined') {
+                        btn.dataset.prevDisabled = btn.disabled ? '1' : '0';
+                    }
+                    btn.disabled = true;
+                } else if (typeof btn.dataset.prevDisabled !== 'undefined') {
+                    btn.disabled = btn.dataset.prevDisabled === '1';
+                    delete btn.dataset.prevDisabled;
+                }
+                if (!isLoading || btn !== triggerBtn) {
+                    setButtonLoading(btn, false);
+                }
+            });
+            if (isLoading && triggerBtn) {
+                setButtonLoading(triggerBtn, true, 'Memproses...');
+            }
+            if (isLoading) {
+                rowEl.setAttribute('data-action-loading', '1');
+            } else {
+                rowEl.removeAttribute('data-action-loading');
+            }
+        }
+
+        function setDetailActionLoading(triggerBtn, isLoading) {
+            var detailButtons = [
+                document.getElementById('detailApproveBtn'),
+                document.getElementById('detailRejectBtn'),
+                document.getElementById('detailPendingBtn')
+            ].filter(Boolean);
+            detailButtons.forEach(function (btn) {
+                if (isLoading) {
+                    if (typeof btn.dataset.prevDisabled === 'undefined') {
+                        btn.dataset.prevDisabled = btn.disabled ? '1' : '0';
+                    }
+                    btn.disabled = true;
+                } else if (typeof btn.dataset.prevDisabled !== 'undefined') {
+                    btn.disabled = btn.dataset.prevDisabled === '1';
+                    delete btn.dataset.prevDisabled;
+                }
+                if (!isLoading || btn !== triggerBtn) {
+                    setButtonLoading(btn, false);
+                }
+            });
+            if (isLoading && triggerBtn) {
+                setButtonLoading(triggerBtn, true, 'Memproses...');
+                return;
+            }
+            configureDetailButtons(currentDetailStatus);
         }
 
         function showGuestPhotoFallback(show) {
@@ -550,10 +622,10 @@
                 if (action === 'reject') {
                     var note = window.prompt('Catatan penolakan (wajib):');
                     if (!note) return;
-                    submitQuickDecision(transactionId, action, rowEl, note);
+                    submitQuickDecision(transactionId, action, rowEl, note, btn);
                     return;
                 }
-                submitQuickDecision(transactionId, action, rowEl, '');
+                submitQuickDecision(transactionId, action, rowEl, '', btn);
             });
             container.appendChild(btn);
         }
@@ -561,6 +633,7 @@
         function loadTransactionDetail(transactionId, rowEl) {
             currentTransactionId = transactionId;
             currentRow = rowEl;
+            currentDetailStatus = null;
             showDetailLoading(true);
             configureDetailButtons(null);
             document.getElementById('detailAdminNote').value = '';
@@ -572,7 +645,7 @@
                     document.getElementById('detailSchoolName').textContent = trx.school_name || '-';
                     document.getElementById('detailSchoolMeta').textContent = [trx.npsn, trx.jenjang, trx.kecamatan, trx.kelurahan].filter(Boolean).join(' • ');
                     var visitAt = trx.visit_at ? new Date(trx.visit_at) : null;
-                    document.getElementById('detailVisitAt').textContent = visitAt ? visitAt.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '-';
+                    document.getElementById('detailVisitAt').textContent = visitAt ? visitAt.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }) : '-';
                     document.getElementById('detailCreatedBy').textContent = trx.created_by_name || '-';
                     var hasLat = typeof trx.latitude === 'number' || typeof trx.latitude === 'string';
                     var hasLon = typeof trx.longitude === 'number' || typeof trx.longitude === 'string';
@@ -649,7 +722,8 @@
 
                     var photoEl = document.getElementById('detailPhoto');
                     photoEl.src = buildPhotoUrl(trx.photo_path);
-                    configureDetailButtons(trx.status);
+                    currentDetailStatus = trx.status;
+                    configureDetailButtons(currentDetailStatus);
                     showDetailLoading(false);
                     detailModal.show();
                 })
@@ -712,13 +786,16 @@
             }
         }
 
-        function submitDecision(action) {
+        function submitDecision(action, triggerBtn) {
             if (!currentTransactionId) return;
+            if (detailActionBusy) return;
             var note = document.getElementById('detailAdminNote').value.trim();
             if (action === 'reject' && !note) {
                 alert('Catatan penolakan wajib diisi.');
                 return;
             }
+            detailActionBusy = true;
+            setDetailActionLoading(triggerBtn, true);
             var formData = new FormData();
             if (note) formData.append('reviewer_note', note);
             fetch('/daftar-tamu/admin/transactions/' + currentTransactionId + '/' + action, {
@@ -730,6 +807,7 @@
                     if (!data.success) throw new Error(data.message || 'Gagal memperbarui status');
                     detailModal.hide();
                     var nextStatus = action === 'approve' ? 'approved' : (action === 'reject' ? 'rejected' : 'pending');
+                    currentDetailStatus = nextStatus;
                     updateRowStatus(currentRow, nextStatus);
                     if (window.updateAdminPendingCounts) {
                         if (activeStatusFilter === 'pending' && nextStatus !== 'pending') {
@@ -742,6 +820,10 @@
                 })
                 .catch(function (err) {
                     alert(err.message || 'Gagal memperbarui status transaksi.');
+                })
+                .finally(function () {
+                    detailActionBusy = false;
+                    setDetailActionLoading(triggerBtn, false);
                 });
         }
 
@@ -753,7 +835,9 @@
             });
         });
 
-        function submitQuickDecision(transactionId, action, rowEl, note) {
+        function submitQuickDecision(transactionId, action, rowEl, note, triggerBtn) {
+            if (!rowEl || rowEl.getAttribute('data-action-loading') === '1') return;
+            setRowActionLoading(rowEl, triggerBtn, true);
             var formData = new FormData();
             if (note) formData.append('reviewer_note', note);
             fetch('/daftar-tamu/admin/transactions/' + transactionId + '/' + action, {
@@ -776,6 +860,9 @@
                 })
                 .catch(function (err) {
                     alert(err.message || 'Gagal memperbarui status transaksi.');
+                })
+                .finally(function () {
+                    setRowActionLoading(rowEl, null, false);
                 });
         }
 
@@ -784,7 +871,7 @@
                 var transactionId = btn.getAttribute('data-transaction-id');
                 var rowEl = btn.closest('tr');
                 if (!transactionId) return;
-                submitQuickDecision(transactionId, 'approve', rowEl, '');
+                submitQuickDecision(transactionId, 'approve', rowEl, '', btn);
             });
         });
 
@@ -795,7 +882,7 @@
                 if (!transactionId) return;
                 var note = window.prompt('Catatan penolakan (wajib):');
                 if (!note) return;
-                submitQuickDecision(transactionId, 'reject', rowEl, note);
+                submitQuickDecision(transactionId, 'reject', rowEl, note, btn);
             });
         });
 
@@ -804,20 +891,20 @@
                 var transactionId = btn.getAttribute('data-transaction-id');
                 var rowEl = btn.closest('tr');
                 if (!transactionId) return;
-                submitQuickDecision(transactionId, 'pending', rowEl, '');
+                submitQuickDecision(transactionId, 'pending', rowEl, '', btn);
             });
         });
 
         document.getElementById('detailApproveBtn').addEventListener('click', function () {
-            submitDecision('approve');
+            submitDecision('approve', this);
         });
 
         document.getElementById('detailRejectBtn').addEventListener('click', function () {
-            submitDecision('reject');
+            submitDecision('reject', this);
         });
 
         document.getElementById('detailPendingBtn').addEventListener('click', function () {
-            submitDecision('pending');
+            submitDecision('pending', this);
         });
 
         if (openTransactionId) {
@@ -832,12 +919,35 @@
             var pendingBtn = document.getElementById('bulkPendingAdmin');
             var form = document.getElementById('bulkValidationForm');
             var noteInput = form ? form.querySelector('input[name="reviewer_note"]') : null;
+            var bulkActionButtons = [approveBtn, rejectBtn, pendingBtn].filter(Boolean);
 
             function getChecks() {
                 return Array.prototype.slice.call(document.querySelectorAll('.admin-select'));
             }
 
+            function setBulkSubmitting(submitter, isSubmitting) {
+                bulkActionSubmitting = isSubmitting;
+                bulkActionButtons.forEach(function (btn) {
+                    if (isSubmitting) {
+                        if (typeof btn.dataset.prevDisabled === 'undefined') {
+                            btn.dataset.prevDisabled = btn.disabled ? '1' : '0';
+                        }
+                        btn.disabled = true;
+                    } else if (typeof btn.dataset.prevDisabled !== 'undefined') {
+                        btn.disabled = btn.dataset.prevDisabled === '1';
+                        delete btn.dataset.prevDisabled;
+                    }
+                    if (!isSubmitting || btn !== submitter) {
+                        setButtonLoading(btn, false);
+                    }
+                });
+                if (isSubmitting && submitter) {
+                    setButtonLoading(submitter, true, 'Memproses...');
+                }
+            }
+
             function updateBulkState() {
+                if (bulkActionSubmitting) return;
                 var checks = getChecks();
                 var hasSelected = checks.some(function (el) { return el.checked; });
                 if (approveBtn) approveBtn.disabled = !hasSelected;
@@ -873,12 +983,18 @@
                         return;
                     }
                     var submitter = event.submitter;
+                    if (bulkActionSubmitting) {
+                        event.preventDefault();
+                        return;
+                    }
                     if (submitter && submitter.id === 'bulkRejectAdmin') {
                         if (!noteInput || !noteInput.value.trim()) {
                             event.preventDefault();
                             alert('Catatan penolakan wajib diisi.');
+                            return;
                         }
                     }
+                    setBulkSubmitting(submitter || null, true);
                 });
             }
 

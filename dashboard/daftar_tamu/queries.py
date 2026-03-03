@@ -3,10 +3,27 @@
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from dashboard.db_access import get_cursor
+
+try:
+    from zoneinfo import ZoneInfo
+except (ImportError, ModuleNotFoundError):
+    ZoneInfo = None
+
+if ZoneInfo is not None:
+    try:
+        _JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
+    except Exception:
+        _JAKARTA_TZ = timezone(timedelta(hours=7), name="WIB")
+else:
+    _JAKARTA_TZ = timezone(timedelta(hours=7), name="WIB")
+
+
+def _today_jakarta() -> date:
+    return datetime.now(_JAKARTA_TZ).date()
 
 
 SORT_OPTIONS = {
@@ -49,11 +66,13 @@ GUESTBOOK_NOTIFICATION_CATEGORY = "daftar_tamu_status"
 PANBERS_REOPEN_NOTIFICATION_CATEGORY = "panbers_reopen_status"
 PANBERS_ASSIGNMENT_NOTIFICATION_CATEGORY = "panbers_assignment_status"
 PANBERS_TEAM_MEMBER_NOTIFICATION_CATEGORY = "panbers_team_member_status"
+PANBERS_FOLLOW_UP_NOTIFICATION_CATEGORY = "panbers_follow_up_status"
 USER_APP_NOTIFICATION_CATEGORIES = (
     GUESTBOOK_NOTIFICATION_CATEGORY,
     PANBERS_REOPEN_NOTIFICATION_CATEGORY,
     PANBERS_ASSIGNMENT_NOTIFICATION_CATEGORY,
     PANBERS_TEAM_MEMBER_NOTIFICATION_CATEGORY,
+    PANBERS_FOLLOW_UP_NOTIFICATION_CATEGORY,
 )
 _NOTIFICATION_SCHEMA_READY = False
 _HAS_DASHBOARD_USER_PROFILE_PHOTO_PATH: Optional[bool] = None
@@ -357,7 +376,7 @@ def fetch_dashboard_summary(
 ) -> Dict[str, Any]:
     """Fetch top-level summary stats for admin dashboard."""
     scope = _normalize_guest_scope(guest_scope)
-    cutoff = date.today() - timedelta(days=30)
+    cutoff = _today_jakarta() - timedelta(days=30)
     params: List[Any] = [
         date_from,
         date_from,
@@ -509,7 +528,7 @@ def fetch_school_rankings(
         cur.execute(data_query, base_params + search_params + [safe_per_page, offset])
         rows = [dict(row) for row in cur.fetchall()]
 
-    today = date.today()
+    today = _today_jakarta()
     for index, row in enumerate(rows, start=offset + 1):
         row["rank"] = index
         row["visit_count"] = int(row.get("visit_count") or 0)
@@ -601,6 +620,7 @@ def fetch_user_rankings(
         WHERE u.account_status = 'approved'
           AND (u.role IS NULL OR u.role <> 'sekolah')
         GROUP BY u.id, u.full_name, u.email, u.role
+        HAVING COUNT(ut.transaction_id) > 0
     )
     """
     )
@@ -651,7 +671,8 @@ def fetch_user_rankings(
         r.last_visit_date,
         latest.school_name AS last_school_name,
         latest.school_npsn,
-        latest.school_kecamatan
+        latest.school_kecamatan,
+        history.visit_history_text
     FROM user_rollup r
     LEFT JOIN LATERAL (
         SELECT
@@ -668,6 +689,32 @@ def fetch_user_rankings(
         ORDER BY ft.visit_at DESC, ft.id DESC
         LIMIT 1
     ) latest ON TRUE
+    LEFT JOIN LATERAL (
+        SELECT STRING_AGG(hist.label, E'\n' ORDER BY hist.visit_seq) AS visit_history_text
+        FROM (
+            SELECT
+                visit_seq,
+                CONCAT(
+                    'Kunjungan ke-',
+                    visit_seq,
+                    ': ',
+                    school_name,
+                    ' (',
+                    visit_date_label,
+                    ')'
+                ) AS label
+            FROM (
+                SELECT
+                    ROW_NUMBER() OVER (ORDER BY ft.visit_at ASC, ft.id ASC) AS visit_seq,
+                    s.name AS school_name,
+                    TO_CHAR(ft.visit_at, 'DD Mon YYYY') AS visit_date_label
+                FROM user_transactions ut
+                JOIN filtered_transactions ft ON ft.id = ut.transaction_id
+                JOIN portal_schools s ON s.id = ft.school_id
+                WHERE ut.user_id = r.user_id
+            ) numbered
+        ) hist
+    ) history ON TRUE
     """
         + search_clause
         + f"""
@@ -701,7 +748,7 @@ def fetch_user_rankings(
         cur.execute(data_query, params_common + [safe_per_page, offset])
         rows = [dict(row) for row in cur.fetchall()]
 
-    today = date.today()
+    today = _today_jakarta()
     for idx, row in enumerate(rows, start=offset + 1):
         row["rank"] = idx
         row["visit_count"] = int(row.get("visit_count") or 0)
@@ -911,12 +958,17 @@ def fetch_user_visit_history(
         ft.id AS transaction_id,
         ft.visit_at,
         ft.purpose,
+        ft.notes,
+        ft.metadata,
         ft.photo_path,
         s.name AS school_name,
-        s.npsn AS school_npsn
+        s.npsn AS school_npsn,
+        k.name AS school_kecamatan
     FROM user_transactions ut
     JOIN filtered_transactions ft ON ft.id = ut.transaction_id
     JOIN portal_schools s ON s.id = ft.school_id
+    LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+    LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
     WHERE ut.user_id = %s
     """
         + search_clause
@@ -948,6 +1000,9 @@ def fetch_user_visit_history(
 
         cur.execute(data_query, params_common + [safe_per_page, offset])
         rows = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        row.update(_summarize_staff_notes(row.get("metadata")))
 
     return rows, total_rows
 
@@ -1315,7 +1370,7 @@ def fetch_map_data(
         cur.execute(query, [date_from, date_from, date_to, date_to, scope, scope, scope])
         rows = [dict(row) for row in cur.fetchall()]
 
-    cutoff = date.today() - timedelta(days=30)
+    cutoff = _today_jakarta() - timedelta(days=30)
     payload: List[Dict[str, Any]] = []
     for row in rows:
         lat = row.get("latitude")
@@ -3018,7 +3073,7 @@ def upsert_transaction_staff_note(
             {
                 "note": safe_note,
                 "level": safe_level,
-                "updated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+                "updated_at": datetime.now(_JAKARTA_TZ).isoformat(timespec="seconds"),
             }
         )
         query = """
@@ -3152,6 +3207,91 @@ def list_purpose_keywords(*, active_only: bool = True, limit: int = 50) -> List[
             continue
         key = kw.lower()
         if key in seen:
+            continue
+        seen.add(key)
+        keywords.append(kw)
+    return keywords
+
+
+def list_popular_purposes(*, limit: int = 50, min_count: int = 1) -> List[str]:
+    safe_limit = max(1, min(int(limit or 50), 500))
+    safe_min_count = max(1, min(int(min_count or 1), 1000))
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH normalized_purposes AS (
+                SELECT
+                    regexp_replace(btrim(COALESCE(t.purpose, '')), '\s+', ' ', 'g') AS purpose_clean
+                FROM daftar_tamu_transactions t
+                WHERE COALESCE(btrim(t.purpose), '') <> ''
+            ),
+            ranked AS (
+                SELECT
+                    lower(purpose_clean) AS purpose_key,
+                    MIN(purpose_clean) AS purpose_label,
+                    COUNT(*) AS usage_count
+                FROM normalized_purposes
+                GROUP BY lower(purpose_clean)
+            )
+            SELECT purpose_label
+            FROM ranked
+            WHERE usage_count >= %s
+            ORDER BY usage_count DESC, lower(purpose_label) ASC
+            LIMIT %s
+            """,
+            [safe_min_count, safe_limit],
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+
+    purposes: List[str] = []
+    for row in rows:
+        value = (row.get("purpose_label") or "").strip()
+        if value:
+            purposes.append(value)
+    return purposes
+
+
+def list_purpose_keywords_by_usage(*, active_only: bool = True, limit: int = 50) -> List[str]:
+    safe_limit = max(1, min(int(limit or 50), 500))
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH keyword_source AS (
+                SELECT
+                    keyword,
+                    lower(regexp_replace(btrim(keyword), '\s+', ' ', 'g')) AS keyword_key
+                FROM daftar_tamu_purpose_keywords
+                WHERE (%s = FALSE OR active = TRUE)
+            ),
+            purpose_usage AS (
+                SELECT
+                    lower(regexp_replace(btrim(COALESCE(t.purpose, '')), '\s+', ' ', 'g')) AS purpose_key,
+                    COUNT(*)::int AS usage_count
+                FROM daftar_tamu_transactions t
+                WHERE COALESCE(btrim(t.purpose), '') <> ''
+                GROUP BY 1
+            )
+            SELECT
+                ks.keyword,
+                ks.keyword_key,
+                COALESCE(pu.usage_count, 0) AS usage_count
+            FROM keyword_source ks
+            LEFT JOIN purpose_usage pu ON pu.purpose_key = ks.keyword_key
+            ORDER BY COALESCE(pu.usage_count, 0) DESC, ks.keyword_key ASC
+            LIMIT %s
+            """,
+            [bool(active_only), safe_limit],
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+
+    keywords: List[str] = []
+    seen: set[str] = set()
+    for row in rows:
+        kw = (row.get("keyword") or "").strip()
+        key = (row.get("keyword_key") or "").strip() or kw.lower()
+        if not kw or key in seen:
             continue
         seen.add(key)
         keywords.append(kw)

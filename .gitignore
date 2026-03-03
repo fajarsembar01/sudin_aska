@@ -40,3 +40,9 @@ Laporan_Portal_PANBERSS.pdf
 uploads/
 
 .aska_vectorstore
+
+# Node/Playwright test artifacts
+node_modules/
+playwright-report/
+test-results/
+.pytest_cache/

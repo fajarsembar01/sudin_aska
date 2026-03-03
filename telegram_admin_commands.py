@@ -9,6 +9,7 @@ from telegram.ext import ContextTypes
 
 from db import save_chat
 from utils import current_jakarta_time, to_jakarta
+from dashboard.db_access import get_cursor
 from dashboard.queries import (
     fetch_dashboard_user_basic,
     fetch_pending_dashboard_users,
@@ -20,6 +21,8 @@ from dashboard.queries import (
 from dashboard.daftar_tamu.queries import get_transaction_detail, update_transaction_status
 from dashboard.telegram_notifications import (
     _build_guestbook_detail_url,
+    delete_guestbook_delivery_message,
+    list_guestbook_delivery_messages,
     notify_guestbook_status_update,
     notify_verification_status_update,
 )
@@ -420,6 +423,171 @@ def _build_guestbook_callback_message(
     if timestamp:
         lines.append(f"🕒 {timestamp.strftime('%d %b %Y, %H:%M')}")
     return "\n".join(lines)
+
+
+def _find_guestbook_same_day_approved_guest_names(transaction_id: int) -> list[str]:
+    if not transaction_id:
+        return []
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT DISTINCT
+                COALESCE(
+                    NULLIF(TRIM(u.full_name), ''),
+                    NULLIF(TRIM(u.email), ''),
+                    CONCAT('ID ', g0.user_id::TEXT)
+                ) AS guest_name
+            FROM daftar_tamu_transactions t0
+            JOIN daftar_tamu_transaction_guests g0 ON g0.transaction_id = t0.id
+            LEFT JOIN dashboard_users u ON u.id = g0.user_id
+            JOIN daftar_tamu_transactions t1 ON t1.school_id = t0.school_id
+            JOIN daftar_tamu_transaction_guests g1
+                ON g1.transaction_id = t1.id
+               AND g1.user_id = g0.user_id
+            WHERE t0.id = %s
+              AND (g0.guest_type = 'sudin' OR g0.guest_type IS NULL)
+              AND (g1.guest_type = 'sudin' OR g1.guest_type IS NULL)
+              AND t1.status = 'approved'
+              AND t1.id <> t0.id
+              AND DATE(t1.visit_at AT TIME ZONE 'Asia/Jakarta') = DATE(t0.visit_at AT TIME ZONE 'Asia/Jakarta')
+            ORDER BY guest_name ASC
+            """,
+            (transaction_id,),
+        )
+        rows = cur.fetchall() or []
+    names: list[str] = []
+    seen: set[str] = set()
+    for row in rows:
+        guest_name = str((row or {}).get("guest_name") or "").strip()
+        if not guest_name:
+            continue
+        key = guest_name.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        names.append(guest_name)
+    return names
+
+
+def _build_guestbook_duplicate_warning_text(*, school_name: Optional[str], guest_names: list[str]) -> str:
+    clean_names = [name.strip() for name in guest_names if str(name or "").strip()]
+    if len(clean_names) > 2:
+        guest_text = f"{clean_names[0]}, {clean_names[1]} (+{len(clean_names) - 2} lainnya)"
+    elif clean_names:
+        guest_text = ", ".join(clean_names)
+    else:
+        guest_text = "Tamu terpilih"
+    school_text = (school_name or "sekolah ini").strip() or "sekolah ini"
+    return f"{guest_text} sudah terverifikasi di {school_text} hari ini. Tetap setujui duplikat?"
+
+
+def _build_guestbook_decision_markup(
+    *,
+    transaction_id: int,
+    existing_markup: Optional[InlineKeyboardMarkup],
+) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = [
+        [
+            InlineKeyboardButton(text="✅ Setujui", callback_data=f"guestbook:approve:{transaction_id}"),
+            InlineKeyboardButton(text="❌ Tolak", callback_data=f"guestbook:reject:{transaction_id}"),
+        ]
+    ]
+    for item in _extract_guestbook_photo_links(existing_markup):
+        text = str((item or {}).get("text") or "").strip()
+        url = str((item or {}).get("url") or "").strip()
+        if not text or not url:
+            continue
+        rows.append([InlineKeyboardButton(text=text, url=url)])
+    return InlineKeyboardMarkup(rows)
+
+
+def _build_guestbook_duplicate_confirm_markup(
+    *,
+    transaction_id: int,
+    existing_markup: Optional[InlineKeyboardMarkup],
+) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = [
+        [
+            InlineKeyboardButton(text="✅ Tetap Setujui", callback_data=f"guestbook:approve_force:{transaction_id}"),
+            InlineKeyboardButton(text="↩️ Batal", callback_data=f"guestbook:approve_cancel:{transaction_id}"),
+        ]
+    ]
+    for item in _extract_guestbook_photo_links(existing_markup):
+        text = str((item or {}).get("text") or "").strip()
+        url = str((item or {}).get("url") or "").strip()
+        if not text or not url:
+            continue
+        rows.append([InlineKeyboardButton(text=text, url=url)])
+    return InlineKeyboardMarkup(rows)
+
+
+async def _sync_guestbook_resolution_to_other_chats(
+    *,
+    context: ContextTypes.DEFAULT_TYPE,
+    transaction_id: int,
+    source_chat_id: Optional[int],
+    summary_text: str,
+    reply_markup: Optional[InlineKeyboardMarkup],
+) -> set[int]:
+    logger = logging.getLogger("telegram.admin")
+    try:
+        rows = list_guestbook_delivery_messages(transaction_id=transaction_id)
+    except Exception:
+        logger.exception("Gagal membaca jejak notifikasi buku tamu Telegram.")
+        return set()
+
+    synced_chat_ids: set[int] = set()
+    source_chat = int(source_chat_id) if source_chat_id is not None else None
+    for row in rows:
+        try:
+            chat_id = int((row or {}).get("chat_id"))
+            message_id = int((row or {}).get("message_id"))
+        except (TypeError, ValueError):
+            continue
+
+        if source_chat is not None and chat_id == source_chat:
+            try:
+                delete_guestbook_delivery_message(transaction_id=transaction_id, chat_id=chat_id)
+            except Exception:
+                logger.exception("Gagal membersihkan jejak pesan sumber buku tamu.")
+            continue
+
+        sent_new = False
+        deleted_old = False
+        try:
+            sent = await context.bot.send_message(
+                chat_id=chat_id,
+                text=summary_text,
+                reply_markup=reply_markup,
+            )
+            sent_new = bool(sent)
+        except Exception:
+            logger.exception(
+                "Gagal mengirim sinkron status buku tamu ke chat_id=%s tx=%s.",
+                chat_id,
+                transaction_id,
+            )
+
+        try:
+            await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
+            deleted_old = True
+        except Exception:
+            logger.exception(
+                "Gagal menghapus notif pending lama buku tamu chat_id=%s tx=%s.",
+                chat_id,
+                transaction_id,
+            )
+
+        if sent_new:
+            synced_chat_ids.add(chat_id)
+
+        if sent_new or deleted_old:
+            try:
+                delete_guestbook_delivery_message(transaction_id=transaction_id, chat_id=chat_id)
+            except Exception:
+                logger.exception("Gagal membersihkan jejak notifikasi buku tamu Telegram.")
+
+    return synced_chat_ids
 
 
 def _authorize_admin(update: Update) -> Optional[dict]:
@@ -847,6 +1015,8 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
             transaction_id=tx_id,
             existing_markup=existing_markup,
         )
+        source_chat_id = getattr(query.message, "chat_id", None)
+        source_chat_id_int = int(source_chat_id) if source_chat_id is not None else None
         current_status = (detail.get("status") or "").strip().lower()
         if current_status in {"approved", "rejected"}:
             label = "✅ Disetujui" if current_status == "approved" else "❌ Ditolak"
@@ -866,14 +1036,55 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
                 reply_markup=followup_markup,
                 include_status_line=False,
             )
+            if source_chat_id_int is not None:
+                try:
+                    delete_guestbook_delivery_message(
+                        transaction_id=tx_id,
+                        chat_id=source_chat_id_int,
+                    )
+                except Exception:
+                    logger.exception("Gagal membersihkan jejak notifikasi buku tamu.")
             return
 
+        if action == "approve_cancel":
+            await query.answer("Persetujuan dibatalkan.", show_alert=False)
+            try:
+                await query.edit_message_reply_markup(
+                    reply_markup=_build_guestbook_decision_markup(
+                        transaction_id=tx_id,
+                        existing_markup=existing_markup,
+                    )
+                )
+            except Exception:
+                logger.exception("Gagal mengembalikan tombol persetujuan buku tamu.")
+            return
+
+        if action == "approve":
+            duplicate_guest_names = _find_guestbook_same_day_approved_guest_names(tx_id)
+            if duplicate_guest_names:
+                warning_text = _build_guestbook_duplicate_warning_text(
+                    school_name=detail.get("school_name"),
+                    guest_names=duplicate_guest_names,
+                )
+                await query.answer(warning_text, show_alert=True)
+                try:
+                    await query.edit_message_reply_markup(
+                        reply_markup=_build_guestbook_duplicate_confirm_markup(
+                            transaction_id=tx_id,
+                            existing_markup=existing_markup,
+                        )
+                    )
+                except Exception:
+                    logger.exception("Gagal menampilkan konfirmasi duplikat buku tamu.")
+                return
+
+        effective_action = "approve" if action in {"approve", "approve_force"} else action
         note = None
-        if action == "reject":
+        if effective_action == "reject":
             note = "Ditolak via Telegram."
 
         try:
-            if action == "approve":
+            if effective_action == "approve":
                 updated = update_transaction_status(
                     transaction_id=tx_id,
                     status="approved",
@@ -881,7 +1092,7 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
                     reviewer_notes=note,
                 )
                 status_label = "✅ Disetujui"
-            elif action == "reject":
+            elif effective_action == "reject":
                 updated = update_transaction_status(
                     transaction_id=tx_id,
                     status="rejected",
@@ -903,7 +1114,6 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
 
         actor_username = _normalize_username(getattr(query.from_user, "username", None))
         actor_name = admin.get("admin_name") or admin.get("admin_email")
-        source_chat_id = getattr(query.message, "chat_id", None)
         photo_links = _extract_guestbook_photo_links(existing_markup)
         guest_names: list[str] = []
         seen_guest_names: set[str] = set()
@@ -917,6 +1127,22 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
             seen_guest_names.add(guest_key)
             guest_names.append(guest_name)
         await query.answer(f"{status_label}!", show_alert=False)
+        final_text = _build_guestbook_callback_message(
+            transaction_id=tx_id,
+            detail=detail,
+            status_label=status_label,
+            actor_name=actor_name,
+        )
+        synced_chat_ids = await _sync_guestbook_resolution_to_other_chats(
+            context=context,
+            transaction_id=tx_id,
+            source_chat_id=source_chat_id_int,
+            summary_text=final_text,
+            reply_markup=followup_markup,
+        )
+        exclude_chat_ids: set[int] = set(synced_chat_ids)
+        if source_chat_id_int is not None:
+            exclude_chat_ids.add(source_chat_id_int)
         try:
             notify_guestbook_status_update(
                 transaction_id=tx_id,
@@ -926,16 +1152,10 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
                 actor_username=actor_username,
                 guest_names=guest_names,
                 photo_links=photo_links,
-                exclude_chat_ids={int(source_chat_id)} if source_chat_id is not None else None,
+                exclude_chat_ids=exclude_chat_ids if exclude_chat_ids else None,
             )
         except Exception:
             logger.exception("Gagal mengirim broadcast update buku tamu.")
-        final_text = _build_guestbook_callback_message(
-            transaction_id=tx_id,
-            detail=detail,
-            status_label=status_label,
-            actor_name=actor_name,
-        )
         await _finalize_callback(
             query,
             status_label,

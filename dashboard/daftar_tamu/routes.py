@@ -53,8 +53,10 @@ from utils import current_jakarta_time, to_jakarta
 
 from .media import stamp_guestbook_photo
 from .queries import (
+    DEFAULT_USER_SORT,
     DEFAULT_SORT,
     SORT_OPTIONS,
+    USER_SORT_OPTIONS,
     ensure_daftar_tamu_seed_data,
     fetch_dashboard_summary,
     fetch_guest_history,
@@ -78,7 +80,7 @@ from .queries import (
     list_user_transactions,
     list_user_visited_school_ids,
     list_purpose_keyword_rows,
-    list_purpose_keywords,
+    list_purpose_keywords_by_usage,
     list_contact_priority_rows,
     list_school_public_transactions,
     list_school_transactions,
@@ -180,6 +182,10 @@ def _to_int(value: Optional[str], default: int) -> int:
         return int(value or default)
     except (TypeError, ValueError):
         return default
+
+
+def _today_jakarta() -> date:
+    return current_jakarta_time().date()
 
 
 def _needs_profile_photo_completion(user: dict | None) -> bool:
@@ -361,6 +367,73 @@ def _parse_guest_payload(raw: Optional[str]) -> tuple[list[int], list[int]]:
         return output
 
     return _dedupe(sudin_ids), _dedupe(umum_ids)
+
+
+def _is_truthy(value: Optional[str]) -> bool:
+    normalized = (value or "").strip().lower()
+    return normalized in {"1", "true", "yes", "on"}
+
+
+def _find_sudin_same_day_approved_duplicates(
+    *,
+    school_id: int,
+    sudin_ids: list[int],
+    visit_at: datetime,
+) -> list[dict]:
+    """Find SUDIN guests already approved at the same school on the same Jakarta date."""
+    if not school_id or not sudin_ids:
+        return []
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                g.user_id AS guest_id,
+                COALESCE(
+                    NULLIF(TRIM(u.full_name), ''),
+                    NULLIF(TRIM(u.email), ''),
+                    CONCAT('ID ', g.user_id::TEXT)
+                ) AS guest_name,
+                COUNT(DISTINCT t.id)::INT AS approved_count
+            FROM daftar_tamu_transactions t
+            JOIN daftar_tamu_transaction_guests g ON g.transaction_id = t.id
+            LEFT JOIN dashboard_users u ON u.id = g.user_id
+            WHERE t.school_id = %s
+              AND t.status = 'approved'
+              AND (g.guest_type = 'sudin' OR g.guest_type IS NULL)
+              AND g.user_id = ANY(%s::INT[])
+              AND DATE(t.visit_at AT TIME ZONE 'Asia/Jakarta') = DATE(%s AT TIME ZONE 'Asia/Jakarta')
+            GROUP BY g.user_id, guest_name
+            HAVING COUNT(DISTINCT t.id) >= 1
+            ORDER BY approved_count DESC, guest_name ASC
+            """,
+            (school_id, sudin_ids, visit_at),
+        )
+        rows = cur.fetchall() or []
+    return [dict(row) for row in rows]
+
+
+def _build_sudin_duplicate_warning_message(*, school_name: Optional[str], duplicate_rows: list[dict]) -> str:
+    guest_names = [
+        str(row.get("guest_name") or "").strip()
+        for row in duplicate_rows
+        if str(row.get("guest_name") or "").strip()
+    ]
+    unique_names: list[str] = []
+    seen: set[str] = set()
+    for name in guest_names:
+        key = name.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_names.append(name)
+
+    guest_text = ", ".join(unique_names) if unique_names else "Tamu terpilih"
+    school_text = (school_name or "sekolah ini").strip() or "sekolah ini"
+    return (
+        f"{guest_text} sudah terverifikasi di {school_text} pada hari ini. "
+        "Yakin ingin menambahkan kunjungan lagi?"
+    )
 
 
 def _web_aska_base_url() -> str:
@@ -1116,7 +1189,7 @@ def admin_dashboard() -> Response:
         search_query=search_query,
         date_from_str=date_from_str,
         date_to_str=date_to_str,
-        today_str=date.today().isoformat(),
+        today_str=_today_jakarta().isoformat(),
         guest_scope=guest_scope,
     )
 
@@ -1137,7 +1210,7 @@ def admin_user_history(user_id: int) -> Response:
             date_from_str="",
             date_to_str="",
             guest_scope="all",
-            today_str=date.today().isoformat(),
+            today_str=_today_jakarta().isoformat(),
             assigned_schools=[],
             assigned_kecamatan=[],
             unvisited_schools=[],
@@ -1193,7 +1266,7 @@ def admin_user_history(user_id: int) -> Response:
         date_from_str=date_from.isoformat() if date_from else "",
         date_to_str=date_to.isoformat() if date_to else "",
         guest_scope=guest_scope,
-        today_str=date.today().isoformat(),
+        today_str=_today_jakarta().isoformat(),
         assigned_schools=assigned_schools,
         assigned_kecamatan=assigned_kecamatan,
         unvisited_schools=unvisited_schools,
@@ -1396,10 +1469,10 @@ def admin_user_visits_export(user_id: int) -> Response:
 
     file_format = (request.args.get("format") or "excel").strip().lower()
     if file_format in {"excel", "xlsx"}:
-        filename = f"riwayat_kunjungan_user_{user_id}_{date.today().isoformat()}.xlsx"
+        filename = f"riwayat_kunjungan_user_{user_id}_{_today_jakarta().isoformat()}.xlsx"
         return _build_xlsx_response(headers, data_rows, filename)
 
-    filename = f"riwayat_kunjungan_user_{user_id}_{date.today().isoformat()}.csv"
+    filename = f"riwayat_kunjungan_user_{user_id}_{_today_jakarta().isoformat()}.csv"
     return _build_csv_response(headers, data_rows, filename)
 
 
@@ -1468,20 +1541,11 @@ def admin_school_visits_export(school_id: int) -> Response:
 
     file_format = (request.args.get("format") or "excel").strip().lower()
     if file_format in {"excel", "xlsx"}:
-        filename = f"riwayat_kunjungan_sekolah_{school_id}_{date.today().isoformat()}.xlsx"
+        filename = f"riwayat_kunjungan_sekolah_{school_id}_{_today_jakarta().isoformat()}.xlsx"
         return _build_xlsx_response(headers, data_rows, filename)
 
-    filename = f"riwayat_kunjungan_sekolah_{school_id}_{date.today().isoformat()}.csv"
+    filename = f"riwayat_kunjungan_sekolah_{school_id}_{_today_jakarta().isoformat()}.csv"
     return _build_csv_response(headers, data_rows, filename)
-
-
-@daftar_tamu_bp.route("/settings/users", methods=["GET", "POST"])
-@role_required("admin")
-def manage_users() -> Response:
-    """Preview dashboard users from Daftar Tamu app (read-only)."""
-    from dashboard.user_management import handle_manage_users
-
-    return handle_manage_users(actor=current_user(), base_template="daftar_tamu/base_daftar_tamu.html", read_only=True)
 
 
 @daftar_tamu_bp.route("/admin/map-data")
@@ -1554,10 +1618,133 @@ def export_rankings() -> Response:
 
     file_format = (request.args.get("format") or "csv").strip().lower()
     if file_format in {"excel", "xlsx"}:
-        filename = f"ranking_daftar_tamu_{date.today().isoformat()}.xlsx"
+        filename = f"ranking_daftar_tamu_{_today_jakarta().isoformat()}.xlsx"
         return _build_xlsx_response(headers, data_rows, filename)
 
-    filename = f"ranking_daftar_tamu_{date.today().isoformat()}.csv"
+    filename = f"ranking_daftar_tamu_{_today_jakarta().isoformat()}.csv"
+    return _build_csv_response(headers, data_rows, filename)
+
+
+@daftar_tamu_bp.route("/admin/export/users")
+@role_required("admin")
+def export_user_rankings() -> Response:
+    """Export user rankings in CSV/Excel."""
+    ensure_daftar_tamu_seed_data()
+
+    user_search_query = (request.args.get("user_q") or request.args.get("q") or "").strip()
+    user_sort = (request.args.get("user_sort") or DEFAULT_USER_SORT).strip().lower()
+    if user_sort not in USER_SORT_OPTIONS:
+        user_sort = DEFAULT_USER_SORT
+
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+
+    per_page = 100
+    rows, total_rows = fetch_user_rankings(
+        page=1,
+        per_page=per_page,
+        sort_key=user_sort,
+        search_query=user_search_query,
+        date_from=None,
+        date_to=None,
+        guest_scope=guest_scope,
+    )
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if total_pages > 1:
+        for page in range(2, total_pages + 1):
+            page_rows, _ = fetch_user_rankings(
+                page=page,
+                per_page=per_page,
+                sort_key=user_sort,
+                search_query=user_search_query,
+                date_from=None,
+                date_to=None,
+                guest_scope=guest_scope,
+            )
+            rows.extend(page_rows)
+
+    headers = [
+        "Peringkat",
+        "Nama User",
+        "Email",
+        "Role",
+        "Kunjungan Ke",
+        "Tanggal Kunjungan",
+        "Nama Sekolah",
+        "NPSN",
+        "Kecamatan",
+        "Tujuan",
+        "Link Foto",
+        "Catatan Sekolah (opsional)",
+        "Catatan Staf/Koordinator (opsional)",
+    ]
+    data_rows: list[list[object]] = []
+    visit_page_size = 100
+    for row in rows:
+        user_id = int(row.get("user_id") or 0)
+        if user_id <= 0:
+            continue
+
+        visit_rows, visit_total_rows = fetch_user_visit_history(
+            user_id=user_id,
+            page=1,
+            per_page=visit_page_size,
+            sort_key="date_asc",
+            search_query="",
+            date_from=None,
+            date_to=None,
+            guest_scope=guest_scope,
+        )
+        visit_total_pages = max(1, math.ceil(visit_total_rows / visit_page_size)) if visit_total_rows else 1
+        if visit_total_pages > 1:
+            for visit_page in range(2, visit_total_pages + 1):
+                page_rows, _ = fetch_user_visit_history(
+                    user_id=user_id,
+                    page=visit_page,
+                    per_page=visit_page_size,
+                    sort_key="date_asc",
+                    search_query="",
+                    date_from=None,
+                    date_to=None,
+                    guest_scope=guest_scope,
+                )
+                visit_rows.extend(page_rows)
+
+        for visit_index, visit in enumerate(visit_rows, start=1):
+            photo_url = _build_photo_url(visit.get("photo_path"), external=True) or ""
+            data_rows.append(
+                [
+                    row.get("rank"),
+                    row.get("full_name"),
+                    row.get("email"),
+                    row.get("role"),
+                    visit_index,
+                    _format_date_dmy(visit.get("visit_at")),
+                    visit.get("school_name") or "",
+                    visit.get("school_npsn") or "",
+                    visit.get("school_kecamatan") or "",
+                    visit.get("purpose") or "",
+                    photo_url,
+                    visit.get("notes") or "",
+                    visit.get("staff_note_text") or "",
+                ]
+            )
+
+    file_format = (request.args.get("format") or "excel").strip().lower()
+    if file_format in {"excel", "xlsx"}:
+        excel_rows: list[list[object]] = []
+        for row in data_rows:
+            excel_row = list(row)
+            photo_url = str(excel_row[10] or "").strip()
+            if photo_url:
+                safe_url = photo_url.replace('"', '""')
+                excel_row[10] = f'=HYPERLINK("{safe_url}","Foto")'
+            else:
+                excel_row[10] = ""
+            excel_rows.append(excel_row)
+        filename = f"ranking_user_kunjungan_{_today_jakarta().isoformat()}.xlsx"
+        return _build_xlsx_response(headers, excel_rows, filename)
+
+    filename = f"ranking_user_kunjungan_{_today_jakarta().isoformat()}.csv"
     return _build_csv_response(headers, data_rows, filename)
 
 
@@ -1626,7 +1813,7 @@ def admin_validation() -> Response:
         total_pages=total_pages,
         date_from_str=date_from_str,
         date_to_str=date_to_str,
-        today_str=date.today().isoformat(),
+        today_str=_today_jakarta().isoformat(),
         open_transaction_id=open_transaction_id,
     )
 
@@ -2225,62 +2412,34 @@ def admin_contact_priority() -> Response:
     )
 
 
+def _admin_public_verification_locked_response() -> Response:
+    message = "Verifikasi transaksi tamu umum hanya bisa dilakukan oleh sekolah."
+    accept_header = (request.headers.get("Accept") or "").lower()
+    content_type = (request.content_type or "").lower()
+    wants_json = (
+        request.is_json
+        or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or "application/json" in accept_header
+        or "application/json" in content_type
+    )
+    if wants_json:
+        return jsonify({"success": False, "message": message}), 403
+    flash(message, "warning")
+    return redirect(url_for("daftar_tamu.admin_public_transactions"))
+
+
 @daftar_tamu_bp.route("/admin/umum-transactions/<int:transaction_id>/approve", methods=["POST"])
 @role_required("admin")
 def admin_public_transaction_approve(transaction_id: int) -> Response:
-    user = current_user()
-    note = (request.form.get("reviewer_note") or "").strip()
-    try:
-        ok = update_public_transaction_status(
-            transaction_id=transaction_id,
-            status="approved",
-            reviewer_id=user["id"],
-            reviewer_notes=note or None,
-        )
-    except ValueError:
-        ok = False
-    if not ok:
-        return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
-    try:
-        _notify_guestbook_status_change(
-            transaction_id=transaction_id,
-            status="approved",
-            actor=user,
-            is_public=True,
-        )
-    except Exception:
-        current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu umum.")
-    return redirect(url_for("daftar_tamu.admin_public_transactions"))
+    _ = transaction_id
+    return _admin_public_verification_locked_response()
 
 
 @daftar_tamu_bp.route("/admin/umum-transactions/<int:transaction_id>/reject", methods=["POST"])
 @role_required("admin")
 def admin_public_transaction_reject(transaction_id: int) -> Response:
-    user = current_user()
-    note = (request.form.get("reviewer_note") or "").strip()
-    if not note:
-        return jsonify({"success": False, "message": "Catatan penolakan wajib diisi."}), 400
-    try:
-        ok = update_public_transaction_status(
-            transaction_id=transaction_id,
-            status="rejected",
-            reviewer_id=user["id"],
-            reviewer_notes=note,
-        )
-    except ValueError:
-        ok = False
-    if not ok:
-        return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
-    try:
-        _notify_guestbook_status_change(
-            transaction_id=transaction_id,
-            status="rejected",
-            actor=user,
-            is_public=True,
-        )
-    except Exception:
-        current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu umum.")
-    return redirect(url_for("daftar_tamu.admin_public_transactions"))
+    _ = transaction_id
+    return _admin_public_verification_locked_response()
 
 
 @daftar_tamu_bp.route("/admin/umum/<int:guest_id>/verify", methods=["POST"])
@@ -2351,7 +2510,7 @@ def sekolah_guestbook() -> Response:
         school=school,
         user_school=school,
         area_contacts=_build_area_contacts(school),
-        purpose_keywords=list_purpose_keywords(active_only=True),
+        purpose_keywords=list_purpose_keywords_by_usage(active_only=True, limit=50),
         error_message=None,
     )
 
@@ -2477,10 +2636,10 @@ def sekolah_public_web_export() -> Response:
     file_format = (request.args.get("format") or "excel").strip().lower()
     school_npsn = (school.get("npsn") or "sekolah").strip()
     if file_format in {"excel", "xlsx"}:
-        filename = f"daftar_tamu_umum_terverifikasi_{school_npsn}_{date.today().isoformat()}.xlsx"
+        filename = f"daftar_tamu_umum_terverifikasi_{school_npsn}_{_today_jakarta().isoformat()}.xlsx"
         return _build_xlsx_response(headers, data_rows, filename)
 
-    filename = f"daftar_tamu_umum_terverifikasi_{school_npsn}_{date.today().isoformat()}.csv"
+    filename = f"daftar_tamu_umum_terverifikasi_{school_npsn}_{_today_jakarta().isoformat()}.csv"
     return _build_csv_response(headers, data_rows, filename)
 
 
@@ -2624,10 +2783,10 @@ def sekolah_riwayat_export() -> Response:
     file_format = (request.args.get("format") or "excel").strip().lower()
     school_npsn = (school.get("npsn") or "sekolah").strip()
     if file_format in {"excel", "xlsx"}:
-        filename = f"riwayat_tamu_kedinasan_{school_npsn}_{date.today().isoformat()}.xlsx"
+        filename = f"riwayat_tamu_kedinasan_{school_npsn}_{_today_jakarta().isoformat()}.xlsx"
         return _build_xlsx_response(headers, data_rows, filename)
 
-    filename = f"riwayat_tamu_kedinasan_{school_npsn}_{date.today().isoformat()}.csv"
+    filename = f"riwayat_tamu_kedinasan_{school_npsn}_{_today_jakarta().isoformat()}.csv"
     return _build_csv_response(headers, data_rows, filename)
 
 
@@ -2870,6 +3029,8 @@ def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dic
         icon = "bi-diagram-3-fill"
     elif category == "panbers_team_member_status":
         icon = "bi-people-fill"
+    elif category == "panbers_follow_up_status":
+        icon = "bi-tools"
 
     tone = "secondary"
     if status_key == "approved":
@@ -2877,6 +3038,10 @@ def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dic
     elif status_key == "rejected":
         tone = "danger"
     elif status_key == "pending":
+        tone = "warning"
+    elif status_key == "selesai":
+        tone = "success"
+    elif status_key in {"baru", "diproses", "diajukan"}:
         tone = "warning"
 
     created_at = row.get("created_at")
@@ -2889,6 +3054,8 @@ def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dic
         fallback_title = "Notifikasi penugasan PANBERSS"
     elif category == "panbers_team_member_status":
         fallback_title = "Notifikasi tim PANBERSS"
+    elif category == "panbers_follow_up_status":
+        fallback_title = "Notifikasi tindak lanjut PANBERSS"
 
     return {
         "id": notification_id,
@@ -3001,7 +3168,7 @@ def _build_user_guestbook_history_context(user: dict, source) -> dict:
         "date_from_str": params["date_from_str"],
         "date_to_str": params["date_to_str"],
         "guest_scope": params["guest_scope"],
-        "today_str": date.today().isoformat(),
+        "today_str": _today_jakarta().isoformat(),
         "user_profile": user,
         "history_feed_base_url": feed_base_url,
         "history_stream_url": stream_url,
@@ -3416,7 +3583,7 @@ def admin_guestbook_ux_metrics() -> Response:
         "daftar_tamu/admin_ux_metrics.html",
         days=days,
         summary=summary,
-        today_str=date.today().isoformat(),
+        today_str=_today_jakarta().isoformat(),
     )
 
 
@@ -4018,6 +4185,7 @@ def sekolah_create_transaction() -> Response:
 
     purpose = (request.form.get("purpose") or "").strip()
     notes = (request.form.get("notes") or "").strip()
+    duplicate_confirmed = _is_truthy(request.form.get("duplicate_confirmed"))
 
     latitude_raw = request.form.get("latitude")
     longitude_raw = request.form.get("longitude")
@@ -4039,6 +4207,33 @@ def sekolah_create_transaction() -> Response:
         return jsonify({"success": False, "message": "Foto wajib diunggah."}), 400
 
     visit_at = current_jakarta_time()
+    duplicate_rows = _find_sudin_same_day_approved_duplicates(
+        school_id=int(school["id"]),
+        sudin_ids=sudin_ids,
+        visit_at=visit_at,
+    )
+    duplicate_repeat_count = 0
+    if duplicate_rows:
+        try:
+            duplicate_repeat_count = max(
+                int(row.get("approved_count") or 0) + 1
+                for row in duplicate_rows
+            )
+        except Exception:
+            duplicate_repeat_count = 0
+    if duplicate_rows and not duplicate_confirmed:
+        warning_message = _build_sudin_duplicate_warning_message(
+            school_name=school.get("name"),
+            duplicate_rows=duplicate_rows,
+        )
+        return jsonify(
+            {
+                "success": False,
+                "requires_confirmation": True,
+                "message": warning_message,
+                "duplicate_guest_count": len(duplicate_rows),
+            }
+        ), 409
 
     try:
         stamp_result = stamp_guestbook_photo(
@@ -4128,6 +4323,7 @@ def sekolah_create_transaction() -> Response:
     if status_value == "pending" and transaction_id:
         try:
             from dashboard.telegram_notifications import notify_guestbook_request
+            import threading
 
             detail = get_transaction_detail(transaction_id)
             photo_links = _build_guestbook_photo_links(
@@ -4135,20 +4331,32 @@ def sekolah_create_transaction() -> Response:
                 detail=detail,
             )
             guest_names = _extract_guest_names_from_detail(detail)
+            
+            # Use current_app.app_context() inside the thread
+            app = current_app._get_current_object()
 
-            notify_guestbook_request(
-                transaction_id=transaction_id,
-                school_name=school.get("name") or "Sekolah",
-                npsn=None,
-                visit_at=visit_at,
-                guest_summary=None,
-                guest_names=guest_names,
-                purpose=purpose or None,
-                notes=notes or None,
-                photo_links=photo_links,
-                photo_file_path=(detail or {}).get("photo_path"),
-            )
+            def _send_notification():
+                with app.app_context():
+                    try:
+                        notify_guestbook_request(
+                            transaction_id=transaction_id,
+                            school_name=school.get("name") or "Sekolah",
+                            npsn=None,
+                            visit_at=visit_at,
+                            guest_summary=None,
+                            guest_names=guest_names,
+                            duplicate_repeat_count=duplicate_repeat_count or None,
+                            purpose=purpose or None,
+                            notes=notes or None,
+                            photo_links=photo_links,
+                            photo_file_path=(detail or {}).get("photo_path"),
+                        )
+                    except Exception:
+                        app.logger.exception("Gagal mengirim notifikasi buku tamu di background thread.")
+
+            threading.Thread(target=_send_notification, daemon=True).start()
+
         except Exception:
-            current_app.logger.exception("Gagal mengirim notifikasi buku tamu.")
+            current_app.logger.exception("Gagal menyiapkan notifikasi buku tamu.")
 
     return jsonify({"success": True, "transaction_id": transaction_id})

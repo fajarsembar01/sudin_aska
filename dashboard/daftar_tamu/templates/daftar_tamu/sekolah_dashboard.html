@@ -31,21 +31,21 @@
     }
 
     .guest-chip-btn-photo {
-        background: #d1e7dd;
-        color: #0f5132;
+        background: rgba(25, 135, 84, 0.14);
+        color: #198754;
     }
 
     .guest-chip-btn-photo:hover {
-        background: #badbcc;
+        background: rgba(25, 135, 84, 0.22);
     }
 
     .guest-chip-btn-remove {
-        background: #f8d7da;
-        color: #b02a37;
+        background: rgba(220, 53, 69, 0.14);
+        color: #dc3545;
     }
 
     .guest-chip-btn-remove:hover {
-        background: #f5c2c7;
+        background: rgba(220, 53, 69, 0.22);
     }
 
     .camera-box {
@@ -79,7 +79,7 @@
     }
 
     .guest-result:hover {
-        background: rgba(13, 110, 253, 0.06);
+        background: var(--bg-muted);
     }
 
     .guest-result-layout {
@@ -106,7 +106,7 @@
         border-radius: 50%;
         overflow: hidden;
         border: 1px solid var(--border-soft);
-        background: var(--bg-surface-alt, #f8f9fa);
+        background: var(--bg-subtle);
         color: var(--text-muted);
         flex: 0 0 38px;
         display: inline-flex;
@@ -134,7 +134,7 @@
 
     .guest-photo-modal .modal-body {
         padding: 0;
-        background: #f8f9fa;
+        background: var(--bg-subtle);
     }
 
     .guest-photo-view {
@@ -145,7 +145,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #f1f3f5;
+        background: var(--bg-muted);
     }
 
     .guest-photo-view img {
@@ -159,7 +159,7 @@
     .guest-photo-fallback {
         padding: 28px 20px;
         text-align: center;
-        color: #6c757d;
+        color: var(--text-muted);
     }
 
     .selected-guests-field {
@@ -170,6 +170,128 @@
 
     .selected-guests-field.is-invalid {
         border-color: #dc3545;
+    }
+
+    .purpose-chip-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .purpose-chip-btn {
+        border: 1px solid var(--border-soft);
+        border-radius: 999px;
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        font-size: 0.78rem;
+        line-height: 1.2;
+        padding: 5px 10px;
+        cursor: pointer;
+    }
+
+    .purpose-chip-btn:hover,
+    .purpose-chip-btn.is-active {
+        background: var(--bg-muted);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .suggestion-item {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        color: var(--text-primary);
+        text-align: left;
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+
+    .suggestion-item:hover,
+    .suggestion-item.is-active {
+        background: var(--bg-muted);
+    }
+
+    .suggestion-item .suggestion-meta {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    html[data-theme="dark"] .guest-chip-btn-photo {
+        background: rgba(25, 135, 84, 0.28);
+        color: #9be4b8;
+    }
+
+    html[data-theme="dark"] .guest-chip-btn-remove {
+        background: rgba(220, 53, 69, 0.3);
+        color: #ffb0b8;
+    }
+
+    @media (max-width: 767.98px) {
+        body {
+            /* Add bottom padding so the sticky footer doesn't cover content */
+            padding-bottom: 90px;
+        }
+
+        /* Edge-to-edge reverted to standard margins per user request */
+        /* Pill-shaped buttons and inputs for a softer touch */
+        .form-control,
+        .form-select,
+        .btn {
+            border-radius: 1rem !important;
+        }
+
+        .nav-pills .nav-link {
+            border-radius: 1rem !important;
+        }
+
+        /* Bottom sheet styling */
+        .guestbook-bottom-sheet {
+            align-items: flex-end;
+            min-height: 100%;
+            margin: 0;
+        }
+
+        .guestbook-bottom-sheet .modal-content {
+            border-bottom-left-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+            border-top-left-radius: 1.5rem !important;
+            border-top-right-radius: 1.5rem !important;
+            border: none;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3);
+            background-color: var(--bg-surface, #fff);
+        }
+
+        /* Sticky bottom action area */
+        .mobile-sticky-footer {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 1rem;
+            right: 1rem;
+            background-color: transparent;
+            padding: 0;
+            box-shadow: none;
+            z-index: 1030;
+            border-top: none;
+            pointer-events: none;
+        }
+
+        .mobile-sticky-footer .btn {
+            pointer-events: auto;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            font-weight: 600;
+            border-radius: 50rem !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            width: 100%;
+        }
+
+        .mobile-sticky-footer .btn {
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            font-weight: 600;
+        }
     }
 </style>
 {% endblock %}
@@ -219,7 +341,7 @@
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="guest-tab-umum" data-bs-toggle="pill"
                                 data-bs-target="#guestTabUmum" type="button" role="tab" aria-controls="guestTabUmum"
-                                aria-selected="false">Instansi Pemerintah Lainnya</button>
+                                aria-selected="false">Instansi Lain</button>
                         </li>
                     </ul>
                     <div class="tab-content mt-3">
@@ -235,7 +357,7 @@
                                 placeholder="Nama, instansi, telepon...">
                             <div id="generalSearchResults" class="border rounded-3 mt-2 d-none"
                                 style="max-height: 220px; overflow: auto;"></div>
-                            <div class="mt-3 border rounded-3 p-3 bg-light">
+                            <div class="mt-3 border rounded-3 p-3 bg-light d-none" id="addGeneralGuestContainer">
                                 <div class="fw-semibold mb-2">Tambah Tamu Instansi Lain</div>
                                 <div class="row g-2">
                                     <div class="col-12">
@@ -246,12 +368,14 @@
                                     <div class="col-12">
                                         <input type="text" id="generalInstansiInput" class="form-control"
                                             placeholder="Instansi *" required>
-                                        <div id="generalInstansiError" class="invalid-feedback">Instansi wajib diisi.</div>
+                                        <div id="generalInstansiError" class="invalid-feedback">Instansi wajib diisi.
+                                        </div>
                                     </div>
                                     <div class="col-12 col-md-6">
                                         <input type="text" id="generalJabatanInput" class="form-control"
                                             placeholder="Jabatan *" required>
-                                        <div id="generalJabatanError" class="invalid-feedback">Jabatan wajib diisi.</div>
+                                        <div id="generalJabatanError" class="invalid-feedback">Jabatan wajib diisi.
+                                        </div>
                                     </div>
                                     <div class="col-12 col-md-6">
                                         <input type="text" id="generalPhoneInput" class="form-control"
@@ -282,11 +406,15 @@
                     <label class="form-label fw-semibold">Tujuan Kunjungan</label>
                     <div class="position-relative">
                         <input type="text" id="purposeInput" class="form-control"
-                            placeholder="Contoh: Monitoring sarpras" list="purposeKeywordList">
-                        <div id="purposeSuggestions"
-                            class="position-absolute w-100 rounded-3 shadow-sm d-none"
-                            style="top: 100%; left: 0; z-index: 1050; max-height: 220px; overflow-y: auto; background-color: var(--bg-surface); border: 1px solid var(--border-soft);">
+                            placeholder="Contoh: Monitoring sarpras" list="purposeKeywordList"
+                            autocomplete="off" role="combobox" aria-autocomplete="list"
+                            aria-expanded="false" aria-controls="purposeSuggestions">
+                        <div id="purposeSuggestions" class="position-absolute w-100 rounded-3 shadow-sm d-none"
+                            role="listbox"
+                            style="top: calc(100% + 4px); left: 0; z-index: 1050; max-height: 220px; overflow-y: auto; background-color: var(--bg-surface); border: 1px solid var(--border-soft);">
                         </div>
+                    </div>
+                    <div id="purposeQuickChips" class="purpose-chip-list" aria-label="Saran cepat tujuan kunjungan">
                     </div>
                     <div id="purposeError" class="invalid-feedback">Tujuan kunjungan wajib diisi.</div>
                     <datalist id="purposeKeywordList">
@@ -294,13 +422,14 @@
                         <option value="{{ kw }}"></option>
                         {% endfor %}
                     </datalist>
-                    <div class="small text-muted mt-1">
-                        Jika tidak ada di saran, tulis saja sesuai kebutuhan (tidak harus sama persis).
+                    <div class="small text-muted mt-2">
+                        Saran hanya dari keyword admin, diurutkan berdasarkan frekuensi pemakaian.
                     </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Catatan Sekolah (opsional)</label>
-                    <textarea id="notesInput" class="form-control" rows="3" placeholder="Catatan tambahan dari sekolah"></textarea>
+                    <textarea id="notesInput" class="form-control" rows="3"
+                        placeholder="Catatan tambahan dari sekolah"></textarea>
                 </div>
             </div>
         </div>
@@ -315,12 +444,6 @@
                     <img id="photoResult" class="camera-preview d-none" alt="Foto hasil">
                 </div>
                 <div class="d-flex flex-wrap gap-2 mb-3">
-                    <button type="button" class="btn btn-outline-primary" id="startCameraBtn">
-                        <i class="bi bi-camera-video me-1"></i>Aktifkan Kamera
-                    </button>
-                    <button type="button" class="btn btn-primary" id="capturePhotoBtn" disabled>
-                        <i class="bi bi-camera me-1"></i>Ambil Foto
-                    </button>
                     <button type="button" class="btn btn-outline-secondary" id="retakePhotoBtn" disabled>
                         <i class="bi bi-arrow-counterclockwise me-1"></i>Ulangi
                     </button>
@@ -328,13 +451,16 @@
                 <div class="mb-3">
                     <span class="gps-pill" id="gpsStatus">GPS belum aktif</span>
                 </div>
-                <div class="d-grid">
-                    <button type="button" class="btn btn-success" id="submitTransactionBtn" disabled>
-                        <i class="bi bi-send-check me-1"></i>Simpan Tamu Kedinasan
-                    </button>
+                <div class="mobile-sticky-footer mt-4 mt-sm-0">
+                    <div class="d-grid">
+                        <button type="button" class="btn btn-success" id="submitTransactionBtn" disabled>
+                            <i class="bi bi-send-check me-1"></i>Simpan Tamu Kedinasan
+                        </button>
+                    </div>
                 </div>
                 <div class="small text-muted mt-2">
-                    Kunjungan tamu umum mandiri akan otomatis terkonfirmasi. Jika ada tamu sudin, status menunggu validasi.
+                    Kunjungan tamu umum mandiri akan otomatis terkonfirmasi. Jika ada tamu sudin, status menunggu
+                    validasi.
                 </div>
             </div>
         </div>
@@ -365,6 +491,46 @@
 </div>
 {% endif %}
 
+<!-- Guestbook Success Modal with SVG Mascot -->
+<div class="modal fade" id="guestbookSuccessModal" tabindex="-1" aria-labelledby="guestbookSuccessModalLabel"
+    aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog guestbook-bottom-sheet">
+        <div class="modal-content text-center">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body pt-0 px-4 pb-4">
+
+                <h4 class="fw-bold text-success mb-3" id="guestbookSuccessModalLabel">
+                    <i class="bi bi-check-circle-fill me-2"></i>Data Tamu Tersimpan
+                </h4>
+                <p class="text-muted mb-4">
+                    Kunjungan tamu kedinasan Sudin saat ini berstatus <strong>Menunggu Verifikasi</strong> oleh Admin
+                    Wilayah.
+                </p>
+
+                <img src="{{ url_for('portal.static', filename='img/robot_verifikasi.png') }}" alt="Robot Verifikasi"
+                    class="img-fluid mb-4" style="max-height: 140px;">
+
+                <div class="bg-light rounded-4 p-3 text-start">
+                    <div class="fw-semibold small text-uppercase text-muted mb-2">
+                        Opsional: Hubungi Admin Wilayah
+                    </div>
+                    <div id="guestbookSuccessContactList">
+                        <div class="text-center text-muted small py-2">
+                            <span class="spinner-border spinner-border-sm me-2"></span>Memuat kontak...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pt-0 pb-4">
+                <button type="button" class="btn btn-primary px-5 rounded-pill" data-bs-dismiss="modal">Tutup &
+                    Selesai</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block portal_scripts %}
@@ -373,6 +539,7 @@
         var selectedGuests = new Map();
         var guestResults = document.getElementById('guestSearchResults');
         var generalResults = document.getElementById('generalSearchResults');
+        var addGeneralGuestContainer = document.getElementById('addGeneralGuestContainer');
         var selectedContainer = document.getElementById('selectedGuests');
         var selectedEmpty = document.getElementById('selectedGuestsEmpty');
         var selectedField = document.getElementById('selectedGuestsField');
@@ -394,845 +561,1212 @@
         var purposeInput = document.getElementById('purposeInput');
         var purposeError = document.getElementById('purposeError');
         var purposeSuggestions = document.getElementById('purposeSuggestions');
-        var purposeKeywords = {{ purpose_keywords|default([]) | tojson }};
+        var purposeQuickChips = document.getElementById('purposeQuickChips');
+        var purposeKeywords = {{ purpose_keywords|default ([]) | tojson
+    }};
+        var purposeSuggestionItems = [];
+        var activePurposeSuggestionIndex = -1;
 
-        var cameraPreview = document.getElementById('cameraPreview');
-        var photoResult = document.getElementById('photoResult');
-        var photoCanvas = document.getElementById('photoCanvas');
-        var startCameraBtn = document.getElementById('startCameraBtn');
-        var capturePhotoBtn = document.getElementById('capturePhotoBtn');
-        var retakePhotoBtn = document.getElementById('retakePhotoBtn');
-        var submitBtn = document.getElementById('submitTransactionBtn');
-        var gpsStatus = document.getElementById('gpsStatus');
+    var cameraPreview = document.getElementById('cameraPreview');
+    var photoResult = document.getElementById('photoResult');
+    var photoCanvas = document.getElementById('photoCanvas');
+    var retakePhotoBtn = document.getElementById('retakePhotoBtn');
+    var submitBtn = document.getElementById('submitTransactionBtn');
+    var gpsStatus = document.getElementById('gpsStatus');
 
-        if (!cameraPreview || !submitBtn) {
+    if (!cameraPreview || !submitBtn) {
+        return;
+    }
+
+    var cameraStream = null;
+    var photoBlob = null;
+    var currentLatitude = null;
+    var currentLongitude = null;
+    var currentAccuracy = null;
+    var guestPhotoModal = null;
+    var hasSudinResultsVisible = false;
+    var hasGeneralResultsVisible = false;
+    var hasTriedSubmit = false;
+
+    function setSudinResultsVisible(visible) {
+        hasSudinResultsVisible = visible;
+        if (guestResults) guestResults.classList.toggle('d-none', !visible);
+    }
+
+    function setGeneralResultsVisible(visible) {
+        hasGeneralResultsVisible = visible;
+        if (generalResults) generalResults.classList.toggle('d-none', !visible);
+    }
+
+    function setInputInvalidState(inputEl, errorEl, isInvalid) {
+        if (inputEl) inputEl.classList.toggle('is-invalid', !!isInvalid);
+        if (errorEl) errorEl.classList.toggle('d-none', !isInvalid);
+    }
+
+    function ensureGuestPhotoModal() {
+        if (!guestPhotoModal && guestPhotoModalEl && window.bootstrap) {
+            guestPhotoModal = bootstrap.Modal.getOrCreateInstance(guestPhotoModalEl, {
+                backdrop: true,
+                keyboard: true
+            });
+        }
+        return guestPhotoModal;
+    }
+
+    function showGuestPhotoFallback(show) {
+        if (guestPhotoImageEl) guestPhotoImageEl.classList.toggle('d-none', !!show);
+        if (guestPhotoFallbackEl) guestPhotoFallbackEl.classList.toggle('d-none', !show);
+    }
+
+    function openGuestPhotoModal(guest) {
+        if (!guest || !guest.profile_photo_url || !guestPhotoModalEl) return;
+        var modal = ensureGuestPhotoModal();
+        if (!modal) return;
+
+        if (guestPhotoTitleEl) {
+            guestPhotoTitleEl.textContent = guest.name ? ('Foto Profil - ' + guest.name) : 'Foto Profil Tamu';
+        }
+
+        showGuestPhotoFallback(false);
+        if (guestPhotoImageEl) {
+            guestPhotoImageEl.src = guest.profile_photo_url;
+            guestPhotoImageEl.alt = guest.name ? ('Foto profil ' + guest.name) : 'Foto profil tamu';
+            guestPhotoImageEl.onerror = function () {
+                showGuestPhotoFallback(true);
+            };
+            guestPhotoImageEl.onload = function () {
+                showGuestPhotoFallback(false);
+            };
+        } else {
+            showGuestPhotoFallback(true);
+        }
+        modal.show();
+    }
+
+    if (guestPhotoModalEl) {
+        guestPhotoModalEl.addEventListener('hidden.bs.modal', function () {
+            if (guestPhotoImageEl) {
+                guestPhotoImageEl.src = '';
+            }
+            showGuestPhotoFallback(true);
+        });
+    }
+
+    function getValidationState() {
+        return {
+            hasGuests: selectedGuests.size > 0,
+            hasPhoto: !!photoBlob,
+            hasGps: typeof currentLatitude === 'number' && typeof currentLongitude === 'number',
+            hasPurpose: purposeInput ? purposeInput.value.trim().length > 0 : false,
+        };
+    }
+
+    function updateSubmitState() {
+        var state = getValidationState();
+        if (selectedField) selectedField.classList.toggle('is-invalid', hasTriedSubmit && !state.hasGuests);
+        if (selectedError) selectedError.classList.toggle('d-none', !(hasTriedSubmit && !state.hasGuests));
+        if (purposeInput) purposeInput.classList.toggle('is-invalid', hasTriedSubmit && !state.hasPurpose);
+
+        if (!cameraStream) {
+            submitBtn.innerHTML = '<i class="bi bi-camera-video me-1"></i>Aktifkan Kamera';
+            submitBtn.className = 'btn btn-primary';
+            submitBtn.disabled = false;
+        } else if (cameraStream && !state.hasPhoto) {
+            submitBtn.innerHTML = '<i class="bi bi-camera me-1"></i>Ambil Foto';
+            submitBtn.className = 'btn btn-primary';
+            submitBtn.disabled = false;
+        } else {
+            submitBtn.innerHTML = '<i class="bi bi-send-check me-1"></i>Simpan Tamu Kedinasan';
+            submitBtn.className = 'btn btn-success';
+            submitBtn.disabled = false;
+        }
+    }
+
+    function normalizeName(value) {
+        return String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    }
+
+    function hasNameConflict(name) {
+        var normalized = normalizeName(name);
+        if (!normalized) return false;
+        var found = false;
+        selectedGuests.forEach(function (guest) {
+            if (guest.normalized_name === normalized) {
+                found = true;
+            }
+        });
+        return found;
+    }
+
+    function addSelectedGuest(payload) {
+        if (!payload || !payload.id) return;
+        var key = payload.type + ':' + payload.id;
+        if (selectedGuests.has(key)) return;
+        if (payload.name && hasNameConflict(payload.name)) {
+            alert('Nama tamu sudah dipilih. Gunakan tamu yang lain.');
             return;
         }
+        var label = payload.label || payload.name || 'Tamu';
+        selectedGuests.set(key, {
+            id: payload.id,
+            type: payload.type,
+            name: payload.name || label,
+            label: label,
+            normalized_name: normalizeName(payload.name || label),
+            profile_photo_url: payload.profile_photo_url || '',
+        });
+        renderSelectedGuests();
+    }
 
-        var cameraStream = null;
-        var photoBlob = null;
-        var currentLatitude = null;
-        var currentLongitude = null;
-        var currentAccuracy = null;
-        var guestPhotoModal = null;
-        var hasSudinResultsVisible = false;
-        var hasGeneralResultsVisible = false;
-
-        function setSudinResultsVisible(visible) {
-            hasSudinResultsVisible = visible;
-            if (guestResults) guestResults.classList.toggle('d-none', !visible);
-        }
-
-        function setGeneralResultsVisible(visible) {
-            hasGeneralResultsVisible = visible;
-            if (generalResults) generalResults.classList.toggle('d-none', !visible);
-        }
-
-        function setInputInvalidState(inputEl, errorEl, isInvalid) {
-            if (inputEl) inputEl.classList.toggle('is-invalid', !!isInvalid);
-            if (errorEl) errorEl.classList.toggle('d-none', !isInvalid);
-        }
-
-        function ensureGuestPhotoModal() {
-            if (!guestPhotoModal && guestPhotoModalEl && window.bootstrap) {
-                guestPhotoModal = bootstrap.Modal.getOrCreateInstance(guestPhotoModalEl, {
-                    backdrop: true,
-                    keyboard: true
-                });
-            }
-            return guestPhotoModal;
-        }
-
-        function showGuestPhotoFallback(show) {
-            if (guestPhotoImageEl) guestPhotoImageEl.classList.toggle('d-none', !!show);
-            if (guestPhotoFallbackEl) guestPhotoFallbackEl.classList.toggle('d-none', !show);
-        }
-
-        function openGuestPhotoModal(guest) {
-            if (!guest || !guest.profile_photo_url || !guestPhotoModalEl) return;
-            var modal = ensureGuestPhotoModal();
-            if (!modal) return;
-
-            if (guestPhotoTitleEl) {
-                guestPhotoTitleEl.textContent = guest.name ? ('Foto Profil - ' + guest.name) : 'Foto Profil Tamu';
-            }
-
-            showGuestPhotoFallback(false);
-            if (guestPhotoImageEl) {
-                guestPhotoImageEl.src = guest.profile_photo_url;
-                guestPhotoImageEl.alt = guest.name ? ('Foto profil ' + guest.name) : 'Foto profil tamu';
-                guestPhotoImageEl.onerror = function () {
-                    showGuestPhotoFallback(true);
-                };
-                guestPhotoImageEl.onload = function () {
-                    showGuestPhotoFallback(false);
-                };
-            } else {
-                showGuestPhotoFallback(true);
-            }
-            modal.show();
-        }
-
-        if (guestPhotoModalEl) {
-            guestPhotoModalEl.addEventListener('hidden.bs.modal', function () {
-                if (guestPhotoImageEl) {
-                    guestPhotoImageEl.src = '';
-                }
-                showGuestPhotoFallback(true);
-            });
-        }
-
-        function updateSubmitState() {
-            var hasGuests = selectedGuests.size > 0;
-            var hasPhoto = !!photoBlob;
-            var hasGps = typeof currentLatitude === 'number' && typeof currentLongitude === 'number';
-            var hasPurpose = purposeInput ? purposeInput.value.trim().length > 0 : false;
-            if (selectedField) selectedField.classList.toggle('is-invalid', !hasGuests);
-            if (selectedError) selectedError.classList.toggle('d-none', hasGuests);
-            if (purposeInput) purposeInput.classList.toggle('is-invalid', !hasPurpose);
-            submitBtn.disabled = !(hasGuests && hasPhoto && hasGps && hasPurpose);
-        }
-
-        function normalizeName(value) {
-            return String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
-        }
-
-        function hasNameConflict(name) {
-            var normalized = normalizeName(name);
-            if (!normalized) return false;
-            var found = false;
-            selectedGuests.forEach(function (guest) {
-                if (guest.normalized_name === normalized) {
-                    found = true;
-                }
-            });
-            return found;
-        }
-
-        function addSelectedGuest(payload) {
-            if (!payload || !payload.id) return;
-            var key = payload.type + ':' + payload.id;
-            if (selectedGuests.has(key)) return;
-            if (payload.name && hasNameConflict(payload.name)) {
-                alert('Nama tamu sudah dipilih. Gunakan tamu yang lain.');
-                return;
-            }
-            var label = payload.label || payload.name || 'Tamu';
-            selectedGuests.set(key, {
-                id: payload.id,
-                type: payload.type,
-                name: payload.name || label,
-                label: label,
-                normalized_name: normalizeName(payload.name || label),
-                profile_photo_url: payload.profile_photo_url || '',
-            });
-            renderSelectedGuests();
-        }
-
-        function renderSelectedGuests() {
-            selectedContainer.innerHTML = '';
-            if (selectedGuests.size === 0) {
-                selectedEmpty.classList.remove('d-none');
-                updateSubmitState();
-                return;
-            }
-            selectedEmpty.classList.add('d-none');
-            selectedGuests.forEach(function (guest, id) {
-                var chip = document.createElement('div');
-                chip.className = 'guest-chip';
-                var labelSpan = document.createElement('span');
-                labelSpan.textContent = guest.label;
-                chip.appendChild(labelSpan);
-
-                var actions = document.createElement('span');
-                actions.className = 'guest-chip-actions';
-
-                if (guest.type === 'sudin' && guest.profile_photo_url) {
-                    var photoBtn = document.createElement('button');
-                    photoBtn.type = 'button';
-                    photoBtn.className = 'guest-chip-btn-photo';
-                    photoBtn.innerHTML = '<i class="bi bi-image"></i>';
-                    photoBtn.setAttribute('aria-label', 'Lihat foto profil tamu');
-                    photoBtn.title = 'Lihat foto profil';
-                    photoBtn.addEventListener('click', function () {
-                        openGuestPhotoModal(guest);
-                    });
-                    actions.appendChild(photoBtn);
-                }
-
-                var removeBtn = document.createElement('button');
-                removeBtn.type = 'button';
-                removeBtn.className = 'guest-chip-btn-remove';
-                removeBtn.innerHTML = '<i class="bi bi-x"></i><span class="ms-1">Hapus</span>';
-                removeBtn.setAttribute('aria-label', 'Hapus tamu');
-                removeBtn.title = 'Hapus tamu';
-                removeBtn.addEventListener('click', function () {
-                    selectedGuests.delete(id);
-                    renderSelectedGuests();
-                });
-                actions.appendChild(removeBtn);
-                chip.appendChild(actions);
-                selectedContainer.appendChild(chip);
-            });
+    function renderSelectedGuests() {
+        selectedContainer.innerHTML = '';
+        if (selectedGuests.size === 0) {
+            selectedEmpty.classList.remove('d-none');
             updateSubmitState();
+            return;
         }
+        selectedEmpty.classList.add('d-none');
+        selectedGuests.forEach(function (guest, id) {
+            var chip = document.createElement('div');
+            chip.className = 'guest-chip';
+            var labelSpan = document.createElement('span');
+            labelSpan.textContent = guest.label;
+            chip.appendChild(labelSpan);
 
-        if (purposeInput) {
-            purposeInput.addEventListener('input', function () {
-                updateSubmitState();
+            var actions = document.createElement('span');
+            actions.className = 'guest-chip-actions';
+
+            if (guest.type === 'sudin' && guest.profile_photo_url) {
+                var photoBtn = document.createElement('button');
+                photoBtn.type = 'button';
+                photoBtn.className = 'guest-chip-btn-photo';
+                photoBtn.innerHTML = '<i class="bi bi-image"></i>';
+                photoBtn.setAttribute('aria-label', 'Lihat foto profil tamu');
+                photoBtn.title = 'Lihat foto profil';
+                photoBtn.addEventListener('click', function () {
+                    openGuestPhotoModal(guest);
+                });
+                actions.appendChild(photoBtn);
+            }
+
+            var removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'guest-chip-btn-remove';
+            removeBtn.innerHTML = '<i class="bi bi-x"></i><span class="ms-1">Hapus</span>';
+            removeBtn.setAttribute('aria-label', 'Hapus tamu');
+            removeBtn.title = 'Hapus tamu';
+            removeBtn.addEventListener('click', function () {
+                selectedGuests.delete(id);
+                renderSelectedGuests();
+            });
+            actions.appendChild(removeBtn);
+            chip.appendChild(actions);
+            selectedContainer.appendChild(chip);
+        });
+        updateSubmitState();
+    }
+
+    function normalizePurposeValue(value) {
+        return String(value || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function normalizePurposeKey(value) {
+        return normalizePurposeValue(value).toLowerCase();
+    }
+
+    function sortPurposeByRelevance(list, queryLower) {
+        var items = (list || []).slice();
+        if (!queryLower) return items;
+        return items.sort(function (a, b) {
+            var aLower = String(a || '').toLowerCase();
+            var bLower = String(b || '').toLowerCase();
+            var aStarts = aLower.indexOf(queryLower) === 0 ? 0 : 1;
+            var bStarts = bLower.indexOf(queryLower) === 0 ? 0 : 1;
+            if (aStarts !== bStarts) return aStarts - bStarts;
+            var aIndex = aLower.indexOf(queryLower);
+            var bIndex = bLower.indexOf(queryLower);
+            if (aIndex !== bIndex) return aIndex - bIndex;
+            return aLower.localeCompare(bLower);
+        });
+    }
+
+    function buildPurposeSuggestionItems(query) {
+        var cleanQuery = normalizePurposeValue(query);
+        var queryLower = cleanQuery.toLowerCase();
+        var keywordList = Array.isArray(purposeKeywords) ? purposeKeywords.slice() : [];
+        var out = [];
+        var seen = {};
+
+        function pushItem(value, source, meta) {
+            var clean = normalizePurposeValue(value);
+            if (!clean) return;
+            var key = normalizePurposeKey(clean);
+            if (seen[key]) return;
+            seen[key] = true;
+            out.push({
+                value: clean,
+                source: source || 'keyword',
+                meta: meta || ''
             });
         }
 
-        function shouldUsePurposeSuggestions() {
-            var ua = navigator.userAgent || '';
-            var isAndroid = /Android/i.test(ua);
-            var isFirefox = /Firefox/i.test(ua) || /Fennec/i.test(ua);
-            var hasDatalist = 'list' in document.createElement('input');
-            return !hasDatalist || (isAndroid && isFirefox);
+        sortPurposeByRelevance(
+            keywordList.filter(function (item) {
+                return !queryLower || String(item || '').toLowerCase().indexOf(queryLower) !== -1;
+            }),
+            queryLower
+        ).slice(0, 8).forEach(function (item) {
+            pushItem(item, 'keyword', 'Keyword admin • paling sering dipilih');
+        });
+
+        if (cleanQuery) {
+            pushItem(cleanQuery, 'typed', 'Gunakan teks yang diketik');
         }
 
-        function renderPurposeSuggestions(items) {
-            if (!purposeSuggestions) return;
-            if (!items || !items.length) {
-                purposeSuggestions.classList.add('d-none');
-                purposeSuggestions.innerHTML = '';
+        return out.slice(0, 8);
+    }
+
+    function syncPurposeChipActiveState() {
+        if (!purposeQuickChips || !purposeInput) return;
+        var currentKey = normalizePurposeKey(purposeInput.value);
+        var chipButtons = purposeQuickChips.querySelectorAll('button[data-value]');
+        for (var i = 0; i < chipButtons.length; i += 1) {
+            var btn = chipButtons[i];
+            var isActive = normalizePurposeKey(btn.getAttribute('data-value')) === currentKey;
+            btn.classList.toggle('is-active', isActive);
+        }
+    }
+
+    function buildPurposeQuickChipValues() {
+        var values = [];
+        var seen = {};
+        var keywordSource = Array.isArray(purposeKeywords) ? purposeKeywords : [];
+
+        keywordSource.slice(0, 8).forEach(function (item) {
+            if (values.length >= 6) return;
+            var clean = normalizePurposeValue(item);
+            if (!clean) return;
+            var key = normalizePurposeKey(clean);
+            if (seen[key]) return;
+            seen[key] = true;
+            values.push(clean);
+        });
+        return values.slice(0, 6);
+    }
+
+    function renderPurposeQuickChips() {
+        if (!purposeQuickChips) return;
+        var values = buildPurposeQuickChipValues();
+        purposeQuickChips.innerHTML = '';
+        if (!values.length) {
+            purposeQuickChips.classList.add('d-none');
+            return;
+        }
+        purposeQuickChips.classList.remove('d-none');
+        values.forEach(function (item) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'purpose-chip-btn';
+            btn.setAttribute('data-value', item);
+            btn.textContent = item;
+            btn.addEventListener('click', function () {
+                if (!purposeInput) return;
+                purposeInput.value = item;
+                hidePurposeSuggestions();
+                updateSubmitState();
+                syncPurposeChipActiveState();
+                purposeInput.focus();
+            });
+            purposeQuickChips.appendChild(btn);
+        });
+        syncPurposeChipActiveState();
+    }
+
+    function hidePurposeSuggestions() {
+        if (!purposeSuggestions) return;
+        purposeSuggestions.classList.add('d-none');
+        purposeSuggestions.innerHTML = '';
+        purposeSuggestionItems = [];
+        activePurposeSuggestionIndex = -1;
+        if (purposeInput) {
+            purposeInput.setAttribute('aria-expanded', 'false');
+            purposeInput.removeAttribute('aria-activedescendant');
+        }
+    }
+
+    function setActivePurposeSuggestion(index) {
+        if (!purposeSuggestions || !purposeSuggestionItems.length) return;
+        if (index < 0 || index >= purposeSuggestionItems.length) return;
+        for (var i = 0; i < purposeSuggestionItems.length; i += 1) {
+            var row = purposeSuggestionItems[i];
+            row.classList.toggle('is-active', i === index);
+            row.setAttribute('aria-selected', i === index ? 'true' : 'false');
+        }
+        activePurposeSuggestionIndex = index;
+        var activeRow = purposeSuggestionItems[index];
+        if (activeRow && purposeInput) {
+            purposeInput.setAttribute('aria-activedescendant', activeRow.id);
+            if (typeof activeRow.scrollIntoView === 'function') {
+                activeRow.scrollIntoView({ block: 'nearest' });
+            }
+        }
+    }
+
+    function selectPurposeSuggestion(index) {
+        if (!purposeInput || !purposeSuggestionItems.length) return;
+        if (index < 0 || index >= purposeSuggestionItems.length) return;
+        var row = purposeSuggestionItems[index];
+        var value = row.getAttribute('data-value') || '';
+        purposeInput.value = value;
+        updateSubmitState();
+        syncPurposeChipActiveState();
+        hidePurposeSuggestions();
+        purposeInput.focus();
+    }
+
+    function renderPurposeSuggestions(items) {
+        if (!purposeSuggestions) return;
+        purposeSuggestions.innerHTML = '';
+        purposeSuggestionItems = [];
+        activePurposeSuggestionIndex = -1;
+        if (!items || !items.length) {
+            hidePurposeSuggestions();
+            return;
+        }
+        items.forEach(function (item, index) {
+            var row = document.createElement('button');
+            row.type = 'button';
+            row.className = 'suggestion-item';
+            row.id = 'purposeSuggestionItem' + index;
+            row.setAttribute('role', 'option');
+            row.setAttribute('data-value', item.value);
+            row.setAttribute('aria-selected', 'false');
+            row.addEventListener('mousedown', function (event) {
+                event.preventDefault();
+            });
+            row.addEventListener('click', function () {
+                selectPurposeSuggestion(index);
+            });
+
+            var titleEl = document.createElement('div');
+            titleEl.className = 'fw-semibold';
+            titleEl.textContent = item.value;
+            row.appendChild(titleEl);
+
+            if (item.meta) {
+                var metaEl = document.createElement('div');
+                metaEl.className = 'suggestion-meta';
+                metaEl.textContent = item.meta;
+                row.appendChild(metaEl);
+            }
+
+            purposeSuggestions.appendChild(row);
+            purposeSuggestionItems.push(row);
+        });
+        purposeSuggestions.classList.remove('d-none');
+        if (purposeInput) {
+            purposeInput.setAttribute('aria-expanded', 'true');
+        }
+    }
+
+    function refreshPurposeSuggestions() {
+        if (!purposeInput || !purposeSuggestions) return;
+        renderPurposeSuggestions(buildPurposeSuggestionItems(purposeInput.value));
+    }
+
+    function isPurposeSuggestionOpen() {
+        return !!(purposeSuggestions && !purposeSuggestions.classList.contains('d-none'));
+    }
+
+    if (purposeInput) {
+        purposeInput.addEventListener('input', function () {
+            updateSubmitState();
+            syncPurposeChipActiveState();
+            refreshPurposeSuggestions();
+        });
+    }
+
+    if (purposeInput && purposeSuggestions) {
+        purposeInput.addEventListener('focus', function () {
+            refreshPurposeSuggestions();
+        });
+        purposeInput.addEventListener('blur', function () {
+            setTimeout(function () {
+                if (!purposeSuggestions) return;
+                var activeEl = document.activeElement;
+                if (activeEl && purposeSuggestions.contains(activeEl)) return;
+                hidePurposeSuggestions();
+            }, 120);
+        });
+        purposeInput.addEventListener('keydown', function (event) {
+            var key = event.key || '';
+            if (key === 'ArrowDown' || key === 'Down') {
+                event.preventDefault();
+                if (!isPurposeSuggestionOpen()) {
+                    refreshPurposeSuggestions();
+                }
+                if (purposeSuggestionItems.length) {
+                    var nextIndex = activePurposeSuggestionIndex + 1;
+                    if (nextIndex >= purposeSuggestionItems.length) nextIndex = 0;
+                    setActivePurposeSuggestion(nextIndex);
+                }
                 return;
             }
-            purposeSuggestions.innerHTML = '';
-            items.forEach(function (item) {
-                var el = document.createElement('div');
-                el.className = 'px-3 py-2 suggestion-item';
-                el.setAttribute('role', 'button');
-                el.dataset.value = item;
-                el.textContent = item;
-                el.addEventListener('click', function () {
-                    var value = el.dataset.value || '';
-                    if (purposeInput) {
-                        purposeInput.value = value;
-                        updateSubmitState();
-                        purposeInput.focus();
-                    }
-                    purposeSuggestions.classList.add('d-none');
-                });
-                purposeSuggestions.appendChild(el);
-            });
-            purposeSuggestions.classList.remove('d-none');
-        }
-
-        function filterPurposeKeywords(query) {
-            var keywordList = Array.isArray(purposeKeywords) ? purposeKeywords : [];
-            var q = String(query || '').toLowerCase().trim();
-            if (!q) return keywordList.slice(0, 8);
-            return keywordList.filter(function (item) {
-                return String(item || '').toLowerCase().indexOf(q) !== -1;
-            }).slice(0, 8);
-        }
-
-        if (purposeInput && purposeSuggestions && shouldUsePurposeSuggestions()) {
-            purposeInput.setAttribute('autocomplete', 'off');
-            purposeInput.addEventListener('focus', function () {
-                renderPurposeSuggestions(filterPurposeKeywords(purposeInput.value));
-            });
-            purposeInput.addEventListener('input', function () {
-                renderPurposeSuggestions(filterPurposeKeywords(purposeInput.value));
-            });
-            document.addEventListener('click', function (event) {
-                if (!purposeSuggestions || !purposeInput) return;
-                if (event.target === purposeInput || purposeSuggestions.contains(event.target)) return;
-                purposeSuggestions.classList.add('d-none');
-            });
-        }
-
-        function buildGuestResultAvatar(item) {
-            var avatar = document.createElement('span');
-            avatar.className = 'guest-result-avatar';
-
-            function setFallbackIcon() {
-                avatar.innerHTML = '';
-                var icon = document.createElement('i');
-                icon.className = 'bi bi-person-circle';
-                icon.setAttribute('aria-hidden', 'true');
-                avatar.appendChild(icon);
+            if (key === 'ArrowUp' || key === 'Up') {
+                event.preventDefault();
+                if (!isPurposeSuggestionOpen()) {
+                    refreshPurposeSuggestions();
+                }
+                if (purposeSuggestionItems.length) {
+                    var prevIndex = activePurposeSuggestionIndex - 1;
+                    if (prevIndex < 0) prevIndex = purposeSuggestionItems.length - 1;
+                    setActivePurposeSuggestion(prevIndex);
+                }
+                return;
             }
-
-            var photoUrl = (item && item.profile_photo_url) ? String(item.profile_photo_url).trim() : '';
-            if (!photoUrl) {
-                setFallbackIcon();
-                return avatar;
+            if (key === 'Enter' && isPurposeSuggestionOpen() && activePurposeSuggestionIndex >= 0) {
+                event.preventDefault();
+                selectPurposeSuggestion(activePurposeSuggestionIndex);
+                return;
             }
+            if (key === 'Escape' || key === 'Esc') {
+                hidePurposeSuggestions();
+            }
+        });
+    }
+    renderPurposeQuickChips();
 
-            var img = document.createElement('img');
-            var fullName = item.full_name || item.email || 'Tamu';
-            img.src = photoUrl;
-            img.alt = 'Foto ' + fullName;
-            img.loading = 'lazy';
-            img.decoding = 'async';
-            img.addEventListener('error', setFallbackIcon);
-            avatar.appendChild(img);
+    function buildGuestResultAvatar(item) {
+        var avatar = document.createElement('span');
+        avatar.className = 'guest-result-avatar';
+
+        function setFallbackIcon() {
+            avatar.innerHTML = '';
+            var icon = document.createElement('i');
+            icon.className = 'bi bi-person-circle';
+            icon.setAttribute('aria-hidden', 'true');
+            avatar.appendChild(icon);
+        }
+
+        var photoUrl = (item && item.profile_photo_url) ? String(item.profile_photo_url).trim() : '';
+        if (!photoUrl) {
+            setFallbackIcon();
             return avatar;
         }
 
-        function renderGuestResults(items) {
-            guestResults.innerHTML = '';
-            if (!items || items.length === 0) {
-                guestResults.innerHTML = '<div class="text-muted small px-2 py-2">Tidak ada hasil.</div>';
-                setSudinResultsVisible(true);
-                return;
-            }
-            items.forEach(function (item) {
-                var row = document.createElement('div');
-                row.className = 'guest-result';
+        var img = document.createElement('img');
+        var fullName = item.full_name || item.email || 'Tamu';
+        img.src = photoUrl;
+        img.alt = 'Foto ' + fullName;
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        img.addEventListener('error', setFallbackIcon);
+        avatar.appendChild(img);
+        return avatar;
+    }
 
-                var layout = document.createElement('div');
-                layout.className = 'guest-result-layout';
-
-                var textCol = document.createElement('div');
-                textCol.className = 'guest-result-text';
-
-                var titleRow = document.createElement('div');
-                titleRow.className = 'fw-semibold';
-                titleRow.appendChild(document.createTextNode(item.full_name || item.email || ''));
-
-                var meta = [];
-                if (item.jabatan) meta.push(item.jabatan);
-                if (item.nrk) meta.push('NRK ' + item.nrk);
-
-                if (item.account_status === 'not_registered') {
-                    var statusBadge = document.createElement('span');
-                    statusBadge.className = 'badge text-bg-secondary ms-2';
-                    statusBadge.textContent = 'Not Register';
-                    titleRow.appendChild(statusBadge);
-                }
-
-                var metaRow = document.createElement('div');
-                metaRow.className = 'small text-muted';
-                metaRow.textContent = meta.join(' • ');
-
-                textCol.appendChild(titleRow);
-                textCol.appendChild(metaRow);
-                layout.appendChild(textCol);
-                layout.appendChild(buildGuestResultAvatar(item));
-                row.appendChild(layout);
-
-                row.addEventListener('click', function () {
-                    var statusLabel = item.account_status === 'not_registered' ? 'Not Register' : '';
-                    var label = (item.full_name || item.email || 'Tamu')
-                        + (meta.length ? ' • ' + meta.join(' • ') : '')
-                        + (statusLabel ? ' • ' + statusLabel : '');
-                    addSelectedGuest({
-                        id: item.id,
-                        type: 'sudin',
-                        name: item.full_name || item.email || 'Tamu',
-                        label: label,
-                        profile_photo_url: item.profile_photo_url || '',
-                    });
-                    searchInput.value = '';
-                    guestResults.innerHTML = '';
-                    setSudinResultsVisible(false);
-                });
-                guestResults.appendChild(row);
-            });
+    function renderGuestResults(items) {
+        guestResults.innerHTML = '';
+        if (!items || items.length === 0) {
+            guestResults.innerHTML = '<div class="text-muted small px-2 py-2">Tidak ada hasil.</div>';
             setSudinResultsVisible(true);
+            return;
         }
+        items.forEach(function (item) {
+            var row = document.createElement('div');
+            row.className = 'guest-result';
 
-        function renderGeneralGuestResults(items) {
-            if (!generalResults) return;
-            generalResults.innerHTML = '';
-            if (!items || items.length === 0) {
-                generalResults.innerHTML = '<div class="text-muted small px-2 py-2">Tidak ada hasil.</div>';
-                setGeneralResultsVisible(true);
-                return;
+            var layout = document.createElement('div');
+            layout.className = 'guest-result-layout';
+
+            var textCol = document.createElement('div');
+            textCol.className = 'guest-result-text';
+
+            var titleRow = document.createElement('div');
+            titleRow.className = 'fw-semibold';
+            titleRow.appendChild(document.createTextNode(item.full_name || item.email || ''));
+
+            var meta = [];
+            if (item.jabatan) meta.push(item.jabatan);
+            if (item.nrk) meta.push('NRK ' + item.nrk);
+
+            if (item.account_status === 'not_registered') {
+                var statusBadge = document.createElement('span');
+                statusBadge.className = 'badge text-bg-secondary ms-2';
+                statusBadge.textContent = 'Not Register';
+                titleRow.appendChild(statusBadge);
             }
-            items.forEach(function (item) {
-                var row = document.createElement('div');
-                row.className = 'guest-result';
-                var meta = [];
-                if (item.instansi) meta.push(item.instansi);
-                if (item.jabatan) meta.push(item.jabatan);
-                if (item.phone) meta.push(item.phone);
-                var badges = [];
-                if (item.is_verified) badges.push('<span class="badge text-bg-success ms-2">Verified</span>');
-                if (item.has_duplicate) badges.push('<span class="badge text-bg-warning ms-2">Duplikat</span>');
-                var title = escapeHtml(item.full_name || 'Tamu');
-                var metaText = escapeHtml(meta.join(' • '));
-                row.innerHTML = '<div class="fw-semibold">' + title + (badges.join('')) + '</div>'
-                    + '<div class="small text-muted">' + metaText + '</div>';
-                row.addEventListener('click', function () {
-                    if (item.has_duplicate && !item.is_verified) {
-                        alert('Nama tamu ganda. Pilih yang sudah verified atau minta admin memverifikasi.');
-                        return;
-                    }
-                    var label = (item.full_name || 'Tamu') + (meta.length ? ' • ' + meta.join(' • ') : '');
-                    addSelectedGuest({
-                        id: item.id,
-                        type: 'umum',
-                        name: item.full_name || 'Tamu',
-                        label: label,
-                    });
-                    if (generalSearchInput) generalSearchInput.value = '';
-                    generalResults.innerHTML = '';
+
+            var metaRow = document.createElement('div');
+            metaRow.className = 'small text-muted';
+            metaRow.textContent = meta.join(' • ');
+
+            textCol.appendChild(titleRow);
+            textCol.appendChild(metaRow);
+            layout.appendChild(textCol);
+            layout.appendChild(buildGuestResultAvatar(item));
+            row.appendChild(layout);
+
+            row.addEventListener('click', function () {
+                var statusLabel = item.account_status === 'not_registered' ? 'Not Register' : '';
+                var label = (item.full_name || item.email || 'Tamu')
+                    + (meta.length ? ' • ' + meta.join(' • ') : '')
+                    + (statusLabel ? ' • ' + statusLabel : '');
+                addSelectedGuest({
+                    id: item.id,
+                    type: 'sudin',
+                    name: item.full_name || item.email || 'Tamu',
+                    label: label,
+                    profile_photo_url: item.profile_photo_url || '',
+                });
+                searchInput.value = '';
+                guestResults.innerHTML = '';
+                setSudinResultsVisible(false);
+            });
+            guestResults.appendChild(row);
+        });
+        setSudinResultsVisible(true);
+    }
+
+    function renderGeneralGuestResults(items) {
+        if (!generalResults) return;
+        generalResults.innerHTML = '';
+        if (!items || items.length === 0) {
+            generalResults.innerHTML = '<div class="px-3 py-3 text-center">' +
+                '<div class="text-muted small mb-2">Tidak menemukan tamu/instansi?</div>' +
+                '<button type="button" class="btn btn-sm btn-outline-primary rounded-pill" id="btnShowAddGeneralGuest">' +
+                '<i class="bi bi-plus-circle me-1"></i>Tambah Tamu Baru' +
+                '</button></div>';
+            var btnAdd = document.getElementById('btnShowAddGeneralGuest');
+            if (btnAdd) {
+                btnAdd.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    if (addGeneralGuestContainer) addGeneralGuestContainer.classList.remove('d-none');
                     setGeneralResultsVisible(false);
                 });
-                generalResults.appendChild(row);
-            });
+            }
             setGeneralResultsVisible(true);
+            return;
         }
-
-        document.addEventListener('click', function (event) {
-            if (guestResults && searchInput && !guestResults.contains(event.target) && event.target !== searchInput) {
-                setSudinResultsVisible(false);
-            }
-            if (generalResults && generalSearchInput && !generalResults.contains(event.target) && event.target !== generalSearchInput) {
-                setGeneralResultsVisible(false);
-            }
-        });
-
-        function escapeHtml(value) {
-            return String(value || '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/\"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        var copyBtn = document.getElementById('copyGuestbookLinkBtn');
-        var linkInput = document.getElementById('guestbookLinkInput');
-        if (copyBtn && linkInput) {
-            copyBtn.addEventListener('click', function () {
-                var value = linkInput.value || '';
-                if (!value) return;
-                function markCopied() {
-                    var original = copyBtn.textContent;
-                    copyBtn.textContent = 'Tersalin';
-                    setTimeout(function () { copyBtn.textContent = original; }, 1500);
+        if (addGeneralGuestContainer) addGeneralGuestContainer.classList.add('d-none');
+        items.forEach(function (item) {
+            var row = document.createElement('div');
+            row.className = 'guest-result';
+            var meta = [];
+            if (item.instansi) meta.push(item.instansi);
+            if (item.jabatan) meta.push(item.jabatan);
+            if (item.phone) meta.push(item.phone);
+            var badges = [];
+            if (item.is_verified) badges.push('<span class="badge text-bg-success ms-2">Verified</span>');
+            if (item.has_duplicate) badges.push('<span class="badge text-bg-warning ms-2">Duplikat</span>');
+            var title = escapeHtml(item.full_name || 'Tamu');
+            var metaText = escapeHtml(meta.join(' • '));
+            row.innerHTML = '<div class="fw-semibold">' + title + (badges.join('')) + '</div>'
+                + '<div class="small text-muted">' + metaText + '</div>';
+            row.addEventListener('click', function () {
+                if (item.has_duplicate && !item.is_verified) {
+                    alert('Nama tamu ganda. Pilih yang sudah verified atau minta admin memverifikasi.');
+                    return;
                 }
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(value).then(markCopied).catch(function () {
-                        linkInput.select();
-                        document.execCommand('copy');
-                        markCopied();
-                    });
-                } else {
+                var label = (item.full_name || 'Tamu') + (meta.length ? ' • ' + meta.join(' • ') : '');
+                addSelectedGuest({
+                    id: item.id,
+                    type: 'umum',
+                    name: item.full_name || 'Tamu',
+                    label: label,
+                });
+                if (generalSearchInput) generalSearchInput.value = '';
+                generalResults.innerHTML = '';
+                setGeneralResultsVisible(false);
+                if (addGeneralGuestContainer) addGeneralGuestContainer.classList.add('d-none');
+            });
+            generalResults.appendChild(row);
+        });
+        setGeneralResultsVisible(true);
+    }
+
+    document.addEventListener('click', function (event) {
+        if (guestResults && searchInput && !guestResults.contains(event.target) && event.target !== searchInput) {
+            setSudinResultsVisible(false);
+        }
+        if (generalResults && generalSearchInput && !generalResults.contains(event.target) && event.target !== generalSearchInput && !(addGeneralGuestContainer && addGeneralGuestContainer.contains(event.target))) {
+            setGeneralResultsVisible(false);
+            if (addGeneralGuestContainer) addGeneralGuestContainer.classList.add('d-none');
+        }
+        if (purposeSuggestions && purposeInput) {
+            var insideSuggestions = purposeSuggestions.contains(event.target);
+            var onInput = event.target === purposeInput;
+            if (!insideSuggestions && !onInput) {
+                hidePurposeSuggestions();
+            }
+        }
+    });
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    var copyBtn = document.getElementById('copyGuestbookLinkBtn');
+    var linkInput = document.getElementById('guestbookLinkInput');
+    if (copyBtn && linkInput) {
+        copyBtn.addEventListener('click', function () {
+            var value = linkInput.value || '';
+            if (!value) return;
+            function markCopied() {
+                var original = copyBtn.textContent;
+                copyBtn.textContent = 'Tersalin';
+                setTimeout(function () { copyBtn.textContent = original; }, 1500);
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(value).then(markCopied).catch(function () {
                     linkInput.select();
                     document.execCommand('copy');
                     markCopied();
-                }
-            });
-        }
-
-        function buildAreaContactsHtml(list) {
-            if (!list || list.length === 0) {
-                return '<div class="alert alert-warning mb-0">Kontak admin wilayah belum tersedia. Silakan hubungi admin secara langsung.</div>';
-            }
-            var items = list.slice().sort(function (a, b) {
-                var areaA = (a.normalized_area || (a.area || '').toLowerCase());
-                var areaB = (b.normalized_area || (b.area || '').toLowerCase());
-                if (areaA < areaB) return -1;
-                if (areaA > areaB) return 1;
-                return (a.contact_index || 0) - (b.contact_index || 0);
-            });
-            var html = '';
-            var currentAreaKey = null;
-            items.forEach(function (c) {
-                var area = c.area || '';
-                var areaKey = c.normalized_area || (area || '').toLowerCase();
-                if (areaKey !== currentAreaKey) {
-                    if (currentAreaKey !== null) {
-                        html += '</ul></div>';
-                    }
-                    html += '<div class="mb-3">';
-                    html += '<div class="fw-semibold text-uppercase small text-muted">' + escapeHtml(area);
-                    if (c.is_user_area) {
-                        html += ' <span class="badge bg-primary ms-2">wilayah anda</span>';
-                    }
-                    html += '</div><ul class="list-unstyled mb-0">';
-                    currentAreaKey = areaKey;
-                }
-                html += '<li class="d-flex justify-content-between align-items-center py-1">';
-                html += '<div class="text-muted small">' + escapeHtml(c.name || '-') + ' • ' + escapeHtml(c.phone || '-') + '</div>';
-                if (c.is_active === false) {
-                    html += '<span class="badge bg-secondary">Inaktif</span>';
-                } else {
-                    html += '<a class="btn btn-success btn-sm d-inline-flex align-items-center gap-2" href="' + escapeHtml(c.wa_link || '#') + '" target="_blank" rel="noopener">';
-                    html += '<i class="bi bi-whatsapp"></i><span>WhatsApp</span></a>';
-                }
-                html += '</li>';
-            });
-            if (currentAreaKey !== null) {
-                html += '</ul></div>';
-            }
-            return html;
-        }
-
-        function updateAreaContacts(list) {
-            var container = document.getElementById('areaContactList');
-            if (!container) return;
-            container.innerHTML = buildAreaContactsHtml(list || []);
-            container.dataset.empty = list && list.length ? '0' : '1';
-        }
-
-        function fetchAreaContacts(transactionId) {
-            var url = '/daftar-tamu/sekolah/area-contacts';
-            if (transactionId) {
-                url += '?transaction_id=' + encodeURIComponent(transactionId);
-            }
-            return fetch(url)
-                .then(function (res) { return res.json(); })
-                .then(function (data) {
-                    if (data && data.success && Array.isArray(data.contacts)) {
-                        updateAreaContacts(data.contacts);
-                    }
                 });
-        }
-
-        var debounceTimer = null;
-        function searchGuests() {
-            var query = (searchInput.value || '').trim();
-            if (!query) {
-                guestResults.innerHTML = '';
-                setSudinResultsVisible(false);
-                return;
+            } else {
+                linkInput.select();
+                document.execCommand('copy');
+                markCopied();
             }
-            fetch('/daftar-tamu/sekolah/guest-search?q=' + encodeURIComponent(query))
-                .then(function (res) { return res.json(); })
-                .then(function (data) {
-                    if (!data.success) throw new Error(data.message || 'Gagal memuat data');
-                    renderGuestResults(data.results || []);
-                })
-                .catch(function () {
-                    guestResults.innerHTML = '<div class="text-danger small px-2 py-2">Gagal memuat data tamu.</div>';
-                    setSudinResultsVisible(true);
-                });
+        });
+    }
+
+    function buildAreaContactsHtml(list) {
+        if (!list || list.length === 0) {
+            return '<div class="alert alert-warning mb-0">Kontak admin wilayah belum tersedia. Silakan hubungi admin secara langsung.</div>';
         }
-
-        if (searchInput) {
-            searchInput.addEventListener('input', function () {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(searchGuests, 300);
-            });
-        }
-
-        var generalDebounceTimer = null;
-        function searchGeneralGuests() {
-            if (!generalSearchInput || !generalResults) return;
-            var query = (generalSearchInput.value || '').trim();
-            if (!query) {
-                generalResults.innerHTML = '';
-                setGeneralResultsVisible(false);
-                return;
-            }
-            fetch('/daftar-tamu/sekolah/guest-search-umum?q=' + encodeURIComponent(query))
-                .then(function (res) { return res.json(); })
-                .then(function (data) {
-                    if (!data.success) throw new Error(data.message || 'Gagal memuat data');
-                    renderGeneralGuestResults(data.results || []);
-                })
-                .catch(function () {
-                    generalResults.innerHTML = '<div class="text-danger small px-2 py-2">Gagal memuat data tamu umum.</div>';
-                    setGeneralResultsVisible(true);
-                });
-        }
-
-        if (generalSearchInput) {
-            generalSearchInput.addEventListener('input', function () {
-                clearTimeout(generalDebounceTimer);
-                generalDebounceTimer = setTimeout(searchGeneralGuests, 300);
-            });
-        }
-
-        if (generalNameInput) {
-            generalNameInput.addEventListener('input', function () {
-                setInputInvalidState(generalNameInput, generalNameError, false);
-            });
-        }
-        if (generalInstansiInput) {
-            generalInstansiInput.addEventListener('input', function () {
-                setInputInvalidState(generalInstansiInput, generalInstansiError, false);
-            });
-        }
-        if (generalJabatanInput) {
-            generalJabatanInput.addEventListener('input', function () {
-                setInputInvalidState(generalJabatanInput, generalJabatanError, false);
-            });
-        }
-
-        if (addGeneralGuestBtn) {
-            addGeneralGuestBtn.addEventListener('click', function () {
-                var nameVal = (generalNameInput && generalNameInput.value || '').trim();
-                var instansiVal = (generalInstansiInput && generalInstansiInput.value || '').trim();
-                var jabatanVal = (generalJabatanInput && generalJabatanInput.value || '').trim();
-                var isValid = true;
-                if (!nameVal) isValid = false;
-                if (!instansiVal) isValid = false;
-                if (!jabatanVal) isValid = false;
-
-                setInputInvalidState(generalNameInput, generalNameError, !nameVal);
-                setInputInvalidState(generalInstansiInput, generalInstansiError, !instansiVal);
-                setInputInvalidState(generalJabatanInput, generalJabatanError, !jabatanVal);
-
-                if (!isValid) return;
-
-                var formData = new FormData();
-                formData.append('full_name', nameVal);
-                formData.append('instansi', instansiVal);
-                formData.append('jabatan', jabatanVal);
-                if (generalPhoneInput && generalPhoneInput.value.trim()) {
-                    formData.append('phone', generalPhoneInput.value.trim());
+        var items = list.slice().sort(function (a, b) {
+            var areaA = (a.normalized_area || (a.area || '').toLowerCase());
+            var areaB = (b.normalized_area || (b.area || '').toLowerCase());
+            if (areaA < areaB) return -1;
+            if (areaA > areaB) return 1;
+            return (a.contact_index || 0) - (b.contact_index || 0);
+        });
+        var html = '';
+        var currentAreaKey = null;
+        items.forEach(function (c) {
+            var area = c.area || '';
+            var areaKey = c.normalized_area || (area || '').toLowerCase();
+            if (areaKey !== currentAreaKey) {
+                if (currentAreaKey !== null) {
+                    html += '</ul></div>';
                 }
-                addGeneralGuestBtn.disabled = true;
-                addGeneralGuestBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
+                html += '<div class="mb-3">';
+                html += '<div class="fw-semibold text-uppercase small text-muted">' + escapeHtml(area);
+                if (c.is_user_area) {
+                    html += ' <span class="badge bg-primary ms-2">wilayah anda</span>';
+                }
+                html += '</div><ul class="list-unstyled mb-0">';
+                currentAreaKey = areaKey;
+            }
+            html += '<li class="d-flex justify-content-between align-items-center py-1">';
+            html += '<div class="text-muted small">' + escapeHtml(c.name || '-') + ' • ' + escapeHtml(c.phone || '-') + '</div>';
+            if (c.is_active === false) {
+                html += '<span class="badge bg-secondary"><span class="d-none d-sm-inline">Inaktif</span><span class="d-inline d-sm-none">Off</span></span>';
+            } else {
+                html += '<a class="btn btn-success btn-sm d-inline-flex align-items-center gap-2" href="' + escapeHtml(c.wa_link || '#') + '" target="_blank" rel="noopener">';
+                html += '<i class="bi bi-whatsapp"></i><span class="d-none d-sm-inline">WhatsApp</span></a>';
+            }
+            html += '</li>';
+        });
+        if (currentAreaKey !== null) {
+            html += '</ul></div>';
+        }
+        return html;
+    }
 
-                fetch('/daftar-tamu/umum', { method: 'POST', body: formData })
-                    .then(function (res) {
-                        var contentType = res.headers.get('content-type') || '';
-                        if (!res.ok) {
-                            return res.text().then(function () {
-                                throw new Error('Gagal menambahkan tamu. Silakan refresh atau restart server.');
-                            });
-                        }
-                        if (contentType.indexOf('application/json') === -1) {
-                            return res.text().then(function () {
-                                throw new Error('Respon server tidak valid. Silakan refresh halaman.');
-                            });
-                        }
-                        return res.json();
-                    })
-                    .then(function (data) {
-                        if (!data.success) throw new Error(data.message || 'Gagal menambahkan tamu');
-                        var guest = data.guest || {};
-                        var meta = [];
-                        if (guest.instansi) meta.push(guest.instansi);
-                        if (guest.jabatan) meta.push(guest.jabatan);
-                        if (guest.phone) meta.push(guest.phone);
-                        var label = (guest.full_name || nameVal) + (meta.length ? ' • ' + meta.join(' • ') : '');
-                        if (guest.has_duplicate && !guest.is_verified) {
-                            alert('Tamu ditambahkan, tetapi nama ganda. Minta admin memberi badge verified sebelum dipilih.');
-                        } else {
-                            addSelectedGuest({
-                                id: guest.id,
-                                type: 'umum',
-                                name: guest.full_name || nameVal,
-                                label: label,
-                            });
-                        }
-                        if (generalNameInput) generalNameInput.value = '';
-                        if (generalInstansiInput) generalInstansiInput.value = '';
-                        if (generalJabatanInput) generalJabatanInput.value = '';
-                        if (generalPhoneInput) generalPhoneInput.value = '';
-                    })
-                    .catch(function (err) {
-                        alert(err.message || 'Gagal menambahkan tamu.');
-                    })
-                    .finally(function () {
-                        addGeneralGuestBtn.disabled = false;
-                        addGeneralGuestBtn.innerHTML = '<i class="bi bi-person-plus me-1"></i>Tambah Tamu Instansi Lain';
+    function updateAreaContacts(list, targetContainerId) {
+        var containerId = targetContainerId || 'areaContactList';
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = buildAreaContactsHtml(list || []);
+        container.dataset.empty = list && list.length ? '0' : '1';
+    }
+
+    function fetchAreaContacts(transactionId, targetContainerId) {
+        var url = '/daftar-tamu/sekolah/area-contacts';
+        if (transactionId) {
+            url += '?transaction_id=' + encodeURIComponent(transactionId);
+        }
+        return fetch(url)
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data && data.success && Array.isArray(data.contacts)) {
+                    updateAreaContacts(data.contacts, targetContainerId);
+                }
+            });
+    }
+
+    var debounceTimer = null;
+    function searchGuests() {
+        var query = (searchInput.value || '').trim();
+        if (!query) {
+            guestResults.innerHTML = '';
+            setSudinResultsVisible(false);
+            return;
+        }
+        fetch('/daftar-tamu/sekolah/guest-search?q=' + encodeURIComponent(query))
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (!data.success) throw new Error(data.message || 'Gagal memuat data');
+                renderGuestResults(data.results || []);
+            })
+            .catch(function () {
+                guestResults.innerHTML = '<div class="text-danger small px-2 py-2">Gagal memuat data tamu.</div>';
+                setSudinResultsVisible(true);
+            });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(searchGuests, 300);
+        });
+    }
+
+    var generalDebounceTimer = null;
+    function searchGeneralGuests() {
+        if (!generalSearchInput || !generalResults) return;
+        var query = (generalSearchInput.value || '').trim();
+        if (!query) {
+            generalResults.innerHTML = '';
+            setGeneralResultsVisible(false);
+            if (addGeneralGuestContainer) addGeneralGuestContainer.classList.add('d-none');
+            return;
+        }
+        fetch('/daftar-tamu/sekolah/guest-search-umum?q=' + encodeURIComponent(query))
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (!data.success) throw new Error(data.message || 'Gagal memuat data');
+                renderGeneralGuestResults(data.results || []);
+            })
+            .catch(function () {
+                generalResults.innerHTML = '<div class="px-3 py-3 text-center">' +
+                    '<div class="text-danger small mb-2">Gagal memuat data tamu umum.</div>' +
+                    '<button type="button" class="btn btn-sm btn-outline-primary rounded-pill" id="btnShowAddGeneralGuestErr">' +
+                    '<i class="bi bi-plus-circle me-1"></i>Tambah Tamu Baru' +
+                    '</button></div>';
+                var btnAddErr = document.getElementById('btnShowAddGeneralGuestErr');
+                if (btnAddErr) {
+                    btnAddErr.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        if (addGeneralGuestContainer) addGeneralGuestContainer.classList.remove('d-none');
+                        setGeneralResultsVisible(false);
                     });
-            });
-        }
-
-        function ensureLocation() {
-            return new Promise(function (resolve) {
-                if (!navigator.geolocation) {
-                    gpsStatus.textContent = 'GPS tidak tersedia';
-                    gpsStatus.classList.add('text-danger');
-                    return resolve();
                 }
-                gpsStatus.textContent = 'Mencari lokasi...';
-                gpsStatus.classList.remove('text-danger');
-                navigator.geolocation.getCurrentPosition(
-                    function (pos) {
-                        currentLatitude = pos.coords.latitude;
-                        currentLongitude = pos.coords.longitude;
-                        currentAccuracy = pos.coords.accuracy;
-                        gpsStatus.textContent = 'GPS aktif (' + currentAccuracy.toFixed(0) + 'm)';
-                        gpsStatus.classList.remove('text-danger');
-                        updateSubmitState();
-                        resolve();
-                    },
-                    function () {
-                        gpsStatus.textContent = 'GPS ditolak atau tidak tersedia';
-                        gpsStatus.classList.add('text-danger');
-                        updateSubmitState();
-                        resolve();
-                    },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                );
+                setGeneralResultsVisible(true);
             });
-        }
+    }
 
-        function stopCamera() {
-            if (cameraStream) {
-                cameraStream.getTracks().forEach(function (track) { track.stop(); });
-                cameraStream = null;
-            }
-        }
+    if (generalSearchInput) {
+        generalSearchInput.addEventListener('input', function () {
+            clearTimeout(generalDebounceTimer);
+            generalDebounceTimer = setTimeout(searchGeneralGuests, 300);
+        });
+    }
 
-        function startCamera() {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                alert('Kamera tidak tersedia di perangkat ini.');
-                return;
+    if (generalNameInput) {
+        generalNameInput.addEventListener('input', function () {
+            setInputInvalidState(generalNameInput, generalNameError, false);
+        });
+    }
+    if (generalInstansiInput) {
+        generalInstansiInput.addEventListener('input', function () {
+            setInputInvalidState(generalInstansiInput, generalInstansiError, false);
+        });
+    }
+    if (generalJabatanInput) {
+        generalJabatanInput.addEventListener('input', function () {
+            setInputInvalidState(generalJabatanInput, generalJabatanError, false);
+        });
+    }
+
+    if (addGeneralGuestBtn) {
+        addGeneralGuestBtn.addEventListener('click', function () {
+            var nameVal = (generalNameInput && generalNameInput.value || '').trim();
+            var instansiVal = (generalInstansiInput && generalInstansiInput.value || '').trim();
+            var jabatanVal = (generalJabatanInput && generalJabatanInput.value || '').trim();
+            var isValid = true;
+            if (!nameVal) isValid = false;
+            if (!instansiVal) isValid = false;
+            if (!jabatanVal) isValid = false;
+
+            setInputInvalidState(generalNameInput, generalNameError, !nameVal);
+            setInputInvalidState(generalInstansiInput, generalInstansiError, !instansiVal);
+            setInputInvalidState(generalJabatanInput, generalJabatanError, !jabatanVal);
+
+            if (!isValid) return;
+
+            var formData = new FormData();
+            formData.append('full_name', nameVal);
+            formData.append('instansi', instansiVal);
+            formData.append('jabatan', jabatanVal);
+            if (generalPhoneInput && generalPhoneInput.value.trim()) {
+                formData.append('phone', generalPhoneInput.value.trim());
             }
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
-                .then(function (stream) {
-                    cameraStream = stream;
-                    cameraPreview.srcObject = stream;
-                    cameraPreview.classList.remove('d-none');
-                    photoResult.classList.add('d-none');
-                    capturePhotoBtn.disabled = false;
-                    retakePhotoBtn.disabled = true;
-                    ensureLocation();
+            addGeneralGuestBtn.disabled = true;
+            addGeneralGuestBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
+
+            fetch('/daftar-tamu/umum', { method: 'POST', body: formData })
+                .then(function (res) {
+                    var contentType = res.headers.get('content-type') || '';
+                    if (!res.ok) {
+                        return res.text().then(function () {
+                            throw new Error('Gagal menambahkan tamu. Silakan refresh atau restart server.');
+                        });
+                    }
+                    if (contentType.indexOf('application/json') === -1) {
+                        return res.text().then(function () {
+                            throw new Error('Respon server tidak valid. Silakan refresh halaman.');
+                        });
+                    }
+                    return res.json();
                 })
-                .catch(function () {
-                    alert('Tidak bisa mengakses kamera. Pastikan izin kamera diaktifkan.');
-                });
-        }
-
-        function compressAndStore(canvas, quality) {
-            var MAX_SIZE = 220 * 1024;
-            canvas.toBlob(function (blob) {
-                if (!blob) {
-                    alert('Gagal memproses gambar.');
-                    return;
-                }
-                if (blob.size > MAX_SIZE && quality > 0.3) {
-                    if (blob.size > 500 * 1024) {
-                        var tempCanvas = document.createElement('canvas');
-                        var scale = 0.7;
-                        tempCanvas.width = canvas.width * scale;
-                        tempCanvas.height = canvas.height * scale;
-                        var ctx = tempCanvas.getContext('2d');
-                        ctx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
-                        compressAndStore(tempCanvas, quality - 0.1);
+                .then(function (data) {
+                    if (!data.success) throw new Error(data.message || 'Gagal menambahkan tamu');
+                    var guest = data.guest || {};
+                    var meta = [];
+                    if (guest.instansi) meta.push(guest.instansi);
+                    if (guest.jabatan) meta.push(guest.jabatan);
+                    if (guest.phone) meta.push(guest.phone);
+                    var label = (guest.full_name || nameVal) + (meta.length ? ' • ' + meta.join(' • ') : '');
+                    if (guest.has_duplicate && !guest.is_verified) {
+                        alert('Tamu ditambahkan, tetapi nama ganda. Minta admin memberi badge verified sebelum dipilih.');
                     } else {
-                        compressAndStore(canvas, quality - 0.1);
+                        addSelectedGuest({
+                            id: guest.id,
+                            type: 'umum',
+                            name: guest.full_name || nameVal,
+                            label: label,
+                        });
                     }
+                    if (generalNameInput) generalNameInput.value = '';
+                    if (generalInstansiInput) generalInstansiInput.value = '';
+                    if (generalJabatanInput) generalJabatanInput.value = '';
+                    if (generalPhoneInput) generalPhoneInput.value = '';
+                })
+                .catch(function (err) {
+                    alert(err.message || 'Gagal menambahkan tamu.');
+                })
+                .finally(function () {
+                    addGeneralGuestBtn.disabled = false;
+                    addGeneralGuestBtn.innerHTML = '<i class="bi bi-person-plus me-1"></i>Tambah Tamu Instansi Lain';
+                });
+        });
+    }
+
+    function ensureLocation() {
+        return new Promise(function (resolve) {
+            if (!navigator.geolocation) {
+                gpsStatus.textContent = 'GPS tidak tersedia';
+                gpsStatus.classList.add('text-danger');
+                return resolve();
+            }
+            gpsStatus.textContent = 'Mencari lokasi...';
+            gpsStatus.classList.remove('text-danger');
+            navigator.geolocation.getCurrentPosition(
+                function (pos) {
+                    currentLatitude = pos.coords.latitude;
+                    currentLongitude = pos.coords.longitude;
+                    currentAccuracy = pos.coords.accuracy;
+                    gpsStatus.textContent = 'GPS aktif (' + currentAccuracy.toFixed(0) + 'm)';
+                    gpsStatus.classList.remove('text-danger');
+                    updateSubmitState();
+                    resolve();
+                },
+                function () {
+                    gpsStatus.textContent = 'GPS ditolak atau tidak tersedia';
+                    gpsStatus.classList.add('text-danger');
+                    updateSubmitState();
+                    resolve();
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        });
+    }
+
+    function stopCamera() {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(function (track) { track.stop(); });
+            cameraStream = null;
+        }
+    }
+
+    function requestUserMedia(constraints) {
+        if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+            return navigator.mediaDevices.getUserMedia(constraints);
+        }
+        var legacyGetUserMedia = navigator.getUserMedia
+            || navigator.webkitGetUserMedia
+            || navigator.mozGetUserMedia
+            || navigator.msGetUserMedia;
+        if (!legacyGetUserMedia) {
+            return Promise.reject({ name: 'NotSupportedError' });
+        }
+        return new Promise(function (resolve, reject) {
+            legacyGetUserMedia.call(navigator, constraints, resolve, reject);
+        });
+    }
+
+    function resolveCameraErrorMessage(err) {
+        if (!err || !err.name) {
+            return 'Tidak bisa mengakses kamera. Pastikan izin kamera diaktifkan.';
+        }
+        if (err.name === 'NotAllowedError') {
+            return 'Izin kamera ditolak. Aktifkan izin kamera di browser lalu coba lagi.';
+        }
+        if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+            return 'Kamera tidak ditemukan di perangkat ini.';
+        }
+        if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+            return 'Kamera sedang dipakai aplikasi lain.';
+        }
+        if (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError') {
+            return 'Mode kamera yang diminta tidak tersedia di perangkat ini.';
+        }
+        if (err.name === 'SecurityError') {
+            return 'Akses kamera membutuhkan HTTPS atau localhost.';
+        }
+        if (err.name === 'NotSupportedError') {
+            return 'Browser ini belum mendukung akses kamera live.';
+        }
+        return 'Tidak bisa mengakses kamera. Pastikan izin kamera diaktifkan.';
+    }
+
+    function applyCameraStream(stream) {
+        cameraStream = stream;
+        cameraPreview.srcObject = stream;
+        cameraPreview.classList.remove('d-none');
+        photoResult.classList.add('d-none');
+        if (retakePhotoBtn) retakePhotoBtn.disabled = true;
+        if (typeof cameraPreview.play === 'function') {
+            cameraPreview.play().catch(function () { });
+        }
+        ensureLocation();
+    }
+
+    function startCamera() {
+        if (window.isSecureContext === false) {
+            alert('Kamera live butuh HTTPS. Buka halaman via HTTPS atau localhost pada perangkat yang sama.');
+            return;
+        }
+        requestUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+            .then(applyCameraStream)
+            .catch(function (err) {
+                if (err && (err.name === 'OverconstrainedError'
+                    || err.name === 'ConstraintNotSatisfiedError'
+                    || err.name === 'NotFoundError')) {
+                    requestUserMedia({ video: true, audio: false })
+                        .then(applyCameraStream)
+                        .catch(function (fallbackErr) {
+                            alert(resolveCameraErrorMessage(fallbackErr));
+                        });
                     return;
                 }
-                photoBlob = blob;
-                photoResult.src = URL.createObjectURL(blob);
-                photoResult.classList.remove('d-none');
-                cameraPreview.classList.add('d-none');
-                capturePhotoBtn.disabled = true;
-                retakePhotoBtn.disabled = false;
-                updateSubmitState();
-            }, 'image/jpeg', quality);
-        }
+                alert(resolveCameraErrorMessage(err));
+            });
+    }
 
-        function capturePhoto() {
-            if (!cameraStream) return;
-            var video = cameraPreview;
-            var size = Math.min(video.videoWidth, video.videoHeight);
-            if (!size) {
-                alert('Preview kamera belum siap.');
+    function compressAndStore(canvas, quality) {
+        var MAX_SIZE = 220 * 1024;
+        canvas.toBlob(function (blob) {
+            if (!blob) {
+                alert('Gagal memproses gambar.');
                 return;
             }
-            photoCanvas.width = size;
-            photoCanvas.height = size;
-            var ctx = photoCanvas.getContext('2d');
-            var sx = (video.videoWidth - size) / 2;
-            var sy = (video.videoHeight - size) / 2;
-            ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
-            compressAndStore(photoCanvas, 0.85);
-        }
+            if (blob.size > MAX_SIZE && quality > 0.3) {
+                if (blob.size > 500 * 1024) {
+                    var tempCanvas = document.createElement('canvas');
+                    var scale = 0.7;
+                    tempCanvas.width = canvas.width * scale;
+                    tempCanvas.height = canvas.height * scale;
+                    var ctx = tempCanvas.getContext('2d');
+                    ctx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+                    compressAndStore(tempCanvas, quality - 0.1);
+                } else {
+                    compressAndStore(canvas, quality - 0.1);
+                }
+                return;
+            }
+            photoBlob = blob;
+            photoResult.src = URL.createObjectURL(blob);
+            photoResult.classList.remove('d-none');
+            cameraPreview.classList.add('d-none');
+            if (retakePhotoBtn) retakePhotoBtn.disabled = false;
+            updateSubmitState();
+        }, 'image/jpeg', quality);
+    }
 
-        if (startCameraBtn) {
-            startCameraBtn.addEventListener('click', startCamera);
+    function capturePhoto() {
+        if (!cameraStream) return;
+        var video = cameraPreview;
+        var size = Math.min(video.videoWidth, video.videoHeight);
+        if (!size) {
+            alert('Preview kamera belum siap.');
+            return;
         }
-        if (capturePhotoBtn) {
-            capturePhotoBtn.addEventListener('click', capturePhoto);
-        }
-        if (retakePhotoBtn) {
-            retakePhotoBtn.addEventListener('click', function () {
-                photoBlob = null;
-                photoResult.classList.add('d-none');
-                cameraPreview.classList.remove('d-none');
-                capturePhotoBtn.disabled = false;
-                retakePhotoBtn.disabled = true;
+        photoCanvas.width = size;
+        photoCanvas.height = size;
+        var ctx = photoCanvas.getContext('2d');
+        var sx = (video.videoWidth - size) / 2;
+        var sy = (video.videoHeight - size) / 2;
+        ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
+        compressAndStore(photoCanvas, 0.85);
+    }
+
+    if (retakePhotoBtn) {
+        retakePhotoBtn.addEventListener('click', function () {
+            photoBlob = null;
+            photoResult.classList.add('d-none');
+            cameraPreview.classList.remove('d-none');
+            retakePhotoBtn.disabled = true;
+            updateSubmitState();
+        });
+    }
+
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function (e) {
+            var hasPhoto = !!photoBlob;
+            if (!cameraStream) {
+                e.preventDefault();
+                startCamera();
+                setTimeout(function () {
+                    if (cameraPreview) {
+                        cameraPreview.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 100);
+                return;
+            } else if (cameraStream && !hasPhoto) {
+                e.preventDefault();
+                capturePhoto();
+                return;
+            }
+
+            hasTriedSubmit = true;
+            updateSubmitState();
+
+            if (!photoBlob) {
+                return;
+            }
+            if (selectedGuests.size === 0) {
                 updateSubmitState();
+                if (selectedField) selectedField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+            if (purposeInput && !purposeInput.value.trim()) {
+                updateSubmitState();
+                purposeInput.focus();
+                return;
+            }
+            var hasGps = typeof currentLatitude === 'number' && typeof currentLongitude === 'number';
+            if (!hasGps) {
+                if (gpsStatus) gpsStatus.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+            var guestPayload = [];
+            selectedGuests.forEach(function (guest) {
+                guestPayload.push({ id: guest.id, type: guest.type });
             });
-        }
 
-        if (submitBtn) {
-            submitBtn.addEventListener('click', function () {
-                if (submitBtn.disabled) return;
-                if (!photoBlob) {
-                    alert('Foto wajib diambil.');
-                    return;
-                }
-                if (selectedGuests.size === 0) {
-                    updateSubmitState();
-                    return;
-                }
-                if (purposeInput && !purposeInput.value.trim()) {
-                    updateSubmitState();
-                    return;
-                }
-                var hasGps = typeof currentLatitude === 'number' && typeof currentLongitude === 'number';
-                if (!hasGps) {
-                    alert('GPS belum tersedia. Aktifkan lokasi.');
-                    return;
-                }
-                var guestPayload = [];
-                selectedGuests.forEach(function (guest) {
-                    guestPayload.push({ id: guest.id, type: guest.type });
-                });
-                var formData = new FormData();
-                formData.append('guest_payload', JSON.stringify(guestPayload));
-                formData.append('purpose', document.getElementById('purposeInput').value.trim());
-                formData.append('notes', document.getElementById('notesInput').value.trim());
-                formData.append('latitude', currentLatitude);
-                formData.append('longitude', currentLongitude);
-                formData.append('accuracy', currentAccuracy || '');
-                formData.append('photo', photoBlob, 'guestbook.jpg');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
 
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
+            function resetSubmitButton() {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-send-check me-1"></i>Simpan Tamu Kedinasan';
+            }
 
-                fetch('/daftar-tamu/sekolah/transactions', {
+            function buildTransactionFormData(duplicateConfirmed) {
+                var payload = new FormData();
+                payload.append('guest_payload', JSON.stringify(guestPayload));
+                payload.append('purpose', document.getElementById('purposeInput').value.trim());
+                payload.append('notes', document.getElementById('notesInput').value.trim());
+                payload.append('latitude', currentLatitude);
+                payload.append('longitude', currentLongitude);
+                payload.append('accuracy', currentAccuracy || '');
+                payload.append('photo', photoBlob, 'guestbook.jpg');
+                if (duplicateConfirmed) {
+                    payload.append('duplicate_confirmed', '1');
+                }
+                return payload;
+            }
+
+            function postTransaction(duplicateConfirmed) {
+                return fetch('/daftar-tamu/sekolah/transactions', {
                     method: 'POST',
-                    body: formData
-                })
-                    .then(function (res) { return res.json(); })
-                    .then(function (data) {
-                        if (!data.success) throw new Error(data.message || 'Gagal mengirim transaksi');
-                        var modalEl = document.getElementById('areaContactModal');
-                        if (modalEl && window.bootstrap) {
-                            var listContainer = document.getElementById('areaContactList');
-                            var previousHtml = listContainer ? listContainer.innerHTML : '';
-                            if (listContainer) {
-                                listContainer.innerHTML = '<div class="text-muted small">Memuat kontak admin wilayah...</div>';
-                            }
-                            fetchAreaContacts(data.transaction_id)
-                                .catch(function () {
-                                    if (listContainer) {
-                                        listContainer.innerHTML = previousHtml;
-                                    }
-                                })
-                                .finally(function () {
-                                    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-                                    modal.show();
-                                    modalEl.addEventListener('hidden.bs.modal', function handler() {
-                                        modalEl.removeEventListener('hidden.bs.modal', handler);
-                                        window.location.reload();
-                                    });
-                                });
-                        } else {
-                            window.location.reload();
-                        }
-                    })
-                    .catch(function (err) {
-                        alert(err.message || 'Gagal mengirim transaksi.');
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<i class="bi bi-send-check me-1"></i>Simpan Tamu Kedinasan';
-                    });
-            });
-        }
+                    body: buildTransactionFormData(duplicateConfirmed)
+                }).then(function (res) {
+                    return res.json()
+                        .catch(function () {
+                            return { success: false, message: 'Respon server tidak valid.' };
+                        })
+                        .then(function (data) {
+                            return { ok: res.ok, status: res.status, data: data };
+                        });
+                });
+            }
 
-        window.addEventListener('beforeunload', stopCamera);
-        setSudinResultsVisible(false);
-        setGeneralResultsVisible(false);
-        renderSelectedGuests();
-    })();
+            postTransaction(false)
+                .then(function (result) {
+                    var data = (result && result.data) || {};
+                    if (data.requires_confirmation) {
+                        var proceed = window.confirm(data.message || 'Tamu yang sama sudah terverifikasi hari ini. Lanjutkan?');
+                        if (!proceed) {
+                            resetSubmitButton();
+                            return null;
+                        }
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
+                        return postTransaction(true).then(function (retryResult) {
+                            return (retryResult && retryResult.data) || {};
+                        });
+                    }
+                    return data;
+                })
+                .then(function (data) {
+                    if (!data) return;
+                    if (!data.success) throw new Error(data.message || 'Gagal mengirim transaksi');
+                    var modalEl = document.getElementById('guestbookSuccessModal');
+                    if (modalEl && window.bootstrap) {
+                        var listContainer = document.getElementById('guestbookSuccessContactList');
+                        var previousHtml = listContainer ? listContainer.innerHTML : '';
+                        if (listContainer) {
+                            listContainer.innerHTML = '<div class="text-muted small">Memuat kontak admin wilayah...</div>';
+                        }
+                        fetchAreaContacts(data.transaction_id, 'guestbookSuccessContactList')
+                            .catch(function () {
+                                if (listContainer) {
+                                    listContainer.innerHTML = previousHtml;
+                                }
+                            })
+                            .finally(function () {
+                                var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                                modal.show();
+                                modalEl.addEventListener('hidden.bs.modal', function handler() {
+                                    modalEl.removeEventListener('hidden.bs.modal', handler);
+                                    window.location.reload();
+                                });
+                            });
+                    } else {
+                        window.location.reload();
+                    }
+                })
+                .catch(function (err) {
+                    alert(err.message || 'Gagal mengirim transaksi.');
+                    resetSubmitButton();
+                });
+        });
+    }
+
+    window.addEventListener('beforeunload', stopCamera);
+    setSudinResultsVisible(false);
+    setGeneralResultsVisible(false);
+    renderSelectedGuests();
+    }) ();
 </script>
 {% endblock %}

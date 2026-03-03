@@ -332,6 +332,38 @@
         kecField.style.display = this.value === 'kecamatan' ? 'block' : 'none';
     });
 </script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+    (function () {
+        document.addEventListener('DOMContentLoaded', function () {
+            if (!window.TomSelect) return;
+            const selects = document.querySelectorAll('select.js-monev-select');
+            selects.forEach(function (select) {
+                if (select.tomselect) return;
+                const isCoordinator = select.name === 'coordinator_id';
+                const tom = new TomSelect(select, {
+                    create: false,
+                    allowEmptyOption: true,
+                    placeholder: isCoordinator ? 'Ketik untuk cari koordinator' : 'Ketik untuk cari staff',
+                    searchField: ['text'],
+                    plugins: select.required ? [] : ['clear_button'],
+                    render: {
+                        no_results: function () {
+                            return '<div class="no-results">Tidak ada hasil</div>';
+                        }
+                    }
+                });
+
+                // Jangan tampilkan label opsi kosong sebagai item terpilih.
+                if (tom.getValue() === '') {
+                    tom.clear(true);
+                    tom.inputState();
+                }
+            });
+        });
+    })();
+</script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const requestForms = document.querySelectorAll('.team-request-form');

@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
             data: {
                 labels: chartDays.map(day => {
                     const date = new Date(day);
-                    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' });
                 }),
                 datasets: [
                     {

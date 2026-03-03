@@ -431,6 +431,7 @@ CREATE TABLE IF NOT EXISTS portal_assessments (
     period_id INTEGER REFERENCES portal_assessment_periods(id) ON DELETE SET NULL,
     assessment_date DATE NOT NULL DEFAULT CURRENT_DATE,
     status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'submitted', 'verified', 'rejected')),
+    score_scale_max INTEGER NOT NULL DEFAULT 3 CHECK (score_scale_max IN (3, 5)),
     total_score DECIMAL(5,2),
     notes TEXT,
     submitted_at TIMESTAMPTZ,
@@ -456,7 +457,7 @@ CREATE TABLE IF NOT EXISTS portal_assessment_scores (
     assessment_id INTEGER NOT NULL REFERENCES portal_assessments(id) ON DELETE CASCADE,
     school_room_id INTEGER NOT NULL REFERENCES portal_school_rooms(id) ON DELETE CASCADE,
     aspect_id INTEGER NOT NULL REFERENCES portal_aspects(id) ON DELETE CASCADE,
-    score INTEGER NOT NULL CHECK (score >= 0 AND score <= 3),
+    score INTEGER NOT NULL CHECK (score >= 0 AND score <= 5),
     notes TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -521,6 +522,61 @@ CREATE INDEX IF NOT EXISTS idx_portal_activity_logs_created ON portal_activity_l
 
 _PORTAL_ACTIVITY_LOGS_INDEX_TARGET = """
 CREATE INDEX IF NOT EXISTS idx_portal_activity_logs_target ON portal_activity_logs (target_type, target_id);
+"""
+
+_PORTAL_ROOM_FOLLOW_UP_TICKETS_SQL = """
+CREATE TABLE IF NOT EXISTS portal_room_follow_up_tickets (
+    id SERIAL PRIMARY KEY,
+    ticket_code TEXT UNIQUE,
+    assessment_id INTEGER NOT NULL REFERENCES portal_assessments(id) ON DELETE CASCADE,
+    school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+    school_room_id INTEGER NOT NULL REFERENCES portal_school_rooms(id) ON DELETE CASCADE,
+    room_id INTEGER NOT NULL REFERENCES portal_rooms(id) ON DELETE CASCADE,
+    room_name_snapshot TEXT NOT NULL,
+    staff_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    trigger_score_pct DECIMAL(5,2) NOT NULL,
+    threshold_pct DECIMAL(5,2) NOT NULL DEFAULT 60.00,
+    status TEXT NOT NULL DEFAULT 'baru' CHECK (status IN ('baru', 'diproses', 'diajukan', 'selesai')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    submitted_at TIMESTAMPTZ,
+    verified_at TIMESTAMPTZ,
+    verified_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    reminder_count INTEGER NOT NULL DEFAULT 0,
+    last_reminder_at TIMESTAMPTZ,
+    next_reminder_at TIMESTAMPTZ,
+    UNIQUE (assessment_id, school_room_id)
+);
+"""
+
+_PORTAL_ROOM_FOLLOW_UP_TICKETS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_portal_follow_up_tickets_school_status
+ON portal_room_follow_up_tickets (school_id, status, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_portal_follow_up_tickets_staff_status
+ON portal_room_follow_up_tickets (staff_id, status, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_portal_follow_up_tickets_reminder
+ON portal_room_follow_up_tickets (next_reminder_at)
+WHERE status <> 'selesai' AND next_reminder_at IS NOT NULL;
+"""
+
+_PORTAL_ROOM_FOLLOW_UP_UPDATES_SQL = """
+CREATE TABLE IF NOT EXISTS portal_room_follow_up_updates (
+    id SERIAL PRIMARY KEY,
+    follow_up_id INTEGER NOT NULL REFERENCES portal_room_follow_up_tickets(id) ON DELETE CASCADE,
+    actor_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    actor_role TEXT,
+    event_type TEXT NOT NULL CHECK (event_type IN ('created', 'school_update', 'school_submit', 'staff_verify', 'reminder')),
+    status_before TEXT,
+    status_after TEXT,
+    note TEXT,
+    photo_path TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_PORTAL_ROOM_FOLLOW_UP_UPDATES_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_portal_follow_up_updates_ticket_created
+ON portal_room_follow_up_updates (follow_up_id, created_at DESC);
 """
 
 _USER_KECAMATAN_SQL = """
@@ -849,6 +905,10 @@ def ensure_dashboard_schema() -> None:
         _PORTAL_ACTIVITY_LOGS_SQL,
         _PORTAL_ACTIVITY_LOGS_INDEX_CREATED,
         _PORTAL_ACTIVITY_LOGS_INDEX_TARGET,
+        _PORTAL_ROOM_FOLLOW_UP_TICKETS_SQL,
+        _PORTAL_ROOM_FOLLOW_UP_TICKETS_INDEX_SQL,
+        _PORTAL_ROOM_FOLLOW_UP_UPDATES_SQL,
+        _PORTAL_ROOM_FOLLOW_UP_UPDATES_INDEX_SQL,
         # Kecamatan access control tables
         _USER_KECAMATAN_SQL,
         _USER_KECAMATAN_INDEX_SQL,
@@ -924,7 +984,36 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS mother_name TEXT",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS nik TEXT",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS kk_number TEXT",
+        "ALTER TABLE portal_assessments ADD COLUMN IF NOT EXISTS score_scale_max INTEGER",
+        "ALTER TABLE portal_assessments ALTER COLUMN score_scale_max SET DEFAULT 3",
+        "UPDATE portal_assessments SET score_scale_max = 3 WHERE score_scale_max IS NULL OR score_scale_max NOT IN (3, 5)",
+        "ALTER TABLE portal_assessments ALTER COLUMN score_scale_max SET NOT NULL",
+        "ALTER TABLE portal_assessments DROP CONSTRAINT IF EXISTS portal_assessments_score_scale_max_check",
+        "ALTER TABLE portal_assessments ADD CONSTRAINT portal_assessments_score_scale_max_check CHECK (score_scale_max IN (3, 5))",
         "ALTER TABLE portal_assessments ADD COLUMN IF NOT EXISTS period_id INTEGER REFERENCES portal_assessment_periods(id) ON DELETE SET NULL",
+        """
+        DO $$
+        DECLARE
+            _constraint_name TEXT;
+        BEGIN
+            FOR _constraint_name IN
+                SELECT c.conname
+                FROM pg_constraint c
+                JOIN pg_class t ON t.oid = c.conrelid
+                JOIN pg_namespace n ON n.oid = t.relnamespace
+                WHERE n.nspname = 'public'
+                  AND t.relname = 'portal_assessment_scores'
+                  AND c.contype = 'c'
+                  AND pg_get_constraintdef(c.oid) ILIKE '%score%'
+            LOOP
+                EXECUTE format(
+                    'ALTER TABLE portal_assessment_scores DROP CONSTRAINT IF EXISTS %I',
+                    _constraint_name
+                );
+            END LOOP;
+        END $$;
+        """,
+        "ALTER TABLE portal_assessment_scores ADD CONSTRAINT portal_assessment_scores_score_check CHECK (score >= 0 AND score <= 5)",
         "ALTER TABLE portal_assessment_scores ADD COLUMN IF NOT EXISTS notes TEXT",
         # Rename taken_at to captured_at if it exists (handling legacy schema)
         "DO $$ BEGIN IF EXISTS(SELECT * FROM information_schema.columns WHERE table_name='portal_assessment_photos' AND column_name='taken_at') THEN ALTER TABLE portal_assessment_photos RENAME COLUMN taken_at TO captured_at; END IF; END $$;",

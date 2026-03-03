@@ -115,7 +115,7 @@ def role_required(*roles: str) -> Callable:
         def wrapper(*args, **kwargs):
             user = current_user()
             if not user:
-                flash("Silakan login terlebih dahulu.", "warning")
+                # flash("Silakan login terlebih dahulu.", "warning")
                 return redirect(url_for("auth.login", next=request.path))
             
             role = user.get("role")
@@ -125,7 +125,7 @@ def role_required(*roles: str) -> Callable:
                 if role == "admin":
                     return redirect(url_for("main.admin_select_role"))
                 elif role == "coordinator":
-                    return redirect(url_for("portal.coordinator_dashboard"))
+                    return redirect(url_for("portal.home"))
                 elif role == "staff":
                     return redirect(url_for("portal.home"))
                 elif role == "sekolah":
@@ -182,7 +182,7 @@ def _redirect_after_login(user: dict, fallback: Optional[str] = None) -> str:
     if role == "admin":
         return url_for("main.admin_select_role")
     elif role == "coordinator":
-        return url_for("portal.coordinator_dashboard")
+        return url_for("portal.home")
     elif role == "staff":
         return url_for("portal.home")
     elif role == "sekolah":

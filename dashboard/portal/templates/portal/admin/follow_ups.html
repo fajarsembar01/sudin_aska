@@ -1,0 +1,448 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Admin Tindak Lanjut" %}
+
+{% block head_extra %}
+<style>
+    .followup-admin-mobile-card {
+        border: 1px solid var(--border-soft);
+        border-radius: 14px;
+        padding: 0.85rem;
+        background: var(--bg-surface);
+    }
+
+    .followup-admin-mobile-card + .followup-admin-mobile-card {
+        margin-top: 0.75rem;
+    }
+
+    .followup-admin-ticket-code {
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+
+    .followup-admin-meta {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    .school-autocomplete-wrap {
+        position: relative;
+    }
+
+    .school-autocomplete-panel {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        z-index: 1200;
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        border: 1px solid var(--border-soft);
+        border-radius: 10px;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+        max-height: 220px;
+        overflow-y: auto;
+        display: none;
+    }
+
+    .school-autocomplete-item {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        color: var(--text-primary);
+        text-align: left;
+        padding: 0.55rem 0.75rem;
+        font-size: 0.875rem;
+        line-height: 1.2;
+    }
+
+    .school-autocomplete-item + .school-autocomplete-item {
+        border-top: 1px solid var(--border-soft);
+    }
+
+    .school-autocomplete-item:hover,
+    .school-autocomplete-item:focus {
+        background: var(--bg-soft);
+        color: var(--text-primary);
+        outline: none;
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h1 class="h4 fw-bold mb-1">Admin Tindak Lanjut PANBERSS</h1>
+                <p class="text-muted mb-0">Review dan kelola seluruh tiket tindak lanjut.</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <span class="badge rounded-pill text-bg-secondary">Total {{ tickets|length }}</span>
+                <span class="badge rounded-pill text-bg-warning">Baru {{ status_counts.baru }}</span>
+                <span class="badge rounded-pill text-bg-primary">Diproses {{ status_counts.diproses }}</span>
+                <span class="badge rounded-pill text-bg-info">Diajukan {{ status_counts.diajukan }}</span>
+                <span class="badge rounded-pill text-bg-success">Selesai {{ status_counts.selesai }}</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4">
+    <div class="col-xl-8">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Filter Tiket</h2>
+                <form method="get" action="{{ url_for('portal.admin_follow_ups') }}" class="row g-2">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="q" value="{{ query_text }}"
+                            placeholder="Cari tiket/sekolah/ruang/NPSN">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" name="status">
+                            <option value="">Semua Status</option>
+                            {% for status_value, status_label in follow_up_status_labels.items() %}
+                            <option value="{{ status_value }}" {% if status_filter == status_value %}selected{% endif %}>{{ status_label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="school-autocomplete-wrap">
+                            <input type="text" class="form-control" id="schoolFilterInput"
+                                placeholder="Ketik nama sekolah...">
+                            <input type="hidden" name="school_id" id="schoolFilterValue"
+                                value="{{ school_filter if school_filter else 0 }}">
+                            <div class="school-autocomplete-panel" id="schoolFilterPanel"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" name="staff_id">
+                            <option value="0">Semua Staff</option>
+                            {% for staff in staff_options %}
+                            <option value="{{ staff.id }}" {% if staff_filter == staff.id %}selected{% endif %}>{{ staff.full_name or staff.email }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm">Terapkan</button>
+                        <a href="{{ url_for('portal.admin_follow_ups') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Daftar Tiket</h2>
+                {% if tickets %}
+                <div class="d-md-none">
+                    {% for ticket in tickets %}
+                    <article class="followup-admin-mobile-card">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <div class="followup-admin-ticket-code">{{ ticket.ticket_code or ('#' ~ ticket.id) }}</div>
+                                <div class="followup-admin-meta">{{ ticket.school_name }}</div>
+                            </div>
+                            <span class="badge text-bg-{{ ticket.status_badge }}">{{ ticket.status_label }}</span>
+                        </div>
+                        <div class="fw-semibold mb-1">{{ ticket.room_name }}</div>
+                        <div class="followup-admin-meta mb-2">
+                            Skor {{ "%.1f"|format(ticket.trigger_score_pct or 0) }}/100 • {{ ticket.updated_label }}
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a class="btn btn-outline-primary btn-sm w-100"
+                                href="{{ url_for('portal.follow_up_detail', follow_up_id=ticket.id) }}">Detail</a>
+                            <a class="btn btn-outline-secondary btn-sm w-100"
+                                href="{{ url_for('portal.admin_follow_up_edit', follow_up_id=ticket.id) }}">Edit</a>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+
+                <div class="table-responsive d-none d-md-block">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Tiket</th>
+                                <th>Sekolah</th>
+                                <th>Ruangan</th>
+                                <th>Staff</th>
+                                <th>Status</th>
+                                <th>Update</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in tickets %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">{{ ticket.ticket_code or ('#' ~ ticket.id) }}</div>
+                                    <div class="small text-muted">Skor {{ "%.1f"|format(ticket.trigger_score_pct or 0) }}/100</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">{{ ticket.school_name }}</div>
+                                    <div class="small text-muted">{{ ticket.school_npsn or '-' }}</div>
+                                </td>
+                                <td>{{ ticket.room_name }}</td>
+                                <td>{{ ticket.staff_name or '-' }}</td>
+                                <td><span class="badge text-bg-{{ ticket.status_badge }}">{{ ticket.status_label }}</span></td>
+                                <td>{{ ticket.updated_label }}</td>
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a class="btn btn-outline-primary btn-sm"
+                                            href="{{ url_for('portal.follow_up_detail', follow_up_id=ticket.id) }}">Detail</a>
+                                        <a class="btn btn-outline-secondary btn-sm"
+                                            href="{{ url_for('portal.admin_follow_up_edit', follow_up_id=ticket.id) }}">Edit</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <h2 class="h6 fw-semibold mb-2">Belum ada tiket sesuai filter.</h2>
+                    <p class="text-muted mb-0">Coba ubah filter atau buat tiket manual.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Pilih Sekolah Untuk Buat Tiket</h2>
+                <form method="get" action="{{ url_for('portal.admin_follow_ups') }}">
+                    <input type="hidden" name="q" value="{{ query_text }}">
+                    <input type="hidden" name="status" value="{{ status_filter }}">
+                    <input type="hidden" name="school_id" value="{{ school_filter }}">
+                    <input type="hidden" name="staff_id" value="{{ staff_filter }}">
+                    <div class="school-autocomplete-wrap mb-2">
+                        <input type="text" class="form-control" id="createSchoolInput"
+                            placeholder="Ketik nama sekolah...">
+                        <input type="hidden" name="create_school_id" id="createSchoolValue"
+                            value="{{ create_school_id if create_school_id else 0 }}">
+                        <div class="school-autocomplete-panel" id="createSchoolPanel"></div>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary btn-sm w-100">Muat Ruangan Sekolah</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Buat Tiket Manual</h2>
+                {% if create_school_id and create_school %}
+                <div class="small text-muted mb-2">Sekolah: <strong>{{ create_school.name }}</strong></div>
+                {% if not create_latest_assessment %}
+                <div class="alert alert-warning py-2 px-3 small mb-3">
+                    Belum ada assessment submitted/verified untuk sekolah ini.
+                </div>
+                {% endif %}
+                <form method="post" action="{{ url_for('portal.admin_follow_up_create') }}">
+                    <input type="hidden" name="school_id" value="{{ create_school_id }}">
+                    <div class="mb-2">
+                        <label class="form-label small text-muted">Assessment ID</label>
+                        <input type="number" class="form-control form-control-sm" name="assessment_id"
+                            value="{{ create_latest_assessment.id if create_latest_assessment else '' }}"
+                            placeholder="Kosongkan untuk latest submitted">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small text-muted">Ruangan Sekolah</label>
+                        <select class="form-select form-select-sm" name="school_room_id" required>
+                            <option value="">Pilih ruangan</option>
+                            {% for room in create_school_rooms %}
+                            <option value="{{ room.school_room_id }}">{{ room.room_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small text-muted">Staff Penanggung Jawab</label>
+                        <select class="form-select form-select-sm" name="staff_id" required>
+                            <option value="">Pilih staff</option>
+                            {% for staff in staff_options %}
+                            <option value="{{ staff.id }}">{{ staff.full_name or staff.email }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Skor Trigger</label>
+                            <input type="number" min="0" max="100" step="0.1" class="form-control form-control-sm"
+                                name="trigger_score_pct" value="0" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Threshold</label>
+                            <input type="number" min="1" max="100" step="0.1" class="form-control form-control-sm"
+                                name="threshold_pct" value="60" required>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small text-muted">Status Awal</label>
+                        <select class="form-select form-select-sm" name="status">
+                            {% for status_value, status_label in follow_up_status_labels.items() %}
+                            <option value="{{ status_value }}">{{ status_label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">Catatan Admin (opsional)</label>
+                        <textarea class="form-control form-control-sm" rows="2" name="note"
+                            placeholder="Catatan pembuatan tiket manual"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm w-100">Buat Tiket</button>
+                </form>
+                {% else %}
+                <p class="text-muted small mb-0">Pilih sekolah dulu untuk memuat daftar ruangan.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block portal_scripts %}
+{{ super() }}
+<script>
+    (function () {
+        var schoolOptions = [
+            {% for school in schools %}
+            {
+                id: {{ school.id }},
+                name: {{ (school.name or '')|tojson }},
+                npsn: {{ (school.npsn or '')|tojson }}
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        function schoolLabel(item) {
+            if (!item) return '';
+            if (item.id === 0) return item.name || 'Semua Sekolah';
+            return item.npsn ? (item.name + ' • ' + item.npsn) : item.name;
+        }
+
+        function normalize(value) {
+            return String(value || '').toLowerCase();
+        }
+
+        function attachAutocomplete(config) {
+            var inputEl = document.getElementById(config.inputId);
+            var hiddenEl = document.getElementById(config.hiddenId);
+            var panelEl = document.getElementById(config.panelId);
+            if (!inputEl || !hiddenEl || !panelEl) return;
+            inputEl.setAttribute('autocomplete', 'off');
+
+            var dataset = (config.includeAllOption ? [{ id: 0, name: 'Semua Sekolah', npsn: '' }] : []).concat(schoolOptions);
+            function findById(id) {
+                return dataset.find(function (item) {
+                    return Number(item.id) === Number(id);
+                });
+            }
+            var selectedId = parseInt(hiddenEl.value || '0', 10);
+            var selectedItem = findById(selectedId);
+            if (selectedItem && Number(selectedItem.id) !== 0) {
+                inputEl.value = schoolLabel(selectedItem);
+            } else {
+                inputEl.value = '';
+                hiddenEl.value = '0';
+            }
+
+            function render(items) {
+                panelEl.innerHTML = '';
+                if (!items.length) {
+                    panelEl.style.display = 'none';
+                    return;
+                }
+                items.forEach(function (item) {
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'school-autocomplete-item';
+                    btn.setAttribute('data-id', String(item.id));
+                    btn.textContent = schoolLabel(item);
+                    panelEl.appendChild(btn);
+                });
+                panelEl.style.display = 'block';
+            }
+
+            function getMatches(queryText) {
+                var query = normalize(queryText).trim();
+                return dataset.filter(function (item) {
+                    if (!query) return true;
+                    return normalize(schoolLabel(item)).indexOf(query) !== -1;
+                }).slice(0, 30);
+            }
+
+            function applyFilter() {
+                render(getMatches(inputEl.value));
+            }
+
+            function setSelection(chosen) {
+                if (!chosen) return;
+                hiddenEl.value = String(chosen.id);
+                inputEl.value = Number(chosen.id) === 0 ? '' : schoolLabel(chosen);
+                panelEl.style.display = 'none';
+            }
+
+            inputEl.addEventListener('focus', applyFilter);
+            inputEl.addEventListener('input', function () {
+                hiddenEl.value = '0';
+                applyFilter();
+            });
+            inputEl.addEventListener('keydown', function (event) {
+                if (event.key !== 'Enter') return;
+                var matches = getMatches(inputEl.value);
+                if (!matches.length) return;
+                setSelection(matches[0]);
+            });
+
+            panelEl.addEventListener('click', function (event) {
+                var target = event.target;
+                if (!target || !target.matches('.school-autocomplete-item')) return;
+                var id = parseInt(target.getAttribute('data-id') || '0', 10);
+                setSelection(findById(id));
+            });
+
+            document.addEventListener('click', function (event) {
+                var within = panelEl.contains(event.target) || inputEl.contains(event.target);
+                if (!within) panelEl.style.display = 'none';
+            });
+
+            inputEl.form && inputEl.form.addEventListener('submit', function () {
+                var typed = normalize(inputEl.value).trim();
+                if (!typed) {
+                    hiddenEl.value = '0';
+                    return;
+                }
+                var exact = dataset.find(function (item) {
+                    return normalize(schoolLabel(item)) === typed;
+                });
+                if (exact) {
+                    hiddenEl.value = String(exact.id);
+                    return;
+                }
+                var matches = getMatches(inputEl.value);
+                if (!matches.length) {
+                    hiddenEl.value = '0';
+                    return;
+                }
+                setSelection(matches[0]);
+            });
+        }
+
+        attachAutocomplete({
+            inputId: 'schoolFilterInput',
+            hiddenId: 'schoolFilterValue',
+            panelId: 'schoolFilterPanel',
+            includeAllOption: true
+        });
+
+        attachAutocomplete({
+            inputId: 'createSchoolInput',
+            hiddenId: 'createSchoolValue',
+            panelId: 'createSchoolPanel',
+            includeAllOption: false
+        });
+    })();
+</script>
+{% endblock %}

@@ -5,11 +5,24 @@ Generate an idempotent SQL import script for portal_kecamatan -> portal_keluraha
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
 import pandas as pd
+
+try:
+    from zoneinfo import ZoneInfo
+except (ImportError, ModuleNotFoundError):
+    ZoneInfo = None
+
+if ZoneInfo is not None:
+    try:
+        _JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
+    except Exception:
+        _JAKARTA_TZ = timezone(timedelta(hours=7), name="WIB")
+else:
+    _JAKARTA_TZ = timezone(timedelta(hours=7), name="WIB")
 
 # Map Excel sheet names to their kecamatan names
 SHEET_KECAMATAN_MAP = {
@@ -224,7 +237,7 @@ def build_school_sql(school_rows: List[Dict[str, str]]) -> Iterable[str]:
 
 def build_sql_file(kelurahan_map: Dict[str, List[str]], school_rows: List[Dict[str, str]]) -> str:
     """Assemble the final SQL script."""
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now(_JAKARTA_TZ).strftime("%Y-%m-%d %H:%M:%S WIB")
     header = [
         "-- Portal school + kelurahan/kecamatan import",
         f"-- Source file : {EXCEL_PATH.name}",

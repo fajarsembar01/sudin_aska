@@ -33,10 +33,10 @@
                             </div>
                             {% endif %}
                             <div class="mb-3">
-                                <div class="fw-semibold text-uppercase small text-muted">
+                                <div class="fw-semibold">
                                     {{ c.area }}
                                     {% if c.is_user_area %}
-                                    <span class="badge bg-primary ms-2">wilayah anda</span>
+                                    <span class="badge bg-primary ms-2">Wilayah Anda</span>
                                     {% endif %}
                                 </div>
                                 <ul class="list-unstyled mb-0">
@@ -65,7 +65,12 @@
                 </div>
 
                 <div class="alert alert-info mt-3 mb-0 small">
-                    Admin wilayah siap membantu verifikasi data atau pembaruan akun sekolah Anda.
+                    <i class="bi bi-info-circle me-1"></i>
+                    {% if user_school %}
+                    Admin wilayah siap membantu verifikasi data atau pembaruan akun sekolah Anda.</p>
+                    {% else %}
+                    Admin wilayah siap membantu pendaftaran atau verifikasi akun Anda.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path, PurePosixPath
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urlparse
 import subprocess
 import sys
 import math
@@ -13,6 +13,7 @@ import json
 import uuid
 import re
 import os
+import io
 import urllib.request as urlrequest
 from zoneinfo import ZoneInfo
 
@@ -141,6 +142,28 @@ from .queries import (
     get_portal_kontak_by_wilayah,
     delete_portal_kontak,
     upsert_portal_undo_window_seconds,
+    list_school_user_ids_for_follow_up_notifications,
+    create_room_follow_up_ticket,
+    list_room_follow_up_tickets_for_school,
+    count_room_follow_up_nav_badge_for_school,
+    count_room_follow_up_nav_badge_for_staff,
+    list_room_follow_up_tickets_for_admin,
+    list_room_follow_up_tickets_for_staff,
+    get_room_follow_up_ticket,
+    get_latest_submitted_assessment_for_school,
+    list_room_follow_up_updates,
+    admin_create_room_follow_up_ticket,
+    admin_update_room_follow_up_ticket,
+    admin_delete_room_follow_up_ticket,
+    add_school_room_follow_up_update,
+    verify_room_follow_up_by_staff,
+    list_due_room_follow_up_reminders,
+    list_due_room_follow_up_reminders_for_staff,
+    mark_room_follow_up_reminders_sent,
+    PORTAL_FOLLOW_UP_STATUS_NEW,
+    PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS,
+    PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
+    PORTAL_FOLLOW_UP_STATUS_DONE,
     PORTAL_UNDO_WINDOW_DEFAULT_SECONDS,
     PORTAL_UNDO_WINDOW_MIN_SECONDS,
     PORTAL_UNDO_WINDOW_MAX_SECONDS,
@@ -154,6 +177,7 @@ from dashboard.queries import (
     get_available_staff,
     list_dashboard_users,
 )
+from dashboard.photo_stamp import decode_data_url_image, stamp_live_photo
 from dashboard.telegram_notifications import (
     notify_assignment_request,
     notify_assignment_request_status_update,
@@ -164,6 +188,7 @@ from dashboard.telegram_notifications import (
 )
 from dashboard.daftar_tamu.queries import (
     PANBERS_ASSIGNMENT_NOTIFICATION_CATEGORY,
+    PANBERS_FOLLOW_UP_NOTIFICATION_CATEGORY,
     PANBERS_REOPEN_NOTIFICATION_CATEGORY,
     PANBERS_TEAM_MEMBER_NOTIFICATION_CATEGORY,
     USER_APP_NOTIFICATION_CATEGORIES,
@@ -199,13 +224,94 @@ portal_bp = Blueprint(
 
 UPLOAD_FOLDER = Path(__file__).parent.parent.parent / "uploads" / "portal"
 PHOTO_REQUIRED_PCT = 90.0
-JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
+FOLLOW_UP_THRESHOLD_PCT = 60.0
+try:
+    JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
+except Exception:
+    JAKARTA_TZ = timezone(timedelta(hours=7), name="WIB")
 _PREVIEW_ALLOWED_ROLES = {"staff", "coordinator", "sekolah"}
 _PREVIEW_ADMIN_SESSION_KEY = "preview_admin_user"
 _PREVIEW_TARGET_SESSION_KEY = "preview_target_user"
 _PREVIEW_APP_SESSION_KEY = "preview_selected_app"
+_PREVIEW_RETURN_URL_SESSION_KEY = "preview_return_url"
 _PREVIEW_READ_ONLY_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 _PREVIEW_READ_ONLY_EXEMPT_ENDPOINTS = {"portal.preview_start", "portal.preview_pin"}
+_LEGACY_SCORE_SCALE_MAX = 3
+_NEW_SCORE_SCALE_MAX = 5
+FOLLOW_UP_STATUS_LABELS = {
+    PORTAL_FOLLOW_UP_STATUS_NEW: "Baru",
+    PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS: "Diproses Sekolah",
+    PORTAL_FOLLOW_UP_STATUS_SUBMITTED: "Menunggu Verifikasi Staff",
+    PORTAL_FOLLOW_UP_STATUS_DONE: "Selesai",
+}
+FOLLOW_UP_EVENT_LABELS = {
+    "created": "Tiket dibuat otomatis",
+    "admin_create": "Tiket dibuat admin",
+    "admin_update": "Update oleh admin",
+    "school_update": "Update dari sekolah",
+    "school_submit": "Sekolah mengajukan verifikasi",
+    "staff_verify": "Staff memverifikasi selesai",
+    "reminder": "Pengingat bulanan",
+}
+
+
+def _normalize_assessment_scale_max(scale_max: int | None) -> int:
+    try:
+        parsed = int(scale_max) if scale_max is not None else _LEGACY_SCORE_SCALE_MAX
+    except (TypeError, ValueError):
+        parsed = _LEGACY_SCORE_SCALE_MAX
+    return _NEW_SCORE_SCALE_MAX if parsed == _NEW_SCORE_SCALE_MAX else _LEGACY_SCORE_SCALE_MAX
+
+
+def _assessment_score_min(scale_max: int) -> int:
+    return 1 if scale_max == _NEW_SCORE_SCALE_MAX else 0
+
+
+def _assessment_submit_baseline(scale_max: int) -> int:
+    return 1 if scale_max == _NEW_SCORE_SCALE_MAX else 0
+
+
+def _score_pct_from_raw(score: float | int | None, scale_max: int) -> float:
+    try:
+        score_value = float(score or 0)
+    except (TypeError, ValueError):
+        return 0.0
+    normalized_scale = _normalize_assessment_scale_max(scale_max)
+    if normalized_scale <= 0:
+        return 0.0
+    return (score_value / normalized_scale) * 100.0
+
+
+def _build_assessment_score_config(assessment: dict | None) -> dict:
+    scale_max = _normalize_assessment_scale_max((assessment or {}).get("score_scale_max"))
+    score_min = _assessment_score_min(scale_max)
+    score_baseline = _assessment_submit_baseline(scale_max)
+    options = list(range(score_min, scale_max + 1))
+    if scale_max == _NEW_SCORE_SCALE_MAX:
+        legend = [
+            {"value": 1, "label": "sangat kurang"},
+            {"value": 2, "label": "kurang"},
+            {"value": 3, "label": "cukup"},
+            {"value": 4, "label": "baik"},
+            {"value": 5, "label": "sangat baik"},
+        ]
+    else:
+        legend = [
+            {"value": 0, "label": "rusak"},
+            {"value": 1, "label": "kurang baik"},
+            {"value": 2, "label": "baik"},
+            {"value": 3, "label": "sangat baik"},
+        ]
+    default_label = next((item["label"] for item in legend if item["value"] == score_min), "")
+    return {
+        "min": score_min,
+        "max": scale_max,
+        "default": score_min,
+        "default_label": default_label,
+        "baseline": score_baseline,
+        "options": options,
+        "legend": legend,
+    }
 
 
 def _is_preview_read_only_session() -> bool:
@@ -248,12 +354,19 @@ def _enforce_preview_read_only_mode() -> Response | None:
     return _preview_read_only_block_response(fallback_url=url_for("portal.preview_accounts"))
 
 
-def _get_low_score_rooms_missing_photos(
+def _get_low_score_rooms(
     assessment_id: int,
     school_id: int,
-    threshold_pct: float = PHOTO_REQUIRED_PCT,
+    *,
+    threshold_pct: float,
+    require_missing_photo: bool = False,
 ) -> list[dict]:
-    """Return rooms with score below threshold that don't have photos yet."""
+    """Return rooms with average score below threshold."""
+    assessment = get_assessment_by_id(assessment_id) or {}
+    score_config = _build_assessment_score_config(assessment)
+    scale_max = score_config["max"]
+    missing_default = score_config["default"]
+
     rooms = list_school_rooms(school_id)
     if not rooms:
         return []
@@ -279,27 +392,141 @@ def _get_low_score_rooms_missing_photos(
             aspect_id = aspect.get("id")
             score_val = score_map.get((room_id, aspect_id))
             if score_val is None:
-                score_val = 3
+                score_val = missing_default
             try:
                 total += float(score_val)
             except (TypeError, ValueError):
-                total += 3.0
+                total += float(missing_default)
             count += 1
 
         if count == 0:
             continue
 
-        pct = (total / count) / 3 * 100
-        if pct < threshold_pct and room_id not in rooms_with_photos:
-            missing.append(
-                {
-                    "school_room_id": room_id,
-                    "room_name": room.get("room_name") or f"Ruang {room_id}",
-                    "room_pct": round(pct, 1),
-                }
-            )
+        pct = _score_pct_from_raw(total / count, scale_max)
+        if pct >= threshold_pct:
+            continue
+        if require_missing_photo and room_id in rooms_with_photos:
+            continue
+        if room_id is None:
+            continue
+        missing.append(
+            {
+                "school_room_id": int(room_id),
+                "room_id": int(room.get("room_id") or 0),
+                "room_name": room.get("room_name") or f"Ruang {room_id}",
+                "room_pct": round(pct, 1),
+            }
+        )
 
     return missing
+
+
+def _get_low_score_rooms_missing_photos(
+    assessment_id: int,
+    school_id: int,
+    threshold_pct: float = PHOTO_REQUIRED_PCT,
+) -> list[dict]:
+    """Return rooms with score below threshold that don't have photos yet."""
+    return _get_low_score_rooms(
+        assessment_id,
+        school_id,
+        threshold_pct=threshold_pct,
+        require_missing_photo=True,
+    )
+
+
+def _status_badge_class(status: str) -> str:
+    value = (status or "").strip().lower()
+    if value == PORTAL_FOLLOW_UP_STATUS_DONE:
+        return "success"
+    if value == PORTAL_FOLLOW_UP_STATUS_SUBMITTED:
+        return "warning"
+    if value in {PORTAL_FOLLOW_UP_STATUS_NEW, PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS}:
+        return "primary"
+    return "secondary"
+
+
+def _follow_up_status_label(status: str) -> str:
+    return FOLLOW_UP_STATUS_LABELS.get((status or "").strip().lower(), "Tidak diketahui")
+
+
+def _follow_up_event_label(event_type: str) -> str:
+    return FOLLOW_UP_EVENT_LABELS.get((event_type or "").strip().lower(), "Update")
+
+
+def _ensure_follow_up_tickets_after_submit(
+    *,
+    assessment: dict,
+    low_rooms: list[dict],
+    actor: dict,
+) -> int:
+    """Create follow-up tickets for low-score rooms and notify sekolah users."""
+    if not assessment or not low_rooms:
+        return 0
+
+    school_id = int(assessment.get("school_id") or 0)
+    assessment_id = int(assessment.get("id") or 0)
+    staff_id = int(assessment.get("staff_id") or 0)
+    school_name = (assessment.get("school_name") or "").strip() or "sekolah"
+    if not school_id or not assessment_id or not staff_id:
+        return 0
+
+    recipient_ids = list_school_user_ids_for_follow_up_notifications(school_id)
+
+    created_count = 0
+    actor_name = (actor or {}).get("full_name") or (actor or {}).get("email") or "Staff"
+    for room in low_rooms:
+        school_room_id = int(room.get("school_room_id") or 0)
+        room_id = int(room.get("room_id") or 0)
+        room_name = (room.get("room_name") or "").strip() or f"Ruang {school_room_id}"
+        room_pct = float(room.get("room_pct") or 0.0)
+        if school_room_id <= 0 or room_id <= 0:
+            continue
+        ticket = create_room_follow_up_ticket(
+            assessment_id=assessment_id,
+            school_id=school_id,
+            school_room_id=school_room_id,
+            room_id=room_id,
+            room_name=room_name,
+            staff_id=staff_id,
+            trigger_score_pct=room_pct,
+            threshold_pct=FOLLOW_UP_THRESHOLD_PCT,
+        )
+        follow_up_id = int(ticket.get("id") or 0)
+        if follow_up_id <= 0:
+            continue
+        if not ticket.get("_created"):
+            continue
+        created_count += 1
+        notif_title = "Tindak Lanjut PANBERSS"
+        notif_message = (
+            f"{school_name}: {room_name} skor {room_pct:.1f} (di bawah {FOLLOW_UP_THRESHOLD_PCT:.0f}). "
+            "Mohon lakukan tindak lanjut."
+        )
+        if recipient_ids:
+            create_user_notifications(
+                recipient_ids=recipient_ids,
+                category=PANBERS_FOLLOW_UP_NOTIFICATION_CATEGORY,
+                title=notif_title,
+                message=notif_message,
+                link=url_for("portal.follow_up_detail", follow_up_id=follow_up_id),
+                reference_table="portal_room_follow_up_tickets",
+                reference_id=follow_up_id,
+                metadata={
+                    "status": PORTAL_FOLLOW_UP_STATUS_NEW,
+                    "feature": "panbers_follow_up",
+                    "ticket_id": follow_up_id,
+                    "ticket_code": ticket.get("ticket_code"),
+                    "school_id": school_id,
+                    "school_name": school_name,
+                    "assessment_id": assessment_id,
+                    "room_name": room_name,
+                    "room_score_pct": room_pct,
+                    "threshold_pct": FOLLOW_UP_THRESHOLD_PCT,
+                    "actor_name": actor_name,
+                },
+            )
+    return created_count
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 AREA_CONTACTS = [
     {"area": "Cilincing", "name": "Neni", "phone": "+62 851-1085-1681"},
@@ -405,6 +632,151 @@ def _build_profile_photo_url(photo_path: str | None) -> str | None:
     return url_for("portal.uploaded_file", filename=rel)
 
 
+def _build_portal_file_url(file_path: str | None) -> str | None:
+    rel = _normalize_photo_rel_path(file_path)
+    if not rel:
+        return None
+    return url_for("portal.uploaded_file", filename=rel)
+
+
+def _format_follow_up_datetime(value: object) -> str:
+    if not isinstance(value, datetime):
+        return "-"
+    local_dt = value
+    if local_dt.tzinfo is None:
+        local_dt = local_dt.replace(tzinfo=timezone.utc)
+    local_dt = local_dt.astimezone(JAKARTA_TZ)
+    return local_dt.strftime("%d %b %Y, %H:%M WIB")
+
+
+def _serialize_follow_up_timeline(updates: list[dict]) -> list[dict]:
+    serialized: list[dict] = []
+    for item in updates or []:
+        row = dict(item)
+        event_type = (row.get("event_type") or "").strip().lower()
+        status_after = (row.get("status_after") or "").strip().lower()
+        row["event_label"] = _follow_up_event_label(event_type)
+        row["status_after_label"] = _follow_up_status_label(status_after) if status_after else ""
+        row["status_badge"] = _status_badge_class(status_after) if status_after else "secondary"
+        row["created_label"] = _format_follow_up_datetime(row.get("created_at"))
+        row["photo_url"] = _build_portal_file_url((row.get("photo_path") or "").strip() or None)
+        serialized.append(row)
+    return serialized
+
+
+def _dispatch_due_follow_up_reminders_for_user(*, user: dict, school: dict | None) -> int:
+    if not user or (user.get("role") or "").strip().lower() != "sekolah":
+        return 0
+    school_id = int((school or {}).get("id") or 0)
+    user_id = int(user.get("id") or 0)
+    if school_id <= 0 or user_id <= 0:
+        return 0
+
+    due_items = list_due_room_follow_up_reminders(school_id, limit=20)
+    if not due_items:
+        return 0
+
+    notified_ids: list[int] = []
+    school_name = (school or {}).get("name") or "sekolah"
+    for item in due_items:
+        follow_up_id = int(item.get("id") or 0)
+        if follow_up_id <= 0:
+            continue
+        room_name = (item.get("room_name_snapshot") or "").strip() or f"Ruang {follow_up_id}"
+        ticket_code = (item.get("ticket_code") or "").strip()
+        score_pct = float(item.get("trigger_score_pct") or 0.0)
+        notif_title = "Pengingat Tindak Lanjut PANBERSS"
+        message = (
+            f"{school_name}: {room_name} belum selesai ditindaklanjuti. "
+            f"Skor terakhir {score_pct:.1f} (<{FOLLOW_UP_THRESHOLD_PCT:.0f})."
+        )
+        if ticket_code:
+            message = f"[{ticket_code}] {message}"
+
+        created = create_user_notifications(
+            recipient_ids=[user_id],
+            category=PANBERS_FOLLOW_UP_NOTIFICATION_CATEGORY,
+            title=notif_title,
+            message=message,
+            link=url_for("portal.follow_up_detail", follow_up_id=follow_up_id),
+            reference_table="portal_room_follow_up_tickets",
+            reference_id=follow_up_id,
+            metadata={
+                "status": (item.get("status") or "").strip().lower() or PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS,
+                "feature": "panbers_follow_up",
+                "ticket_id": follow_up_id,
+                "ticket_code": ticket_code or None,
+                "room_name": room_name,
+                "room_score_pct": score_pct,
+                "is_reminder": True,
+                "school_id": school_id,
+                "threshold_pct": FOLLOW_UP_THRESHOLD_PCT,
+            },
+        )
+        if created > 0:
+            notified_ids.append(follow_up_id)
+
+    if not notified_ids:
+        return 0
+    mark_room_follow_up_reminders_sent(follow_up_ids=notified_ids, actor_user_id=user_id)
+    return len(notified_ids)
+
+
+def _dispatch_due_follow_up_reminders_for_staff_user(*, user: dict) -> int:
+    if not user or (user.get("role") or "").strip().lower() != "staff":
+        return 0
+    user_id = int(user.get("id") or 0)
+    if user_id <= 0:
+        return 0
+
+    due_items = list_due_room_follow_up_reminders_for_staff(user_id, limit=20)
+    if not due_items:
+        return 0
+
+    notified_ids: list[int] = []
+    for item in due_items:
+        follow_up_id = int(item.get("id") or 0)
+        if follow_up_id <= 0:
+            continue
+        school_name = (item.get("school_name") or "").strip() or "Sekolah"
+        room_name = (item.get("room_name_snapshot") or "").strip() or f"Ruang {follow_up_id}"
+        ticket_code = (item.get("ticket_code") or "").strip()
+        score_pct = float(item.get("trigger_score_pct") or 0.0)
+        notif_title = "Reminder Verifikasi Tindak Lanjut PANBERSS"
+        message = (
+            f"{school_name}: {room_name} menunggu verifikasi staff. "
+            f"Skor terakhir {score_pct:.1f} (<{FOLLOW_UP_THRESHOLD_PCT:.0f})."
+        )
+        if ticket_code:
+            message = f"[{ticket_code}] {message}"
+        created = create_user_notifications(
+            recipient_ids=[user_id],
+            category=PANBERS_FOLLOW_UP_NOTIFICATION_CATEGORY,
+            title=notif_title,
+            message=message,
+            link=url_for("portal.follow_up_detail", follow_up_id=follow_up_id),
+            reference_table="portal_room_follow_up_tickets",
+            reference_id=follow_up_id,
+            metadata={
+                "status": PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
+                "feature": "panbers_follow_up",
+                "ticket_id": follow_up_id,
+                "ticket_code": ticket_code or None,
+                "room_name": room_name,
+                "school_name": school_name,
+                "room_score_pct": score_pct,
+                "is_reminder": True,
+            },
+        )
+        if created > 0:
+            notified_ids.append(follow_up_id)
+
+    if not notified_ids:
+        return 0
+    mark_room_follow_up_reminders_sent(follow_up_ids=notified_ids, actor_user_id=user_id)
+    return len(notified_ids)
+
+
 def _portal_access_required(view):
     """Decorator for portal access (staff, sekolah, coordinator, or admin)."""
     from functools import wraps
@@ -440,7 +812,7 @@ def _require_profile_photo_redirect(user: dict | None) -> Response | None:
     """Redirect to profile page when photo completion is mandatory."""
     if not _needs_profile_photo_completion(user):
         return None
-    flash("Foto profil wajib diisi untuk melanjutkan akses OSS.", "warning")
+    flash("Foto profil wajib diisi untuk melanjutkan akses ke Portal.", "warning")
     return redirect(url_for("portal.user_profile_settings"))
 
 
@@ -1328,6 +1700,10 @@ def home() -> Response:
     """Portal home by role."""
     user = current_user()
     role = user.get("role")
+    display_name = (user.get("full_name") or user.get("email") or "").strip()
+    header_title = "Selamat Datang"
+    if display_name:
+        header_title = f"Selamat Datang, {display_name}"
     photo_redirect = _require_profile_photo_redirect(user)
     if photo_redirect:
         return photo_redirect
@@ -1359,13 +1735,12 @@ def home() -> Response:
             "role_selection.html",
             page_title="Pilih Layanan Staff - ASKA Portal",
             page_description="Pilih layanan untuk Staff",
-            header_title="Selamat Datang, Staff",
+            header_title=header_title,
             header_subtitle="Silakan pilih layanan yang ingin Anda akses",
             cards=cards,
             default_col_class="col-md-6 col-12",
             show_logout=True,
         )
-
     if role == "coordinator":
         cards = [
             {
@@ -1387,7 +1762,7 @@ def home() -> Response:
             "role_selection.html",
             page_title="Pilih Layanan Koordinator - ASKA Portal",
             page_description="Pilih layanan untuk Koordinator",
-            header_title="Selamat Datang, Koordinator",
+            header_title=header_title,
             header_subtitle="Silakan pilih layanan yang ingin Anda akses",
             cards=cards,
             default_col_class="col-md-6 col-12",
@@ -1462,11 +1837,11 @@ def sekolah_home() -> Response:
         subtitle = f"{school.get('name')} • NPSN {school.get('npsn')}"
     cards = [
          {
-            "title": "PANBERSS",
-            "description": "Konfigurasi ruangan untuk pemantauan kebersihan dan sarana sekolah.",
-            "icon": "bi bi-building",
-            "href": url_for("portal.sekolah_rooms"),
-            "col_class": "col-md-6 col-12",
+             "title": "PANBERSS",
+             "description": "Konfigurasi ruangan untuk pemantauan kebersihan dan sarana sekolah.",
+             "icon": "bi bi-building",
+             "href": url_for("portal.sekolah_rooms"),
+             "col_class": "col-md-6 col-12",
         },
         {
             "title": "Buku Tamu",
@@ -1480,12 +1855,614 @@ def sekolah_home() -> Response:
         "role_selection.html",
         page_title="Pilih Layanan Sekolah - ASKA Portal",
         page_description="Pilih layanan untuk sekolah",
-        header_title="Selamat Datang, Sekolah",
+        header_title="Selamat Datang",
         header_subtitle=subtitle,
         cards=cards,
         default_col_class="col-md-6 col-12",
         show_logout=True,
     )
+
+
+def _annotate_follow_up_ticket(ticket: dict) -> dict:
+    row = dict(ticket or {})
+    status_value = (row.get("status") or "").strip().lower()
+    row["status_label"] = _follow_up_status_label(status_value)
+    row["status_badge"] = _status_badge_class(status_value)
+    row["created_label"] = _format_follow_up_datetime(row.get("created_at"))
+    row["updated_label"] = _format_follow_up_datetime(row.get("updated_at"))
+    row["submitted_label"] = _format_follow_up_datetime(row.get("submitted_at"))
+    row["verified_label"] = _format_follow_up_datetime(row.get("verified_at"))
+    row["last_event_label"] = _follow_up_event_label(row.get("last_event_type") or "")
+    row["last_event_at_label"] = _format_follow_up_datetime(row.get("last_event_at"))
+    return row
+
+
+def _can_access_follow_up_ticket(user: dict, ticket: dict) -> bool:
+    role_value = (user.get("role") or "").strip().lower()
+    if role_value in {"admin", "coordinator"}:
+        return True
+    if role_value == "staff":
+        return int(user.get("id") or 0) == int(ticket.get("staff_id") or 0)
+    if role_value == "sekolah":
+        school = _fetch_user_school(user.get("id"))
+        return int((school or {}).get("id") or 0) == int(ticket.get("school_id") or 0)
+    return False
+
+
+def _parse_live_photo_payload() -> tuple[bytes | None, float | None, float | None, datetime | None]:
+    photo_data = (request.form.get("photo_data") or "").strip()
+    if not photo_data:
+        return None, None, None, None
+
+    source_bytes = decode_data_url_image(photo_data)
+    lat_raw = request.form.get("photo_latitude")
+    lon_raw = request.form.get("photo_longitude")
+    try:
+        latitude = float(lat_raw)
+        longitude = float(lon_raw)
+    except (TypeError, ValueError):
+        raise ValueError("Lokasi GPS foto progress tidak valid.")
+    if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+        raise ValueError("Lokasi GPS foto progress di luar jangkauan.")
+
+    captured_raw = (request.form.get("photo_captured_at") or "").strip()
+    captured_at: datetime | None = None
+    if captured_raw:
+        try:
+            captured_at = datetime.fromisoformat(captured_raw.replace("Z", "+00:00"))
+        except ValueError:
+            captured_at = None
+    if captured_at is None:
+        captured_at = datetime.now(JAKARTA_TZ)
+    return source_bytes, latitude, longitude, captured_at
+
+
+def _save_follow_up_photo(file_storage, *, follow_up_id: int, school_label: str | None) -> str | None:
+    live_source_bytes, live_latitude, live_longitude, live_captured_at = _parse_live_photo_payload()
+    if live_source_bytes:
+        stamped = stamp_live_photo(
+            source_bytes=live_source_bytes,
+            latitude=float(live_latitude),
+            longitude=float(live_longitude),
+            captured_at=live_captured_at or datetime.now(JAKARTA_TZ),
+            school_label=school_label,
+            upload_root=UPLOAD_FOLDER / "followups",
+            relative_root="uploads/portal/followups",
+            file_prefix=f"followup_{int(follow_up_id)}",
+        )
+        return stamped.get("stamped_path")
+
+    if not file_storage or not getattr(file_storage, "filename", ""):
+        return None
+    if not _allowed_file(file_storage.filename):
+        raise ValueError("Format foto tidak didukung. Gunakan PNG, JPG, JPEG, atau WEBP.")
+    file_storage.stream.seek(0)
+    source_bytes = file_storage.stream.read()
+    stamped = stamp_live_photo(
+        source_bytes=source_bytes,
+        latitude=0.0,
+        longitude=0.0,
+        captured_at=datetime.now(JAKARTA_TZ),
+        school_label=school_label,
+        upload_root=UPLOAD_FOLDER / "followups",
+        relative_root="uploads/portal/followups",
+        file_prefix=f"followup_{int(follow_up_id)}",
+    )
+    return stamped.get("stamped_path")
+
+
+@portal_bp.route("/sekolah/tindak-lanjut")
+@role_required("sekolah")
+def sekolah_follow_ups() -> Response:
+    user = current_user()
+    school = _fetch_user_school(user.get("id"))
+    if not school:
+        flash("Akun belum terhubung ke data sekolah.", "warning")
+        return redirect(url_for("portal.sekolah_home"))
+
+    tickets = [
+        _annotate_follow_up_ticket(item)
+        for item in list_room_follow_up_tickets_for_school(int(school.get("id")), include_done=True, limit=200)
+    ]
+    open_count = sum(1 for item in tickets if (item.get("status") or "").strip().lower() != PORTAL_FOLLOW_UP_STATUS_DONE)
+    done_count = len(tickets) - open_count
+    return render_template(
+        "portal/sekolah/follow_ups.html",
+        school=school,
+        tickets=tickets,
+        open_count=open_count,
+        done_count=done_count,
+    )
+
+
+@portal_bp.route("/staff/tindak-lanjut")
+@role_required("staff")
+def staff_follow_ups() -> Response:
+    user = current_user()
+    tickets = [
+        _annotate_follow_up_ticket(item)
+        for item in list_room_follow_up_tickets_for_staff(int(user.get("id") or 0), include_done=True, limit=250)
+    ]
+    pending_verify_count = sum(
+        1 for item in tickets if (item.get("status") or "").strip().lower() == PORTAL_FOLLOW_UP_STATUS_SUBMITTED
+    )
+    open_count = sum(1 for item in tickets if (item.get("status") or "").strip().lower() != PORTAL_FOLLOW_UP_STATUS_DONE)
+    return render_template(
+        "portal/staff/follow_ups.html",
+        tickets=tickets,
+        pending_verify_count=pending_verify_count,
+        open_count=open_count,
+    )
+
+
+@portal_bp.route("/admin/tindak-lanjut")
+@role_required("admin")
+def admin_follow_ups() -> Response:
+    query_text = (request.args.get("q") or "").strip()
+    status_filter = (request.args.get("status") or "").strip().lower()
+    school_filter = request.args.get("school_id", type=int)
+    staff_filter = request.args.get("staff_id", type=int)
+    create_school_id = request.args.get("create_school_id", type=int)
+
+    tickets = [
+        _annotate_follow_up_ticket(item)
+        for item in list_room_follow_up_tickets_for_admin(
+            status=status_filter or None,
+            school_id=school_filter if school_filter and school_filter > 0 else None,
+            staff_id=staff_filter if staff_filter and staff_filter > 0 else None,
+            search=query_text or None,
+            limit=500,
+        )
+    ]
+
+    status_counts = {
+        PORTAL_FOLLOW_UP_STATUS_NEW: 0,
+        PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS: 0,
+        PORTAL_FOLLOW_UP_STATUS_SUBMITTED: 0,
+        PORTAL_FOLLOW_UP_STATUS_DONE: 0,
+    }
+    for item in tickets:
+        status_value = (item.get("status") or "").strip().lower()
+        if status_value in status_counts:
+            status_counts[status_value] += 1
+
+    schools = list_portal_schools(active_only=False)
+    staff_options = list_all_staff()
+    create_school = get_school_by_id(create_school_id) if create_school_id else None
+    create_school_rooms = list_school_rooms(int(create_school_id)) if create_school_id else []
+    create_latest_assessment = (
+        get_latest_submitted_assessment_for_school(int(create_school_id))
+        if create_school_id
+        else None
+    )
+
+    return render_template(
+        "portal/admin/follow_ups.html",
+        tickets=tickets,
+        schools=schools,
+        staff_options=staff_options,
+        query_text=query_text,
+        status_filter=status_filter,
+        school_filter=school_filter or 0,
+        staff_filter=staff_filter or 0,
+        status_counts=status_counts,
+        create_school_id=create_school_id or 0,
+        create_school=create_school,
+        create_school_rooms=create_school_rooms,
+        create_latest_assessment=create_latest_assessment,
+        follow_up_status_labels=FOLLOW_UP_STATUS_LABELS,
+    )
+
+
+@portal_bp.route("/admin/tindak-lanjut/create", methods=["POST"])
+@role_required("admin")
+def admin_follow_up_create() -> Response:
+    user = current_user()
+    school_id = request.form.get("school_id", type=int)
+    school_room_id = request.form.get("school_room_id", type=int)
+    staff_id = request.form.get("staff_id", type=int)
+    assessment_id = request.form.get("assessment_id", type=int)
+    status_value = (request.form.get("status") or "").strip().lower()
+    note = (request.form.get("note") or "").strip()
+
+    try:
+        trigger_score_pct = float((request.form.get("trigger_score_pct") or "").strip() or "0")
+    except (TypeError, ValueError):
+        trigger_score_pct = -1.0
+    try:
+        threshold_pct = float((request.form.get("threshold_pct") or "").strip() or "60")
+    except (TypeError, ValueError):
+        threshold_pct = -1.0
+
+    if status_value not in {
+        PORTAL_FOLLOW_UP_STATUS_NEW,
+        PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS,
+        PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
+        PORTAL_FOLLOW_UP_STATUS_DONE,
+    }:
+        status_value = PORTAL_FOLLOW_UP_STATUS_NEW
+
+    if not school_id or school_id <= 0:
+        flash("Pilih sekolah terlebih dahulu.", "warning")
+        return redirect(url_for("portal.admin_follow_ups"))
+    if not school_room_id or school_room_id <= 0:
+        flash("Pilih ruangan sekolah terlebih dahulu.", "warning")
+        return redirect(url_for("portal.admin_follow_ups", create_school_id=school_id))
+    if not staff_id or staff_id <= 0:
+        flash("Pilih staff penanggung jawab.", "warning")
+        return redirect(url_for("portal.admin_follow_ups", create_school_id=school_id))
+    if trigger_score_pct < 0 or trigger_score_pct > 100:
+        flash("Skor trigger harus di antara 0 sampai 100.", "warning")
+        return redirect(url_for("portal.admin_follow_ups", create_school_id=school_id))
+    if threshold_pct <= 0 or threshold_pct > 100:
+        flash("Threshold harus di antara 1 sampai 100.", "warning")
+        return redirect(url_for("portal.admin_follow_ups", create_school_id=school_id))
+
+    school = get_school_by_id(int(school_id))
+    if not school:
+        flash("Sekolah tidak ditemukan.", "warning")
+        return redirect(url_for("portal.admin_follow_ups"))
+    school_rooms = list_school_rooms(int(school_id))
+    selected_room = next(
+        (item for item in school_rooms if int(item.get("school_room_id") or 0) == int(school_room_id)),
+        None,
+    )
+    if not selected_room:
+        flash("Ruangan sekolah tidak ditemukan.", "warning")
+        return redirect(url_for("portal.admin_follow_ups", create_school_id=school_id))
+
+    if assessment_id and assessment_id > 0:
+        assessment = get_assessment_by_id(int(assessment_id))
+        if not assessment or int(assessment.get("school_id") or 0) != int(school_id):
+            flash("Assessment tidak valid untuk sekolah ini.", "warning")
+            return redirect(url_for("portal.admin_follow_ups", create_school_id=school_id))
+        if (assessment.get("status") or "").strip().lower() not in {"submitted", "verified"}:
+            flash("Assessment harus berstatus submitted/verified untuk membuat tiket.", "warning")
+            return redirect(url_for("portal.admin_follow_ups", create_school_id=school_id))
+    else:
+        latest_assessment = get_latest_submitted_assessment_for_school(int(school_id))
+        if not latest_assessment:
+            flash("Belum ada assessment submitted/verified untuk sekolah ini.", "warning")
+            return redirect(url_for("portal.admin_follow_ups", create_school_id=school_id))
+        assessment_id = int(latest_assessment.get("id") or 0)
+
+    created = admin_create_room_follow_up_ticket(
+        assessment_id=int(assessment_id),
+        school_id=int(school_id),
+        school_room_id=int(school_room_id),
+        room_id=int(selected_room.get("room_id") or 0),
+        room_name=(selected_room.get("room_name") or "").strip(),
+        staff_id=int(staff_id),
+        trigger_score_pct=float(trigger_score_pct),
+        threshold_pct=float(threshold_pct),
+        status=status_value,
+        actor_user_id=int(user.get("id") or 0),
+        note=note,
+    )
+    follow_up_id = int(created.get("id") or 0)
+    if follow_up_id <= 0:
+        flash("Gagal membuat tiket tindak lanjut.", "danger")
+        return redirect(url_for("portal.admin_follow_ups", create_school_id=school_id))
+
+    if not created.get("_created"):
+        flash("Tiket untuk assessment dan ruangan ini sudah ada.", "info")
+    else:
+        flash("Tiket tindak lanjut berhasil dibuat.", "success")
+
+    return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
+
+
+@portal_bp.route("/admin/tindak-lanjut/<int:follow_up_id>/edit", methods=["GET", "POST"])
+@role_required("admin")
+def admin_follow_up_edit(follow_up_id: int) -> Response:
+    user = current_user()
+    ticket = get_room_follow_up_ticket(follow_up_id)
+    if not ticket:
+        flash("Tiket tindak lanjut tidak ditemukan.", "warning")
+        return redirect(url_for("portal.admin_follow_ups"))
+
+    if request.method == "POST":
+        staff_id = request.form.get("staff_id", type=int)
+        status_value = (request.form.get("status") or "").strip().lower()
+        note = (request.form.get("note") or "").strip()
+        return_to = (request.form.get("return_to") or "").strip()
+        try:
+            trigger_score_pct = float((request.form.get("trigger_score_pct") or "").strip() or "0")
+        except (TypeError, ValueError):
+            trigger_score_pct = -1.0
+        try:
+            threshold_pct = float((request.form.get("threshold_pct") or "").strip() or "60")
+        except (TypeError, ValueError):
+            threshold_pct = -1.0
+
+        if not staff_id or staff_id <= 0:
+            flash("Staff penanggung jawab wajib dipilih.", "warning")
+            return redirect(url_for("portal.admin_follow_up_edit", follow_up_id=follow_up_id))
+        if trigger_score_pct < 0 or trigger_score_pct > 100:
+            flash("Skor trigger harus di antara 0 sampai 100.", "warning")
+            return redirect(url_for("portal.admin_follow_up_edit", follow_up_id=follow_up_id))
+        if threshold_pct <= 0 or threshold_pct > 100:
+            flash("Threshold harus di antara 1 sampai 100.", "warning")
+            return redirect(url_for("portal.admin_follow_up_edit", follow_up_id=follow_up_id))
+
+        updated = admin_update_room_follow_up_ticket(
+            follow_up_id=follow_up_id,
+            actor_user_id=int(user.get("id") or 0),
+            staff_id=int(staff_id),
+            status=status_value,
+            trigger_score_pct=float(trigger_score_pct),
+            threshold_pct=float(threshold_pct),
+            note=note,
+        )
+        if not updated:
+            flash("Gagal memperbarui tiket tindak lanjut.", "danger")
+            return redirect(url_for("portal.admin_follow_up_edit", follow_up_id=follow_up_id))
+
+        flash("Tiket tindak lanjut berhasil diperbarui.", "success")
+        if return_to.startswith("/") and not return_to.startswith("//"):
+            return redirect(return_to)
+        return redirect(url_for("portal.admin_follow_up_edit", follow_up_id=follow_up_id))
+
+    annotated = _annotate_follow_up_ticket(ticket)
+    timeline = _serialize_follow_up_timeline(list_room_follow_up_updates(follow_up_id, limit=200))
+    staff_options = list_all_staff()
+    return render_template(
+        "portal/admin/follow_up_edit.html",
+        ticket=annotated,
+        timeline=timeline,
+        staff_options=staff_options,
+        follow_up_status_labels=FOLLOW_UP_STATUS_LABELS,
+    )
+
+
+@portal_bp.route("/admin/tindak-lanjut/<int:follow_up_id>/delete", methods=["POST"])
+@role_required("admin")
+def admin_follow_up_delete(follow_up_id: int) -> Response:
+    return_to = (request.form.get("return_to") or "").strip()
+    deleted = admin_delete_room_follow_up_ticket(follow_up_id=follow_up_id)
+    if not deleted:
+        flash("Tiket tindak lanjut tidak ditemukan.", "warning")
+    else:
+        label = (deleted.get("ticket_code") or f"#{follow_up_id}").strip()
+        flash(f"Tiket {label} berhasil dihapus.", "success")
+
+    if return_to.startswith("/") and not return_to.startswith("//"):
+        return redirect(return_to)
+    return redirect(url_for("portal.admin_follow_ups"))
+
+
+@portal_bp.route("/tindak-lanjut/<int:follow_up_id>")
+@_portal_access_required
+def follow_up_detail(follow_up_id: int) -> Response:
+    user = current_user()
+    ticket = get_room_follow_up_ticket(follow_up_id)
+    if not ticket:
+        flash("Tiket tindak lanjut tidak ditemukan.", "warning")
+        return redirect(url_for("portal.home"))
+    if not _can_access_follow_up_ticket(user, ticket):
+        flash("Anda tidak memiliki akses ke tiket ini.", "danger")
+        return redirect(url_for("portal.home"))
+
+    annotated = _annotate_follow_up_ticket(ticket)
+    raw_timeline = list_room_follow_up_updates(follow_up_id, limit=200)
+    timeline = _serialize_follow_up_timeline(raw_timeline)
+    assessment = get_assessment_by_id(int(annotated.get("assessment_id") or 0)) or {}
+    score_scale = _build_assessment_score_config(assessment)
+    school_room_id = int(annotated.get("school_room_id") or 0)
+    score_rows = get_assessment_scores(int(annotated.get("assessment_id") or 0))
+    aspect_scores = [
+        row for row in score_rows
+        if int(row.get("school_room_id") or 0) == school_room_id
+    ]
+    room_note_map = get_assessment_room_details(int(annotated.get("assessment_id") or 0))
+    staff_room_note = (room_note_map.get(school_room_id) or "").strip()
+    role_value = (user.get("role") or "").strip().lower()
+    can_school_update = (
+        role_value == "sekolah"
+        and int(annotated.get("school_id") or 0) == int((_fetch_user_school(user.get("id")) or {}).get("id") or 0)
+        and (annotated.get("status") or "").strip().lower() != PORTAL_FOLLOW_UP_STATUS_DONE
+    )
+    can_staff_verify = (
+        role_value == "staff"
+        and int(user.get("id") or 0) == int(annotated.get("staff_id") or 0)
+        and (annotated.get("status") or "").strip().lower() in {
+            PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS,
+            PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
+        }
+    )
+    status_value = (annotated.get("status") or "").strip().lower()
+    is_waiting_staff_verification = status_value == PORTAL_FOLLOW_UP_STATUS_SUBMITTED
+    has_school_progress = any((item.get("event_type") or "").strip().lower() == "school_update" for item in raw_timeline)
+    can_submit_verification = can_school_update and has_school_progress and not is_waiting_staff_verification
+    return render_template(
+        "portal/follow_up/detail.html",
+        ticket=annotated,
+        score_scale=score_scale,
+        aspect_scores=aspect_scores,
+        staff_room_note=staff_room_note,
+        timeline=timeline,
+        can_school_update=can_school_update,
+        can_submit_verification=can_submit_verification,
+        is_waiting_staff_verification=is_waiting_staff_verification,
+        can_staff_verify=can_staff_verify,
+        follow_up_status_labels=FOLLOW_UP_STATUS_LABELS,
+    )
+
+
+@portal_bp.route("/tindak-lanjut/<int:follow_up_id>/update", methods=["POST"])
+@role_required("sekolah")
+def follow_up_update(follow_up_id: int) -> Response:
+    user = current_user()
+    ticket = get_room_follow_up_ticket(follow_up_id)
+    if not ticket:
+        flash("Tiket tindak lanjut tidak ditemukan.", "warning")
+        return redirect(url_for("portal.sekolah_follow_ups"))
+    if not _can_access_follow_up_ticket(user, ticket):
+        flash("Anda tidak memiliki akses ke tiket ini.", "danger")
+        return redirect(url_for("portal.sekolah_follow_ups"))
+    status_value = (ticket.get("status") or "").strip().lower()
+    if status_value == PORTAL_FOLLOW_UP_STATUS_DONE:
+        flash("Tiket sudah selesai.", "info")
+        return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
+    if status_value == PORTAL_FOLLOW_UP_STATUS_SUBMITTED:
+        flash("Tiket sudah diajukan dan sedang menunggu verifikasi staff.", "info")
+        return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
+
+    note = (request.form.get("note") or "").strip()
+    uploaded_photo = request.files.get("photo")
+    try:
+        photo_path = _save_follow_up_photo(
+            uploaded_photo,
+            follow_up_id=follow_up_id,
+            school_label=ticket.get("school_name"),
+        )
+    except ValueError as exc:
+        flash(str(exc), "warning")
+        return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
+    except Exception:
+        current_app.logger.exception("Gagal menyimpan foto tindak lanjut.")
+        flash("Gagal menyimpan foto tindak lanjut.", "danger")
+        return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
+
+    if not note and not photo_path:
+        flash("Isi catatan atau ambil foto progress sebelum menyimpan update.", "warning")
+        return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
+
+    updated = add_school_room_follow_up_update(
+        follow_up_id=follow_up_id,
+        actor_user_id=int(user.get("id") or 0),
+        actor_role="sekolah",
+        note=note,
+        photo_path=photo_path,
+        submit_for_verification=False,
+    )
+    if not updated:
+        flash("Gagal menyimpan update tindak lanjut.", "danger")
+        return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
+
+    flash("Update tindak lanjut berhasil disimpan.", "success")
+    return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
+
+
+@portal_bp.route("/tindak-lanjut/<int:follow_up_id>/ajukan", methods=["POST"])
+@role_required("sekolah")
+def follow_up_submit_for_verification(follow_up_id: int) -> Response:
+    user = current_user()
+    ticket = get_room_follow_up_ticket(follow_up_id)
+    if not ticket:
+        flash("Tiket tindak lanjut tidak ditemukan.", "warning")
+        return redirect(url_for("portal.sekolah_follow_ups"))
+    if not _can_access_follow_up_ticket(user, ticket):
+        flash("Anda tidak memiliki akses ke tiket ini.", "danger")
+        return redirect(url_for("portal.sekolah_follow_ups"))
+    status_value = (ticket.get("status") or "").strip().lower()
+    if status_value == PORTAL_FOLLOW_UP_STATUS_DONE:
+        flash("Tiket sudah selesai.", "info")
+        return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
+    if status_value == PORTAL_FOLLOW_UP_STATUS_SUBMITTED:
+        flash("Tiket sudah diajukan. Jika belum diverifikasi, sistem akan kirim pengingat bulanan ke staff.", "info")
+        return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
+
+    timeline = list_room_follow_up_updates(follow_up_id, limit=200)
+    has_school_progress = any((item.get("event_type") or "").strip().lower() == "school_update" for item in timeline)
+    if not has_school_progress:
+        flash("Simpan update progress terlebih dahulu sebelum mengajukan verifikasi.", "warning")
+        return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
+
+    updated = add_school_room_follow_up_update(
+        follow_up_id=follow_up_id,
+        actor_user_id=int(user.get("id") or 0),
+        actor_role="sekolah",
+        note=None,
+        photo_path=None,
+        submit_for_verification=True,
+    )
+    if not updated:
+        flash("Gagal mengajukan verifikasi tindak lanjut.", "danger")
+        return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
+
+    staff_id = int(updated.get("staff_id") or 0)
+    if staff_id > 0:
+        create_user_notifications(
+            recipient_ids=[staff_id],
+            category=PANBERS_FOLLOW_UP_NOTIFICATION_CATEGORY,
+            title="Verifikasi Tindak Lanjut PANBERSS",
+            message=(
+                f"{updated.get('school_name')}: {updated.get('room_name')} diajukan untuk verifikasi."
+            ),
+            link=url_for("portal.follow_up_detail", follow_up_id=follow_up_id),
+            reference_table="portal_room_follow_up_tickets",
+            reference_id=follow_up_id,
+            metadata={
+                "status": PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
+                "feature": "panbers_follow_up",
+                "ticket_id": follow_up_id,
+                "ticket_code": updated.get("ticket_code"),
+                "school_id": int(updated.get("school_id") or 0),
+                "assessment_id": int(updated.get("assessment_id") or 0),
+                "room_name": updated.get("room_name"),
+                "actor_name": user.get("full_name") or user.get("email"),
+            },
+        )
+
+    flash("Tindak lanjut diajukan ke staff untuk verifikasi.", "success")
+    return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
+
+
+@portal_bp.route("/tindak-lanjut/<int:follow_up_id>/verifikasi", methods=["POST"])
+@role_required("staff")
+def follow_up_verify(follow_up_id: int) -> Response:
+    user = current_user()
+    ticket = get_room_follow_up_ticket(follow_up_id)
+    if not ticket:
+        flash("Tiket tindak lanjut tidak ditemukan.", "warning")
+        return redirect(url_for("portal.staff_follow_ups"))
+    if not _can_access_follow_up_ticket(user, ticket):
+        flash("Anda tidak memiliki akses ke tiket ini.", "danger")
+        return redirect(url_for("portal.staff_follow_ups"))
+    status_value = (ticket.get("status") or "").strip().lower()
+    if status_value == PORTAL_FOLLOW_UP_STATUS_DONE:
+        flash("Tiket sudah selesai.", "info")
+        return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
+    if status_value not in {PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS, PORTAL_FOLLOW_UP_STATUS_SUBMITTED}:
+        flash("Sekolah belum mengajukan progres untuk diverifikasi.", "warning")
+        return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
+
+    note = (request.form.get("note") or "").strip()
+    updated = verify_room_follow_up_by_staff(
+        follow_up_id=follow_up_id,
+        actor_user_id=int(user.get("id") or 0),
+        actor_role="staff",
+        note=note,
+    )
+    if not updated:
+        flash("Gagal memverifikasi tindak lanjut.", "danger")
+        return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
+
+    recipient_ids = list_school_user_ids_for_follow_up_notifications(int(updated.get("school_id") or 0))
+    if recipient_ids:
+        create_user_notifications(
+            recipient_ids=recipient_ids,
+            category=PANBERS_FOLLOW_UP_NOTIFICATION_CATEGORY,
+            title="Tindak Lanjut PANBERSS Selesai",
+            message=f"{updated.get('room_name')} telah diverifikasi selesai oleh staff.",
+            link=url_for("portal.follow_up_detail", follow_up_id=follow_up_id),
+            reference_table="portal_room_follow_up_tickets",
+            reference_id=follow_up_id,
+            metadata={
+                "status": PORTAL_FOLLOW_UP_STATUS_DONE,
+                "feature": "panbers_follow_up",
+                "ticket_id": follow_up_id,
+                "ticket_code": updated.get("ticket_code"),
+                "school_id": int(updated.get("school_id") or 0),
+                "assessment_id": int(updated.get("assessment_id") or 0),
+                "room_name": updated.get("room_name"),
+                "actor_name": user.get("full_name") or user.get("email"),
+            },
+        )
+
+    flash("Tindak lanjut berhasil diverifikasi selesai.", "success")
+    return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
 
 
 def _filter_assessment_rooms(rooms: list[dict]) -> list[dict]:
@@ -1670,6 +2647,7 @@ def assess(school_id: int) -> Response:
             return redirect(url_for("portal.schools"))
             
     assessment_id = assessment["id"]
+    score_scale = _build_assessment_score_config(assessment)
     _sync_assessment_period_to_active(assessment)
     
     # Ensure classroom variants are materialized as rooms for this school
@@ -1729,6 +2707,7 @@ def assess(school_id: int) -> Response:
         "portal/assessments/assessment.html",
         school=school,
         assessment=assessment,
+        score_scale=score_scale,
         rooms=rooms,
         scores_map=scores_map,
         photos_map=photos_map,
@@ -1775,8 +2754,13 @@ def save_score(school_id: int) -> Response:
         if assessment["staff_id"] != user["id"] and user["role"] != "admin":
             return jsonify({"success": False, "message": "Unauthorized access to this assessment"}), 403
 
-        if not (0 <= score <= 3):
-            return jsonify({"success": False, "message": "Invalid score"}), 400
+        score_config = _build_assessment_score_config(assessment)
+        min_score = score_config["min"]
+        max_score = score_config["max"]
+        if not (min_score <= score <= max_score):
+            if max_score == _NEW_SCORE_SCALE_MAX:
+                return jsonify({"success": False, "message": "Nilai harus dalam rentang 1-5"}), 400
+            return jsonify({"success": False, "message": "Nilai harus dalam rentang 0-3"}), 400
 
         _sync_assessment_period_to_active(assessment)
 
@@ -1996,6 +2980,10 @@ def submit(school_id: int) -> Response:
             return redirect(url_for("portal.staff_assignments"))
 
     try:
+        score_config = _build_assessment_score_config(assessment)
+        baseline = score_config["baseline"]
+        default_score = score_config["default"]
+
         all_rooms = list_school_rooms(school_id)
         rooms = _filter_assessment_rooms(all_rooms)
         existing_scores = get_assessment_scores(assessment_id_int)
@@ -2036,13 +3024,15 @@ def submit(school_id: int) -> Response:
             aspects = room.get("aspects") or []
             if not room_id or not aspects:
                 continue
-            has_non_zero = False
+            has_meaningful_score = False
             for aspect in aspects:
-                score_val = scores_map.get((room_id, aspect.get("id"))) or 0
-                if score_val > 0:
-                    has_non_zero = True
+                score_val = scores_map.get((room_id, aspect.get("id")))
+                if score_val is None:
+                    score_val = default_score
+                if int(score_val) > baseline:
+                    has_meaningful_score = True
                     break
-            if not has_non_zero:
+            if not has_meaningful_score:
                 missing_messages.append("Terdapat ruangan yang masih belum dinilai.")
                 break
 
@@ -2058,6 +3048,25 @@ def submit(school_id: int) -> Response:
         _sync_assessment_period_to_active(assessment)
         success = submit_assessment(assessment_id_int)
         if success:
+            try:
+                low_rooms = _get_low_score_rooms(
+                    assessment_id_int,
+                    school_id,
+                    threshold_pct=FOLLOW_UP_THRESHOLD_PCT,
+                    require_missing_photo=False,
+                )
+                created_follow_ups = _ensure_follow_up_tickets_after_submit(
+                    assessment=assessment,
+                    low_rooms=low_rooms,
+                    actor=user,
+                )
+                if created_follow_ups > 0:
+                    flash(
+                        f"Dibuat {created_follow_ups} tiket tindak lanjut ruangan di bawah {FOLLOW_UP_THRESHOLD_PCT:.0f}.",
+                        "warning",
+                    )
+            except Exception:
+                current_app.logger.exception("Gagal membuat tiket tindak lanjut PANBERSS.")
             flash("Penilaian berhasil disubmit!", "success")
         else:
             flash("Gagal submit penilaian.", "danger")
@@ -2421,6 +3430,8 @@ def view_assessment(assessment_id: int) -> Response:
     if assessment["staff_id"] != user["id"] and user["role"] != "admin":
         flash("Anda tidak memiliki akses untuk melihat penilaian ini.", "danger")
         return redirect(url_for("portal.home"))
+
+    score_scale = _build_assessment_score_config(assessment)
     
     scores = get_assessment_scores(assessment_id)
     photos = get_assessment_photos(assessment_id)
@@ -2439,7 +3450,12 @@ def view_assessment(assessment_id: int) -> Response:
                 """
                 SELECT 
                     a.id, 
-                    a.total_score, 
+                    a.total_score,
+                    a.score_scale_max,
+                    CASE
+                        WHEN a.total_score IS NULL THEN NULL
+                        ELSE (a.total_score::DECIMAL / NULLIF(COALESCE(a.score_scale_max, 3), 0) * 100)
+                    END AS score_pct,
                     a.submitted_at, 
                     a.staff_id, 
                     u.full_name as assessor_name,
@@ -2447,8 +3463,8 @@ def view_assessment(assessment_id: int) -> Response:
                     (a.id = %s) AS is_current
                 FROM portal_assessments a
                 LEFT JOIN dashboard_users u ON u.id = a.staff_id
-                WHERE a.school_id = %s AND a.status = 'submitted'
-                ORDER BY a.submitted_at DESC
+                WHERE a.school_id = %s AND a.status IN ('submitted', 'verified')
+                ORDER BY a.submitted_at DESC, a.id DESC
                 """,
                 (assessment_id, assessment["school_id"]),
             )
@@ -2485,6 +3501,7 @@ def view_assessment(assessment_id: int) -> Response:
     return render_template(
         "portal/assessments/view.html",
         assessment=assessment,
+        score_scale=score_scale,
         user=user,
         photos_by_room=photos_by_room,
         room_notes=room_notes,
@@ -2662,15 +3679,20 @@ def staff_assignments() -> Response:
         flash("Halaman ini hanya untuk staf.", "warning")
         return redirect(url_for("portal.home"))
     
-    assigned_schools = get_staff_assigned_schools(user["id"])
     periods = list_periods()
     active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
-    
+    selected_period_id = request.args.get("period_id", type=int)
+    if selected_period_id is None:
+        selected_period_id = active_period_id
+
+    assigned_schools = get_staff_assigned_schools(user["id"], period_id=selected_period_id)
+
     return render_template(
         "portal/staff/assignments.html",
         assigned_schools=assigned_schools,
         periods=periods,
         active_period_id=active_period_id,
+        selected_period_id=selected_period_id,
         user=user,
     )
 
@@ -3019,6 +4041,52 @@ def _get_team_staff_ids(team_id: int):
     return staff_ids, team
 
 
+def _build_admin_stats_period_filter(
+    periods: list[dict[str, object]],
+    year: int | None,
+    month: int | None,
+    period_id: int | None = None,
+) -> tuple[int | None, list[int] | None, list[int], int | None, int | None]:
+    """Resolve admin stats period filters from year/month selections."""
+    period_rows: list[tuple[int, int, int]] = []
+    year_set: set[int] = set()
+    for p in periods:
+        pid = p.get("id")
+        start_date = p.get("start_date")
+        if not isinstance(pid, int) or start_date is None:
+            continue
+        y = getattr(start_date, "year", None)
+        m = getattr(start_date, "month", None)
+        if not isinstance(y, int) or not isinstance(m, int):
+            continue
+        year_set.add(y)
+        period_rows.append((pid, y, m))
+
+    selected_year = year if isinstance(year, int) and year in year_set else None
+    selected_month = month if isinstance(month, int) and 1 <= month <= 12 else None
+    if selected_year is None and selected_month is None and isinstance(period_id, int):
+        chosen = next(((pid, y, m) for (pid, y, m) in period_rows if pid == period_id), None)
+        if chosen:
+            selected_year = chosen[1]
+            selected_month = chosen[2]
+    if selected_year is None:
+        selected_month = None
+
+    year_options = sorted(year_set, reverse=True)
+    if selected_year is None:
+        return None, None, year_options, None, None
+
+    year_period_ids = [pid for (pid, y, _m) in period_rows if y == selected_year]
+    if selected_month is None:
+        return None, year_period_ids, year_options, selected_year, None
+
+    matching = [pid for (pid, y, m) in period_rows if y == selected_year and m == selected_month]
+    if not matching:
+        return None, [], year_options, selected_year, selected_month
+    selected_period_id = matching[0]
+    return selected_period_id, [selected_period_id], year_options, selected_year, selected_month
+
+
 def _serialize_related_photos(school_id: int | None, room_id: int | None, staff_ids: list[int] | None = None):
     """Serialize related photos response with optional staff filtering."""
     if not school_id or not room_id:
@@ -3041,14 +4109,20 @@ def _serialize_related_photos(school_id: int | None, room_id: int | None, staff_
         else:
             photo_url = url_for("portal.uploaded_file", filename=filename) if filename else None
         
-        score_base = float(p.get("room_score") or 0)
-        score_pct = (score_base / 3 * 100) if score_base else 0
+        raw_score_pct = p.get("room_score_pct")
+        if raw_score_pct is None:
+            score_base = float(p.get("room_score") or 0)
+            score_scale_max = _normalize_assessment_scale_max(p.get("score_scale_max"))
+            score_pct = _score_pct_from_raw(score_base, score_scale_max)
+        else:
+            score_pct = float(raw_score_pct)
         
         result.append({
             "photo_url": photo_url,
             "school_name": p.get("school_name"),
             "room_name": p.get("room_name"),
             "score": round(score_pct, 1),
+            "score_pct": round(score_pct, 1),
             "captured_at": p["captured_at"].isoformat() if p.get("captured_at") else None,
             "latitude": float(p["latitude"]) if p.get("latitude") else None,
             "longitude": float(p["longitude"]) if p.get("longitude") else None,
@@ -3089,7 +4163,35 @@ def coordinator_stats() -> Response:
     
     if not my_team:
         flash("Anda belum ditugaskan sebagai koordinator tim manapun.", "warning")
-        return redirect(url_for("portal.home"))
+        periods = list_periods()
+        empty_stats = {
+            "schools": {"total_schools": 0, "active_schools": 0},
+            "assessments": {
+                "total": 0,
+                "drafts": 0,
+                "submitted": 0,
+                "avg_score": None,
+            },
+        }
+        return render_template(
+            "portal/coordinator/stats.html",
+            team=None,
+            team_members=[],
+            stats=empty_stats,
+            score_dist=[0] * 9,
+            kecamatan_stats=[],
+            recent_assessments=[],
+            top_schools=[],
+            bottom_schools=[],
+            random_photos=[],
+            school_avg_map={},
+            periods=periods,
+            current_period_id=period_id,
+            jenjang_filter=jenjang_filter,
+            order=order,
+            photo_order=photo_order,
+            selected_team_id=None,
+        )
         
     stats = fetch_portal_stats(period_id=period_id, staff_ids=staff_ids)
     score_dist = fetch_score_distribution(period_id=period_id, staff_ids=staff_ids)
@@ -3138,9 +4240,22 @@ def admin_stats() -> Response:
     """Admin view of portal statistics."""
     # Trigger reload
     from dashboard.queries import get_monev_teams
-    from .queries import fetch_team_top_schools, fetch_team_bottom_schools
+    from .queries import (
+        fetch_team_top_schools,
+        fetch_team_bottom_schools,
+        fetch_negeri_assessment_frequency,
+    )
 
-    period_id = request.args.get("period_id", type=int)
+    periods = list_periods()
+    selected_year_arg = request.args.get("year", type=int)
+    selected_month_arg = request.args.get("month", type=int)
+    selected_period_arg = request.args.get("period_id", type=int)
+    period_id, period_ids, period_year_options, selected_year, selected_month = _build_admin_stats_period_filter(
+        periods,
+        selected_year_arg,
+        selected_month_arg,
+        selected_period_arg,
+    )
     team_id = request.args.get("team_id", type=int)
     jenjang_filter = request.args.get("jenjang") or None
     order = request.args.get("order") or "recent"
@@ -3165,41 +4280,48 @@ def admin_stats() -> Response:
         if selected_team is None:
             staff_ids = None
     
-    stats = fetch_portal_stats(period_id, staff_ids=staff_ids)
+    stats = fetch_portal_stats(period_id=period_id, period_ids=period_ids, staff_ids=staff_ids)
     from .queries import fetch_score_distribution
-    score_dist = fetch_score_distribution(period_id, staff_ids=staff_ids)
+    score_dist = fetch_score_distribution(period_id=period_id, period_ids=period_ids, staff_ids=staff_ids)
     recent_assessments = list_recent_assessments(
         period_id=period_id,
+        period_ids=period_ids,
         jenjang=jenjang_filter,
         order=order,
         staff_ids=staff_ids,
     )
     staff_latest_assessments = list_staff_latest_assessments(
         period_id=period_id,
+        period_ids=period_ids,
         staff_ids=staff_ids,
         limit=100,
     )
     if staff_ids:
-        top_schools = fetch_team_top_schools(staff_ids, period_id=period_id, limit=10)
-        bottom_schools = fetch_team_bottom_schools(staff_ids, period_id=period_id, limit=10)
+        top_schools = fetch_team_top_schools(staff_ids, period_id=period_id, period_ids=period_ids, limit=10)
+        bottom_schools = fetch_team_bottom_schools(staff_ids, period_id=period_id, period_ids=period_ids, limit=10)
     else:
-        top_schools = fetch_top_schools(period_id=period_id, limit=10)
-        bottom_schools = fetch_bottom_schools(period_id=period_id, limit=10)
+        top_schools = fetch_top_schools(period_id=period_id, period_ids=period_ids, limit=10)
+        bottom_schools = fetch_bottom_schools(period_id=period_id, period_ids=period_ids, limit=10)
     photo_order = request.args.get("photo_order", "random")
     random_photos = fetch_random_photos(
         period_id=period_id,
+        period_ids=period_ids,
         order=photo_order,
         limit=24,
         staff_ids=staff_ids,
     )
-    school_avg_map = fetch_school_avg_scores(period_id=period_id, staff_ids=staff_ids)
-    periods = list_periods()
+    school_avg_map = fetch_school_avg_scores(period_id=period_id, period_ids=period_ids, staff_ids=staff_ids)
     all_schools = list_portal_schools()
     all_staff = list_all_staff()
     monev_teams = get_monev_teams()
     
     from .queries import fetch_kecamatan_avg_scores
-    kecamatan_stats = fetch_kecamatan_avg_scores(period_id, staff_ids=staff_ids)
+    kecamatan_stats = fetch_kecamatan_avg_scores(period_id=period_id, period_ids=period_ids, staff_ids=staff_ids)
+    negeri_assessment_frequency = fetch_negeri_assessment_frequency(
+        period_id=period_id,
+        period_ids=period_ids,
+        staff_ids=staff_ids,
+    )
     
     return render_template(
         "portal/admin/stats.html",
@@ -3213,6 +4335,9 @@ def admin_stats() -> Response:
         school_avg_map=school_avg_map,
         periods=periods,
         current_period_id=period_id,
+        current_period_year=selected_year,
+        current_period_month=selected_month,
+        period_year_options=period_year_options,
         selected_team_id=team_id,
         selected_team=selected_team,
         jenjang_filter=jenjang_filter,
@@ -3222,6 +4347,66 @@ def admin_stats() -> Response:
         all_staff=all_staff,
         monev_teams=monev_teams,
         staff_latest_assessments=staff_latest_assessments,
+        negeri_assessment_frequency=negeri_assessment_frequency,
+    )
+
+
+@portal_bp.route("/admin/stats/negeri-frequency")
+@role_required("admin")
+def admin_stats_negeri_frequency() -> Response:
+    """Detail negeri school names grouped by assessment frequency."""
+    from dashboard.queries import get_monev_teams
+    from .queries import fetch_negeri_assessment_frequency
+
+    periods = list_periods()
+    selected_year_arg = request.args.get("year", type=int)
+    selected_month_arg = request.args.get("month", type=int)
+    selected_period_arg = request.args.get("period_id", type=int)
+    period_id, period_ids, period_year_options, selected_year, selected_month = _build_admin_stats_period_filter(
+        periods,
+        selected_year_arg,
+        selected_month_arg,
+        selected_period_arg,
+    )
+    team_id = request.args.get("team_id", type=int)
+    selected_count = request.args.get("count", type=int)
+
+    staff_ids: list[int] | None = None
+    selected_team = None
+    if team_id:
+        staff_ids, selected_team = _get_team_staff_ids(team_id)
+        if selected_team is None:
+            staff_ids = None
+
+    grouped = fetch_negeri_assessment_frequency(
+        period_id=period_id,
+        period_ids=period_ids,
+        staff_ids=staff_ids,
+    )
+    available_counts = [int(row.get("count_times") or 0) for row in grouped]
+    if selected_count is None and available_counts:
+        selected_count = available_counts[0]
+    selected_group = next(
+        (row for row in grouped if int(row.get("count_times") or 0) == int(selected_count))
+        if selected_count is not None
+        else None,
+        None,
+    )
+
+    return render_template(
+        "portal/admin/stats_negeri_frequency.html",
+        grouped=grouped,
+        selected_group=selected_group,
+        available_counts=available_counts,
+        periods=periods,
+        current_period_id=period_id,
+        current_period_year=selected_year,
+        current_period_month=selected_month,
+        period_year_options=period_year_options,
+        selected_team_id=team_id,
+        selected_team=selected_team,
+        monev_teams=get_monev_teams(),
+        selected_count=selected_count,
     )
 
 
@@ -3296,7 +4481,16 @@ def api_rankings() -> Response:
     type_ = request.args.get("type", "best")
     limit = request.args.get("limit", 10, type=int)
     offset = request.args.get("offset", 0, type=int)
-    period_id = request.args.get("period_id", type=int) or None
+    periods = list_periods()
+    selected_year_arg = request.args.get("year", type=int)
+    selected_month_arg = request.args.get("month", type=int)
+    selected_period_arg = request.args.get("period_id", type=int)
+    period_id, period_ids, _year_options, _selected_year, _selected_month = _build_admin_stats_period_filter(
+        periods,
+        selected_year_arg,
+        selected_month_arg,
+        selected_period_arg,
+    )
     team_id = request.args.get("team_id", type=int)
     
     staff_ids = None
@@ -3307,14 +4501,14 @@ def api_rankings() -> Response:
     
     if type_ == "best":
         if staff_ids:
-            data = fetch_team_top_schools(staff_ids, period_id=period_id, limit=limit, offset=offset)
+            data = fetch_team_top_schools(staff_ids, period_id=period_id, period_ids=period_ids, limit=limit, offset=offset)
         else:
-            data = fetch_top_schools(limit=limit, offset=offset, period_id=period_id)
+            data = fetch_top_schools(limit=limit, offset=offset, period_id=period_id, period_ids=period_ids)
     else:
         if staff_ids:
-            data = fetch_team_bottom_schools(staff_ids, period_id=period_id, limit=limit, offset=offset)
+            data = fetch_team_bottom_schools(staff_ids, period_id=period_id, period_ids=period_ids, limit=limit, offset=offset)
         else:
-            data = fetch_bottom_schools(limit=limit, offset=offset, period_id=period_id)
+            data = fetch_bottom_schools(limit=limit, offset=offset, period_id=period_id, period_ids=period_ids)
         
     return jsonify(data)
 
@@ -3374,7 +4568,7 @@ def export_excel() -> Response:
         
     output.seek(0)
     
-    filename = f"Laporan_Penilaian_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    filename = f"Laporan_Penilaian_{datetime.now(JAKARTA_TZ).strftime('%Y%m%d')}.xlsx"
     
     return send_file(
         output,
@@ -3388,7 +4582,16 @@ def export_excel() -> Response:
 @role_required("admin")
 def admin_map_data() -> Response:
     """Return JSON data for school locations map."""
-    period_id = request.args.get("period_id", type=int)
+    periods = list_periods()
+    selected_year_arg = request.args.get("year", type=int)
+    selected_month_arg = request.args.get("month", type=int)
+    selected_period_arg = request.args.get("period_id", type=int)
+    period_id, period_ids, _year_options, _selected_year, _selected_month = _build_admin_stats_period_filter(
+        periods,
+        selected_year_arg,
+        selected_month_arg,
+        selected_period_arg,
+    )
     team_id = request.args.get("team_id", type=int)
     from .queries import fetch_map_data
     
@@ -3398,7 +4601,7 @@ def admin_map_data() -> Response:
         if team is None:
             staff_ids = None
     
-    data = fetch_map_data(period_id, staff_ids=staff_ids)
+    data = fetch_map_data(period_id=period_id, period_ids=period_ids, staff_ids=staff_ids)
     return jsonify(data)
 
 
@@ -3510,7 +4713,16 @@ def sekolah_change_password() -> Response:
 @role_required("admin")
 def admin_photos_partial() -> Response:
     """Return gallery grid partial for photo order changes (AJAX)."""
-    period_id = request.args.get("period_id", type=int)
+    periods = list_periods()
+    selected_year_arg = request.args.get("year", type=int)
+    selected_month_arg = request.args.get("month", type=int)
+    selected_period_arg = request.args.get("period_id", type=int)
+    period_id, period_ids, _year_options, _selected_year, _selected_month = _build_admin_stats_period_filter(
+        periods,
+        selected_year_arg,
+        selected_month_arg,
+        selected_period_arg,
+    )
     photo_order = request.args.get("photo_order", "random")
     team_id = request.args.get("team_id", type=int)
     
@@ -3524,6 +4736,7 @@ def admin_photos_partial() -> Response:
 
     photos = fetch_random_photos(
         period_id=period_id,
+        period_ids=period_ids,
         order=photo_order,
         limit=24,
         staff_ids=staff_ids,
@@ -3885,6 +5098,8 @@ def _serialize_user_app_notification(row: dict, fallback_link: str) -> dict:
         icon = "bi-diagram-3-fill"
     elif category == PANBERS_TEAM_MEMBER_NOTIFICATION_CATEGORY:
         icon = "bi-people-fill"
+    elif category == PANBERS_FOLLOW_UP_NOTIFICATION_CATEGORY:
+        icon = "bi-tools"
     elif category == "daftar_tamu_status":
         icon = "bi-journal-check"
 
@@ -3894,6 +5109,14 @@ def _serialize_user_app_notification(row: dict, fallback_link: str) -> dict:
     elif status_key == "rejected":
         tone = "danger"
     elif status_key == "pending":
+        tone = "warning"
+    elif status_key == PORTAL_FOLLOW_UP_STATUS_DONE:
+        tone = "success"
+    elif status_key in {
+        PORTAL_FOLLOW_UP_STATUS_NEW,
+        PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS,
+        PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
+    }:
         tone = "warning"
 
     created_at = row.get("created_at")
@@ -5247,7 +6470,7 @@ def generate_sidak_route() -> Response:
     # Get schools for sidak
     schools = fetch_schools_for_sidak(
         kelurahan_id=kelurahan_id,
-        max_score_pct=100,  # Get all schools, we'll filter in frontend
+        max_score_pct=60,
         period_id=period_id,
     )
     
@@ -5319,9 +6542,17 @@ def get_school_room_details(school_id: int) -> Response:
             a.id as assessment_id,
             u.full_name as staff_name,
             u.id as staff_id,
-            -- Average score for this room (0-3 scale, convert to 0-100)
+            -- Average score for this room in raw and normalized scale-aware percentage
             COALESCE(AVG(sc.score), 0)::DECIMAL(5,2) as avg_score_raw,
-            ROUND(COALESCE(AVG(sc.score), 0) / 3 * 100, 1) as avg_score_pct,
+            ROUND(
+                COALESCE(
+                    AVG(
+                        sc.score::DECIMAL / NULLIF(COALESCE(a.score_scale_max, 3), 0) * 100
+                    ),
+                    0
+                ),
+                1
+            ) as avg_score_pct,
             -- Photo path
             (SELECT p.photo_path FROM portal_assessment_photos p 
              WHERE p.assessment_id = a.id AND p.school_room_id = sr.id 
@@ -5337,10 +6568,10 @@ def get_school_room_details(school_id: int) -> Response:
         LEFT JOIN portal_assessment_scores sc 
             ON sc.assessment_id = a.id AND sc.school_room_id = sr.id
         WHERE sr.school_id = %s
-          AND a.status = 'submitted'
+          AND a.status IN ('submitted', 'verified')
         GROUP BY r.id, r.name, sr.id, a.id, u.full_name, u.id
         HAVING AVG(sc.score) IS NOT NULL
-        ORDER BY AVG(sc.score) ASC, r.name, u.full_name
+        ORDER BY avg_score_pct ASC, r.name, u.full_name
     """
     
     with get_cursor() as cur:
@@ -6052,8 +7283,24 @@ def inject_permissions():
     if not user:
         return {}
 
-    if user.get("profile_photo_path") and not user.get("profile_photo_url"):
-        computed_photo_url = _build_profile_photo_url(user.get("profile_photo_path"))
+    # Keep session photo state in sync with DB so modal rules reflect latest admin changes.
+    session_photo_path = user.get("profile_photo_path")
+    latest_photo_path = session_photo_path
+    try:
+        latest_profile = get_dashboard_user_profile(int(user.get("id"))) or {}
+        latest_photo_path = latest_profile.get("profile_photo_path")
+    except Exception:
+        current_app.logger.exception("Failed to sync profile photo state from DB")
+    if latest_photo_path != session_photo_path:
+        computed_photo_url = _build_profile_photo_url(latest_photo_path)
+        user["profile_photo_path"] = latest_photo_path
+        user["profile_photo_url"] = computed_photo_url
+        session_user = session.get("user") or {}
+        session_user["profile_photo_path"] = latest_photo_path
+        session_user["profile_photo_url"] = computed_photo_url
+        session["user"] = session_user
+    elif session_photo_path and not user.get("profile_photo_url"):
+        computed_photo_url = _build_profile_photo_url(session_photo_path)
         if computed_photo_url:
             user["profile_photo_url"] = computed_photo_url
             session_user = session.get("user") or {}
@@ -6067,6 +7314,18 @@ def inject_permissions():
         user_school = _fetch_user_school(user.get("id"))
     else:
         user_area_name = _fetch_user_kecamatan_name(user.get("id"))
+
+    if user.get("role") == "sekolah":
+        try:
+            _dispatch_due_follow_up_reminders_for_user(user=user, school=user_school)
+        except Exception:
+            current_app.logger.exception("Gagal mengirim reminder tindak lanjut PANBERSS.")
+    elif user.get("role") == "staff":
+        try:
+            _dispatch_due_follow_up_reminders_for_staff_user(user=user)
+        except Exception:
+            current_app.logger.exception("Gagal mengirim reminder verifikasi tindak lanjut PANBERSS.")
+
     area_contacts = _build_coordinator_contacts(user_school, area_name=user_area_name)
     admin_pending = {
         "pending_users": 0,
@@ -6080,6 +7339,7 @@ def inject_permissions():
         "unread_count": 0,
         "total_count": 0,
     }
+    follow_up_nav_badge_count = 0
     undo_window_seconds = PORTAL_UNDO_WINDOW_DEFAULT_SECONDS
     if user.get("role") == "admin":
         try:
@@ -6094,6 +7354,18 @@ def inject_permissions():
             )
         except Exception:
             user_app_notifications = {"unread_count": 0, "total_count": 0}
+    if user.get("role") == "sekolah" and user_school:
+        try:
+            follow_up_nav_badge_count = count_room_follow_up_nav_badge_for_school(int(user_school.get("id") or 0))
+        except Exception:
+            current_app.logger.exception("Failed to load follow-up nav badge count")
+            follow_up_nav_badge_count = 0
+    elif user.get("role") == "staff":
+        try:
+            follow_up_nav_badge_count = count_room_follow_up_nav_badge_for_staff(int(user.get("id") or 0))
+        except Exception:
+            current_app.logger.exception("Failed to load staff follow-up nav badge count")
+            follow_up_nav_badge_count = 0
     try:
         undo_window_seconds = fetch_portal_undo_window_seconds()
     except Exception:
@@ -6110,6 +7382,7 @@ def inject_permissions():
         'area_contacts': area_contacts,
         'admin_pending': admin_pending,
         'user_app_notifications': user_app_notifications,
+        'follow_up_nav_badge_count': follow_up_nav_badge_count,
         'undo_window_seconds': undo_window_seconds,
         'undo_window_min_seconds': PORTAL_UNDO_WINDOW_MIN_SECONDS,
         'undo_window_max_seconds': PORTAL_UNDO_WINDOW_MAX_SECONDS,
@@ -6185,20 +7458,31 @@ def coordinator_team() -> Response:
 @role_required("coordinator")
 def coordinator_request_member() -> Response:
     """Coordinator submits a member addition request for admin approval."""
+    from dashboard.queries import get_monev_teams
+
     user = current_user()
     user_id = user.get("id")
+    team_id = request.form.get("team_id", type=int)
     staff_id = request.form.get("staff_id", type=int)
     note = (request.form.get("note") or "").strip()
-    
-    my_team, _, _ = _get_coordinator_team_context(user_id)
+
+    coordinator_teams = [
+        team for team in get_monev_teams()
+        if team.get("coordinator_id") == user_id
+    ]
+    if team_id is not None:
+        my_team = next((team for team in coordinator_teams if team.get("id") == team_id), None)
+    else:
+        my_team = coordinator_teams[0] if coordinator_teams else None
+
     if not my_team:
         flash("Anda belum memiliki tim.", "warning")
         return redirect(url_for("portal.view_my_team"))
-    
+
     if not staff_id:
         flash("Pilih staff yang ingin diajukan.", "warning")
-        return redirect(url_for("portal.coordinator_team"))
-    
+        return redirect(url_for("portal.view_my_team", _anchor=f"team-{my_team['id']}"))
+
     result = create_team_member_request(
         team_id=my_team["id"],
         staff_id=staff_id,
@@ -6229,8 +7513,8 @@ def coordinator_request_member() -> Response:
         flash("Permintaan tambah anggota dikirim ke admin untuk verifikasi.", "success")
     else:
         flash("Gagal mengirim permintaan.", "danger")
-    
-    return redirect(url_for("portal.coordinator_team"))
+
+    return redirect(url_for("portal.view_my_team", _anchor=f"team-{my_team['id']}"))
 
 
 # =====================================================
@@ -6268,7 +7552,7 @@ def upload_profile_photo() -> Response:
     upload_dir = UPLOAD_FOLDER / "profile"
     upload_dir.mkdir(parents=True, exist_ok=True)
 
-    timestamp = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
+    timestamp = datetime.now(JAKARTA_TZ).strftime("%Y%m%d%H%M%S")
     generated_name = f"user_{int(user['id'])}_{timestamp}_{uuid.uuid4().hex[:8]}.{ext}"
     abs_path = upload_dir / generated_name
     rel_path = f"profile/{generated_name}"
@@ -6457,6 +7741,37 @@ def _normalize_preview_app(raw: str | None) -> str:
     return "portal"
 
 
+def _preview_home_fallback_url() -> str:
+    return url_for("main.admin_select_role")
+
+
+def _sanitize_preview_return_url(raw_url: str | None) -> str | None:
+    if raw_url is None:
+        return None
+    value = str(raw_url).strip()
+    if not value:
+        return None
+
+    parsed = urlparse(value)
+    # Allow relative URLs and same-origin absolute URLs only.
+    if parsed.netloc:
+        host = urlparse(request.host_url).netloc
+        if parsed.netloc != host:
+            return None
+        if parsed.scheme and parsed.scheme not in {"http", "https"}:
+            return None
+
+    path = (parsed.path or "").strip()
+    if not path.startswith("/") or path.startswith("//"):
+        return None
+
+    # Prevent redirect loop back into preview workspace/stop endpoint.
+    if path == url_for("portal.preview_accounts") or path.startswith("/portal/preview/"):
+        return None
+
+    return f"{path}?{parsed.query}" if parsed.query else path
+
+
 def _build_preview_entry_url(*, role: str, app: str) -> str:
     role_value = (role or "").strip().lower()
     app_value = _normalize_preview_app(app)
@@ -6583,6 +7898,12 @@ def preview_accounts() -> Response:
             session.pop(_PREVIEW_APP_SESSION_KEY, None)
             selected_target = None
 
+    # Keep return destination so "Keluar Preview" can go back to previous page.
+    referrer_return_url = _sanitize_preview_return_url(request.referrer)
+    stored_return_url = _sanitize_preview_return_url(session.get(_PREVIEW_RETURN_URL_SESSION_KEY))
+    preview_return_url = referrer_return_url or stored_return_url or _preview_home_fallback_url()
+    session[_PREVIEW_RETURN_URL_SESSION_KEY] = preview_return_url
+
     return render_template(
         "portal/admin/preview_workspace.html",
         preview_users=preview_users,
@@ -6590,6 +7911,7 @@ def preview_accounts() -> Response:
         preview_target=selected_target,
         preview_selected_app=selected_app,
         preview_url=preview_url,
+        preview_return_url=preview_return_url,
     )
 
 
@@ -6667,6 +7989,7 @@ def preview_pin(user_id: int) -> Response:
 @_preview_access_required
 def preview_stop() -> Response:
     """Stop preview mode and restore original admin session."""
+    stored_return_url = _sanitize_preview_return_url(session.get(_PREVIEW_RETURN_URL_SESSION_KEY))
     admin_session_user = session.get(_PREVIEW_ADMIN_SESSION_KEY)
     if isinstance(admin_session_user, dict) and admin_session_user.get("role") == "admin":
         session["user"] = admin_session_user
@@ -6675,8 +7998,13 @@ def preview_stop() -> Response:
     session.pop(_PREVIEW_ADMIN_SESSION_KEY, None)
     session.pop(_PREVIEW_TARGET_SESSION_KEY, None)
     session.pop(_PREVIEW_APP_SESSION_KEY, None)
+    session.pop(_PREVIEW_RETURN_URL_SESSION_KEY, None)
 
-    next_url = (request.args.get("next") or "").strip() or url_for("portal.preview_accounts")
+    next_url = (
+        _sanitize_preview_return_url(request.args.get("next"))
+        or stored_return_url
+        or _preview_home_fallback_url()
+    )
     return redirect(next_url)
 
 
@@ -7209,51 +8537,56 @@ def portal_kontak_wilayah() -> Response:
 @portal_bp.route("/my-team")
 @role_required("coordinator", "staff")
 def view_my_team() -> Response:
-    """View monev team for coordinator or staff member (Portal)."""
+    """View all monev teams for coordinator or staff member (Portal)."""
     from dashboard.queries import get_monev_teams, get_team_members
-    
+
     user = current_user()
     user_id = user.get("id")
-    
+
     all_teams = get_monev_teams()
-    
-    my_team = None
-    my_team_role = None
-    
+    my_teams = []
+    all_available_staff = get_available_staff()
+
     for team in all_teams:
+        team_role = None
         if team.get('coordinator_id') == user_id:
-            my_team = team
-            my_team_role = 'coordinator'
-            break
-        
+            team_role = 'coordinator'
+
         members = get_team_members(team['id'])
-        if any(m.get('staff_id') == user_id for m in members):
-            my_team = team
-            my_team_role = 'member'
-            break
-    
-    if my_team:
-        my_team['members'] = get_team_members(my_team['id'])
-        if my_team_role == "coordinator":
-            existing_member_ids = {m["staff_id"] for m in my_team["members"]}
-            available_staff = [
-                s for s in get_available_staff()
-                if s["id"] not in existing_member_ids
+
+        if team_role is None and any(m.get('staff_id') == user_id for m in members):
+            team_role = 'member'
+
+        if team_role is None:
+            continue
+
+        team_data = dict(team)
+        team_data["team_role"] = team_role
+        team_data["members"] = members
+        if team_role == "coordinator":
+            existing_member_ids = {m["staff_id"] for m in members}
+            team_data["available_staff"] = [
+                staff for staff in all_available_staff
+                if staff["id"] not in existing_member_ids
             ]
-            member_requests = list_team_member_requests_for_team(my_team["id"])
+            team_data["member_requests"] = list_team_member_requests_for_team(team["id"])
         else:
-            available_staff = []
-            member_requests = []
-    else:
-        available_staff = []
-        member_requests = []
-    
+            team_data["available_staff"] = []
+            team_data["member_requests"] = []
+        my_teams.append(team_data)
+
+    my_teams.sort(
+        key=lambda row: (
+            0 if row.get("team_role") == "coordinator" else 1,
+            (row.get("team_type") or "").lower(),
+            (row.get("name") or row.get("kecamatan_name") or "").lower(),
+            row.get("id") or 0,
+        )
+    )
+
     return render_template(
         "portal/teams/my_team.html",
-        team=my_team,
-        team_role=my_team_role,
-        available_staff=available_staff,
-        member_requests=member_requests,
+        my_teams=my_teams,
     )
 
 
