@@ -1981,7 +1981,9 @@ def list_staff_latest_assessments(
         ORDER BY latest.submitted_at DESC NULLS LAST, u.full_name ASC
         LIMIT %s
     """
-    params = [*latest_params, *staff_params, limit]
+    # latest_where is used in two LATERAL subqueries (visited, latest),
+    # so its bind parameters must be supplied twice.
+    params = [*latest_params, *latest_params, *staff_params, limit]
 
     with get_cursor() as cur:
         cur.execute(query, params)
