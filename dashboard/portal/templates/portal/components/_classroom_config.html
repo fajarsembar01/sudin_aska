@@ -16,55 +16,79 @@
         </div>
         <div class="card-body">
             {% set jenjang = user_school.jenjang %}
-            {% if jenjang == 'PAUD' %}
-            {% set grade_levels = [-2, -1, 0] %}
-            {% elif jenjang == 'TK' %}
-            {% set grade_levels = [-1, 0] %}
-            {% elif jenjang == 'SD' %}
-            {% set grade_levels = range(1, 7) %}
-            {% elif jenjang == 'SMP' %}
-            {% set grade_levels = range(7, 10) %}
-            {% elif jenjang in ['SMA', 'SMK'] %}
-            {% set grade_levels = range(10, 13) %}
-            {% else %}
-            {% set grade_levels = range(1, 13) %}
-            {% endif %}
+            {% set level_configs = classroom_levels or [] %}
+            {% set level_labels = classroom_level_labels or {} %}
 
-            {% if grade_levels %}
+            {% if level_configs %}
+            {% set first_level = level_configs | first %}
+            {% set last_level = level_configs | last %}
             <div class="alert alert-light border d-flex align-items-center gap-2 mb-3">
                 <i class="bi bi-magic text-primary"></i>
                 <div>
                     <div class="fw-semibold">Pengaturan paralel kelas {{ jenjang }}</div>
                     <div class="text-muted small">
-                        {% if jenjang in ['PAUD', 'TK'] %}
+                        {% if jenjang == 'SLB' %}
+                        Buka tiap kelas untuk mengatur jenis ketunaan A-G dan jumlah paralelnya.
+                        {% elif jenjang in ['PAUD', 'TK', 'SPS', 'TPA', 'KB', 'SKB', 'PKBM'] %}
                         Tentukan jumlah paralel untuk setiap tingkat.
                         {% else %}
-                        Tentukan jumlah kelas per tingkat ({{ grade_levels|first }}-{{ grade_levels|last }}).
-                        Sistem otomatis membuat Kelas {{ grade_levels|first }}A, {{ grade_levels|first }}B, dst sesuai
+                        Tentukan jumlah kelas per tingkat ({{ first_level.label }}-{{ last_level.label }}).
+                        Sistem otomatis membuat Kelas {{ first_level.label }}, dst sesuai
                         kebutuhan.
                         {% endif %}
                     </div>
                 </div>
             </div>
             <div class="row g-3 mb-3" id="parallelControls">
-                {% for i in grade_levels %}
+                {% if jenjang == 'SLB' %}
+                {% set slb_types = (level_configs | first).slb_types if level_configs else [] %}
+                {% for level in level_configs %}
+                <div class="col-12">
+                    <div class="border rounded-3 p-3 bg-light-subtle">
+                        <button class="btn btn-sm btn-outline-primary d-flex align-items-center justify-content-between w-100"
+                            type="button" data-bs-toggle="collapse" data-bs-target="#slb-level-{{ level.code }}"
+                            aria-expanded="false" aria-controls="slb-level-{{ level.code }}">
+                            <span class="fw-semibold">{{ level.label }}</span>
+                            <span class="small text-muted">Atur A-G</span>
+                        </button>
+                        <div class="collapse mt-3" id="slb-level-{{ level.code }}">
+                        <div class="row g-2">
+                            {% for slb_type in slb_types %}
+                            <div class="col-sm-6 col-lg-4">
+                                <label class="form-label small mb-1">{{ level.code }}{{ slb_type.label }}</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">Jumlah</span>
+                                    <input type="number" class="form-control" min="0" max="26" value="0"
+                                        data-slb-grade="{{ level.code }}" data-slb-type="{{ slb_type.code }}">
+                                    <span class="input-group-text bg-light text-muted">paralel</span>
+                                </div>
+                                <small class="text-muted d-block">{{ slb_type.description }}</small>
+                                <small class="text-muted d-block">Output: {{ level.code }}{{ slb_type.label }} - 1, -2, dst</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                {% for level in level_configs %}
                 <div class="col-sm-6 col-lg-4">
                     <label class="form-label small mb-1">
-                        {% if i < 0 %} {% if i==-2 %}KB {% elif i==-1 %} {% if jenjang=='TK' %}TK A{% else %}Kelompok
-                            A{% endif %} {% endif %} {% elif i==0 and jenjang in ['TK', 'PAUD' ] %} {% if jenjang=='TK'
-                            %}TK B{% else %}Kelompok B{% endif %} {% else %}Kelas {{ i }}{% endif %} </label>
+                        {{ level.label }}</label>
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text">Jumlah</span>
                                 <input type="number" class="form-control" min="0" max="26" value="0"
-                                    data-grade-parallel="{{ i }}">
+                                    data-grade-parallel="{{ level.code }}">
                                 <span class="input-group-text bg-light text-muted">paralel</span>
                             </div>
                             <small class="text-muted">
-                                {% if i < 0 or (i==0 and jenjang in ['TK', 'PAUD' ]) %} Otomatis membuat varian paralel
-                                    untuk tingkat ini {% else %} Otomatis jadi Kelas {{ i }}A, {{ i }}B, dst {% endif %}
+                                {% if level.variant_style == 'numeric' %}Otomatis membuat varian paralel
+                                    untuk tingkat ini{% else %}Otomatis jadi {{ level.label }}A, {{ level.label }}B, dst{% endif %}
                                     </small>
                 </div>
                 {% endfor %}
+                {% endif %}
             </div>
             {% endif %}
             <!-- Existing ClassRooms -->
@@ -84,22 +108,7 @@
                             {% for classroom in classrooms %}
                             <tr data-classroom-id="{{ classroom.id }}">
                                 <td class="fw-semibold">{{ classroom.name }}</td>
-                                {% set grade_label = 'Kelas ' ~ classroom.grade_level %}
-                                {% if classroom.grade_level == -2 %}
-                                    {% set grade_label = 'KB' %}
-                                {% elif classroom.grade_level == -1 %}
-                                    {% if jenjang == 'TK' %}
-                                        {% set grade_label = 'TK A' %}
-                                    {% else %}
-                                        {% set grade_label = 'Kelompok A' %}
-                                    {% endif %}
-                                {% elif classroom.grade_level == 0 and jenjang in ['TK', 'PAUD'] %}
-                                    {% if jenjang == 'TK' %}
-                                        {% set grade_label = 'TK B' %}
-                                    {% else %}
-                                        {% set grade_label = 'Kelompok B' %}
-                                    {% endif %}
-                                {% endif %}
+                                {% set grade_label = level_labels.get(classroom.grade_level|string, 'Kelas ' ~ classroom.grade_level) %}
                                 <td><span class="badge bg-info">{{ grade_label }}</span></td>
                                 <td>{{ classroom.variant or '-' }}</td>
                                 <td>
@@ -135,14 +144,26 @@
     document.addEventListener('DOMContentLoaded', function () {
         let classrooms = {{ classrooms | default ([]) | tojson | safe
     }};
+    const levelConfigs = {{ level_configs | tojson | safe }};
+    const levelMap = {};
+    levelConfigs.forEach(level => { levelMap[String(level.code)] = level; });
+    const levelLabels = {{ level_labels | tojson | safe }};
     const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
     const schoolJenjang = "{{ jenjang or '' }}".toUpperCase();
+    const slbTypeOptions = (levelConfigs.find(level => Array.isArray(level.slb_types))?.slb_types) || [];
+    const slbParallelInputs = document.querySelectorAll('[data-slb-grade][data-slb-type]');
 
     // ===== Helpers for paralel kelas (SD) =====
     const gradeParallelInputs = document.querySelectorAll('[data-grade-parallel]');
+    const maxParallelCount = 26;
+
+    function encodeSlbGrade(level, typeCode) {
+        const index = slbTypeOptions.findIndex(item => item.code === typeCode);
+        if (index < 0) return NaN;
+        return 1000 + (parseInt(level, 10) * 10) + index + 1;
+    }
 
     function refreshGradeInputs() {
-        if (!gradeParallelInputs.length) return;
         const counts = {};
         classrooms.forEach(c => {
             const g = parseInt(c.grade_level);
@@ -154,21 +175,28 @@
             const grade = parseInt(input.dataset.gradeParallel, 10);
             input.value = counts[grade] || 0;
         });
+        slbParallelInputs.forEach(input => {
+            const grade = encodeSlbGrade(input.dataset.slbGrade, input.dataset.slbType);
+            input.value = counts[grade] || 0;
+        });
     }
 
     function formatGradeLabel(grade) {
-        if (grade === -2) return 'KB';
-        if (grade === -1) return schoolJenjang === 'TK' ? 'TK A' : 'Kelompok A';
-        if (grade === 0 && (schoolJenjang === 'TK' || schoolJenjang === 'PAUD')) {
-            return schoolJenjang === 'TK' ? 'TK B' : 'Kelompok B';
-        }
-        return `Kelas ${grade}`;
+        return levelLabels[String(grade)] || `Kelas ${grade}`;
     }
 
     function buildClassroomName(grade, variant) {
+        const level = levelMap[String(grade)] || {};
+        const label = formatGradeLabel(grade);
         if (schoolJenjang === 'TK') {
             if (grade === -1) return `Kelas TK A${variant || ''}`.trim();
             if (grade === 0) return `Kelas TK B${variant || ''}`.trim();
+        }
+        if (['PAUD', 'SPS', 'TPA', 'KB', 'SKB', 'PKBM'].includes(schoolJenjang) && level.variant_style === 'numeric') {
+            return `${label}${variant || ''}`.trim();
+        }
+        if (schoolJenjang === 'SLB') {
+            return `${label} - ${variant || ''}`.trim();
         }
         return `Kelas ${grade}${variant || ''}`.trim();
     }
@@ -226,8 +254,7 @@
 
     function applyParallelCount(grade, count) {
         if (isNaN(grade)) return;
-        const maxParallel = alphabet.length;
-        const target = Math.max(0, Math.min(count || 0, maxParallel));
+        const target = Math.max(0, Math.min(count || 0, maxParallelCount));
 
         // Get existing classrooms by variant for this grade
         const existingByVariant = {};
@@ -241,9 +268,38 @@
         classrooms = classrooms.filter(c => parseInt(c.grade_level) !== grade);
 
         for (let i = 0; i < target; i++) {
-            const variant = (schoolJenjang === 'TK' && (grade === -1 || grade === 0))
+            const level = levelMap[String(grade)] || {};
+            const variant = level.variant_style === 'numeric'
                 ? String(i + 1)
                 : (alphabet[i] || String(i + 1));
+            const existing = existingByVariant[variant];
+            classrooms.push({
+                name: (existing && existing.name) ? existing.name : buildClassroomName(grade, variant),
+                grade_level: grade,
+                variant: variant,
+                capacity: existing ? existing.capacity : null,
+                notes: existing ? existing.notes : null,
+                id: existing ? existing.id : `temp_${Date.now()}_${grade}_${variant}`
+            });
+        }
+        updateClassroomTable();
+    }
+
+    function applySlbParallelCount(level, typeCode, count) {
+        const grade = encodeSlbGrade(level, typeCode);
+        if (isNaN(grade)) return;
+        const target = Math.max(0, Math.min(count || 0, maxParallelCount));
+        const existingByVariant = {};
+        classrooms
+            .filter(c => parseInt(c.grade_level, 10) === grade && c.variant)
+            .forEach(c => {
+                existingByVariant[String(c.variant).toUpperCase()] = c;
+            });
+
+        classrooms = classrooms.filter(c => parseInt(c.grade_level, 10) !== grade);
+
+        for (let i = 0; i < target; i++) {
+            const variant = String(i + 1);
             const existing = existingByVariant[variant];
             classrooms.push({
                 name: (existing && existing.name) ? existing.name : buildClassroomName(grade, variant),
@@ -262,6 +318,15 @@
             const grade = parseInt(this.dataset.gradeParallel, 10);
             const val = parseInt(this.value || "0", 10);
             applyParallelCount(grade, isNaN(val) ? 0 : val);
+        });
+    });
+
+    slbParallelInputs.forEach(input => {
+        input.addEventListener('change', function () {
+            const level = parseInt(this.dataset.slbGrade, 10);
+            const typeCode = this.dataset.slbType;
+            const val = parseInt(this.value || "0", 10);
+            applySlbParallelCount(level, typeCode, isNaN(val) ? 0 : val);
         });
     });
 

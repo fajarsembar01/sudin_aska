@@ -7,6 +7,15 @@ from datetime import datetime, date, timedelta, timezone
 import calendar
 
 from ..db_access import get_cursor
+from .classroom_rules import (
+    PAKET_JENJANGS,
+    PAUD_GROUP_JENJANGS,
+    build_room_name,
+    get_template_room_name,
+    normalize_jenjang,
+    normalize_variant,
+    parse_room_info,
+)
 
 try:
     from zoneinfo import ZoneInfo
@@ -2426,6 +2435,48 @@ def update_school_rooms(
         return len(deduped_room_ids)
 
 
+def enable_all_classroom_room_aspects_for_school(school_id: int) -> int:
+    """Enable all active aspects for classroom-like rooms assigned to a school."""
+    school = get_school_by_id(school_id)
+    school_jenjang = school.get("jenjang") if school else None
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT sr.id AS school_room_id, sr.room_id, r.name AS room_name
+            FROM portal_school_rooms sr
+            JOIN portal_rooms r ON r.id = sr.room_id
+            WHERE sr.school_id = %s AND r.active = TRUE
+            """,
+            (school_id,),
+        )
+        classroom_school_room_ids: list[int] = []
+        room_ids: list[int] = []
+        for row in cur.fetchall():
+            parsed = parse_room_info(row["room_name"], school_jenjang)
+            if not parsed:
+                continue
+            classroom_school_room_ids.append(int(row["school_room_id"]))
+            room_ids.append(int(row["room_id"]))
+
+        if not classroom_school_room_ids or not room_ids:
+            return 0
+
+        cur.execute(
+            """
+            INSERT INTO portal_school_room_aspects (school_room_id, aspect_id)
+            SELECT sr.id, a.id
+            FROM portal_school_rooms sr
+            JOIN portal_aspects a ON a.room_id = sr.room_id AND a.active = TRUE
+            WHERE sr.id = ANY(%s)
+              AND sr.room_id = ANY(%s)
+            ON CONFLICT DO NOTHING
+            """,
+            (classroom_school_room_ids, room_ids),
+        )
+        return cur.rowcount
+
+
 def list_all_staff() -> List[Dict[str, Any]]:
     """List all staff users."""
     with get_cursor() as cur:
@@ -3820,13 +3871,200 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
     Uses the base room for the matching grade (e.g., "Ruang Kelas 1") as a template and
     copies its aspects to generated rooms (e.g., "Ruang Kelas 1A").
     """
+    school = get_school_by_id(school_id)
+    school_jenjang = school.get("jenjang") if school else None
+    classrooms = list_school_classrooms(school_id, active_only=True)
+
+    if normalize_jenjang(school_jenjang) in (PAUD_GROUP_JENJANGS | PAKET_JENJANGS | {"SLB"}):
+        template_room_name = get_template_room_name(school_jenjang)
+        if not template_room_name:
+            return
+
+        all_rooms = list_portal_rooms(active_only=False)
+        room_by_name = {
+            (room.get("name") or "").strip().lower(): room
+            for room in all_rooms
+            if room.get("name")
+        }
+        template_room = room_by_name.get(template_room_name.strip().lower())
+
+        with get_cursor(commit=True) as cur:
+            if not template_room:
+                fallback_template = next(
+                    (room for room in all_rooms if "kelas" in (room.get("name") or "").lower()),
+                    None,
+                )
+                cur.execute(
+                    """
+                    INSERT INTO portal_rooms (name, description, category, sort_order, active, is_required)
+                    VALUES (%s, %s, %s, %s, TRUE, %s)
+                    RETURNING id, name, description, category, sort_order, is_required
+                    """,
+                    (
+                        template_room_name,
+                        (fallback_template or {}).get("description"),
+                        (fallback_template or {}).get("category") or "akademik",
+                        (fallback_template or {}).get("sort_order") or 0,
+                        (fallback_template or {}).get("is_required") or False,
+                    ),
+                )
+                template_room = dict(cur.fetchone())
+                template_room["aspects"] = list((fallback_template or {}).get("aspects") or [])
+                for idx, aspect in enumerate((fallback_template or {}).get("aspects") or []):
+                    cur.execute(
+                        """
+                        INSERT INTO portal_aspects (room_id, name, description, sort_order, active, is_required)
+                        VALUES (%s, %s, %s, %s, TRUE, %s)
+                        """,
+                        (
+                            template_room["id"],
+                            aspect.get("name"),
+                            aspect.get("description"),
+                            aspect.get("sort_order") if aspect.get("sort_order") is not None else idx,
+                            aspect.get("is_required") or False,
+                        ),
+                    )
+
+            if not classrooms:
+                cur.execute(
+                    """
+                    SELECT sr.room_id, r.name
+                    FROM portal_school_rooms sr
+                    JOIN portal_rooms r ON r.id = sr.room_id
+                    WHERE sr.school_id = %s
+                    """,
+                    (school_id,),
+                )
+                rows = cur.fetchall()
+                orphaned = [
+                    row["room_id"]
+                    for row in rows
+                    if parse_room_info(row["name"])
+                ]
+                if orphaned:
+                    cur.execute(
+                        "DELETE FROM portal_school_rooms WHERE school_id = %s AND room_id = ANY(%s)",
+                        (school_id, orphaned),
+                    )
+                if template_room:
+                    cur.execute(
+                        "DELETE FROM portal_school_rooms WHERE school_id = %s AND room_id = %s",
+                        (school_id, template_room["id"]),
+                    )
+                return
+
+            configured_room_names: set[str] = set()
+            for cls in classrooms:
+                try:
+                    grade_int = int(cls.get("grade_level"))
+                except (TypeError, ValueError):
+                    continue
+                variant = normalize_variant(school_jenjang, grade_int, cls.get("variant"))
+                if not variant:
+                    continue
+
+                target_name = build_room_name(school_jenjang, grade_int, variant)
+                configured_room_names.add(target_name)
+                existing_room = room_by_name.get(target_name.strip().lower())
+                if existing_room:
+                    target_room_id = existing_room["id"]
+                    if not existing_room.get("active"):
+                        cur.execute("UPDATE portal_rooms SET active = TRUE WHERE id = %s", (target_room_id,))
+                        existing_room["active"] = True
+                else:
+                    cur.execute(
+                        """
+                        INSERT INTO portal_rooms (name, description, category, sort_order, active, is_required)
+                        VALUES (%s, %s, %s, %s, TRUE, %s)
+                        RETURNING id, name, description, category, sort_order, is_required
+                        """,
+                        (
+                            target_name,
+                            template_room.get("description"),
+                            template_room.get("category") or "akademik",
+                            template_room.get("sort_order") or 0,
+                            template_room.get("is_required") or False,
+                        ),
+                    )
+                    existing_room = dict(cur.fetchone())
+                    room_by_name[target_name.strip().lower()] = existing_room
+                    target_room_id = existing_room["id"]
+                    for idx, aspect in enumerate(template_room.get("aspects") or []):
+                        cur.execute(
+                            """
+                            INSERT INTO portal_aspects (room_id, name, description, sort_order, active, is_required)
+                            VALUES (%s, %s, %s, %s, TRUE, %s)
+                            """,
+                            (
+                                target_room_id,
+                                aspect.get("name"),
+                                aspect.get("description"),
+                                aspect.get("sort_order") if aspect.get("sort_order") is not None else idx,
+                                aspect.get("is_required") or False,
+                            ),
+                        )
+
+                quantity_val = cls.get("capacity") or 1
+                notes_val = cls.get("notes")
+                cur.execute(
+                    """
+                    INSERT INTO portal_school_rooms (school_id, room_id, quantity, notes)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (school_id, room_id)
+                    DO UPDATE SET quantity = EXCLUDED.quantity, notes = EXCLUDED.notes
+                    """,
+                    (school_id, target_room_id, quantity_val, notes_val),
+                )
+                cur.execute(
+                    """
+                    INSERT INTO portal_school_room_aspects (school_room_id, aspect_id)
+                    SELECT sr.id, a.id
+                    FROM portal_school_rooms sr
+                    JOIN portal_aspects a ON a.room_id = sr.room_id AND a.is_required = TRUE
+                    WHERE sr.school_id = %s AND sr.room_id = %s
+                    ON CONFLICT DO NOTHING
+                    """,
+                    (school_id, target_room_id),
+                )
+
+            if template_room:
+                cur.execute(
+                    "DELETE FROM portal_school_rooms WHERE school_id = %s AND room_id = %s",
+                    (school_id, template_room["id"]),
+                )
+            cur.execute(
+                """
+                SELECT sr.room_id, r.name
+                FROM portal_school_rooms sr
+                JOIN portal_rooms r ON r.id = sr.room_id
+                WHERE sr.school_id = %s
+                """,
+                (school_id,),
+            )
+            rows = cur.fetchall()
+            orphaned = [
+                row["room_id"]
+                for row in rows
+                if parse_room_info(row["name"])
+                and row["name"] not in configured_room_names
+            ]
+            if orphaned:
+                cur.execute(
+                    "DELETE FROM portal_school_rooms WHERE school_id = %s AND room_id = ANY(%s)",
+                    (school_id, orphaned),
+                )
+        return
+
     import re  # Import at function level for regex operations
 
     tk_variant_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s+([AB])\s*\d+\s*$", re.IGNORECASE)
-    tk_base_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s*$", re.IGNORECASE)
+    tk_base_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+(?:TK|-1)\s*$", re.IGNORECASE)
     numeric_variant_pattern = re.compile(r"\bKelas\s+-?\d+[A-Z]+$", re.IGNORECASE)
-    
-    classrooms = list_school_classrooms(school_id, active_only=True)
+    malformed_hyphenated_classroom_pattern = re.compile(
+        r"^\s*Ruang\s+Kelas\s+\d+[A-Z](?:1)?\s*-\s*[0-9A-Z]+\s*$",
+        re.IGNORECASE,
+    )
+
     if not classrooms:
         # No classrooms configured - remove all variant classroom rooms for this school
         with get_cursor(commit=True) as cur:
@@ -3843,8 +4081,32 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
     # Include inactive rooms so we can revive old variants instead of colliding on insert
     all_rooms = list_portal_rooms(active_only=False)
 
+    def _parsed_for_school(room_name: str) -> Optional[Dict[str, Any]]:
+        return parse_room_info(room_name, school_jenjang)
+
+    def _parsed_any(room_name: str) -> Optional[Dict[str, Any]]:
+        return parse_room_info(room_name)
+
+    def _is_other_jenjang_classroom(room_name: str) -> bool:
+        parsed_any = _parsed_any(room_name)
+        if not parsed_any:
+            return False
+        return _parsed_for_school(room_name) is None
+
+    def _is_malformed_hyphenated_classroom(room_name: str) -> bool:
+        if normalize_jenjang(school_jenjang) == "SLB":
+            return False
+        return bool(malformed_hyphenated_classroom_pattern.match(room_name or ""))
+
     def _is_variant_name(room_name: str) -> bool:
-        return bool(numeric_variant_pattern.search(room_name or "") or tk_variant_pattern.match(room_name or ""))
+        parsed = _parsed_for_school(room_name)
+        if parsed:
+            return bool(parsed.get("is_variant"))
+        return bool(
+            numeric_variant_pattern.search(room_name or "")
+            or tk_variant_pattern.match(room_name or "")
+            or _is_malformed_hyphenated_classroom(room_name)
+        )
 
     def _room_grade(room_name: str) -> Optional[int]:
         m = re.search(r"\bKelas\s+(-?\d+)", room_name or "", flags=re.IGNORECASE)
@@ -3881,6 +4143,8 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
     fallback_template: Optional[Dict[str, Any]] = None
     for room in all_rooms:
         name_val = room.get("name") or ""
+        if _is_other_jenjang_classroom(name_val) or _is_malformed_hyphenated_classroom(name_val):
+            continue
         # Map base TK room as template for TK A/B
         if tk_base_pattern.match(name_val):
             template_by_grade.setdefault(-1, room)
@@ -3920,7 +4184,7 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                 # Create a base template for this grade using fallback styling (aspects/category/etc).
                 template_source = fallback_template
                 if grade_int in (-1, 0):
-                    base_name = "Ruang Kelas TK"
+                    base_name = "Ruang Kelas -1"
                 else:
                     base_name = f"Ruang Kelas {grade_int}"
                 base_cat = (template_source or {}).get("category") or "akademik"
@@ -4069,22 +4333,29 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
         if variant:
             configured_room_names.add(_build_room_name(grade_int, variant))
     
-    # Get all variant rooms currently assigned to this school
+    # Get all classroom-like rooms currently assigned to this school
     with get_cursor() as cur:
         cur.execute("""
             SELECT sr.room_id, r.name
             FROM portal_school_rooms sr
             JOIN portal_rooms r ON r.id = sr.room_id
             WHERE sr.school_id = %s
-            AND (r.name ~ E'Kelas\\\\s+-?\\\\d+[A-Z]+' OR r.name ~ E'Kelas\\\\s+TK\\\\s+[AB]\\\\d+')
         """, (school_id,))
         
-        assigned_variant_rooms = cur.fetchall()
+        assigned_classroom_rooms = cur.fetchall()
     
     # Find orphaned room IDs (assigned but not configured anymore)
     orphaned_room_ids = [
-        row[0] for row in assigned_variant_rooms
-        if row[1] not in configured_room_names
+        row[0]
+        for row in assigned_classroom_rooms
+        if (
+            (
+                (_parsed_for_school(row[1]) or {}).get("is_variant")
+                and row[1] not in configured_room_names
+            )
+            or _is_other_jenjang_classroom(row[1])
+            or _is_malformed_hyphenated_classroom(row[1])
+        )
     ]
     
     if orphaned_room_ids:
@@ -4095,7 +4366,7 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                 AND room_id = ANY(%s)
             """, (school_id, orphaned_room_ids))
             
-        orphaned_names = [row[1] for row in assigned_variant_rooms if row[0] in orphaned_room_ids]
+        orphaned_names = [row[1] for row in assigned_classroom_rooms if row[0] in orphaned_room_ids]
         current_app.logger.info(
             "[ensure_classroom_rooms] Removed %d orphaned variant rooms for school_id=%s: %s",
             len(orphaned_room_ids), school_id, orphaned_names
