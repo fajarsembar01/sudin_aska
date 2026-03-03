@@ -457,7 +457,6 @@
                             <i class="bi bi-send-check me-1"></i>Simpan Tamu Kedinasan
                         </button>
                     </div>
-                    <div id="submitGuidance" class="small text-muted mt-2" aria-live="polite"></div>
                 </div>
                 <div class="small text-muted mt-2">
                     Kunjungan tamu umum mandiri akan otomatis terkonfirmasi. Jika ada tamu sudin, status menunggu
@@ -563,7 +562,6 @@
         var purposeError = document.getElementById('purposeError');
         var purposeSuggestions = document.getElementById('purposeSuggestions');
         var purposeQuickChips = document.getElementById('purposeQuickChips');
-        var submitGuidance = document.getElementById('submitGuidance');
         var purposeKeywords = {{ purpose_keywords|default ([]) | tojson
     }};
         var purposeSuggestionItems = [];
@@ -663,31 +661,8 @@
         };
     }
 
-    function buildMissingSteps(state) {
-        var steps = [];
-        if (!state.hasGuests) steps.push('pilih minimal 1 tamu');
-        if (!state.hasPurpose) steps.push('isi tujuan kunjungan');
-        if (!state.hasGps) steps.push('aktifkan lokasi (GPS)');
-        return steps;
-    }
-
-    function setSubmitGuidanceMessage(message, tone) {
-        if (!submitGuidance) return;
-        submitGuidance.textContent = message || '';
-        submitGuidance.classList.remove('text-muted', 'text-danger', 'text-success');
-        if (tone === 'danger') {
-            submitGuidance.classList.add('text-danger');
-        } else if (tone === 'success') {
-            submitGuidance.classList.add('text-success');
-        } else {
-            submitGuidance.classList.add('text-muted');
-        }
-    }
-
     function updateSubmitState() {
         var state = getValidationState();
-        var canSubmit = state.hasGuests && state.hasPhoto && state.hasGps && state.hasPurpose;
-        var missingSteps = buildMissingSteps(state);
         if (selectedField) selectedField.classList.toggle('is-invalid', hasTriedSubmit && !state.hasGuests);
         if (selectedError) selectedError.classList.toggle('d-none', !(hasTriedSubmit && !state.hasGuests));
         if (purposeInput) purposeInput.classList.toggle('is-invalid', hasTriedSubmit && !state.hasPurpose);
@@ -696,23 +671,14 @@
             submitBtn.innerHTML = '<i class="bi bi-camera-video me-1"></i>Aktifkan Kamera';
             submitBtn.className = 'btn btn-primary';
             submitBtn.disabled = false;
-            setSubmitGuidanceMessage('Langkah 1: Aktifkan kamera untuk mulai ambil foto.', 'muted');
         } else if (cameraStream && !state.hasPhoto) {
             submitBtn.innerHTML = '<i class="bi bi-camera me-1"></i>Ambil Foto';
             submitBtn.className = 'btn btn-primary';
             submitBtn.disabled = false;
-            setSubmitGuidanceMessage('Langkah 2: Ambil foto kunjungan sebelum simpan.', 'muted');
         } else {
             submitBtn.innerHTML = '<i class="bi bi-send-check me-1"></i>Simpan Tamu Kedinasan';
             submitBtn.className = 'btn btn-success';
             submitBtn.disabled = false;
-            if (hasTriedSubmit && !canSubmit) {
-                setSubmitGuidanceMessage('Lengkapi dulu: ' + missingSteps.join(', ') + '.', 'danger');
-            } else if (canSubmit) {
-                setSubmitGuidanceMessage('Data sudah lengkap. Tekan tombol simpan untuk kirim.', 'success');
-            } else {
-                setSubmitGuidanceMessage('Lengkapi data tamu, tujuan, dan GPS sebelum menyimpan.', 'muted');
-            }
         }
     }
 
