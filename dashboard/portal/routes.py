@@ -4472,6 +4472,80 @@ def admin_gallery() -> Response:
     )
 
 
+@portal_bp.route("/coordinator/gallery")
+@role_required("coordinator")
+def coordinator_gallery() -> Response:
+    """Coordinator gallery view grouped by school."""
+    user = current_user()
+    period_id = request.args.get("period_id", type=int)
+    my_team, _, staff_ids = _get_coordinator_team_context(user.get("id"))
+
+    if not my_team or not staff_ids:
+        flash("Anda belum ditugaskan sebagai koordinator tim manapun.", "warning")
+        periods = list_periods()
+        return render_template(
+            "portal/coordinator/gallery.html",
+            albums=[],
+            total_photos=0,
+            total_schools=0,
+            periods=periods,
+            current_period_id=period_id,
+            selected_team_id=None,
+            selected_team=my_team,
+        )
+
+    photos = fetch_gallery_photos(
+        period_id=period_id,
+        staff_ids=staff_ids,
+        restrict_to_staff=True,
+    )
+    latest_at = fetch_gallery_latest_date(
+        period_id=period_id,
+        staff_ids=staff_ids,
+        restrict_to_staff=True,
+    )
+    albums: list[dict] = []
+    album_map: dict[int, dict] = {}
+    for p in photos:
+        school_id = p.get("school_id")
+        if not school_id:
+            continue
+        album = album_map.get(school_id)
+        if not album:
+            album = {
+                "school_id": school_id,
+                "school_name": p.get("school_name") or "Sekolah",
+                "school_jenjang": p.get("school_jenjang"),
+                "photos": [],
+            }
+            album_map[school_id] = album
+            albums.append(album)
+        album["photos"].append(p)
+
+    total_photos = sum(len(a.get("photos") or []) for a in albums)
+    periods = list_periods()
+    if latest_at:
+        latest_date = latest_at.date() if hasattr(latest_at, "date") else latest_at
+    else:
+        latest_date = datetime.now().date()
+    periods = [
+        p
+        for p in periods
+        if p.get("start_date") and p.get("start_date") <= latest_date
+    ]
+
+    return render_template(
+        "portal/coordinator/gallery.html",
+        albums=albums,
+        total_photos=total_photos,
+        total_schools=len(albums),
+        periods=periods,
+        current_period_id=period_id,
+        selected_team_id=my_team.get("id"),
+        selected_team=my_team,
+    )
+
+
 @portal_bp.route("/api/rankings")
 @role_required("admin")
 def api_rankings() -> Response:

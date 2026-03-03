@@ -8,6 +8,7 @@
 {% set photos_endpoint = 'portal.admin_photos_partial' if is_admin else 'portal.coordinator_photos_partial' %}
 {% set related_photos_endpoint = 'portal.admin_related_photos' if is_admin else 'portal.coordinator_related_photos' %}
 {% set ranking_endpoint = 'portal.api_rankings' if is_admin else 'portal.coordinator_api_rankings' %}
+{% set gallery_endpoint = 'portal.admin_gallery' if is_admin else 'portal.coordinator_gallery' %}
 {% set current_team_id = selected_team_id if selected_team_id is not none else (team.id if team else None) %}
 {% set teams = monev_teams|default([]) %}
 {% set selected_year = current_period_year|default(None) %}
@@ -489,9 +490,9 @@
           </h6>
         </div>
         <div class="d-flex flex-wrap align-items-center gap-2">
-          {% if is_admin %}
+          {% if is_admin or stats_role == 'coordinator' %}
           <a
-            href="{{ url_for('portal.admin_gallery', period_id=current_period_id, team_id=current_team_id) }}"
+            href="{{ url_for(gallery_endpoint, period_id=current_period_id, team_id=current_team_id) }}"
             class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2"
             target="_blank"
             rel="noopener"
