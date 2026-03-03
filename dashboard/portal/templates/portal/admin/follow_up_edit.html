@@ -1,0 +1,154 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Edit Tiket Tindak Lanjut" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('portal.admin_follow_ups') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="h4 fw-bold mb-1">Edit Tiket {{ ticket.ticket_code or ('#' ~ ticket.id) }}</h1>
+                <p class="text-muted mb-0">{{ ticket.school_name }} • {{ ticket.room_name }}</p>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('portal.follow_up_detail', follow_up_id=ticket.id) }}" class="btn btn-outline-primary btn-sm">
+                Lihat Detail Publik
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4">
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Ubah Tiket</h2>
+                <form method="post" action="{{ url_for('portal.admin_follow_up_edit', follow_up_id=ticket.id) }}">
+                    <input type="hidden" name="return_to" value="{{ url_for('portal.admin_follow_ups') }}">
+                    <div class="mb-2">
+                        <label class="form-label small text-muted">Staff Penanggung Jawab</label>
+                        <select class="form-select form-select-sm" name="staff_id" required>
+                            {% for staff in staff_options %}
+                            <option value="{{ staff.id }}" {% if (ticket.staff_id|int) == (staff.id|int) %}selected{% endif %}>
+                                {{ staff.full_name or staff.email }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small text-muted">Status</label>
+                        <select class="form-select form-select-sm" name="status" required>
+                            {% for status_value, status_label in follow_up_status_labels.items() %}
+                            <option value="{{ status_value }}" {% if ticket.status == status_value %}selected{% endif %}>{{ status_label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Skor Trigger</label>
+                            <input type="number" min="0" max="100" step="0.1" class="form-control form-control-sm"
+                                name="trigger_score_pct" value="{{ '%.1f'|format(ticket.trigger_score_pct or 0) }}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Threshold</label>
+                            <input type="number" min="1" max="100" step="0.1" class="form-control form-control-sm"
+                                name="threshold_pct" value="{{ '%.1f'|format(ticket.threshold_pct or 60) }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">Catatan Admin</label>
+                        <textarea class="form-control form-control-sm" name="note" rows="3"
+                            placeholder="Contoh: status diubah setelah koordinasi lapangan."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm w-100">Simpan Perubahan</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3 text-danger">Hapus Tiket</h2>
+                <p class="small text-muted mb-3">Aksi ini akan menghapus tiket dan seluruh timeline tindak lanjut.</p>
+                <form method="post" action="{{ url_for('portal.admin_follow_up_delete', follow_up_id=ticket.id) }}"
+                    onsubmit="return confirm('Yakin hapus tiket ini? Data timeline akan ikut terhapus.');">
+                    <input type="hidden" name="return_to" value="{{ url_for('portal.admin_follow_ups') }}">
+                    <button type="submit" class="btn btn-outline-danger btn-sm w-100">Hapus Tiket</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Ringkasan</h2>
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <td class="text-muted">Sekolah</td>
+                        <td class="text-end">{{ ticket.school_name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">NPSN</td>
+                        <td class="text-end">{{ ticket.school_npsn or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Ruangan</td>
+                        <td class="text-end">{{ ticket.room_name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Assessment ID</td>
+                        <td class="text-end">#{{ ticket.assessment_id }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Status</td>
+                        <td class="text-end"><span class="badge text-bg-{{ ticket.status_badge }}">{{ ticket.status_label }}</span></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Update Terakhir</td>
+                        <td class="text-end">{{ ticket.updated_label }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Timeline</h2>
+                {% if timeline %}
+                <div class="d-flex flex-column gap-3">
+                    {% for item in timeline %}
+                    <div class="border rounded-3 p-3">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <div class="fw-semibold">{{ item.event_label }}</div>
+                                <div class="small text-muted">
+                                    {{ item.actor_name or item.actor_role or 'Sistem' }}
+                                    {% if item.status_after_label %}
+                                    • <span class="badge text-bg-{{ item.status_badge }}">{{ item.status_after_label }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="small text-muted">{{ item.created_label }}</div>
+                        </div>
+                        {% if item.note %}
+                        <p class="mb-2">{{ item.note }}</p>
+                        {% endif %}
+                        {% if item.photo_url %}
+                        <a href="{{ item.photo_url }}" target="_blank" rel="noopener">
+                            <img src="{{ item.photo_url }}" alt="Foto tindak lanjut" class="img-fluid rounded" style="max-height: 220px;">
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">Belum ada timeline.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

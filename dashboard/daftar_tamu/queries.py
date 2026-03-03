@@ -66,11 +66,13 @@ GUESTBOOK_NOTIFICATION_CATEGORY = "daftar_tamu_status"
 PANBERS_REOPEN_NOTIFICATION_CATEGORY = "panbers_reopen_status"
 PANBERS_ASSIGNMENT_NOTIFICATION_CATEGORY = "panbers_assignment_status"
 PANBERS_TEAM_MEMBER_NOTIFICATION_CATEGORY = "panbers_team_member_status"
+PANBERS_FOLLOW_UP_NOTIFICATION_CATEGORY = "panbers_follow_up_status"
 USER_APP_NOTIFICATION_CATEGORIES = (
     GUESTBOOK_NOTIFICATION_CATEGORY,
     PANBERS_REOPEN_NOTIFICATION_CATEGORY,
     PANBERS_ASSIGNMENT_NOTIFICATION_CATEGORY,
     PANBERS_TEAM_MEMBER_NOTIFICATION_CATEGORY,
+    PANBERS_FOLLOW_UP_NOTIFICATION_CATEGORY,
 )
 _NOTIFICATION_SCHEMA_READY = False
 _HAS_DASHBOARD_USER_PROFILE_PHOTO_PATH: Optional[bool] = None
@@ -957,6 +959,7 @@ def fetch_user_visit_history(
         ft.visit_at,
         ft.purpose,
         ft.notes,
+        ft.metadata,
         ft.photo_path,
         s.name AS school_name,
         s.npsn AS school_npsn,
@@ -997,6 +1000,9 @@ def fetch_user_visit_history(
 
         cur.execute(data_query, params_common + [safe_per_page, offset])
         rows = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        row.update(_summarize_staff_notes(row.get("metadata")))
 
     return rows, total_rows
 
@@ -3201,6 +3207,91 @@ def list_purpose_keywords(*, active_only: bool = True, limit: int = 50) -> List[
             continue
         key = kw.lower()
         if key in seen:
+            continue
+        seen.add(key)
+        keywords.append(kw)
+    return keywords
+
+
+def list_popular_purposes(*, limit: int = 50, min_count: int = 1) -> List[str]:
+    safe_limit = max(1, min(int(limit or 50), 500))
+    safe_min_count = max(1, min(int(min_count or 1), 1000))
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH normalized_purposes AS (
+                SELECT
+                    regexp_replace(btrim(COALESCE(t.purpose, '')), '\s+', ' ', 'g') AS purpose_clean
+                FROM daftar_tamu_transactions t
+                WHERE COALESCE(btrim(t.purpose), '') <> ''
+            ),
+            ranked AS (
+                SELECT
+                    lower(purpose_clean) AS purpose_key,
+                    MIN(purpose_clean) AS purpose_label,
+                    COUNT(*) AS usage_count
+                FROM normalized_purposes
+                GROUP BY lower(purpose_clean)
+            )
+            SELECT purpose_label
+            FROM ranked
+            WHERE usage_count >= %s
+            ORDER BY usage_count DESC, lower(purpose_label) ASC
+            LIMIT %s
+            """,
+            [safe_min_count, safe_limit],
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+
+    purposes: List[str] = []
+    for row in rows:
+        value = (row.get("purpose_label") or "").strip()
+        if value:
+            purposes.append(value)
+    return purposes
+
+
+def list_purpose_keywords_by_usage(*, active_only: bool = True, limit: int = 50) -> List[str]:
+    safe_limit = max(1, min(int(limit or 50), 500))
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH keyword_source AS (
+                SELECT
+                    keyword,
+                    lower(regexp_replace(btrim(keyword), '\s+', ' ', 'g')) AS keyword_key
+                FROM daftar_tamu_purpose_keywords
+                WHERE (%s = FALSE OR active = TRUE)
+            ),
+            purpose_usage AS (
+                SELECT
+                    lower(regexp_replace(btrim(COALESCE(t.purpose, '')), '\s+', ' ', 'g')) AS purpose_key,
+                    COUNT(*)::int AS usage_count
+                FROM daftar_tamu_transactions t
+                WHERE COALESCE(btrim(t.purpose), '') <> ''
+                GROUP BY 1
+            )
+            SELECT
+                ks.keyword,
+                ks.keyword_key,
+                COALESCE(pu.usage_count, 0) AS usage_count
+            FROM keyword_source ks
+            LEFT JOIN purpose_usage pu ON pu.purpose_key = ks.keyword_key
+            ORDER BY COALESCE(pu.usage_count, 0) DESC, ks.keyword_key ASC
+            LIMIT %s
+            """,
+            [bool(active_only), safe_limit],
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+
+    keywords: List[str] = []
+    seen: set[str] = set()
+    for row in rows:
+        kw = (row.get("keyword") or "").strip()
+        key = (row.get("keyword_key") or "").strip() or kw.lower()
+        if not kw or key in seen:
             continue
         seen.add(key)
         keywords.append(kw)

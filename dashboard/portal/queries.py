@@ -57,6 +57,21 @@ PORTAL_LEGACY_SCORE_SCALE_MAX = 3
 PORTAL_NEW_SCORE_SCALE_MAX = 5
 PORTAL_NEW_SCORE_MIN = 1
 PORTAL_LEGACY_SCORE_MIN = 0
+PORTAL_FOLLOW_UP_STATUS_NEW = "baru"
+PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS = "diproses"
+PORTAL_FOLLOW_UP_STATUS_SUBMITTED = "diajukan"
+PORTAL_FOLLOW_UP_STATUS_DONE = "selesai"
+PORTAL_FOLLOW_UP_STATUSES = (
+    PORTAL_FOLLOW_UP_STATUS_NEW,
+    PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS,
+    PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
+    PORTAL_FOLLOW_UP_STATUS_DONE,
+)
+PORTAL_FOLLOW_UP_ACTIVE_STATUSES = (
+    PORTAL_FOLLOW_UP_STATUS_NEW,
+    PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS,
+    PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
+)
 
 
 def _sync_portal_assessment_periods_sequence(cur) -> None:
@@ -102,6 +117,27 @@ def _score_pct_sql(score_expr: str, scale_expr: str) -> str:
         f"THEN ({score_expr})::DECIMAL / {PORTAL_NEW_SCORE_SCALE_MAX}.0 * 100.0 "
         f"ELSE ({score_expr})::DECIMAL / {PORTAL_LEGACY_SCORE_SCALE_MAX}.0 * 100.0 END)"
     )
+
+
+def _apply_period_filter(
+    clauses: List[str],
+    params: List[Any],
+    period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
+    column: str = "period_id",
+) -> None:
+    """Append period filter to SQL clause list with matching bind parameters."""
+    if period_ids is not None:
+        if not period_ids:
+            clauses.append("1 = 0")
+            return
+        placeholders = ",".join(["%s"] * len(period_ids))
+        clauses.append(f"{column} IN ({placeholders})")
+        params.extend(period_ids)
+        return
+    if period_id:
+        clauses.append(f"{column} = %s")
+        params.append(period_id)
 
 
 def normalize_portal_undo_window_seconds(
@@ -1106,6 +1142,7 @@ def reopen_assessment(assessment_id: int) -> bool:
 def fetch_random_photos(
     limit: int = 6,
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     order: str = "random",
     staff_ids: Optional[List[int]] = None,
     restrict_to_staff: bool = False,
@@ -1126,9 +1163,7 @@ def fetch_random_photos(
     
     clauses = ["a.status = 'submitted'"]
     params: List[Any] = []
-    if period_id:
-        clauses.append("a.period_id = %s")
-        params.append(period_id)
+    _apply_period_filter(clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
     if staff_ids:
         placeholders = ",".join(["%s"] * len(staff_ids))
         clauses.append(f"a.staff_id IN ({placeholders})")
@@ -1183,6 +1218,100 @@ def fetch_random_photos(
     with get_cursor() as cur:
         cur.execute(query, params)
         return [dict(row) for row in cur.fetchall()]
+
+
+def fetch_gallery_photos(
+    period_id: Optional[int] = None,
+    staff_ids: Optional[List[int]] = None,
+    restrict_to_staff: bool = False,
+) -> List[Dict[str, Any]]:
+    """Fetch photos for gallery albums grouped by school (latest per room)."""
+    if staff_ids is not None and len(staff_ids) == 0:
+        return []
+    if restrict_to_staff and not staff_ids:
+        return []
+
+    clauses = ["a.status = 'submitted'"]
+    params: List[Any] = []
+    if period_id:
+        clauses.append("a.period_id = %s")
+        params.append(period_id)
+    if staff_ids:
+        placeholders = ",".join(["%s"] * len(staff_ids))
+        clauses.append(f"a.staff_id IN ({placeholders})")
+        params.extend(staff_ids)
+    where = "WHERE " + " AND ".join(clauses)
+
+    query = f"""
+        SELECT * FROM (
+            SELECT DISTINCT ON (s.id, r.id)
+                p.photo_path,
+                s.id AS school_id,
+                s.name AS school_name,
+                s.jenjang AS school_jenjang,
+                a.id AS assessment_id,
+                r.id AS room_id,
+                r.name AS room_name,
+                p.captured_at,
+                p.latitude,
+                p.longitude,
+                (
+                    SELECT COALESCE(AVG(sc2.score), 0)::DECIMAL(5,2)
+                    FROM portal_assessment_scores sc2
+                    JOIN portal_school_rooms sr2 ON sc2.school_room_id = sr2.id
+                    WHERE sr2.school_id = s.id AND sr2.room_id = r.id
+                ) AS room_score
+            FROM portal_assessment_photos p
+            JOIN portal_assessments a ON p.assessment_id = a.id
+            JOIN portal_schools s ON a.school_id = s.id
+            JOIN portal_school_rooms sr ON p.school_room_id = sr.id
+            JOIN portal_rooms r ON sr.room_id = r.id
+            {where}
+            ORDER BY s.id, r.id, p.captured_at DESC NULLS LAST
+        ) sub
+        ORDER BY school_name, room_name
+    """
+
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def fetch_gallery_latest_date(
+    period_id: Optional[int] = None,
+    staff_ids: Optional[List[int]] = None,
+    restrict_to_staff: bool = False,
+) -> Optional[datetime]:
+    """Return latest captured/created timestamp for gallery photos."""
+    if staff_ids is not None and len(staff_ids) == 0:
+        return None
+    if restrict_to_staff and not staff_ids:
+        return None
+
+    clauses = ["a.status = 'submitted'"]
+    params: List[Any] = []
+    if period_id:
+        clauses.append("a.period_id = %s")
+        params.append(period_id)
+    if staff_ids:
+        placeholders = ",".join(["%s"] * len(staff_ids))
+        clauses.append(f"a.staff_id IN ({placeholders})")
+        params.extend(staff_ids)
+    where = "WHERE " + " AND ".join(clauses)
+
+    query = f"""
+        SELECT MAX(COALESCE(p.captured_at, p.created_at)) AS latest_at
+        FROM portal_assessment_photos p
+        JOIN portal_assessments a ON p.assessment_id = a.id
+        {where}
+    """
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        row = cur.fetchone()
+    if not row:
+        return None
+    latest_at = row.get("latest_at") if isinstance(row, dict) else row[0]
+    return latest_at
 
 
 def save_assessment_photo(
@@ -1383,6 +1512,974 @@ def submit_assessment(assessment_id: int) -> bool:
         return cur.fetchone() is not None
 
 
+def _build_follow_up_ticket_code(ticket_id: int) -> str:
+    return f"PBR-TL-{int(ticket_id):06d}"
+
+
+def _insert_follow_up_timeline_entry(
+    cur,
+    *,
+    follow_up_id: int,
+    actor_user_id: Optional[int],
+    actor_role: Optional[str],
+    event_type: str,
+    status_before: Optional[str] = None,
+    status_after: Optional[str] = None,
+    note: Optional[str] = None,
+    photo_path: Optional[str] = None,
+) -> None:
+    cur.execute(
+        """
+        INSERT INTO portal_room_follow_up_updates (
+            follow_up_id,
+            actor_user_id,
+            actor_role,
+            event_type,
+            status_before,
+            status_after,
+            note,
+            photo_path
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """,
+        (
+            int(follow_up_id),
+            int(actor_user_id) if actor_user_id else None,
+            (actor_role or "").strip() or None,
+            (event_type or "").strip(),
+            (status_before or "").strip() or None,
+            (status_after or "").strip() or None,
+            (note or "").strip() or None,
+            (photo_path or "").strip() or None,
+        ),
+    )
+
+
+def list_school_user_ids_for_follow_up_notifications(school_id: int) -> List[int]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id
+            FROM dashboard_users
+            WHERE role = 'sekolah'
+              AND school_id = %s
+            ORDER BY id
+            """,
+            (int(school_id),),
+        )
+        return [int(row["id"]) for row in cur.fetchall() if row.get("id")]
+
+
+def create_room_follow_up_ticket(
+    *,
+    assessment_id: int,
+    school_id: int,
+    school_room_id: int,
+    room_id: int,
+    room_name: str,
+    staff_id: int,
+    trigger_score_pct: float,
+    threshold_pct: float = 60.0,
+) -> Dict[str, Any]:
+    """Create follow-up ticket for one room when score is below threshold."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO portal_room_follow_up_tickets (
+                assessment_id,
+                school_id,
+                school_room_id,
+                room_id,
+                room_name_snapshot,
+                staff_id,
+                trigger_score_pct,
+                threshold_pct,
+                status,
+                next_reminder_at
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW() + INTERVAL '1 month')
+            ON CONFLICT (assessment_id, school_room_id) DO NOTHING
+            RETURNING id, ticket_code, status
+            """,
+            (
+                int(assessment_id),
+                int(school_id),
+                int(school_room_id),
+                int(room_id),
+                (room_name or "").strip() or f"Ruang {int(school_room_id)}",
+                int(staff_id),
+                float(trigger_score_pct),
+                float(threshold_pct),
+                PORTAL_FOLLOW_UP_STATUS_NEW,
+            ),
+        )
+        inserted = cur.fetchone()
+        if inserted:
+            ticket_id = int(inserted["id"])
+            ticket_code = inserted.get("ticket_code") or _build_follow_up_ticket_code(ticket_id)
+            cur.execute(
+                """
+                UPDATE portal_room_follow_up_tickets
+                SET ticket_code = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+                """,
+                (ticket_code, ticket_id),
+            )
+            _insert_follow_up_timeline_entry(
+                cur,
+                follow_up_id=ticket_id,
+                actor_user_id=staff_id,
+                actor_role="staff",
+                event_type="created",
+                status_after=PORTAL_FOLLOW_UP_STATUS_NEW,
+                note=(
+                    f"Tiket dibuat otomatis karena skor ruang di bawah ambang {float(threshold_pct):.1f} "
+                    f"(skor {float(trigger_score_pct):.1f})."
+                ),
+            )
+            cur.execute(
+                """
+                SELECT id
+                FROM portal_room_follow_up_tickets
+                WHERE id = %s
+                """,
+                (ticket_id,),
+            )
+            row = cur.fetchone()
+            return {"id": int(row["id"]), "ticket_code": ticket_code, "_created": True}
+
+        cur.execute(
+            """
+            SELECT id, ticket_code, next_reminder_at
+            FROM portal_room_follow_up_tickets
+            WHERE assessment_id = %s
+              AND school_room_id = %s
+            LIMIT 1
+            """,
+            (int(assessment_id), int(school_room_id)),
+        )
+        existing = cur.fetchone()
+        if not existing:
+            return {}
+        ticket_id = int(existing["id"])
+        ticket_code = (existing.get("ticket_code") or "").strip()
+        if not ticket_code:
+            ticket_code = _build_follow_up_ticket_code(ticket_id)
+            cur.execute(
+                """
+                UPDATE portal_room_follow_up_tickets
+                SET ticket_code = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+                """,
+                (ticket_code, ticket_id),
+            )
+        if existing.get("next_reminder_at") is None:
+            cur.execute(
+                """
+                UPDATE portal_room_follow_up_tickets
+                SET next_reminder_at = NOW() + INTERVAL '1 month',
+                    updated_at = NOW()
+                WHERE id = %s
+                """,
+                (ticket_id,),
+            )
+        return {
+            "id": ticket_id,
+            "ticket_code": ticket_code,
+            "_created": False,
+        }
+
+
+def _follow_up_ticket_select_sql() -> str:
+    return """
+        SELECT
+            t.id,
+            t.ticket_code,
+            t.assessment_id,
+            t.school_id,
+            t.school_room_id,
+            t.room_id,
+            t.room_name_snapshot,
+            t.staff_id,
+            t.trigger_score_pct,
+            t.threshold_pct,
+            t.status,
+            t.created_at,
+            t.updated_at,
+            t.submitted_at,
+            t.verified_at,
+            t.verified_by,
+            t.reminder_count,
+            t.last_reminder_at,
+            t.next_reminder_at,
+            s.name AS school_name,
+            s.npsn AS school_npsn,
+            s.jenjang AS school_jenjang,
+            COALESCE(r.name, t.room_name_snapshot) AS room_name,
+            staff.full_name AS staff_name,
+            staff.email AS staff_email,
+            verifier.full_name AS verified_by_name,
+            p.name AS period_name,
+            p.start_date AS period_start_date,
+            p.end_date AS period_end_date,
+            last_u.event_type AS last_event_type,
+            last_u.note AS last_event_note,
+            last_u.created_at AS last_event_at,
+            last_u.status_after AS last_event_status,
+            last_actor.full_name AS last_event_actor_name
+        FROM portal_room_follow_up_tickets t
+        JOIN portal_schools s ON s.id = t.school_id
+        JOIN portal_assessments a ON a.id = t.assessment_id
+        LEFT JOIN portal_assessment_periods p ON p.id = a.period_id
+        LEFT JOIN portal_rooms r ON r.id = t.room_id
+        LEFT JOIN dashboard_users staff ON staff.id = t.staff_id
+        LEFT JOIN dashboard_users verifier ON verifier.id = t.verified_by
+        LEFT JOIN LATERAL (
+            SELECT u.event_type, u.note, u.created_at, u.status_after, u.actor_user_id
+            FROM portal_room_follow_up_updates u
+            WHERE u.follow_up_id = t.id
+            ORDER BY u.created_at DESC, u.id DESC
+            LIMIT 1
+        ) last_u ON TRUE
+        LEFT JOIN dashboard_users last_actor ON last_actor.id = last_u.actor_user_id
+    """
+
+
+def get_room_follow_up_ticket(follow_up_id: int) -> Optional[Dict[str, Any]]:
+    query = _follow_up_ticket_select_sql() + " WHERE t.id = %s LIMIT 1"
+    with get_cursor() as cur:
+        cur.execute(query, (int(follow_up_id),))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_latest_submitted_assessment_for_school(school_id: int) -> Optional[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, school_id, staff_id, period_id, status, submitted_at, score_scale_max
+            FROM portal_assessments
+            WHERE school_id = %s
+              AND status IN ('submitted', 'verified')
+            ORDER BY submitted_at DESC NULLS LAST, id DESC
+            LIMIT 1
+            """,
+            (int(school_id),),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def list_room_follow_up_tickets_for_admin(
+    *,
+    status: Optional[str] = None,
+    school_id: Optional[int] = None,
+    staff_id: Optional[int] = None,
+    search: Optional[str] = None,
+    limit: int = 300,
+) -> List[Dict[str, Any]]:
+    safe_limit = max(1, min(int(limit or 300), 500))
+    clauses: List[str] = []
+    params: List[Any] = []
+
+    status_value = (status or "").strip().lower()
+    if status_value in PORTAL_FOLLOW_UP_STATUSES:
+        clauses.append("t.status = %s")
+        params.append(status_value)
+    try:
+        parsed_school_id = int(school_id) if school_id is not None else 0
+    except (TypeError, ValueError):
+        parsed_school_id = 0
+    if parsed_school_id > 0:
+        clauses.append("t.school_id = %s")
+        params.append(parsed_school_id)
+    try:
+        parsed_staff_id = int(staff_id) if staff_id is not None else 0
+    except (TypeError, ValueError):
+        parsed_staff_id = 0
+    if parsed_staff_id > 0:
+        clauses.append("t.staff_id = %s")
+        params.append(parsed_staff_id)
+
+    search_value = (search or "").strip()
+    if search_value:
+        like_value = f"%{search_value}%"
+        clauses.append(
+            "(t.ticket_code ILIKE %s OR s.name ILIKE %s OR s.npsn ILIKE %s OR COALESCE(r.name, t.room_name_snapshot) ILIKE %s)"
+        )
+        params.extend([like_value, like_value, like_value, like_value])
+
+    where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    query = (
+        _follow_up_ticket_select_sql()
+        + f"""
+        {where_sql}
+        ORDER BY
+            CASE t.status
+                WHEN '{PORTAL_FOLLOW_UP_STATUS_SUBMITTED}' THEN 0
+                WHEN '{PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS}' THEN 1
+                WHEN '{PORTAL_FOLLOW_UP_STATUS_NEW}' THEN 2
+                ELSE 3
+            END,
+            t.updated_at DESC,
+            t.id DESC
+        LIMIT %s
+        """
+    )
+    params.append(safe_limit)
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def admin_create_room_follow_up_ticket(
+    *,
+    assessment_id: int,
+    school_id: int,
+    school_room_id: int,
+    room_id: int,
+    room_name: str,
+    staff_id: int,
+    trigger_score_pct: float,
+    threshold_pct: float = 60.0,
+    status: str = PORTAL_FOLLOW_UP_STATUS_NEW,
+    actor_user_id: Optional[int] = None,
+    note: Optional[str] = None,
+) -> Dict[str, Any]:
+    status_value = (status or "").strip().lower()
+    if status_value not in PORTAL_FOLLOW_UP_STATUSES:
+        status_value = PORTAL_FOLLOW_UP_STATUS_NEW
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT id, ticket_code
+            FROM portal_room_follow_up_tickets
+            WHERE assessment_id = %s
+              AND school_room_id = %s
+            LIMIT 1
+            """,
+            (int(assessment_id), int(school_room_id)),
+        )
+        existing = cur.fetchone()
+        if existing:
+            return {
+                "id": int(existing["id"]),
+                "ticket_code": (existing.get("ticket_code") or "").strip() or _build_follow_up_ticket_code(int(existing["id"])),
+                "_created": False,
+            }
+
+        reminder_at_sql = "NOW() + INTERVAL '1 month'"
+        if status_value == PORTAL_FOLLOW_UP_STATUS_DONE:
+            reminder_at_sql = "NULL"
+
+        cur.execute(
+            f"""
+            INSERT INTO portal_room_follow_up_tickets (
+                assessment_id,
+                school_id,
+                school_room_id,
+                room_id,
+                room_name_snapshot,
+                staff_id,
+                trigger_score_pct,
+                threshold_pct,
+                status,
+                submitted_at,
+                verified_at,
+                verified_by,
+                next_reminder_at
+            )
+            VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                CASE WHEN %s IN (%s, %s) THEN NOW() ELSE NULL END,
+                CASE WHEN %s = %s THEN NOW() ELSE NULL END,
+                CASE WHEN %s = %s THEN %s ELSE NULL END,
+                {reminder_at_sql}
+            )
+            RETURNING id
+            """,
+            (
+                int(assessment_id),
+                int(school_id),
+                int(school_room_id),
+                int(room_id),
+                (room_name or "").strip() or f"Ruang {int(school_room_id)}",
+                int(staff_id),
+                float(trigger_score_pct),
+                float(threshold_pct),
+                status_value,
+                status_value,
+                PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
+                PORTAL_FOLLOW_UP_STATUS_DONE,
+                status_value,
+                PORTAL_FOLLOW_UP_STATUS_DONE,
+                status_value,
+                PORTAL_FOLLOW_UP_STATUS_DONE,
+                int(actor_user_id) if actor_user_id else None,
+            ),
+        )
+        inserted = cur.fetchone()
+        if not inserted:
+            return {}
+        ticket_id = int(inserted["id"])
+        ticket_code = _build_follow_up_ticket_code(ticket_id)
+        cur.execute(
+            """
+            UPDATE portal_room_follow_up_tickets
+            SET ticket_code = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            """,
+            (ticket_code, ticket_id),
+        )
+        timeline_note = (note or "").strip() or "Tiket dibuat manual oleh admin."
+        _insert_follow_up_timeline_entry(
+            cur,
+            follow_up_id=ticket_id,
+            actor_user_id=int(actor_user_id) if actor_user_id else None,
+            actor_role="admin",
+            event_type="admin_create",
+            status_after=status_value,
+            note=timeline_note,
+        )
+        return {"id": ticket_id, "ticket_code": ticket_code, "_created": True}
+
+
+def admin_update_room_follow_up_ticket(
+    *,
+    follow_up_id: int,
+    actor_user_id: int,
+    staff_id: Optional[int] = None,
+    status: Optional[str] = None,
+    trigger_score_pct: Optional[float] = None,
+    threshold_pct: Optional[float] = None,
+    note: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT id, status, staff_id, trigger_score_pct, threshold_pct, submitted_at, verified_at, verified_by, next_reminder_at
+            FROM portal_room_follow_up_tickets
+            WHERE id = %s
+            FOR UPDATE
+            """,
+            (int(follow_up_id),),
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+
+        old_status = (row.get("status") or "").strip().lower()
+        next_status = old_status
+        raw_status = (status or "").strip().lower()
+        if raw_status in PORTAL_FOLLOW_UP_STATUSES:
+            next_status = raw_status
+
+        try:
+            next_staff_id = int(staff_id) if staff_id is not None else int(row.get("staff_id") or 0)
+        except (TypeError, ValueError):
+            next_staff_id = int(row.get("staff_id") or 0)
+        if next_staff_id <= 0:
+            next_staff_id = int(row.get("staff_id") or 0)
+
+        try:
+            next_trigger_score_pct = float(trigger_score_pct) if trigger_score_pct is not None else float(row.get("trigger_score_pct") or 0.0)
+        except (TypeError, ValueError):
+            next_trigger_score_pct = float(row.get("trigger_score_pct") or 0.0)
+        try:
+            next_threshold_pct = float(threshold_pct) if threshold_pct is not None else float(row.get("threshold_pct") or 60.0)
+        except (TypeError, ValueError):
+            next_threshold_pct = float(row.get("threshold_pct") or 60.0)
+
+        submitted_at_value = row.get("submitted_at")
+        if next_status in {PORTAL_FOLLOW_UP_STATUS_SUBMITTED, PORTAL_FOLLOW_UP_STATUS_DONE}:
+            if not submitted_at_value:
+                submitted_at_value = datetime.now(timezone.utc)
+        else:
+            submitted_at_value = None
+
+        verified_at_value = row.get("verified_at")
+        verified_by_value = row.get("verified_by")
+        if next_status == PORTAL_FOLLOW_UP_STATUS_DONE:
+            if not verified_at_value:
+                verified_at_value = datetime.now(timezone.utc)
+            verified_by_value = int(actor_user_id)
+        else:
+            verified_at_value = None
+            verified_by_value = None
+
+        next_reminder_at_value = row.get("next_reminder_at")
+        if next_status == PORTAL_FOLLOW_UP_STATUS_DONE:
+            next_reminder_at_value = None
+        elif next_status == PORTAL_FOLLOW_UP_STATUS_SUBMITTED:
+            next_reminder_at_value = datetime.now(timezone.utc) + timedelta(days=30)
+        elif not next_reminder_at_value:
+            next_reminder_at_value = datetime.now(timezone.utc) + timedelta(days=30)
+
+        cur.execute(
+            """
+            UPDATE portal_room_follow_up_tickets
+            SET staff_id = %s,
+                status = %s,
+                trigger_score_pct = %s,
+                threshold_pct = %s,
+                submitted_at = %s,
+                verified_at = %s,
+                verified_by = %s,
+                next_reminder_at = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            """,
+            (
+                next_staff_id,
+                next_status,
+                float(next_trigger_score_pct),
+                float(next_threshold_pct),
+                submitted_at_value,
+                verified_at_value,
+                verified_by_value,
+                next_reminder_at_value,
+                int(follow_up_id),
+            ),
+        )
+
+        note_text = (note or "").strip() or "Admin memperbarui tiket tindak lanjut."
+        _insert_follow_up_timeline_entry(
+            cur,
+            follow_up_id=int(follow_up_id),
+            actor_user_id=int(actor_user_id),
+            actor_role="admin",
+            event_type="admin_update",
+            status_before=old_status,
+            status_after=next_status,
+            note=note_text,
+        )
+
+    return get_room_follow_up_ticket(int(follow_up_id))
+
+
+def admin_delete_room_follow_up_ticket(
+    *,
+    follow_up_id: int,
+) -> Optional[Dict[str, Any]]:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT id, ticket_code, school_id, room_name_snapshot
+            FROM portal_room_follow_up_tickets
+            WHERE id = %s
+            """,
+            (int(follow_up_id),),
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+        payload = dict(row)
+        cur.execute(
+            """
+            DELETE FROM portal_room_follow_up_tickets
+            WHERE id = %s
+            """,
+            (int(follow_up_id),),
+        )
+        return payload
+
+
+def list_room_follow_up_tickets_for_school(
+    school_id: int,
+    *,
+    include_done: bool = True,
+    limit: int = 100,
+) -> List[Dict[str, Any]]:
+    safe_limit = max(1, min(int(limit or 100), 300))
+    clauses = ["t.school_id = %s"]
+    params: List[Any] = [int(school_id)]
+    if not include_done:
+        clauses.append("t.status <> %s")
+        params.append(PORTAL_FOLLOW_UP_STATUS_DONE)
+
+    query = (
+        _follow_up_ticket_select_sql()
+        + f"""
+        WHERE {' AND '.join(clauses)}
+        ORDER BY
+            CASE t.status
+                WHEN '{PORTAL_FOLLOW_UP_STATUS_NEW}' THEN 0
+                WHEN '{PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS}' THEN 1
+                WHEN '{PORTAL_FOLLOW_UP_STATUS_SUBMITTED}' THEN 2
+                ELSE 3
+            END,
+            t.updated_at DESC,
+            t.id DESC
+        LIMIT %s
+        """
+    )
+    params.append(safe_limit)
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def count_room_follow_up_nav_badge_for_school(school_id: int) -> int:
+    """Count follow-up tickets still needing school action for nav badge.
+
+    Rules:
+    - Include only status baru/diproses.
+    - Exclude tickets that already have school progress photo uploaded.
+    - Exclude tickets waiting staff verification (status diajukan) by status filter.
+    """
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM portal_room_follow_up_tickets t
+            WHERE t.school_id = %s
+              AND t.status IN (%s, %s)
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM portal_room_follow_up_updates u
+                  WHERE u.follow_up_id = t.id
+                    AND u.event_type = 'school_update'
+                    AND NULLIF(BTRIM(COALESCE(u.photo_path, '')), '') IS NOT NULL
+              )
+            """,
+            (
+                int(school_id),
+                PORTAL_FOLLOW_UP_STATUS_NEW,
+                PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS,
+            ),
+        )
+        row = cur.fetchone() or {}
+        return int(row.get("total") or 0)
+
+
+def count_room_follow_up_nav_badge_for_staff(staff_id: int) -> int:
+    """Count follow-up tickets assigned to staff that are waiting verification."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM portal_room_follow_up_tickets t
+            WHERE t.staff_id = %s
+              AND t.status = %s
+            """,
+            (
+                int(staff_id),
+                PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
+            ),
+        )
+        row = cur.fetchone() or {}
+        return int(row.get("total") or 0)
+
+
+def list_room_follow_up_tickets_for_staff(
+    staff_id: int,
+    *,
+    include_done: bool = True,
+    limit: int = 100,
+) -> List[Dict[str, Any]]:
+    safe_limit = max(1, min(int(limit or 100), 300))
+    clauses = ["t.staff_id = %s"]
+    params: List[Any] = [int(staff_id)]
+    if not include_done:
+        clauses.append("t.status <> %s")
+        params.append(PORTAL_FOLLOW_UP_STATUS_DONE)
+
+    query = (
+        _follow_up_ticket_select_sql()
+        + f"""
+        WHERE {' AND '.join(clauses)}
+        ORDER BY
+            CASE t.status
+                WHEN '{PORTAL_FOLLOW_UP_STATUS_SUBMITTED}' THEN 0
+                WHEN '{PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS}' THEN 1
+                WHEN '{PORTAL_FOLLOW_UP_STATUS_NEW}' THEN 2
+                ELSE 3
+            END,
+            t.updated_at DESC,
+            t.id DESC
+        LIMIT %s
+        """
+    )
+    params.append(safe_limit)
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def list_room_follow_up_updates(follow_up_id: int, *, limit: int = 200) -> List[Dict[str, Any]]:
+    safe_limit = max(1, min(int(limit or 200), 500))
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                u.id,
+                u.follow_up_id,
+                u.actor_user_id,
+                u.actor_role,
+                u.event_type,
+                u.status_before,
+                u.status_after,
+                u.note,
+                u.photo_path,
+                u.created_at,
+                actor.full_name AS actor_name,
+                actor.email AS actor_email
+            FROM portal_room_follow_up_updates u
+            LEFT JOIN dashboard_users actor ON actor.id = u.actor_user_id
+            WHERE u.follow_up_id = %s
+            ORDER BY u.created_at DESC, u.id DESC
+            LIMIT %s
+            """,
+            (int(follow_up_id), safe_limit),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def add_school_room_follow_up_update(
+    *,
+    follow_up_id: int,
+    actor_user_id: int,
+    actor_role: str,
+    note: Optional[str],
+    photo_path: Optional[str] = None,
+    submit_for_verification: bool = False,
+) -> Optional[Dict[str, Any]]:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT id, status
+            FROM portal_room_follow_up_tickets
+            WHERE id = %s
+            FOR UPDATE
+            """,
+            (int(follow_up_id),),
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+
+        current_status = (row.get("status") or "").strip() or PORTAL_FOLLOW_UP_STATUS_NEW
+        if current_status == PORTAL_FOLLOW_UP_STATUS_DONE:
+            return get_room_follow_up_ticket(int(follow_up_id))
+        if submit_for_verification and current_status == PORTAL_FOLLOW_UP_STATUS_SUBMITTED:
+            return get_room_follow_up_ticket(int(follow_up_id))
+
+        next_status = current_status
+        event_type = "school_update"
+        if submit_for_verification:
+            next_status = PORTAL_FOLLOW_UP_STATUS_SUBMITTED
+            event_type = "school_submit"
+        elif current_status == PORTAL_FOLLOW_UP_STATUS_NEW:
+            next_status = PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS
+
+        cur.execute(
+            """
+            UPDATE portal_room_follow_up_tickets
+            SET status = %s,
+                submitted_at = CASE
+                    WHEN %s = %s THEN NOW()
+                    WHEN status = %s THEN submitted_at
+                    ELSE submitted_at
+                END,
+                next_reminder_at = CASE
+                    WHEN %s = %s THEN NOW() + INTERVAL '1 month'
+                    ELSE next_reminder_at
+                END,
+                updated_at = NOW()
+            WHERE id = %s
+            """,
+            (
+                next_status,
+                next_status,
+                PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
+                PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
+                next_status,
+                PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
+                int(follow_up_id),
+            ),
+        )
+
+        _insert_follow_up_timeline_entry(
+            cur,
+            follow_up_id=int(follow_up_id),
+            actor_user_id=int(actor_user_id),
+            actor_role=(actor_role or "").strip() or "sekolah",
+            event_type=event_type,
+            status_before=current_status,
+            status_after=next_status,
+            note=note,
+            photo_path=photo_path,
+        )
+
+    return get_room_follow_up_ticket(int(follow_up_id))
+
+
+def verify_room_follow_up_by_staff(
+    *,
+    follow_up_id: int,
+    actor_user_id: int,
+    actor_role: str,
+    note: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT id, status
+            FROM portal_room_follow_up_tickets
+            WHERE id = %s
+            FOR UPDATE
+            """,
+            (int(follow_up_id),),
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+        current_status = (row.get("status") or "").strip() or PORTAL_FOLLOW_UP_STATUS_NEW
+        if current_status == PORTAL_FOLLOW_UP_STATUS_DONE:
+            return get_room_follow_up_ticket(int(follow_up_id))
+
+        cur.execute(
+            """
+            UPDATE portal_room_follow_up_tickets
+            SET status = %s,
+                verified_by = %s,
+                verified_at = NOW(),
+                updated_at = NOW(),
+                next_reminder_at = NULL
+            WHERE id = %s
+            """,
+            (
+                PORTAL_FOLLOW_UP_STATUS_DONE,
+                int(actor_user_id),
+                int(follow_up_id),
+            ),
+        )
+        _insert_follow_up_timeline_entry(
+            cur,
+            follow_up_id=int(follow_up_id),
+            actor_user_id=int(actor_user_id),
+            actor_role=(actor_role or "").strip() or "staff",
+            event_type="staff_verify",
+            status_before=current_status,
+            status_after=PORTAL_FOLLOW_UP_STATUS_DONE,
+            note=note,
+        )
+
+    return get_room_follow_up_ticket(int(follow_up_id))
+
+
+def list_due_room_follow_up_reminders(
+    school_id: int,
+    *,
+    limit: int = 20,
+) -> List[Dict[str, Any]]:
+    safe_limit = max(1, min(int(limit or 20), 100))
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, ticket_code, room_name_snapshot, trigger_score_pct, status
+            FROM portal_room_follow_up_tickets
+            WHERE school_id = %s
+              AND status IN (%s, %s)
+              AND next_reminder_at IS NOT NULL
+              AND next_reminder_at <= NOW()
+            ORDER BY next_reminder_at ASC, id ASC
+            LIMIT %s
+            """,
+            (
+                int(school_id),
+                PORTAL_FOLLOW_UP_STATUS_NEW,
+                PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS,
+                safe_limit,
+            ),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def list_due_room_follow_up_reminders_for_staff(
+    staff_id: int,
+    *,
+    limit: int = 20,
+) -> List[Dict[str, Any]]:
+    safe_limit = max(1, min(int(limit or 20), 100))
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                t.id,
+                t.ticket_code,
+                t.room_name_snapshot,
+                t.trigger_score_pct,
+                t.status,
+                s.name AS school_name
+            FROM portal_room_follow_up_tickets t
+            JOIN portal_schools s ON s.id = t.school_id
+            WHERE t.staff_id = %s
+              AND t.status = %s
+              AND t.next_reminder_at IS NOT NULL
+              AND t.next_reminder_at <= NOW()
+            ORDER BY t.next_reminder_at ASC, t.id ASC
+            LIMIT %s
+            """,
+            (
+                int(staff_id),
+                PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
+                safe_limit,
+            ),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def mark_room_follow_up_reminders_sent(
+    *,
+    follow_up_ids: List[int],
+    actor_user_id: Optional[int] = None,
+) -> int:
+    safe_ids: List[int] = []
+    seen: set[int] = set()
+    for raw_id in follow_up_ids or []:
+        try:
+            parsed = int(raw_id)
+        except (TypeError, ValueError):
+            continue
+        if parsed <= 0 or parsed in seen:
+            continue
+        seen.add(parsed)
+        safe_ids.append(parsed)
+    if not safe_ids:
+        return 0
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE portal_room_follow_up_tickets
+            SET reminder_count = COALESCE(reminder_count, 0) + 1,
+                last_reminder_at = NOW(),
+                next_reminder_at = NOW() + INTERVAL '1 month',
+                updated_at = NOW()
+            WHERE id = ANY(%s::int[])
+            RETURNING id
+            """,
+            (safe_ids,),
+        )
+        rows = cur.fetchall()
+        updated_ids = [int(row["id"]) for row in rows if row.get("id")]
+        for follow_up_id in updated_ids:
+            _insert_follow_up_timeline_entry(
+                cur,
+                follow_up_id=follow_up_id,
+                actor_user_id=actor_user_id,
+                actor_role="system",
+                event_type="reminder",
+                note="Pengingat bulanan dikirim.",
+            )
+    return len(updated_ids)
+
+
 def list_staff_assessments(
     staff_id: int,
     status: Optional[str] = None,
@@ -1452,6 +2549,7 @@ def get_active_assessment(
 
 def fetch_portal_stats(
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
 ) -> Dict[str, Any]:
     """Get aggregate statistics for portal assessments.
@@ -1481,9 +2579,13 @@ def fetch_portal_stats(
         assess_conditions.append(f"a.staff_id IN ({placeholders})")
         assess_params.extend(staff_ids)
     
-    if period_id:
-        assess_conditions.append("a.period_id = %s")
-        assess_params.append(period_id)
+    _apply_period_filter(
+        assess_conditions,
+        assess_params,
+        period_id=period_id,
+        period_ids=period_ids,
+        column="a.period_id",
+    )
     
     where_clause = f"WHERE {' AND '.join(assess_conditions)}" if assess_conditions else ""
 
@@ -1536,6 +2638,7 @@ def fetch_portal_stats(
 
 def fetch_score_distribution(
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
 ) -> List[int]:
     """Calculate score distribution (9 bins: <60, 60-65, ..., 95-100)."""
@@ -1545,9 +2648,7 @@ def fetch_score_distribution(
     conditions = ["status IN ('submitted', 'verified')", "total_score IS NOT NULL"]
     params: List[Any] = []
     
-    if period_id:
-        conditions.append("period_id = %s")
-        params.append(period_id)
+    _apply_period_filter(conditions, params, period_id=period_id, period_ids=period_ids, column="period_id")
     
     if staff_ids:
         placeholders = ",".join(["%s"] * len(staff_ids))
@@ -1583,9 +2684,82 @@ def fetch_score_distribution(
     return distribution
 
 
+def fetch_negeri_assessment_frequency(
+    period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
+    staff_ids: Optional[List[int]] = None,
+) -> List[Dict[str, Any]]:
+    """Return grouped negeri schools by submitted/verified assessment frequency."""
+    if staff_ids is not None and len(staff_ids) == 0:
+        return [{"count_times": 0, "school_count": 0, "schools": []}]
+
+    assess_conditions = ["a.status IN ('submitted', 'verified')"]
+    assess_params: List[Any] = []
+    _apply_period_filter(
+        assess_conditions,
+        assess_params,
+        period_id=period_id,
+        period_ids=period_ids,
+        column="a.period_id",
+    )
+    if staff_ids:
+        placeholders = ",".join(["%s"] * len(staff_ids))
+        assess_conditions.append(f"a.staff_id IN ({placeholders})")
+        assess_params.extend(staff_ids)
+    assess_where = " AND ".join(assess_conditions)
+
+    query = f"""
+        WITH negeri_schools AS (
+            SELECT s.id, s.name, s.npsn, s.jenjang
+            FROM portal_schools s
+            WHERE UPPER(COALESCE(s.status, '')) = 'NEGERI'
+              AND COALESCE(s.active, TRUE) = TRUE
+              AND UPPER(COALESCE(s.jenjang, '')) NOT IN ('MI', 'MTS', 'MA')
+        ),
+        assessed_counts AS (
+            SELECT a.school_id, COUNT(*)::INT AS count_times
+            FROM portal_assessments a
+            WHERE {assess_where}
+            GROUP BY a.school_id
+        ),
+        school_counts AS (
+            SELECT
+                ns.id AS school_id,
+                ns.name AS school_name,
+                ns.npsn,
+                ns.jenjang,
+                COALESCE(ac.count_times, 0)::INT AS count_times
+            FROM negeri_schools ns
+            LEFT JOIN assessed_counts ac ON ac.school_id = ns.id
+        )
+        SELECT
+            count_times,
+            COUNT(*)::INT AS school_count,
+            COALESCE(
+                json_agg(
+                    json_build_object(
+                        'id', school_id,
+                        'name', school_name,
+                        'npsn', npsn,
+                        'jenjang', jenjang
+                    )
+                    ORDER BY school_name ASC
+                ),
+                '[]'::json
+            ) AS schools
+        FROM school_counts
+        GROUP BY count_times
+        ORDER BY count_times ASC
+    """
+    with get_cursor() as cur:
+        cur.execute(query, assess_params)
+        return [dict(row) for row in cur.fetchall()]
+
+
 
 def fetch_map_data(
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch school locations and status for the map.
@@ -1600,9 +2774,7 @@ def fetch_map_data(
     conditions = ["status IN ('submitted', 'verified')"]
     params: List[Any] = []
     
-    if period_id:
-        conditions.append("period_id = %s")
-        params.append(period_id)
+    _apply_period_filter(conditions, params, period_id=period_id, period_ids=period_ids, column="period_id")
     
     if staff_ids:
         placeholders = ",".join(["%s"] * len(staff_ids))
@@ -1698,13 +2870,19 @@ def fetch_map_data(
         return data
 
 
-def fetch_top_schools(limit: int = 5, offset: int = 0, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
+def fetch_top_schools(
+    limit: int = 5,
+    offset: int = 0,
+    period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
+) -> List[Dict[str, Any]]:
     """Fetch top performing schools based on their latest assessment."""
     where = "WHERE a.status IN ('submitted', 'verified')"
     params = []
-    if period_id:
-        where += " AND a.period_id = %s"
-        params.append(period_id)
+    period_clauses: List[str] = []
+    _apply_period_filter(period_clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+    if period_clauses:
+        where += " AND " + " AND ".join(period_clauses)
     
     params.append(limit)
     params.append(offset)
@@ -1804,13 +2982,19 @@ def delete_school(school_id: int) -> bool:
         cur.execute("DELETE FROM portal_schools WHERE id = %s", (school_id,))
         return cur.rowcount > 0
 
-def fetch_bottom_schools(limit: int = 5, offset: int = 0, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
+def fetch_bottom_schools(
+    limit: int = 5,
+    offset: int = 0,
+    period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
+) -> List[Dict[str, Any]]:
     """Fetch lowest performing schools based on their latest assessment."""
     where = "WHERE a.status IN ('submitted', 'verified')"
     params = []
-    if period_id:
-        where += " AND a.period_id = %s"
-        params.append(period_id)
+    period_clauses: List[str] = []
+    _apply_period_filter(period_clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+    if period_clauses:
+        where += " AND " + " AND ".join(period_clauses)
     
     params.append(limit)
     params.append(offset)
@@ -1842,6 +3026,7 @@ def fetch_bottom_schools(limit: int = 5, offset: int = 0, period_id: Optional[in
 def list_recent_assessments(
     limit: int = 50,
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     jenjang: Optional[str] = None,
     order: str = "recent",
     staff_ids: Optional[List[int]] = None,
@@ -1852,9 +3037,10 @@ def list_recent_assessments(
     
     where = "WHERE a.status IN ('submitted', 'verified')"
     params = []
-    if period_id:
-        where += " AND a.period_id = %s"
-        params.append(period_id)
+    period_clauses: List[str] = []
+    _apply_period_filter(period_clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+    if period_clauses:
+        where += " AND " + " AND ".join(period_clauses)
     if jenjang:
         where += " AND s.jenjang = %s"
         params.append(jenjang)
@@ -1924,6 +3110,7 @@ def list_recent_assessments(
 
 def list_staff_latest_assessments(
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
     limit: int = 100,
 ) -> List[Dict[str, Any]]:
@@ -1933,9 +3120,7 @@ def list_staff_latest_assessments(
 
     latest_filters = ["a.staff_id = u.id", "a.status IN ('submitted', 'verified')"]
     latest_params: List[Any] = []
-    if period_id:
-        latest_filters.append("a.period_id = %s")
-        latest_params.append(period_id)
+    _apply_period_filter(latest_filters, latest_params, period_id=period_id, period_ids=period_ids, column="a.period_id")
     latest_where = " AND ".join(latest_filters)
 
     staff_where = "WHERE u.role IN ('staff', 'coordinator') AND u.account_status = 'approved'"
@@ -1990,7 +3175,9 @@ def list_staff_latest_assessments(
         ORDER BY latest.submitted_at DESC NULLS LAST, u.full_name ASC
         LIMIT %s
     """
-    params = [*latest_params, *staff_params, limit]
+    # latest_where is used in two LATERAL subqueries (visited, latest),
+    # so its bind parameters must be supplied twice.
+    params = [*latest_params, *latest_params, *staff_params, limit]
 
     with get_cursor() as cur:
         cur.execute(query, params)
@@ -1999,6 +3186,7 @@ def list_staff_latest_assessments(
 
 def fetch_school_avg_scores(
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
 ) -> Dict[int, float]:
     """Return map {school_id: avg_score_pct} for submitted assessments."""
@@ -2007,9 +3195,7 @@ def fetch_school_avg_scores(
     
     params: List[Any] = []
     where_clauses = ["status IN ('submitted', 'verified')"]
-    if period_id:
-        where_clauses.append("period_id = %s")
-        params.append(period_id)
+    _apply_period_filter(where_clauses, params, period_id=period_id, period_ids=period_ids, column="period_id")
     if staff_ids:
         placeholders = ",".join(["%s"] * len(staff_ids))
         where_clauses.append(f"staff_id IN ({placeholders})")
@@ -2937,6 +4123,7 @@ def fetch_schools_for_sidak(
 
 def fetch_kecamatan_avg_scores(
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch average assessment scores grouped by kecamatan (0-100 scale)."""
@@ -2945,9 +4132,7 @@ def fetch_kecamatan_avg_scores(
     
     conditions = ["a.status IN ('submitted', 'verified')"]
     params: List[Any] = []
-    if period_id:
-        conditions.append("a.period_id = %s")
-        params.append(period_id)
+    _apply_period_filter(conditions, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
     if staff_ids:
         placeholders = ",".join(["%s"] * len(staff_ids))
         conditions.append(f"a.staff_id IN ({placeholders})")
@@ -4626,6 +5811,7 @@ def list_team_assessments(
 def fetch_team_top_schools(
     staff_ids: List[int],
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     limit: int = 5,
     offset: int = 0,
 ) -> List[Dict[str, Any]]:
@@ -4636,10 +5822,9 @@ def fetch_team_top_schools(
     with get_cursor() as cur:
         placeholders = ",".join(["%s"] * len(staff_ids))
         params = list(staff_ids)
-        period_filter = ""
-        if period_id:
-            period_filter = " AND a.period_id = %s"
-            params.append(period_id)
+        period_clauses: List[str] = []
+        _apply_period_filter(period_clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+        period_filter = f" AND {' AND '.join(period_clauses)}" if period_clauses else ""
         params.extend([limit, offset])
         
         cur.execute(
@@ -4677,6 +5862,7 @@ def fetch_team_top_schools(
 def fetch_team_bottom_schools(
     staff_ids: List[int],
     period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
     limit: int = 5,
     offset: int = 0,
 ) -> List[Dict[str, Any]]:
@@ -4687,10 +5873,9 @@ def fetch_team_bottom_schools(
     with get_cursor() as cur:
         placeholders = ",".join(["%s"] * len(staff_ids))
         params = list(staff_ids)
-        period_filter = ""
-        if period_id:
-            period_filter = " AND a.period_id = %s"
-            params.append(period_id)
+        period_clauses: List[str] = []
+        _apply_period_filter(period_clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+        period_filter = f" AND {' AND '.join(period_clauses)}" if period_clauses else ""
         params.extend([limit, offset])
         
         cur.execute(

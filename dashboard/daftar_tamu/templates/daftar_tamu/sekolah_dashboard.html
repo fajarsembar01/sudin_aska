@@ -31,21 +31,21 @@
     }
 
     .guest-chip-btn-photo {
-        background: #d1e7dd;
-        color: #0f5132;
+        background: rgba(25, 135, 84, 0.14);
+        color: #198754;
     }
 
     .guest-chip-btn-photo:hover {
-        background: #badbcc;
+        background: rgba(25, 135, 84, 0.22);
     }
 
     .guest-chip-btn-remove {
-        background: #f8d7da;
-        color: #b02a37;
+        background: rgba(220, 53, 69, 0.14);
+        color: #dc3545;
     }
 
     .guest-chip-btn-remove:hover {
-        background: #f5c2c7;
+        background: rgba(220, 53, 69, 0.22);
     }
 
     .camera-box {
@@ -79,7 +79,7 @@
     }
 
     .guest-result:hover {
-        background: rgba(13, 110, 253, 0.06);
+        background: var(--bg-muted);
     }
 
     .guest-result-layout {
@@ -106,7 +106,7 @@
         border-radius: 50%;
         overflow: hidden;
         border: 1px solid var(--border-soft);
-        background: var(--bg-surface-alt, #f8f9fa);
+        background: var(--bg-subtle);
         color: var(--text-muted);
         flex: 0 0 38px;
         display: inline-flex;
@@ -134,7 +134,7 @@
 
     .guest-photo-modal .modal-body {
         padding: 0;
-        background: #f8f9fa;
+        background: var(--bg-subtle);
     }
 
     .guest-photo-view {
@@ -145,7 +145,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #f1f3f5;
+        background: var(--bg-muted);
     }
 
     .guest-photo-view img {
@@ -159,7 +159,7 @@
     .guest-photo-fallback {
         padding: 28px 20px;
         text-align: center;
-        color: #6c757d;
+        color: var(--text-muted);
     }
 
     .selected-guests-field {
@@ -170,6 +170,62 @@
 
     .selected-guests-field.is-invalid {
         border-color: #dc3545;
+    }
+
+    .purpose-chip-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .purpose-chip-btn {
+        border: 1px solid var(--border-soft);
+        border-radius: 999px;
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        font-size: 0.78rem;
+        line-height: 1.2;
+        padding: 5px 10px;
+        cursor: pointer;
+    }
+
+    .purpose-chip-btn:hover,
+    .purpose-chip-btn.is-active {
+        background: var(--bg-muted);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .suggestion-item {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        color: var(--text-primary);
+        text-align: left;
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+
+    .suggestion-item:hover,
+    .suggestion-item.is-active {
+        background: var(--bg-muted);
+    }
+
+    .suggestion-item .suggestion-meta {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    html[data-theme="dark"] .guest-chip-btn-photo {
+        background: rgba(25, 135, 84, 0.28);
+        color: #9be4b8;
+    }
+
+    html[data-theme="dark"] .guest-chip-btn-remove {
+        background: rgba(220, 53, 69, 0.3);
+        color: #ffb0b8;
     }
 
     @media (max-width: 767.98px) {
@@ -350,10 +406,15 @@
                     <label class="form-label fw-semibold">Tujuan Kunjungan</label>
                     <div class="position-relative">
                         <input type="text" id="purposeInput" class="form-control"
-                            placeholder="Contoh: Monitoring sarpras" list="purposeKeywordList">
+                            placeholder="Contoh: Monitoring sarpras" list="purposeKeywordList"
+                            autocomplete="off" role="combobox" aria-autocomplete="list"
+                            aria-expanded="false" aria-controls="purposeSuggestions">
                         <div id="purposeSuggestions" class="position-absolute w-100 rounded-3 shadow-sm d-none"
-                            style="top: 100%; left: 0; z-index: 1050; max-height: 220px; overflow-y: auto; background-color: var(--bg-surface); border: 1px solid var(--border-soft);">
+                            role="listbox"
+                            style="top: calc(100% + 4px); left: 0; z-index: 1050; max-height: 220px; overflow-y: auto; background-color: var(--bg-surface); border: 1px solid var(--border-soft);">
                         </div>
+                    </div>
+                    <div id="purposeQuickChips" class="purpose-chip-list" aria-label="Saran cepat tujuan kunjungan">
                     </div>
                     <div id="purposeError" class="invalid-feedback">Tujuan kunjungan wajib diisi.</div>
                     <datalist id="purposeKeywordList">
@@ -361,8 +422,8 @@
                         <option value="{{ kw }}"></option>
                         {% endfor %}
                     </datalist>
-                    <div class="small text-muted mt-1">
-                        Jika tidak ada di saran, tulis saja sesuai kebutuhan (tidak harus sama persis).
+                    <div class="small text-muted mt-2">
+                        Saran hanya dari keyword admin, diurutkan berdasarkan frekuensi pemakaian.
                     </div>
                 </div>
                 <div class="mb-3">
@@ -396,7 +457,6 @@
                             <i class="bi bi-send-check me-1"></i>Simpan Tamu Kedinasan
                         </button>
                     </div>
-                    <div id="submitGuidance" class="small text-muted mt-2" aria-live="polite"></div>
                 </div>
                 <div class="small text-muted mt-2">
                     Kunjungan tamu umum mandiri akan otomatis terkonfirmasi. Jika ada tamu sudin, status menunggu
@@ -501,9 +561,11 @@
         var purposeInput = document.getElementById('purposeInput');
         var purposeError = document.getElementById('purposeError');
         var purposeSuggestions = document.getElementById('purposeSuggestions');
-        var submitGuidance = document.getElementById('submitGuidance');
+        var purposeQuickChips = document.getElementById('purposeQuickChips');
         var purposeKeywords = {{ purpose_keywords|default ([]) | tojson
     }};
+        var purposeSuggestionItems = [];
+        var activePurposeSuggestionIndex = -1;
 
     var cameraPreview = document.getElementById('cameraPreview');
     var photoResult = document.getElementById('photoResult');
@@ -599,31 +661,8 @@
         };
     }
 
-    function buildMissingSteps(state) {
-        var steps = [];
-        if (!state.hasGuests) steps.push('pilih minimal 1 tamu');
-        if (!state.hasPurpose) steps.push('isi tujuan kunjungan');
-        if (!state.hasGps) steps.push('aktifkan lokasi (GPS)');
-        return steps;
-    }
-
-    function setSubmitGuidanceMessage(message, tone) {
-        if (!submitGuidance) return;
-        submitGuidance.textContent = message || '';
-        submitGuidance.classList.remove('text-muted', 'text-danger', 'text-success');
-        if (tone === 'danger') {
-            submitGuidance.classList.add('text-danger');
-        } else if (tone === 'success') {
-            submitGuidance.classList.add('text-success');
-        } else {
-            submitGuidance.classList.add('text-muted');
-        }
-    }
-
     function updateSubmitState() {
         var state = getValidationState();
-        var canSubmit = state.hasGuests && state.hasPhoto && state.hasGps && state.hasPurpose;
-        var missingSteps = buildMissingSteps(state);
         if (selectedField) selectedField.classList.toggle('is-invalid', hasTriedSubmit && !state.hasGuests);
         if (selectedError) selectedError.classList.toggle('d-none', !(hasTriedSubmit && !state.hasGuests));
         if (purposeInput) purposeInput.classList.toggle('is-invalid', hasTriedSubmit && !state.hasPurpose);
@@ -632,23 +671,14 @@
             submitBtn.innerHTML = '<i class="bi bi-camera-video me-1"></i>Aktifkan Kamera';
             submitBtn.className = 'btn btn-primary';
             submitBtn.disabled = false;
-            setSubmitGuidanceMessage('Langkah 1: Aktifkan kamera untuk mulai ambil foto.', 'muted');
         } else if (cameraStream && !state.hasPhoto) {
             submitBtn.innerHTML = '<i class="bi bi-camera me-1"></i>Ambil Foto';
             submitBtn.className = 'btn btn-primary';
             submitBtn.disabled = false;
-            setSubmitGuidanceMessage('Langkah 2: Ambil foto kunjungan sebelum simpan.', 'muted');
         } else {
             submitBtn.innerHTML = '<i class="bi bi-send-check me-1"></i>Simpan Tamu Kedinasan';
             submitBtn.className = 'btn btn-success';
             submitBtn.disabled = false;
-            if (hasTriedSubmit && !canSubmit) {
-                setSubmitGuidanceMessage('Lengkapi dulu: ' + missingSteps.join(', ') + '.', 'danger');
-            } else if (canSubmit) {
-                setSubmitGuidanceMessage('Data sudah lengkap. Tekan tombol simpan untuk kirim.', 'success');
-            } else {
-                setSubmitGuidanceMessage('Lengkapi data tamu, tujuan, dan GPS sebelum menyimpan.', 'muted');
-            }
         }
     }
 
@@ -736,71 +766,275 @@
         updateSubmitState();
     }
 
-    if (purposeInput) {
-        purposeInput.addEventListener('input', function () {
-            updateSubmitState();
+    function normalizePurposeValue(value) {
+        return String(value || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function normalizePurposeKey(value) {
+        return normalizePurposeValue(value).toLowerCase();
+    }
+
+    function sortPurposeByRelevance(list, queryLower) {
+        var items = (list || []).slice();
+        if (!queryLower) return items;
+        return items.sort(function (a, b) {
+            var aLower = String(a || '').toLowerCase();
+            var bLower = String(b || '').toLowerCase();
+            var aStarts = aLower.indexOf(queryLower) === 0 ? 0 : 1;
+            var bStarts = bLower.indexOf(queryLower) === 0 ? 0 : 1;
+            if (aStarts !== bStarts) return aStarts - bStarts;
+            var aIndex = aLower.indexOf(queryLower);
+            var bIndex = bLower.indexOf(queryLower);
+            if (aIndex !== bIndex) return aIndex - bIndex;
+            return aLower.localeCompare(bLower);
         });
     }
 
-    function shouldUsePurposeSuggestions() {
-        var ua = navigator.userAgent || '';
-        var isAndroid = /Android/i.test(ua);
-        var isFirefox = /Firefox/i.test(ua) || /Fennec/i.test(ua);
-        var hasDatalist = 'list' in document.createElement('input');
-        return !hasDatalist || (isAndroid && isFirefox);
+    function buildPurposeSuggestionItems(query) {
+        var cleanQuery = normalizePurposeValue(query);
+        var queryLower = cleanQuery.toLowerCase();
+        var keywordList = Array.isArray(purposeKeywords) ? purposeKeywords.slice() : [];
+        var out = [];
+        var seen = {};
+
+        function pushItem(value, source, meta) {
+            var clean = normalizePurposeValue(value);
+            if (!clean) return;
+            var key = normalizePurposeKey(clean);
+            if (seen[key]) return;
+            seen[key] = true;
+            out.push({
+                value: clean,
+                source: source || 'keyword',
+                meta: meta || ''
+            });
+        }
+
+        sortPurposeByRelevance(
+            keywordList.filter(function (item) {
+                return !queryLower || String(item || '').toLowerCase().indexOf(queryLower) !== -1;
+            }),
+            queryLower
+        ).slice(0, 8).forEach(function (item) {
+            pushItem(item, 'keyword', 'Keyword admin • paling sering dipilih');
+        });
+
+        if (cleanQuery) {
+            pushItem(cleanQuery, 'typed', 'Gunakan teks yang diketik');
+        }
+
+        return out.slice(0, 8);
+    }
+
+    function syncPurposeChipActiveState() {
+        if (!purposeQuickChips || !purposeInput) return;
+        var currentKey = normalizePurposeKey(purposeInput.value);
+        var chipButtons = purposeQuickChips.querySelectorAll('button[data-value]');
+        for (var i = 0; i < chipButtons.length; i += 1) {
+            var btn = chipButtons[i];
+            var isActive = normalizePurposeKey(btn.getAttribute('data-value')) === currentKey;
+            btn.classList.toggle('is-active', isActive);
+        }
+    }
+
+    function buildPurposeQuickChipValues() {
+        var values = [];
+        var seen = {};
+        var keywordSource = Array.isArray(purposeKeywords) ? purposeKeywords : [];
+
+        keywordSource.slice(0, 8).forEach(function (item) {
+            if (values.length >= 6) return;
+            var clean = normalizePurposeValue(item);
+            if (!clean) return;
+            var key = normalizePurposeKey(clean);
+            if (seen[key]) return;
+            seen[key] = true;
+            values.push(clean);
+        });
+        return values.slice(0, 6);
+    }
+
+    function renderPurposeQuickChips() {
+        if (!purposeQuickChips) return;
+        var values = buildPurposeQuickChipValues();
+        purposeQuickChips.innerHTML = '';
+        if (!values.length) {
+            purposeQuickChips.classList.add('d-none');
+            return;
+        }
+        purposeQuickChips.classList.remove('d-none');
+        values.forEach(function (item) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'purpose-chip-btn';
+            btn.setAttribute('data-value', item);
+            btn.textContent = item;
+            btn.addEventListener('click', function () {
+                if (!purposeInput) return;
+                purposeInput.value = item;
+                hidePurposeSuggestions();
+                updateSubmitState();
+                syncPurposeChipActiveState();
+                purposeInput.focus();
+            });
+            purposeQuickChips.appendChild(btn);
+        });
+        syncPurposeChipActiveState();
+    }
+
+    function hidePurposeSuggestions() {
+        if (!purposeSuggestions) return;
+        purposeSuggestions.classList.add('d-none');
+        purposeSuggestions.innerHTML = '';
+        purposeSuggestionItems = [];
+        activePurposeSuggestionIndex = -1;
+        if (purposeInput) {
+            purposeInput.setAttribute('aria-expanded', 'false');
+            purposeInput.removeAttribute('aria-activedescendant');
+        }
+    }
+
+    function setActivePurposeSuggestion(index) {
+        if (!purposeSuggestions || !purposeSuggestionItems.length) return;
+        if (index < 0 || index >= purposeSuggestionItems.length) return;
+        for (var i = 0; i < purposeSuggestionItems.length; i += 1) {
+            var row = purposeSuggestionItems[i];
+            row.classList.toggle('is-active', i === index);
+            row.setAttribute('aria-selected', i === index ? 'true' : 'false');
+        }
+        activePurposeSuggestionIndex = index;
+        var activeRow = purposeSuggestionItems[index];
+        if (activeRow && purposeInput) {
+            purposeInput.setAttribute('aria-activedescendant', activeRow.id);
+            if (typeof activeRow.scrollIntoView === 'function') {
+                activeRow.scrollIntoView({ block: 'nearest' });
+            }
+        }
+    }
+
+    function selectPurposeSuggestion(index) {
+        if (!purposeInput || !purposeSuggestionItems.length) return;
+        if (index < 0 || index >= purposeSuggestionItems.length) return;
+        var row = purposeSuggestionItems[index];
+        var value = row.getAttribute('data-value') || '';
+        purposeInput.value = value;
+        updateSubmitState();
+        syncPurposeChipActiveState();
+        hidePurposeSuggestions();
+        purposeInput.focus();
     }
 
     function renderPurposeSuggestions(items) {
         if (!purposeSuggestions) return;
+        purposeSuggestions.innerHTML = '';
+        purposeSuggestionItems = [];
+        activePurposeSuggestionIndex = -1;
         if (!items || !items.length) {
-            purposeSuggestions.classList.add('d-none');
-            purposeSuggestions.innerHTML = '';
+            hidePurposeSuggestions();
             return;
         }
-        purposeSuggestions.innerHTML = '';
-        items.forEach(function (item) {
-            var el = document.createElement('div');
-            el.className = 'px-3 py-2 suggestion-item';
-            el.setAttribute('role', 'button');
-            el.dataset.value = item;
-            el.textContent = item;
-            el.addEventListener('click', function () {
-                var value = el.dataset.value || '';
-                if (purposeInput) {
-                    purposeInput.value = value;
-                    updateSubmitState();
-                    purposeInput.focus();
-                }
-                purposeSuggestions.classList.add('d-none');
+        items.forEach(function (item, index) {
+            var row = document.createElement('button');
+            row.type = 'button';
+            row.className = 'suggestion-item';
+            row.id = 'purposeSuggestionItem' + index;
+            row.setAttribute('role', 'option');
+            row.setAttribute('data-value', item.value);
+            row.setAttribute('aria-selected', 'false');
+            row.addEventListener('mousedown', function (event) {
+                event.preventDefault();
             });
-            purposeSuggestions.appendChild(el);
+            row.addEventListener('click', function () {
+                selectPurposeSuggestion(index);
+            });
+
+            var titleEl = document.createElement('div');
+            titleEl.className = 'fw-semibold';
+            titleEl.textContent = item.value;
+            row.appendChild(titleEl);
+
+            if (item.meta) {
+                var metaEl = document.createElement('div');
+                metaEl.className = 'suggestion-meta';
+                metaEl.textContent = item.meta;
+                row.appendChild(metaEl);
+            }
+
+            purposeSuggestions.appendChild(row);
+            purposeSuggestionItems.push(row);
         });
         purposeSuggestions.classList.remove('d-none');
+        if (purposeInput) {
+            purposeInput.setAttribute('aria-expanded', 'true');
+        }
     }
 
-    function filterPurposeKeywords(query) {
-        var keywordList = Array.isArray(purposeKeywords) ? purposeKeywords : [];
-        var q = String(query || '').toLowerCase().trim();
-        if (!q) return keywordList.slice(0, 8);
-        return keywordList.filter(function (item) {
-            return String(item || '').toLowerCase().indexOf(q) !== -1;
-        }).slice(0, 8);
+    function refreshPurposeSuggestions() {
+        if (!purposeInput || !purposeSuggestions) return;
+        renderPurposeSuggestions(buildPurposeSuggestionItems(purposeInput.value));
     }
 
-    if (purposeInput && purposeSuggestions && shouldUsePurposeSuggestions()) {
-        purposeInput.setAttribute('autocomplete', 'off');
-        purposeInput.addEventListener('focus', function () {
-            renderPurposeSuggestions(filterPurposeKeywords(purposeInput.value));
-        });
+    function isPurposeSuggestionOpen() {
+        return !!(purposeSuggestions && !purposeSuggestions.classList.contains('d-none'));
+    }
+
+    if (purposeInput) {
         purposeInput.addEventListener('input', function () {
-            renderPurposeSuggestions(filterPurposeKeywords(purposeInput.value));
-        });
-        document.addEventListener('click', function (event) {
-            if (!purposeSuggestions || !purposeInput) return;
-            if (event.target === purposeInput || purposeSuggestions.contains(event.target)) return;
-            purposeSuggestions.classList.add('d-none');
+            updateSubmitState();
+            syncPurposeChipActiveState();
+            refreshPurposeSuggestions();
         });
     }
+
+    if (purposeInput && purposeSuggestions) {
+        purposeInput.addEventListener('focus', function () {
+            refreshPurposeSuggestions();
+        });
+        purposeInput.addEventListener('blur', function () {
+            setTimeout(function () {
+                if (!purposeSuggestions) return;
+                var activeEl = document.activeElement;
+                if (activeEl && purposeSuggestions.contains(activeEl)) return;
+                hidePurposeSuggestions();
+            }, 120);
+        });
+        purposeInput.addEventListener('keydown', function (event) {
+            var key = event.key || '';
+            if (key === 'ArrowDown' || key === 'Down') {
+                event.preventDefault();
+                if (!isPurposeSuggestionOpen()) {
+                    refreshPurposeSuggestions();
+                }
+                if (purposeSuggestionItems.length) {
+                    var nextIndex = activePurposeSuggestionIndex + 1;
+                    if (nextIndex >= purposeSuggestionItems.length) nextIndex = 0;
+                    setActivePurposeSuggestion(nextIndex);
+                }
+                return;
+            }
+            if (key === 'ArrowUp' || key === 'Up') {
+                event.preventDefault();
+                if (!isPurposeSuggestionOpen()) {
+                    refreshPurposeSuggestions();
+                }
+                if (purposeSuggestionItems.length) {
+                    var prevIndex = activePurposeSuggestionIndex - 1;
+                    if (prevIndex < 0) prevIndex = purposeSuggestionItems.length - 1;
+                    setActivePurposeSuggestion(prevIndex);
+                }
+                return;
+            }
+            if (key === 'Enter' && isPurposeSuggestionOpen() && activePurposeSuggestionIndex >= 0) {
+                event.preventDefault();
+                selectPurposeSuggestion(activePurposeSuggestionIndex);
+                return;
+            }
+            if (key === 'Escape' || key === 'Esc') {
+                hidePurposeSuggestions();
+            }
+        });
+    }
+    renderPurposeQuickChips();
 
     function buildGuestResultAvatar(item) {
         var avatar = document.createElement('span');
@@ -958,6 +1192,13 @@
         if (generalResults && generalSearchInput && !generalResults.contains(event.target) && event.target !== generalSearchInput && !(addGeneralGuestContainer && addGeneralGuestContainer.contains(event.target))) {
             setGeneralResultsVisible(false);
             if (addGeneralGuestContainer) addGeneralGuestContainer.classList.add('d-none');
+        }
+        if (purposeSuggestions && purposeInput) {
+            var insideSuggestions = purposeSuggestions.contains(event.target);
+            var onInput = event.target === purposeInput;
+            if (!insideSuggestions && !onInput) {
+                hidePurposeSuggestions();
+            }
         }
     });
 

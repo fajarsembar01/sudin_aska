@@ -1,0 +1,87 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Detail Frekuensi Penilaian Sekolah Negeri" %}
+
+{% block portal_content %}
+<section class="mb-3">
+  <div class="card border-0 shadow-sm">
+    <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div>
+        <h1 class="h4 fw-bold mb-1">Detail Frekuensi Penilaian Sekolah Negeri</h1>
+        <p class="text-muted small mb-0">
+          Dikelompokkan berdasarkan jumlah penilaian (submitted/verified).
+        </p>
+      </div>
+      <a
+        href="{{ url_for('portal.admin_stats', period_id=current_period_id, year=current_period_year, month=current_period_month, team_id=selected_team_id) }}"
+        class="btn btn-outline-primary"
+      >
+        Kembali ke Statistik
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="mb-3">
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <form method="get" class="row g-2 align-items-end">
+        <input type="hidden" name="period_id" value="{{ current_period_id or '' }}" />
+        <input type="hidden" name="year" value="{{ current_period_year or '' }}" />
+        <input type="hidden" name="month" value="{{ current_period_month or '' }}" />
+        <input type="hidden" name="team_id" value="{{ selected_team_id or '' }}" />
+        <div class="col-md-4">
+          <label class="form-label fw-semibold mb-1">Jumlah Penilaian</label>
+          <select name="count" class="form-select" onchange="this.form.submit()">
+            {% for c in available_counts %}
+            <option value="{{ c }}" {% if selected_count == c %}selected{% endif %}>Dinilai {{ c }}x</option>
+            {% endfor %}
+          </select>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="row g-3">
+  {% if selected_group %}
+  <div class="col-12">
+    <div class="card border-0 shadow-sm border-primary">
+      <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+        <h2 class="h6 fw-bold mb-0">Dinilai {{ selected_group.count_times }}x</h2>
+        <span class="badge bg-secondary rounded-pill">{{ selected_group.school_count }} sekolah</span>
+      </div>
+      <div class="card-body">
+        {% if selected_group.schools %}
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Nama Sekolah</th>
+                <th>NPSN</th>
+                <th>Jenjang</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for school in selected_group.schools %}
+              <tr>
+                <td>{{ school.name }}</td>
+                <td>{{ school.npsn or '-' }}</td>
+                <td>{{ school.jenjang or '-' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-muted small">Tidak ada sekolah pada kelompok ini.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12">
+    <div class="alert alert-secondary mb-0">Belum ada data untuk filter saat ini.</div>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

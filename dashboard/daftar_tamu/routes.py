@@ -80,7 +80,7 @@ from .queries import (
     list_user_transactions,
     list_user_visited_school_ids,
     list_purpose_keyword_rows,
-    list_purpose_keywords,
+    list_purpose_keywords_by_usage,
     list_contact_priority_rows,
     list_school_public_transactions,
     list_school_transactions,
@@ -1675,6 +1675,7 @@ def export_user_rankings() -> Response:
         "Tujuan",
         "Link Foto",
         "Catatan Sekolah (opsional)",
+        "Catatan Staf/Koordinator (opsional)",
     ]
     data_rows: list[list[object]] = []
     visit_page_size = 100
@@ -1724,6 +1725,7 @@ def export_user_rankings() -> Response:
                     visit.get("purpose") or "",
                     photo_url,
                     visit.get("notes") or "",
+                    visit.get("staff_note_text") or "",
                 ]
             )
 
@@ -2508,7 +2510,7 @@ def sekolah_guestbook() -> Response:
         school=school,
         user_school=school,
         area_contacts=_build_area_contacts(school),
-        purpose_keywords=list_purpose_keywords(active_only=True),
+        purpose_keywords=list_purpose_keywords_by_usage(active_only=True, limit=50),
         error_message=None,
     )
 
@@ -3027,6 +3029,8 @@ def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dic
         icon = "bi-diagram-3-fill"
     elif category == "panbers_team_member_status":
         icon = "bi-people-fill"
+    elif category == "panbers_follow_up_status":
+        icon = "bi-tools"
 
     tone = "secondary"
     if status_key == "approved":
@@ -3034,6 +3038,10 @@ def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dic
     elif status_key == "rejected":
         tone = "danger"
     elif status_key == "pending":
+        tone = "warning"
+    elif status_key == "selesai":
+        tone = "success"
+    elif status_key in {"baru", "diproses", "diajukan"}:
         tone = "warning"
 
     created_at = row.get("created_at")
@@ -3046,6 +3054,8 @@ def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dic
         fallback_title = "Notifikasi penugasan PANBERSS"
     elif category == "panbers_team_member_status":
         fallback_title = "Notifikasi tim PANBERSS"
+    elif category == "panbers_follow_up_status":
+        fallback_title = "Notifikasi tindak lanjut PANBERSS"
 
     return {
         "id": notification_id,

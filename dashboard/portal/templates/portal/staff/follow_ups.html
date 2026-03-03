@@ -1,0 +1,185 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Verifikasi Tindak Lanjut" %}
+
+{% block head_extra %}
+<style>
+    .follow-up-hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .follow-up-mobile-list {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .follow-up-mobile-card {
+        border: 1px solid var(--border-soft);
+        border-radius: 14px;
+        padding: 0.85rem;
+        background: var(--bg-surface);
+    }
+
+    .follow-up-mobile-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.6rem;
+        margin-bottom: 0.55rem;
+    }
+
+    .follow-up-ticket-code {
+        font-weight: 700;
+        font-size: 0.95rem;
+        line-height: 1.2;
+    }
+
+    .follow-up-ticket-score {
+        font-size: 0.74rem;
+        color: var(--text-muted);
+    }
+
+    .follow-up-mobile-school {
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+    }
+
+    .follow-up-mobile-room {
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+        font-size: 0.86rem;
+    }
+
+    .follow-up-mobile-meta {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.35rem;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-bottom: 0.7rem;
+    }
+
+    .follow-up-mobile-meta .value {
+        color: var(--text-primary);
+        font-weight: 600;
+        margin-left: 0.25rem;
+    }
+
+    @media (max-width: 767.98px) {
+        .follow-up-hero-title {
+            font-size: 1.1rem;
+        }
+
+        .follow-up-hero-subtitle {
+            font-size: 0.82rem;
+        }
+
+        .follow-up-mobile-card .btn {
+            border-radius: 0.85rem;
+            padding-top: 0.55rem;
+            padding-bottom: 0.55rem;
+            font-weight: 600;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h1 class="h4 fw-bold mb-1 follow-up-hero-title">Verifikasi Tindak Lanjut Sekolah</h1>
+                <p class="text-muted mb-0 follow-up-hero-subtitle">Pantau progres sekolah dan verifikasi penyelesaian.</p>
+            </div>
+            <div class="follow-up-hero-meta">
+                <span class="badge rounded-pill text-bg-warning">Menunggu verifikasi {{ pending_verify_count }}</span>
+                <span class="badge rounded-pill text-bg-primary">Total aktif {{ open_count }}</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm">
+    <div class="card-body">
+        {% if tickets %}
+        <div class="follow-up-mobile-list d-md-none">
+            {% for ticket in tickets %}
+            <article class="follow-up-mobile-card">
+                <div class="follow-up-mobile-head">
+                    <div>
+                        <div class="follow-up-ticket-code">{{ ticket.ticket_code or ('#' ~ ticket.id) }}</div>
+                        <div class="follow-up-ticket-score">Skor {{ "%.1f"|format(ticket.trigger_score_pct or 0) }}/100</div>
+                    </div>
+                    <span class="badge text-bg-{{ ticket.status_badge }}">{{ ticket.status_label }}</span>
+                </div>
+                <div class="follow-up-mobile-school">{{ ticket.school_name }}</div>
+                <div class="follow-up-mobile-room">{{ ticket.room_name }} • {{ ticket.school_npsn or '-' }}</div>
+                <div class="follow-up-mobile-meta">
+                    <div>Update <span class="value">{{ ticket.updated_label }}</span></div>
+                    {% if ticket.last_event_actor_name %}
+                    <div>Oleh <span class="value">{{ ticket.last_event_actor_name }}</span></div>
+                    {% endif %}
+                </div>
+                <a class="btn btn-outline-primary btn-sm w-100"
+                    href="{{ url_for('portal.follow_up_detail', follow_up_id=ticket.id) }}">
+                    Lihat Detail
+                </a>
+            </article>
+            {% endfor %}
+        </div>
+
+        <div class="table-responsive d-none d-md-block">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Tiket</th>
+                        <th>Sekolah</th>
+                        <th>Ruangan</th>
+                        <th>Status</th>
+                        <th>Update Terakhir</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticket in tickets %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ ticket.ticket_code or ('#' ~ ticket.id) }}</div>
+                            <div class="small text-muted">Skor {{ "%.1f"|format(ticket.trigger_score_pct or 0) }}/100</div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ ticket.school_name }}</div>
+                            <div class="small text-muted">{{ ticket.school_npsn or '-' }}</div>
+                        </td>
+                        <td>{{ ticket.room_name }}</td>
+                        <td>
+                            <span class="badge text-bg-{{ ticket.status_badge }}">{{ ticket.status_label }}</span>
+                        </td>
+                        <td>
+                            <div>{{ ticket.updated_label }}</div>
+                            {% if ticket.last_event_actor_name %}
+                            <div class="small text-muted">{{ ticket.last_event_actor_name }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a class="btn btn-outline-primary btn-sm"
+                                href="{{ url_for('portal.follow_up_detail', follow_up_id=ticket.id) }}">
+                                Detail
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <h2 class="h6 fw-semibold mb-2">Belum ada tiket tindak lanjut untuk Anda.</h2>
+            <p class="text-muted mb-0">Tiket muncul otomatis dari penilaian Anda yang memiliki skor ruangan di bawah 60.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

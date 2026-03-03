@@ -8,8 +8,11 @@
 {% set photos_endpoint = 'portal.admin_photos_partial' if is_admin else 'portal.coordinator_photos_partial' %}
 {% set related_photos_endpoint = 'portal.admin_related_photos' if is_admin else 'portal.coordinator_related_photos' %}
 {% set ranking_endpoint = 'portal.api_rankings' if is_admin else 'portal.coordinator_api_rankings' %}
+{% set gallery_endpoint = 'portal.admin_gallery' if is_admin else 'portal.coordinator_gallery' %}
 {% set current_team_id = selected_team_id if selected_team_id is not none else (team.id if team else None) %}
 {% set teams = monev_teams|default([]) %}
+{% set selected_year = current_period_year|default(None) %}
+{% set selected_month = current_period_month|default(None) %}
 {% from "portal/components/_color_macros.html" import get_score_bootstrap_class %}
 
 <section class="mb-4">
@@ -52,23 +55,39 @@
           </a>
           {% endif %}
           <form method="get" class="d-inline-flex align-items-center gap-2">
+            {% if is_admin %}
             <select
-              name="period_id"
+              name="year"
               class="form-select border-primary text-primary fw-medium"
               onchange="this.form.submit()"
               style="min-width: 150px"
             >
-              <option value="">Semua Periode</option>
-              {% for p in periods %}
+              <option value="">Semua Tahun</option>
+              {% for y in period_year_options|default([]) %}
               <option
-                value="{{ p.id }}"
-                {% if current_period_id==p.id %}selected{% endif %}
+                value="{{ y }}"
+                {% if selected_year==y %}selected{% endif %}
               >
-                {{ p.name }}
+                {{ y }}
               </option>
               {% endfor %}
             </select>
-            {% if is_admin %}
+            <select
+              name="month"
+              class="form-select border-primary text-primary fw-medium"
+              onchange="this.form.submit()"
+              style="min-width: 160px"
+            >
+              <option value="">{% if selected_year %}Semua Bulan{% else %}Pilih Tahun Dulu{% endif %}</option>
+              {% for m in range(1, 13) %}
+              <option
+                value="{{ m }}"
+                {% if selected_month==m %}selected{% endif %}
+              >
+                {{ "%02d"|format(m) }}
+              </option>
+              {% endfor %}
+            </select>
             <select
               name="team_id"
               class="form-select border-primary text-primary fw-medium"
@@ -86,15 +105,25 @@
               </option>
               {% endfor %}
             </select>
+            {% else %}
+            <select
+              name="period_id"
+              class="form-select border-primary text-primary fw-medium"
+              onchange="this.form.submit()"
+              style="min-width: 150px"
+            >
+              <option value="">Semua Periode</option>
+              {% for p in periods %}
+              <option
+                value="{{ p.id }}"
+                {% if current_period_id==p.id %}selected{% endif %}
+              >
+                {{ p.name }}
+              </option>
+              {% endfor %}
+            </select>
             {% endif %}
           </form>
-          <a
-            href="{{ url_for('portal.home') }}"
-            class="btn btn-primary d-inline-flex align-items-center gap-2"
-          >
-            <i class="bi bi-box-arrow-up-right"></i>
-            <span>Buka Portal</span>
-          </a>
         </div>
       </div>
     </div>
@@ -308,10 +337,18 @@
   <div class="col-lg-4">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
+        {% if is_admin %}
+        <h6 class="fw-bold mb-1">Jumlah Penilaian Sekolah</h6>
+        
+        <div style="height: 300px; position: relative">
+          <canvas id="negeriFrequencyPieChart"></canvas>
+        </div>
+        {% else %}
         <h6 class="fw-bold mb-3">Status Penilaian</h6>
         <div style="height: 300px; position: relative">
           <canvas id="statusPieChart"></canvas>
         </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -452,29 +489,43 @@
             photo_order=='newest' else 'Terendah') }}
           </h6>
         </div>
-        <div
-          class="btn-group btn-group-sm"
-          role="group"
-          aria-label="Urutkan galeri"
-        >
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          {% if is_admin or stats_role == 'coordinator' %}
           <a
-            class="btn btn-outline-primary {% if photo_order=='random' %}active{% endif %}"
-            href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='random') }}#galleryTitle"
+            href="{{ url_for(gallery_endpoint, period_id=current_period_id, team_id=current_team_id) }}"
+            class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2"
+            target="_blank"
+            rel="noopener"
+            title="Buka album galeri per sekolah"
           >
-            Random
+            <i class="bi bi-box-arrow-up-right"></i>
+            <span>Lihat Semua Foto</span>
           </a>
-          <a
-            class="btn btn-outline-primary {% if photo_order=='newest' %}active{% endif %}"
-            href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='newest') }}#galleryTitle"
+          {% endif %}
+          <div
+            class="btn-group btn-group-sm"
+            role="group"
+            aria-label="Urutkan galeri"
           >
-            Terbaru
-          </a>
-          <a
-            class="btn btn-outline-primary {% if photo_order=='lowest' %}active{% endif %}"
-            href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='lowest') }}#galleryTitle"
-          >
-            Terendah
-          </a>
+            <a
+              class="btn btn-outline-primary {% if photo_order=='random' %}active{% endif %}"
+              href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='random') }}#galleryTitle"
+            >
+              Random
+            </a>
+            <a
+              class="btn btn-outline-primary {% if photo_order=='newest' %}active{% endif %}"
+              href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='newest') }}#galleryTitle"
+            >
+              Terbaru
+            </a>
+            <a
+              class="btn btn-outline-primary {% if photo_order=='lowest' %}active{% endif %}"
+              href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='lowest') }}#galleryTitle"
+            >
+              Terendah
+            </a>
+          </div>
         </div>
       </div>
       <div class="card-body">
@@ -506,6 +557,8 @@
             name="period_id"
             value="{{ current_period_id or '' }}"
           />
+          <input type="hidden" name="year" value="{{ selected_year or '' }}" />
+          <input type="hidden" name="month" value="{{ selected_month or '' }}" />
           {% if current_team_id %}
           <input type="hidden" name="team_id" value="{{ current_team_id }}" />
           {% endif %}
@@ -528,7 +581,7 @@
             </button>
             <a
               class="btn btn-light"
-              href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, _anchor='recent-assessments') }}"
+              href="{{ url_for(stats_endpoint, period_id=current_period_id, year=selected_year, month=selected_month, team_id=current_team_id, _anchor='recent-assessments') }}"
               >Reset</a
             >
           </div>
@@ -548,7 +601,7 @@
                 = 'date_asc' if order == 'date_desc' else 'date_desc' %}
                 <th class="border-0 ps-3">
                   <a
-                    href="{{ url_for(stats_endpoint, period_id=base_period, jenjang=base_jenjang, order=name_order, team_id=base_team, _anchor=anchor) }}"
+                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=name_order, team_id=base_team, _anchor=anchor) }}"
                     class="text-decoration-none d-flex align-items-center gap-1"
                   >
                     Sekolah
@@ -559,7 +612,7 @@
                 </th>
                 <th class="border-0">
                   <a
-                    href="{{ url_for(stats_endpoint, period_id=base_period, jenjang=base_jenjang, order=staff_order, team_id=base_team, _anchor=anchor) }}"
+                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=staff_order, team_id=base_team, _anchor=anchor) }}"
                     class="text-decoration-none d-flex align-items-center gap-1"
                   >
                     Staff
@@ -570,7 +623,7 @@
                 </th>
                 <th class="border-0">
                   <a
-                    href="{{ url_for(stats_endpoint, period_id=base_period, jenjang=base_jenjang, order=avg_order, team_id=base_team, _anchor=anchor) }}"
+                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=avg_order, team_id=base_team, _anchor=anchor) }}"
                     class="text-decoration-none d-flex align-items-center gap-1"
                   >
                     Average
@@ -581,7 +634,7 @@
                 </th>
                 <th class="border-0">
                   <a
-                    href="{{ url_for(stats_endpoint, period_id=base_period, jenjang=base_jenjang, order=date_order, team_id=base_team, _anchor=anchor) }}"
+                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=date_order, team_id=base_team, _anchor=anchor) }}"
                     class="text-decoration-none d-flex align-items-center gap-1"
                   >
                     Tanggal
@@ -834,6 +887,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
       const CURRENT_PERIOD_ID = "{{ current_period_id or '' }}";
+      const CURRENT_PERIOD_YEAR = "{{ selected_year or '' }}";
+      const CURRENT_PERIOD_MONTH = "{{ selected_month or '' }}";
       const CURRENT_TEAM_ID = "{{ current_team_id if current_team_id is not none else (team.id if team else '') }}";
       // Legend text is now static in the HTML, no dynamic update needed
 
@@ -847,9 +902,13 @@
 
           // Fetch Data
           const periodId = CURRENT_PERIOD_ID;
+          const periodYear = CURRENT_PERIOD_YEAR;
+          const periodMonth = CURRENT_PERIOD_MONTH;
           const teamId = CURRENT_TEAM_ID;
           const mapParams = new URLSearchParams();
           if (periodId) mapParams.set('period_id', periodId);
+          if (periodYear) mapParams.set('year', periodYear);
+          if (periodMonth) mapParams.set('month', periodMonth);
           if (teamId) mapParams.set('team_id', teamId);
           fetch(`{{ url_for(map_data_endpoint) }}?${mapParams.toString()}`)
               .then(response => response.json())
@@ -1020,7 +1079,64 @@
               });
           }
 
-      // --- Status Pie Chart ---
+      {% if is_admin %}
+      const negeriDetailBaseUrl = "{{ url_for('portal.admin_stats_negeri_frequency') }}";
+      const negeriFrequencyRows = {{ negeri_assessment_frequency|default([])|tojson }};
+      const negeriCanvas = document.getElementById('negeriFrequencyPieChart');
+      if (negeriCanvas) {
+          const labels = negeriFrequencyRows.map((row) => `Dinilai ${row.count_times}x`);
+          const values = negeriFrequencyRows.map((row) => Number(row.school_count || 0));
+          const counts = negeriFrequencyRows.map((row) => Number(row.count_times || 0));
+          const colors = ['#0d6efd', '#198754', '#fd7e14', '#6f42c1', '#20c997', '#dc3545', '#ffc107', '#6c757d'];
+
+          const negeriChart = new Chart(negeriCanvas.getContext('2d'), {
+              type: 'doughnut',
+              data: {
+                  labels,
+                  datasets: [{
+                      data: values,
+                      backgroundColor: labels.map((_, idx) => colors[idx % colors.length]),
+                      borderWidth: 0,
+                      hoverOffset: 5
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  cutout: '55%',
+                  plugins: {
+                      legend: { position: 'bottom', labels: { usePointStyle: true, padding: 14 } },
+                      tooltip: {
+                          callbacks: {
+                              label: function (ctx) {
+                                  const val = ctx.raw || 0;
+                                  const dataArr = ctx.dataset && Array.isArray(ctx.dataset.data) ? ctx.dataset.data : [];
+                                  const total = dataArr.reduce((acc, n) => acc + (Number(n) || 0), 0);
+                                  const pct = total > 0 ? Math.round((Number(val) / total) * 100) : 0;
+                                  return `${ctx.label}: ${val} sekolah (${pct}%)`;
+                              }
+                          }
+                      }
+                  }
+              }
+          });
+
+          negeriCanvas.addEventListener('dblclick', function (evt) {
+              const points = negeriChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+              if (!points || points.length === 0) return;
+              const idx = points[0].index;
+              const count = counts[idx];
+              const params = new URLSearchParams();
+              if (CURRENT_PERIOD_ID) params.set('period_id', CURRENT_PERIOD_ID);
+              if (CURRENT_PERIOD_YEAR) params.set('year', CURRENT_PERIOD_YEAR);
+              if (CURRENT_PERIOD_MONTH) params.set('month', CURRENT_PERIOD_MONTH);
+              if (CURRENT_TEAM_ID) params.set('team_id', CURRENT_TEAM_ID);
+              if (Number.isFinite(count)) params.set('count', String(count));
+              const targetUrl = `${negeriDetailBaseUrl}?${params.toString()}`;
+              window.open(targetUrl, '_blank', 'noopener');
+          });
+      }
+      {% else %}
       const pieEl = document.getElementById('statusPieChart');
       if (pieEl) {
           new Chart(pieEl.getContext('2d'), {
@@ -1042,6 +1158,7 @@
               }
           });
       }
+      {% endif %}
   });
 
       // ========================================
@@ -1050,6 +1167,8 @@
       let rankingOffset = { best: 10, worst: 10 };
       const rankingLimit = 10;
       const periodId = CURRENT_PERIOD_ID;
+      const periodYear = CURRENT_PERIOD_YEAR;
+      const periodMonth = CURRENT_PERIOD_MONTH;
       const teamId = CURRENT_TEAM_ID;
 
       function loadMoreRankings(type) {
@@ -1071,6 +1190,8 @@
               offset,
           });
           if (periodId) params.set('period_id', periodId);
+          if (periodYear) params.set('year', periodYear);
+          if (periodMonth) params.set('month', periodMonth);
           if (teamId) params.set('team_id', teamId);
 
           fetch(`${rankingsEndpoint}?${params.toString()}`)

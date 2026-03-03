@@ -1,0 +1,635 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Detail Tindak Lanjut" %}
+
+{% block head_extra %}
+<style>
+    .score-chip {
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 0.2rem 0.45rem;
+        min-width: 0;
+        font-size: 0.75rem;
+        line-height: 1.1;
+        display: inline-flex;
+        justify-content: center;
+    }
+
+    .score-chip-red {
+        background: #dc3545;
+        color: #fff;
+    }
+
+    .score-chip-orange {
+        background: #fd7e14;
+        color: #fff;
+    }
+
+    .score-chip-yellow {
+        background: #ffc107;
+        color: #212529;
+    }
+
+    .score-chip-lime {
+        background: #8bc34a;
+        color: #1f2a1f;
+    }
+
+    .score-chip-green {
+        background: #198754;
+        color: #fff;
+    }
+
+    .camera-box {
+        border: 1px dashed var(--border-soft);
+        border-radius: 12px;
+        padding: 12px;
+        background: var(--bg-surface);
+    }
+
+    .camera-preview {
+        width: 100%;
+        border-radius: 12px;
+        background: #000;
+    }
+
+    .gps-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        border: 1px solid var(--border-soft);
+        background: var(--bg-surface);
+    }
+
+    @media (max-width: 767.98px) {
+        body {
+            padding-bottom: 90px;
+        }
+
+        .mobile-sticky-footer {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 1rem;
+            right: 1rem;
+            background-color: transparent;
+            padding: 0;
+            box-shadow: none;
+            z-index: 1030;
+            border-top: none;
+            pointer-events: none;
+        }
+
+        .mobile-sticky-footer .btn {
+            pointer-events: auto;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            font-weight: 600;
+            border-radius: 50rem !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2">
+            {% if current_user and current_user.role == 'staff' %}
+            {% set back_url = url_for('portal.staff_follow_ups') %}
+            {% elif current_user and current_user.role == 'sekolah' %}
+            {% set back_url = url_for('portal.sekolah_follow_ups') %}
+            {% else %}
+            {% set back_url = url_for('portal.home') %}
+            {% endif %}
+            <a href="{{ back_url }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="h4 fw-bold mb-1">Tiket {{ ticket.ticket_code or ('#' ~ ticket.id) }}</h1>
+                <p class="text-muted mb-0">{{ ticket.school_name }} • {{ ticket.room_name }}</p>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge text-bg-danger">Skor {{ "%.1f"|format(ticket.trigger_score_pct or 0) }}/100</span>
+            <span class="badge text-bg-{{ ticket.status_badge }}">{{ ticket.status_label }}</span>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Ringkasan Tiket</h2>
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <td class="text-muted">Sekolah</td>
+                        <td class="text-end">{{ ticket.school_name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">NPSN</td>
+                        <td class="text-end">{{ ticket.school_npsn or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Ruangan</td>
+                        <td class="text-end">{{ ticket.room_name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Staff Penilai</td>
+                        <td class="text-end">{{ ticket.staff_name or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Dibuat</td>
+                        <td class="text-end">{{ ticket.created_label }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Update</td>
+                        <td class="text-end">{{ ticket.updated_label }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Status</td>
+                        <td class="text-end">
+                            <span class="badge text-bg-{{ ticket.status_badge }}">{{ ticket.status_label }}</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Catatan Staff Ruangan</h2>
+                {% if staff_room_note %}
+                <p class="mb-0">{{ staff_room_note }}</p>
+                {% else %}
+                <p class="text-muted mb-0">Belum ada catatan ruangan dari staff.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if can_school_update and not can_submit_verification and not is_waiting_staff_verification %}
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Simpan Progress Sekolah</h2>
+                <form method="post" enctype="multipart/form-data"
+                    action="{{ url_for('portal.follow_up_update', follow_up_id=ticket.id) }}" id="followUpProgressForm">
+                    <input type="hidden" name="photo_data" id="progressPhotoData">
+                    <input type="hidden" name="photo_latitude" id="progressPhotoLatitude">
+                    <input type="hidden" name="photo_longitude" id="progressPhotoLongitude">
+                    <input type="hidden" name="photo_captured_at" id="progressPhotoCapturedAt">
+                    <label class="form-label small text-muted">Catatan progress (opsional)</label>
+                    <textarea class="form-control mb-2" name="note" rows="3"
+                        placeholder="Contoh: toilet diperbaiki, saluran sudah dibersihkan." id="followUpNoteInput"></textarea>
+                    <label class="form-label small text-muted">Foto progress live</label>
+                    <div class="camera-box mb-3">
+                        <video id="progressCameraPreview" class="camera-preview" autoplay playsinline></video>
+                        <canvas id="progressPhotoCanvas" class="d-none"></canvas>
+                        <img id="progressPhotoResult" class="camera-preview d-none" alt="Foto hasil progress">
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <button type="button" class="btn btn-outline-secondary" id="progressRetakePhotoBtn" disabled>
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Ulangi
+                        </button>
+                    </div>
+                    <div class="mb-3">
+                        <span class="gps-pill" id="progressGpsStatus">GPS belum aktif</span>
+                    </div>
+                    <div class="mobile-sticky-footer mt-4 mt-sm-0">
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-success" id="progressSubmitUpdateBtn" disabled>
+                                <i class="bi bi-send-check me-1"></i>Simpan Update
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if can_school_update and can_submit_verification %}
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-2">Update Sudah Tersimpan</h2>
+                <p class="small text-muted mb-3">Lanjutkan dengan ajukan verifikasi ke staff.</p>
+                <form method="post" class="d-none d-md-block"
+                    action="{{ url_for('portal.follow_up_submit_for_verification', follow_up_id=ticket.id) }}">
+                    <button type="submit" class="btn btn-success w-100">
+                        Ajukan Verifikasi
+                    </button>
+                </form>
+            </div>
+        </div>
+        <div class="mobile-sticky-footer d-md-none">
+            <div class="d-grid">
+                <form method="post" action="{{ url_for('portal.follow_up_submit_for_verification', follow_up_id=ticket.id) }}">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-send-check me-1"></i>Ajukan Verifikasi
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if can_school_update and is_waiting_staff_verification %}
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-2">Menunggu Verifikasi Staff</h2>
+                <p class="small text-muted mb-0">
+                    Tiket sudah diajukan. Jika belum diverifikasi, sistem akan kirim pengingat otomatis ke staff tiap 1 bulan.
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if can_staff_verify %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Verifikasi Staff</h2>
+                <form method="post" action="{{ url_for('portal.follow_up_verify', follow_up_id=ticket.id) }}">
+                    <label class="form-label small text-muted">Catatan verifikasi (opsional)</label>
+                    <textarea class="form-control mb-3" name="note" rows="3"
+                        placeholder="Catatan staff setelah cek tindak lanjut sekolah."></textarea>
+                    <button type="submit" class="btn btn-success w-100">Tandai Selesai</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Rincian Nilai Per Aspek</h2>
+                {% if aspect_scores %}
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Aspek</th>
+                                <th class="text-center">Nilai</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in aspect_scores %}
+                            <tr>
+                                <td class="fw-medium">{{ row.aspect_name }}</td>
+                                <td class="text-center">
+                                    {% set score_class = 'score-chip-red' %}
+                                    {% if score_scale.max == 5 %}
+                                        {% if row.score == 5 %}
+                                            {% set score_class = 'score-chip-green' %}
+                                        {% elif row.score == 4 %}
+                                            {% set score_class = 'score-chip-lime' %}
+                                        {% elif row.score == 3 %}
+                                            {% set score_class = 'score-chip-yellow' %}
+                                        {% elif row.score == 2 %}
+                                            {% set score_class = 'score-chip-orange' %}
+                                        {% else %}
+                                            {% set score_class = 'score-chip-red' %}
+                                        {% endif %}
+                                    {% else %}
+                                        {% if row.score >= 3 %}
+                                            {% set score_class = 'score-chip-green' %}
+                                        {% elif row.score == 2 %}
+                                            {% set score_class = 'score-chip-yellow' %}
+                                        {% elif row.score == 1 %}
+                                            {% set score_class = 'score-chip-orange' %}
+                                        {% else %}
+                                            {% set score_class = 'score-chip-red' %}
+                                        {% endif %}
+                                    {% endif %}
+                                    <span class="score-chip {{ score_class }}">
+                                        {{ row.score }} / {{ score_scale.max }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">Belum ada data nilai aspek untuk ruangan ini.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Timeline Tindak Lanjut</h2>
+                {% if timeline %}
+                <div class="d-flex flex-column gap-3">
+                    {% for item in timeline %}
+                    <div class="border rounded-3 p-3">
+                        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <div class="fw-semibold">{{ item.event_label }}</div>
+                                <div class="small text-muted">
+                                    {{ item.actor_name or item.actor_role or 'Sistem' }}
+                                    {% if item.status_after_label %}
+                                    • <span class="badge text-bg-{{ item.status_badge }}">{{ item.status_after_label }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="small text-muted">{{ item.created_label }}</div>
+                        </div>
+                        {% if item.note %}
+                        <p class="mb-2">{{ item.note }}</p>
+                        {% endif %}
+                        {% if item.photo_url %}
+                        <a href="{{ item.photo_url }}" target="_blank" rel="noopener">
+                            <img src="{{ item.photo_url }}" alt="Foto tindak lanjut" class="img-fluid rounded"
+                                style="max-height: 240px;">
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">Belum ada timeline tindak lanjut.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block portal_scripts %}
+{{ super() }}
+{% if can_school_update and not can_submit_verification and not is_waiting_staff_verification %}
+<script>
+    (function () {
+        var formEl = document.getElementById('followUpProgressForm');
+        var noteInput = document.getElementById('followUpNoteInput');
+        var submitBtn = document.getElementById('progressSubmitUpdateBtn');
+        var video = document.getElementById('progressCameraPreview');
+        var photoResult = document.getElementById('progressPhotoResult');
+        var canvas = document.getElementById('progressPhotoCanvas');
+        var retakePhotoBtn = document.getElementById('progressRetakePhotoBtn');
+        var gpsStatus = document.getElementById('progressGpsStatus');
+        var photoDataInput = document.getElementById('progressPhotoData');
+        var photoLatInput = document.getElementById('progressPhotoLatitude');
+        var photoLonInput = document.getElementById('progressPhotoLongitude');
+        var photoCapturedInput = document.getElementById('progressPhotoCapturedAt');
+        if (!formEl || !submitBtn || !video || !canvas || !photoResult || !gpsStatus) {
+            return;
+        }
+
+        var cameraStream = null;
+        var photoBlob = null;
+        var currentLatitude = null;
+        var currentLongitude = null;
+        var currentAccuracy = null;
+
+        function getValidationState() {
+            return {
+                hasNote: noteInput ? noteInput.value.trim().length > 0 : false,
+                hasPhoto: !!photoBlob,
+                hasGps: typeof currentLatitude === 'number' && typeof currentLongitude === 'number',
+            };
+        }
+
+        function updateSubmitState() {
+            var state = getValidationState();
+
+            if (!cameraStream) {
+                submitBtn.innerHTML = '<i class="bi bi-camera-video me-1"></i>Aktifkan Kamera';
+                submitBtn.className = 'btn btn-primary';
+                submitBtn.disabled = false;
+            } else if (cameraStream && !state.hasPhoto) {
+                submitBtn.innerHTML = '<i class="bi bi-camera me-1"></i>Ambil Foto';
+                submitBtn.className = 'btn btn-primary';
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.innerHTML = '<i class="bi bi-send-check me-1"></i>Simpan Update';
+                submitBtn.className = 'btn btn-success';
+                submitBtn.disabled = false;
+            }
+        }
+
+        function ensureGps() {
+            return new Promise(function (resolve) {
+                if (!navigator.geolocation) {
+                    gpsStatus.textContent = 'GPS tidak tersedia';
+                    gpsStatus.classList.add('text-danger');
+                    updateSubmitState();
+                    return resolve();
+                }
+                gpsStatus.textContent = 'Mencari lokasi...';
+                gpsStatus.classList.remove('text-danger');
+                navigator.geolocation.getCurrentPosition(function (pos) {
+                    currentLatitude = pos.coords.latitude;
+                    currentLongitude = pos.coords.longitude;
+                    currentAccuracy = pos.coords.accuracy;
+                    gpsStatus.textContent = 'GPS aktif (' + currentAccuracy.toFixed(0) + 'm)';
+                    gpsStatus.classList.remove('text-danger');
+                    updateSubmitState();
+                    resolve();
+                }, function () {
+                    gpsStatus.textContent = 'GPS ditolak atau tidak tersedia';
+                    gpsStatus.classList.add('text-danger');
+                    updateSubmitState();
+                    resolve();
+                }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+            });
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(function (track) { track.stop(); });
+                cameraStream = null;
+            }
+        }
+
+        function requestUserMedia(constraints) {
+            if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+                return navigator.mediaDevices.getUserMedia(constraints);
+            }
+            var legacyGetUserMedia = navigator.getUserMedia
+                || navigator.webkitGetUserMedia
+                || navigator.mozGetUserMedia
+                || navigator.msGetUserMedia;
+            if (!legacyGetUserMedia) {
+                return Promise.reject({ name: 'NotSupportedError' });
+            }
+            return new Promise(function (resolve, reject) {
+                legacyGetUserMedia.call(navigator, constraints, resolve, reject);
+            });
+        }
+
+        function resolveCameraErrorMessage(err) {
+            if (!err || !err.name) {
+                return 'Tidak bisa mengakses kamera. Pastikan izin kamera diaktifkan.';
+            }
+            if (err.name === 'NotAllowedError') {
+                return 'Izin kamera ditolak. Aktifkan izin kamera di browser lalu coba lagi.';
+            }
+            if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                return 'Kamera tidak ditemukan di perangkat ini.';
+            }
+            if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                return 'Kamera sedang dipakai aplikasi lain.';
+            }
+            if (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError') {
+                return 'Mode kamera yang diminta tidak tersedia di perangkat ini.';
+            }
+            if (err.name === 'SecurityError') {
+                return 'Akses kamera membutuhkan HTTPS atau localhost.';
+            }
+            if (err.name === 'NotSupportedError') {
+                return 'Browser ini belum mendukung akses kamera live.';
+            }
+            return 'Tidak bisa mengakses kamera. Pastikan izin kamera diaktifkan.';
+        }
+
+        function applyCameraStream(stream) {
+            cameraStream = stream;
+            video.srcObject = stream;
+            video.classList.remove('d-none');
+            photoResult.classList.add('d-none');
+            if (retakePhotoBtn) retakePhotoBtn.disabled = true;
+            if (typeof video.play === 'function') {
+                video.play().catch(function () { });
+            }
+            ensureGps();
+            updateSubmitState();
+        }
+
+        function startCamera() {
+            if (window.isSecureContext === false) {
+                alert('Kamera live butuh HTTPS. Buka halaman via HTTPS atau localhost pada perangkat yang sama.');
+                return;
+            }
+            requestUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+                .then(applyCameraStream)
+                .catch(function (err) {
+                    if (err && (err.name === 'OverconstrainedError'
+                        || err.name === 'ConstraintNotSatisfiedError'
+                        || err.name === 'NotFoundError')) {
+                        requestUserMedia({ video: true, audio: false })
+                            .then(applyCameraStream)
+                            .catch(function (fallbackErr) {
+                                alert(resolveCameraErrorMessage(fallbackErr));
+                            });
+                        return;
+                    }
+                    alert(resolveCameraErrorMessage(err));
+                });
+        }
+
+        function compressAndStore(rawCanvas, quality) {
+            var MAX_SIZE = 220 * 1024;
+            rawCanvas.toBlob(function (blob) {
+                if (!blob) {
+                    alert('Gagal memproses gambar.');
+                    return;
+                }
+                if (blob.size > MAX_SIZE && quality > 0.3) {
+                    if (blob.size > 500 * 1024) {
+                        var tempCanvas = document.createElement('canvas');
+                        var scale = 0.7;
+                        tempCanvas.width = rawCanvas.width * scale;
+                        tempCanvas.height = rawCanvas.height * scale;
+                        var tmpCtx = tempCanvas.getContext('2d');
+                        tmpCtx.drawImage(rawCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+                        compressAndStore(tempCanvas, quality - 0.1);
+                    } else {
+                        compressAndStore(rawCanvas, quality - 0.1);
+                    }
+                    return;
+                }
+                photoBlob = blob;
+                var objectUrl = URL.createObjectURL(blob);
+                photoResult.src = objectUrl;
+                photoResult.classList.remove('d-none');
+                video.classList.add('d-none');
+                if (retakePhotoBtn) retakePhotoBtn.disabled = false;
+                photoLatInput.value = currentLatitude === null ? '' : String(currentLatitude);
+                photoLonInput.value = currentLongitude === null ? '' : String(currentLongitude);
+                photoCapturedInput.value = new Date().toISOString();
+                var reader = new FileReader();
+                reader.onloadend = function () {
+                    photoDataInput.value = typeof reader.result === 'string' ? reader.result : '';
+                };
+                reader.readAsDataURL(blob);
+                updateSubmitState();
+            }, 'image/jpeg', quality);
+        }
+
+        function capturePhoto() {
+            if (!cameraStream) return;
+            var size = Math.min(video.videoWidth, video.videoHeight);
+            if (!size) {
+                alert('Preview kamera belum siap.');
+                return;
+            }
+            canvas.width = size;
+            canvas.height = size;
+            var ctx = canvas.getContext('2d');
+            var sx = (video.videoWidth - size) / 2;
+            var sy = (video.videoHeight - size) / 2;
+            ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
+            compressAndStore(canvas, 0.85);
+        }
+
+        if (retakePhotoBtn) {
+            retakePhotoBtn.addEventListener('click', function () {
+                photoBlob = null;
+                photoDataInput.value = '';
+                photoLatInput.value = '';
+                photoLonInput.value = '';
+                photoCapturedInput.value = '';
+                photoResult.classList.add('d-none');
+                video.classList.remove('d-none');
+                retakePhotoBtn.disabled = true;
+                updateSubmitState();
+            });
+        }
+
+        submitBtn.addEventListener('click', function (e) {
+            var hasPhoto = !!photoBlob;
+            if (!cameraStream) {
+                e.preventDefault();
+                startCamera();
+                setTimeout(function () {
+                    video.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+                return;
+            } else if (cameraStream && !hasPhoto) {
+                e.preventDefault();
+                capturePhoto();
+                return;
+            }
+
+            updateSubmitState();
+            var state = getValidationState();
+            if (!state.hasPhoto) {
+                e.preventDefault();
+                return;
+            }
+            if (!state.hasGps) {
+                e.preventDefault();
+                gpsStatus.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
+            formEl.submit();
+        });
+
+        if (noteInput) {
+            noteInput.addEventListener('input', function () {
+                updateSubmitState();
+            });
+        }
+
+        window.addEventListener('beforeunload', stopCamera);
+        updateSubmitState();
+    })();
+</script>
+{% endif %}
+{% endblock %}
