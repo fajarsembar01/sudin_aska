@@ -488,29 +488,43 @@
             photo_order=='newest' else 'Terendah') }}
           </h6>
         </div>
-        <div
-          class="btn-group btn-group-sm"
-          role="group"
-          aria-label="Urutkan galeri"
-        >
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          {% if is_admin %}
           <a
-            class="btn btn-outline-primary {% if photo_order=='random' %}active{% endif %}"
-            href="{{ url_for(stats_endpoint, period_id=current_period_id, year=selected_year, month=selected_month, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='random') }}#galleryTitle"
+            href="{{ url_for('portal.admin_gallery', period_id=current_period_id, team_id=current_team_id) }}"
+            class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2"
+            target="_blank"
+            rel="noopener"
+            title="Buka album galeri per sekolah"
           >
-            Random
+            <i class="bi bi-box-arrow-up-right"></i>
+            <span>Lihat Semua Foto</span>
           </a>
-          <a
-            class="btn btn-outline-primary {% if photo_order=='newest' %}active{% endif %}"
-            href="{{ url_for(stats_endpoint, period_id=current_period_id, year=selected_year, month=selected_month, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='newest') }}#galleryTitle"
+          {% endif %}
+          <div
+            class="btn-group btn-group-sm"
+            role="group"
+            aria-label="Urutkan galeri"
           >
-            Terbaru
-          </a>
-          <a
-            class="btn btn-outline-primary {% if photo_order=='lowest' %}active{% endif %}"
-            href="{{ url_for(stats_endpoint, period_id=current_period_id, year=selected_year, month=selected_month, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='lowest') }}#galleryTitle"
-          >
-            Terendah
-          </a>
+            <a
+              class="btn btn-outline-primary {% if photo_order=='random' %}active{% endif %}"
+              href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='random') }}#galleryTitle"
+            >
+              Random
+            </a>
+            <a
+              class="btn btn-outline-primary {% if photo_order=='newest' %}active{% endif %}"
+              href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='newest') }}#galleryTitle"
+            >
+              Terbaru
+            </a>
+            <a
+              class="btn btn-outline-primary {% if photo_order=='lowest' %}active{% endif %}"
+              href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='lowest') }}#galleryTitle"
+            >
+              Terendah
+            </a>
+          </div>
         </div>
       </div>
       <div class="card-body">
