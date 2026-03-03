@@ -80,7 +80,7 @@ from .queries import (
     list_user_transactions,
     list_user_visited_school_ids,
     list_purpose_keyword_rows,
-    list_purpose_keywords,
+    list_purpose_keywords_by_usage,
     list_contact_priority_rows,
     list_school_public_transactions,
     list_school_transactions,
@@ -2510,7 +2510,7 @@ def sekolah_guestbook() -> Response:
         school=school,
         user_school=school,
         area_contacts=_build_area_contacts(school),
-        purpose_keywords=list_purpose_keywords(active_only=True),
+        purpose_keywords=list_purpose_keywords_by_usage(active_only=True, limit=50),
         error_message=None,
     )
 
