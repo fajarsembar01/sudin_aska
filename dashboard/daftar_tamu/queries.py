@@ -957,6 +957,7 @@ def fetch_user_visit_history(
         ft.visit_at,
         ft.purpose,
         ft.notes,
+        ft.metadata,
         ft.photo_path,
         s.name AS school_name,
         s.npsn AS school_npsn,
@@ -997,6 +998,9 @@ def fetch_user_visit_history(
 
         cur.execute(data_query, params_common + [safe_per_page, offset])
         rows = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        row.update(_summarize_staff_notes(row.get("metadata")))
 
     return rows, total_rows
 

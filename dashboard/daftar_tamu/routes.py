@@ -1675,6 +1675,7 @@ def export_user_rankings() -> Response:
         "Tujuan",
         "Link Foto",
         "Catatan Sekolah (opsional)",
+        "Catatan Staf/Koordinator (opsional)",
     ]
     data_rows: list[list[object]] = []
     visit_page_size = 100
@@ -1724,6 +1725,7 @@ def export_user_rankings() -> Response:
                     visit.get("purpose") or "",
                     photo_url,
                     visit.get("notes") or "",
+                    visit.get("staff_note_text") or "",
                 ]
             )
 
