@@ -71,6 +71,8 @@ from .queries import (
     list_periods,
     reopen_assessment,
     fetch_random_photos,
+    fetch_gallery_photos,
+    fetch_gallery_latest_date,
     create_period,
     list_all_staff,
     list_all_staff_assignments_overview,
@@ -3220,6 +3222,68 @@ def admin_stats() -> Response:
         all_staff=all_staff,
         monev_teams=monev_teams,
         staff_latest_assessments=staff_latest_assessments,
+    )
+
+
+@portal_bp.route("/admin/gallery")
+@role_required("admin")
+def admin_gallery() -> Response:
+    """Admin gallery view grouped by school."""
+    from dashboard.queries import get_monev_teams
+
+    period_id = request.args.get("period_id", type=int)
+    team_id = request.args.get("team_id", type=int)
+
+    staff_ids: list[int] | None = None
+    selected_team = None
+    if team_id:
+        staff_ids, selected_team = _get_team_staff_ids(team_id)
+        if selected_team is None:
+            staff_ids = None
+
+    photos = fetch_gallery_photos(period_id=period_id, staff_ids=staff_ids)
+    latest_at = fetch_gallery_latest_date(staff_ids=staff_ids)
+    albums: list[dict] = []
+    album_map: dict[int, dict] = {}
+    for p in photos:
+        school_id = p.get("school_id")
+        if not school_id:
+            continue
+        album = album_map.get(school_id)
+        if not album:
+            album = {
+                "school_id": school_id,
+                "school_name": p.get("school_name") or "Sekolah",
+                "school_jenjang": p.get("school_jenjang"),
+                "photos": [],
+            }
+            album_map[school_id] = album
+            albums.append(album)
+        album["photos"].append(p)
+
+    total_photos = sum(len(a.get("photos") or []) for a in albums)
+    periods = list_periods()
+    if latest_at:
+        latest_date = latest_at.date() if hasattr(latest_at, "date") else latest_at
+    else:
+        latest_date = datetime.now().date()
+    periods = [
+        p
+        for p in periods
+        if p.get("start_date") and p.get("start_date") <= latest_date
+    ]
+    monev_teams = get_monev_teams()
+
+    return render_template(
+        "portal/admin/gallery.html",
+        albums=albums,
+        total_photos=total_photos,
+        total_schools=len(albums),
+        periods=periods,
+        current_period_id=period_id,
+        selected_team_id=team_id,
+        selected_team=selected_team,
+        monev_teams=monev_teams,
     )
 
 

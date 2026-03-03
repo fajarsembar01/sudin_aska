@@ -1096,6 +1096,100 @@ def fetch_random_photos(
         return [dict(row) for row in cur.fetchall()]
 
 
+def fetch_gallery_photos(
+    period_id: Optional[int] = None,
+    staff_ids: Optional[List[int]] = None,
+    restrict_to_staff: bool = False,
+) -> List[Dict[str, Any]]:
+    """Fetch photos for gallery albums grouped by school (latest per room)."""
+    if staff_ids is not None and len(staff_ids) == 0:
+        return []
+    if restrict_to_staff and not staff_ids:
+        return []
+
+    clauses = ["a.status = 'submitted'"]
+    params: List[Any] = []
+    if period_id:
+        clauses.append("a.period_id = %s")
+        params.append(period_id)
+    if staff_ids:
+        placeholders = ",".join(["%s"] * len(staff_ids))
+        clauses.append(f"a.staff_id IN ({placeholders})")
+        params.extend(staff_ids)
+    where = "WHERE " + " AND ".join(clauses)
+
+    query = f"""
+        SELECT * FROM (
+            SELECT DISTINCT ON (s.id, r.id)
+                p.photo_path,
+                s.id AS school_id,
+                s.name AS school_name,
+                s.jenjang AS school_jenjang,
+                a.id AS assessment_id,
+                r.id AS room_id,
+                r.name AS room_name,
+                p.captured_at,
+                p.latitude,
+                p.longitude,
+                (
+                    SELECT COALESCE(AVG(sc2.score), 0)::DECIMAL(5,2)
+                    FROM portal_assessment_scores sc2
+                    JOIN portal_school_rooms sr2 ON sc2.school_room_id = sr2.id
+                    WHERE sr2.school_id = s.id AND sr2.room_id = r.id
+                ) AS room_score
+            FROM portal_assessment_photos p
+            JOIN portal_assessments a ON p.assessment_id = a.id
+            JOIN portal_schools s ON a.school_id = s.id
+            JOIN portal_school_rooms sr ON p.school_room_id = sr.id
+            JOIN portal_rooms r ON sr.room_id = r.id
+            {where}
+            ORDER BY s.id, r.id, p.captured_at DESC NULLS LAST
+        ) sub
+        ORDER BY school_name, room_name
+    """
+
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def fetch_gallery_latest_date(
+    period_id: Optional[int] = None,
+    staff_ids: Optional[List[int]] = None,
+    restrict_to_staff: bool = False,
+) -> Optional[datetime]:
+    """Return latest captured/created timestamp for gallery photos."""
+    if staff_ids is not None and len(staff_ids) == 0:
+        return None
+    if restrict_to_staff and not staff_ids:
+        return None
+
+    clauses = ["a.status = 'submitted'"]
+    params: List[Any] = []
+    if period_id:
+        clauses.append("a.period_id = %s")
+        params.append(period_id)
+    if staff_ids:
+        placeholders = ",".join(["%s"] * len(staff_ids))
+        clauses.append(f"a.staff_id IN ({placeholders})")
+        params.extend(staff_ids)
+    where = "WHERE " + " AND ".join(clauses)
+
+    query = f"""
+        SELECT MAX(COALESCE(p.captured_at, p.created_at)) AS latest_at
+        FROM portal_assessment_photos p
+        JOIN portal_assessments a ON p.assessment_id = a.id
+        {where}
+    """
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        row = cur.fetchone()
+    if not row:
+        return None
+    latest_at = row.get("latest_at") if isinstance(row, dict) else row[0]
+    return latest_at
+
+
 def save_assessment_photo(
     assessment_id: int,
     school_room_id: int,
