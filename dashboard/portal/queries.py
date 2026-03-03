@@ -1598,6 +1598,78 @@ def fetch_score_distribution(
     return distribution
 
 
+def fetch_negeri_assessment_frequency(
+    period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
+    staff_ids: Optional[List[int]] = None,
+) -> List[Dict[str, Any]]:
+    """Return grouped negeri schools by submitted/verified assessment frequency."""
+    if staff_ids is not None and len(staff_ids) == 0:
+        return [{"count_times": 0, "school_count": 0, "schools": []}]
+
+    assess_conditions = ["a.status IN ('submitted', 'verified')"]
+    assess_params: List[Any] = []
+    _apply_period_filter(
+        assess_conditions,
+        assess_params,
+        period_id=period_id,
+        period_ids=period_ids,
+        column="a.period_id",
+    )
+    if staff_ids:
+        placeholders = ",".join(["%s"] * len(staff_ids))
+        assess_conditions.append(f"a.staff_id IN ({placeholders})")
+        assess_params.extend(staff_ids)
+    assess_where = " AND ".join(assess_conditions)
+
+    query = f"""
+        WITH negeri_schools AS (
+            SELECT s.id, s.name, s.npsn, s.jenjang
+            FROM portal_schools s
+            WHERE UPPER(COALESCE(s.status, '')) = 'NEGERI'
+              AND COALESCE(s.active, TRUE) = TRUE
+              AND UPPER(COALESCE(s.jenjang, '')) NOT IN ('MI', 'MTS', 'MA')
+        ),
+        assessed_counts AS (
+            SELECT a.school_id, COUNT(*)::INT AS count_times
+            FROM portal_assessments a
+            WHERE {assess_where}
+            GROUP BY a.school_id
+        ),
+        school_counts AS (
+            SELECT
+                ns.id AS school_id,
+                ns.name AS school_name,
+                ns.npsn,
+                ns.jenjang,
+                COALESCE(ac.count_times, 0)::INT AS count_times
+            FROM negeri_schools ns
+            LEFT JOIN assessed_counts ac ON ac.school_id = ns.id
+        )
+        SELECT
+            count_times,
+            COUNT(*)::INT AS school_count,
+            COALESCE(
+                json_agg(
+                    json_build_object(
+                        'id', school_id,
+                        'name', school_name,
+                        'npsn', npsn,
+                        'jenjang', jenjang
+                    )
+                    ORDER BY school_name ASC
+                ),
+                '[]'::json
+            ) AS schools
+        FROM school_counts
+        GROUP BY count_times
+        ORDER BY count_times ASC
+    """
+    with get_cursor() as cur:
+        cur.execute(query, assess_params)
+        return [dict(row) for row in cur.fetchall()]
+
+
 
 def fetch_map_data(
     period_id: Optional[int] = None,

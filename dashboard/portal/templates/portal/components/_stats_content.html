@@ -336,10 +336,18 @@
   <div class="col-lg-4">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
+        {% if is_admin %}
+        <h6 class="fw-bold mb-1">Jumlah Penilaian Sekolah</h6>
+        
+        <div style="height: 300px; position: relative">
+          <canvas id="negeriFrequencyPieChart"></canvas>
+        </div>
+        {% else %}
         <h6 class="fw-bold mb-3">Status Penilaian</h6>
         <div style="height: 300px; position: relative">
           <canvas id="statusPieChart"></canvas>
         </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -1056,7 +1064,64 @@
               });
           }
 
-      // --- Status Pie Chart ---
+      {% if is_admin %}
+      const negeriDetailBaseUrl = "{{ url_for('portal.admin_stats_negeri_frequency') }}";
+      const negeriFrequencyRows = {{ negeri_assessment_frequency|default([])|tojson }};
+      const negeriCanvas = document.getElementById('negeriFrequencyPieChart');
+      if (negeriCanvas) {
+          const labels = negeriFrequencyRows.map((row) => `Dinilai ${row.count_times}x`);
+          const values = negeriFrequencyRows.map((row) => Number(row.school_count || 0));
+          const counts = negeriFrequencyRows.map((row) => Number(row.count_times || 0));
+          const colors = ['#0d6efd', '#198754', '#fd7e14', '#6f42c1', '#20c997', '#dc3545', '#ffc107', '#6c757d'];
+
+          const negeriChart = new Chart(negeriCanvas.getContext('2d'), {
+              type: 'doughnut',
+              data: {
+                  labels,
+                  datasets: [{
+                      data: values,
+                      backgroundColor: labels.map((_, idx) => colors[idx % colors.length]),
+                      borderWidth: 0,
+                      hoverOffset: 5
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  cutout: '55%',
+                  plugins: {
+                      legend: { position: 'bottom', labels: { usePointStyle: true, padding: 14 } },
+                      tooltip: {
+                          callbacks: {
+                              label: function (ctx) {
+                                  const val = ctx.raw || 0;
+                                  const dataArr = ctx.dataset && Array.isArray(ctx.dataset.data) ? ctx.dataset.data : [];
+                                  const total = dataArr.reduce((acc, n) => acc + (Number(n) || 0), 0);
+                                  const pct = total > 0 ? Math.round((Number(val) / total) * 100) : 0;
+                                  return `${ctx.label}: ${val} sekolah (${pct}%)`;
+                              }
+                          }
+                      }
+                  }
+              }
+          });
+
+          negeriCanvas.addEventListener('dblclick', function (evt) {
+              const points = negeriChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+              if (!points || points.length === 0) return;
+              const idx = points[0].index;
+              const count = counts[idx];
+              const params = new URLSearchParams();
+              if (CURRENT_PERIOD_ID) params.set('period_id', CURRENT_PERIOD_ID);
+              if (CURRENT_PERIOD_YEAR) params.set('year', CURRENT_PERIOD_YEAR);
+              if (CURRENT_PERIOD_MONTH) params.set('month', CURRENT_PERIOD_MONTH);
+              if (CURRENT_TEAM_ID) params.set('team_id', CURRENT_TEAM_ID);
+              if (Number.isFinite(count)) params.set('count', String(count));
+              const targetUrl = `${negeriDetailBaseUrl}?${params.toString()}`;
+              window.open(targetUrl, '_blank', 'noopener');
+          });
+      }
+      {% else %}
       const pieEl = document.getElementById('statusPieChart');
       if (pieEl) {
           new Chart(pieEl.getContext('2d'), {
@@ -1078,6 +1143,7 @@
               }
           });
       }
+      {% endif %}
   });
 
       // ========================================

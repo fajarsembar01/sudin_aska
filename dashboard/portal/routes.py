@@ -3315,7 +3315,11 @@ def admin_stats() -> Response:
     """Admin view of portal statistics."""
     # Trigger reload
     from dashboard.queries import get_monev_teams
-    from .queries import fetch_team_top_schools, fetch_team_bottom_schools
+    from .queries import (
+        fetch_team_top_schools,
+        fetch_team_bottom_schools,
+        fetch_negeri_assessment_frequency,
+    )
 
     periods = list_periods()
     selected_year_arg = request.args.get("year", type=int)
@@ -3388,6 +3392,11 @@ def admin_stats() -> Response:
     
     from .queries import fetch_kecamatan_avg_scores
     kecamatan_stats = fetch_kecamatan_avg_scores(period_id=period_id, period_ids=period_ids, staff_ids=staff_ids)
+    negeri_assessment_frequency = fetch_negeri_assessment_frequency(
+        period_id=period_id,
+        period_ids=period_ids,
+        staff_ids=staff_ids,
+    )
     
     return render_template(
         "portal/admin/stats.html",
@@ -3413,6 +3422,66 @@ def admin_stats() -> Response:
         all_staff=all_staff,
         monev_teams=monev_teams,
         staff_latest_assessments=staff_latest_assessments,
+        negeri_assessment_frequency=negeri_assessment_frequency,
+    )
+
+
+@portal_bp.route("/admin/stats/negeri-frequency")
+@role_required("admin")
+def admin_stats_negeri_frequency() -> Response:
+    """Detail negeri school names grouped by assessment frequency."""
+    from dashboard.queries import get_monev_teams
+    from .queries import fetch_negeri_assessment_frequency
+
+    periods = list_periods()
+    selected_year_arg = request.args.get("year", type=int)
+    selected_month_arg = request.args.get("month", type=int)
+    selected_period_arg = request.args.get("period_id", type=int)
+    period_id, period_ids, period_year_options, selected_year, selected_month = _build_admin_stats_period_filter(
+        periods,
+        selected_year_arg,
+        selected_month_arg,
+        selected_period_arg,
+    )
+    team_id = request.args.get("team_id", type=int)
+    selected_count = request.args.get("count", type=int)
+
+    staff_ids: list[int] | None = None
+    selected_team = None
+    if team_id:
+        staff_ids, selected_team = _get_team_staff_ids(team_id)
+        if selected_team is None:
+            staff_ids = None
+
+    grouped = fetch_negeri_assessment_frequency(
+        period_id=period_id,
+        period_ids=period_ids,
+        staff_ids=staff_ids,
+    )
+    available_counts = [int(row.get("count_times") or 0) for row in grouped]
+    if selected_count is None and available_counts:
+        selected_count = available_counts[0]
+    selected_group = next(
+        (row for row in grouped if int(row.get("count_times") or 0) == int(selected_count))
+        if selected_count is not None
+        else None,
+        None,
+    )
+
+    return render_template(
+        "portal/admin/stats_negeri_frequency.html",
+        grouped=grouped,
+        selected_group=selected_group,
+        available_counts=available_counts,
+        periods=periods,
+        current_period_id=period_id,
+        current_period_year=selected_year,
+        current_period_month=selected_month,
+        period_year_options=period_year_options,
+        selected_team_id=team_id,
+        selected_team=selected_team,
+        monev_teams=get_monev_teams(),
+        selected_count=selected_count,
     )
 
 
