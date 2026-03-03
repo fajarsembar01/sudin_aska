@@ -117,6 +117,7 @@ from .queries import (
     update_dashboard_user_profile,
     update_dashboard_user_profile_photo,
     # Classroom configuration
+    enable_all_classroom_room_aspects_for_school,
     list_school_classrooms,
     create_school_classroom,
     update_school_classroom,
@@ -176,6 +177,16 @@ from dashboard.queries import (
     get_team_member_request,
     get_available_staff,
     list_dashboard_users,
+)
+from .classroom_rules import (
+    expected_grade_levels,
+    get_classroom_levels,
+    get_template_room_name,
+    grade_label,
+    grade_label_map,
+    normalize_jenjang,
+    parse_room_info,
+    sanitize_submitted_classrooms,
 )
 from dashboard.photo_stamp import decode_data_url_image, stamp_live_photo
 from dashboard.telegram_notifications import (
@@ -1272,50 +1283,23 @@ def _detect_suspicious_profile_data(school: dict | None) -> list[str]:
 
 def _expected_grade_levels(jenjang: str | None) -> list[int]:
     """Return grade levels based on jenjang."""
-    if not jenjang:
-        return []
-    upper = jenjang.upper()
-    if upper == "SD":
-        return list(range(1, 7))
-    if upper == "SMP":
-        return list(range(7, 10))
-    if upper in {"SMA", "SMK"}:
-        return list(range(10, 13))
-    if upper == "TK":
-        return [-1, 0]  # TK A, TK B
-    if upper == "PAUD":
-        return [-2, -1, 0]  # KB, Kelompok A, Kelompok B
-    return []
+    return expected_grade_levels(jenjang)
 
 
 def _classroom_grade_from_name(name: str) -> int | None:
     """Extract grade number from classroom name (supports variants like 5A)."""
-    if not name:
-        return None
-    match = re.search(r"\bKelas\s+TK\s+([AB])\s*\d+\b", name, flags=re.IGNORECASE)
-    if match:
-        return -1 if match.group(1).upper() == "A" else 0
-    if re.search(r"\bKelas\s+TK\b", name, flags=re.IGNORECASE):
-        return -1
-    match = re.search(r"\bKelas\s+(-?\d+)", name, flags=re.IGNORECASE)
-    if not match:
-        return None
-    try:
-        return int(match.group(1))
-    except (TypeError, ValueError):
-        return None
+    parsed = parse_room_info(name)
+    if parsed:
+        try:
+            return int(parsed.get("grade_level"))
+        except (TypeError, ValueError):
+            return None
+    return None
 
 
 def _is_classroom_variant(name: str) -> bool:
     """Return True for variant classroom names like 'Ruang Kelas 5A'."""
-    return bool(
-        re.match(
-            r"^\s*(?:Ruang\s+)?Kelas\s+-?\d+\s*[A-Za-z]+\s*$",
-            name or "",
-            flags=re.IGNORECASE,
-        )
-        or re.match(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s+[AB]\s*\d+\s*$", name or "", flags=re.IGNORECASE)
-    )
+    return bool((parse_room_info(name) or {}).get("is_variant"))
 
 
 def _classroom_band_for_grade(grade: int) -> list[int]:
@@ -1531,15 +1515,15 @@ def _validate_profile_data(payload: dict, *, jenjang: str | None = None) -> list
             for g in expected_grades:
                 val = empty_map.get(str(g))
                 if val is None:
-                    errors.append(f"Bangku kosong kelas {g} wajib diisi.")
+                    errors.append(f"Bangku kosong {grade_label(jenjang, g)} wajib diisi.")
                     break
                 try:
                     int_val = int(val)
                     if int_val < 0:
-                        errors.append(f"Bangku kosong kelas {g} harus >= 0.")
+                        errors.append(f"Bangku kosong {grade_label(jenjang, g)} harus >= 0.")
                         break
                 except Exception:
-                    errors.append(f"Bangku kosong kelas {g} harus angka.")
+                    errors.append(f"Bangku kosong {grade_label(jenjang, g)} harus angka.")
                     break
     else:
         if payload.get("empty_seats") is None:
@@ -1863,6 +1847,8 @@ def sekolah_home() -> Response:
     )
 
 
+def _filter_assessment_rooms(rooms: list[dict], jenjang: str | None = None) -> list[dict]:
+    """Filter rooms to hide base classrooms and drop classroom names from other jenjangs."""
 def _annotate_follow_up_ticket(ticket: dict) -> dict:
     row = dict(ticket or {})
     status_value = (row.get("status") or "").strip().lower()
@@ -2491,20 +2477,68 @@ def _filter_assessment_rooms(rooms: list[dict]) -> list[dict]:
         rooms_by_grade.setdefault(grade, []).append({"room": room, "variant": variant})
 
     filtered_rooms: list[dict] = []
-    for rlist in rooms_by_grade.values():
-        has_variant = any(item.get("variant") for item in rlist)
-        for item in rlist:
-            if has_variant and not item.get("variant"):
+    rooms_by_key: dict[tuple[str | None, int], list[dict]] = {}
+
+    for room in rooms:
+        name = (room.get("room_name") or "").strip()
+        parsed = parse_room_info(name, jenjang)
+        if parsed:
+            key = (parsed.get("bucket"), int(parsed.get("grade_level")))
+            rooms_by_key.setdefault(key, []).append({"room": room, "parsed": parsed})
+            continue
+        if parse_room_info(name):
+            continue
+        filtered_rooms.append(room)
+
+    for grouped_rooms in rooms_by_key.values():
+        has_variant = any(bool(item["parsed"].get("is_variant")) for item in grouped_rooms)
+        for item in grouped_rooms:
+            if has_variant and not item["parsed"].get("is_variant"):
                 continue
             filtered_rooms.append(dict(item["room"]))
 
-    # Include non-classroom rooms (no grade match)
-    for room in rooms:
-        grade, _ = _grade_and_variant(room.get("room_name") or "")
-        if grade is None:
-            filtered_rooms.append(room)
-
     return filtered_rooms
+
+
+def _sort_assessment_rooms(rooms: list[dict], jenjang: str | None = None) -> list[dict]:
+    """Show classroom-like rooms before umum rooms on assessment pages."""
+    bucket_order = {
+        "paud": 0,
+        "paket": 1,
+        "slb": 2,
+        "tk": 3,
+        "sd": 4,
+        "smp": 5,
+        "sma": 6,
+    }
+
+    def _variant_key(value: str | None) -> tuple[int, str]:
+        variant = (value or "").strip().upper()
+        if not variant:
+            return (0, "")
+        if variant.isdigit():
+            return (1, f"{int(variant):04d}")
+        return (2, variant)
+
+    decorated: list[tuple[tuple[Any, ...], dict]] = []
+    for index, room in enumerate(rooms):
+        name = (room.get("room_name") or "").strip()
+        parsed = parse_room_info(name, jenjang)
+        if parsed:
+            sort_key = (
+                0,
+                bucket_order.get(parsed.get("bucket"), 99),
+                int(parsed.get("grade_level") or 0),
+                _variant_key(parsed.get("variant")),
+                name.lower(),
+                index,
+            )
+        else:
+            sort_key = (1, 999, 999, (9, ""), name.lower(), index)
+        decorated.append((sort_key, room))
+
+    decorated.sort(key=lambda item: item[0])
+    return [room for _, room in decorated]
 
 
 def _augment_rooms_with_assessment_data(
@@ -2662,7 +2696,7 @@ def assess(school_id: int) -> Response:
         flash("Sekolah belum memiliki ruangan yang dikonfigurasi.", "warning")
         return redirect(url_for("portal.schools"))
 
-    rooms = _filter_assessment_rooms(all_rooms)
+    rooms = _filter_assessment_rooms(all_rooms, school.get("jenjang"))
     
     # Periode penilaian untuk badge UI
     assessment_period = get_period_by_id(assessment.get("period_id")) if assessment.get("period_id") else get_active_period()
@@ -2679,6 +2713,7 @@ def assess(school_id: int) -> Response:
         photos_list=photos_list,
         room_notes=room_notes,
     )
+    rooms = _sort_assessment_rooms(rooms, school.get("jenjang"))
     total_aspects = sum(len(r.get("aspects", [])) for r in rooms)
     scores_map = {
         (s["school_room_id"], s["aspect_id"]): s["score"]
@@ -2854,7 +2889,8 @@ def upload_photo(school_id: int) -> Response:
     try:
         _sync_assessment_period_to_active(assessment)
         all_rooms = list_school_rooms(school_id)
-        rooms = _filter_assessment_rooms(all_rooms)
+        school = get_school_by_id(school_id)
+        rooms = _filter_assessment_rooms(all_rooms, school.get("jenjang") if school else None)
         photos_list = get_assessment_photos(assessment_id)
         rooms, _, photos_list, _ = _augment_rooms_with_assessment_data(
             all_rooms,
@@ -2985,7 +3021,8 @@ def submit(school_id: int) -> Response:
         default_score = score_config["default"]
 
         all_rooms = list_school_rooms(school_id)
-        rooms = _filter_assessment_rooms(all_rooms)
+        school = get_school_by_id(school_id)
+        rooms = _filter_assessment_rooms(all_rooms, school.get("jenjang") if school else None)
         existing_scores = get_assessment_scores(assessment_id_int)
         photos_list = get_assessment_photos(assessment_id_int)
         rooms, existing_scores, photos_list, _ = _augment_rooms_with_assessment_data(
@@ -3753,6 +3790,10 @@ def sekolah_rooms() -> Response:
                 except Exception:
                     current_app.logger.exception("Failed to sync classroom rooms before update_school_rooms")
                 count = update_school_rooms(current_school_id, room_ids, aspect_map)
+                try:
+                    ensure_classroom_rooms_for_school(current_school_id)
+                except Exception:
+                    current_app.logger.exception("Failed to sync classroom rooms after update_school_rooms")
                 # Log what is stored after save
                 saved_after = list_school_rooms(current_school_id, include_all_aspects=True)
                 saved_map = {
@@ -3793,6 +3834,17 @@ def sekolah_rooms() -> Response:
     classrooms = []
     if current_school_id:
         classrooms = list_school_classrooms(current_school_id)
+
+    selected_school = user_school
+    if not selected_school and current_school_id:
+        selected_school = next((s for s in schools if s.get("id") == current_school_id), None)
+    selected_jenjang = selected_school.get("jenjang") if selected_school else None
+    selected_jenjang_upper = normalize_jenjang(selected_jenjang)
+    template_room_name = (get_template_room_name(selected_jenjang) or "").strip().lower()
+    classroom_levels = get_classroom_levels(selected_jenjang)
+    classroom_level_labels = grade_label_map(selected_jenjang)
+    profile_classroom_levels = get_classroom_levels(selected_jenjang, for_profile=True)
+    profile_classroom_level_labels = grade_label_map(selected_jenjang, for_profile=True)
     
     # Build set of (grade, variant) pairs for exact matching
     # e.g., {(1, 'A'), (2, 'A'), (3, 'A')} means only show Kelas 1A, 2A, 3A
@@ -3830,40 +3882,41 @@ def sekolah_rooms() -> Response:
                 for a in aspects
             ]
 
-    # Categorize rooms by grade number (so SD tab doesn't show kelas 10-12)
-    # Regex patterns to match classroom names (support negative grades for PAUD/TK)
-    tk_variant_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s+([AB])\s*(\d+)\s*$", re.IGNORECASE)
-    tk_base_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s*$", re.IGNORECASE)
-    variant_pattern = re.compile(r"^\s*(?:Ruang\s+)?Kelas\s+(-?\d+)\s*([A-Za-z]+)\s*$", re.IGNORECASE)
-    base_pattern = re.compile(r"\bKelas\s+(-?\d+)\b", re.IGNORECASE)
-
     def _room_grade(room: dict) -> int | None:
-        name_val = room.get("name") or ""
-        m = tk_variant_pattern.match(name_val)
-        if m:
-            return -1 if m.group(1).upper() == "A" else 0
-        m = variant_pattern.match(name_val) or base_pattern.search(name_val)
-        if not m:
+        name_val = room.get("name") or room.get("room_name") or ""
+        parsed = parse_room_info(name_val, selected_jenjang)
+        if not parsed:
             return None
         try:
-            return int(m.group(1))
+            return int(parsed.get("grade_level"))
         except (TypeError, ValueError):
             return None
 
     def _is_variant_class(name: str) -> bool:
-        return bool(variant_pattern.match(name or "") or tk_variant_pattern.match(name or ""))
+        return bool((parse_room_info(name or "", selected_jenjang) or {}).get("is_variant"))
 
     
     def _room_variant(room: dict) -> str | None:
         """Extract variant letter from room name (e.g., 'A' from 'Ruang Kelas 1A')."""
-        name_val = room.get("name") or ""
-        m = tk_variant_pattern.match(name_val)
-        if m and m.group(2):
-            return m.group(2).strip()
-        m = variant_pattern.match(name_val)
-        if not m or not m.group(2):
-            return None
-        return m.group(2).strip().upper()
+        name_val = room.get("name") or room.get("room_name") or ""
+        parsed = parse_room_info(name_val, selected_jenjang)
+        variant = (parsed or {}).get("variant")
+        return str(variant).strip().upper() if variant else None
+
+    def _room_bucket(room: dict) -> str | None:
+        name_val = room.get("name") or room.get("room_name") or ""
+        parsed = parse_room_info(name_val, selected_jenjang)
+        return (parsed or {}).get("bucket")
+
+    def _room_is_other_jenjang_classroom(room: dict) -> bool:
+        if not selected_jenjang_upper:
+            return False
+        name_val = room.get("name") or room.get("room_name") or ""
+        parsed_any = parse_room_info(name_val)
+        if not parsed_any:
+            return False
+        parsed_selected = parse_room_info(name_val, selected_jenjang)
+        return parsed_selected is None
 
     for r in all_rooms:
         aspects = r.get("aspects") or []
@@ -3872,22 +3925,14 @@ def sekolah_rooms() -> Response:
         )
         r["default_select_all_aspects"] = bool(_room_grade(r) is not None and not has_optional_selected)
 
-    # Identifikasi jenjang yang sudah punya kelas paralel (mis. 1A, 1B) untuk menyembunyikan base "Ruang Kelas 1"
+    # Identifikasi jenjang yang sudah punya kelas paralel untuk sekolah aktif saja.
     variant_grades: set[int] = set()
-    for r in all_rooms:
-        name_val = r.get("name") or ""
-        if _is_variant_class(name_val):
-            g = _room_grade(r)
-            if g is not None:
-                variant_grades.add(g)
-    # Tambahkan paralel yang sudah disimpan oleh sekolah (jika ada)
     for sr in saved_rooms:
         name_val = sr.get("room_name") or sr.get("name") or ""
         if _is_variant_class(name_val):
             g = _room_grade(sr)
             if g is not None:
                 variant_grades.add(g)
-    # Include classroom config grades so base kelas disembunyikan ketika paralel sudah diatur
     variant_grades.update(classroom_grades)
 
     # Debug logging to diagnose filtering issues
@@ -3904,17 +3949,37 @@ def sekolah_rooms() -> Response:
     filtered_rooms = []
     skipped_variant_rooms = []
     skipped_base_rooms = []
+    hide_all_numeric_grade_rooms = selected_jenjang_upper in {"SD", "SMP", "SMA", "SMK"} and not classroom_grades
     
     for r in all_rooms:
         name_val = r.get("name") or ""
+        g = _room_grade(r)
+        is_saved = r.get("id") in saved_room_ids
+        r["auto_select"] = False
+
+        if hide_all_numeric_grade_rooms and g is not None:
+            current_app.logger.info(
+                "[sekolah_rooms] Skipping classroom room '%s' (grade=%s) because numeric classroom config is empty",
+                name_val, g
+            )
+            skipped_base_rooms.append(name_val)
+            continue
+
+        if classrooms and g is not None and g not in classroom_grades and not is_saved:
+            current_app.logger.info(
+                "[sekolah_rooms] Skipping classroom room '%s' (grade=%s) because grade is not configured",
+                name_val, g
+            )
+            skipped_base_rooms.append(name_val)
+            continue
+
         # Only show variant classrooms if exact (grade, variant) match OR already saved
         if _is_variant_class(name_val):
-            g = _room_grade(r)
             variant = _room_variant(r)
             
             # Check if this exact (grade, variant) pair is configured
             is_exact_match = (g, variant) in classroom_variants if (g is not None and variant) else False
-            is_saved = r.get("id") in saved_room_ids
+            r["auto_select"] = bool(is_exact_match)
             should_skip = not is_exact_match and not is_saved
             
             # Log each variant room decision
@@ -3926,8 +3991,9 @@ def sekolah_rooms() -> Response:
             if should_skip:
                 skipped_variant_rooms.append(name_val)
                 continue
+        elif g is not None and g in classroom_grades and not variant_grades:
+            r["auto_select"] = True
         # Jika ada paralel untuk jenjang yang sama, sembunyikan base class (mis. "Ruang Kelas 1")
-        g = _room_grade(r)
         if not _is_variant_class(name_val) and g is not None and g in variant_grades:
             current_app.logger.info(
                 "[sekolah_rooms] Skipping base room '%s' (grade=%s) because variants exist",
@@ -3951,20 +4017,30 @@ def sekolah_rooms() -> Response:
     sma_rooms = []
     paud_rooms = []
     tk_rooms = []
+    paket_rooms = []
+    slb_rooms = []
     umum_rooms = []
     for r in filtered_rooms:
+        room_name = (r.get("name") or "").strip().lower()
+        if _room_is_other_jenjang_classroom(r):
+            continue
+        if template_room_name and room_name == template_room_name and selected_jenjang_upper in {"SPS", "TPA", "KB", "SKB", "PKBM", "SLB"}:
+            continue
+        bucket = _room_bucket(r)
         grade = _room_grade(r)
-        if grade is None:
-            umum_rooms.append(r)
-        elif -2 <= grade <= 0:  # PAUD/TK levels
-            # Add to both, template will show correct tab based on jenjang
+        if bucket == "paud":
             paud_rooms.append(r)
+        elif bucket == "tk":
             tk_rooms.append(r)
-        elif 1 <= grade <= 6:
+        elif bucket == "paket":
+            paket_rooms.append(r)
+        elif bucket == "slb":
+            slb_rooms.append(r)
+        elif 1 <= (grade or 0) <= 6:
             sd_rooms.append(r)
-        elif 7 <= grade <= 9:
+        elif 7 <= (grade or 0) <= 9:
             smp_rooms.append(r)
-        elif 10 <= grade <= 12:
+        elif 10 <= (grade or 0) <= 12:
             sma_rooms.append(r)
         else:
             umum_rooms.append(r)
@@ -3974,11 +4050,6 @@ def sekolah_rooms() -> Response:
     kecamatan_list = list_kecamatan()
     kelurahan_list = list_kelurahan()  # full list to allow sekolah update
     
-    # Determine selected school for jenjang-aware UI
-    selected_school = user_school
-    if not selected_school and current_school_id:
-        selected_school = next((s for s in schools if s.get("id") == current_school_id), None)
-
     return render_template(
         "portal/sekolah/rooms.html",
         all_rooms=all_rooms,
@@ -3993,9 +4064,16 @@ def sekolah_rooms() -> Response:
         kecamatan_list=kecamatan_list,
         kelurahan_list=kelurahan_list,
         classrooms=classrooms,
+        classroom_levels=classroom_levels,
+        classroom_level_labels=classroom_level_labels,
+        profile_classroom_levels=profile_classroom_levels,
+        profile_classroom_level_labels=profile_classroom_level_labels,
+        selected_jenjang_upper=selected_jenjang_upper,
         selected_school=selected_school,
         paud_rooms=paud_rooms,
         tk_rooms=tk_rooms,
+        paket_rooms=paket_rooms,
+        slb_rooms=slb_rooms,
         sd_rooms=sd_rooms,
         smp_rooms=smp_rooms,
         sma_rooms=sma_rooms,
@@ -5628,36 +5706,34 @@ def admin_setup() -> Response:
         )
 
     def _room_grade(name: str) -> int | None:
-        if re.search(r"\bKelas\s+TK\s+A\s*\d+\b", name or "", flags=re.IGNORECASE):
-            return -1
-        if re.search(r"\bKelas\s+TK\s+B\s*\d+\b", name or "", flags=re.IGNORECASE):
-            return 0
-        if re.search(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s*$", name or "", flags=re.IGNORECASE):
-            return -1
-        m = re.search(r"\bKelas\s+(\d+)", name or "", flags=re.IGNORECASE)
-        if not m:
+        parsed = parse_room_info(name)
+        if not parsed:
             return None
         try:
-            return int(m.group(1))
+            return int(parsed.get("grade_level"))
         except (TypeError, ValueError):
             return None
 
     def _is_variant_class(name: str) -> bool:
-        # Detect names like "Ruang Kelas 1A" "Ruang Kelas 1B" etc.
-        return bool(
-            re.search(r"^Ruang\\s+Kelas\\s+\\d+\\s*[A-Za-z]+$", name or "", flags=re.IGNORECASE)
-            or re.search(r"^\\s*(?:Ruang\\s+)?Kelas\\s+TK\\s+[AB]\\s*\\d+$", name or "", flags=re.IGNORECASE)
-        )
+        parsed = parse_room_info(name)
+        return bool((parsed or {}).get("is_variant"))
 
     # Build base rooms: keep non-class rooms and only one representative per jenjang band (SD=1, SMP=7, SMA=10)
     base_rooms = []
     seen_names = set()
+    explicit_template_names = {
+        "ruang kelas -1",
+        "ruang kelas paud",
+        "ruang kelas paket",
+        "ruang kelas slb",
+    }
     for r in rooms:
         name = r.get("name") or ""
+        name_lower = name.strip().lower()
         grade = _room_grade(name)
         is_variant = _is_variant_class(name)
         templ = None
-        is_tk_base = bool(re.search(r"^\\s*(?:Ruang\\s+)?Kelas\\s+TK\\s*$", name or "", flags=re.IGNORECASE))
+        is_tk_base = bool(re.search(r"^\\s*(?:Ruang\\s+)?Kelas\\s+-1\\s*$", name or "", flags=re.IGNORECASE))
         if grade is not None:
             if grade <= 6:
                 templ = 1
@@ -5667,7 +5743,9 @@ def admin_setup() -> Response:
                 templ = 10
 
         should_keep = False
-        if grade is None:
+        if name_lower in explicit_template_names:
+            should_keep = True
+        elif grade is None:
             should_keep = True  # non-class room
         elif is_tk_base:
             should_keep = True
@@ -6703,14 +6781,12 @@ def save_classrooms() -> Response:
         return jsonify({"success": False, "message": "Sekolah tidak ditemukan"}), 404
     
     data = request.get_json(silent=True) or {}
-    classrooms = data.get("classrooms", [])
+    classrooms = sanitize_submitted_classrooms(user_school.get("jenjang"), data.get("classrooms", []))
     
     try:
         save_school_classrooms_batch(user_school["id"], classrooms)
-        try:
-            ensure_classroom_rooms_for_school(user_school["id"])
-        except Exception:
-            current_app.logger.exception("Failed to sync classroom rooms after save")
+        ensure_classroom_rooms_for_school(user_school["id"])
+        enable_all_classroom_room_aspects_for_school(user_school["id"])
         return jsonify({"success": True, "message": "Konfigurasi kelas berhasil disimpan"})
     except Exception as e:
         current_app.logger.exception("Error saving classrooms")

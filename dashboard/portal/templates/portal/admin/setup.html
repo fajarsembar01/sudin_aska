@@ -3,19 +3,7 @@
 
 {% block portal_content %}
 <section class="mb-4">
-    {% set display_rooms = [] %}
-    {% if base_rooms is defined %}
-    {% for r in base_rooms %}
-    {% set nm = (r.name or '') %}
-    {% set tail = nm.lower().replace('ruang kelas', '').strip() %}
-    {% set is_variant = tail and tail[-1].isalpha() and tail[:-1].strip() and tail[:-1].strip()[-1].isdigit() %}
-    {% if not is_variant %}
-    {% set _ = display_rooms.append(r) %}
-    {% endif %}
-    {% endfor %}
-    {% else %}
-    {% set display_rooms = [] %}
-    {% endif %}
+    {% set display_rooms = base_rooms if base_rooms is defined else [] %}
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div class="d-flex align-items-center gap-3">
             <a href="{{ url_for('portal.admin_stats') }}" class="btn btn-outline-secondary">
@@ -391,13 +379,13 @@
                                         <div class="col-md-6">
                                             <div class="bg-white rounded-3 p-2 shadow-sm h-100">
                                                 <div class="small fw-semibold text-primary mb-2"><i
-                                                        class="bi bi-door-open me-1"></i>Ruang Kelas TK</div>
+                                                        class="bi bi-door-open me-1"></i>Ruang Kelas -1</div>
                                                 <div class="list-group list-group-flush" style="font-size: 0.75rem;">
                                                     <label
                                                         class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
                                                         <input class="form-check-input flex-shrink-0" type="checkbox"
                                                             checked disabled>
-                                                        <span>Ruang Kelas TK (dasar)</span>
+                                                        <span>Ruang Kelas -1 (dasar)</span>
                                                     </label>
                                                     <label
                                                         class="list-group-item d-flex align-items-center gap-2 py-1 px-0 border-0">
