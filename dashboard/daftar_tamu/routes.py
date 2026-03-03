@@ -3029,6 +3029,8 @@ def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dic
         icon = "bi-diagram-3-fill"
     elif category == "panbers_team_member_status":
         icon = "bi-people-fill"
+    elif category == "panbers_follow_up_status":
+        icon = "bi-tools"
 
     tone = "secondary"
     if status_key == "approved":
@@ -3036,6 +3038,10 @@ def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dic
     elif status_key == "rejected":
         tone = "danger"
     elif status_key == "pending":
+        tone = "warning"
+    elif status_key == "selesai":
+        tone = "success"
+    elif status_key in {"baru", "diproses", "diajukan"}:
         tone = "warning"
 
     created_at = row.get("created_at")
@@ -3048,6 +3054,8 @@ def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dic
         fallback_title = "Notifikasi penugasan PANBERSS"
     elif category == "panbers_team_member_status":
         fallback_title = "Notifikasi tim PANBERSS"
+    elif category == "panbers_follow_up_status":
+        fallback_title = "Notifikasi tindak lanjut PANBERSS"
 
     return {
         "id": notification_id,

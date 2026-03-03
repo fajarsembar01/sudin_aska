@@ -928,6 +928,16 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint in ['portal.staff_follow_ups', 'portal.follow_up_detail'] %}active{% endif %}"
+                            href="{{ url_for('portal.staff_follow_ups') }}">
+                            <i class="bi bi-tools nav-icon"></i>Tindak Lanjut
+                            {% set follow_up_badge = follow_up_nav_badge_count|default(0) %}
+                            <span class="badge rounded-pill text-bg-danger ms-2{% if follow_up_badge <= 0 %} d-none{% endif %}">
+                                {{ follow_up_badge }}
+                            </span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'portal.view_my_team' %}active{% endif %}"
                             href="{{ url_for('portal.view_my_team') }}">
                             <i class="bi bi-people nav-icon"></i>Tim Saya
@@ -987,6 +997,12 @@
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('portal.admin_reopen_requests') }}">
                                     <i class="bi bi-arrow-counterclockwise me-2"></i>Permintaan Reopen
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint in ['portal.admin_follow_ups', 'portal.admin_follow_up_edit'] %}active{% endif %}"
+                                    href="{{ url_for('portal.admin_follow_ups') }}">
+                                    <i class="bi bi-tools me-2"></i>Tindak Lanjut
                                 </a>
                             </li>
                             <li>
@@ -1056,6 +1072,16 @@
                         <a class="nav-link {% if request.endpoint == 'portal.sekolah_rooms' %}active{% endif %}"
                             href="{{ url_for('portal.sekolah_rooms') }}">
                             <i class="bi bi-sliders nav-icon"></i>Konfigurasi Ruangan
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint in ['portal.sekolah_follow_ups', 'portal.follow_up_detail'] %}active{% endif %}"
+                            href="{{ url_for('portal.sekolah_follow_ups') }}">
+                            <i class="bi bi-tools nav-icon"></i>Tindak Lanjut
+                            {% set follow_up_badge = follow_up_nav_badge_count|default(0) %}
+                            <span class="badge rounded-pill text-bg-danger ms-2{% if follow_up_badge <= 0 %} d-none{% endif %}">
+                                {{ follow_up_badge }}
+                            </span>
                         </a>
                     </li>
                     <!-- <li class="nav-item">
