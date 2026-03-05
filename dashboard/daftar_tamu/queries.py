@@ -620,7 +620,6 @@ def fetch_user_rankings(
         WHERE u.account_status = 'approved'
           AND (u.role IS NULL OR u.role <> 'sekolah')
         GROUP BY u.id, u.full_name, u.email, u.role
-        HAVING COUNT(ut.transaction_id) > 0
     )
     """
     )

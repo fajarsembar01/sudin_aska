@@ -1122,8 +1122,8 @@ def admin_dashboard() -> Response:
         per_page=user_per_page,
         sort_key=user_sort,
         search_query=user_search_query,
-        date_from=None,
-        date_to=None,
+        date_from=date_from,
+        date_to=date_to,
         guest_scope=guest_scope,
     )
     user_total_pages = max(1, math.ceil(user_total_rows / user_per_page)) if user_total_rows else 1
@@ -1134,8 +1134,8 @@ def admin_dashboard() -> Response:
             per_page=user_per_page,
             sort_key=user_sort,
             search_query=user_search_query,
-            date_from=None,
-            date_to=None,
+            date_from=date_from,
+            date_to=date_to,
             guest_scope=guest_scope,
         )
 
@@ -1631,6 +1631,11 @@ def export_user_rankings() -> Response:
     """Export user rankings in CSV/Excel."""
     ensure_daftar_tamu_seed_data()
 
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+
     user_search_query = (request.args.get("user_q") or request.args.get("q") or "").strip()
     user_sort = (request.args.get("user_sort") or DEFAULT_USER_SORT).strip().lower()
     if user_sort not in USER_SORT_OPTIONS:
@@ -1644,8 +1649,8 @@ def export_user_rankings() -> Response:
         per_page=per_page,
         sort_key=user_sort,
         search_query=user_search_query,
-        date_from=None,
-        date_to=None,
+        date_from=date_from,
+        date_to=date_to,
         guest_scope=guest_scope,
     )
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
@@ -1656,8 +1661,8 @@ def export_user_rankings() -> Response:
                 per_page=per_page,
                 sort_key=user_sort,
                 search_query=user_search_query,
-                date_from=None,
-                date_to=None,
+                date_from=date_from,
+                date_to=date_to,
                 guest_scope=guest_scope,
             )
             rows.extend(page_rows)
@@ -1690,8 +1695,8 @@ def export_user_rankings() -> Response:
             per_page=visit_page_size,
             sort_key="date_asc",
             search_query="",
-            date_from=None,
-            date_to=None,
+            date_from=date_from,
+            date_to=date_to,
             guest_scope=guest_scope,
         )
         visit_total_pages = max(1, math.ceil(visit_total_rows / visit_page_size)) if visit_total_rows else 1
@@ -1703,8 +1708,8 @@ def export_user_rankings() -> Response:
                     per_page=visit_page_size,
                     sort_key="date_asc",
                     search_query="",
-                    date_from=None,
-                    date_to=None,
+                    date_from=date_from,
+                    date_to=date_to,
                     guest_scope=guest_scope,
                 )
                 visit_rows.extend(page_rows)
