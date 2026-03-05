@@ -5,6 +5,15 @@
 {% set sort_name = "name_desc" if sort == "name_asc" else "name_asc" %}
 {% set user_sort_visits = "visits_asc" if user_sort == "visits_desc" else "visits_desc" %}
 {% set user_sort_last_visit = "last_visit_asc" if user_sort == "last_visit_desc" else "last_visit_desc" %}
+{% if date_from_str and date_to_str %}
+{% set user_rank_filter_label = date_from_str ~ " s/d " ~ date_to_str %}
+{% elif date_from_str %}
+{% set user_rank_filter_label = "Mulai " ~ date_from_str %}
+{% elif date_to_str %}
+{% set user_rank_filter_label = "Sampai " ~ date_to_str %}
+{% else %}
+{% set user_rank_filter_label = "Semua tanggal" %}
+{% endif %}
 
 {% block head_extra %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -410,9 +419,10 @@
                     <div>
                         <h2 class="h6 fw-bold mb-0">Ranking User Berdasarkan Kunjungan</h2>
                         <small class="text-muted">Urutan default: coordinator, lalu staff, kemudian role lainnya.</small>
+                        <small class="text-muted d-block">Mengikuti filter peta kunjungan: {{ user_rank_filter_label }}.</small>
                     </div>
                     <div class="d-flex flex-wrap gap-2 no-print">
-                        <a href="{{ url_for('daftar_tamu.export_user_rankings', format='excel', user_q=user_search_query, user_sort=user_sort, guest_scope=guest_scope) }}"
+                        <a href="{{ url_for('daftar_tamu.export_user_rankings', format='excel', user_q=user_search_query, user_sort=user_sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}"
                             class="btn btn-sm btn-outline-success">
                             <i class="bi bi-file-earmark-excel me-1"></i>Excel
                         </a>
