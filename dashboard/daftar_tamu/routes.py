@@ -126,13 +126,13 @@ _VISIT_DISTRIBUTION_BUCKETS = [
     {"key": "d5", "label": "5x", "min_visits": 5, "max_visits": 5},
     {"key": "d6", "label": "6x", "min_visits": 6, "max_visits": 6},
     {"key": "d7", "label": "7x", "min_visits": 7, "max_visits": 7},
-    {"key": "d8_plus", "label": ">=8x", "min_visits": 8, "max_visits": None},
+    {"key": "d8_plus", "label": "8+", "min_visits": 8, "max_visits": None},
 ]
 _VISIT_FREQUENCY_BUCKETS = [
     {"key": "f0", "label": "0x", "min_visits": 0, "max_visits": 0},
     {"key": "f1_4", "label": "1-4x", "min_visits": 1, "max_visits": 4},
     {"key": "f5_9", "label": "5-9x", "min_visits": 5, "max_visits": 9},
-    {"key": "f10_plus", "label": ">=10x", "min_visits": 10, "max_visits": None},
+    {"key": "f10_plus", "label": "10+", "min_visits": 10, "max_visits": None},
 ]
 
 
