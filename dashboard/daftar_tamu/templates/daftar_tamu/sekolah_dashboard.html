@@ -1128,27 +1128,48 @@
         setSudinResultsVisible(true);
     }
 
+    function appendAddGeneralGuestAction(message, withTopBorder) {
+        if (!generalResults) return;
+        var actionWrap = document.createElement('div');
+        actionWrap.className = 'px-3 py-3 text-center';
+        actionWrap.style.position = 'sticky';
+        actionWrap.style.bottom = '0';
+        actionWrap.style.background = 'var(--bg-surface)';
+        actionWrap.style.zIndex = '1';
+        if (withTopBorder) {
+            actionWrap.classList.add('border-top');
+        }
+
+        if (message) {
+            var messageEl = document.createElement('div');
+            messageEl.className = 'text-muted small mb-2';
+            messageEl.textContent = message;
+            actionWrap.appendChild(messageEl);
+        }
+
+        var btnAdd = document.createElement('button');
+        btnAdd.type = 'button';
+        btnAdd.className = 'btn btn-sm btn-outline-primary rounded-pill';
+        btnAdd.innerHTML = '<i class="bi bi-plus-circle me-1"></i>Tambah Baru';
+        btnAdd.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (addGeneralGuestContainer) addGeneralGuestContainer.classList.remove('d-none');
+            setGeneralResultsVisible(false);
+        });
+        actionWrap.appendChild(btnAdd);
+        generalResults.appendChild(actionWrap);
+    }
+
     function renderGeneralGuestResults(items) {
         if (!generalResults) return;
         generalResults.innerHTML = '';
+        if (addGeneralGuestContainer) addGeneralGuestContainer.classList.add('d-none');
+
         if (!items || items.length === 0) {
-            generalResults.innerHTML = '<div class="px-3 py-3 text-center">' +
-                '<div class="text-muted small mb-2">Tidak menemukan tamu/instansi?</div>' +
-                '<button type="button" class="btn btn-sm btn-outline-primary rounded-pill" id="btnShowAddGeneralGuest">' +
-                '<i class="bi bi-plus-circle me-1"></i>Tambah Tamu Baru' +
-                '</button></div>';
-            var btnAdd = document.getElementById('btnShowAddGeneralGuest');
-            if (btnAdd) {
-                btnAdd.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    if (addGeneralGuestContainer) addGeneralGuestContainer.classList.remove('d-none');
-                    setGeneralResultsVisible(false);
-                });
-            }
+            appendAddGeneralGuestAction('Tidak menemukan tamu/instansi?', false);
             setGeneralResultsVisible(true);
             return;
         }
-        if (addGeneralGuestContainer) addGeneralGuestContainer.classList.add('d-none');
         items.forEach(function (item) {
             var row = document.createElement('div');
             row.className = 'guest-result';
@@ -1182,6 +1203,7 @@
             });
             generalResults.appendChild(row);
         });
+        appendAddGeneralGuestAction('Belum sesuai? Tambah data tamu baru.', true);
         setGeneralResultsVisible(true);
     }
 
@@ -1346,19 +1368,8 @@
                 renderGeneralGuestResults(data.results || []);
             })
             .catch(function () {
-                generalResults.innerHTML = '<div class="px-3 py-3 text-center">' +
-                    '<div class="text-danger small mb-2">Gagal memuat data tamu umum.</div>' +
-                    '<button type="button" class="btn btn-sm btn-outline-primary rounded-pill" id="btnShowAddGeneralGuestErr">' +
-                    '<i class="bi bi-plus-circle me-1"></i>Tambah Tamu Baru' +
-                    '</button></div>';
-                var btnAddErr = document.getElementById('btnShowAddGeneralGuestErr');
-                if (btnAddErr) {
-                    btnAddErr.addEventListener('click', function (e) {
-                        e.stopPropagation();
-                        if (addGeneralGuestContainer) addGeneralGuestContainer.classList.remove('d-none');
-                        setGeneralResultsVisible(false);
-                    });
-                }
+                generalResults.innerHTML = '<div class="px-3 pt-3 text-center"><div class="text-danger small mb-2">Gagal memuat data tamu umum.</div></div>';
+                appendAddGeneralGuestAction('', false);
                 setGeneralResultsVisible(true);
             });
     }
