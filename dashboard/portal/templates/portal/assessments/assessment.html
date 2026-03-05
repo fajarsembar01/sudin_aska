@@ -800,6 +800,7 @@
     var uploadInProgress = false;
     var pendingRotationRoomSet = new Set();
     var rotationPersistPromises = {};
+    var pendingScoreRequests = {};
     var bypassSubmitRotationSync = false;
     var bypassDraftRotationSync = false;
     var locationRequestInFlight = null;
@@ -1421,28 +1422,43 @@
                 }
 
                 var pendingRotations = getPendingRotationRoomIds();
-                if (!pendingRotations.length) return;
+                var pendingScores = countPendingScoreRequests();
+                if (!pendingRotations.length && pendingScores === 0) return;
 
                 event.preventDefault();
                 var submitBtn = document.getElementById('submitAssessmentBtn');
                 var submitBtnHtml = submitBtn ? submitBtn.innerHTML : '';
                 if (submitBtn) {
                     submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan rotasi foto...';
+                    submitBtn.innerHTML = pendingScores > 0
+                        ? '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan nilai...'
+                        : '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan rotasi foto...';
                 }
 
-                syncPendingPhotoRotationsBeforeForm()
-                    .then(function (ok) {
-                        if (!ok) {
-                            showToast('Ada rotasi foto yang gagal disimpan. Coba lagi sebelum submit.');
-                            return;
-                        }
+                syncPendingScoreSavesBeforeForm()
+                    .then(function (scoreOk) {
+                        if (!scoreOk) throw new Error('score_sync_failed');
+                        return syncPendingPhotoRotationsBeforeForm();
+                    })
+                    .then(function (rotationOk) {
+                        if (!rotationOk) throw new Error('rotation_sync_failed');
                         bypassSubmitRotationSync = true;
                         if (typeof submitForm.requestSubmit === 'function') {
                             submitForm.requestSubmit();
                         } else {
                             submitForm.submit();
                         }
+                    })
+                    .catch(function (err) {
+                        if (err && err.message === 'score_sync_failed') {
+                            showToast('Ada nilai yang gagal disimpan. Periksa koneksi lalu coba submit lagi.');
+                            return;
+                        }
+                        if (err && err.message === 'rotation_sync_failed') {
+                            showToast('Ada rotasi foto yang gagal disimpan. Coba lagi sebelum submit.');
+                            return;
+                        }
+                        showToast('Sinkronisasi data gagal. Coba lagi.');
                     })
                     .finally(function () {
                         if (submitBtn) {
@@ -1462,28 +1478,43 @@
                 }
 
                 var pendingRotations = getPendingRotationRoomIds();
-                if (!pendingRotations.length) return;
+                var pendingScores = countPendingScoreRequests();
+                if (!pendingRotations.length && pendingScores === 0) return;
 
                 event.preventDefault();
                 var draftBtn = draftForm.querySelector('button[type="submit"]');
                 var draftBtnHtml = draftBtn ? draftBtn.innerHTML : '';
                 if (draftBtn) {
                     draftBtn.disabled = true;
-                    draftBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan rotasi foto...';
+                    draftBtn.innerHTML = pendingScores > 0
+                        ? '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan nilai...'
+                        : '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan rotasi foto...';
                 }
 
-                syncPendingPhotoRotationsBeforeForm()
-                    .then(function (ok) {
-                        if (!ok) {
-                            showToast('Ada rotasi foto yang gagal disimpan. Coba lagi sebelum simpan draft.');
-                            return;
-                        }
+                syncPendingScoreSavesBeforeForm()
+                    .then(function (scoreOk) {
+                        if (!scoreOk) throw new Error('score_sync_failed');
+                        return syncPendingPhotoRotationsBeforeForm();
+                    })
+                    .then(function (rotationOk) {
+                        if (!rotationOk) throw new Error('rotation_sync_failed');
                         bypassDraftRotationSync = true;
                         if (typeof draftForm.requestSubmit === 'function') {
                             draftForm.requestSubmit();
                         } else {
                             draftForm.submit();
                         }
+                    })
+                    .catch(function (err) {
+                        if (err && err.message === 'score_sync_failed') {
+                            showToast('Ada nilai yang gagal disimpan. Periksa koneksi lalu coba simpan draft lagi.');
+                            return;
+                        }
+                        if (err && err.message === 'rotation_sync_failed') {
+                            showToast('Ada rotasi foto yang gagal disimpan. Coba lagi sebelum simpan draft.');
+                            return;
+                        }
+                        showToast('Sinkronisasi data gagal. Coba lagi.');
                     })
                     .finally(function () {
                         if (draftBtn) {
@@ -1530,11 +1561,76 @@
         }
     });
 
+    function getScoreRequestKey(schoolRoomId, aspectId) {
+        return String(schoolRoomId) + ':' + String(aspectId);
+    }
+
+    function countPendingScoreRequests() {
+        return Object.keys(pendingScoreRequests).length;
+    }
+
+    function saveScoreRequest(schoolRoomId, aspectId, score) {
+        var key = getScoreRequestKey(schoolRoomId, aspectId);
+        var previousPromise = pendingScoreRequests[key] || Promise.resolve();
+
+        var requestPromise = previousPromise
+            .catch(function () { return null; })
+            .then(function () {
+                return fetch('/portal/assess/' + schoolId + '/score', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        assessment_id: assessmentId,
+                        school_room_id: schoolRoomId,
+                        aspect_id: aspectId,
+                        score: score
+                    })
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (!data.success) {
+                            throw new Error(data.message || 'Gagal menyimpan skor');
+                        }
+                        return data;
+                    });
+            });
+
+        pendingScoreRequests[key] = requestPromise;
+        return requestPromise.finally(function () {
+            if (pendingScoreRequests[key] === requestPromise) {
+                delete pendingScoreRequests[key];
+            }
+        });
+    }
+
+    function syncPendingScoreSavesBeforeForm() {
+        var pendingKeys = Object.keys(pendingScoreRequests);
+        if (!pendingKeys.length) {
+            return Promise.resolve(true);
+        }
+
+        return Promise.all(
+            pendingKeys.map(function (key) {
+                return pendingScoreRequests[key]
+                    .then(function () { return true; })
+                    .catch(function () { return false; });
+            })
+        ).then(function (results) {
+            return results.every(function (ok) { return ok; });
+        });
+    }
+
     function selectScore(btn) {
         var group = btn.closest('.score-group');
-        var schoolRoomId = group.dataset.schoolRoomId;
-        var aspectId = group.dataset.aspectId;
-        var score = parseInt(btn.dataset.score);
+        if (!group) return;
+
+        var schoolRoomId = parseInt(group.dataset.schoolRoomId, 10);
+        var aspectId = parseInt(group.dataset.aspectId, 10);
+        var score = parseInt(btn.dataset.score, 10);
+        if (Number.isNaN(schoolRoomId) || Number.isNaN(aspectId) || Number.isNaN(score)) {
+            showToast('Data penilaian tidak valid.');
+            return;
+        }
 
         // Update UI
         group.querySelectorAll('.score-btn').forEach(function (b) { b.classList.remove('selected'); });
@@ -1545,29 +1641,13 @@
         updateRoomProgress(schoolRoomId);
         updateRoomScore(schoolRoomId);
 
-        // Save to server
-        fetch('/portal/assess/' + schoolId + '/score', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                assessment_id: assessmentId,
-                school_room_id: schoolRoomId,
-                aspect_id: aspectId,
-                score: score
-            })
-        })
-            .then(function (res) { return res.json(); })
-            .then(function (data) {
-                if (data.success) {
-                    // showToast('Skor tersimpan'); // Optional: reduce noise
-                    updateRoomProgress(schoolRoomId);
-                    updateRoomScore(schoolRoomId);
-                } else {
-                    showToast('Gagal menyimpan: ' + data.message);
-                }
+        saveScoreRequest(schoolRoomId, aspectId, score)
+            .then(function () {
+                updateRoomProgress(schoolRoomId);
+                updateRoomScore(schoolRoomId);
             })
             .catch(function (err) {
-                showToast('Error: ' + err.message);
+                showToast('Gagal menyimpan: ' + err.message);
             });
     }
 

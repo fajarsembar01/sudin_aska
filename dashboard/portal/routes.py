@@ -2768,6 +2768,34 @@ def save_score(school_id: int) -> Response:
         if assessment["staff_id"] != user["id"] and user["role"] != "admin":
             return jsonify({"success": False, "message": "Unauthorized access to this assessment"}), 403
 
+        with get_cursor() as cur:
+            cur.execute(
+                """
+                SELECT 1
+                FROM portal_assessments asses
+                JOIN portal_school_rooms sr
+                  ON sr.id = %s
+                 AND sr.school_id = asses.school_id
+                JOIN portal_aspects asp
+                  ON asp.id = %s
+                 AND asp.room_id = sr.room_id
+                 AND asp.active = TRUE
+                WHERE asses.id = %s
+                  AND (
+                    asp.is_required = TRUE
+                    OR EXISTS (
+                        SELECT 1
+                        FROM portal_school_room_aspects psra
+                        WHERE psra.school_room_id = sr.id
+                          AND psra.aspect_id = asp.id
+                    )
+                  )
+                """,
+                (school_room_id, aspect_id, assessment_id),
+            )
+            if not cur.fetchone():
+                return jsonify({"success": False, "message": "Aspek tidak sesuai dengan ruangan yang dinilai"}), 400
+
         score_config = _build_assessment_score_config(assessment)
         min_score = score_config["min"]
         max_score = score_config["max"]

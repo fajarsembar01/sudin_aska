@@ -1471,8 +1471,19 @@ def submit_assessment(assessment_id: int) -> bool:
             SELECT %s, sr.id, pa.id, %s, NOW(), NOW()
             FROM portal_school_rooms sr
             JOIN portal_assessments a ON a.id = %s
-            JOIN portal_aspects pa ON pa.room_id = sr.room_id
+            JOIN portal_aspects pa
+                ON pa.room_id = sr.room_id
+               AND pa.active = TRUE
             WHERE sr.school_id = a.school_id
+              AND (
+                    pa.is_required = TRUE
+                    OR EXISTS (
+                        SELECT 1
+                        FROM portal_school_room_aspects psra
+                        WHERE psra.school_room_id = sr.id
+                          AND psra.aspect_id = pa.id
+                    )
+                  )
               AND NOT EXISTS (
                   SELECT 1 
                   FROM portal_assessment_scores s 
