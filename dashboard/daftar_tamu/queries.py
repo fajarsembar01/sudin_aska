@@ -559,6 +559,154 @@ def fetch_school_rankings(
     return rows, total_rows
 
 
+def fetch_school_visit_histogram(
+    *,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
+) -> Dict[int, int]:
+    """Return histogram of school visit counts for active negeri schools."""
+    scope = _normalize_guest_scope(guest_scope)
+    query = (
+        _ROLLUP_CTE
+        + """
+    SELECT
+        visit_count::int AS visit_count,
+        COUNT(*)::int AS school_count
+    FROM school_rollup
+    WHERE status = 'NEGERI'
+      AND jenjang NOT IN ('MI', 'MTS', 'MA')
+    GROUP BY visit_count
+    ORDER BY visit_count ASC
+    """
+    )
+    params: List[Any] = [date_from, date_from, date_to, date_to, scope, scope, scope]
+
+    histogram: Dict[int, int] = {}
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        for row in cur.fetchall():
+            visit_count = int(row.get("visit_count") or 0)
+            school_count = int(row.get("school_count") or 0)
+            histogram[visit_count] = school_count
+    return histogram
+
+
+def fetch_school_visit_bucket_rows(
+    *,
+    min_visits: int,
+    max_visits: Optional[int] = None,
+    page: int = 1,
+    per_page: int = 20,
+    sort_key: str = "visits_desc",
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
+) -> Tuple[List[Dict[str, Any]], int]:
+    """Fetch schools within a visit-count bucket for dashboard drill-down."""
+    scope = _normalize_guest_scope(guest_scope)
+    safe_page = max(1, page)
+    safe_per_page = max(5, min(per_page, 200))
+    offset = (safe_page - 1) * safe_per_page
+
+    safe_min_visits = max(0, int(min_visits))
+    safe_max_visits: Optional[int] = None
+    if max_visits is not None:
+        try:
+            parsed_max = int(max_visits)
+            if parsed_max >= safe_min_visits:
+                safe_max_visits = parsed_max
+        except (TypeError, ValueError):
+            safe_max_visits = None
+
+    bucket_sort_options = {
+        "visits_desc": "visit_count DESC, school_name ASC",
+        "visits_asc": "visit_count ASC, school_name ASC",
+        "name_asc": "school_name ASC",
+        "name_desc": "school_name DESC",
+        "last_visit_desc": "last_visit_date DESC NULLS LAST, school_name ASC",
+        "last_visit_asc": "last_visit_date ASC NULLS FIRST, school_name ASC",
+    }
+    safe_sort = sort_key if sort_key in bucket_sort_options else "visits_desc"
+    order_sql = bucket_sort_options[safe_sort]
+
+    bucket_clause = "visit_count >= %s"
+    bucket_params: List[Any] = [safe_min_visits]
+    if safe_max_visits is not None:
+        bucket_clause += " AND visit_count <= %s"
+        bucket_params.append(safe_max_visits)
+
+    count_query = (
+        _ROLLUP_CTE
+        + f"""
+    SELECT COUNT(*) AS total
+    FROM school_rollup
+    WHERE status = 'NEGERI'
+      AND jenjang NOT IN ('MI', 'MTS', 'MA')
+      AND {bucket_clause}
+    """
+    )
+
+    data_query = (
+        _ROLLUP_CTE
+        + f"""
+    SELECT
+        school_id,
+        npsn,
+        school_name,
+        jenjang,
+        kecamatan,
+        kelurahan,
+        visit_count,
+        last_visit_date,
+        last_guest_names,
+        last_guest_count
+    FROM school_rollup
+    WHERE status = 'NEGERI'
+      AND jenjang NOT IN ('MI', 'MTS', 'MA')
+      AND {bucket_clause}
+    ORDER BY {order_sql}
+    LIMIT %s OFFSET %s
+    """
+    )
+
+    base_params: List[Any] = [date_from, date_from, date_to, date_to, scope, scope, scope]
+
+    with get_cursor() as cur:
+        cur.execute(count_query, base_params + bucket_params)
+        count_row = cur.fetchone()
+        total_rows = int(dict(count_row).get("total") or 0) if count_row else 0
+
+        cur.execute(data_query, base_params + bucket_params + [safe_per_page, offset])
+        rows = [dict(row) for row in cur.fetchall()]
+
+    today = _today_jakarta()
+    for index, row in enumerate(rows, start=offset + 1):
+        row["rank"] = index
+        row["visit_count"] = int(row.get("visit_count") or 0)
+        last_visit = row.get("last_visit_date")
+        row["days_since_visit"] = (today - last_visit.date()).days if last_visit else None
+
+        names_raw = row.get("last_guest_names") or ""
+        names = [n.strip() for n in names_raw.split(",") if n.strip()]
+        guest_count = int(row.get("last_guest_count") or 0)
+        if not guest_count:
+            guest_count = len(names)
+        if names:
+            if len(names) > 2:
+                display = f"{names[0]} +{len(names) - 1}"
+            elif len(names) == 2:
+                display = f"{names[0]} & {names[1]}"
+            else:
+                display = names[0]
+        else:
+            display = None
+        row["last_guest_display"] = display
+        row["last_guest_count"] = guest_count
+
+    return rows, total_rows
+
+
 def fetch_user_rankings(
     *,
     page: int = 1,
@@ -1238,6 +1386,8 @@ def fetch_school_visit_history(
         t.id AS transaction_id,
         t.visit_at,
         t.purpose,
+        t.notes,
+        t.metadata,
         t.photo_path,
         guests.guest_names,
         guests.guest_count
@@ -1282,6 +1432,7 @@ def fetch_school_visit_history(
         rows = [dict(row) for row in cur.fetchall()]
 
     for row in rows:
+        row.update(_summarize_staff_notes(row.get("metadata")))
         names_raw = row.get("guest_names") or ""
         names = [n.strip() for n in names_raw.split(",") if n.strip()]
         guest_count = int(row.get("guest_count") or 0)

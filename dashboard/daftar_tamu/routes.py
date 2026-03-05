@@ -63,6 +63,8 @@ from .queries import (
     fetch_map_data,
     fetch_recent_visits,
     fetch_school_rankings,
+    fetch_school_visit_bucket_rows,
+    fetch_school_visit_histogram,
     fetch_school_visit_history,
     fetch_user_guestbook_history,
     fetch_user_rankings,
@@ -115,6 +117,23 @@ _STAFF_NOTE_LEVEL_TONE_MAP = {
     "tindak_lanjut": "warning",
     "mendesak": "danger",
 }
+_VISIT_DISTRIBUTION_BUCKETS = [
+    {"key": "d0", "label": "0x", "min_visits": 0, "max_visits": 0},
+    {"key": "d1", "label": "1x", "min_visits": 1, "max_visits": 1},
+    {"key": "d2", "label": "2x", "min_visits": 2, "max_visits": 2},
+    {"key": "d3", "label": "3x", "min_visits": 3, "max_visits": 3},
+    {"key": "d4", "label": "4x", "min_visits": 4, "max_visits": 4},
+    {"key": "d5", "label": "5x", "min_visits": 5, "max_visits": 5},
+    {"key": "d6", "label": "6x", "min_visits": 6, "max_visits": 6},
+    {"key": "d7", "label": "7x", "min_visits": 7, "max_visits": 7},
+    {"key": "d8_plus", "label": ">=8x", "min_visits": 8, "max_visits": None},
+]
+_VISIT_FREQUENCY_BUCKETS = [
+    {"key": "f0", "label": "0x", "min_visits": 0, "max_visits": 0},
+    {"key": "f1_4", "label": "1-4x", "min_visits": 1, "max_visits": 4},
+    {"key": "f5_9", "label": "5-9x", "min_visits": 5, "max_visits": 9},
+    {"key": "f10_plus", "label": ">=10x", "min_visits": 10, "max_visits": None},
+]
 
 
 daftar_tamu_bp = Blueprint(
@@ -1101,6 +1120,61 @@ def admin_dashboard() -> Response:
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
     summary = fetch_dashboard_summary(date_from=date_from, date_to=date_to, guest_scope=guest_scope)
+    visit_histogram = fetch_school_visit_histogram(
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+
+    def _count_histogram_bucket(min_visits: int, max_visits: Optional[int]) -> int:
+        total = 0
+        for visit_count, school_count in visit_histogram.items():
+            if visit_count < min_visits:
+                continue
+            if max_visits is not None and visit_count > max_visits:
+                continue
+            total += int(school_count or 0)
+        return total
+
+    visit_dist_labels = [bucket["label"] for bucket in _VISIT_DISTRIBUTION_BUCKETS]
+    visit_dist_values = [
+        _count_histogram_bucket(
+            int(bucket.get("min_visits") or 0),
+            int(bucket["max_visits"]) if bucket.get("max_visits") is not None else None,
+        )
+        for bucket in _VISIT_DISTRIBUTION_BUCKETS
+    ]
+    visit_frequency_groups = [
+        {
+            "key": bucket["key"],
+            "label": bucket["label"],
+            "school_count": _count_histogram_bucket(
+                int(bucket.get("min_visits") or 0),
+                int(bucket["max_visits"]) if bucket.get("max_visits") is not None else None,
+            ),
+        }
+        for bucket in _VISIT_FREQUENCY_BUCKETS
+    ]
+
+    top_visit_rankings, _ = fetch_school_rankings(
+        page=1,
+        per_page=10,
+        sort_key="visits_desc",
+        search_query="",
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+    bottom_visit_rankings, _ = fetch_school_rankings(
+        page=1,
+        per_page=10,
+        sort_key="visits_asc",
+        search_query="",
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+
     rankings, total_rows = fetch_school_rankings(
         page=page,
         per_page=per_page,
@@ -1171,6 +1245,11 @@ def admin_dashboard() -> Response:
     return render_template(
         "daftar_tamu/admin_dashboard.html",
         summary=summary,
+        visit_dist_labels=visit_dist_labels,
+        visit_dist_values=visit_dist_values,
+        visit_frequency_groups=visit_frequency_groups,
+        top_visit_rankings=top_visit_rankings,
+        bottom_visit_rankings=bottom_visit_rankings,
         rankings=rankings,
         user_rankings=user_rankings,
         user_total_rows=user_total_rows,
@@ -1561,10 +1640,140 @@ def admin_map_data() -> Response:
     return jsonify(fetch_map_data(date_from=date_from, date_to=date_to, guest_scope=guest_scope))
 
 
+@daftar_tamu_bp.route("/admin/rankings/more")
+@role_required("admin")
+def admin_rankings_more() -> Response:
+    """Load more school rankings for dashboard card."""
+    ensure_daftar_tamu_seed_data()
+
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    ranking_type = (request.args.get("type") or "best").strip().lower()
+    if ranking_type not in {"best", "worst"}:
+        ranking_type = "best"
+    sort_key = "visits_desc" if ranking_type == "best" else "visits_asc"
+
+    limit = max(1, min(_to_int(request.args.get("limit"), 10), 50))
+    offset = max(0, _to_int(request.args.get("offset"), 0))
+    page = (offset // limit) + 1
+    skip = offset % limit
+
+    rows, _ = fetch_school_rankings(
+        page=page,
+        per_page=limit + skip,
+        sort_key=sort_key,
+        search_query="",
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+    if skip:
+        rows = rows[skip:]
+    rows = rows[:limit]
+
+    payload = [
+        {
+            "rank": row.get("rank"),
+            "name": row.get("school_name") or "",
+            "jenjang": row.get("jenjang") or "",
+            "npsn": row.get("npsn") or "",
+            "visit_count": int(row.get("visit_count") or 0),
+        }
+        for row in rows
+    ]
+    return jsonify(payload)
+
+
+@daftar_tamu_bp.route("/admin/stats/visit-buckets")
+@role_required("admin")
+def admin_visit_bucket_detail() -> Response:
+    """Detailed school list for selected visit-count bucket."""
+    ensure_daftar_tamu_seed_data()
+
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+
+    source = (request.args.get("source") or "distribution").strip().lower()
+    if source not in {"distribution", "frequency"}:
+        source = "distribution"
+    bucket_options = _VISIT_DISTRIBUTION_BUCKETS if source == "distribution" else _VISIT_FREQUENCY_BUCKETS
+
+    selected_bucket_key = (request.args.get("bucket") or "").strip().lower()
+    selected_bucket = next((row for row in bucket_options if row.get("key") == selected_bucket_key), None)
+    if not selected_bucket:
+        selected_bucket = bucket_options[0]
+
+    sort = (request.args.get("sort") or "visits_desc").strip().lower()
+    if sort not in {"visits_desc", "visits_asc", "name_asc", "name_desc", "last_visit_desc", "last_visit_asc"}:
+        sort = "visits_desc"
+
+    per_page = _to_int(request.args.get("per_page"), 25)
+    per_page = max(10, min(per_page, 100))
+
+    page = _to_int(request.args.get("page"), 1)
+    page = max(1, page)
+
+    min_visits = int(selected_bucket.get("min_visits") or 0)
+    raw_max_visits = selected_bucket.get("max_visits")
+    max_visits = int(raw_max_visits) if raw_max_visits is not None else None
+
+    rows, total_rows = fetch_school_visit_bucket_rows(
+        min_visits=min_visits,
+        max_visits=max_visits,
+        page=page,
+        per_page=per_page,
+        sort_key=sort,
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if page > total_pages:
+        page = total_pages
+        rows, total_rows = fetch_school_visit_bucket_rows(
+            min_visits=min_visits,
+            max_visits=max_visits,
+            page=page,
+            per_page=per_page,
+            sort_key=sort,
+            date_from=date_from,
+            date_to=date_to,
+            guest_scope=guest_scope,
+        )
+
+    date_from_str = date_from.isoformat() if date_from else ""
+    date_to_str = date_to.isoformat() if date_to else ""
+
+    return render_template(
+        "daftar_tamu/admin_visit_bucket_detail.html",
+        source=source,
+        bucket_options=bucket_options,
+        selected_bucket=selected_bucket,
+        rows=rows,
+        total_rows=total_rows,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+        sort=sort,
+        date_from_str=date_from_str,
+        date_to_str=date_to_str,
+        guest_scope=guest_scope,
+        today_str=_today_jakarta().isoformat(),
+    )
+
+
 @daftar_tamu_bp.route("/admin/export")
 @role_required("admin")
 def export_rankings() -> Response:
-    """Export rankings in CSV/Excel-friendly CSV."""
+    """Export school rankings in CSV/Excel."""
     ensure_daftar_tamu_seed_data()
 
     date_from = _parse_iso_date(request.args.get("date_from"))
@@ -1589,7 +1798,7 @@ def export_rankings() -> Response:
         guest_scope=guest_scope,
     )
 
-    headers = [
+    csv_headers = [
         "Peringkat",
         "NPSN",
         "Nama Sekolah",
@@ -1600,9 +1809,9 @@ def export_rankings() -> Response:
         "Kunjungan Terakhir",
         "Tamu Terakhir",
     ]
-    data_rows: list[list[object]] = []
+    csv_rows: list[list[object]] = []
     for row in rows:
-        data_rows.append(
+        csv_rows.append(
             [
                 row.get("rank"),
                 row.get("npsn"),
@@ -1618,11 +1827,118 @@ def export_rankings() -> Response:
 
     file_format = (request.args.get("format") or "csv").strip().lower()
     if file_format in {"excel", "xlsx"}:
+        excel_headers = [
+            "Peringkat",
+            "NPSN",
+            "Nama Sekolah",
+            "Jenjang",
+            "Kecamatan",
+            "Kelurahan",
+            "Kunjungan Ke",
+            "Tanggal Kunjungan",
+            "Nama Pengunjung",
+            "Tujuan",
+            "Link Foto",
+            "Catatan Sekolah (opsional)",
+            "Catatan Staf/Koordinator (opsional)",
+        ]
+        detail_rows: list[list[object]] = []
+        visit_page_size = 100
+
+        for row in rows:
+            school_id = int(row.get("school_id") or 0)
+            if school_id <= 0:
+                continue
+
+            school_rank = row.get("rank")
+            school_npsn = row.get("npsn") or ""
+            school_name = row.get("school_name") or ""
+            school_jenjang = row.get("jenjang") or ""
+            school_kecamatan = row.get("kecamatan") or ""
+            school_kelurahan = row.get("kelurahan") or ""
+            visit_count = int(row.get("visit_count") or 0)
+
+            if visit_count <= 0:
+                detail_rows.append(
+                    [
+                        school_rank,
+                        school_npsn,
+                        school_name,
+                        school_jenjang,
+                        school_kecamatan,
+                        school_kelurahan,
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                    ]
+                )
+                continue
+
+            visit_rows, visit_total_rows = fetch_school_visit_history(
+                school_id=school_id,
+                page=1,
+                per_page=visit_page_size,
+                sort_key="date_asc",
+                search_query="",
+                date_from=date_from,
+                date_to=date_to,
+                guest_scope=guest_scope,
+            )
+            visit_total_pages = max(1, math.ceil(visit_total_rows / visit_page_size)) if visit_total_rows else 1
+            if visit_total_pages > 1:
+                for visit_page in range(2, visit_total_pages + 1):
+                    page_rows, _ = fetch_school_visit_history(
+                        school_id=school_id,
+                        page=visit_page,
+                        per_page=visit_page_size,
+                        sort_key="date_asc",
+                        search_query="",
+                        date_from=date_from,
+                        date_to=date_to,
+                        guest_scope=guest_scope,
+                    )
+                    visit_rows.extend(page_rows)
+
+            for visit_index, visit in enumerate(visit_rows, start=1):
+                photo_url = _build_photo_url(visit.get("photo_path"), external=True) or ""
+                detail_rows.append(
+                    [
+                        school_rank,
+                        school_npsn,
+                        school_name,
+                        school_jenjang,
+                        school_kecamatan,
+                        school_kelurahan,
+                        visit_index,
+                        _format_date_dmy(visit.get("visit_at")),
+                        visit.get("guest_names") or visit.get("guest_display") or "",
+                        visit.get("purpose") or "",
+                        photo_url,
+                        visit.get("notes") or "",
+                        visit.get("staff_note_text") or "",
+                    ]
+                )
+
+        excel_rows: list[list[object]] = []
+        for row in detail_rows:
+            excel_row = list(row)
+            photo_url = str(excel_row[10] or "").strip()
+            if photo_url:
+                safe_url = photo_url.replace('"', '""')
+                excel_row[10] = f'=HYPERLINK("{safe_url}","Foto")'
+            else:
+                excel_row[10] = ""
+            excel_rows.append(excel_row)
+
         filename = f"ranking_daftar_tamu_{_today_jakarta().isoformat()}.xlsx"
-        return _build_xlsx_response(headers, data_rows, filename)
+        return _build_xlsx_response(excel_headers, excel_rows, filename)
 
     filename = f"ranking_daftar_tamu_{_today_jakarta().isoformat()}.csv"
-    return _build_csv_response(headers, data_rows, filename)
+    return _build_csv_response(csv_headers, csv_rows, filename)
 
 
 @daftar_tamu_bp.route("/admin/export/users")

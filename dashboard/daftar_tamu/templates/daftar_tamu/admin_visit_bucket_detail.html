@@ -1,0 +1,172 @@
+{% extends "daftar_tamu/base_daftar_tamu.html" %}
+{% set page_title = "Detail Kelompok Kunjungan Sekolah" %}
+{% set sort_options = {
+    'visits_desc': 'Kunjungan terbanyak',
+    'visits_asc': 'Kunjungan tersedikit',
+    'name_asc': 'Nama A-Z',
+    'name_desc': 'Nama Z-A',
+    'last_visit_desc': 'Kunjungan terbaru',
+    'last_visit_asc': 'Kunjungan terlama'
+} %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div>
+                <h1 class="h4 fw-bold mb-1">Detail Kelompok Kunjungan Sekolah</h1>
+                <p class="text-muted mb-0">Daftar sekolah untuk bucket kunjungan terpilih pada filter aktif.</p>
+            </div>
+            <a href="{{ url_for('daftar_tamu.admin_dashboard', date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}"
+                class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-1"></i>Kembali ke Dashboard
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <input type="hidden" name="date_from" value="{{ date_from_str }}">
+            <input type="hidden" name="date_to" value="{{ date_to_str }}">
+            <input type="hidden" name="guest_scope" value="{{ guest_scope }}">
+            <input type="hidden" name="page" value="1">
+
+            <div class="col-md-3">
+                <label class="form-label small mb-1">Sumber Chart</label>
+                <select name="source" class="form-select" onchange="this.form.submit()">
+                    <option value="distribution" {% if source == 'distribution' %}selected{% endif %}>Sebaran Kunjungan</option>
+                    <option value="frequency" {% if source == 'frequency' %}selected{% endif %}>Kelompok Frekuensi</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label small mb-1">Bucket</label>
+                <select name="bucket" class="form-select" onchange="this.form.submit()">
+                    {% for option in bucket_options %}
+                    <option value="{{ option.key }}" {% if selected_bucket and selected_bucket.key == option.key %}selected{% endif %}>{{ option.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label small mb-1">Urutkan</label>
+                <select name="sort" class="form-select" onchange="this.form.submit()">
+                    {% for option_key, option_label in sort_options.items() %}
+                    <option value="{{ option_key }}" {% if sort == option_key %}selected{% endif %}>{{ option_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small mb-1">Baris</label>
+                <select name="per_page" class="form-select" onchange="this.form.submit()">
+                    {% for option in [10, 25, 50, 100] %}
+                    <option value="{{ option }}" {% if per_page == option %}selected{% endif %}>{{ option }} / halaman</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-1 d-grid">
+                <button type="submit" class="btn btn-primary">Go</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h2 class="h6 fw-bold mb-0">Bucket {{ selected_bucket.label if selected_bucket else '-' }}</h2>
+            <span class="badge text-bg-light">{{ total_rows }} sekolah</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-3">#</th>
+                        <th>Sekolah</th>
+                        <th>Kecamatan</th>
+                        <th class="text-end">Kunjungan</th>
+                        <th>Kunjungan Terakhir</th>
+                        <th>Tamu Terakhir</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        <td class="ps-3 fw-semibold">{{ row.rank }}</td>
+                        <td>
+                            <div class="fw-semibold">{{ row.school_name }}</div>
+                            <div class="small text-muted">{{ row.npsn or '-' }} &bull; {{ row.jenjang or '-' }}</div>
+                        </td>
+                        <td>{{ row.kecamatan or '-' }}</td>
+                        <td class="text-end">{{ row.visit_count or 0 }}</td>
+                        <td>
+                            {% if row.last_visit_date %}
+                            <div>{{ row.last_visit_date.strftime('%d %b %Y') }}</div>
+                            <div class="small text-muted">{{ row.days_since_visit }} hari lalu</div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ row.last_guest_display or '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">Tidak ada sekolah pada bucket ini.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% set start_row = ((page - 1) * per_page) + 1 if total_rows else 0 %}
+        {% set end_row = ((page - 1) * per_page) + (rows|length) if total_rows else 0 %}
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+            <small class="text-muted">Menampilkan {{ start_row }}-{{ end_row }} dari {{ total_rows }} sekolah</small>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_visit_bucket_detail',
+                        source=source,
+                        bucket=selected_bucket.key if selected_bucket else '',
+                        sort=sort,
+                        per_page=per_page,
+                        page=page-1,
+                        date_from=date_from_str,
+                        date_to=date_to_str,
+                        guest_scope=guest_scope) }}">Prev</a>
+                </li>
+                {% set start_page = 1 if page - 2 < 1 else page - 2 %}
+                {% set end_page = total_pages if page + 2 > total_pages else page + 2 %}
+                {% for p in range(start_page, end_page + 1) %}
+                <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_visit_bucket_detail',
+                        source=source,
+                        bucket=selected_bucket.key if selected_bucket else '',
+                        sort=sort,
+                        per_page=per_page,
+                        page=p,
+                        date_from=date_from_str,
+                        date_to=date_to_str,
+                        guest_scope=guest_scope) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_visit_bucket_detail',
+                        source=source,
+                        bucket=selected_bucket.key if selected_bucket else '',
+                        sort=sort,
+                        per_page=per_page,
+                        page=page+1,
+                        date_from=date_from_str,
+                        date_to=date_to_str,
+                        guest_scope=guest_scope) }}">Next</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+{% endblock %}
