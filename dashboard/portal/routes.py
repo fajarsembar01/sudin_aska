@@ -1847,8 +1847,6 @@ def sekolah_home() -> Response:
     )
 
 
-def _filter_assessment_rooms(rooms: list[dict], jenjang: str | None = None) -> list[dict]:
-    """Filter rooms to hide base classrooms and drop classroom names from other jenjangs."""
 def _annotate_follow_up_ticket(ticket: dict) -> dict:
     row = dict(ticket or {})
     status_value = (row.get("status") or "").strip().lower()
@@ -2451,31 +2449,8 @@ def follow_up_verify(follow_up_id: int) -> Response:
     return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
 
 
-def _filter_assessment_rooms(rooms: list[dict]) -> list[dict]:
+def _filter_assessment_rooms(rooms: list[dict], jenjang: str | None = None) -> list[dict]:
     """Filter rooms to hide base kelas when variant rooms exist."""
-    def _grade_and_variant(name: str) -> tuple[int | None, str | None]:
-        match = re.search(r"\bKelas\s+TK\s+([AB])\s*(\d+)\b", name or "", flags=re.IGNORECASE)
-        if match:
-            grade = -1 if match.group(1).upper() == "A" else 0
-            variant = match.group(2).strip() or None
-            return grade, variant
-        match = re.search(r"\bKelas\s+(\d+)(\s*[A-Za-z]+)?$", name or "", flags=re.IGNORECASE)
-        if not match:
-            return None, None
-        try:
-            grade = int(match.group(1))
-        except (TypeError, ValueError):
-            return None, None
-        variant = (match.group(2) or "").strip().upper() or None
-        return grade, variant
-
-    rooms_by_grade: dict[int, list[dict]] = {}
-    for room in rooms:
-        grade, variant = _grade_and_variant(room.get("room_name") or "")
-        if grade is None:
-            continue
-        rooms_by_grade.setdefault(grade, []).append({"room": room, "variant": variant})
-
     filtered_rooms: list[dict] = []
     rooms_by_key: dict[tuple[str | None, int], list[dict]] = {}
 
@@ -2483,7 +2458,11 @@ def _filter_assessment_rooms(rooms: list[dict]) -> list[dict]:
         name = (room.get("room_name") or "").strip()
         parsed = parse_room_info(name, jenjang)
         if parsed:
-            key = (parsed.get("bucket"), int(parsed.get("grade_level")))
+            try:
+                key = (parsed.get("bucket"), int(parsed.get("grade_level")))
+            except (TypeError, ValueError):
+                filtered_rooms.append(room)
+                continue
             rooms_by_key.setdefault(key, []).append({"room": room, "parsed": parsed})
             continue
         if parse_room_info(name):
