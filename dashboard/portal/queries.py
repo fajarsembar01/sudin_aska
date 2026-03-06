@@ -650,7 +650,7 @@ def list_reopen_requests(status: Optional[str] = None) -> List[Dict[str, Any]]:
 
 
 def fetch_admin_pending_summary() -> Dict[str, int]:
-    """Return counts of pending admin confirmations for Portal."""
+    """Return counts of pending admin confirmations for Portal (termasuk Call Center unread)."""
     query = """
         SELECT
             (SELECT COUNT(*) FROM dashboard_users WHERE account_status = 'pending') AS pending_users,
@@ -664,28 +664,36 @@ def fetch_admin_pending_summary() -> Dict[str, int]:
         row = cur.fetchone()
 
     if not row:
-        return {
+        summary = {
             "pending_users": 0,
             "pending_assignment_requests": 0,
             "pending_team_member_requests": 0,
             "pending_reopen_requests": 0,
             "pending_guestbook": 0,
-            "total": 0,
+            "pending_call_center": 0,
         }
+    else:
+        summary = {
+            "pending_users": int(row["pending_users"] or 0),
+            "pending_assignment_requests": int(row["pending_assignment_requests"] or 0),
+            "pending_team_member_requests": int(row["pending_team_member_requests"] or 0),
+            "pending_reopen_requests": int(row["pending_reopen_requests"] or 0),
+            "pending_guestbook": int(row["pending_guestbook"] or 0),
+            "pending_call_center": 0,
+        }
+        try:
+            from dashboard.call_center.queries import fetch_cc_unread_total
+            summary["pending_call_center"] = fetch_cc_unread_total()
+        except Exception:
+            summary["pending_call_center"] = 0
 
-    summary = {
-        "pending_users": int(row["pending_users"] or 0),
-        "pending_assignment_requests": int(row["pending_assignment_requests"] or 0),
-        "pending_team_member_requests": int(row["pending_team_member_requests"] or 0),
-        "pending_reopen_requests": int(row["pending_reopen_requests"] or 0),
-        "pending_guestbook": int(row["pending_guestbook"] or 0),
-    }
     summary["total"] = (
         summary["pending_users"]
         + summary["pending_assignment_requests"]
         + summary["pending_team_member_requests"]
         + summary["pending_reopen_requests"]
         + summary["pending_guestbook"]
+        + summary["pending_call_center"]
     )
     return summary
 

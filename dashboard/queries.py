@@ -2075,8 +2075,8 @@ def upsert_whatsapp_link_settings(wa_link: Optional[str], updated_by: Optional[i
         return True
 
 
-def list_telegram_admin_accounts() -> List[Dict[str, Any]]:
-    """List Telegram admin username mappings."""
+def list_telegram_admin_accounts(scope: str = "default") -> List[Dict[str, Any]]:
+    """List Telegram admin username mappings. scope: 'default' (umum) or 'call_center'."""
     with get_cursor() as cur:
         cur.execute(
             """
@@ -2084,14 +2084,17 @@ def list_telegram_admin_accounts() -> List[Dict[str, Any]]:
                 ta.id,
                 ta.telegram_username,
                 ta.dashboard_user_id,
+                ta.notification_scope,
                 ta.created_at,
                 u.full_name AS admin_name,
                 u.email AS admin_email,
                 u.role AS admin_role
             FROM telegram_admin_accounts ta
             LEFT JOIN dashboard_users u ON u.id = ta.dashboard_user_id
+            WHERE ta.notification_scope = %s
             ORDER BY LOWER(ta.telegram_username) ASC
-            """
+            """,
+            (scope,),
         )
         rows = cur.fetchall()
     return [dict(row) for row in rows]
@@ -2151,23 +2154,29 @@ def delete_telegram_notification_group_by_chat_id(chat_id: int) -> bool:
         return cur.rowcount > 0
 
 
-def upsert_telegram_admin_accounts(entries: List[Dict[str, Any]], created_by: Optional[int]) -> int:
-    """Upsert multiple Telegram admin mappings."""
+def upsert_telegram_admin_accounts(
+    entries: List[Dict[str, Any]], created_by: Optional[int], scope: str = "default"
+) -> int:
+    """Upsert multiple Telegram admin mappings. scope: 'default' or 'call_center'."""
     if not entries:
         return 0
     with get_cursor(commit=True) as cur:
         for entry in entries:
+            username = (entry.get("telegram_username") or "").strip().lstrip("@").lower()
+            if not username:
+                continue
             cur.execute(
                 """
-                INSERT INTO telegram_admin_accounts (dashboard_user_id, telegram_username, created_by)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (telegram_username) DO UPDATE
+                INSERT INTO telegram_admin_accounts (dashboard_user_id, telegram_username, notification_scope, created_by)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (telegram_username, notification_scope) DO UPDATE
                 SET dashboard_user_id = EXCLUDED.dashboard_user_id,
                     created_by = EXCLUDED.created_by
                 """,
                 (
                     entry.get("dashboard_user_id"),
-                    entry.get("telegram_username"),
+                    username,
+                    scope,
                     created_by,
                 ),
             )
@@ -2181,7 +2190,7 @@ def delete_telegram_admin_account(mapping_id: int) -> bool:
         return cur.rowcount > 0
 
 
-def get_telegram_admin_by_username(username: str) -> Optional[Dict[str, Any]]:
+def get_telegram_admin_by_username(username: str, scope: str = "default") -> Optional[Dict[str, Any]]:
     """Return admin mapping if username is authorized and linked to admin user."""
     if not username:
         return None
@@ -2200,10 +2209,11 @@ def get_telegram_admin_by_username(username: str) -> Optional[Dict[str, Any]]:
             FROM telegram_admin_accounts ta
             JOIN dashboard_users u ON u.id = ta.dashboard_user_id
             WHERE ta.telegram_username = %s
+              AND ta.notification_scope = %s
               AND u.role = 'admin'
             LIMIT 1
             """,
-            (normalized,),
+            (normalized, scope),
         )
         row = cur.fetchone()
     return dict(row) if row else None

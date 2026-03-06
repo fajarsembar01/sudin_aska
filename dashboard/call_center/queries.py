@@ -292,69 +292,6 @@ def delete_cc_telegram_group(group_id: int) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Telegram allowed users (who may receive CC notifications)
-# ---------------------------------------------------------------------------
-
-def list_cc_telegram_allowed_users() -> list[dict]:
-    """List dashboard users who are allowed to receive CC Telegram notifications."""
-    try:
-        with get_cursor() as cur:
-            cur.execute(
-                """
-                SELECT a.id, a.user_id, a.created_at,
-                       u.full_name, u.email
-                FROM cc_telegram_allowed_users a
-                JOIN dashboard_users u ON u.id = a.user_id
-                ORDER BY u.full_name
-                """
-            )
-            return [dict(r) for r in cur.fetchall()]
-    except Exception:
-        return []
-
-
-def add_cc_telegram_allowed_user(user_id: int) -> bool:
-    """Add a user to the allowed list. Returns True on success."""
-    try:
-        with get_cursor(commit=True) as cur:
-            cur.execute(
-                """
-                INSERT INTO cc_telegram_allowed_users (user_id)
-                VALUES (%(uid)s)
-                ON CONFLICT (user_id) DO NOTHING
-                """,
-                {"uid": user_id},
-            )
-        return True
-    except Exception:
-        return False
-
-
-def remove_cc_telegram_allowed_user(user_id: int) -> bool:
-    """Remove a user from the allowed list."""
-    with get_cursor(commit=True) as cur:
-        cur.execute("DELETE FROM cc_telegram_allowed_users WHERE user_id = %(uid)s", {"uid": user_id})
-        return cur.rowcount > 0
-
-
-def list_dashboard_admins_for_cc() -> list[dict]:
-    """List dashboard users with role admin (for dropdown in CC Telegram settings)."""
-    try:
-        with get_cursor() as cur:
-            cur.execute(
-                """
-                SELECT id, full_name, email
-                FROM dashboard_users
-                WHERE role = 'admin'
-                ORDER BY full_name
-                """
-            )
-            return [dict(r) for r in cur.fetchall()]
-    except Exception:
-        return []
-
-
-# ---------------------------------------------------------------------------
 # Send Telegram notification for Call Center
 # ---------------------------------------------------------------------------
 

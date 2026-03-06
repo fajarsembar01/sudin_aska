@@ -1126,100 +1126,10 @@
 
                     {% if current_user and current_user.role == 'admin' %}
                     {% set pending_total = admin_pending.total if admin_pending else 0 %}
-                    {% set pending_users = admin_pending.pending_users if admin_pending else 0 %}
-                    {% set pending_assignments = admin_pending.pending_assignment_requests if admin_pending else 0 %}
-                    {% set pending_team = admin_pending.pending_team_member_requests if admin_pending else 0 %}
-                    {% set pending_reopen = admin_pending.pending_reopen_requests if admin_pending else 0 %}
-                    {% set pending_guestbook = admin_pending.pending_guestbook if admin_pending else 0 %}
-                    <div class="dropdown notification-menu">
-                        <button class="notification-toggle" type="button" data-bs-toggle="dropdown"
-                            id="adminNotificationToggle" aria-expanded="false" aria-label="Notifikasi admin">
-                            <i class="bi bi-bell"></i>
-                            <span class="notification-badge{% if pending_total == 0 %} d-none{% endif %}"
-                                id="adminPendingTotalBadge" data-count="{{ pending_total }}">{{ pending_total }}</span>
-                        </button>
-                        <div class="dropdown-menu dropdown-menu-end notification-dropdown">
-                            <div class="notification-header">
-                                <span class="fw-semibold">Butuh Konfirmasi</span>
-                                <div class="notification-controls">
-                                    <button type="button" class="btn btn-outline-secondary btn-sm notification-refresh"
-                                        id="adminPendingRefresh" title="Perbarui">
-                                        <i class="bi bi-arrow-clockwise"></i>
-                                    </button>
-                                    <span
-                                        class="badge bg-danger-subtle text-danger{% if pending_total == 0 %} d-none{% endif %}"
-                                        id="adminPendingTotalLabel" data-count="{{ pending_total }}">{{ pending_total
-                                        }}</span>
-                                </div>
-                            </div>
-                            <div id="adminPendingEmpty"
-                                class="notification-empty text-muted small{% if pending_total > 0 %} d-none{% endif %}">
-                                Tidak ada permintaan yang menunggu.
-                            </div>
-                            <a class="notification-item{% if pending_users == 0 %} d-none{% endif %}"
-                                id="adminPendingUsersItem" href="{{ url_for('portal.manage_users') }}">
-                                <div>
-                                    <div class="fw-semibold">User baru</div>
-                                    <small>Menunggu verifikasi akun</small>
-                                </div>
-                                <span class="badge bg-warning text-dark" id="adminPendingUsersCount"
-                                    data-count="{{ pending_users }}">{{ pending_users }}</span>
-                            </a>
-                            <a class="notification-item{% if pending_assignments == 0 %} d-none{% endif %}"
-                                id="adminPendingAssignmentItem" href="{{ url_for('portal.admin_manage_staff') }}">
-                                <div>
-                                    <div class="fw-semibold">Permintaan penugasan</div>
-                                    <small>Koordinator ajukan penugasan staff</small>
-                                </div>
-                                <span class="badge bg-info text-dark" id="adminPendingAssignmentCount"
-                                    data-count="{{ pending_assignments }}">{{ pending_assignments }}</span>
-                            </a>
-                            <a class="notification-item{% if pending_team == 0 %} d-none{% endif %}"
-                                id="adminPendingTeamItem" href="{{ url_for('portal.manage_monev_teams') }}">
-                                <div>
-                                    <div class="fw-semibold">Permintaan anggota tim</div>
-                                    <small>Persetujuan anggota monev</small>
-                                </div>
-                                <span class="badge bg-primary" id="adminPendingTeamCount"
-                                    data-count="{{ pending_team }}">{{ pending_team }}</span>
-                            </a>
-                            <a class="notification-item{% if pending_reopen == 0 %} d-none{% endif %}"
-                                id="adminPendingReopenItem" href="{{ url_for('portal.admin_reopen_requests') }}">
-                                <div>
-                                    <div class="fw-semibold">Permintaan reopen</div>
-                                    <small>Penilaian diajukan untuk dibuka</small>
-                                </div>
-                                <span class="badge bg-danger" id="adminPendingReopenCount"
-                                    data-count="{{ pending_reopen }}">{{ pending_reopen }}</span>
-                            </a>
-                            <a class="notification-item{% if pending_guestbook == 0 %} d-none{% endif %}"
-                                id="adminPendingGuestbookItem" href="{{ url_for('daftar_tamu.admin_validation') }}">
-                                <div>
-                                    <div class="fw-semibold">Verifikasi daftar tamu</div>
-                                    <small>Transaksi buku tamu menunggu validasi</small>
-                                </div>
-                                <span class="badge bg-success" id="adminPendingGuestbookCount"
-                                    data-count="{{ pending_guestbook }}">{{ pending_guestbook }}</span>
-                            </a>
-                            <div class="notification-divider" id="adminPendingQuickDivider"></div>
-                            <div class="notification-quick" id="adminPendingQuickList"
-                                data-users-url="{{ url_for('portal.manage_users') }}"
-                                data-user-verify-url="{{ url_for('portal.manage_users') }}"
-                                data-assignment-url="{{ url_for('portal.admin_manage_staff') }}"
-                                data-team-url="{{ url_for('portal.manage_monev_teams') }}"
-                                data-reopen-url="{{ url_for('portal.admin_reopen_requests') }}"
-                                data-guestbook-url="{{ url_for('daftar_tamu.admin_validation') }}"
-                                data-undo-window-seconds="{{ undo_window_seconds | default(7) }}"
-                                data-approve-assignment="{{ url_for('portal.admin_approve_assignment_request', request_id=0) }}"
-                                data-reject-assignment="{{ url_for('portal.admin_reject_assignment_request', request_id=0) }}"
-                                data-approve-reopen="{{ url_for('portal.approve_reopen', assessment_id=0) }}"
-                                data-reject-reopen="{{ url_for('portal.reject_reopen', assessment_id=0) }}"
-                                data-approve-guestbook="{{ url_for('daftar_tamu.admin_transaction_approve', transaction_id=0) }}"
-                                data-reject-guestbook="{{ url_for('daftar_tamu.admin_transaction_reject', transaction_id=0) }}"
-                                data-preview-url="{{ url_for('portal.admin_pending_preview') }}">
-                            </div>
-                        </div>
-                    </div>
+                    {% set total_count = pending_total %}
+                    {% set notification_items = admin_notification_items %}
+                    {% set notification_extra_include = 'portal/components/_notification_admin_quick.html' %}
+                    {% include "portal/components/_notification_dropdown.html" with context %}
                     {% endif %}
 
                     {% if current_user and current_user.role in ['staff', 'coordinator', 'sekolah'] %}
@@ -1479,6 +1389,10 @@
             guestbook: {
                 item: document.getElementById('adminPendingGuestbookItem'),
                 count: document.getElementById('adminPendingGuestbookCount')
+            },
+            call_center: {
+                item: document.getElementById('adminPendingCCItem'),
+                count: document.getElementById('adminPendingCCCount')
             }
         };
         var hasPendingUI = !!document.getElementById('adminNotificationToggle');
@@ -1786,7 +1700,8 @@
                 + getCount(elements.assignment.count)
                 + getCount(elements.team.count)
                 + getCount(elements.reopen.count)
-                + getCount(elements.guestbook.count);
+                + getCount(elements.guestbook.count)
+                + (elements.call_center && elements.call_center.count ? getCount(elements.call_center.count) : 0);
 
             setCount(elements.totalBadge, total);
             setCount(elements.totalLabel, total);
@@ -1812,6 +1727,7 @@
             setItem('team', summary.pending_team_member_requests || 0);
             setItem('reopen', summary.pending_reopen_requests || 0);
             setItem('guestbook', summary.pending_guestbook || 0);
+            if (elements.call_center) setItem('call_center', summary.pending_call_center || 0);
             updateTotals();
         };
 

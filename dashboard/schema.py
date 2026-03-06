@@ -268,9 +268,10 @@ CREATE TABLE IF NOT EXISTS telegram_admin_accounts (
     id SERIAL PRIMARY KEY,
     dashboard_user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
     telegram_username TEXT NOT NULL,
+    notification_scope TEXT NOT NULL DEFAULT 'default',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
-    UNIQUE (telegram_username)
+    UNIQUE (telegram_username, notification_scope)
 );
 """
 
@@ -918,6 +919,22 @@ CREATE TABLE IF NOT EXISTS cc_telegram_settings (
 );
 """
 
+# Migration: add notification_scope to telegram_admin_accounts (existing DBs)
+_TELEGRAM_ADMIN_SCOPE_MIGRATION = """
+ALTER TABLE telegram_admin_accounts ADD COLUMN IF NOT EXISTS notification_scope TEXT NOT NULL DEFAULT 'default';
+"""
+_TELEGRAM_ADMIN_DROP_OLD_UNIQUE = """
+ALTER TABLE telegram_admin_accounts DROP CONSTRAINT IF EXISTS telegram_admin_accounts_telegram_username_key;
+"""
+_TELEGRAM_ADMIN_ADD_SCOPE_UNIQUE = """
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'telegram_admin_accounts_telegram_username_scope_key') THEN
+    ALTER TABLE telegram_admin_accounts ADD CONSTRAINT telegram_admin_accounts_telegram_username_scope_key UNIQUE (telegram_username, notification_scope);
+  END IF;
+END $$;
+"""
+
 _CC_TELEGRAM_GROUPS_SQL = """
 CREATE TABLE IF NOT EXISTS cc_telegram_groups (
     id SERIAL PRIMARY KEY,
@@ -928,15 +945,6 @@ CREATE TABLE IF NOT EXISTS cc_telegram_groups (
     created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
 );
 """
-
-_CC_TELEGRAM_ALLOWED_USERS_SQL = """
-CREATE TABLE IF NOT EXISTS cc_telegram_allowed_users (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL UNIQUE REFERENCES dashboard_users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-"""
-
 
 def ensure_dashboard_schema() -> None:
     """Create core dashboard tables when they do not yet exist."""
@@ -971,6 +979,9 @@ def ensure_dashboard_schema() -> None:
         _WHATSAPP_LINK_SETTINGS_SQL,
         _TELEGRAM_ADMIN_ACCOUNTS_SQL,
         _TELEGRAM_ADMIN_ACCOUNTS_INDEX_USER,
+        _TELEGRAM_ADMIN_SCOPE_MIGRATION,
+        _TELEGRAM_ADMIN_DROP_OLD_UNIQUE,
+        _TELEGRAM_ADMIN_ADD_SCOPE_UNIQUE,
         _TELEGRAM_NOTIFICATION_GROUPS_SQL,
         # Portal PANBERSS tables
         _PORTAL_KECAMATAN_SQL,
@@ -1165,7 +1176,6 @@ def ensure_dashboard_schema() -> None:
         _CC_MESSAGES_INDEX_SQL,
         _CC_TELEGRAM_SETTINGS_SQL,
         _CC_TELEGRAM_GROUPS_SQL,
-        _CC_TELEGRAM_ALLOWED_USERS_SQL,
     )
     
     # Execute statements one by one to ensure partial success and better error reporting

@@ -23,6 +23,12 @@ from flask import (
 )
 
 from ..auth import current_user, role_required
+from dashboard.queries import (
+    list_telegram_admin_accounts,
+    upsert_telegram_admin_accounts,
+    delete_telegram_admin_account,
+    list_admin_users,
+)
 from .queries import (
     upsert_cc_conversation,
     fetch_cc_conversations,
@@ -39,10 +45,6 @@ from .queries import (
     list_cc_telegram_groups,
     delete_cc_telegram_group,
     send_cc_telegram_notification,
-    list_cc_telegram_allowed_users,
-    add_cc_telegram_allowed_user,
-    remove_cc_telegram_allowed_user,
-    list_dashboard_admins_for_cc,
 )
 from . import call_center_bp
 
@@ -351,35 +353,59 @@ def settings_telegram() -> Response:
             else:
                 flash(f"Tes notifikasi terkirim ke {result['sent']} grup.", "success")
 
-        elif action == "add_allowed_user":
-            uid = request.form.get("user_id", type=int)
-            if uid and add_cc_telegram_allowed_user(uid):
-                flash("User ditambahkan ke daftar penerima notifikasi.", "success")
-            else:
-                flash("Gagal menambahkan user.", "danger")
+        elif action == "add_admins":
+            raw_usernames = request.form.getlist("telegram_username[]")
+            raw_admin_ids = request.form.getlist("dashboard_user_id[]")
+            admin_users_list = list_admin_users()
+            admin_ids = {str(u.get("id")) for u in admin_users_list if u.get("id") is not None}
+            entries_map = {}
+            errors = []
+            for idx, (raw_username, raw_admin_id) in enumerate(zip(raw_usernames, raw_admin_ids), start=1):
+                username = (raw_username or "").strip().lstrip("@").lower()
+                admin_id = (raw_admin_id or "").strip()
+                if not username and not admin_id:
+                    continue
+                if not username:
+                    errors.append(f"Username Telegram di baris {idx} kosong.")
+                    continue
+                if admin_id not in admin_ids:
+                    errors.append(f"Admin dashboard belum dipilih untuk @{username}.")
+                    continue
+                entries_map[username] = int(admin_id)
+            if entries_map:
+                payload = [
+                    {"telegram_username": u, "dashboard_user_id": uid}
+                    for u, uid in entries_map.items()
+                ]
+                saved = upsert_telegram_admin_accounts(payload, created_by=actor.get("id"), scope="call_center")
+                flash(f"{saved} admin Telegram Call Center disimpan.", "success")
+            for err in errors:
+                flash(err, "warning")
 
-        elif action == "remove_allowed_user":
-            uid = request.form.get("user_id", type=int)
-            if uid and remove_cc_telegram_allowed_user(uid):
-                flash("User dihapus dari daftar penerima notifikasi.", "success")
+        elif action == "delete_admin":
+            mapping_id = (request.form.get("mapping_id") or "").strip()
+            if mapping_id.isdigit():
+                deleted = delete_telegram_admin_account(int(mapping_id))
+                if deleted:
+                    flash("Admin Telegram dihapus dari daftar penerima notifikasi Call Center.", "success")
+                else:
+                    flash("Mapping tidak ditemukan.", "warning")
             else:
-                flash("Gagal menghapus user.", "danger")
+                flash("ID mapping tidak valid.", "danger")
 
         return redirect(url_for("call_center.settings_telegram"))
 
     telegram_settings = fetch_cc_telegram_settings()
     telegram_groups = list_cc_telegram_groups()
-    allowed_users = list_cc_telegram_allowed_users()
-    admin_users = list_dashboard_admins_for_cc()
-    allowed_user_ids = {u["user_id"] for u in allowed_users}
+    telegram_admins = list_telegram_admin_accounts(scope="call_center")
+    admin_users = list_admin_users()
 
     return render_template(
         "cc_settings_telegram.html",
         telegram_settings=telegram_settings,
         telegram_groups=telegram_groups,
-        allowed_users=allowed_users,
+        telegram_admins=telegram_admins,
         admin_users=admin_users,
-        allowed_user_ids=allowed_user_ids,
     )
 
 

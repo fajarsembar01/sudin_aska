@@ -39,6 +39,13 @@
             </ul>
 
             <div class="d-flex align-items-center gap-3 user-nav-actions">
+                {% if current_user and current_user.role == 'admin' %}
+                {% set pending_total = admin_pending.total if admin_pending else 0 %}
+                {% set total_count = pending_total %}
+                {% set notification_items = admin_notification_items %}
+                {% set notification_extra_include = 'portal/components/_notification_admin_quick.html' %}
+                {% include "portal/components/_notification_dropdown.html" with context %}
+                {% endif %}
                 <a href="{{ url_for('main.admin_select_role') }}"
                     class="btn btn-outline-secondary btn-sm text-nowrap oss-home-btn">
                     <i class="bi bi-house me-1"></i><span class="oss-home-label">Home</span>

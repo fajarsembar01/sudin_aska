@@ -11,13 +11,13 @@
 
 <div class="row g-4">
     <!-- Bot Token & Grup -->
-    <div class="col-lg-6">
+    <div class="col-lg-5">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-transparent">
                 <h6 class="mb-0"><i class="bi bi-telegram text-primary me-2"></i>Bot & Grup</h6>
             </div>
             <div class="card-body">
-                <form method="post" action="{{ url_for('call_center.settings_telegram') }}" class="mb-3">
+                <form method="post" action="{{ url_for('call_center.settings_telegram') }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="save_telegram_token">
                     <label class="form-label small fw-bold">Bot Token</label>
@@ -29,7 +29,7 @@
                     <div class="form-text">Token dari @BotFather khusus untuk notifikasi Call Center.</div>
                 </form>
 
-                <h6 class="small fw-bold text-secondary">Grup Notifikasi</h6>
+                <h6 class="small fw-bold text-secondary mt-3">Grup Notifikasi</h6>
                 {% if telegram_groups %}
                 <div class="list-group list-group-flush mb-3">
                     {% for g in telegram_groups %}
@@ -67,62 +67,128 @@
         </div>
     </div>
 
-    <!-- User yang boleh dapat notif -->
-    <div class="col-lg-6">
+    <!-- User yang boleh dapat notif (flow sama dengan /settings/telegram-notifications) -->
+    <div class="col-lg-7">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-transparent">
-                <h6 class="mb-0"><i class="bi bi-person-check text-primary me-2"></i>User yang boleh dapat notifikasi</h6>
+                <h6 class="mb-0"><i class="bi bi-person-check text-primary me-2"></i>Admin Telegram (penerima notifikasi Call Center)</h6>
             </div>
             <div class="card-body">
-                <p class="small text-secondary mb-3">Daftar user (admin) yang diizinkan menerima notifikasi Telegram Call Center.</p>
+                <p class="text-muted small mb-3">
+                    Username Telegram + Admin Dashboard yang diizinkan menerima notifikasi Call Center. Flow sama dengan
+                    <a href="{{ url_for('auth.telegram_notifications') }}" target="_blank">Notifikasi Telegram umum</a>; data disimpan di tabel yang sama dengan kolom pembeda scope.
+                </p>
 
-                {% if allowed_users %}
-                <ul class="list-group list-group-flush mb-3">
-                    {% for u in allowed_users %}
-                    <li class="list-group-item d-flex align-items-center justify-content-between px-0">
-                        <div>
-                            <i class="bi bi-person-fill text-primary me-2"></i>
-                            <strong>{{ u.full_name or u.email }}</strong>
-                            {% if u.email %}<small class="text-secondary ms-2">{{ u.email }}</small>{% endif %}
-                        </div>
-                        <form method="post" action="{{ url_for('call_center.settings_telegram') }}" class="d-inline">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="action" value="remove_allowed_user">
-                            <input type="hidden" name="user_id" value="{{ u.user_id }}">
-                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Hapus dari daftar">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
-                        </form>
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                <p class="text-secondary small mb-3">Belum ada user. Tambahkan dari daftar admin di bawah.</p>
-                {% endif %}
-
-                <form method="post" action="{{ url_for('call_center.settings_telegram') }}" class="d-flex gap-2 flex-wrap align-items-end">
+                <form method="post" id="ccTelegramAdminForm">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="action" value="add_allowed_user">
-                    <div class="flex-grow-1" style="min-width: 200px;">
-                        <label class="form-label small fw-bold">Tambah user (admin)</label>
-                        <select name="user_id" class="form-select form-select-sm">
-                            <option value="">-- Pilih user --</option>
-                            {% for a in admin_users %}
-                            {% if a.id not in allowed_user_ids %}
-                            <option value="{{ a.id }}">{{ a.full_name or a.email }}{% if a.email %} ({{ a.email }}){% endif %}</option>
-                            {% endif %}
-                            {% endfor %}
-                        </select>
-                        {% if admin_users|length > 0 and allowed_user_ids|length >= admin_users|length %}
-                        <small class="text-muted d-block mt-1">Semua admin sudah ditambahkan.</small>
-                        {% endif %}
+                    <input type="hidden" name="action" value="add_admins">
+                    <div id="ccAdminRows">
+                        <div class="row g-2 align-items-end admin-row">
+                            <div class="col-md-6">
+                                <label class="form-label small">Username Telegram</label>
+                                <input type="text" name="telegram_username[]" class="form-control form-control-sm"
+                                    placeholder="@username">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label small">Admin Dashboard</label>
+                                <select name="dashboard_user_id[]" class="form-select form-select-sm">
+                                    <option value="">Pilih admin</option>
+                                    {% for admin in admin_users %}
+                                    <option value="{{ admin.id }}">{{ admin.full_name }} ({{ admin.email }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-1 d-grid">
+                                <button type="button" class="btn btn-outline-danger btn-sm remove-admin-row" title="Hapus baris">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-plus-lg me-1"></i>Tambah
-                    </button>
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="ccAddAdminRow">
+                            <i class="bi bi-plus-lg me-1"></i>Tambah Baris
+                        </button>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-check-lg me-1"></i>Simpan Admin
+                        </button>
+                    </div>
                 </form>
+
+                <div class="table-responsive mt-4">
+                    <table class="table table-sm align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Username</th>
+                                <th>Admin Dashboard</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in telegram_admins %}
+                            <tr>
+                                <td>@{{ item.telegram_username }}</td>
+                                <td>
+                                    <div class="fw-semibold">{{ item.admin_name or '-' }}</div>
+                                    <div class="text-muted small">{{ item.admin_email or '-' }}</div>
+                                </td>
+                                <td class="text-end">
+                                    <form method="post" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="action" value="delete_admin">
+                                        <input type="hidden" name="mapping_id" value="{{ item.id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Hapus @{{ item.telegram_username }} dari penerima notifikasi Call Center?')">
+                                            <i class="bi bi-trash me-1"></i>Hapus
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted small">Belum ada admin Telegram untuk Call Center.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-muted small mb-0">Pastikan admin sudah chat ke bot Call Center agar notifikasi bisa terkirim.</p>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var adminRows = document.getElementById('ccAdminRows');
+    var addBtn = document.getElementById('ccAddAdminRow');
+    function clearRow(row) {
+        row.querySelectorAll('input[type="text"]').forEach(function (i) { i.value = ''; });
+        var sel = row.querySelector('select');
+        if (sel) sel.selectedIndex = 0;
+    }
+    function bindRemove(row) {
+        var btn = row.querySelector('.remove-admin-row');
+        if (!btn) return;
+        btn.addEventListener('click', function () {
+            var rows = adminRows.querySelectorAll('.admin-row');
+            if (rows.length > 1) row.remove();
+            else clearRow(row);
+        });
+    }
+    if (addBtn && adminRows) {
+        addBtn.addEventListener('click', function () {
+            var tpl = adminRows.querySelector('.admin-row');
+            if (!tpl) return;
+            var clone = tpl.cloneNode(true);
+            clearRow(clone);
+            adminRows.appendChild(clone);
+            bindRemove(clone);
+        });
+    }
+    if (adminRows) adminRows.querySelectorAll('.admin-row').forEach(bindRemove);
+})();
+</script>
 {% endblock %}

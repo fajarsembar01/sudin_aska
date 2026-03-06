@@ -1717,10 +1717,10 @@ def home() -> Response:
         ]
         return render_template(
             "role_selection.html",
-            page_title="Pilih Layanan Staff - ASKA Portal",
-            page_description="Pilih layanan untuk Staff",
+            page_title="ASKA Portal - Pilih Layanan Staff ",
+            page_description="Pilih layanan ASKA Portal untuk Staff",
             header_title=header_title,
-            header_subtitle="Silakan pilih layanan yang ingin Anda akses",
+            header_subtitle="Silakan pilih layanan ASKA Portal",
             cards=cards,
             default_col_class="col-md-6 col-12",
             show_logout=True,
@@ -1744,10 +1744,10 @@ def home() -> Response:
         ]
         return render_template(
             "role_selection.html",
-            page_title="Pilih Layanan Koordinator - ASKA Portal",
-            page_description="Pilih layanan untuk Koordinator",
+            page_title="ASKA Portal - Pilih Layanan Koordinator",
+            page_description="Pilih layanan ASKA Portal untuk Koordinator",
             header_title=header_title,
-            header_subtitle="Silakan pilih layanan yang ingin Anda akses",
+            header_subtitle="Silakan pilih layanan ASKA Portal",
             cards=cards,
             default_col_class="col-md-6 col-12",
             show_logout=True,
@@ -1816,7 +1816,7 @@ def sekolah_home() -> Response:
     school = _fetch_user_school(user.get("id"))
     if not school:
         flash("Akun belum terhubung dengan sekolah. Hubungi admin.", "warning")
-    subtitle = "Silakan pilih layanan yang ingin Anda akses"
+    subtitle = ""
     if school and school.get("name") and school.get("npsn"):
         subtitle = f"{school.get('name')} • NPSN {school.get('npsn')}"
     cards = [
@@ -1837,8 +1837,8 @@ def sekolah_home() -> Response:
     ]
     return render_template(
         "role_selection.html",
-        page_title="Pilih Layanan Sekolah - ASKA Portal",
-        page_description="Pilih layanan untuk sekolah",
+        page_title="ASKA Portal - Pilih Layanan Sekola",
+        page_description="Pilih layanan ASKA Portal yang ingin Anda akses",
         header_title="Selamat Datang",
         header_subtitle=subtitle,
         cards=cards,
@@ -5190,6 +5190,8 @@ def admin_pending_summary() -> Response:
                 "pending_assignment_requests": 0,
                 "pending_team_member_requests": 0,
                 "pending_reopen_requests": 0,
+                "pending_guestbook": 0,
+                "pending_call_center": 0,
                 "total": 0,
             }
         )
@@ -5212,6 +5214,8 @@ def admin_pending_preview() -> Response:
                     "pending_assignment_requests": 0,
                     "pending_team_member_requests": 0,
                     "pending_reopen_requests": 0,
+                    "pending_guestbook": 0,
+                    "pending_call_center": 0,
                     "total": 0,
                 },
                 "users": [],
@@ -7531,6 +7535,66 @@ def inject_permissions():
 
     require_profile_photo_upload = _needs_profile_photo_completion(user)
 
+    admin_notification_items = []
+    if user.get("role") == "admin" and admin_pending:
+        from flask import url_for
+        admin_notification_items = [
+            {
+                "href": url_for("portal.manage_users"),
+                "title": "User baru",
+                "subtitle": "Menunggu verifikasi akun",
+                "count": admin_pending.get("pending_users", 0),
+                "item_id": "adminPendingUsersItem",
+                "count_id": "adminPendingUsersCount",
+                "badge_class": "bg-warning text-dark",
+            },
+            {
+                "href": url_for("portal.admin_manage_staff"),
+                "title": "Permintaan penugasan",
+                "subtitle": "Koordinator ajukan penugasan staff",
+                "count": admin_pending.get("pending_assignment_requests", 0),
+                "item_id": "adminPendingAssignmentItem",
+                "count_id": "adminPendingAssignmentCount",
+                "badge_class": "bg-info text-dark",
+            },
+            {
+                "href": url_for("portal.manage_monev_teams"),
+                "title": "Permintaan anggota tim",
+                "subtitle": "Persetujuan anggota monev",
+                "count": admin_pending.get("pending_team_member_requests", 0),
+                "item_id": "adminPendingTeamItem",
+                "count_id": "adminPendingTeamCount",
+                "badge_class": "bg-primary",
+            },
+            {
+                "href": url_for("portal.admin_reopen_requests"),
+                "title": "Permintaan reopen",
+                "subtitle": "Penilaian diajukan untuk dibuka",
+                "count": admin_pending.get("pending_reopen_requests", 0),
+                "item_id": "adminPendingReopenItem",
+                "count_id": "adminPendingReopenCount",
+                "badge_class": "bg-danger",
+            },
+            {
+                "href": url_for("daftar_tamu.admin_validation"),
+                "title": "Verifikasi daftar tamu",
+                "subtitle": "Transaksi buku tamu menunggu validasi",
+                "count": admin_pending.get("pending_guestbook", 0),
+                "item_id": "adminPendingGuestbookItem",
+                "count_id": "adminPendingGuestbookCount",
+                "badge_class": "bg-success",
+            },
+            {
+                "href": url_for("call_center.inbox"),
+                "title": "Call Center",
+                "subtitle": "Pesan masuk belum dibaca",
+                "count": admin_pending.get("pending_call_center", 0),
+                "item_id": "adminPendingCCItem",
+                "count_id": "adminPendingCCCount",
+                "badge_class": "text-bg-danger",
+            },
+        ]
+
     return {
         'permissions': get_permission_summary(user),
         'is_superadmin': is_superadmin(user),
@@ -7538,6 +7602,7 @@ def inject_permissions():
         'user_school': user_school,
         'area_contacts': area_contacts,
         'admin_pending': admin_pending,
+        'admin_notification_items': admin_notification_items,
         'user_app_notifications': user_app_notifications,
         'follow_up_nav_badge_count': follow_up_nav_badge_count,
         'undo_window_seconds': undo_window_seconds,
