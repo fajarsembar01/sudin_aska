@@ -870,6 +870,74 @@ CREATE INDEX IF NOT EXISTS idx_daftar_tamu_contact_priority_active ON daftar_tam
 """
 
 
+# ===== Call Center Schema =====
+
+_CC_CONVERSATIONS_SQL = """
+CREATE TABLE IF NOT EXISTS cc_conversations (
+    id SERIAL PRIMARY KEY,
+    wa_user_id TEXT UNIQUE NOT NULL,
+    display_name TEXT,
+    status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','closed')),
+    last_message_at TIMESTAMPTZ,
+    unread_count INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_CC_CONVERSATIONS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_cc_conversations_status ON cc_conversations (status);
+CREATE INDEX IF NOT EXISTS idx_cc_conversations_last_msg ON cc_conversations (last_message_at DESC NULLS LAST);
+"""
+
+_CC_MESSAGES_SQL = """
+CREATE TABLE IF NOT EXISTS cc_messages (
+    id SERIAL PRIMARY KEY,
+    conversation_id INTEGER NOT NULL REFERENCES cc_conversations(id) ON DELETE CASCADE,
+    direction TEXT NOT NULL CHECK (direction IN ('inbound','outbound')),
+    message_text TEXT NOT NULL,
+    admin_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    admin_display_name TEXT,
+    wa_message_id TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_CC_MESSAGES_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_cc_messages_conversation ON cc_messages (conversation_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_cc_messages_created ON cc_messages (created_at DESC);
+"""
+
+_CC_TELEGRAM_SETTINGS_SQL = """
+CREATE TABLE IF NOT EXISTS cc_telegram_settings (
+    id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    bot_token TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+"""
+
+_CC_TELEGRAM_GROUPS_SQL = """
+CREATE TABLE IF NOT EXISTS cc_telegram_groups (
+    id SERIAL PRIMARY KEY,
+    chat_id BIGINT UNIQUE NOT NULL,
+    title TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+"""
+
+_CC_TELEGRAM_ALLOWED_USERS_SQL = """
+CREATE TABLE IF NOT EXISTS cc_telegram_allowed_users (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL UNIQUE REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+
 def ensure_dashboard_schema() -> None:
     """Create core dashboard tables when they do not yet exist."""
     statements: Iterable[str] = (
@@ -1060,7 +1128,16 @@ def ensure_dashboard_schema() -> None:
           AND a.created_at < b.created_at
         """,
         # Enforce unique constraint for atomic upserts
-        "ALTER TABLE portal_assessment_photos ADD CONSTRAINT portal_assessment_photos_assessment_id_school_room_id_key UNIQUE (assessment_id, school_room_id)", 
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'portal_assessment_photos_assessment_id_school_room_id_key'
+            ) THEN
+                ALTER TABLE portal_assessment_photos ADD CONSTRAINT portal_assessment_photos_assessment_id_school_room_id_key UNIQUE (assessment_id, school_room_id);
+            END IF;
+        END $$;
+        """,
         # Portal schools additional columns
         "ALTER TABLE portal_schools ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'NEGERI'",
         "ALTER TABLE portal_schools ADD COLUMN IF NOT EXISTS kelurahan_id INTEGER REFERENCES portal_kelurahan(id) ON DELETE SET NULL",
@@ -1081,6 +1158,14 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS latitude DECIMAL(9,6)",
         "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS longitude DECIMAL(9,6)",
         "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS metadata JSONB",
+        # ===== Call Center tables =====
+        _CC_CONVERSATIONS_SQL,
+        _CC_CONVERSATIONS_INDEX_SQL,
+        _CC_MESSAGES_SQL,
+        _CC_MESSAGES_INDEX_SQL,
+        _CC_TELEGRAM_SETTINGS_SQL,
+        _CC_TELEGRAM_GROUPS_SQL,
+        _CC_TELEGRAM_ALLOWED_USERS_SQL,
     )
     
     # Execute statements one by one to ensure partial success and better error reporting

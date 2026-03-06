@@ -55,6 +55,7 @@ test-results/
 
 # WhatsApp session & cache
 .wa_session/
+.wa_cc_session/
 .wwebjs_cache/
 
 # Runtime files (logs, pids, status)

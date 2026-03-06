@@ -10,6 +10,7 @@ from .auth import auth_bp, current_user, init_oauth
 from .routes import main_bp
 from .portal.routes import portal_bp
 from .daftar_tamu.routes import daftar_tamu_bp
+from .call_center import call_center_bp
 from .db_access import shutdown_pool
 from .queries import fetch_pending_bullying_count, fetch_pending_psych_count, fetch_pending_corruption_count
 from .schema import ensure_dashboard_schema
@@ -35,6 +36,7 @@ def create_app() -> Flask:
     app.register_blueprint(main_bp)
     app.register_blueprint(portal_bp)
     app.register_blueprint(daftar_tamu_bp)
+    app.register_blueprint(call_center_bp)
     init_oauth(app)
 
     try:
@@ -81,6 +83,15 @@ def create_app() -> Flask:
             except Exception:
                 area_contacts = []
 
+        # Call Center unread badge
+        cc_unread_count = 0
+        if user and user.get("role") == "admin":
+            try:
+                from .call_center.queries import fetch_cc_unread_total
+                cc_unread_count = fetch_cc_unread_total()
+            except Exception:
+                cc_unread_count = 0
+
         return {
             "current_user": user,
             "pending_bullying_count": pending_count,
@@ -88,6 +99,7 @@ def create_app() -> Flask:
             "pending_corruption_count": pending_corruption,
             "user_school": user_school,
             "area_contacts": area_contacts,
+            "cc_unread_count": cc_unread_count,
         }
 
     @app.template_filter("jakarta")

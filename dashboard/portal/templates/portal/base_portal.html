@@ -1,7 +1,22 @@
 <!DOCTYPE html>
-<html lang="id" data-theme="light">
+<html lang="id" data-theme="light" data-bs-theme="light">
 
 <head>
+    <script>
+        (function () {
+            try {
+                var storageKey = 'theme';
+                var stored = localStorage.getItem(storageKey);
+                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var theme = stored === 'dark' || (!stored && prefersDark) ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', theme);
+                document.documentElement.setAttribute('data-bs-theme', theme);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+        })();
+    </script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ page_title|default("Portal PANBERSS") }} - {{ app_title|default("ASKA Portal") }}</title>
@@ -1361,14 +1376,18 @@
 
             if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 html.setAttribute('data-theme', 'dark');
-                toggle.checked = true;
+                html.setAttribute('data-bs-theme', 'dark');
+                if (toggle) toggle.checked = true;
             }
 
-            toggle.addEventListener('change', function () {
-                var theme = this.checked ? 'dark' : 'light';
-                html.setAttribute('data-theme', theme);
-                localStorage.setItem('theme', theme);
-            });
+            if (toggle) {
+                toggle.addEventListener('change', function () {
+                    var theme = this.checked ? 'dark' : 'light';
+                    html.setAttribute('data-theme', theme);
+                    html.setAttribute('data-bs-theme', theme);
+                    localStorage.setItem('theme', theme);
+                });
+            }
         })();
 
         function showToast(message, duration) {

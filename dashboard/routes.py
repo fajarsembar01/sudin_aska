@@ -299,23 +299,36 @@ def admin_select_role() -> Response:
             "description": "Dashboard analitik dan pemantauan data.",
             "icon": "bi-graph-up-arrow",
             "href": url_for("main.dashboard"),
-            "col_class": "col-md-4 col-12",
         },
         {
             "title": "PANBERSS",
             "description": "Dashboard pemantauan kebersihan dan sarana sekolah.",
-            "icon": "bi bi-building",
+            "icon": "bi-building",
             "href": url_for("portal.home"),
-            "col_class": "col-md-4 col-12",
         },
         {
             "title": "Daftar Tamu",
             "description": "Dashboard pemantauan kunjungan tamu sekolah.",
             "icon": "bi-person-vcard",
             "href": url_for("daftar_tamu.admin_dashboard"),
-            "col_class": "col-md-4 col-12",
+        },
+        {
+            "title": "Call Center",
+            "description": "Layanan operasional dan notifikasi admin.",
+            "icon": "bi-headset",
+            "href": url_for("call_center.inbox"),
         },
     ]
+    # Layout fleksibel: 1–3 card = 1 baris; 4+ card = 2 baris (2-2)
+    n = len(cards)
+    if n >= 4:
+        default_col_class = "col-md-6 col-12"
+    elif n == 3:
+        default_col_class = "col-md-4 col-12"
+    elif n == 2:
+        default_col_class = "col-md-6 col-12"
+    else:
+        default_col_class = "col-12"
     return render_template(
         "role_selection.html",
         page_title="Pilih Mode Akses - ASKA Portal",
@@ -323,7 +336,7 @@ def admin_select_role() -> Response:
         header_title=header_title,
         header_subtitle="Silakan pilih layanan yang ingin Anda akses",
         cards=cards,
-        default_col_class="col-md-4 col-12",
+        default_col_class=default_col_class,
         show_logout=True,
     )
 

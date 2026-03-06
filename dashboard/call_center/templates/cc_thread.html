@@ -1,0 +1,428 @@
+{% extends "base_cc.html" %}
+{% set page_title = "Chat — " ~ (conversation.display_name or conversation.wa_user_id) %}
+
+{% block head_extra %}
+<style>
+    .cc-container {
+        display: flex;
+        gap: 1rem;
+        min-height: 72vh;
+    }
+
+    /* ── Sidebar ── */
+    .cc-sidebar {
+        width: 300px;
+        min-width: 260px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--bs-border-color);
+        border-radius: .75rem;
+        overflow: hidden;
+    }
+
+    .cc-sidebar-header {
+        padding: .6rem .75rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        background: var(--bs-tertiary-bg);
+    }
+
+    .cc-conv-list {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .cc-conv-item {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        padding: .6rem .75rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        text-decoration: none;
+        color: inherit;
+        transition: background .15s;
+        font-size: .85rem;
+    }
+
+    .cc-conv-item:hover,
+    .cc-conv-item.active {
+        background: var(--bs-primary-bg-subtle);
+    }
+
+    .cc-conv-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--bs-primary);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: .85rem;
+        flex-shrink: 0;
+    }
+
+    .cc-conv-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .cc-conv-name {
+        font-weight: 600;
+        font-size: .82rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .cc-conv-preview {
+        font-size: .75rem;
+        color: var(--bs-secondary-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* ── Chat area ── */
+    .cc-chat {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--bs-border-color);
+        border-radius: .75rem;
+        overflow: hidden;
+    }
+
+    .cc-chat-header {
+        padding: .75rem 1rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        background: var(--bs-tertiary-bg);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+    }
+
+    .cc-chat-header-info {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .cc-chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+        background: var(--bs-body-bg);
+    }
+
+    .cc-bubble {
+        max-width: 75%;
+        padding: .6rem .85rem;
+        border-radius: 1rem;
+        font-size: .88rem;
+        line-height: 1.45;
+        word-wrap: break-word;
+        position: relative;
+    }
+
+    .cc-bubble-in {
+        align-self: flex-start;
+        background: var(--bs-tertiary-bg);
+        border-bottom-left-radius: .25rem;
+    }
+
+    .cc-bubble-out {
+        align-self: flex-end;
+        background: var(--bs-primary);
+        color: #fff;
+        border-bottom-right-radius: .25rem;
+    }
+
+    .cc-bubble-meta {
+        font-size: .7rem;
+        margin-top: .2rem;
+        opacity: .7;
+    }
+
+    .cc-bubble-out .cc-bubble-meta {
+        color: rgba(255, 255, 255, .8);
+    }
+
+    .cc-bubble-admin {
+        font-size: .68rem;
+        font-weight: 600;
+        margin-top: .15rem;
+        opacity: .85;
+    }
+
+    .cc-bubble-out .cc-bubble-admin {
+        color: rgba(255, 255, 255, .9);
+    }
+
+    /* ── Input bar ── */
+    .cc-input-bar {
+        padding: .75rem 1rem;
+        border-top: 1px solid var(--bs-border-color);
+        background: var(--bs-tertiary-bg);
+    }
+
+    .cc-input-bar .input-group {
+        gap: .5rem;
+    }
+
+    .cc-input-bar textarea {
+        resize: none;
+        min-height: 42px;
+        max-height: 120px;
+        border-radius: .75rem;
+        font-size: .88rem;
+    }
+
+    .cc-input-bar .btn-send {
+        border-radius: .75rem;
+        padding: .5rem 1.25rem;
+    }
+
+    @media (max-width: 992px) {
+        .cc-sidebar {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<div class="cc-container">
+    <!-- Sidebar (mini) -->
+    <div class="cc-sidebar">
+        <div class="cc-sidebar-header">
+            <a href="{{ url_for('call_center.inbox') }}" class="btn btn-outline-secondary btn-sm w-100">
+                <i class="bi bi-arrow-left me-1"></i>Semua Chat
+            </a>
+        </div>
+        <div class="cc-conv-list">
+            {% for c in conversations %}
+            <a href="{{ url_for('call_center.thread', conv_id=c.id) }}"
+                class="cc-conv-item {% if c.id == conversation.id %}active{% endif %}">
+                <div class="cc-conv-avatar">{{ (c.display_name or c.wa_user_id)[:1].upper() }}</div>
+                <div class="cc-conv-info">
+                    <div class="cc-conv-name">{{ c.display_name or c.wa_user_id }}</div>
+                    {% if c.unread_count %}
+                    <span class="badge rounded-pill text-bg-primary" style="font-size:.65rem">{{ c.unread_count
+                        }}</span>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Chat area -->
+    <div class="cc-chat">
+        <div class="cc-chat-header">
+            <div class="cc-chat-header-info">
+                <a href="{{ url_for('call_center.inbox') }}" class="d-lg-none btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <div class="cc-conv-avatar">{{ (conversation.display_name or conversation.wa_user_id)[:1].upper() }}
+                </div>
+                <div>
+                    <div class="fw-bold" style="font-size:.92rem">{{ conversation.display_name or
+                        conversation.wa_user_id }}</div>
+                    <small class="text-secondary">{{ conversation.wa_user_id }}</small>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                {% if conversation.status == 'open' %}
+                <button class="btn btn-outline-danger btn-sm" id="btnCloseConv" title="Tutup percakapan">
+                    <i class="bi bi-x-circle me-1"></i>Close
+                </button>
+                {% else %}
+                <button class="btn btn-outline-success btn-sm" id="btnReopenConv" title="Buka kembali">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Reopen
+                </button>
+                {% endif %}
+                <a href="{{ url_for('call_center.settings_wa') }}" class="btn btn-outline-secondary btn-sm" title="Konfigurasi WhatsApp">
+                    <i class="bi bi-whatsapp"></i>
+                </a>
+                <a href="{{ url_for('call_center.settings_telegram') }}" class="btn btn-outline-secondary btn-sm" title="Notifikasi Telegram">
+                    <i class="bi bi-telegram"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="cc-chat-messages" id="chatMessages">
+            {% for m in messages %}
+            <div class="cc-bubble {% if m.direction == 'inbound' %}cc-bubble-in{% else %}cc-bubble-out{% endif %}"
+                data-msg-id="{{ m.id }}">
+                <div class="cc-bubble-text">{{ m.message_text }}</div>
+                <div class="cc-bubble-meta">
+                    {{ m.created_at|jakarta('%H:%M') }}
+                </div>
+                {% if m.direction == 'outbound' and m.admin_display_name %}
+                <div class="cc-bubble-admin"><i class="bi bi-person-fill me-1"></i>{{ m.admin_display_name }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if conversation.status == 'open' %}
+        <div class="cc-input-bar">
+            <div class="input-group">
+                <textarea class="form-control" id="msgInput" placeholder="Ketik pesan…" rows="1"></textarea>
+                <button class="btn btn-primary btn-send" id="btnSend" type="button">
+                    <i class="bi bi-send-fill me-1"></i>Kirim
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div class="cc-input-bar text-center text-secondary small">
+            <i class="bi bi-lock me-1"></i>Percakapan ditutup. Klik <strong>Reopen</strong> untuk melanjutkan.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var chatBox = document.getElementById('chatMessages');
+        var msgInput = document.getElementById('msgInput');
+        var btnSend = document.getElementById('btnSend');
+        var convId = {{ conversation.id }
+    };
+    var csrfToken = '{{ csrf_token() }}';
+    var lastMsgId = 0;
+
+    // Scroll to bottom
+    function scrollBottom() {
+        if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+    }
+    scrollBottom();
+
+    // Get last message ID
+    var allBubbles = chatBox ? chatBox.querySelectorAll('.cc-bubble') : [];
+    if (allBubbles.length) {
+        lastMsgId = parseInt(allBubbles[allBubbles.length - 1].getAttribute('data-msg-id') || '0', 10);
+    }
+
+    // Send message
+    function sendMessage() {
+        if (!msgInput || !msgInput.value.trim()) return;
+        var text = msgInput.value.trim();
+        btnSend.disabled = true;
+        msgInput.disabled = true;
+
+        fetch('{{ url_for("call_center.api_send") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ conversation_id: convId, message: text })
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    alert('Gagal kirim: ' + data.error);
+                } else {
+                    msgInput.value = '';
+                    pollMessages(); // immediate refresh
+                }
+            })
+            .catch(function (err) { alert('Error: ' + err.message); })
+            .finally(function () {
+                btnSend.disabled = false;
+                msgInput.disabled = false;
+                msgInput.focus();
+            });
+    }
+
+    if (btnSend) {
+        btnSend.addEventListener('click', sendMessage);
+    }
+    if (msgInput) {
+        msgInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        // Auto-resize textarea
+        msgInput.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+    }
+
+    // Poll for new messages
+    function pollMessages() {
+        fetch('{{ url_for("call_center.api_messages", conv_id=conversation.id) }}?after_id=' + lastMsgId)
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                var msgs = data.messages || [];
+                if (!msgs.length) return;
+                msgs.forEach(function (m) {
+                    if (m.id <= lastMsgId) return;
+                    lastMsgId = m.id;
+                    var div = document.createElement('div');
+                    div.className = 'cc-bubble ' + (m.direction === 'inbound' ? 'cc-bubble-in' : 'cc-bubble-out');
+                    div.setAttribute('data-msg-id', m.id);
+                    var time = '';
+                    try {
+                        var d = new Date(m.created_at);
+                        time = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    } catch (_) { }
+                    var html = '<div class="cc-bubble-text">' + escapeHtml(m.message_text) + '</div>';
+                    html += '<div class="cc-bubble-meta">' + time + '</div>';
+                    if (m.direction === 'outbound' && m.admin_display_name) {
+                        html += '<div class="cc-bubble-admin"><i class="bi bi-person-fill me-1"></i>' + escapeHtml(m.admin_display_name) + '</div>';
+                    }
+                    div.innerHTML = html;
+                    chatBox.appendChild(div);
+                });
+                scrollBottom();
+            })
+            .catch(function () { });
+    }
+
+    // Poll every 5 seconds
+    setInterval(pollMessages, 5000);
+
+    function escapeHtml(text) {
+        var el = document.createElement('span');
+        el.textContent = text || '';
+        return el.innerHTML;
+    }
+
+    // Close / Reopen conversation
+    var btnClose = document.getElementById('btnCloseConv');
+    var btnReopen = document.getElementById('btnReopenConv');
+    if (btnClose) {
+        btnClose.addEventListener('click', function () {
+            if (!confirm('Tutup percakapan ini?')) return;
+            fetch('{{ url_for("call_center.api_close", conv_id=conversation.id) }}', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            }).then(function () { location.reload(); });
+        });
+    }
+    if (btnReopen) {
+        btnReopen.addEventListener('click', function () {
+            fetch('{{ url_for("call_center.api_reopen", conv_id=conversation.id) }}', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            }).then(function () { location.reload(); });
+        });
+    }
+});
+</script>
+{% endblock %}

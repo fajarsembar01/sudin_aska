@@ -732,6 +732,62 @@ def create_app() -> Flask:
             }
         )
 
+    @app.route("/api/callcenter/inbound", methods=["POST"])
+    def callcenter_inbound():
+        """Receive inbound messages from the Call Center WhatsApp bridge.
+
+        Unlike the ASKA bot, this does NOT generate an AI reply.
+        It stores the message and notifies admins via Telegram.
+        """
+        token_expected = (os.getenv("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+        if not token_expected:
+            return jsonify({"error": "ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}), 501
+
+        provided_token = (
+            request.headers.get("X-ASKA-CC-TOKEN")
+            or request.args.get("token")
+            or ""
+        )
+        if provided_token != token_expected:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        data = request.get_json(silent=True) or {}
+        raw_user_id = str(data.get("user_id") or "").strip()
+        if not raw_user_id:
+            return jsonify({"error": "user_id required"}), 400
+
+        username = (data.get("username") or raw_user_id).strip()[:120]
+        message = (data.get("message") or "").strip()
+        message_id = data.get("message_id") or None
+        if not message:
+            return jsonify({"error": "message required"}), 400
+
+        try:
+            from dashboard.call_center.queries import (
+                upsert_cc_conversation,
+                save_cc_message,
+                send_cc_telegram_notification,
+            )
+
+            conv = upsert_cc_conversation(wa_user_id=raw_user_id, display_name=username)
+            msg = save_cc_message(
+                conversation_id=conv["id"],
+                direction="inbound",
+                message_text=message,
+                wa_message_id=message_id,
+            )
+
+            # Fire-and-forget Telegram notification
+            try:
+                send_cc_telegram_notification(username, message)
+            except Exception:
+                pass
+
+            return jsonify({"ok": True, "conversation_id": conv.get("id"), "message_id": msg.get("id")})
+        except Exception as exc:
+            current_app.logger.exception("callcenter_inbound error")
+            return jsonify({"error": str(exc)}), 500
+
     @app.route("/api/chat", methods=["POST"])
     def chat():
         if 'user' not in session:
