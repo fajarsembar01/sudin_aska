@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Konfigurasi WhatsApp - ASKA Insights{% endblock %}
+{% block content %}
+<section class="page-header">
+    <div class="page-title-group">
+        <span class="icon-badge feature-icon text-success">
+            <i class="bi bi-whatsapp"></i>
+        </span>
+        <div>
+            <h1 class="h4 fw-bold page-title mb-0">Konfigurasi Link WhatsApp</h1>
+            <p class="page-subtitle">Atur link klik WhatsApp yang tampil di dashboard ASKA Insight.</p>
+        </div>
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title mb-2">Link Entry WhatsApp</h5>
+                <p class="text-muted small mb-3">
+                    Bisa isi format nomor (`0821...`) atau URL penuh (`https://wa.me/62...`).
+                </p>
+                <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <div class="mb-3">
+                        <label class="form-label">Nomor / Link WhatsApp</label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            name="wa_link"
+                            value="{{ settings.get('wa_link') or current_link }}"
+                            placeholder="082143646463 atau https://wa.me/6282143646463"
+                            autocomplete="off">
+                        <div class="form-text">Sistem akan menyimpan ke format <code>https://wa.me/...</code>.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-2"></i>Simpan Link
+                    </button>
+                </form>
+
+                <div class="mt-3 small">
+                    <div class="text-muted">Preview link aktif:</div>
+                    <a href="{{ current_link }}" target="_blank" rel="noopener">{{ current_link }}</a>
+                </div>
+
+                {% if settings.get('updated_at') %}
+                <div class="small text-muted mt-3">
+                    Terakhir diperbarui: {{ settings.get('updated_at')|jakarta }}
+                    {% if settings.get('updated_by_name') %}
+                    oleh {{ settings.get('updated_by_name') }}
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -115,7 +115,7 @@ def _log_command(update: Update, text: str) -> None:
     if not user:
         return
     username = user.username or user.first_name or "admin"
-    save_chat(user.id, username, text, role="user", topic=None)
+    save_chat(user.id, username, text, role="user", topic="notif")
 
 
 def _log_bot_message(user_id: Optional[int], username: Optional[str], text: Optional[str]) -> None:
@@ -127,7 +127,7 @@ def _log_bot_message(user_id: Optional[int], username: Optional[str], text: Opti
     safe_username = (username or "").strip() or "admin"
     logger = logging.getLogger("telegram.admin")
     try:
-        save_chat(user_id, safe_username, message_text, role="aska", topic=None)
+        save_chat(user_id, safe_username, message_text, role="aska", topic="notif")
     except Exception:
         logger.exception("Gagal menyimpan log balasan bot.")
 

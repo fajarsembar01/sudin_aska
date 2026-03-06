@@ -63,7 +63,8 @@ DEFAULT_LIMITED_REASON = (
 STATUS_ENUM_SQL = ", ".join(f"'{status}'" for status in ACCOUNT_STATUS_CHOICES)
 CHAT_CHANNEL_EXPRESSION = (
     "COALESCE(channel, CASE WHEN topic = 'web' THEN 'web' "
-    "WHEN topic = 'twitter' THEN 'twitter' ELSE 'telegram' END)"
+    "WHEN topic = 'twitter' THEN 'twitter' "
+    "WHEN topic = 'whatsapp' THEN 'whatsapp' ELSE 'telegram' END)"
 )
 def _chat_logs_has_topic_column(force_refresh: bool = False) -> bool:
     """
@@ -136,6 +137,7 @@ def _ensure_chat_logs_schema() -> None:
                 SET channel = CASE
                     WHEN topic = 'web' THEN 'web'
                     WHEN topic = 'twitter' THEN 'twitter'
+                    WHEN topic = 'whatsapp' THEN 'whatsapp'
                     ELSE 'telegram'
                 END
                 WHERE channel IS NULL
@@ -143,6 +145,19 @@ def _ensure_chat_logs_schema() -> None:
             )
             cur.execute("ALTER TABLE chat_logs ALTER COLUMN channel SET DEFAULT 'telegram'")
             _CHAT_CHANNEL_AVAILABLE = True
+        else:
+            cur.execute(
+                """
+                UPDATE chat_logs
+                SET channel = CASE
+                    WHEN topic = 'web' THEN 'web'
+                    WHEN topic = 'twitter' THEN 'twitter'
+                    WHEN topic = 'whatsapp' THEN 'whatsapp'
+                    ELSE 'telegram'
+                END
+                WHERE channel IS NULL
+                """
+            )
     conn.commit()
 
 def _ensure_bullying_schema() -> None:
@@ -998,6 +1013,108 @@ def _sync_telegram_user_profile(
             (telegram_user_id, clean_username, preview),
         )
 
+
+def _backfill_whatsapp_users() -> None:
+    """Buat data user WhatsApp dari chat_logs jika table kosong/belum lengkap."""
+    _ensure_chat_logs_schema()
+    with conn.cursor() as cur:
+        cur.execute(
+            f"""
+            INSERT INTO whatsapp_users (
+                whatsapp_user_id,
+                display_name,
+                first_seen_at,
+                last_seen_at
+            )
+            SELECT
+                user_id,
+                MAX(username) FILTER (WHERE username IS NOT NULL),
+                MIN(created_at),
+                MAX(created_at)
+            FROM chat_logs
+            WHERE user_id IS NOT NULL
+              AND {CHAT_CHANNEL_EXPRESSION} = 'whatsapp'
+            GROUP BY user_id
+            ON CONFLICT (whatsapp_user_id) DO NOTHING
+            """
+        )
+    conn.commit()
+
+
+def _ensure_whatsapp_user_schema() -> None:
+    """Pastikan tabel whatsapp_users tersedia dan terisi dari chat_logs."""
+    with conn.cursor() as cur:
+        cur.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS whatsapp_users (
+                id SERIAL PRIMARY KEY,
+                whatsapp_user_id BIGINT UNIQUE NOT NULL,
+                display_name TEXT,
+                first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                last_message_preview TEXT,
+                status TEXT NOT NULL DEFAULT '{ACCOUNT_STATUS_ACTIVE}',
+                status_reason TEXT,
+                status_changed_at TIMESTAMPTZ,
+                status_changed_by TEXT,
+                metadata JSONB,
+                CONSTRAINT whatsapp_users_status_check CHECK (status IN ({STATUS_ENUM_SQL}))
+            );
+            """
+        )
+        cur.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_whatsapp_users_user
+            ON whatsapp_users (whatsapp_user_id)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_whatsapp_users_status
+            ON whatsapp_users (status)
+            """
+        )
+    conn.commit()
+    _backfill_whatsapp_users()
+
+
+def _sync_whatsapp_user_profile(
+    whatsapp_user_id: Optional[int],
+    display_name: Optional[str],
+    last_message: Optional[str],
+) -> None:
+    """Upsert profil WhatsApp berdasarkan chat terbaru."""
+    if not whatsapp_user_id:
+        return
+    _ensure_whatsapp_user_schema()
+    clean_name = (display_name or "").strip() or None
+    preview = (last_message or "").strip()
+    if preview:
+        preview = preview[:280]
+    else:
+        preview = None
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO whatsapp_users (
+                whatsapp_user_id,
+                display_name,
+                last_message_preview
+            )
+            VALUES (%s, %s, %s)
+            ON CONFLICT (whatsapp_user_id) DO UPDATE
+            SET
+                display_name = COALESCE(EXCLUDED.display_name, whatsapp_users.display_name),
+                last_seen_at = NOW(),
+                last_message_preview = COALESCE(
+                    EXCLUDED.last_message_preview,
+                    whatsapp_users.last_message_preview
+                )
+            """,
+            (whatsapp_user_id, clean_name, preview),
+        )
+
+
 def _calculate_due_at(category: str) -> datetime:
     base = datetime.now(timezone.utc)
     category = (category or "general").lower()
@@ -1110,6 +1227,8 @@ def _resolve_channel(topic: Optional[str]) -> str:
         return "web"
     if value == "twitter":
         return "twitter"
+    if value in {"whatsapp", "wa"}:
+        return "whatsapp"
     return "telegram"
 
 
@@ -1230,8 +1349,11 @@ def save_chat(
             raise
         _reset_chat_logs_sequence()
         inserted_id = _insert_row()
-    if channel_value == "telegram" and role == "user" and user_id is not None:
-        _sync_telegram_user_profile(user_id, username, message)
+    if role == "user" and user_id is not None:
+        if channel_value == "telegram":
+            _sync_telegram_user_profile(user_id, username, message)
+        elif channel_value == "whatsapp":
+            _sync_whatsapp_user_profile(user_id, username, message)
 
     conn.commit()
     return inserted_id
@@ -1721,6 +1843,36 @@ def get_telegram_user_status(user_id: int) -> Dict[str, Any]:
     return dict(row)
 
 
+def get_whatsapp_user_status(user_id: int) -> Dict[str, Any]:
+    """Ambil status akun WhatsApp berdasarkan whatsapp_user_id."""
+    _ensure_whatsapp_user_schema()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            """
+            SELECT
+                whatsapp_user_id,
+                display_name,
+                status,
+                status_reason,
+                status_changed_at,
+                status_changed_by
+            FROM whatsapp_users
+            WHERE whatsapp_user_id = %s
+            """,
+            (user_id,),
+        )
+        row = cur.fetchone()
+    if not row:
+        return {
+            "whatsapp_user_id": user_id,
+            "status": ACCOUNT_STATUS_ACTIVE,
+            "status_reason": None,
+            "status_changed_at": None,
+            "status_changed_by": None,
+        }
+    return dict(row)
+
+
 def get_chat_quota_status(user_id: int) -> Dict[str, Any]:
     """Ambil status kuota chat user web, sekaligus reset jika cooldown selesai."""
     _ensure_user_schema()
@@ -2038,5 +2190,6 @@ _ensure_psych_schema()
 _ensure_user_schema()
 _ensure_guestbook_general_schema()
 _ensure_telegram_user_schema()
+_ensure_whatsapp_user_schema()
 _ensure_corruption_schema()
 _ensure_twitter_log_schema()

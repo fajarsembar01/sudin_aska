@@ -64,6 +64,7 @@ from .queries import (
     chat_topic_available,
     fetch_twitter_worker_logs,
     update_no_tester_preference,
+    fetch_whatsapp_link_settings,
 )
 
 main_bp = Blueprint("main", __name__)
@@ -116,6 +117,20 @@ def _reporting_disabled_response(message: str = "Fitur pelaporan ASKA sedang din
         return jsonify({"success": False, "message": message}), 403
     flash(message, "warning")
     return redirect(url_for("main.dashboard"))
+
+
+def _normalize_whatsapp_link(raw_value: str) -> str:
+    clean = (raw_value or "").strip()
+    if not clean:
+        return "https://wa.me/6282143646463"
+    if clean.startswith("http://") or clean.startswith("https://"):
+        return clean.rstrip("/")
+    digits = "".join(ch for ch in clean if ch.isdigit())
+    if not digits:
+        return "https://wa.me/6282143646463"
+    if digits.startswith("0"):
+        digits = f"62{digits[1:]}"
+    return f"https://wa.me/{digits}"
 
 
 def _resolve_runtime_path(value: Optional[str], default: str) -> Path:
@@ -374,10 +389,17 @@ def dashboard() -> Response:
         "all": metrics["total_incoming_messages"],
     }
 
+    whatsapp_settings = fetch_whatsapp_link_settings()
+    whatsapp_link_value = (
+        whatsapp_settings.get("wa_link")
+        or os.getenv("ASKA_WHATSAPP_URL", "082143646463")
+    )
+
     aska_links = {
         "tele": os.getenv("ASKA_TELEGRAM_URL", "https://t.me/tanyaaska_bot"),
         "web": os.getenv("ASKA_WEB_URL", "https://aska.sdnsembar01.sch.id/"),
         "twitter": os.getenv("ASKA_TWITTER_URL", "https://twitter.com/tanyaaska_ai"),
+        "whatsapp": _normalize_whatsapp_link(whatsapp_link_value),
     }
 
     return render_template(
@@ -443,6 +465,7 @@ def twitter_logs() -> Response:
         search=search,
         user_id=user_id,
         topic="twitter",
+        channel="twitter",
     )
 
     topic_supported = chat_topic_available()
@@ -487,7 +510,7 @@ def twitter_logs() -> Response:
 
     export_url = None
     if topic_supported:
-        export_params: dict = {"topic": "twitter"}
+        export_params: dict = {"topic": "twitter", "channel": "twitter"}
         if start:
             try:
                 export_params["start"] = start.strftime("%Y-%m-%d")
@@ -530,6 +553,43 @@ def twitter_logs() -> Response:
     )
 
 
+
+@main_bp.route("/notif-logs")
+@role_required("admin")
+def notif_logs() -> Response:
+    args: MultiDict = request.args
+    page = max(1, int(args.get("page", 1)))
+    start = _parse_date(args.get("start"))
+    end = _parse_date(args.get("end"))
+    role = args.get("role") or None
+    if role not in {"user", "aska"}:
+        role = None
+    search = args.get("search") or None
+    user_id = args.get("user_id")
+    user_id = int(user_id) if user_id else None
+
+    filters = ChatFilters(
+        start=start,
+        end=end,
+        role=role,
+        search=search,
+        user_id=user_id,
+        topic="notif",
+    )
+    offset = (page - 1) * PAGE_SIZE
+    records, total = fetch_chat_logs(filters=filters, limit=PAGE_SIZE, offset=offset)
+    total_pages = max(1, ceil(total / PAGE_SIZE))
+
+    return render_template(
+        "notif_logs.html",
+        records=records,
+        total=total,
+        page=page,
+        total_pages=total_pages,
+        filters=filters,
+    )
+
+
 @main_bp.route("/chats")
 @role_required("admin")
 def chats() -> Response:
@@ -539,10 +599,20 @@ def chats() -> Response:
     end = _parse_date(args.get("end"))
     role = args.get("role") or None
     search = args.get("search") or None
+    channel = (args.get("channel") or "").strip().lower() or None
+    if channel not in {"telegram", "web", "twitter", "whatsapp"}:
+        channel = None
     user_id = args.get("user_id")
     user_id = int(user_id) if user_id else None
 
-    filters = ChatFilters(start=start, end=end, role=role, search=search, user_id=user_id)
+    filters = ChatFilters(
+        start=start,
+        end=end,
+        role=role,
+        search=search,
+        user_id=user_id,
+        channel=channel,
+    )
     offset = (page - 1) * PAGE_SIZE
 
     records, total = fetch_chat_logs(filters=filters, limit=PAGE_SIZE, offset=offset)
@@ -557,6 +627,8 @@ def chats() -> Response:
         export_params["role"] = role
     if search:
         export_params["search"] = search
+    if channel:
+        export_params["channel"] = channel
     if user_id:
         export_params["user_id"] = user_id
 
@@ -1135,11 +1207,25 @@ def export_chats() -> Response:
     end = _parse_date(args.get("end"))
     role = args.get("role") or None
     search = args.get("search") or None
+    channel = (args.get("channel") or "").strip().lower() or None
+    if channel not in {"telegram", "web", "twitter", "whatsapp"}:
+        channel = None
     user_id = args.get("user_id")
     user_id = int(user_id) if user_id else None
     topic = args.get("topic") or None
+    normalized_topic = (topic or "").strip().lower() or None
+    if not channel and normalized_topic in {"telegram", "web", "twitter", "whatsapp"}:
+        channel = normalized_topic
 
-    filters = ChatFilters(start=start, end=end, role=role, search=search, user_id=user_id, topic=topic)
+    filters = ChatFilters(
+        start=start,
+        end=end,
+        role=role,
+        search=search,
+        user_id=user_id,
+        topic=normalized_topic,
+        channel=channel,
+    )
 
     records, _ = fetch_chat_logs(filters=filters, limit=5000, offset=0)
 
@@ -1148,7 +1234,7 @@ def export_chats() -> Response:
 
     buffer = StringIO()
     writer = csv.writer(buffer)
-    writer.writerow(["id", "created_at", "user_id", "username", "role", "topic", "response_time_ms", "text"])
+    writer.writerow(["id", "created_at", "user_id", "username", "role", "channel", "topic", "response_time_ms", "text"])
     for row in records:
         created_at = row.get("created_at")
         if created_at:
@@ -1164,6 +1250,7 @@ def export_chats() -> Response:
                 row.get("user_id"),
                 row.get("username"),
                 row.get("role"),
+                row.get("channel"),
                 row.get("topic"),
                 row.get("response_time_ms"),
                 (row.get("text") or "").replace("\n", " "),

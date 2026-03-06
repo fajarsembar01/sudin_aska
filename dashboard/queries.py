@@ -67,6 +67,7 @@ STOPWORDS = {
 }
 
 _CHAT_TOPIC_AVAILABLE: Optional[bool] = None
+_CHAT_CHANNEL_AVAILABLE: Optional[bool] = None
 _TESTER_IDS_CACHE: Optional[List[int]] = None
 
 
@@ -129,6 +130,48 @@ def chat_topic_available() -> bool:
         )
         _CHAT_TOPIC_AVAILABLE = cur.fetchone() is not None
     return _CHAT_TOPIC_AVAILABLE
+
+
+def chat_channel_available() -> bool:
+    """Check once whether chat_logs table has channel column."""
+    global _CHAT_CHANNEL_AVAILABLE
+    if _CHAT_CHANNEL_AVAILABLE is not None:
+        return _CHAT_CHANNEL_AVAILABLE
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = current_schema()
+              AND table_name = 'chat_logs'
+              AND column_name = 'channel'
+            LIMIT 1
+            """
+        )
+        _CHAT_CHANNEL_AVAILABLE = cur.fetchone() is not None
+    return _CHAT_CHANNEL_AVAILABLE
+
+
+def _chat_channel_expression_sql() -> str:
+    has_topic = chat_topic_available()
+    has_channel = chat_channel_available()
+    if has_channel and has_topic:
+        return (
+            "COALESCE(channel, CASE WHEN topic = 'web' THEN 'web' "
+            "WHEN topic = 'twitter' THEN 'twitter' "
+            "WHEN topic = 'whatsapp' THEN 'whatsapp' ELSE 'telegram' END)"
+        )
+    if has_channel:
+        return "COALESCE(channel, 'telegram')"
+    if has_topic:
+        return (
+            "CASE WHEN topic = 'web' THEN 'web' "
+            "WHEN topic = 'twitter' THEN 'twitter' "
+            "WHEN topic = 'whatsapp' THEN 'whatsapp' ELSE 'telegram' END"
+        )
+    return "'telegram'"
+
+
 BULLYING_STATUSES = (
     'pending',
     'in_progress',
@@ -164,6 +207,7 @@ class ChatFilters:
     search: Optional[str] = None
     user_id: Optional[int] = None
     topic: Optional[str] = None
+    channel: Optional[str] = None
 
 def _apply_filters(conditions: List[str], params: List[Any], filters: ChatFilters) -> None:
     if filters.start:
@@ -184,6 +228,11 @@ def _apply_filters(conditions: List[str], params: List[Any], filters: ChatFilter
     if filters.topic and chat_topic_available():
         conditions.append("topic = %s")
         params.append(filters.topic)
+    if filters.channel:
+        normalized_channel = str(filters.channel).strip().lower()
+        if normalized_channel in {"telegram", "web", "twitter", "whatsapp"}:
+            conditions.append(f"{_chat_channel_expression_sql()} = %s")
+            params.append(normalized_channel)
 
 def fetch_overview_metrics(window_days: int = 7) -> Dict[str, Any]:
     """Aggregate key performance indicators for the dashboard landing page."""
@@ -192,6 +241,7 @@ def fetch_overview_metrics(window_days: int = 7) -> Dict[str, Any]:
 
     bullying_rows: List[Dict[str, Any]] = []
     escalated_total = 0
+    channel_row: Dict[str, Any] = {}
 
     with get_cursor() as cur:
         clause, params = _tester_condition("user_id")
@@ -250,6 +300,26 @@ def fetch_overview_metrics(window_days: int = 7) -> Dict[str, Any]:
 
         active_today = unique_users_today
 
+        channel_expr = _chat_channel_expression_sql()
+        channel_query = f"""
+            SELECT
+                COUNT(*) FILTER (WHERE {channel_expr} = 'telegram') AS telegram_total,
+                COUNT(*) FILTER (WHERE {channel_expr} = 'web') AS web_total,
+                COUNT(*) FILTER (WHERE {channel_expr} = 'twitter') AS twitter_total,
+                COUNT(*) FILTER (WHERE {channel_expr} = 'whatsapp') AS whatsapp_total,
+                COUNT(*) FILTER (WHERE role = 'user' AND {channel_expr} = 'telegram') AS telegram_user_total,
+                COUNT(*) FILTER (WHERE role = 'user' AND {channel_expr} = 'web') AS web_user_total,
+                COUNT(*) FILTER (WHERE role = 'user' AND {channel_expr} = 'twitter') AS twitter_user_total,
+                COUNT(*) FILTER (WHERE role = 'user' AND {channel_expr} = 'whatsapp') AS whatsapp_user_total
+            FROM chat_logs
+        """
+        channel_params: List[Any] = []
+        if clause:
+            channel_query += f" WHERE {clause}"
+            channel_params.append(tester_param)
+        cur.execute(channel_query, tuple(channel_params))
+        channel_row = cur.fetchone() or {}
+
         cur.execute(
             """
             SELECT status, COUNT(*) AS total
@@ -291,6 +361,19 @@ def fetch_overview_metrics(window_days: int = 7) -> Dict[str, Any]:
     bullying_active_total = int(bullying_total - bullying_summary.get("spam", 0))
     psych_active_total = int(psych_summary.get("total", 0)) if psych_summary else 0
 
+    channel_totals = {
+        "telegram": int(channel_row.get("telegram_total") or 0),
+        "web": int(channel_row.get("web_total") or 0),
+        "twitter": int(channel_row.get("twitter_total") or 0),
+        "whatsapp": int(channel_row.get("whatsapp_total") or 0),
+    }
+    channel_user_totals = {
+        "telegram": int(channel_row.get("telegram_user_total") or 0),
+        "web": int(channel_row.get("web_user_total") or 0),
+        "twitter": int(channel_row.get("twitter_user_total") or 0),
+        "whatsapp": int(channel_row.get("whatsapp_user_total") or 0),
+    }
+
     return {
         "total_messages": int(total_messages or 0),
         "total_incoming_messages": int(total_incoming_messages or 0),
@@ -315,6 +398,8 @@ def fetch_overview_metrics(window_days: int = 7) -> Dict[str, Any]:
         "corruption_active_total": corruption_active_total,
         "psych_summary": psych_summary,
         "psych_active_total": psych_active_total,
+        "channel_totals": channel_totals,
+        "channel_user_totals": channel_user_totals,
     }
 
 def fetch_daily_activity(days: int = 14, role: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -445,9 +530,12 @@ def fetch_chat_logs(
     if conditions:
         where_clause = " WHERE " + " AND ".join(conditions)
 
-    select_columns = "id, user_id, username, text, role, created_at, response_time_ms"
-    if chat_topic_available():
-        select_columns = "id, user_id, username, text, role, topic, created_at, response_time_ms"
+    topic_select = "topic" if chat_topic_available() else "NULL::TEXT AS topic"
+    channel_select = f"{_chat_channel_expression_sql()} AS channel"
+    select_columns = (
+        "id, user_id, username, text, role, "
+        f"{topic_select}, {channel_select}, created_at, response_time_ms"
+    )
 
     query = (
         f"SELECT {select_columns} "
@@ -474,6 +562,7 @@ def fetch_conversation_thread(user_id: int, limit: int = 200) -> List[Dict[str, 
             SELECT id, user_id, username, text, role, created_at, response_time_ms
             FROM chat_logs
             WHERE user_id = %s
+              AND (topic IS NULL OR topic != 'notif')
             ORDER BY created_at DESC
             LIMIT %s
             """,
@@ -495,6 +584,7 @@ def fetch_all_chat_users() -> List[Dict[str, Any]]:
             "    COUNT(*) AS message_count",
             "FROM chat_logs",
             "WHERE role = 'user'",
+            "AND (topic IS NULL OR topic != 'notif')",
         ]
         if clause:
             query_parts.append(f"AND {clause}")
@@ -1943,6 +2033,48 @@ def upsert_telegram_notification_settings(bot_token: Optional[str], updated_by: 
         return True
 
 
+def fetch_whatsapp_link_settings() -> Dict[str, Any]:
+    """Fetch stored WhatsApp entry link configuration."""
+    try:
+        with get_cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    s.wa_link,
+                    s.updated_at,
+                    s.updated_by,
+                    u.full_name AS updated_by_name,
+                    u.email AS updated_by_email
+                FROM whatsapp_link_settings s
+                LEFT JOIN dashboard_users u ON u.id = s.updated_by
+                WHERE s.id = 1
+                LIMIT 1
+                """
+            )
+            row = cur.fetchone()
+    except Exception:
+        return {}
+    return dict(row) if row else {}
+
+
+def upsert_whatsapp_link_settings(wa_link: Optional[str], updated_by: Optional[int]) -> bool:
+    """Insert/update WhatsApp entry link configuration."""
+    clean_link = (wa_link or "").strip() or None
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO whatsapp_link_settings (id, wa_link, updated_at, updated_by)
+            VALUES (1, %s, NOW(), %s)
+            ON CONFLICT (id) DO UPDATE
+            SET wa_link = EXCLUDED.wa_link,
+                updated_at = NOW(),
+                updated_by = EXCLUDED.updated_by
+            """,
+            (clean_link, updated_by),
+        )
+        return True
+
+
 def list_telegram_admin_accounts() -> List[Dict[str, Any]]:
     """List Telegram admin username mappings."""
     with get_cursor() as cur:
@@ -2648,14 +2780,15 @@ def _normalize_status_filter(value: Optional[str]) -> Optional[str]:
 
 
 def fetch_aska_users(source: str, status: Optional[str], search: Optional[str], *, limit: int = 200) -> List[Dict[str, Any]]:
-    """Gabungkan daftar user web & Telegram sesuai filter."""
-    normalized_source = (source or "web").strip().lower()
+    """Gabungkan daftar user web, Telegram, dan WhatsApp sesuai filter."""
+    normalized_source = (source or "all").strip().lower()
     normalized_status = _normalize_status_filter(status)
     normalized_search = (search or "").strip()
 
     rows: List[Dict[str, Any]] = []
     fetch_web = normalized_source in {"web", "all"}
     fetch_telegram = normalized_source in {"telegram", "all"}
+    fetch_whatsapp = normalized_source in {"whatsapp", "all"}
 
     if fetch_web:
         conditions: List[str] = []
@@ -2752,15 +2885,63 @@ def fetch_aska_users(source: str, status: Optional[str], search: Optional[str], 
                     }
                 )
 
+    if fetch_whatsapp:
+        conditions = []
+        params = []
+        if normalized_status:
+            conditions.append("status = %s")
+            params.append(normalized_status)
+        if normalized_search:
+            conditions.append("(display_name ILIKE %s OR CAST(whatsapp_user_id AS TEXT) ILIKE %s)")
+            term = f"%{normalized_search}%"
+            params.extend([term, term])
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        query = f"""
+            SELECT
+                whatsapp_user_id,
+                display_name,
+                first_seen_at,
+                last_seen_at,
+                status,
+                status_reason,
+                status_changed_at,
+                status_changed_by,
+                last_message_preview
+            FROM whatsapp_users
+            {where_clause}
+            ORDER BY COALESCE(last_seen_at, first_seen_at) DESC
+            LIMIT %s
+        """
+        params.append(limit)
+        with get_cursor() as cur:
+            cur.execute(query, params)
+            for row in cur.fetchall():
+                rows.append(
+                    {
+                        "channel": "whatsapp",
+                        "id": row["whatsapp_user_id"],
+                        "display_name": row["display_name"] or f"ID {row['whatsapp_user_id']}",
+                        "identifier": f"+{row['whatsapp_user_id']}",
+                        "status": row["status"],
+                        "status_reason": row["status_reason"],
+                        "status_changed_at": row["status_changed_at"],
+                        "status_changed_by": row["status_changed_by"],
+                        "last_activity": row["last_seen_at"] or row["first_seen_at"],
+                        "created_at": row["first_seen_at"],
+                        "extra": {"last_message_preview": row["last_message_preview"]},
+                    }
+                )
+
     rows.sort(key=lambda item: item.get("last_activity") or item.get("created_at") or datetime.min, reverse=True)
     return rows[:limit]
 
 
 def summarize_aska_users() -> Dict[str, Dict[str, int]]:
-    """Hitung total user per status untuk web dan Telegram."""
+    """Hitung total user per status untuk web, Telegram, dan WhatsApp."""
     summary = {
         "web": {status: 0 for status in ACCOUNT_STATUS_CHOICES},
         "telegram": {status: 0 for status in ACCOUNT_STATUS_CHOICES},
+        "whatsapp": {status: 0 for status in ACCOUNT_STATUS_CHOICES},
     }
     with get_cursor() as cur:
         cur.execute("SELECT status, COUNT(*) FROM web_users GROUP BY status")
@@ -2769,13 +2950,24 @@ def summarize_aska_users() -> Dict[str, Dict[str, int]]:
         cur.execute("SELECT status, COUNT(*) FROM telegram_users GROUP BY status")
         for status, total in cur.fetchall():
             summary["telegram"][status] = int(total)
+        cur.execute("SELECT status, COUNT(*) FROM whatsapp_users GROUP BY status")
+        for status, total in cur.fetchall():
+            summary["whatsapp"][status] = int(total)
     for scope in summary.values():
         scope["total"] = sum(scope.get(status, 0) for status in ACCOUNT_STATUS_CHOICES)
     summary["combined"] = {
-        status: summary["web"].get(status, 0) + summary["telegram"].get(status, 0)
+        status: (
+            summary["web"].get(status, 0)
+            + summary["telegram"].get(status, 0)
+            + summary["whatsapp"].get(status, 0)
+        )
         for status in ACCOUNT_STATUS_CHOICES
     }
-    summary["combined"]["total"] = summary["web"].get("total", 0) + summary["telegram"].get("total", 0)
+    summary["combined"]["total"] = (
+        summary["web"].get("total", 0)
+        + summary["telegram"].get("total", 0)
+        + summary["whatsapp"].get("total", 0)
+    )
     return summary
 
 
@@ -2817,6 +3009,28 @@ def update_telegram_user_status(user_id: int, status: str, reason: Optional[str]
                 status_changed_at = NOW(),
                 status_changed_by = %s
             WHERE telegram_user_id = %s
+            """,
+            (normalized, cleaned_reason, changed_by, user_id),
+        )
+        return cur.rowcount > 0
+
+
+def update_whatsapp_user_status(user_id: int, status: str, reason: Optional[str], *, changed_by: str) -> bool:
+    normalized = _normalize_status_filter(status)
+    if normalized is None:
+        raise ValueError("Status tidak valid.")
+    cleaned_reason = (reason or "").strip() or None
+    if cleaned_reason:
+        cleaned_reason = cleaned_reason[:500]
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE whatsapp_users
+            SET status = %s,
+                status_reason = %s,
+                status_changed_at = NOW(),
+                status_changed_by = %s
+            WHERE whatsapp_user_id = %s
             """,
             (normalized, cleaned_reason, changed_by, user_id),
         )

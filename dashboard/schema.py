@@ -223,10 +223,40 @@ _TELEGRAM_USERS_INDEX_STATUS = """
 CREATE INDEX IF NOT EXISTS idx_telegram_users_status ON telegram_users (status);
 """
 
+_WHATSAPP_USERS_SQL = """
+CREATE TABLE IF NOT EXISTS whatsapp_users (
+    id SERIAL PRIMARY KEY,
+    whatsapp_user_id BIGINT UNIQUE NOT NULL,
+    display_name TEXT,
+    first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_message_preview TEXT,
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','suspended','under_review')),
+    status_reason TEXT,
+    status_changed_at TIMESTAMPTZ,
+    status_changed_by TEXT,
+    metadata JSONB
+);
+"""
+
+_WHATSAPP_USERS_INDEX_STATUS = """
+CREATE INDEX IF NOT EXISTS idx_whatsapp_users_status ON whatsapp_users (status);
+"""
+
 _TELEGRAM_NOTIFICATION_SETTINGS_SQL = """
 CREATE TABLE IF NOT EXISTS telegram_notification_settings (
     id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
     bot_token TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+"""
+
+_WHATSAPP_LINK_SETTINGS_SQL = """
+CREATE TABLE IF NOT EXISTS whatsapp_link_settings (
+    id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    wa_link TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
@@ -867,7 +897,10 @@ def ensure_dashboard_schema() -> None:
         _CHAT_FEEDBACK_CREATED_INDEX_SQL,
         _TELEGRAM_USERS_SQL,
         _TELEGRAM_USERS_INDEX_STATUS,
+        _WHATSAPP_USERS_SQL,
+        _WHATSAPP_USERS_INDEX_STATUS,
         _TELEGRAM_NOTIFICATION_SETTINGS_SQL,
+        _WHATSAPP_LINK_SETTINGS_SQL,
         _TELEGRAM_ADMIN_ACCOUNTS_SQL,
         _TELEGRAM_ADMIN_ACCOUNTS_INDEX_USER,
         _TELEGRAM_NOTIFICATION_GROUPS_SQL,
