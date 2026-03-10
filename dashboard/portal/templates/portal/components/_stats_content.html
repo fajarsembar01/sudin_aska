@@ -1,7 +1,7 @@
 {# Shared stats content component - expects stats_role variable ('admin' or 'coordinator') #}
 {# Set defaults if not provided #}
 {% set is_admin = (stats_role == 'admin') %}
-{% set title = stats_title or ('Dashboard PANBERSS' if is_admin else 'Statistik Tim ' ~ (team.name or team.kecamatan_name or 'Koordinator')) %}
+{% set title = stats_title or ('Dashboard PANBERSS' if is_admin else 'Dashboard Tim ' ~ (team.name or team.kecamatan_name or 'Koordinator')) %}
 {% set subtitle = stats_subtitle or ('Ringkasan data penilaian sekolah' if is_admin else 'Data penilaian oleh anggota tim Anda') %}
 {% set map_data_endpoint = 'portal.admin_map_data' if is_admin else 'portal.coordinator_map_data' %}
 {% set stats_endpoint = 'portal.admin_stats' if is_admin else 'portal.coordinator_stats' %}
@@ -13,13 +13,14 @@
 {% set teams = monev_teams|default([]) %}
 {% set selected_year = current_period_year|default(None) %}
 {% set selected_month = current_period_month|default(None) %}
+{% set periods_sorted = periods|default([]) | sort(attribute='start_date') %}
 {% from "portal/components/_color_macros.html" import get_score_bootstrap_class %}
 
 <section class="mb-4">
   <div class="card portal-hero border-0 shadow-sm">
     <div class="card-body">
       <div
-        class="d-flex flex-wrap justify-content-between align-items-start gap-4"
+        class="d-flex flex-wrap justify-content-between align-items-start gap-3"
       >
         <div class="d-flex align-items-start gap-3 flex-wrap">
           <span class="icon-badge feature-icon text-primary">
@@ -30,14 +31,14 @@
             <p class="page-subtitle mb-0">{{ subtitle }}</p>
           </div>
         </div>
-        <div class="d-flex gap-2 flex-wrap align-items-center">
+        <div class="d-flex flex-wrap gap-2">
           {% if is_admin %}
           <a
-            href="{{ url_for('portal.admin_setup') }}"
-            class="btn btn-outline-primary d-inline-flex align-items-center gap-2"
+            href="{{ url_for('portal.sidak_planner') }}{% if current_period_id %}?period_id={{ current_period_id }}{% endif %}"
+            class="btn btn-outline-danger d-inline-flex align-items-center gap-2"
           >
-            <i class="bi bi-tools"></i>
-            <span>Setup Data Sekolah</span>
+            <i class="bi bi-map"></i>
+            <span>Sidak Planner</span>
           </a>
           <a
             href="{{ url_for('portal.export_excel', period_id=current_period_id) }}"
@@ -45,13 +46,6 @@
           >
             <i class="bi bi-file-earmark-excel"></i>
             <span>Export Excel</span>
-          </a>
-          <a
-            href="{{ url_for('portal.sidak_planner') }}{% if current_period_id %}?period_id={{ current_period_id }}{% endif %}"
-            class="btn btn-outline-danger d-inline-flex align-items-center gap-2"
-          >
-            <i class="bi bi-map"></i>
-            <span>Sidak Planner</span>
           </a>
           {% endif %}
           <form method="get" class="d-inline-flex align-items-center gap-2">
@@ -106,19 +100,19 @@
               {% endfor %}
             </select>
             {% else %}
-            <select
-              name="period_id"
-              class="form-select border-primary text-primary fw-medium"
-              onchange="this.form.submit()"
-              style="min-width: 150px"
-            >
+            <form method="get" class="d-inline-flex align-items-center gap-2">
+              <select
+                class="form-select border-primary text-primary fw-medium "
+                name="period_id"
+                onchange="this.form.submit()"
+              >
               <option value="">Semua Periode</option>
-              {% for p in periods %}
+              {% for p in periods_sorted %}
               <option
                 value="{{ p.id }}"
                 {% if current_period_id==p.id %}selected{% endif %}
               >
-                {{ p.name }}
+              {{ p.name }}
               </option>
               {% endfor %}
             </select>
@@ -563,7 +557,7 @@
           <input type="hidden" name="team_id" value="{{ current_team_id }}" />
           {% endif %}
           <div class="col-md-4">
-            <select name="jenjang" class="form-select">
+            <select name="jenjang" class="form-select border-primary text-primary">
               <option value="">Semua Jenjang</option>
               {% for j in ['SD','MI','SMP','MTS','SMA','MA','SMK','TK'] %}
               <option
@@ -758,7 +752,7 @@
           >
             <div class="d-flex align-items-center gap-2">
               <i class="bi bi-people"></i>
-              <span>Dashboard Tim</span>
+              <span>Ringkasan Tim</span>
             </div>
             <i class="bi bi-chevron-right small"></i>
           </a>
@@ -767,8 +761,8 @@
             class="btn btn-outline-primary d-flex align-items-center gap-2 justify-content-between"
           >
             <div class="d-flex align-items-center gap-2">
-              <i class="bi bi-person-lines-fill"></i>
-              <span>Kelola Tim</span>
+              <i class="bi bi-person-plus"></i>
+              <span>Penambahan Anggota Tim</span>
             </div>
             <i class="bi bi-chevron-right small"></i>
           </a>
@@ -1614,6 +1608,13 @@
     .photo-nav-right {
       right: 8px;
     }
+
+    .form-select-custom-chevron {
+  /* Replace the default Bootstrap SVG with your custom color */
+  /* The color is specified as fill='...' in the SVG */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23dc3545' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+
   }
 </style>
 

@@ -319,7 +319,7 @@
         .form-control,
         .form-select,
         .input-group-text {
-            background: var(--bg-surface);
+            background-color: var(--bg-surface);
             color: var(--text-primary);
             border-color: var(--border-soft);
         }
@@ -864,7 +864,7 @@
             <a class="navbar-brand"
                 href="{% if current_user and current_user.role == 'admin' %}{{ url_for('portal.admin_stats')}}
                 {% elif current_user and current_user.role == 'staff' %}{{ url_for('portal.staff_assignments')}}
-                {% elif current_user and current_user.role == 'coordinator' %}{{ url_for('portal.coordinator_dashboard')}}
+                {% elif current_user and current_user.role == 'coordinator' %}{{ url_for('portal.coordinator_stats')}}
                 {% elif current_user and current_user.role == 'sekolah' %}{{ url_for('portal.sekolah_rooms')}}
                 {% endif %}">
                 <span class="icon-badge brand-icon text-primary">
@@ -924,8 +924,6 @@
                             </li>
                         </ul>
                     </li>
-
-                    
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'portal.coordinator_assessments' %}active{% endif %}"
                             href="{{ url_for('portal.coordinator_assessments') }}">
@@ -988,16 +986,11 @@
                     <!-- Admin dropdown with new Kelola Staff -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if ('admin' in request.endpoint and request.endpoint != 'portal.admin_stats') 
-                        or request.endpoint in ['portal.portal_kontak_wilayah', 'portal.manage_users', 'portal.preview_accounts'] %} active {% endif %}"
+                        or request.endpoint in ['portal.manage_monev_teams', 'portal.portal_kontak_wilayah', 'portal.manage_users', 'portal.preview_accounts', 'portal.sekolah_rooms'] %} active {% endif %}"
                         href="#" data-bs-toggle="dropdown">
                             <i class="bi bi-gear nav-icon"></i>Admin
                         </a>
                         <ul class="dropdown-menu">
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('portal.admin_stats') }}">
-                                    <i class="bi bi-bar-chart me-2"></i>Statistik
-                                </a>
-                            </li>
                             <li>
                                 <a class="dropdown-item {% if request.endpoint == 'portal.portal_kontak_wilayah' %}active{% endif %}"
                                     href="{{ url_for('portal.portal_kontak_wilayah') }}">
