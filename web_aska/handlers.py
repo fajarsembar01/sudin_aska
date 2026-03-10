@@ -17,6 +17,7 @@ from knowledge_loader import (
     STRUKTUR_ORG_FILE,
 )
 from db import save_chat, get_chat_history
+from rag_logger import save_rag_log
 from responses import ASKA_NO_DATA_RESPONSE, ASKA_TECHNICAL_ISSUE_RESPONSE
 from utils import (
     normalize_input,
@@ -335,6 +336,16 @@ async def process_channel_request(
         print(f"[{now_str()}] ?? ASKA AMBIL {len(result['context'])} KONTEN:")
         for i, doc in enumerate(result["context"], 1):
             print(f"  {i}. {doc.page_content[:200]}...")
+
+        save_rag_log(
+            user_id=user_id,
+            username=username,
+            channel=normalized_topic,
+            question=normalized_input,
+            chunks=[doc.page_content[:300] for doc in result["context"]],
+            answer=coerce_to_text(result)[:500],
+            response_ms=int((time.perf_counter() - start_time) * 1000),
+        )
 
         response = coerce_to_text(result)
         response = remove_trailing_signature(response.strip())

@@ -46,8 +46,9 @@
                 {% set current_role = current_user.role if current_user else None %}
                 {% set is_admin = current_role == 'admin' %}
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    {% set bot_endpoints = ['main.chats', 'main.chat_thread', 'main.feedback', 'main.twitter_logs',
-                    'main.notif_logs'] %}
+                    {% set bot_endpoints = ['main.chats', 'main.chat_thread', 'main.feedback', 'main.manage_knowledge',
+                    'main.twitter_logs',
+                    'main.notif_logs', 'main.rag_debug_logs'] %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if request.endpoint in bot_endpoints %}active{% endif %}"
                             href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -67,6 +68,12 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if request.endpoint == 'main.manage_knowledge' %}active{% endif %}"
+                                    href="{{ url_for('main.manage_knowledge') }}">
+                                    <i class="bi bi-journal-text me-2 text-primary"></i>Kecerdasan ASKA
+                                </a>
+                            </li>
+                            <li>
                                 <hr class="dropdown-divider">
                             </li>
                             <li>
@@ -79,6 +86,12 @@
                                 <a class="dropdown-item {% if request.endpoint == 'main.notif_logs' %}active{% endif %}"
                                     href="{{ url_for('main.notif_logs') }}">
                                     <i class="bi bi-bell me-2 text-primary"></i>Log Notifikasi
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'main.rag_debug_logs' %}active{% endif %}"
+                                    href="{{ url_for('main.rag_debug_logs') }}">
+                                    <i class="bi bi-cpu me-2 text-primary"></i>Log Debug RAG
                                 </a>
                             </li>
                         </ul>
@@ -131,6 +144,14 @@
                             </li>
                             {% endif %}
                         </ul>
+                    </li>
+                    {% endif %}
+                    {% if is_admin %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'main.admin_performance' %}active{% endif %}"
+                            href="{{ url_for('main.admin_performance') }}">
+                            <i class="bi bi-person-lines-fill nav-icon"></i>Performa Admin
+                        </a>
                     </li>
                     {% endif %}
                     {% if is_admin %}

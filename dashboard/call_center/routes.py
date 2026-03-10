@@ -28,6 +28,7 @@ from dashboard.queries import (
     upsert_telegram_admin_accounts,
     delete_telegram_admin_account,
     list_admin_users,
+    record_admin_action,
 )
 from .queries import (
     upsert_cc_conversation,
@@ -295,14 +296,38 @@ def api_messages(conv_id: int) -> Response:
 @call_center_bp.route("/api/close/<int:conv_id>", methods=["POST"])
 @role_required("admin")
 def api_close(conv_id: int) -> Response:
+    user = current_user() or {}
     close_conversation(conv_id)
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="call_center",
+            action="CLOSE",
+            target_type="CALL_CENTER_CONVERSATION",
+            target_id=conv_id,
+            target_name=f"Conversation #{conv_id}",
+        )
+    except Exception:
+        pass
     return jsonify({"ok": True})
 
 
 @call_center_bp.route("/api/reopen/<int:conv_id>", methods=["POST"])
 @role_required("admin")
 def api_reopen(conv_id: int) -> Response:
+    user = current_user() or {}
     reopen_conversation(conv_id)
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="call_center",
+            action="REOPEN",
+            target_type="CALL_CENTER_CONVERSATION",
+            target_id=conv_id,
+            target_name=f"Conversation #{conv_id}",
+        )
+    except Exception:
+        pass
     return jsonify({"ok": True})
 
 
@@ -335,11 +360,32 @@ def settings_telegram() -> Response:
         if action == "save_telegram_token":
             token = request.form.get("bot_token") or ""
             upsert_cc_telegram_settings(token, updated_by=actor.get("id"))
+            try:
+                record_admin_action(
+                    user_id=actor.get("id"),
+                    feature_key="call_center",
+                    action="UPDATE",
+                    target_type="CALL_CENTER_TELEGRAM_SETTINGS",
+                    target_name="Telegram Bot Token",
+                )
+            except Exception:
+                pass
             flash("Token bot Telegram Call Center disimpan.", "success")
 
         elif action == "delete_group":
             gid = request.form.get("group_id") or ""
             if gid.isdigit() and delete_cc_telegram_group(int(gid)):
+                try:
+                    record_admin_action(
+                        user_id=actor.get("id"),
+                        feature_key="call_center",
+                        action="DELETE",
+                        target_type="CALL_CENTER_TELEGRAM_GROUP",
+                        target_id=int(gid),
+                        target_name=f"Telegram Group #{gid}",
+                    )
+                except Exception:
+                    pass
                 flash("Grup Telegram dihapus.", "success")
             else:
                 flash("Gagal menghapus grup.", "danger")
@@ -378,6 +424,17 @@ def settings_telegram() -> Response:
                     for u, uid in entries_map.items()
                 ]
                 saved = upsert_telegram_admin_accounts(payload, created_by=actor.get("id"), scope="call_center")
+                try:
+                    record_admin_action(
+                        user_id=actor.get("id"),
+                        feature_key="call_center",
+                        action="CREATE",
+                        target_type="CALL_CENTER_TELEGRAM_ADMIN",
+                        target_name="Call Center Telegram Admins",
+                        metadata={"count": saved},
+                    )
+                except Exception:
+                    pass
                 flash(f"{saved} admin Telegram Call Center disimpan.", "success")
             for err in errors:
                 flash(err, "warning")
@@ -387,6 +444,17 @@ def settings_telegram() -> Response:
             if mapping_id.isdigit():
                 deleted = delete_telegram_admin_account(int(mapping_id))
                 if deleted:
+                    try:
+                        record_admin_action(
+                            user_id=actor.get("id"),
+                            feature_key="call_center",
+                            action="DELETE",
+                            target_type="CALL_CENTER_TELEGRAM_ADMIN",
+                            target_id=int(mapping_id),
+                            target_name=f"Telegram Admin #{mapping_id}",
+                        )
+                    except Exception:
+                        pass
                     flash("Admin Telegram dihapus dari daftar penerima notifikasi Call Center.", "success")
                 else:
                     flash("Mapping tidak ditemukan.", "warning")

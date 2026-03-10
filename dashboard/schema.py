@@ -115,6 +115,35 @@ CREATE INDEX IF NOT EXISTS idx_bullying_report_events_report
 ON bullying_report_events (report_id);
 """
 
+_DASHBOARD_ADMIN_ACTION_LOGS_SQL = """
+CREATE TABLE IF NOT EXISTS dashboard_admin_action_logs (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    feature_key TEXT NOT NULL,
+    action TEXT NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id INTEGER,
+    target_name TEXT,
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_DASHBOARD_ADMIN_ACTION_LOGS_INDEX_CREATED = """
+CREATE INDEX IF NOT EXISTS idx_dashboard_admin_action_logs_created
+ON dashboard_admin_action_logs (created_at DESC);
+"""
+
+_DASHBOARD_ADMIN_ACTION_LOGS_INDEX_FEATURE = """
+CREATE INDEX IF NOT EXISTS idx_dashboard_admin_action_logs_feature
+ON dashboard_admin_action_logs (feature_key, created_at DESC);
+"""
+
+_DASHBOARD_ADMIN_ACTION_LOGS_INDEX_USER = """
+CREATE INDEX IF NOT EXISTS idx_dashboard_admin_action_logs_user
+ON dashboard_admin_action_logs (user_id, created_at DESC);
+"""
+
 _NOTIFICATIONS_SQL = """
 CREATE TABLE IF NOT EXISTS notifications (
     id SERIAL PRIMARY KEY,
@@ -957,6 +986,10 @@ def ensure_dashboard_schema() -> None:
         _BULLYING_STATUS_INDEX_SQL,
         _BULLYING_EVENTS_SQL,
         _BULLYING_EVENTS_INDEX_SQL,
+        _DASHBOARD_ADMIN_ACTION_LOGS_SQL,
+        _DASHBOARD_ADMIN_ACTION_LOGS_INDEX_CREATED,
+        _DASHBOARD_ADMIN_ACTION_LOGS_INDEX_FEATURE,
+        _DASHBOARD_ADMIN_ACTION_LOGS_INDEX_USER,
         _NOTIFICATIONS_SQL,
         "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES dashboard_users(id) ON DELETE CASCADE",
         _NOTIFICATIONS_INDEX_STATUS,

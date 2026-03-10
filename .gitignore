@@ -63,6 +63,7 @@ runtime/
 
 # AI / build artifacts
 kecerdasan.build.md
+kecerdasan/.generated/
 
 # Twitter bot state
 twitter_state.json

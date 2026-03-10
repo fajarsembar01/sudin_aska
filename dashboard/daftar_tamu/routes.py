@@ -36,6 +36,7 @@ import qrcode
 
 from dashboard.auth import current_user, role_required
 from dashboard.db_access import get_cursor
+from dashboard.queries import record_admin_action
 from dashboard.portal.permissions import can_access_aska, get_permission_summary, is_superadmin
 from dashboard.portal.queries import (
     fetch_admin_pending_summary,
@@ -2248,6 +2249,18 @@ def admin_transaction_approve(transaction_id: int) -> Response:
         )
     except Exception:
         current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu.")
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="daftar_tamu",
+            action="VERIFY_APPROVE",
+            target_type="GUESTBOOK_TRANSACTION",
+            target_id=transaction_id,
+            target_name=f"Transaksi #{transaction_id}",
+            metadata={"status": "approved", "reviewer_note": note or None},
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mencatat action admin buku tamu.")
     return jsonify({"success": True})
 
 
@@ -2287,6 +2300,18 @@ def admin_transaction_reject(transaction_id: int) -> Response:
         )
     except Exception:
         current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu.")
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="daftar_tamu",
+            action="VERIFY_REJECT",
+            target_type="GUESTBOOK_TRANSACTION",
+            target_id=transaction_id,
+            target_name=f"Transaksi #{transaction_id}",
+            metadata={"status": "rejected", "reviewer_note": note},
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mencatat action admin buku tamu.")
     return jsonify({"success": True})
 
 
@@ -2315,6 +2340,18 @@ def admin_transaction_pending(transaction_id: int) -> Response:
         )
     except Exception:
         current_app.logger.exception("Gagal menyimpan notifikasi status buku tamu aplikasi.")
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="daftar_tamu",
+            action="VERIFY_PENDING",
+            target_type="GUESTBOOK_TRANSACTION",
+            target_id=transaction_id,
+            target_name=f"Transaksi #{transaction_id}",
+            metadata={"status": "pending", "reviewer_note": note or None},
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mencatat action admin buku tamu.")
     return jsonify({"success": True})
 
 
@@ -2347,6 +2384,18 @@ def admin_bulk_approve_transactions() -> Response:
             ok = False
         if ok:
             success_count += 1
+            try:
+                record_admin_action(
+                    user_id=user.get("id"),
+                    feature_key="daftar_tamu",
+                    action="VERIFY_APPROVE",
+                    target_type="GUESTBOOK_TRANSACTION",
+                    target_id=tx_id,
+                    target_name=f"Transaksi #{tx_id}",
+                    metadata={"status": "approved", "reviewer_note": note or None, "mode": "bulk"},
+                )
+            except Exception:
+                current_app.logger.exception("Gagal mencatat bulk approve buku tamu.")
             try:
                 _notify_user_app_status_change(
                     transaction_id=tx_id,
@@ -2407,6 +2456,18 @@ def admin_bulk_reject_transactions() -> Response:
             ok = False
         if ok:
             success_count += 1
+            try:
+                record_admin_action(
+                    user_id=user.get("id"),
+                    feature_key="daftar_tamu",
+                    action="VERIFY_REJECT",
+                    target_type="GUESTBOOK_TRANSACTION",
+                    target_id=tx_id,
+                    target_name=f"Transaksi #{tx_id}",
+                    metadata={"status": "rejected", "reviewer_note": note, "mode": "bulk"},
+                )
+            except Exception:
+                current_app.logger.exception("Gagal mencatat bulk reject buku tamu.")
             try:
                 _notify_user_app_status_change(
                     transaction_id=tx_id,
@@ -2784,6 +2845,18 @@ def admin_verify_general_guest(guest_id: int) -> Response:
         )
         if cur.rowcount == 0:
             return jsonify({"success": False, "message": "Tamu umum tidak ditemukan atau sudah dihapus."}), 404
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="daftar_tamu",
+            action="VERIFY_GENERAL_GUEST",
+            target_type="GENERAL_GUEST",
+            target_id=guest_id,
+            target_name=f"Tamu Umum #{guest_id}",
+            metadata={"is_verified": is_verified},
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mencatat verifikasi tamu umum.")
     return jsonify({"success": True, "is_verified": is_verified})
 
 
@@ -2807,6 +2880,18 @@ def admin_delete_general_guest(guest_id: int) -> Response:
         )
         if cur.rowcount == 0:
             return jsonify({"success": False, "message": "Tamu umum tidak ditemukan."}), 404
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="daftar_tamu",
+            action="DELETE_GENERAL_GUEST" if is_deleted else "RESTORE_GENERAL_GUEST",
+            target_type="GENERAL_GUEST",
+            target_id=guest_id,
+            target_name=f"Tamu Umum #{guest_id}",
+            metadata={"is_deleted": is_deleted},
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mencatat hapus tamu umum.")
     return jsonify({"success": True, "is_deleted": is_deleted})
 
 

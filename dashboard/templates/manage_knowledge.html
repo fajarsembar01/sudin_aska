@@ -1,0 +1,496 @@
+{% extends 'base.html' %}
+{% block title %}Kelola Kecerdasan ASKA{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+        <div class="text-muted small fw-semibold text-uppercase mb-1">ASKA Insight</div>
+        <h1 class="h4 fw-bold mb-1">Kelola Kecerdasan</h1>
+        <p class="text-muted mb-0">Tambah atau sunting berkas Markdown yang dipakai RAG ASKA. Semua *.md di folder
+            <code>kecerdasan/</code> otomatis ikut dimuat.
+        </p>
+    </div>
+    <span class="badge rounded-pill text-bg-light border">
+        <i class="bi bi-hdd-stack text-primary me-2"></i>
+        {{ files|length }} berkas
+    </span>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm" style="position: sticky; top: 1rem;">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="icon-badge section-icon text-primary"><i class="bi bi-folder"></i></span>
+                    <div class="flex-grow-1">
+                        <h2 class="h6 fw-bold mb-0">Berkas Kecerdasan</h2>
+                        <div class="text-muted small">Klik untuk membuka / lanjut sunting.</div>
+                    </div>
+                </div>
+                <a href="{{ url_for('main.manage_knowledge', new='1', tab='editor') }}"
+                    class="btn btn-sm btn-primary w-100 mb-3">
+                    <i class="bi bi-plus-lg me-1"></i>Buat Berkas Baru
+                </a>
+
+                <ul class="nav nav-pills nav-fill mb-3" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active small py-1 px-2" id="tab-original-btn" data-bs-toggle="pill"
+                            data-bs-target="#tab-original" type="button" role="tab">
+                            <i class="bi bi-file-earmark-text me-1"></i>Original
+                            <span class="badge text-bg-secondary ms-1">{{ files|length }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link small py-1 px-2" id="tab-generated-btn" data-bs-toggle="pill"
+                            data-bs-target="#tab-generated" type="button" role="tab">
+                            <i class="bi bi-file-earmark-check me-1"></i>Generated
+                            <span class="badge text-bg-secondary ms-1">{{ generated_files|length }}</span>
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="tab-original" role="tabpanel">
+                        <div class="list-group small">
+                            {% for item in files %}
+                            <a class="list-group-item list-group-item-action d-flex align-items-start gap-2 {% if item.rel_path == selected_file %}active{% endif %}"
+                                href="{{ url_for('main.manage_knowledge', file=item.rel_path) }}">
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold">{{ item.rel_path or item.name }}</div>
+                                    <div
+                                        class="text-muted {% if item.rel_path == selected_file %}text-white-50{% endif %}">
+                                        {{ item.updated_at|jakarta('%d %b %Y %H:%M') }} · {{ (item.size / 1024)|round(1)
+                                        }} KB
+                                    </div>
+                                </div>
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                            {% else %}
+                            <div class="text-muted">Belum ada berkas. Simpan berkas pertama di form kanan.</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="tab-generated" role="tabpanel">
+                        <div class="list-group small">
+                            {% for item in generated_files %}
+                            <div class="list-group-item d-flex align-items-start gap-2">
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold"><i class="bi bi-check-circle text-success me-1"></i>{{
+                                        item.rel_path or item.name }}</div>
+                                    <div class="text-muted">
+                                        {{ item.updated_at|jakarta('%d %b %Y %H:%M') }} · {{ (item.size / 1024)|round(1)
+                                        }} KB
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-muted small">Belum ada berkas generated. File bersih akan otomatis dibuat
+                                saat Anda menyimpan atau menambahkan snippet.</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="fw-semibold small text-uppercase text-muted">Prioritas berkas</div>
+                        <small class="text-muted">{{ files|length }} berkas</small>
+                    </div>
+                    {% if files %}
+                    <div class="list-group list-group-flush" id="fileOrderList">
+                        {% for item in files %}
+                        <div class="list-group-item list-group-item-light px-0 py-2 d-flex align-items-center justify-content-between gap-2 file-order-item"
+                            draggable="true" data-file-item data-file-path="{{ item.rel_path }}">
+                            <span class="text-truncate small fw-semibold">
+                                {{ loop.index }}. {{ item.rel_path }}
+                            </span>
+                            <i class="bi bi-arrows-move text-muted small"></i>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <form method="POST" id="fileOrderForm" class="mt-3">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <input type="hidden" name="action" value="save_file_order" />
+                        <input type="hidden" name="file_order" id="fileOrderInput"
+                            value="{{ files|map(attribute='rel_path')|join(',') }}" />
+                        <input type="hidden" name="file" value="{{ selected_file }}">
+                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-save me-1"></i>Simpan urutan
+                        </button>
+                    </form>
+                    {% else %}
+                    <p class="text-muted small mb-0">Belum ada berkas tambahan. Simpan berkas pertama di form kanan lalu
+                        atur prioritasnya di sini.</p>
+                    {% endif %}
+                </div>
+                <div class="alert alert-info mt-3 mb-0 small" role="status">
+                    <div class="fw-semibold mb-1">Bagaimana ASKA belajar?</div>
+                    <ol class="ps-3 mb-0">
+                        <li>Gabungkan semua berkas *.md → jadi satu dokumen.</li>
+                        <li>Dokumen dipecah jadi chunk lalu di-embed ke FAISS.</li>
+                        <li>Setiap tanya-jawab, ASKA tarik chunk relevan &amp; jawab.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <ul class="nav nav-tabs mb-3">
+                    <li class="nav-item">
+                        <a class="nav-link {% if selected_tab == 'editor' %}active{% endif %}"
+                            href="{{ url_for('main.manage_knowledge', file=selected_file, tab='editor') }}">
+                            Kelola berkas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if selected_tab == 'history' %}active{% endif %}"
+                            href="{{ url_for('main.manage_knowledge', file=selected_file, tab='history') }}">
+                            Riwayat penambahan
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if selected_tab == 'preview' %}active{% endif %}"
+                            href="{{ url_for('main.manage_knowledge', file=selected_file, tab='preview') }}">
+                            <i class="bi bi-diagram-3 me-1"></i>Preview berkas
+                        </a>
+                    </li>
+                </ul>
+
+                {% if selected_tab == 'editor' %}
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="icon-badge section-icon text-success"><i class="bi bi-journal-text"></i></span>
+                        <div>
+                            <h2 class="h6 fw-bold mb-0">Sunting / Tambah Berkas</h2>
+                            <div class="text-muted small">Sedang mengedit: <code>{{ selected_file }}</code></div>
+                        </div>
+                    </div>
+                    <form method="POST" action="{{ url_for('main.manage_knowledge', file=selected_file) }}"
+                        onsubmit="return confirm('Yakin ingin menghapus berkas {{ selected_file }}? Tindakan ini tidak bisa dibatalkan.');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <input type="hidden" name="action" value="delete_file">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash me-1"></i>Hapus
+                        </button>
+                    </form>
+                </div>
+                <form method="POST" action="{{ url_for('main.manage_knowledge', file=selected_file) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="action" value="save_file">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nama berkas</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-filetype-md"></i></span>
+                            <input type="text" class="form-control" name="new_filename" value="{{ selected_basename }}"
+                                placeholder="contoh: kjp_2025.md" required>
+                        </div>
+                        <div class="form-text">Hanya huruf, angka, titik, garis bawah, atau minus. Ekstensi .md
+                            ditambahkan otomatis bila belum ada.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Konten Markdown</label>
+                        <textarea class="form-control" name="content" rows="16" spellcheck="false"
+                            style="font-family: 'JetBrains Mono', 'SFMono-Regular', Menlo, monospace;">{{ selected_content }}</textarea>
+                        <div class="form-text">Tempel teks dari notulensi, panduan, atau dokumen resmi. Sertakan heading
+                            agar mudah dicari (mis. <code># KJP 2025</code>).</div>
+                    </div>
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="refreshSwitch"
+                                name="refresh" value="1">
+                            <label class="form-check-label" for="refreshSwitch">Refresh RAG setelah simpan</label>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 small text-muted">
+                            <i class="bi bi-collection"></i>
+                            <span>Total gabungan: {{ combined_chars }} karakter</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="reset" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>Simpan
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                <hr class="my-4">
+                <form method="POST" action="{{ url_for('main.manage_knowledge', file=selected_file) }}" class="mb-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="action" value="append_snippet">
+                    <input type="hidden" name="new_filename" value="{{ selected_basename }}">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge text-bg-light border"><i
+                                class="bi bi-plus-circle me-1 text-success"></i>Tambahkan potongan halaman</span>
+                        <span class="text-muted small">Untuk menambah isi baru ke berkas yang sudah ada tanpa
+                            menimpa.</span>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Halaman dari</label>
+                            <input type="number" min="1" class="form-control" name="page_from" placeholder="1">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Halaman sampai</label>
+                            <input type="number" min="1" class="form-control" name="page_to" placeholder="5">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-text small text-muted">
+                                Opsional. Kosongkan bila hanya satu halaman.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Konten potongan baru</label>
+                        <textarea class="form-control" name="append_content" rows="8" spellcheck="false"
+                            style="font-family: 'JetBrains Mono', 'SFMono-Regular', Menlo, monospace;"></textarea>
+                        <div class="form-text small text-muted">
+                            Hanya isi teks yang ingin ditambahkan untuk halaman tersebut. Sistem akan mencegah duplikasi
+                            isi di dalam berkas yang sama.
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-outline-success">
+                        <i class="bi bi-plus-circle me-1"></i>Tambah potongan halaman ke berkas
+                    </button>
+                </form>
+                <div class="mt-4">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge text-bg-light border"><i class="bi bi-eye me-1 text-primary"></i>Preview
+                            Gabungan</span>
+                        <span class="text-muted small">Cuplikan 1.200 karakter pertama dari semua berkas.</span>
+                    </div>
+                    <pre class="bg-body-tertiary rounded p-3 small"
+                        style="white-space: pre-wrap; line-height: 1.35; max-height: 320px; overflow:auto;">{{ combined_preview_snippet }}</pre>
+                </div>
+
+                {% elif selected_tab == 'preview' %}
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="icon-badge section-icon text-primary"><i class="bi bi-diagram-3"></i></span>
+                    <div>
+                        <h2 class="h6 fw-bold mb-0">Preview berkas (fold per heading)</h2>
+                        <div class="text-muted small">Klik judul untuk buka/tutup isi tiap bagian. Berkas:
+                            <code>{{ selected_file }}</code>
+                        </div>
+                    </div>
+                </div>
+                <div id="fileFoldPreview" class="bg-body-tertiary rounded p-3 small">
+                    <div class="text-muted small">Struktur berkas akan muncul di sini berdasarkan heading (#, ##, dst.).
+                    </div>
+                </div>
+
+                {% elif selected_tab == 'history' %}
+                <div class="mb-3">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge text-bg-light border">
+                            <i class="bi bi-clock-history me-1 text-primary"></i>
+                            Riwayat penambahan kecerdasan
+                        </span>
+                        <span class="text-muted small">Hanya untuk berkas ini ({{ selected_file }}).</span>
+                    </div>
+                    <p class="text-muted small mb-3">
+                        Menampilkan maksimal 50 aksi terakhir admin pada berkas kecerdasan ini. Detail ini juga dipakai
+                        di halaman Performa Admin.
+                    </p>
+                </div>
+                {% if history_entries %}
+                <div class="list-group list-group-flush small">
+                    {% for item in history_entries %}
+                    <div class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                            <div>
+                                <span class="badge bg-light text-uppercase text-muted border me-1">
+                                    {{ item.action }}
+                                </span>
+                                <span class="fw-semibold">
+                                    {{ item.actor_label }}
+                                </span>
+                            </div>
+                            <div class="text-muted">
+                                {{ item.created_at|jakarta('%d %b %Y %H:%M') }}
+                            </div>
+                        </div>
+                        <div class="text-muted">
+                            File: <code>{{ item.target_name }}</code>
+                            {% set meta = item.metadata or {} %}
+                            {% if meta.page_from or meta.page_to %}
+                            · Halaman:
+                            {% if meta.page_from and meta.page_to and meta.page_from != meta.page_to %}
+                            {{ meta.page_from }}–{{ meta.page_to }}
+                            {% else %}
+                            {{ meta.page_from or meta.page_to }}
+                            {% endif %}
+                            {% endif %}
+                            {% if meta.append %}
+                            · Append
+                            {% endif %}
+                            {% if meta.chars is not none %}
+                            · {{ meta.chars }} karakter
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0">
+                    Belum ada riwayat penambahan kecerdasan yang tercatat untuk berkas ini.
+                    Simpan atau tambahkan potongan halaman, lalu riwayat akan muncul di sini.
+                </p>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        var list = document.getElementById("fileOrderList");
+        var orderInput = document.getElementById("fileOrderInput");
+        var orderForm = document.getElementById("fileOrderForm");
+        if (!list || !orderInput) {
+            return;
+        }
+
+        var dragging = null;
+
+        function refreshOrderValue() {
+            var items = list.querySelectorAll("[data-file-path]");
+            var values = Array.from(items).map(function (item) {
+                return item.dataset.filePath || "";
+            }).filter(Boolean);
+            orderInput.value = values.join(",");
+        }
+
+        list.addEventListener("dragstart", function (event) {
+            var target = event.target.closest("[data-file-item]");
+            if (!target) {
+                return;
+            }
+            dragging = target;
+            event.dataTransfer.effectAllowed = "move";
+            try {
+                event.dataTransfer.setData("text/plain", "");
+            } catch (ignore) {
+                /* some browsers require setData */
+            }
+            target.classList.add("dragging");
+        });
+
+        list.addEventListener("dragend", function () {
+            if (dragging) {
+                dragging.classList.remove("dragging");
+                dragging = null;
+            }
+        });
+
+        list.addEventListener("dragover", function (event) {
+            event.preventDefault();
+            var over = event.target.closest("[data-file-item]");
+            if (!over || over === dragging || !dragging) {
+                return;
+            }
+            var rect = over.getBoundingClientRect();
+            var after = (event.clientY - rect.top) > rect.height / 2;
+            if (after) {
+                over.parentNode.insertBefore(dragging, over.nextElementSibling);
+            } else {
+                over.parentNode.insertBefore(dragging, over);
+            }
+        });
+
+        list.addEventListener("drop", function (event) {
+            event.preventDefault();
+            if (dragging) {
+                dragging.classList.remove("dragging");
+                dragging = null;
+                refreshOrderValue();
+            }
+        });
+
+        if (orderForm) {
+            orderForm.addEventListener("submit", function () {
+                refreshOrderValue();
+            });
+        }
+
+        refreshOrderValue();
+    })();
+
+    (function () {
+        var container = document.getElementById("fileFoldPreview");
+        if (!container) {
+            return;
+        }
+
+        /* Use the clean version (without page markers) for preview */
+        var rawText = {{ selected_content_clean| tojson
+    }};
+
+    function buildFoldPreview() {
+        var text = rawText || "";
+        var lines = text.split(/\r?\n/);
+        var sections = [];
+        var current = null;
+
+        lines.forEach(function (line) {
+            var match = line.match(/^(#{1,6})\s+(.*)$/);
+            if (match) {
+                if (current) {
+                    sections.push(current);
+                }
+                current = {
+                    heading: match[2] || "Tanpa judul",
+                    level: match[1].length,
+                    body: [],
+                };
+            } else {
+                if (!current) {
+                    current = {
+                        heading: "Tanpa judul",
+                        level: 1,
+                        body: [],
+                    };
+                }
+                current.body.push(line);
+            }
+        });
+        if (current) {
+            sections.push(current);
+        }
+
+        container.innerHTML = "";
+        if (!sections.length) {
+            var empty = document.createElement("div");
+            empty.className = "text-muted small";
+            empty.textContent = "Belum ada konten pada berkas ini.";
+            container.appendChild(empty);
+            return;
+        }
+
+        sections.forEach(function (sec, index) {
+            var details = document.createElement("details");
+            if (index === 0) {
+                details.open = true;
+            }
+            var summary = document.createElement("summary");
+            summary.textContent = Array(sec.level + 1).join("#") + " " + sec.heading;
+            summary.className = "fw-semibold";
+            details.appendChild(summary);
+            var pre = document.createElement("pre");
+            pre.textContent = sec.body.join("\n");
+            pre.style.whiteSpace = "pre-wrap";
+            pre.style.margin = "0.25rem 0 0 0";
+            details.appendChild(pre);
+            container.appendChild(details);
+        });
+    }
+
+    buildFoldPreview();
+    }) ();
+</script>
+{% endblock %}
