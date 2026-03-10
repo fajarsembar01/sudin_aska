@@ -2502,7 +2502,7 @@ def view_assessment(assessment_id: int) -> Response:
         return redirect(url_for("portal.home"))
     
     # Security check: Only owner or admin can view
-    if assessment["staff_id"] != user["id"] and user["role"] != "admin":
+    if assessment["staff_id"] != user["id"] and user["role"] != "admin" and user["role"] != "coordinator":
         flash("Anda tidak memiliki akses untuk melihat penilaian ini.", "danger")
         return redirect(url_for("portal.home"))
 
@@ -7542,14 +7542,20 @@ def coordinator_assignment_requests() -> Response:
 def coordinator_assessments() -> Response:
     """Coordinator can start/continue their own assessments."""
     user = current_user()
-    assigned_schools = get_staff_assigned_schools(user["id"])
     periods = list_periods()
     active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
     
+    selected_period_id = request.args.get("period_id", type=int)
+    if selected_period_id is None:
+        selected_period_id = active_period_id
+
+    assigned_schools = get_staff_assigned_schools(user["id"], period_id=selected_period_id)
+
     return render_template(
         "portal/coordinator/assessments.html",
         assigned_schools=assigned_schools,
         periods=periods,
         active_period_id=active_period_id,
+        selected_period_id=selected_period_id,
         user=user,
     )

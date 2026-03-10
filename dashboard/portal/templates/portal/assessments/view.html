@@ -9,7 +9,7 @@
             {% set back_url = (
                 url_for('portal.staff_assignments') if current_user and current_user.role == 'staff'
                 else (
-                    url_for('portal.coordinator_assessments') if current_user and current_user.role == 'coordinator'
+                    url_for('portal.coordinator_stats') if current_user and current_user.role == 'coordinator'
                     else (
                         url_for('portal.admin_stats') if current_user and current_user.role == 'admin'
                         else url_for('portal.home')
@@ -24,14 +24,16 @@
                 <p class="text-muted mb-0 small">{{ assessment.school_name }}</p>
             </div>
         </div>
-        <span class="status-badge status-{{ assessment.status }}">
-            <i class="bi bi-{% if assessment.status == 'submitted' %}check-circle{% else %}pencil{% endif %}"></i>
-            {{ assessment.status|capitalize }}
-        </span>
-        <span class="badge bg-primary-subtle text-primary border">
-            <i class="bi bi-calendar-event"></i>
-            {{ assessment.period_name or 'Periode aktif saat dibuat' }}
-        </span>
+        <div class="d-flex gap-2">
+            <span class="status-badge status-{{ assessment.status }}">
+                <i class="bi bi-{% if assessment.status == 'submitted' %}check-circle{% else %}pencil{% endif %}"></i>
+                {{ assessment.status|capitalize }}
+            </span>
+            <span class="badge bg-primary-subtle text-primary border d-inline-flex align-items-center justify-content-center">
+                <i class="bi bi-calendar-event me-1"></i>
+                {{ assessment.period_name or 'Periode aktif saat dibuat' }}
+            </span>
+        </div>
     </div>
 
     <div class="row g-4">

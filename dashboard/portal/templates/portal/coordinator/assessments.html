@@ -3,6 +3,8 @@
 {% block title %}Penilaian Saya - Koordinator{% endblock %}
 
 {% block portal_content %}
+{% set periods_sorted = periods|default([]) | sort(attribute='start_date') %}
+
 <section class="mb-4">
     <div class="card portal-hero border-0 shadow-sm">
         <div class="card-body">
@@ -51,10 +53,14 @@
                         </div>
                     </div>
                     <div style="min-width: 240px;">
-                        <select id="periodSelect" class="form-select form-select-sm">
-                            <option value="">{% if active_period_id %}Periode aktif (default){% else %}-- Pilih periode --{% endif %}</option>
-                            {% for p in periods %}
-                            <option value="{{ p.id }}" {% if active_period_id and active_period_id==p.id %}selected{% endif %}>{{ p.name }}</option>
+                        <select id="periodSelect" class="form-select form-select-sm border-primary text-primary">
+                            <option value="" {% if not selected_period_id %}selected{% endif %}>
+                                {% if active_period_id %}Periode aktif (default){% else %}-- Pilih periode --{% endif %}
+                            </option>
+                            {% for p in periods_sorted %}
+                            <option value="{{ p.id }}" {% if selected_period_id and selected_period_id==p.id %}selected{% endif %}>
+                                {{ p.name }}
+                            </option>
                             {% endfor %}
                         </select>
                     </div>
@@ -170,6 +176,24 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const periodSelect = document.getElementById('periodSelect');
+
+        if (periodSelect) {
+            periodSelect.addEventListener('change', function () {
+                try {
+                    const url = new URL(window.location.href);
+                    const pid = (this.value || '').trim();
+                    if (pid) {
+                        url.searchParams.set('period_id', pid);
+                    } else {
+                        url.searchParams.delete('period_id');
+                    }
+                    window.location.href = url.toString();
+                } catch (err) {
+                    console.warn('Gagal mengganti periode', err);
+                }
+            });
+        }
+
         document.querySelectorAll('.start-assessment-btn').forEach(btn => {
             btn.addEventListener('click', function () {
                 if (this.dataset.hasDraft === 'true') {
