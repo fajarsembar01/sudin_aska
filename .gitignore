@@ -2,7 +2,6 @@
 venv/
 venv_py39/
 .env
-.env
 
 # Cache & pyc
 __pycache__/
@@ -13,13 +12,19 @@ __pycache__/
 
 # OS files (macOS/Linux)
 .DS_Store
+Thumbs.db
 
-# VS Code config (jika pakai)
+# IDE / Editor config
 .vscode/
+.idea/
+*.swp
+*.swo
 
-# Log
+# Log & PID files
 *.log
+*.pid
 .pglog
+.dashboard.log
 
 # Local postgres data
 .pgdata/
@@ -39,10 +44,30 @@ Laporan_Portal_PANBERSS.docx
 Laporan_Portal_PANBERSS.pdf
 uploads/
 
-.aska_vectorstore
-
-# Node/Playwright test artifacts
+# Node / NPM
 node_modules/
+package-lock.json
+
+# Playwright test artifacts
 playwright-report/
 test-results/
 .pytest_cache/
+
+# WhatsApp session & cache
+.wa_session/
+.wa_cc_session/
+.wwebjs_cache/
+
+# Runtime files (logs, pids, status)
+runtime/
+
+# AI / build artifacts
+kecerdasan.build.md
+kecerdasan/.generated/
+
+# Twitter bot state
+twitter_state.json
+twitter_posts.txt
+
+# Agent config (Gemini/Antigravity)
+.agent/

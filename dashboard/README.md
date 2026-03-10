@@ -6,6 +6,7 @@ Dashboard Flask untuk memantau performa bot ASKA tanpa akses langsung ke databas
 
 - Login berbasis session dengan role (`admin`, `editor`, `viewer`).
 - Kartu KPI: total pesan, pengguna unik, volume 7 hari terakhir, pengguna aktif hari ini.
+- Ringkasan performa channel Web, Telegram, WhatsApp, dan Twitter di ASKA Insight.
 - Grafik tren 14 hari (Chart.js) termasuk rata-rata dan p90 waktu respon.
 - Feed pertanyaan terbaru, top user aktif, dan timeline percakapan per user.
 - Tabel chat dengan filter tanggal, role, user ID, pencarian teks, serta ekspor CSV.
@@ -29,6 +30,7 @@ DB_PORT=5432
 DASHBOARD_SECRET_KEY=ganti-dengan-string-acak
 DASHBOARD_SESSION_DAYS=14
 DASHBOARD_DB_MAX_CONN=8
+ASKA_WHATSAPP_URL=082143646463      # tombol cepat WA di ASKA Insight
 ```
 
 ## Instalasi & Setup

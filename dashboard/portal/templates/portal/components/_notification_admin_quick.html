@@ -1,0 +1,18 @@
+{# Fragment quick list untuk dropdown notifikasi admin (di-include di dalam _notification_dropdown) #}
+<div class="notification-divider" id="adminPendingQuickDivider"></div>
+<div class="notification-quick" id="adminPendingQuickList"
+    data-users-url="{{ url_for('portal.manage_users') }}"
+    data-user-verify-url="{{ url_for('portal.manage_users') }}"
+    data-assignment-url="{{ url_for('portal.admin_manage_staff') }}"
+    data-team-url="{{ url_for('portal.manage_monev_teams') }}"
+    data-reopen-url="{{ url_for('portal.admin_reopen_requests') }}"
+    data-guestbook-url="{{ url_for('daftar_tamu.admin_validation') }}"
+    data-undo-window-seconds="{{ undo_window_seconds | default(7) }}"
+    data-approve-assignment="{{ url_for('portal.admin_approve_assignment_request', request_id=0) }}"
+    data-reject-assignment="{{ url_for('portal.admin_reject_assignment_request', request_id=0) }}"
+    data-approve-reopen="{{ url_for('portal.approve_reopen', assessment_id=0) }}"
+    data-reject-reopen="{{ url_for('portal.reject_reopen', assessment_id=0) }}"
+    data-approve-guestbook="{{ url_for('daftar_tamu.admin_transaction_approve', transaction_id=0) }}"
+    data-reject-guestbook="{{ url_for('daftar_tamu.admin_transaction_reject', transaction_id=0) }}"
+    data-preview-url="{{ url_for('portal.admin_pending_preview') }}">
+</div>

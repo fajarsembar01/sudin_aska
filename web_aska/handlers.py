@@ -17,6 +17,7 @@ from knowledge_loader import (
     STRUKTUR_ORG_FILE,
 )
 from db import save_chat, get_chat_history
+from rag_logger import save_rag_log
 from responses import ASKA_NO_DATA_RESPONSE, ASKA_TECHNICAL_ISSUE_RESPONSE
 from utils import (
     normalize_input,
@@ -146,14 +147,24 @@ PSYCH_TIMEOUT_MESSAGE = (
 
 # Psych severity rank handled inside shared flows (responses/psychologist)
 
-async def process_web_request(user_id: int, user_input: str, username: str = "WebUser") -> tuple[str, Optional[int]]:
-    """Main function to handle a chat request from the web API.
+async def process_channel_request(
+    user_id: int,
+    user_input: str,
+    *,
+    username: str = "WebUser",
+    topic: str = "web",
+) -> tuple[str, Optional[int]]:
+    """Main function to handle chat request from non-Telegram channels.
     
     Returns:
         tuple: (response_text, chat_log_id) where chat_log_id is the ID of the bot's response
     """
-    
-    session_data = web_sessions.setdefault(user_id, {})
+    normalized_topic = (topic or "web").strip().lower()
+    if normalized_topic not in {"web", "whatsapp"}:
+        normalized_topic = "web"
+
+    session_key = f"{normalized_topic}:{user_id}"
+    session_data = web_sessions.setdefault(session_key, {})
     _maybe_reload_qa_chain()
 
     user = MockUser(user_id, first_name=username)
@@ -174,7 +185,7 @@ async def process_web_request(user_id: int, user_input: str, username: str = "We
         username = user.username
 
         print(
-            f"[{now_str()}] WEB HANDLER CALLED - FROM {username}: {normalized_input}"
+            f"[{now_str()}] {normalized_topic.upper()} HANDLER CALLED - FROM {username}: {normalized_input}"
         )
 
         storage_key = user_id
@@ -197,7 +208,13 @@ async def process_web_request(user_id: int, user_input: str, username: str = "We
         recent_messages[normalized_input] = now_ts
 
         print(f"[{now_str()}] SAVING USER MESSAGE")
-        chat_log_id = save_chat(user_id, username, normalized_input, role="user", topic="web")
+        chat_log_id = save_chat(
+            user_id,
+            username,
+            normalized_input,
+            role="user",
+            topic=normalized_topic,
+        )
 
         # 1) Bullying / Safety (reuse shared flow)
         reply_target = MockMessage(user, "")
@@ -211,15 +228,15 @@ async def process_web_request(user_id: int, user_input: str, username: str = "We
             user_id=user_id,
             username=username,
             chat_log_id=chat_log_id,
-            source="web",
+            source=normalized_topic,
             mark_responded=lambda: None,
             storage_key=storage_key,
             now_ts=now_ts,
             timeout_seconds=BULLYING_TIMEOUT_SECONDS,
-            topic="web",
+            topic=normalized_topic,
         )
         if handled:
-            print(f"[{now_str()}] WEB FLOW HANDLED: bullying")
+            print(f"[{now_str()}] {normalized_topic.upper()} FLOW HANDLED: bullying")
             return reply_target._last_reply or "", None
 
         # 2) Corruption Reporting Flow (reuse shared flow)
@@ -234,12 +251,12 @@ async def process_web_request(user_id: int, user_input: str, username: str = "We
             user_id=user_id,
             username=username,
             storage_key=storage_key,
-            source="web",
-            topic="web",
+            source=normalized_topic,
+            topic=normalized_topic,
             mark_responded=lambda: None,
         )
         if handled:
-            print(f"[{now_str()}] WEB FLOW HANDLED: corruption")
+            print(f"[{now_str()}] {normalized_topic.upper()} FLOW HANDLED: corruption")
             return reply_target._last_reply or "", None
 
         # 3) Psych / counseling (reuse shared flow)
@@ -255,15 +272,15 @@ async def process_web_request(user_id: int, user_input: str, username: str = "We
             username=username,
             storage_key=storage_key,
             chat_log_id=chat_log_id,
-            source="web",
-            topic="web",
+            source=normalized_topic,
+            topic=normalized_topic,
             mark_responded=lambda: None,
             timeout_seconds=PSYCH_TIMEOUT_SECONDS,
             timeout_message=PSYCH_TIMEOUT_MESSAGE,
             now_ts=now_ts,
         )
         if handled:
-            print(f"[{now_str()}] WEB FLOW HANDLED: psych")
+            print(f"[{now_str()}] {normalized_topic.upper()} FLOW HANDLED: psych")
             return reply_target._last_reply or "", None
 
         # Teacher flow is handled via shared flow handler below
@@ -279,13 +296,13 @@ async def process_web_request(user_id: int, user_input: str, username: str = "We
             normalized_input=normalized_input,
             user_id=user_id,
             storage_key=storage_key,
-            topic="web",
+            topic=normalized_topic,
             mark_responded=lambda: None,
             timeout_seconds=TEACHER_TIMEOUT_SECONDS,
             timeout_message=TEACHER_TIMEOUT_MESSAGE,
         )
         if handled:
-            print(f"[{now_str()}] WEB FLOW HANDLED: teacher")
+            print(f"[{now_str()}] {normalized_topic.upper()} FLOW HANDLED: teacher")
             return reply_target._last_reply or "", None
 
         # 5) Smalltalk / canned (reuse shared flow)
@@ -298,11 +315,11 @@ async def process_web_request(user_id: int, user_input: str, username: str = "We
             normalized_input=normalized_input,
             user_id=user_id,
             username=username,
-            topic="web",
+            topic=normalized_topic,
             mark_responded=lambda: None,
         )
         if handled:
-            print(f"[{now_str()}] WEB FLOW HANDLED: smalltalk")
+            print(f"[{now_str()}] {normalized_topic.upper()} FLOW HANDLED: smalltalk")
             return reply_target._last_reply or "", None
 
         normalized_input = rewrite_schedule_query(normalized_input)
@@ -320,6 +337,16 @@ async def process_web_request(user_id: int, user_input: str, username: str = "We
         for i, doc in enumerate(result["context"], 1):
             print(f"  {i}. {doc.page_content[:200]}...")
 
+        save_rag_log(
+            user_id=user_id,
+            username=username,
+            channel=normalized_topic,
+            question=normalized_input,
+            chunks=[doc.page_content[:300] for doc in result["context"]],
+            answer=coerce_to_text(result)[:500],
+            response_ms=int((time.perf_counter() - start_time) * 1000),
+        )
+
         response = coerce_to_text(result)
         response = remove_trailing_signature(response.strip())
 
@@ -333,7 +360,7 @@ async def process_web_request(user_id: int, user_input: str, username: str = "We
             "ASKA",
             response,
             role="aska",
-            topic="web",
+            topic=normalized_topic,
             response_time_ms=int(duration_ms),
         )
 
@@ -342,3 +369,13 @@ async def process_web_request(user_id: int, user_input: str, username: str = "We
     except Exception as e:
         print(f"[{now_str()}] [ERROR] {e}")
         return ASKA_TECHNICAL_ISSUE_RESPONSE, None
+
+
+async def process_web_request(user_id: int, user_input: str, username: str = "WebUser") -> tuple[str, Optional[int]]:
+    """Backward-compatible wrapper for existing web endpoint."""
+    return await process_channel_request(
+        user_id,
+        user_input,
+        username=username,
+        topic="web",
+    )

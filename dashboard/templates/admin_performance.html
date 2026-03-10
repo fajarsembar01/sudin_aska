@@ -1,0 +1,663 @@
+{% extends 'base.html' %}
+{% block title %}Performa Admin - ASKA Insights{% endblock %}
+
+{% block head_extra %}
+<style>
+    .performance-shell {
+        display: grid;
+        gap: 1.25rem;
+    }
+    .performance-hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 1.5rem;
+        border: 1px solid var(--border-soft);
+        background:
+            radial-gradient(circle at top right, rgba(255, 193, 7, 0.18), transparent 34%),
+            linear-gradient(135deg, rgba(13, 110, 253, 0.14), rgba(25, 135, 84, 0.08));
+        box-shadow: var(--shadow-soft);
+    }
+    .performance-hero::after {
+        content: "";
+        position: absolute;
+        inset: auto -8% -45% auto;
+        width: 280px;
+        height: 280px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.22);
+        filter: blur(8px);
+    }
+    .performance-hero .card-body {
+        position: relative;
+        z-index: 1;
+        padding: 1.5rem;
+    }
+    .tab-chip {
+        border-radius: 999px;
+        padding: 0.55rem 0.95rem;
+        border: 1px solid var(--border-soft);
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .tab-chip.active {
+        background: linear-gradient(135deg, rgba(13,110,253,0.12), rgba(25,135,84,0.14));
+        color: var(--accent);
+        border-color: rgba(13, 110, 253, 0.22);
+    }
+    .tab-chip .badge {
+        border-radius: 999px;
+    }
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+    }
+    .metric-card {
+        border-radius: 1.2rem;
+        border: 1px solid var(--border-soft);
+        box-shadow: var(--shadow-soft);
+    }
+    .metric-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+    }
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.05;
+    }
+    .summary-grid {
+        display: grid;
+        grid-template-columns: 1.25fr 0.95fr;
+        gap: 1rem;
+    }
+    .panel-card {
+        border-radius: 1.25rem;
+        border: 1px solid var(--border-soft);
+        box-shadow: var(--shadow-soft);
+    }
+    .leaderboard-table td,
+    .leaderboard-table th,
+    .detail-table td,
+    .detail-table th {
+        vertical-align: middle;
+    }
+    .admin-avatar {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(13, 110, 253, 0.12);
+        color: var(--accent);
+        font-weight: 700;
+    }
+    .mini-list {
+        display: grid;
+        gap: 0.7rem;
+    }
+    .mini-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.8rem 0.9rem;
+        border-radius: 1rem;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-soft);
+    }
+    .trend-wrap {
+        position: relative;
+        min-height: 320px;
+    }
+    .admin-link {
+        border: 0;
+        background: transparent;
+        padding: 0;
+        text-align: left;
+        color: inherit;
+        width: 100%;
+    }
+    .admin-link:hover .fw-semibold,
+    .admin-link:focus .fw-semibold {
+        color: var(--accent);
+        text-decoration: underline;
+    }
+    .activity-feed {
+        display: grid;
+        gap: 0.85rem;
+    }
+    .activity-item {
+        border: 1px solid var(--border-soft);
+        border-radius: 1rem;
+        padding: 0.9rem 1rem;
+        background: var(--bg-surface);
+    }
+    @media (max-width: 1100px) {
+        .metric-grid,
+        .summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 768px) {
+        .metric-grid,
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="performance-shell">
+    <section class="card performance-hero border-0">
+        <div class="card-body">
+            <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+                <div>
+                    <div class="text-uppercase small fw-semibold text-muted mb-2">ASKA Insight</div>
+                    <h1 class="h3 fw-bold mb-2">Performa Admin</h1>
+                    <p class="text-muted mb-0">Rekap aksi perubahan data admin lintas app, dengan tab per fitur dan mode gabungan.</p>
+                </div>
+                <div class="text-end">
+                    <div class="small text-muted">Terakhir terdeteksi</div>
+                    <div class="fw-semibold">
+                        {{ performance.summary.latest_action_at|jakarta if performance.summary.latest_action_at else '-' }}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                {% for key, label in performance.feature_options.items() %}
+                {% if key == 'all' %}
+                    {% set count = performance.all_feature_total %}
+                {% else %}
+                    {% set count = performance.feature_counts.get(key, 0) %}
+                {% endif %}
+                <button type="submit" form="filterForm" name="feature" value="{{ key }}"
+                    class="tab-chip {% if performance.selected_feature == key %}active{% endif %}">
+                    <span>{{ label }}</span>
+                    <span class="badge text-bg-light">{{ count }}</span>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="card panel-card">
+        <div class="card-body">
+            <form id="filterForm" method="get" class="row g-3 align-items-end">
+                <div class="col-xl-3 col-lg-6">
+                    <label class="form-label">Cari</label>
+                    <input type="text" class="form-control" name="search" value="{{ performance.search }}"
+                        placeholder="Admin, aksi, target, detail">
+                </div>
+                <div class="col-xl-2 col-lg-6">
+                    <label class="form-label">Admin</label>
+                    <select class="form-select" name="admin_id">
+                        <option value="">Semua admin</option>
+                        {% for admin in performance.admin_options %}
+                        <option value="{{ admin.id }}" {% if performance.selected_admin_id == admin.id %}selected{% endif %}>
+                            {{ admin.label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-xl-2 col-lg-6">
+                    <label class="form-label">Aksi</label>
+                    <select class="form-select" name="action">
+                        <option value="">Semua aksi</option>
+                        {% for item in performance.action_options %}
+                        <option value="{{ item }}" {% if performance.selected_action == item %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-xl-2 col-lg-6">
+                    <label class="form-label">Target</label>
+                    <select class="form-select" name="target_type">
+                        <option value="">Semua target</option>
+                        {% for item in performance.target_options %}
+                        <option value="{{ item }}" {% if performance.selected_target_type == item %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-xl-1 col-md-6">
+                    <label class="form-label">Mulai</label>
+                    <input type="date" class="form-control" name="start"
+                        value="{{ performance.start.strftime('%Y-%m-%d') if performance.start else '' }}">
+                </div>
+                <div class="col-xl-1 col-md-6">
+                    <label class="form-label">Sampai</label>
+                    <input type="date" class="form-control" name="end"
+                        value="{{ performance.end.strftime('%Y-%m-%d') if performance.end else '' }}">
+                </div>
+                <div class="col-xl-1 col-md-12 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100">Terapkan</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <section class="alert alert-warning border-0 shadow-sm mb-0">
+        <div class="d-flex gap-3 align-items-start">
+            <i class="bi bi-info-circle-fill fs-5"></i>
+            <div class="small">
+                PANBERSS dan bullying memakai event/log yang sudah historis. Sebagian data Buku Tamu, psych, dan Call Center lama
+                direkonstruksi dari metadata yang tersedia; logging baru juga sudah ditambahkan agar event berikutnya tercatat lebih rapi.
+            </div>
+        </div>
+    </section>
+
+    <section class="metric-grid">
+        <article class="card metric-card border-0">
+            <div class="card-body">
+                <div class="metric-label mb-2">Total Action</div>
+                <div class="metric-value">{{ performance.summary.total_actions }}</div>
+                <div class="text-muted small mt-2">Sesuai filter aktif</div>
+            </div>
+        </article>
+        <article class="card metric-card border-0">
+            <div class="card-body">
+                <div class="metric-label mb-2">Admin Aktif</div>
+                <div class="metric-value">{{ performance.summary.unique_admins }}</div>
+                <div class="text-muted small mt-2">Jumlah admin yang melakukan perubahan</div>
+            </div>
+        </article>
+        <article class="card metric-card border-0">
+            <div class="card-body">
+                <div class="metric-label mb-2">Cakupan Fitur</div>
+                <div class="metric-value">{{ performance.summary.total_features }}</div>
+                <div class="text-muted small mt-2">Fitur yang punya aksi pada filter ini</div>
+            </div>
+        </article>
+        <article class="card metric-card border-0">
+            <div class="card-body">
+                <div class="metric-label mb-2">Baris Detail</div>
+                <div class="metric-value">{{ performance.detail_total }}</div>
+                <div class="text-muted small mt-2">Siap diinspeksi pada tabel event</div>
+            </div>
+        </article>
+    </section>
+
+    <section class="summary-grid">
+        <article class="card panel-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h2 class="h5 mb-1">Tren Harian</h2>
+                        <div class="text-muted small">Volume aksi admin per hari pada tab aktif</div>
+                    </div>
+                </div>
+                <div class="trend-wrap">
+                    <canvas id="dailyTrendChart"></canvas>
+                </div>
+            </div>
+        </article>
+        <article class="card panel-card">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Distribusi Ringkas</h2>
+                <div class="mini-list">
+                    {% for item in performance.top_actions[:5] %}
+                    <div class="mini-item">
+                        <div>
+                            <div class="fw-semibold">{{ item.action }}</div>
+                            <div class="text-muted small">Jenis aksi</div>
+                        </div>
+                        <span class="badge text-bg-primary rounded-pill">{{ item.count }}</span>
+                    </div>
+                    {% else %}
+                    <div class="text-muted small">Belum ada aksi pada filter ini.</div>
+                    {% endfor %}
+                    {% for item in performance.top_features[:3] %}
+                    <div class="mini-item">
+                        <div>
+                            <div class="fw-semibold">{{ item.feature_label }}</div>
+                            <div class="text-muted small">Fitur teraktif</div>
+                        </div>
+                        <span class="badge text-bg-success rounded-pill">{{ item.count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <section class="row g-3">
+        <div class="col-xl-8">
+            <div class="card panel-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h2 class="h5 mb-1">Leaderboard Admin</h2>
+                            <div class="text-muted small">Urutan berdasarkan jumlah action mentah</div>
+                        </div>
+                        <span class="badge text-bg-light">{{ performance.leaderboard|length }} admin</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle leaderboard-table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Admin</th>
+                                    <th>Total</th>
+                                    <th>Aksi Dominan</th>
+                                    <th>Fitur</th>
+                                    <th>Terakhir</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in performance.leaderboard %}
+                                {% set top_action = item.action_counts|dictsort(by='value')|last if item.action_counts else None %}
+                                <tr>
+                                    <td>
+                                        <button type="button" class="admin-link js-admin-activity-trigger"
+                                            data-admin-id="{{ item.actor_user_id or '' }}"
+                                            data-admin-label="{{ item.actor_label }}">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="admin-avatar">{{ (item.actor_label or 'A')[0]|upper }}</span>
+                                                <div>
+                                                    <div class="fw-semibold">{{ item.actor_label }}</div>
+                                                    <div class="text-muted small">ID: {{ item.actor_user_id or '-' }}</div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </td>
+                                    <td><span class="badge text-bg-primary rounded-pill">{{ item.total_actions }}</span></td>
+                                    <td>{{ top_action[0] if top_action else '-' }}</td>
+                                    <td>
+                                        {% for feature_key, count in item.feature_counts.items() %}
+                                        <span class="badge text-bg-light me-1 mb-1">{{ performance.feature_options.get(feature_key, feature_key) }}: {{ count }}</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td class="text-muted small">{{ item.last_action_at|jakarta if item.last_action_at else '-' }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">Belum ada data performa pada filter ini.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="card panel-card h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Target Paling Sering Diubah</h2>
+                    <div class="mini-list">
+                        {% for item in performance.top_targets[:8] %}
+                        <div class="mini-item">
+                            <div>
+                                <div class="fw-semibold">{{ item.target_type }}</div>
+                                <div class="text-muted small">Target perubahan data</div>
+                            </div>
+                            <span class="badge text-bg-secondary rounded-pill">{{ item.count }}</span>
+                        </div>
+                        {% else %}
+                        <div class="text-muted small">Belum ada target yang tercatat.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card panel-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="h5 mb-1">Detail Event</h2>
+                    <div class="text-muted small">Menampilkan {{ performance.detail_rows|length }} dari {{ performance.detail_total }} event</div>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle detail-table mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Waktu</th>
+                            <th>Fitur</th>
+                            <th>Admin</th>
+                            <th>Aksi</th>
+                            <th>Target</th>
+                            <th>Nama Target</th>
+                            <th>Detail</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in performance.detail_rows %}
+                        <tr>
+                            <td class="text-muted small">{{ row.created_at|jakarta if row.created_at else '-' }}</td>
+                            <td><span class="badge text-bg-light">{{ row.feature_label }}</span></td>
+                            <td>{{ row.actor_label }}</td>
+                            <td><span class="badge text-bg-primary">{{ row.action }}</span></td>
+                            <td class="text-muted">{{ row.target_type }}</td>
+                            <td class="fw-semibold">{{ row.target_name }}</td>
+                            <td class="small text-muted">{{ row.detail_text[:180] ~ ('...' if row.detail_text|length > 180 else '') }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">Belum ada event yang cocok dengan filter ini.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="adminActivityModal" tabindex="-1" aria-labelledby="adminActivityModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 class="modal-title h5 mb-1" id="adminActivityModalLabel">Aktivitas Admin</h2>
+                    <div class="text-muted small" id="adminActivityModalMeta">-</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="adminActivityFeed" class="activity-feed"></div>
+                <div id="adminActivityEmpty" class="text-center text-muted py-4 d-none">Belum ada aktivitas untuk admin ini.</div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div class="text-muted small" id="adminActivityCounter">0 action</div>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="adminActivityPrevPage">Prev</button>
+                    <div class="text-muted small" id="adminActivityPagination">Page 1 / 1</div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="adminActivityNextPage">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    (function () {
+        var chartEl = document.getElementById('dailyTrendChart');
+        if (!chartEl || !window.Chart) return;
+        var labels = {{ performance.daily_series | map(attribute='day') | list | tojson }};
+        var values = {{ performance.daily_series | map(attribute='count') | list | tojson }};
+        new Chart(chartEl, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Action Admin',
+                    data: values,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13,110,253,0.14)',
+                    fill: true,
+                    borderWidth: 2,
+                    tension: 0.35,
+                    pointRadius: 3,
+                    pointHoverRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        ticks: { maxRotation: 0, autoSkip: true }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 }
+                    }
+                }
+            }
+        });
+    })();
+
+    (function () {
+        var modalEl = document.getElementById('adminActivityModal');
+        var feedEl = document.getElementById('adminActivityFeed');
+        var emptyEl = document.getElementById('adminActivityEmpty');
+        var metaEl = document.getElementById('adminActivityModalMeta');
+        var counterEl = document.getElementById('adminActivityCounter');
+        var paginationEl = document.getElementById('adminActivityPagination');
+        var prevBtn = document.getElementById('adminActivityPrevPage');
+        var nextBtn = document.getElementById('adminActivityNextPage');
+        if (!modalEl || !feedEl || !paginationEl || !prevBtn || !nextBtn || !window.bootstrap) return;
+
+        var modal = new window.bootstrap.Modal(modalEl);
+        var currentRows = [];
+        var currentLabel = '';
+        var pageSize = 8;
+        var currentPage = 1;
+        var currentAdminId = '';
+        var currentFilters = {
+            feature: {{ performance.selected_feature | tojson }},
+            action: {{ performance.selected_action | tojson }},
+            target_type: {{ performance.selected_target_type | tojson }},
+            search: {{ performance.search | tojson }},
+            start: {{ (performance.start.strftime('%Y-%m-%d') if performance.start else '') | tojson }},
+            end: {{ (performance.end.strftime('%Y-%m-%d') if performance.end else '') | tojson }}
+        };
+        var endpointTemplate = {{ url_for('main.admin_performance_admin_events', admin_id=0) | tojson }};
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function totalPages() {
+            return currentRows._totalPages || 1;
+        }
+
+        function renderRows() {
+            feedEl.innerHTML = '';
+            for (var i = 0; i < currentRows.length; i += 1) {
+                var row = currentRows[i] || {};
+                var item = document.createElement('article');
+                item.className = 'activity-item';
+                item.innerHTML = ''
+                    + '<div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">'
+                    + '  <div>'
+                    + '    <div class="fw-semibold">' + escapeHtml(row.action || '-') + '</div>'
+                    + '    <div class="text-muted small">' + escapeHtml(row.feature_label || '-') + ' • ' + escapeHtml(row.target_type || '-') + '</div>'
+                    + '  </div>'
+                    + '  <div class="text-muted small">' + escapeHtml(row.created_at_label || '-') + '</div>'
+                    + '</div>'
+                    + '<div class="small mb-1"><strong>Target:</strong> ' + escapeHtml(row.target_name || '-') + '</div>'
+                    + '<div class="small text-muted">' + escapeHtml(row.detail_text || '-') + '</div>';
+                feedEl.appendChild(item);
+            }
+            counterEl.textContent = (currentRows._total || 0) + ' action';
+            paginationEl.textContent = 'Page ' + currentPage + ' / ' + totalPages();
+            prevBtn.disabled = currentPage <= 1;
+            nextBtn.disabled = currentPage >= totalPages();
+            emptyEl.classList.toggle('d-none', currentRows.length > 0);
+        }
+
+        function decorateRows(rows) {
+            (rows || []).forEach(function (row) {
+                row.created_at_label = row.created_at_iso ? new Date(row.created_at_iso).toLocaleString('id-ID') : '-';
+            });
+            return rows || [];
+        }
+
+        function buildUrl(page) {
+            var endpoint = endpointTemplate.replace('/0/events', '/' + String(currentAdminId) + '/events');
+            var url = new URL(endpoint, window.location.origin);
+            url.searchParams.set('page', String(page));
+            url.searchParams.set('per_page', String(pageSize));
+            if (currentFilters.feature) url.searchParams.set('feature', currentFilters.feature);
+            if (currentFilters.action) url.searchParams.set('action', currentFilters.action);
+            if (currentFilters.target_type) url.searchParams.set('target_type', currentFilters.target_type);
+            if (currentFilters.search) url.searchParams.set('search', currentFilters.search);
+            if (currentFilters.start) url.searchParams.set('start', currentFilters.start);
+            if (currentFilters.end) url.searchParams.set('end', currentFilters.end);
+            return url.toString();
+        }
+
+        async function fetchPage(page) {
+            feedEl.innerHTML = '<div class="text-muted small">Memuat aktivitas...</div>';
+            try {
+                var response = await fetch(buildUrl(page), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!response.ok) throw new Error('Gagal memuat aktivitas');
+                var payload = await response.json();
+                currentPage = payload.page || 1;
+                currentLabel = payload.actor_label || currentLabel;
+                document.getElementById('adminActivityModalLabel').textContent = currentLabel;
+                currentRows = decorateRows(payload.rows || []);
+                currentRows._total = payload.total || 0;
+                currentRows._totalPages = payload.total_pages || 1;
+                renderRows();
+            } catch (error) {
+                currentRows = [];
+                currentRows._total = 0;
+                currentRows._totalPages = 1;
+                feedEl.innerHTML = '<div class="text-danger small">Gagal memuat aktivitas admin.</div>';
+                counterEl.textContent = '0 action';
+                paginationEl.textContent = 'Page 1 / 1';
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                emptyEl.classList.add('d-none');
+            }
+        }
+
+        document.querySelectorAll('.js-admin-activity-trigger').forEach(function (button) {
+            button.addEventListener('click', function () {
+                currentAdminId = this.getAttribute('data-admin-id') || '';
+                currentLabel = this.getAttribute('data-admin-label') || 'Admin';
+                currentPage = 1;
+                document.getElementById('adminActivityModalLabel').textContent = currentLabel;
+                metaEl.textContent = 'Aktivitas terakhir pada hasil filter saat ini';
+                modal.show();
+                fetchPage(1);
+            });
+        });
+
+        prevBtn.addEventListener('click', function () {
+            if (currentPage <= 1) return;
+            fetchPage(currentPage - 1);
+        });
+
+        nextBtn.addEventListener('click', function () {
+            if (currentPage >= totalPages()) return;
+            fetchPage(currentPage + 1);
+        });
+    })();
+</script>
+{% endblock %}

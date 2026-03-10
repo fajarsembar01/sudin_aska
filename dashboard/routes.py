@@ -5,8 +5,10 @@ import os
 import re
 from datetime import datetime, timedelta, timezone
 from math import ceil
-from typing import Optional, Dict, List
+from typing import Iterable, Optional, Dict, List
 from pathlib import Path
+
+from knowledge_loader import GENERATED_DIR, KECERDASAN_DIR, build_kecerdasan_file, generate_clean_file, load_file_order, load_kecerdasan, save_file_order
 
 from flask import (
     Blueprint,
@@ -46,6 +48,8 @@ from .queries import (
     fetch_feedback_summary,
     fetch_feedback_list,
     fetch_feedback_trend,
+    fetch_admin_performance_data,
+    fetch_admin_activity_page,
     update_bullying_report_status,
     bulk_update_bullying_report_status,
     fetch_psych_reports,
@@ -64,6 +68,9 @@ from .queries import (
     chat_topic_available,
     fetch_twitter_worker_logs,
     update_no_tester_preference,
+    fetch_whatsapp_link_settings,
+    record_admin_action,
+    fetch_aska_knowledge_history,
 )
 
 main_bp = Blueprint("main", __name__)
@@ -118,11 +125,217 @@ def _reporting_disabled_response(message: str = "Fitur pelaporan ASKA sedang din
     return redirect(url_for("main.dashboard"))
 
 
+def _normalize_whatsapp_link(raw_value: str) -> str:
+    clean = (raw_value or "").strip()
+    if not clean:
+        return "https://wa.me/6282143646463"
+    if clean.startswith("http://") or clean.startswith("https://"):
+        return clean.rstrip("/")
+    digits = "".join(ch for ch in clean if ch.isdigit())
+    if not digits:
+        return "https://wa.me/6282143646463"
+    if digits.startswith("0"):
+        digits = f"62{digits[1:]}"
+    return f"https://wa.me/{digits}"
+
+
 def _resolve_runtime_path(value: Optional[str], default: str) -> Path:
     path = Path(value or default)
     if not path.is_absolute():
         path = (PROJECT_ROOT / path).resolve()
     return path
+
+
+_MD_SANITIZE_RE = re.compile(r"[^A-Za-z0-9._-]+")
+_FOLDER_SANITIZE_RE = re.compile(r"[^A-Za-z0-9 _.-]+")
+
+
+def _normalize_relative_path(raw: Optional[str], default: str = "umum.md") -> str:
+    value = (raw or "").strip()
+    if not value:
+        return default
+    value = value.replace("\\", "/")
+    segments = []
+    for segment in value.split("/"):
+        part = segment.strip()
+        if not part or part in {".", ".."}:
+            continue
+        segments.append(part)
+    return "/".join(segments) if segments else default
+
+
+def _path_within(target: Path, root: Path) -> bool:
+    try:
+        target.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
+def _relative_path_str(target: Path) -> str:
+    try:
+        rel = target.relative_to(KECERDASAN_DIR)
+    except ValueError:
+        return ""
+    text = rel.as_posix()
+    return text if text != "." else ""
+
+
+def _sanitize_md_basename(raw_name: str) -> str:
+    name = (raw_name or "").strip()
+    if not name:
+        raise ValueError("Nama berkas wajib diisi.")
+    if not name.lower().endswith(".md"):
+        name = f"{name}.md"
+    name = name.replace(" ", "_")
+    name = _MD_SANITIZE_RE.sub("_", name)
+    name = name.strip("._")
+    if len(name) > 80:
+        name = name[:80]
+    if not name:
+        raise ValueError("Nama berkas tidak valid.")
+    return name
+
+
+def _list_knowledge_files() -> list[dict]:
+    items: list[dict] = []
+    if not KECERDASAN_DIR.exists():
+        return items
+
+    file_order = load_file_order()
+    order_index = {rel_path: idx for idx, rel_path in enumerate(file_order)}
+    default_index = len(order_index)
+
+    for path in KECERDASAN_DIR.rglob("*.md"):
+        # Skip files inside .generated/ directory
+        try:
+            path.relative_to(GENERATED_DIR)
+            continue
+        except ValueError:
+            pass
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        rel_text = _relative_path_str(path)
+        updated_at = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc)
+        items.append(
+            {
+                "name": path.name,
+                "rel_path": rel_text,
+                "size": stat.st_size,
+                "updated_at": updated_at,
+            }
+        )
+
+    def _sort_key(item: dict) -> tuple[int, str]:
+        rel_path = item.get("rel_path") or ""
+        rank = order_index.get(rel_path, default_index)
+        return rank, rel_path.lower()
+
+    items.sort(key=_sort_key)
+    return items
+
+
+def _list_generated_files() -> list[dict]:
+    """List clean (marker-free) copies from the .generated/ directory."""
+    items: list[dict] = []
+    if not GENERATED_DIR.exists():
+        return items
+    for path in GENERATED_DIR.rglob("*.md"):
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        rel = path.relative_to(GENERATED_DIR)
+        rel_text = rel.as_posix()
+        updated_at = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc)
+        items.append(
+            {
+                "name": path.name,
+                "rel_path": rel_text,
+                "size": stat.st_size,
+                "updated_at": updated_at,
+            }
+        )
+    items.sort(key=lambda i: (i.get("rel_path") or "").lower())
+    return items
+
+
+def _list_knowledge_dirs() -> list[str]:
+    dirs: set[str] = {""}
+    if not KECERDASAN_DIR.exists():
+        return [""]
+    for root, dirnames, _ in os.walk(KECERDASAN_DIR):
+        rel = Path(root).relative_to(KECERDASAN_DIR)
+        label = "" if rel in (Path("."), Path("")) else rel.as_posix()
+        dirs.add(label)
+        for subdir in dirnames:
+            subpath = Path(root) / subdir
+            rel_sub = subpath.relative_to(KECERDASAN_DIR)
+            label_sub = "" if rel_sub in (Path("."), Path("")) else rel_sub.as_posix()
+            dirs.add(label_sub)
+    sorted_dirs = sorted(dirs, key=lambda value: (value != "", value.lower()))
+    return sorted_dirs
+
+
+def _sanitize_folder_segments(raw: Optional[str]) -> list[str]:
+    if not raw:
+        return []
+    segments: list[str] = []
+    for part in re.split(r"[\\/]+", raw):
+        segment = part.strip()
+        if not segment or segment in {".", ".."}:
+            continue
+        cleaned = _FOLDER_SANITIZE_RE.sub("_", segment)
+        cleaned = cleaned.strip()
+        if cleaned:
+            segments.append(cleaned)
+    return segments
+
+
+def _resolve_folder_path(raw: Optional[str]) -> tuple[str, Path]:
+    segments = _sanitize_folder_segments(raw)
+    if not segments:
+        return "", KECERDASAN_DIR
+    rel_path = "/".join(segments)
+    folder_path = KECERDASAN_DIR.joinpath(*segments)
+    resolved = folder_path.resolve()
+    if not _path_within(resolved, KECERDASAN_DIR):
+        raise ValueError("Nama folder tidak valid.")
+    return rel_path, folder_path
+
+
+def _try_reload_qa_chain() -> tuple[bool, Optional[str]]:
+    """Coba refresh chain QA bila modul tersedia dalam proses yang sama."""
+
+    reloaders: list[tuple[str, object]] = []
+    try:
+        from web_aska.handlers import reload_qa_chain as web_reload  # type: ignore
+
+        reloaders.append(("web", web_reload))
+    except Exception:
+        pass
+
+    try:
+        from handlers import reload_qa_chain as tg_reload  # type: ignore
+
+        reloaders.append(("telegram", tg_reload))
+    except Exception:
+        pass
+
+    if not reloaders:
+        return False, "Fungsi reload tidak tersedia di server ini."
+
+    last_error: Optional[str] = None
+    for name, fn in reloaders:
+        try:
+            fn()
+            return True, None
+        except Exception as exc:  # pragma: no cover - hanya dipakai di runtime opsional
+            last_error = f"{name}: {exc}"
+            continue
+    return False, last_error or "Gagal reload chain."
 
 
 def _load_twitter_runtime() -> dict:
@@ -284,23 +497,36 @@ def admin_select_role() -> Response:
             "description": "Dashboard analitik dan pemantauan data.",
             "icon": "bi-graph-up-arrow",
             "href": url_for("main.dashboard"),
-            "col_class": "col-md-4 col-12",
         },
         {
             "title": "PANBERSS",
             "description": "Dashboard pemantauan kebersihan dan sarana sekolah.",
-            "icon": "bi bi-building",
+            "icon": "bi-building",
             "href": url_for("portal.home"),
-            "col_class": "col-md-4 col-12",
         },
         {
             "title": "Daftar Tamu",
             "description": "Dashboard pemantauan kunjungan tamu sekolah.",
             "icon": "bi-person-vcard",
             "href": url_for("daftar_tamu.admin_dashboard"),
-            "col_class": "col-md-4 col-12",
+        },
+        {
+            "title": "Call Center",
+            "description": "Layanan operasional dan notifikasi admin.",
+            "icon": "bi-headset",
+            "href": url_for("call_center.inbox"),
         },
     ]
+    # Layout fleksibel: 1–3 card = 1 baris; 4+ card = 2 baris (2-2)
+    n = len(cards)
+    if n >= 4:
+        default_col_class = "col-md-6 col-12"
+    elif n == 3:
+        default_col_class = "col-md-4 col-12"
+    elif n == 2:
+        default_col_class = "col-md-6 col-12"
+    else:
+        default_col_class = "col-12"
     return render_template(
         "role_selection.html",
         page_title="Pilih Mode Akses - ASKA Portal",
@@ -308,7 +534,7 @@ def admin_select_role() -> Response:
         header_title=header_title,
         header_subtitle="Silakan pilih layanan yang ingin Anda akses",
         cards=cards,
-        default_col_class="col-md-4 col-12",
+        default_col_class=default_col_class,
         show_logout=True,
     )
 
@@ -374,10 +600,17 @@ def dashboard() -> Response:
         "all": metrics["total_incoming_messages"],
     }
 
+    whatsapp_settings = fetch_whatsapp_link_settings()
+    whatsapp_link_value = (
+        whatsapp_settings.get("wa_link")
+        or os.getenv("ASKA_WHATSAPP_URL", "082143646463")
+    )
+
     aska_links = {
         "tele": os.getenv("ASKA_TELEGRAM_URL", "https://t.me/tanyaaska_bot"),
         "web": os.getenv("ASKA_WEB_URL", "https://aska.sdnsembar01.sch.id/"),
         "twitter": os.getenv("ASKA_TWITTER_URL", "https://twitter.com/tanyaaska_ai"),
+        "whatsapp": _normalize_whatsapp_link(whatsapp_link_value),
     }
 
     return render_template(
@@ -395,6 +628,59 @@ def dashboard() -> Response:
         messages_counts=messages_counts,
         aska_links=aska_links,
     )
+
+
+@main_bp.route("/overview/admin-performance")
+@role_required("admin")
+def admin_performance() -> Response:
+    feature_key = (request.args.get("feature") or "all").strip().lower() or "all"
+    admin_id = request.args.get("admin_id", type=int)
+    action = (request.args.get("action") or "").strip().upper() or None
+    target_type = (request.args.get("target_type") or "").strip().upper() or None
+    search = (request.args.get("search") or "").strip() or None
+    start = _parse_date(request.args.get("start"))
+    end = _parse_date(request.args.get("end"))
+
+    data = fetch_admin_performance_data(
+        feature_key=feature_key,
+        admin_id=admin_id,
+        action=action,
+        target_type=target_type,
+        search=search,
+        start=start,
+        end=end,
+        detail_limit=400,
+    )
+    return render_template(
+        "admin_performance.html",
+        performance=data,
+    )
+
+
+@main_bp.route("/overview/admin-performance/admin/<int:admin_id>/events")
+@role_required("admin")
+def admin_performance_admin_events(admin_id: int) -> Response:
+    feature_key = (request.args.get("feature") or "all").strip().lower() or "all"
+    action = (request.args.get("action") or "").strip().upper() or None
+    target_type = (request.args.get("target_type") or "").strip().upper() or None
+    search = (request.args.get("search") or "").strip() or None
+    start = _parse_date(request.args.get("start"))
+    end = _parse_date(request.args.get("end"))
+    page = max(1, request.args.get("page", type=int) or 1)
+    per_page = max(1, min(request.args.get("per_page", type=int) or 8, 25))
+
+    payload = fetch_admin_activity_page(
+        admin_id=admin_id,
+        feature_key=feature_key,
+        action=action,
+        target_type=target_type,
+        search=search,
+        start=start,
+        end=end,
+        page=page,
+        per_page=per_page,
+    )
+    return jsonify(payload)
 
 
 @main_bp.route("/twitter/logs")
@@ -443,6 +729,7 @@ def twitter_logs() -> Response:
         search=search,
         user_id=user_id,
         topic="twitter",
+        channel="twitter",
     )
 
     topic_supported = chat_topic_available()
@@ -487,7 +774,7 @@ def twitter_logs() -> Response:
 
     export_url = None
     if topic_supported:
-        export_params: dict = {"topic": "twitter"}
+        export_params: dict = {"topic": "twitter", "channel": "twitter"}
         if start:
             try:
                 export_params["start"] = start.strftime("%Y-%m-%d")
@@ -530,6 +817,67 @@ def twitter_logs() -> Response:
     )
 
 
+
+@main_bp.route("/notif-logs")
+@role_required("admin")
+def notif_logs() -> Response:
+    args: MultiDict = request.args
+    page = max(1, int(args.get("page", 1)))
+    start = _parse_date(args.get("start"))
+    end = _parse_date(args.get("end"))
+    role = args.get("role") or None
+    if role not in {"user", "aska"}:
+        role = None
+    search = args.get("search") or None
+    user_id = args.get("user_id")
+    user_id = int(user_id) if user_id else None
+
+    filters = ChatFilters(
+        start=start,
+        end=end,
+        role=role,
+        search=search,
+        user_id=user_id,
+        topic="notif",
+    )
+    offset = (page - 1) * PAGE_SIZE
+    records, total = fetch_chat_logs(filters=filters, limit=PAGE_SIZE, offset=offset)
+    total_pages = max(1, ceil(total / PAGE_SIZE))
+
+    return render_template(
+        "notif_logs.html",
+        records=records,
+        total=total,
+        page=page,
+        total_pages=total_pages,
+        filters=filters,
+    )
+
+
+@main_bp.route("/rag-debug-logs")
+@role_required("admin")
+def rag_debug_logs() -> Response:
+    """Halaman log debug RAG — lihat chunk kecerdasan yang diambil per pertanyaan."""
+    from rag_logger import read_rag_logs
+
+    args: MultiDict = request.args
+    page = max(1, int(args.get("page", 1)))
+    search = args.get("search") or None
+
+    offset = (page - 1) * PAGE_SIZE
+    records, total = read_rag_logs(limit=PAGE_SIZE, offset=offset, search=search)
+    total_pages = max(1, ceil(total / PAGE_SIZE))
+
+    return render_template(
+        "rag_debug_logs.html",
+        records=records,
+        total=total,
+        page=page,
+        total_pages=total_pages,
+        search=search,
+    )
+
+
 @main_bp.route("/chats")
 @role_required("admin")
 def chats() -> Response:
@@ -539,10 +887,21 @@ def chats() -> Response:
     end = _parse_date(args.get("end"))
     role = args.get("role") or None
     search = args.get("search") or None
+    channel = (args.get("channel") or "").strip().lower() or None
+    if channel not in {"telegram", "web", "twitter", "whatsapp"}:
+        channel = None
     user_id = args.get("user_id")
     user_id = int(user_id) if user_id else None
 
-    filters = ChatFilters(start=start, end=end, role=role, search=search, user_id=user_id)
+    filters = ChatFilters(
+        start=start,
+        end=end,
+        role=role,
+        search=search,
+        user_id=user_id,
+        channel=channel,
+        exclude_topic="notif",
+    )
     offset = (page - 1) * PAGE_SIZE
 
     records, total = fetch_chat_logs(filters=filters, limit=PAGE_SIZE, offset=offset)
@@ -557,6 +916,8 @@ def chats() -> Response:
         export_params["role"] = role
     if search:
         export_params["search"] = search
+    if channel:
+        export_params["channel"] = channel
     if user_id:
         export_params["user_id"] = user_id
 
@@ -839,6 +1200,21 @@ def bulk_update_corruption_status() -> Response:
             bulk_update_corruption_report_status(report_ids, "open", updated_by)
         else:
             bulk_update_corruption_report_status(report_ids, status, updated_by)
+        if user:
+            normalized_status = "open" if status == "undo" else status
+            for report_id in report_ids:
+                try:
+                    record_admin_action(
+                        user_id=user.get("id"),
+                        feature_key="aska_insight",
+                        action="UPDATE",
+                        target_type="CORRUPTION_REPORT",
+                        target_id=int(report_id),
+                        target_name=f"Corruption Report #{int(report_id)}",
+                        metadata={"status": normalized_status, "mode": "bulk"},
+                    )
+                except Exception:
+                    current_app.logger.exception("Failed to log bulk corruption admin action")
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
@@ -875,6 +1251,19 @@ def update_corruption_status(report_id: int) -> Response:
         return redirect(next_url)
 
     if updated:
+        if user:
+            try:
+                record_admin_action(
+                    user_id=user.get("id"),
+                    feature_key="aska_insight",
+                    action="UPDATE",
+                    target_type="CORRUPTION_REPORT",
+                    target_id=report_id,
+                    target_name=f"Corruption Report #{report_id}",
+                    metadata={"status": status_value, "mode": action or "single"},
+                )
+            except Exception:
+                current_app.logger.exception("Failed to log corruption admin action")
         flash("Status laporan korupsi berhasil diperbarui.", "success")
     else:
         flash("Gagal memperbarui status laporan korupsi.", "danger")
@@ -1002,6 +1391,21 @@ def bulk_update_psych_status() -> Response:
             bulk_update_psych_report_status(report_ids, "open", updated_by)
         else:
             bulk_update_psych_report_status(report_ids, status, updated_by)
+        if user:
+            normalized_status = "open" if status == "undo" else status
+            for report_id in report_ids:
+                try:
+                    record_admin_action(
+                        user_id=user.get("id"),
+                        feature_key="aska_insight",
+                        action="UPDATE",
+                        target_type="PSYCH_REPORT",
+                        target_id=int(report_id),
+                        target_name=f"Psych Report #{int(report_id)}",
+                        metadata={"status": normalized_status, "mode": "bulk"},
+                    )
+                except Exception:
+                    current_app.logger.exception("Failed to log bulk psych admin action")
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
@@ -1036,6 +1440,19 @@ def update_psych_status(report_id: int) -> Response:
         return redirect(next_url)
 
     if updated:
+        if user:
+            try:
+                record_admin_action(
+                    user_id=user.get("id"),
+                    feature_key="aska_insight",
+                    action="UPDATE",
+                    target_type="PSYCH_REPORT",
+                    target_id=report_id,
+                    target_name=f"Psych Report #{report_id}",
+                    metadata={"status": status_value, "mode": "single"},
+                )
+            except Exception:
+                current_app.logger.exception("Failed to log psych admin action")
         flash("Status laporan konseling berhasil diubah.", "success")
     else:
         flash("Laporan konseling tidak ditemukan atau tidak ada perubahan.", "info")
@@ -1135,11 +1552,25 @@ def export_chats() -> Response:
     end = _parse_date(args.get("end"))
     role = args.get("role") or None
     search = args.get("search") or None
+    channel = (args.get("channel") or "").strip().lower() or None
+    if channel not in {"telegram", "web", "twitter", "whatsapp"}:
+        channel = None
     user_id = args.get("user_id")
     user_id = int(user_id) if user_id else None
     topic = args.get("topic") or None
+    normalized_topic = (topic or "").strip().lower() or None
+    if not channel and normalized_topic in {"telegram", "web", "twitter", "whatsapp"}:
+        channel = normalized_topic
 
-    filters = ChatFilters(start=start, end=end, role=role, search=search, user_id=user_id, topic=topic)
+    filters = ChatFilters(
+        start=start,
+        end=end,
+        role=role,
+        search=search,
+        user_id=user_id,
+        topic=normalized_topic,
+        channel=channel,
+    )
 
     records, _ = fetch_chat_logs(filters=filters, limit=5000, offset=0)
 
@@ -1148,7 +1579,7 @@ def export_chats() -> Response:
 
     buffer = StringIO()
     writer = csv.writer(buffer)
-    writer.writerow(["id", "created_at", "user_id", "username", "role", "topic", "response_time_ms", "text"])
+    writer.writerow(["id", "created_at", "user_id", "username", "role", "channel", "topic", "response_time_ms", "text"])
     for row in records:
         created_at = row.get("created_at")
         if created_at:
@@ -1164,6 +1595,7 @@ def export_chats() -> Response:
                 row.get("user_id"),
                 row.get("username"),
                 row.get("role"),
+                row.get("channel"),
                 row.get("topic"),
                 row.get("response_time_ms"),
                 (row.get("text") or "").replace("\n", " "),
@@ -1175,6 +1607,285 @@ def export_chats() -> Response:
     response = Response(buffer.getvalue(), mimetype="text/csv")
     response.headers["Content-Disposition"] = f"attachment; filename={filename}"
     return response
+
+
+@main_bp.route("/knowledge", methods=["GET", "POST"])
+@role_required("admin")
+def manage_knowledge() -> Response:
+    """Halaman admin untuk menambah/mengedit berkas kecerdasan ASKA."""
+
+    KECERDASAN_DIR.mkdir(parents=True, exist_ok=True)
+    user = current_user()
+    admin_id = user.get("id") if user else None
+    files = _list_knowledge_files()
+    default_file = files[0]["rel_path"] if files else "umum.md"
+    values = request.values
+    selected_file = _normalize_relative_path(values.get("file"), default=default_file)
+    selected_tab = (values.get("tab") or "editor").strip().lower()
+    if selected_tab not in {"editor", "history", "preview"}:
+        selected_tab = "editor"
+    try:
+        selected_path = (KECERDASAN_DIR / selected_file).resolve()
+        if not _path_within(selected_path, KECERDASAN_DIR):
+            raise ValueError("Nama berkas tidak valid.")
+    except Exception:
+        selected_file = _normalize_relative_path(None, default=default_file)
+        selected_path = (KECERDASAN_DIR / selected_file).resolve()
+
+    selected_basename = Path(selected_file).name
+
+    if request.method == "POST":
+        action = (request.form.get("action") or "save_file").strip()
+
+        if action == "save_file_order":
+            payload = request.form.get("file_order") or ""
+            raw_items = [item.strip() for item in payload.split(",") if item.strip()]
+            existing_paths = {item["rel_path"] for item in files}
+            ordered_paths = [path for path in raw_items if path in existing_paths]
+            for item in files:
+                rel_path = item["rel_path"]
+                if rel_path not in ordered_paths:
+                    ordered_paths.append(rel_path)
+            save_file_order(ordered_paths)
+            flash("Urutan berkas tersimpan.", "success")
+            return redirect(url_for("main.manage_knowledge", file=selected_file))
+
+        if action == "delete_file":
+            try:
+                if not selected_path.exists():
+                    raise ValueError("Berkas tidak ditemukan.")
+                if not _path_within(selected_path, KECERDASAN_DIR):
+                    raise ValueError("Lokasi berkas tidak valid.")
+                # Delete source file
+                selected_path.unlink()
+                # Delete clean copy if exists
+                clean_path = GENERATED_DIR / Path(selected_file)
+                if clean_path.exists():
+                    clean_path.unlink()
+                build_kecerdasan_file()
+                try:
+                    record_admin_action(
+                        user_id=admin_id,
+                        feature_key="aska_insight",
+                        action="DELETE",
+                        target_type="ASKA_KNOWLEDGE_FILE",
+                        target_name=selected_file,
+                        metadata={"path": selected_file},
+                    )
+                except Exception:
+                    current_app.logger.exception("Failed to log knowledge file delete")
+                flash(f"Berkas '{selected_file}' berhasil dihapus.", "success")
+            except Exception as exc:
+                flash(str(exc), "danger")
+            return redirect(url_for("main.manage_knowledge"))
+
+        if action == "append_snippet":
+            raw_name = request.form.get("new_filename") or selected_basename or default_file
+            content = (request.form.get("append_content") or "").rstrip()
+            page_from_raw = (request.form.get("page_from") or "").strip()
+            page_to_raw = (request.form.get("page_to") or "").strip()
+            try:
+                if not content:
+                    raise ValueError("Konten potongan baru wajib diisi.")
+                sanitized_name = _sanitize_md_basename(raw_name)
+                target_path = KECERDASAN_DIR / sanitized_name
+                resolved_target = target_path.resolve()
+                if not _path_within(resolved_target, KECERDASAN_DIR):
+                    raise ValueError("Lokasi berkas tidak valid.")
+                existed_before = target_path.exists()
+                if not existed_before:
+                    raise ValueError("Berkas belum ada. Simpan dulu berkasnya sebelum menambah potongan halaman.")
+
+                page_from: Optional[int] = None
+                page_to: Optional[int] = None
+                if page_from_raw:
+                    page_from = int(page_from_raw)
+                if page_to_raw:
+                    page_to = int(page_to_raw)
+                if page_from is not None and page_to is not None and page_from > page_to:
+                    raise ValueError("Range halaman tidak valid (dari > sampai).")
+
+                existing_text = target_path.read_text(encoding="utf-8")
+                snippet = content.strip()
+                if snippet and snippet in existing_text:
+                    flash("Konten yang sama sudah ada di berkas (anti duplikat aktif).", "warning")
+                    return redirect(
+                        url_for(
+                            "main.manage_knowledge",
+                            file=str(target_path.relative_to(KECERDASAN_DIR)).replace("\\", "/"),
+                        )
+                    )
+
+                # Build the new block with a page marker
+                new_page_num = page_from  # use page_from as sort key
+                if new_page_num is not None:
+                    page_label = f"{page_from}" if page_to is None or page_from == page_to else f"{page_from}-{page_to}"
+                    new_block = f"<!-- halaman:{page_label} -->\n{content.rstrip()}\n"
+                else:
+                    new_block = content.rstrip() + "\n"
+
+                if new_page_num is not None:
+                    # Split existing text into blocks by page markers and
+                    # insert the new block in sorted order.
+                    import re as _re
+                    marker_pattern = _re.compile(r"^<!-- halaman:(\d+)(?:-(\d+))? -->", _re.MULTILINE)
+                    markers = list(marker_pattern.finditer(existing_text))
+
+                    # Check for duplicate/overlapping page numbers
+                    req_from = page_from
+                    req_to = page_to if page_to is not None else page_from
+                    for m in markers:
+                        existing_from = int(m.group(1))
+                        existing_to = int(m.group(2)) if m.group(2) else existing_from
+                        # Check overlap: two ranges overlap if start1 <= end2 AND start2 <= end1
+                        if req_from <= existing_to and existing_from <= req_to:
+                            existing_label = f"{existing_from}" if existing_from == existing_to else f"{existing_from}-{existing_to}"
+                            flash(f"Halaman {page_label} tumpang tindih dengan halaman {existing_label} yang sudah ada.", "warning")
+                            return redirect(
+                                url_for(
+                                    "main.manage_knowledge",
+                                    file=str(target_path.relative_to(KECERDASAN_DIR)).replace("\\", "/"),
+                                )
+                            )
+
+                    if markers:
+                        insert_pos = None
+                        for m in markers:
+                            m_page = int(m.group(1))
+                            if m_page > new_page_num:
+                                insert_pos = m.start()
+                                break
+                        if insert_pos is not None:
+                            # Insert before the marker with higher page number
+                            before = existing_text[:insert_pos].rstrip()
+                            after = existing_text[insert_pos:].lstrip("\n")
+                            new_text = before + "\n\n" + new_block + "\n" + after
+                        else:
+                            # All existing markers have lower page numbers; append at end
+                            new_text = existing_text.rstrip() + "\n\n" + new_block
+                    else:
+                        # No markers yet — just append
+                        new_text = existing_text.rstrip() + "\n\n" + new_block
+                else:
+                    # No page number — plain append
+                    new_text = existing_text.rstrip() + "\n\n" + new_block
+
+                target_path.write_text(new_text, encoding="utf-8")
+
+                generate_clean_file(target_path)
+                build_kecerdasan_file()
+                relative_path = str(target_path.relative_to(KECERDASAN_DIR)).replace("\\", "/")
+                metadata = {
+                    "path": relative_path,
+                    "folder": "",
+                    "chars": len(content),
+                    "refreshed": False,
+                    "page_from": page_from,
+                    "page_to": page_to,
+                    "append": True,
+                }
+                try:
+                    record_admin_action(
+                        user_id=admin_id,
+                        feature_key="aska_insight",
+                        action="UPDATE",
+                        target_type="ASKA_KNOWLEDGE_FILE",
+                        target_name=relative_path,
+                        metadata=metadata,
+                    )
+                except Exception:
+                    current_app.logger.exception("Failed to log knowledge snippet append")
+                flash("Potongan halaman berhasil ditambahkan ke berkas.", "success")
+                return redirect(url_for("main.manage_knowledge", file=relative_path))
+            except Exception as exc:
+                flash(str(exc), "danger")
+                return redirect(url_for("main.manage_knowledge", file=selected_file))
+
+        raw_name = request.form.get("new_filename") or selected_basename or default_file
+        content = (request.form.get("content") or "").rstrip()
+        refresh_requested = request.form.get("refresh") == "1"
+        try:
+            sanitized_name = _sanitize_md_basename(raw_name)
+            target_path = KECERDASAN_DIR / sanitized_name
+            resolved_target = target_path.resolve()
+            if not _path_within(resolved_target, KECERDASAN_DIR):
+                raise ValueError("Lokasi berkas tidak valid.")
+            existed_before = target_path.exists()
+            target_path.write_text(content + "\n", encoding="utf-8")
+
+            generate_clean_file(target_path)
+            build_kecerdasan_file()
+            relative_path = str(target_path.relative_to(KECERDASAN_DIR)).replace("\\", "/")
+            metadata = {
+                "path": relative_path,
+                "folder": "",
+                "chars": len(content),
+                "refreshed": refresh_requested,
+                "page_from": None,
+                "page_to": None,
+                "append": False,
+            }
+            try:
+                record_admin_action(
+                    user_id=admin_id,
+                    feature_key="aska_insight",
+                    action="CREATE" if not existed_before else "UPDATE",
+                    target_type="ASKA_KNOWLEDGE_FILE",
+                    target_name=relative_path,
+                    metadata=metadata,
+                )
+            except Exception:
+                current_app.logger.exception("Failed to log knowledge file edit")
+            flash(f"Berkas kecerdasan '{relative_path}' tersimpan.", "success")
+            if refresh_requested:
+                ok, message = _try_reload_qa_chain()
+                if ok:
+                    flash("Knowledge base berhasil direfresh untuk ASKA.", "success")
+                else:
+                    flash(f"Berkas tersimpan, tetapi gagal refresh otomatis: {message}", "warning")
+            return redirect(url_for("main.manage_knowledge", file=relative_path))
+        except Exception as exc:
+            flash(str(exc), "danger")
+
+    is_new_mode = values.get("new") == "1"
+    selected_content = ""
+    selected_content_clean = ""
+    if is_new_mode:
+        selected_basename = ""
+    elif selected_path.exists() and selected_path.suffix.lower() == ".md":
+        try:
+            selected_content = selected_path.read_text(encoding="utf-8")
+        except Exception:
+            selected_content = ""
+        # Read clean version for preview
+        try:
+            clean_path = GENERATED_DIR / Path(selected_file)
+            if clean_path.exists():
+                selected_content_clean = clean_path.read_text(encoding="utf-8")
+            else:
+                selected_content_clean = selected_content
+        except Exception:
+            selected_content_clean = selected_content
+
+    combined_preview = load_kecerdasan()
+    combined_chars = len(combined_preview)
+    combined_preview_snippet = combined_preview[:1200]
+
+    history_entries = fetch_aska_knowledge_history(file_path=selected_file, limit=50)
+
+    return render_template(
+        "manage_knowledge.html",
+        files=files,
+        generated_files=_list_generated_files(),
+        selected_file=selected_file,
+        selected_basename=selected_basename,
+        selected_content=selected_content,
+        selected_content_clean=selected_content_clean,
+        selected_tab=selected_tab,
+        history_entries=history_entries,
+        combined_chars=combined_chars,
+        combined_preview_snippet=combined_preview_snippet,
+    )
 
 
 @main_bp.route("/documentation")

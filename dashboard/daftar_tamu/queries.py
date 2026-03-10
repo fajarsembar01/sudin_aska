@@ -66,11 +66,13 @@ GUESTBOOK_NOTIFICATION_CATEGORY = "daftar_tamu_status"
 PANBERS_REOPEN_NOTIFICATION_CATEGORY = "panbers_reopen_status"
 PANBERS_ASSIGNMENT_NOTIFICATION_CATEGORY = "panbers_assignment_status"
 PANBERS_TEAM_MEMBER_NOTIFICATION_CATEGORY = "panbers_team_member_status"
+PANBERS_FOLLOW_UP_NOTIFICATION_CATEGORY = "panbers_follow_up_status"
 USER_APP_NOTIFICATION_CATEGORIES = (
     GUESTBOOK_NOTIFICATION_CATEGORY,
     PANBERS_REOPEN_NOTIFICATION_CATEGORY,
     PANBERS_ASSIGNMENT_NOTIFICATION_CATEGORY,
     PANBERS_TEAM_MEMBER_NOTIFICATION_CATEGORY,
+    PANBERS_FOLLOW_UP_NOTIFICATION_CATEGORY,
 )
 _NOTIFICATION_SCHEMA_READY = False
 _HAS_DASHBOARD_USER_PROFILE_PHOTO_PATH: Optional[bool] = None
@@ -557,6 +559,154 @@ def fetch_school_rankings(
     return rows, total_rows
 
 
+def fetch_school_visit_histogram(
+    *,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
+) -> Dict[int, int]:
+    """Return histogram of school visit counts for active negeri schools."""
+    scope = _normalize_guest_scope(guest_scope)
+    query = (
+        _ROLLUP_CTE
+        + """
+    SELECT
+        visit_count::int AS visit_count,
+        COUNT(*)::int AS school_count
+    FROM school_rollup
+    WHERE status = 'NEGERI'
+      AND jenjang NOT IN ('MI', 'MTS', 'MA')
+    GROUP BY visit_count
+    ORDER BY visit_count ASC
+    """
+    )
+    params: List[Any] = [date_from, date_from, date_to, date_to, scope, scope, scope]
+
+    histogram: Dict[int, int] = {}
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        for row in cur.fetchall():
+            visit_count = int(row.get("visit_count") or 0)
+            school_count = int(row.get("school_count") or 0)
+            histogram[visit_count] = school_count
+    return histogram
+
+
+def fetch_school_visit_bucket_rows(
+    *,
+    min_visits: int,
+    max_visits: Optional[int] = None,
+    page: int = 1,
+    per_page: int = 20,
+    sort_key: str = "visits_desc",
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
+) -> Tuple[List[Dict[str, Any]], int]:
+    """Fetch schools within a visit-count bucket for dashboard drill-down."""
+    scope = _normalize_guest_scope(guest_scope)
+    safe_page = max(1, page)
+    safe_per_page = max(5, min(per_page, 200))
+    offset = (safe_page - 1) * safe_per_page
+
+    safe_min_visits = max(0, int(min_visits))
+    safe_max_visits: Optional[int] = None
+    if max_visits is not None:
+        try:
+            parsed_max = int(max_visits)
+            if parsed_max >= safe_min_visits:
+                safe_max_visits = parsed_max
+        except (TypeError, ValueError):
+            safe_max_visits = None
+
+    bucket_sort_options = {
+        "visits_desc": "visit_count DESC, school_name ASC",
+        "visits_asc": "visit_count ASC, school_name ASC",
+        "name_asc": "school_name ASC",
+        "name_desc": "school_name DESC",
+        "last_visit_desc": "last_visit_date DESC NULLS LAST, school_name ASC",
+        "last_visit_asc": "last_visit_date ASC NULLS FIRST, school_name ASC",
+    }
+    safe_sort = sort_key if sort_key in bucket_sort_options else "visits_desc"
+    order_sql = bucket_sort_options[safe_sort]
+
+    bucket_clause = "visit_count >= %s"
+    bucket_params: List[Any] = [safe_min_visits]
+    if safe_max_visits is not None:
+        bucket_clause += " AND visit_count <= %s"
+        bucket_params.append(safe_max_visits)
+
+    count_query = (
+        _ROLLUP_CTE
+        + f"""
+    SELECT COUNT(*) AS total
+    FROM school_rollup
+    WHERE status = 'NEGERI'
+      AND jenjang NOT IN ('MI', 'MTS', 'MA')
+      AND {bucket_clause}
+    """
+    )
+
+    data_query = (
+        _ROLLUP_CTE
+        + f"""
+    SELECT
+        school_id,
+        npsn,
+        school_name,
+        jenjang,
+        kecamatan,
+        kelurahan,
+        visit_count,
+        last_visit_date,
+        last_guest_names,
+        last_guest_count
+    FROM school_rollup
+    WHERE status = 'NEGERI'
+      AND jenjang NOT IN ('MI', 'MTS', 'MA')
+      AND {bucket_clause}
+    ORDER BY {order_sql}
+    LIMIT %s OFFSET %s
+    """
+    )
+
+    base_params: List[Any] = [date_from, date_from, date_to, date_to, scope, scope, scope]
+
+    with get_cursor() as cur:
+        cur.execute(count_query, base_params + bucket_params)
+        count_row = cur.fetchone()
+        total_rows = int(dict(count_row).get("total") or 0) if count_row else 0
+
+        cur.execute(data_query, base_params + bucket_params + [safe_per_page, offset])
+        rows = [dict(row) for row in cur.fetchall()]
+
+    today = _today_jakarta()
+    for index, row in enumerate(rows, start=offset + 1):
+        row["rank"] = index
+        row["visit_count"] = int(row.get("visit_count") or 0)
+        last_visit = row.get("last_visit_date")
+        row["days_since_visit"] = (today - last_visit.date()).days if last_visit else None
+
+        names_raw = row.get("last_guest_names") or ""
+        names = [n.strip() for n in names_raw.split(",") if n.strip()]
+        guest_count = int(row.get("last_guest_count") or 0)
+        if not guest_count:
+            guest_count = len(names)
+        if names:
+            if len(names) > 2:
+                display = f"{names[0]} +{len(names) - 1}"
+            elif len(names) == 2:
+                display = f"{names[0]} & {names[1]}"
+            else:
+                display = names[0]
+        else:
+            display = None
+        row["last_guest_display"] = display
+        row["last_guest_count"] = guest_count
+
+    return rows, total_rows
+
+
 def fetch_user_rankings(
     *,
     page: int = 1,
@@ -618,7 +768,6 @@ def fetch_user_rankings(
         WHERE u.account_status = 'approved'
           AND (u.role IS NULL OR u.role <> 'sekolah')
         GROUP BY u.id, u.full_name, u.email, u.role
-        HAVING COUNT(ut.transaction_id) > 0
     )
     """
     )
@@ -957,6 +1106,7 @@ def fetch_user_visit_history(
         ft.visit_at,
         ft.purpose,
         ft.notes,
+        ft.metadata,
         ft.photo_path,
         s.name AS school_name,
         s.npsn AS school_npsn,
@@ -997,6 +1147,9 @@ def fetch_user_visit_history(
 
         cur.execute(data_query, params_common + [safe_per_page, offset])
         rows = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        row.update(_summarize_staff_notes(row.get("metadata")))
 
     return rows, total_rows
 
@@ -1233,6 +1386,8 @@ def fetch_school_visit_history(
         t.id AS transaction_id,
         t.visit_at,
         t.purpose,
+        t.notes,
+        t.metadata,
         t.photo_path,
         guests.guest_names,
         guests.guest_count
@@ -1277,6 +1432,7 @@ def fetch_school_visit_history(
         rows = [dict(row) for row in cur.fetchall()]
 
     for row in rows:
+        row.update(_summarize_staff_notes(row.get("metadata")))
         names_raw = row.get("guest_names") or ""
         names = [n.strip() for n in names_raw.split(",") if n.strip()]
         guest_count = int(row.get("guest_count") or 0)
@@ -3201,6 +3357,91 @@ def list_purpose_keywords(*, active_only: bool = True, limit: int = 50) -> List[
             continue
         key = kw.lower()
         if key in seen:
+            continue
+        seen.add(key)
+        keywords.append(kw)
+    return keywords
+
+
+def list_popular_purposes(*, limit: int = 50, min_count: int = 1) -> List[str]:
+    safe_limit = max(1, min(int(limit or 50), 500))
+    safe_min_count = max(1, min(int(min_count or 1), 1000))
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH normalized_purposes AS (
+                SELECT
+                    regexp_replace(btrim(COALESCE(t.purpose, '')), '\s+', ' ', 'g') AS purpose_clean
+                FROM daftar_tamu_transactions t
+                WHERE COALESCE(btrim(t.purpose), '') <> ''
+            ),
+            ranked AS (
+                SELECT
+                    lower(purpose_clean) AS purpose_key,
+                    MIN(purpose_clean) AS purpose_label,
+                    COUNT(*) AS usage_count
+                FROM normalized_purposes
+                GROUP BY lower(purpose_clean)
+            )
+            SELECT purpose_label
+            FROM ranked
+            WHERE usage_count >= %s
+            ORDER BY usage_count DESC, lower(purpose_label) ASC
+            LIMIT %s
+            """,
+            [safe_min_count, safe_limit],
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+
+    purposes: List[str] = []
+    for row in rows:
+        value = (row.get("purpose_label") or "").strip()
+        if value:
+            purposes.append(value)
+    return purposes
+
+
+def list_purpose_keywords_by_usage(*, active_only: bool = True, limit: int = 50) -> List[str]:
+    safe_limit = max(1, min(int(limit or 50), 500))
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH keyword_source AS (
+                SELECT
+                    keyword,
+                    lower(regexp_replace(btrim(keyword), '\s+', ' ', 'g')) AS keyword_key
+                FROM daftar_tamu_purpose_keywords
+                WHERE (%s = FALSE OR active = TRUE)
+            ),
+            purpose_usage AS (
+                SELECT
+                    lower(regexp_replace(btrim(COALESCE(t.purpose, '')), '\s+', ' ', 'g')) AS purpose_key,
+                    COUNT(*)::int AS usage_count
+                FROM daftar_tamu_transactions t
+                WHERE COALESCE(btrim(t.purpose), '') <> ''
+                GROUP BY 1
+            )
+            SELECT
+                ks.keyword,
+                ks.keyword_key,
+                COALESCE(pu.usage_count, 0) AS usage_count
+            FROM keyword_source ks
+            LEFT JOIN purpose_usage pu ON pu.purpose_key = ks.keyword_key
+            ORDER BY COALESCE(pu.usage_count, 0) DESC, ks.keyword_key ASC
+            LIMIT %s
+            """,
+            [bool(active_only), safe_limit],
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+
+    keywords: List[str] = []
+    seen: set[str] = set()
+    for row in rows:
+        kw = (row.get("keyword") or "").strip()
+        key = (row.get("keyword_key") or "").strip() or kw.lower()
+        if not kw or key in seen:
             continue
         seen.add(key)
         keywords.append(kw)

@@ -1,0 +1,69 @@
+{% extends "portal/base_portal.html" %}
+{% set app_title = "ASKA Call Center" %}
+
+{% block portal_nav %}
+<nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container-fluid px-lg-4">
+        <a class="navbar-brand" href="{{ url_for('call_center.inbox') }}">
+            <span class="icon-badge brand-icon text-primary">
+                <i class="bi bi-headset"></i>
+            </span>
+            <span class="fw-bold">Call Center</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#ccNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="ccNavbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'call_center.inbox' %}active{% endif %}"
+                        href="{{ url_for('call_center.inbox') }}">
+                        <i class="bi bi-inbox nav-icon"></i>Inbox
+                        {% if cc_unread_count %}
+                        <span class="badge rounded-pill text-bg-danger ms-2">{{ cc_unread_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'call_center.settings_wa' %}active{% endif %}"
+                        href="{{ url_for('call_center.settings_wa') }}">
+                        <i class="bi bi-whatsapp nav-icon"></i>WhatsApp
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'call_center.settings_telegram' %}active{% endif %}"
+                        href="{{ url_for('call_center.settings_telegram') }}">
+                        <i class="bi bi-telegram nav-icon"></i>Telegram
+                    </a>
+                </li>
+            </ul>
+
+            <div class="d-flex align-items-center gap-3 user-nav-actions">
+                {% if current_user and current_user.role == 'admin' %}
+                {% set pending_total = admin_pending.total if admin_pending else 0 %}
+                {% set total_count = pending_total %}
+                {% set notification_items = admin_notification_items %}
+                {% set notification_extra_include = 'portal/components/_notification_admin_quick.html' %}
+                {% include "portal/components/_notification_dropdown.html" with context %}
+                {% endif %}
+                <a href="{{ url_for('main.admin_select_role') }}"
+                    class="btn btn-outline-secondary btn-sm text-nowrap oss-home-btn">
+                    <i class="bi bi-house me-1"></i><span class="oss-home-label">Home</span>
+                </a>
+
+                <!-- Theme Toggle -->
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" id="themeToggle" role="switch">
+                    <label class="theme-toggle-label" for="themeToggle">
+                        <i class="bi bi-sun-fill theme-icon theme-icon-sun"></i>
+                        <i class="bi bi-moon-fill theme-icon theme-icon-moon"></i>
+                    </label>
+                </div>
+
+                {% include "portal/components/_user_menu.html" %}
+            </div>
+        </div>
+    </div>
+</nav>
+
+{% endblock %}

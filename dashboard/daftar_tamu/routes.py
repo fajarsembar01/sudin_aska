@@ -36,6 +36,7 @@ import qrcode
 
 from dashboard.auth import current_user, role_required
 from dashboard.db_access import get_cursor
+from dashboard.queries import record_admin_action
 from dashboard.portal.permissions import can_access_aska, get_permission_summary, is_superadmin
 from dashboard.portal.queries import (
     fetch_admin_pending_summary,
@@ -63,6 +64,8 @@ from .queries import (
     fetch_map_data,
     fetch_recent_visits,
     fetch_school_rankings,
+    fetch_school_visit_bucket_rows,
+    fetch_school_visit_histogram,
     fetch_school_visit_history,
     fetch_user_guestbook_history,
     fetch_user_rankings,
@@ -80,7 +83,7 @@ from .queries import (
     list_user_transactions,
     list_user_visited_school_ids,
     list_purpose_keyword_rows,
-    list_purpose_keywords,
+    list_purpose_keywords_by_usage,
     list_contact_priority_rows,
     list_school_public_transactions,
     list_school_transactions,
@@ -115,6 +118,23 @@ _STAFF_NOTE_LEVEL_TONE_MAP = {
     "tindak_lanjut": "warning",
     "mendesak": "danger",
 }
+_VISIT_DISTRIBUTION_BUCKETS = [
+    {"key": "d0", "label": "0x", "min_visits": 0, "max_visits": 0},
+    {"key": "d1", "label": "1x", "min_visits": 1, "max_visits": 1},
+    {"key": "d2", "label": "2x", "min_visits": 2, "max_visits": 2},
+    {"key": "d3", "label": "3x", "min_visits": 3, "max_visits": 3},
+    {"key": "d4", "label": "4x", "min_visits": 4, "max_visits": 4},
+    {"key": "d5", "label": "5x", "min_visits": 5, "max_visits": 5},
+    {"key": "d6", "label": "6x", "min_visits": 6, "max_visits": 6},
+    {"key": "d7", "label": "7x", "min_visits": 7, "max_visits": 7},
+    {"key": "d8_plus", "label": "8+", "min_visits": 8, "max_visits": None},
+]
+_VISIT_FREQUENCY_BUCKETS = [
+    {"key": "f0", "label": "0x", "min_visits": 0, "max_visits": 0},
+    {"key": "f1_4", "label": "1-4x", "min_visits": 1, "max_visits": 4},
+    {"key": "f5_9", "label": "5-9x", "min_visits": 5, "max_visits": 9},
+    {"key": "f10_plus", "label": "10+", "min_visits": 10, "max_visits": None},
+]
 
 
 daftar_tamu_bp = Blueprint(
@@ -367,6 +387,73 @@ def _parse_guest_payload(raw: Optional[str]) -> tuple[list[int], list[int]]:
         return output
 
     return _dedupe(sudin_ids), _dedupe(umum_ids)
+
+
+def _is_truthy(value: Optional[str]) -> bool:
+    normalized = (value or "").strip().lower()
+    return normalized in {"1", "true", "yes", "on"}
+
+
+def _find_sudin_same_day_approved_duplicates(
+    *,
+    school_id: int,
+    sudin_ids: list[int],
+    visit_at: datetime,
+) -> list[dict]:
+    """Find SUDIN guests already approved at the same school on the same Jakarta date."""
+    if not school_id or not sudin_ids:
+        return []
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                g.user_id AS guest_id,
+                COALESCE(
+                    NULLIF(TRIM(u.full_name), ''),
+                    NULLIF(TRIM(u.email), ''),
+                    CONCAT('ID ', g.user_id::TEXT)
+                ) AS guest_name,
+                COUNT(DISTINCT t.id)::INT AS approved_count
+            FROM daftar_tamu_transactions t
+            JOIN daftar_tamu_transaction_guests g ON g.transaction_id = t.id
+            LEFT JOIN dashboard_users u ON u.id = g.user_id
+            WHERE t.school_id = %s
+              AND t.status = 'approved'
+              AND (g.guest_type = 'sudin' OR g.guest_type IS NULL)
+              AND g.user_id = ANY(%s::INT[])
+              AND DATE(t.visit_at AT TIME ZONE 'Asia/Jakarta') = DATE(%s AT TIME ZONE 'Asia/Jakarta')
+            GROUP BY g.user_id, guest_name
+            HAVING COUNT(DISTINCT t.id) >= 1
+            ORDER BY approved_count DESC, guest_name ASC
+            """,
+            (school_id, sudin_ids, visit_at),
+        )
+        rows = cur.fetchall() or []
+    return [dict(row) for row in rows]
+
+
+def _build_sudin_duplicate_warning_message(*, school_name: Optional[str], duplicate_rows: list[dict]) -> str:
+    guest_names = [
+        str(row.get("guest_name") or "").strip()
+        for row in duplicate_rows
+        if str(row.get("guest_name") or "").strip()
+    ]
+    unique_names: list[str] = []
+    seen: set[str] = set()
+    for name in guest_names:
+        key = name.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_names.append(name)
+
+    guest_text = ", ".join(unique_names) if unique_names else "Tamu terpilih"
+    school_text = (school_name or "sekolah ini").strip() or "sekolah ini"
+    return (
+        f"{guest_text} sudah terverifikasi di {school_text} pada hari ini. "
+        "Yakin ingin menambahkan kunjungan lagi?"
+    )
 
 
 def _web_aska_base_url() -> str:
@@ -1034,6 +1121,61 @@ def admin_dashboard() -> Response:
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
     summary = fetch_dashboard_summary(date_from=date_from, date_to=date_to, guest_scope=guest_scope)
+    visit_histogram = fetch_school_visit_histogram(
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+
+    def _count_histogram_bucket(min_visits: int, max_visits: Optional[int]) -> int:
+        total = 0
+        for visit_count, school_count in visit_histogram.items():
+            if visit_count < min_visits:
+                continue
+            if max_visits is not None and visit_count > max_visits:
+                continue
+            total += int(school_count or 0)
+        return total
+
+    visit_dist_labels = [bucket["label"] for bucket in _VISIT_DISTRIBUTION_BUCKETS]
+    visit_dist_values = [
+        _count_histogram_bucket(
+            int(bucket.get("min_visits") or 0),
+            int(bucket["max_visits"]) if bucket.get("max_visits") is not None else None,
+        )
+        for bucket in _VISIT_DISTRIBUTION_BUCKETS
+    ]
+    visit_frequency_groups = [
+        {
+            "key": bucket["key"],
+            "label": bucket["label"],
+            "school_count": _count_histogram_bucket(
+                int(bucket.get("min_visits") or 0),
+                int(bucket["max_visits"]) if bucket.get("max_visits") is not None else None,
+            ),
+        }
+        for bucket in _VISIT_FREQUENCY_BUCKETS
+    ]
+
+    top_visit_rankings, _ = fetch_school_rankings(
+        page=1,
+        per_page=10,
+        sort_key="visits_desc",
+        search_query="",
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+    bottom_visit_rankings, _ = fetch_school_rankings(
+        page=1,
+        per_page=10,
+        sort_key="visits_asc",
+        search_query="",
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+
     rankings, total_rows = fetch_school_rankings(
         page=page,
         per_page=per_page,
@@ -1055,8 +1197,8 @@ def admin_dashboard() -> Response:
         per_page=user_per_page,
         sort_key=user_sort,
         search_query=user_search_query,
-        date_from=None,
-        date_to=None,
+        date_from=date_from,
+        date_to=date_to,
         guest_scope=guest_scope,
     )
     user_total_pages = max(1, math.ceil(user_total_rows / user_per_page)) if user_total_rows else 1
@@ -1067,8 +1209,8 @@ def admin_dashboard() -> Response:
             per_page=user_per_page,
             sort_key=user_sort,
             search_query=user_search_query,
-            date_from=None,
-            date_to=None,
+            date_from=date_from,
+            date_to=date_to,
             guest_scope=guest_scope,
         )
 
@@ -1104,6 +1246,11 @@ def admin_dashboard() -> Response:
     return render_template(
         "daftar_tamu/admin_dashboard.html",
         summary=summary,
+        visit_dist_labels=visit_dist_labels,
+        visit_dist_values=visit_dist_values,
+        visit_frequency_groups=visit_frequency_groups,
+        top_visit_rankings=top_visit_rankings,
+        bottom_visit_rankings=bottom_visit_rankings,
         rankings=rankings,
         user_rankings=user_rankings,
         user_total_rows=user_total_rows,
@@ -1494,10 +1641,140 @@ def admin_map_data() -> Response:
     return jsonify(fetch_map_data(date_from=date_from, date_to=date_to, guest_scope=guest_scope))
 
 
+@daftar_tamu_bp.route("/admin/rankings/more")
+@role_required("admin")
+def admin_rankings_more() -> Response:
+    """Load more school rankings for dashboard card."""
+    ensure_daftar_tamu_seed_data()
+
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    ranking_type = (request.args.get("type") or "best").strip().lower()
+    if ranking_type not in {"best", "worst"}:
+        ranking_type = "best"
+    sort_key = "visits_desc" if ranking_type == "best" else "visits_asc"
+
+    limit = max(1, min(_to_int(request.args.get("limit"), 10), 50))
+    offset = max(0, _to_int(request.args.get("offset"), 0))
+    page = (offset // limit) + 1
+    skip = offset % limit
+
+    rows, _ = fetch_school_rankings(
+        page=page,
+        per_page=limit + skip,
+        sort_key=sort_key,
+        search_query="",
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+    if skip:
+        rows = rows[skip:]
+    rows = rows[:limit]
+
+    payload = [
+        {
+            "rank": row.get("rank"),
+            "name": row.get("school_name") or "",
+            "jenjang": row.get("jenjang") or "",
+            "npsn": row.get("npsn") or "",
+            "visit_count": int(row.get("visit_count") or 0),
+        }
+        for row in rows
+    ]
+    return jsonify(payload)
+
+
+@daftar_tamu_bp.route("/admin/stats/visit-buckets")
+@role_required("admin")
+def admin_visit_bucket_detail() -> Response:
+    """Detailed school list for selected visit-count bucket."""
+    ensure_daftar_tamu_seed_data()
+
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+
+    source = (request.args.get("source") or "distribution").strip().lower()
+    if source not in {"distribution", "frequency"}:
+        source = "distribution"
+    bucket_options = _VISIT_DISTRIBUTION_BUCKETS if source == "distribution" else _VISIT_FREQUENCY_BUCKETS
+
+    selected_bucket_key = (request.args.get("bucket") or "").strip().lower()
+    selected_bucket = next((row for row in bucket_options if row.get("key") == selected_bucket_key), None)
+    if not selected_bucket:
+        selected_bucket = bucket_options[0]
+
+    sort = (request.args.get("sort") or "visits_desc").strip().lower()
+    if sort not in {"visits_desc", "visits_asc", "name_asc", "name_desc", "last_visit_desc", "last_visit_asc"}:
+        sort = "visits_desc"
+
+    per_page = _to_int(request.args.get("per_page"), 25)
+    per_page = max(10, min(per_page, 100))
+
+    page = _to_int(request.args.get("page"), 1)
+    page = max(1, page)
+
+    min_visits = int(selected_bucket.get("min_visits") or 0)
+    raw_max_visits = selected_bucket.get("max_visits")
+    max_visits = int(raw_max_visits) if raw_max_visits is not None else None
+
+    rows, total_rows = fetch_school_visit_bucket_rows(
+        min_visits=min_visits,
+        max_visits=max_visits,
+        page=page,
+        per_page=per_page,
+        sort_key=sort,
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if page > total_pages:
+        page = total_pages
+        rows, total_rows = fetch_school_visit_bucket_rows(
+            min_visits=min_visits,
+            max_visits=max_visits,
+            page=page,
+            per_page=per_page,
+            sort_key=sort,
+            date_from=date_from,
+            date_to=date_to,
+            guest_scope=guest_scope,
+        )
+
+    date_from_str = date_from.isoformat() if date_from else ""
+    date_to_str = date_to.isoformat() if date_to else ""
+
+    return render_template(
+        "daftar_tamu/admin_visit_bucket_detail.html",
+        source=source,
+        bucket_options=bucket_options,
+        selected_bucket=selected_bucket,
+        rows=rows,
+        total_rows=total_rows,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+        sort=sort,
+        date_from_str=date_from_str,
+        date_to_str=date_to_str,
+        guest_scope=guest_scope,
+        today_str=_today_jakarta().isoformat(),
+    )
+
+
 @daftar_tamu_bp.route("/admin/export")
 @role_required("admin")
 def export_rankings() -> Response:
-    """Export rankings in CSV/Excel-friendly CSV."""
+    """Export school rankings in CSV/Excel."""
     ensure_daftar_tamu_seed_data()
 
     date_from = _parse_iso_date(request.args.get("date_from"))
@@ -1522,7 +1799,7 @@ def export_rankings() -> Response:
         guest_scope=guest_scope,
     )
 
-    headers = [
+    csv_headers = [
         "Peringkat",
         "NPSN",
         "Nama Sekolah",
@@ -1533,9 +1810,9 @@ def export_rankings() -> Response:
         "Kunjungan Terakhir",
         "Tamu Terakhir",
     ]
-    data_rows: list[list[object]] = []
+    csv_rows: list[list[object]] = []
     for row in rows:
-        data_rows.append(
+        csv_rows.append(
             [
                 row.get("rank"),
                 row.get("npsn"),
@@ -1551,11 +1828,118 @@ def export_rankings() -> Response:
 
     file_format = (request.args.get("format") or "csv").strip().lower()
     if file_format in {"excel", "xlsx"}:
+        excel_headers = [
+            "Peringkat",
+            "NPSN",
+            "Nama Sekolah",
+            "Jenjang",
+            "Kecamatan",
+            "Kelurahan",
+            "Kunjungan Ke",
+            "Tanggal Kunjungan",
+            "Nama Pengunjung",
+            "Tujuan",
+            "Link Foto",
+            "Catatan Sekolah (opsional)",
+            "Catatan Staf/Koordinator (opsional)",
+        ]
+        detail_rows: list[list[object]] = []
+        visit_page_size = 100
+
+        for row in rows:
+            school_id = int(row.get("school_id") or 0)
+            if school_id <= 0:
+                continue
+
+            school_rank = row.get("rank")
+            school_npsn = row.get("npsn") or ""
+            school_name = row.get("school_name") or ""
+            school_jenjang = row.get("jenjang") or ""
+            school_kecamatan = row.get("kecamatan") or ""
+            school_kelurahan = row.get("kelurahan") or ""
+            visit_count = int(row.get("visit_count") or 0)
+
+            if visit_count <= 0:
+                detail_rows.append(
+                    [
+                        school_rank,
+                        school_npsn,
+                        school_name,
+                        school_jenjang,
+                        school_kecamatan,
+                        school_kelurahan,
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                    ]
+                )
+                continue
+
+            visit_rows, visit_total_rows = fetch_school_visit_history(
+                school_id=school_id,
+                page=1,
+                per_page=visit_page_size,
+                sort_key="date_asc",
+                search_query="",
+                date_from=date_from,
+                date_to=date_to,
+                guest_scope=guest_scope,
+            )
+            visit_total_pages = max(1, math.ceil(visit_total_rows / visit_page_size)) if visit_total_rows else 1
+            if visit_total_pages > 1:
+                for visit_page in range(2, visit_total_pages + 1):
+                    page_rows, _ = fetch_school_visit_history(
+                        school_id=school_id,
+                        page=visit_page,
+                        per_page=visit_page_size,
+                        sort_key="date_asc",
+                        search_query="",
+                        date_from=date_from,
+                        date_to=date_to,
+                        guest_scope=guest_scope,
+                    )
+                    visit_rows.extend(page_rows)
+
+            for visit_index, visit in enumerate(visit_rows, start=1):
+                photo_url = _build_photo_url(visit.get("photo_path"), external=True) or ""
+                detail_rows.append(
+                    [
+                        school_rank,
+                        school_npsn,
+                        school_name,
+                        school_jenjang,
+                        school_kecamatan,
+                        school_kelurahan,
+                        visit_index,
+                        _format_date_dmy(visit.get("visit_at")),
+                        visit.get("guest_names") or visit.get("guest_display") or "",
+                        visit.get("purpose") or "",
+                        photo_url,
+                        visit.get("notes") or "",
+                        visit.get("staff_note_text") or "",
+                    ]
+                )
+
+        excel_rows: list[list[object]] = []
+        for row in detail_rows:
+            excel_row = list(row)
+            photo_url = str(excel_row[10] or "").strip()
+            if photo_url:
+                safe_url = photo_url.replace('"', '""')
+                excel_row[10] = f'=HYPERLINK("{safe_url}","Foto")'
+            else:
+                excel_row[10] = ""
+            excel_rows.append(excel_row)
+
         filename = f"ranking_daftar_tamu_{_today_jakarta().isoformat()}.xlsx"
-        return _build_xlsx_response(headers, data_rows, filename)
+        return _build_xlsx_response(excel_headers, excel_rows, filename)
 
     filename = f"ranking_daftar_tamu_{_today_jakarta().isoformat()}.csv"
-    return _build_csv_response(headers, data_rows, filename)
+    return _build_csv_response(csv_headers, csv_rows, filename)
 
 
 @daftar_tamu_bp.route("/admin/export/users")
@@ -1563,6 +1947,11 @@ def export_rankings() -> Response:
 def export_user_rankings() -> Response:
     """Export user rankings in CSV/Excel."""
     ensure_daftar_tamu_seed_data()
+
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
 
     user_search_query = (request.args.get("user_q") or request.args.get("q") or "").strip()
     user_sort = (request.args.get("user_sort") or DEFAULT_USER_SORT).strip().lower()
@@ -1577,8 +1966,8 @@ def export_user_rankings() -> Response:
         per_page=per_page,
         sort_key=user_sort,
         search_query=user_search_query,
-        date_from=None,
-        date_to=None,
+        date_from=date_from,
+        date_to=date_to,
         guest_scope=guest_scope,
     )
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
@@ -1589,8 +1978,8 @@ def export_user_rankings() -> Response:
                 per_page=per_page,
                 sort_key=user_sort,
                 search_query=user_search_query,
-                date_from=None,
-                date_to=None,
+                date_from=date_from,
+                date_to=date_to,
                 guest_scope=guest_scope,
             )
             rows.extend(page_rows)
@@ -1608,6 +1997,7 @@ def export_user_rankings() -> Response:
         "Tujuan",
         "Link Foto",
         "Catatan Sekolah (opsional)",
+        "Catatan Staf/Koordinator (opsional)",
     ]
     data_rows: list[list[object]] = []
     visit_page_size = 100
@@ -1622,8 +2012,8 @@ def export_user_rankings() -> Response:
             per_page=visit_page_size,
             sort_key="date_asc",
             search_query="",
-            date_from=None,
-            date_to=None,
+            date_from=date_from,
+            date_to=date_to,
             guest_scope=guest_scope,
         )
         visit_total_pages = max(1, math.ceil(visit_total_rows / visit_page_size)) if visit_total_rows else 1
@@ -1635,8 +2025,8 @@ def export_user_rankings() -> Response:
                     per_page=visit_page_size,
                     sort_key="date_asc",
                     search_query="",
-                    date_from=None,
-                    date_to=None,
+                    date_from=date_from,
+                    date_to=date_to,
                     guest_scope=guest_scope,
                 )
                 visit_rows.extend(page_rows)
@@ -1657,6 +2047,7 @@ def export_user_rankings() -> Response:
                     visit.get("purpose") or "",
                     photo_url,
                     visit.get("notes") or "",
+                    visit.get("staff_note_text") or "",
                 ]
             )
 
@@ -1858,6 +2249,18 @@ def admin_transaction_approve(transaction_id: int) -> Response:
         )
     except Exception:
         current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu.")
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="daftar_tamu",
+            action="VERIFY_APPROVE",
+            target_type="GUESTBOOK_TRANSACTION",
+            target_id=transaction_id,
+            target_name=f"Transaksi #{transaction_id}",
+            metadata={"status": "approved", "reviewer_note": note or None},
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mencatat action admin buku tamu.")
     return jsonify({"success": True})
 
 
@@ -1897,6 +2300,18 @@ def admin_transaction_reject(transaction_id: int) -> Response:
         )
     except Exception:
         current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu.")
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="daftar_tamu",
+            action="VERIFY_REJECT",
+            target_type="GUESTBOOK_TRANSACTION",
+            target_id=transaction_id,
+            target_name=f"Transaksi #{transaction_id}",
+            metadata={"status": "rejected", "reviewer_note": note},
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mencatat action admin buku tamu.")
     return jsonify({"success": True})
 
 
@@ -1925,6 +2340,18 @@ def admin_transaction_pending(transaction_id: int) -> Response:
         )
     except Exception:
         current_app.logger.exception("Gagal menyimpan notifikasi status buku tamu aplikasi.")
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="daftar_tamu",
+            action="VERIFY_PENDING",
+            target_type="GUESTBOOK_TRANSACTION",
+            target_id=transaction_id,
+            target_name=f"Transaksi #{transaction_id}",
+            metadata={"status": "pending", "reviewer_note": note or None},
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mencatat action admin buku tamu.")
     return jsonify({"success": True})
 
 
@@ -1957,6 +2384,18 @@ def admin_bulk_approve_transactions() -> Response:
             ok = False
         if ok:
             success_count += 1
+            try:
+                record_admin_action(
+                    user_id=user.get("id"),
+                    feature_key="daftar_tamu",
+                    action="VERIFY_APPROVE",
+                    target_type="GUESTBOOK_TRANSACTION",
+                    target_id=tx_id,
+                    target_name=f"Transaksi #{tx_id}",
+                    metadata={"status": "approved", "reviewer_note": note or None, "mode": "bulk"},
+                )
+            except Exception:
+                current_app.logger.exception("Gagal mencatat bulk approve buku tamu.")
             try:
                 _notify_user_app_status_change(
                     transaction_id=tx_id,
@@ -2017,6 +2456,18 @@ def admin_bulk_reject_transactions() -> Response:
             ok = False
         if ok:
             success_count += 1
+            try:
+                record_admin_action(
+                    user_id=user.get("id"),
+                    feature_key="daftar_tamu",
+                    action="VERIFY_REJECT",
+                    target_type="GUESTBOOK_TRANSACTION",
+                    target_id=tx_id,
+                    target_name=f"Transaksi #{tx_id}",
+                    metadata={"status": "rejected", "reviewer_note": note, "mode": "bulk"},
+                )
+            except Exception:
+                current_app.logger.exception("Gagal mencatat bulk reject buku tamu.")
             try:
                 _notify_user_app_status_change(
                     transaction_id=tx_id,
@@ -2394,6 +2845,18 @@ def admin_verify_general_guest(guest_id: int) -> Response:
         )
         if cur.rowcount == 0:
             return jsonify({"success": False, "message": "Tamu umum tidak ditemukan atau sudah dihapus."}), 404
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="daftar_tamu",
+            action="VERIFY_GENERAL_GUEST",
+            target_type="GENERAL_GUEST",
+            target_id=guest_id,
+            target_name=f"Tamu Umum #{guest_id}",
+            metadata={"is_verified": is_verified},
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mencatat verifikasi tamu umum.")
     return jsonify({"success": True, "is_verified": is_verified})
 
 
@@ -2417,6 +2880,18 @@ def admin_delete_general_guest(guest_id: int) -> Response:
         )
         if cur.rowcount == 0:
             return jsonify({"success": False, "message": "Tamu umum tidak ditemukan."}), 404
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="daftar_tamu",
+            action="DELETE_GENERAL_GUEST" if is_deleted else "RESTORE_GENERAL_GUEST",
+            target_type="GENERAL_GUEST",
+            target_id=guest_id,
+            target_name=f"Tamu Umum #{guest_id}",
+            metadata={"is_deleted": is_deleted},
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mencatat hapus tamu umum.")
     return jsonify({"success": True, "is_deleted": is_deleted})
 
 
@@ -2441,7 +2916,7 @@ def sekolah_guestbook() -> Response:
         school=school,
         user_school=school,
         area_contacts=_build_area_contacts(school),
-        purpose_keywords=list_purpose_keywords(active_only=True),
+        purpose_keywords=list_purpose_keywords_by_usage(active_only=True, limit=50),
         error_message=None,
     )
 
@@ -2960,6 +3435,8 @@ def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dic
         icon = "bi-diagram-3-fill"
     elif category == "panbers_team_member_status":
         icon = "bi-people-fill"
+    elif category == "panbers_follow_up_status":
+        icon = "bi-tools"
 
     tone = "secondary"
     if status_key == "approved":
@@ -2967,6 +3444,10 @@ def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dic
     elif status_key == "rejected":
         tone = "danger"
     elif status_key == "pending":
+        tone = "warning"
+    elif status_key == "selesai":
+        tone = "success"
+    elif status_key in {"baru", "diproses", "diajukan"}:
         tone = "warning"
 
     created_at = row.get("created_at")
@@ -2979,6 +3460,8 @@ def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dic
         fallback_title = "Notifikasi penugasan PANBERSS"
     elif category == "panbers_team_member_status":
         fallback_title = "Notifikasi tim PANBERSS"
+    elif category == "panbers_follow_up_status":
+        fallback_title = "Notifikasi tindak lanjut PANBERSS"
 
     return {
         "id": notification_id,
@@ -4108,6 +4591,7 @@ def sekolah_create_transaction() -> Response:
 
     purpose = (request.form.get("purpose") or "").strip()
     notes = (request.form.get("notes") or "").strip()
+    duplicate_confirmed = _is_truthy(request.form.get("duplicate_confirmed"))
 
     latitude_raw = request.form.get("latitude")
     longitude_raw = request.form.get("longitude")
@@ -4129,6 +4613,33 @@ def sekolah_create_transaction() -> Response:
         return jsonify({"success": False, "message": "Foto wajib diunggah."}), 400
 
     visit_at = current_jakarta_time()
+    duplicate_rows = _find_sudin_same_day_approved_duplicates(
+        school_id=int(school["id"]),
+        sudin_ids=sudin_ids,
+        visit_at=visit_at,
+    )
+    duplicate_repeat_count = 0
+    if duplicate_rows:
+        try:
+            duplicate_repeat_count = max(
+                int(row.get("approved_count") or 0) + 1
+                for row in duplicate_rows
+            )
+        except Exception:
+            duplicate_repeat_count = 0
+    if duplicate_rows and not duplicate_confirmed:
+        warning_message = _build_sudin_duplicate_warning_message(
+            school_name=school.get("name"),
+            duplicate_rows=duplicate_rows,
+        )
+        return jsonify(
+            {
+                "success": False,
+                "requires_confirmation": True,
+                "message": warning_message,
+                "duplicate_guest_count": len(duplicate_rows),
+            }
+        ), 409
 
     try:
         stamp_result = stamp_guestbook_photo(
@@ -4240,6 +4751,7 @@ def sekolah_create_transaction() -> Response:
                             visit_at=visit_at,
                             guest_summary=None,
                             guest_names=guest_names,
+                            duplicate_repeat_count=duplicate_repeat_count or None,
                             purpose=purpose or None,
                             notes=notes or None,
                             photo_links=photo_links,

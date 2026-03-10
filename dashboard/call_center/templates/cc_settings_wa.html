@@ -1,0 +1,131 @@
+{% extends "base_cc.html" %}
+{% set page_title = "Konfigurasi WhatsApp" %}
+
+{% block head_extra %}
+<style>
+    .cc-env-pre {
+        background: var(--bg-subtle);
+        color: var(--text-primary);
+        border: 1px solid var(--border-soft);
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<div class="d-flex align-items-center gap-2 mb-3">
+    <a href="{{ url_for('call_center.inbox') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Call Center
+    </a>
+    <h4 class="mb-0"><i class="bi bi-whatsapp text-success me-2"></i>Konfigurasi WhatsApp (Call Center)</h4>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent">
+                <h6 class="mb-0"><i class="bi bi-whatsapp text-success me-2"></i>WhatsApp Bridge</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3" id="bridgeStatusArea">
+                    {% set state = bridge_status.get('state', 'unknown') %}
+                    {% if state == 'ready' %}
+                    <div class="alert alert-success mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-check-circle-fill fs-4"></i>
+                        <div>
+                            <strong>Terhubung</strong>
+                            <div class="small">Bridge siap menerima dan mengirim pesan.</div>
+                        </div>
+                    </div>
+                    {% elif state == 'qr' %}
+                    <div class="alert alert-warning mb-0">
+                        <strong><i class="bi bi-qr-code-scan me-1"></i>Menunggu Scan QR</strong>
+                        <p class="mb-0 small mt-1">Buka WhatsApp → Linked Devices → Scan QR yang tampil di terminal
+                            <code>npm run wa:cc</code>
+                        </p>
+                    </div>
+                    {% elif state == 'authenticated' %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-shield-check me-1"></i>Authenticated — menunggu ready…
+                    </div>
+                    {% elif state == 'starting' %}
+                    <div class="alert alert-info mb-0">
+                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                        Memulai bridge…
+                    </div>
+                    {% elif state == 'disconnected' or state == 'auth_failure' %}
+                    <div class="alert alert-danger mb-0">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        {{ bridge_status.get('message', 'Disconnected') }}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-secondary mb-0">
+                        <i class="bi bi-question-circle me-1"></i>
+                        Status: <strong>{{ state }}</strong>
+                        <p class="mb-0 small mt-1">Jalankan <code>npm run wa:cc</code> di terminal lalu generate QR.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <form method="post" action="{{ url_for('call_center.generate_qr') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-warning btn-sm">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Generate QR Baru
+                    </button>
+                    <small class="text-secondary ms-2">Reset sesi & scan QR ulang</small>
+                </form>
+
+                <hr>
+                <h6 class="small fw-bold text-secondary">Polling Status</h6>
+                <div id="pollStatus" class="small text-secondary">Memuat…</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent">
+            <h6 class="mb-0"><i class="bi bi-terminal text-secondary me-2"></i>Environment Variables</h6>
+        </div>
+        <div class="card-body">
+            <p class="small text-secondary mb-1">Variabel yang perlu diset di <code>.env</code> untuk Call Center:</p>
+            <pre class="cc-env-pre p-3 rounded small mb-0"><code>ASKA_CC_WHATSAPP_INTERNAL_TOKEN=&lt;token-rahasia&gt;
+ASKA_CC_HTTP_PORT=3100
+# Opsional:
+# ASKA_CC_WHATSAPP_CLIENT_ID=cc-main
+# ASKA_CC_WHATSAPP_SESSION_PATH=.wa_cc_session
+# ASKA_CC_WHATSAPP_STATUS_PATH=runtime/whatsapp_cc_status.json
+# ASKA_CC_WHATSAPP_INTERNAL_URL=http://127.0.0.1:5001/api/callcenter/inbound</code></pre>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        var pollEl = document.getElementById('pollStatus');
+        if (!pollEl) return;
+        function pollBridgeStatus() {
+            fetch('{{ url_for("call_center.bridge_status") }}')
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    var state = data.state || 'unknown';
+                    var msg = data.message || '';
+                    var color = 'text-secondary';
+                    if (state === 'ready') color = 'text-success';
+                    else if (state === 'qr' || state === 'starting') color = 'text-warning';
+                    else if (state === 'error' || state === 'disconnected') color = 'text-danger';
+                    pollEl.className = 'small ' + color;
+                    pollEl.textContent = 'Status: ' + state + (msg ? ' — ' + msg : '') + ' (Updated: ' + (data.updatedAt || '-') + ')';
+                })
+                .catch(function () {
+                    pollEl.className = 'small text-danger';
+                    pollEl.textContent = 'Gagal mengambil status bridge.';
+                });
+        }
+        pollBridgeStatus();
+        setInterval(pollBridgeStatus, 5000);
+    })();
+</script>
+{% endblock %}

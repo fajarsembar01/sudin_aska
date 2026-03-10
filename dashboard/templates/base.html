@@ -46,7 +46,9 @@
                 {% set current_role = current_user.role if current_user else None %}
                 {% set is_admin = current_role == 'admin' %}
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    {% set bot_endpoints = ['main.chats', 'main.chat_thread', 'main.feedback', 'main.twitter_logs'] %}
+                    {% set bot_endpoints = ['main.chats', 'main.chat_thread', 'main.feedback', 'main.manage_knowledge',
+                    'main.twitter_logs',
+                    'main.notif_logs', 'main.rag_debug_logs'] %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if request.endpoint in bot_endpoints %}active{% endif %}"
                             href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -66,12 +68,30 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if request.endpoint == 'main.manage_knowledge' %}active{% endif %}"
+                                    href="{{ url_for('main.manage_knowledge') }}">
+                                    <i class="bi bi-journal-text me-2 text-primary"></i>Kecerdasan ASKA
+                                </a>
+                            </li>
+                            <li>
                                 <hr class="dropdown-divider">
                             </li>
                             <li>
                                 <a class="dropdown-item {% if request.endpoint == 'main.twitter_logs' %}active{% endif %}"
                                     href="{{ url_for('main.twitter_logs') }}">
                                     <i class="bi bi-twitter me-2 text-primary"></i>Twitter Ops
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'main.notif_logs' %}active{% endif %}"
+                                    href="{{ url_for('main.notif_logs') }}">
+                                    <i class="bi bi-bell me-2 text-primary"></i>Log Notifikasi
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'main.rag_debug_logs' %}active{% endif %}"
+                                    href="{{ url_for('main.rag_debug_logs') }}">
+                                    <i class="bi bi-cpu me-2 text-primary"></i>Log Debug RAG
                                 </a>
                             </li>
                         </ul>
@@ -127,8 +147,16 @@
                     </li>
                     {% endif %}
                     {% if is_admin %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'main.admin_performance' %}active{% endif %}"
+                            href="{{ url_for('main.admin_performance') }}">
+                            <i class="bi bi-person-lines-fill nav-icon"></i>Performa Admin
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if is_admin %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['auth.manage_users', 'auth.manage_aska_users', 'auth.manage_monev_teams', 'auth.telegram_notifications'] %}active{% endif %}"
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['auth.manage_users', 'auth.manage_aska_users', 'auth.manage_monev_teams', 'auth.telegram_notifications', 'auth.whatsapp_link_settings', 'auth.whatsapp_bridge_settings'] %}active{% endif %}"
                             href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-gear nav-icon"></i>Manajemen
                         </a>
@@ -155,6 +183,18 @@
                                 <a class="dropdown-item {% if request.endpoint == 'auth.telegram_notifications' %}active{% endif %}"
                                     href="{{ url_for('auth.telegram_notifications') }}">
                                     <i class="bi bi-telegram me-2"></i>Notifikasi Telegram
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'auth.whatsapp_link_settings' %}active{% endif %}"
+                                    href="{{ url_for('auth.whatsapp_link_settings') }}">
+                                    <i class="bi bi-whatsapp me-2"></i>Link WhatsApp
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'auth.whatsapp_bridge_settings' %}active{% endif %}"
+                                    href="{{ url_for('auth.whatsapp_bridge_settings') }}">
+                                    <i class="bi bi-qr-code-scan me-2"></i>WhatsApp QR Connect
                                 </a>
                             </li>
                         </ul>

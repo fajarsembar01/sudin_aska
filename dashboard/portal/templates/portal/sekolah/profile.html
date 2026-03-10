@@ -17,6 +17,9 @@
 
     {% set grade_map = {
         'PAUD': [-2, -1, 0],
+        'SPS': [-1, 0],
+        'TPA': [-1, 0],
+        'KB': [-1, 0],
         'TK': [-1, 0],
         'SD': [1, 2, 3, 4, 5, 6],
         'SMP': [7, 8, 9],
@@ -133,7 +136,7 @@
                                     {% elif g == -1 %}
                                         {% set grade_label = 'TK A' if school_jenjang_upper == 'TK' else 'Kelompok A' %}
                                     {% endif %}
-                                {% elif g == 0 and school_jenjang_upper in ['TK','PAUD'] %}
+                                {% elif g == 0 and school_jenjang_upper in ['TK','PAUD','SPS','TPA','KB'] %}
                                     {% set grade_label = 'TK B' if school_jenjang_upper == 'TK' else 'Kelompok B' %}
                                 {% endif %}
                                 <div class="col-md-4">

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 import json
 import os
 import secrets
@@ -10,9 +11,10 @@ from datetime import datetime, timezone
 from flask import Flask, request, jsonify, render_template, session, redirect, url_for, flash, send_from_directory, abort
 from authlib.integrations.flask_client import OAuth
 
-from .handlers import process_web_request, web_sessions, reload_qa_chain
+from .handlers import process_channel_request, process_web_request, web_sessions, reload_qa_chain
 from .feedback_routes import feedback_bp
 from db import (
+    save_chat,
     get_or_create_web_user,
     get_chat_history,
     get_corruption_report,
@@ -21,6 +23,7 @@ from db import (
     get_web_user_status,
     DEFAULT_LIMITED_QUOTA,
     DEFAULT_LIMITED_REASON,
+    get_whatsapp_user_status,
     get_portal_school_by_npsn,
     create_public_guestbook_transaction,
     find_general_guest_by_phone,
@@ -38,6 +41,22 @@ LIMIT_BLOCK_MESSAGE = (
 )
 GMAIL_ALLOWED_DOMAINS = {"gmail.com", "googlemail.com"}
 WEB_BOT_USERNAME = "ASKA_WEB"
+
+
+def _run_async(coro):
+    """Safely run an async coroutine from a sync Flask/gunicorn context."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        # Already inside a running loop — offload to a new thread
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(asyncio.run, coro)
+            return future.result()
+    else:
+        return asyncio.run(coro)
 
 
 def create_app() -> Flask:
@@ -129,6 +148,15 @@ def create_app() -> Flask:
         if digits.startswith("0"):
             digits = "62" + digits[1:]
         return digits
+
+    def _normalize_whatsapp_user_id(value: object) -> Optional[int]:
+        digits = "".join(ch for ch in str(value or "") if ch.isdigit())
+        if not digits:
+            return None
+        try:
+            return int(digits)
+        except (TypeError, ValueError):
+            return None
 
     def _build_contact_buttons(school: dict | None) -> list[dict]:
         if not school:
@@ -624,18 +652,141 @@ def create_app() -> Flask:
             guest_user_id = -1 * (secrets.randbelow(1_000_000_000) + 1)
             session["guest_chat_user_id"] = guest_user_id
 
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
         guest_name = session.get("guest_chat_name") or "Tamu Umum"
-        response, _ = loop.run_until_complete(process_web_request(guest_user_id, message, username=guest_name))
+        response, _ = _run_async(process_web_request(guest_user_id, message, username=guest_name))
         remaining -= 1
         session["guest_chat_remaining"] = remaining
         session.modified = True
         return jsonify({"response": response, "remaining": remaining})
+
+    @app.route("/api/whatsapp/inbound", methods=["POST"])
+    def whatsapp_inbound():
+        token_expected = (os.getenv("ASKA_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+        if not token_expected:
+            return jsonify({"error": "ASKA_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}), 501
+
+        provided_token = (
+            request.headers.get("X-ASKA-WHATSAPP-TOKEN")
+            or request.args.get("token")
+            or request.form.get("token")
+        )
+        if provided_token != token_expected:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        data = request.get_json(silent=True) or {}
+        user_id = _normalize_whatsapp_user_id(data.get("user_id") or data.get("from"))
+        if not user_id:
+            return jsonify({"error": "Nomor WhatsApp tidak valid"}), 400
+
+        username = (data.get("username") or data.get("name") or "WhatsApp User").strip()[:120]
+        message_type = (data.get("message_type") or "text").strip().lower()
+        message = (data.get("message") or "").strip()
+
+        if message_type != "text":
+            return jsonify(
+                {
+                    "response": "Saat ini ASKA via WhatsApp baru support pesan teks dulu ya 🙏",
+                    "blocked": False,
+                    "blockType": "unsupported_type",
+                    "chat_log_id": None,
+                }
+            )
+        if not message:
+            return jsonify({"error": "Message is required"}), 400
+
+        status_info = get_whatsapp_user_status(user_id)
+        status_value = (status_info or {}).get("status")
+        if status_value in BLOCKING_STATUSES:
+            notice = build_status_notice(
+                status_value,
+                reason=(status_info or {}).get("status_reason"),
+                channel="whatsapp",
+            )
+            save_chat(user_id, username, message, role="user", topic="whatsapp")
+            response_text = notice.message if notice else "Akses WhatsApp kamu sedang dibatasi oleh sekolah."
+            save_chat(user_id, "ASKA", response_text, role="aska", topic="whatsapp")
+            return jsonify(
+                {
+                    "response": response_text,
+                    "blocked": True,
+                    "blockType": "status",
+                    "chat_log_id": None,
+                    "statusBlock": notice.__dict__ if notice else None,
+                }
+            )
+
+        response, chat_log_id = _run_async(
+            process_channel_request(
+                user_id,
+                message,
+                username=username,
+                topic="whatsapp",
+            )
+        )
+        return jsonify(
+            {
+                "response": response,
+                "blocked": False,
+                "blockType": None,
+                "chat_log_id": chat_log_id,
+            }
+        )
+
+    @app.route("/api/callcenter/inbound", methods=["POST"])
+    def callcenter_inbound():
+        """Receive inbound messages from the Call Center WhatsApp bridge.
+
+        Unlike the ASKA bot, this does NOT generate an AI reply.
+        It stores the message and notifies admins via Telegram.
+        """
+        token_expected = (os.getenv("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+        if not token_expected:
+            return jsonify({"error": "ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}), 501
+
+        provided_token = (
+            request.headers.get("X-ASKA-CC-TOKEN")
+            or request.args.get("token")
+            or ""
+        )
+        if provided_token != token_expected:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        data = request.get_json(silent=True) or {}
+        raw_user_id = str(data.get("user_id") or "").strip()
+        if not raw_user_id:
+            return jsonify({"error": "user_id required"}), 400
+
+        username = (data.get("username") or raw_user_id).strip()[:120]
+        message = (data.get("message") or "").strip()
+        message_id = data.get("message_id") or None
+        if not message:
+            return jsonify({"error": "message required"}), 400
+
+        try:
+            from dashboard.call_center.queries import (
+                upsert_cc_conversation,
+                save_cc_message,
+                send_cc_telegram_notification,
+            )
+
+            conv = upsert_cc_conversation(wa_user_id=raw_user_id, display_name=username)
+            msg = save_cc_message(
+                conversation_id=conv["id"],
+                direction="inbound",
+                message_text=message,
+                wa_message_id=message_id,
+            )
+
+            # Fire-and-forget Telegram notification
+            try:
+                send_cc_telegram_notification(username, message)
+            except Exception:
+                pass
+
+            return jsonify({"ok": True, "conversation_id": conv.get("id"), "message_id": msg.get("id")})
+        except Exception as exc:
+            current_app.logger.exception("callcenter_inbound error")
+            return jsonify({"error": str(exc)}), 500
 
     @app.route("/api/chat", methods=["POST"])
     def chat():
@@ -691,14 +842,7 @@ def create_app() -> Flask:
                 "serverTime": server_now,
             })
 
-        # Run the async function in a managed event loop
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:  # 'get_running_loop' fails if no loop is running
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        response, chat_log_id = loop.run_until_complete(process_web_request(user_id, message, username=full_name))
+        response, chat_log_id = _run_async(process_web_request(user_id, message, username=full_name))
         server_now = datetime.now(timezone.utc).isoformat()
         return jsonify({
             "response": response,

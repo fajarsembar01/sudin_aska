@@ -5,6 +5,15 @@
 {% set sort_name = "name_desc" if sort == "name_asc" else "name_asc" %}
 {% set user_sort_visits = "visits_asc" if user_sort == "visits_desc" else "visits_desc" %}
 {% set user_sort_last_visit = "last_visit_asc" if user_sort == "last_visit_desc" else "last_visit_desc" %}
+{% if date_from_str and date_to_str %}
+{% set user_rank_filter_label = date_from_str ~ " s/d " ~ date_to_str %}
+{% elif date_from_str %}
+{% set user_rank_filter_label = "Mulai " ~ date_from_str %}
+{% elif date_to_str %}
+{% set user_rank_filter_label = "Sampai " ~ date_to_str %}
+{% else %}
+{% set user_rank_filter_label = "Semua tanggal" %}
+{% endif %}
 
 {% block head_extra %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -237,6 +246,120 @@
     </div>
 </section>
 
+<section class="row g-3 mb-4">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Sebaran Banyak Kunjungan</h2>
+                <div style="height: 300px">
+                    <canvas id="visitDistChart"></canvas>
+                </div>
+                <small class="text-muted d-block mt-2">
+                    Klik batang chart untuk melihat daftar sekolah per bucket.
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-1">Jumlah Kunjungan Sekolah</h2>
+                <div style="height: 300px; position: relative">
+                    <canvas id="visitFrequencyPieChart"></canvas>
+                </div>
+                <small class="text-muted d-block mt-2">
+                    Double click irisan chart untuk membuka detail kelompok.
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="icon-badge section-icon text-warning">
+                        <i class="bi bi-trophy"></i>
+                    </span>
+                    <h2 class="h6 fw-bold mb-0">Perankingan Sekolah</h2>
+                </div>
+
+                <ul class="nav nav-pills nav-fill mb-3" id="visitRankTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="visit-best-tab" data-bs-toggle="pill" data-bs-target="#visit-best-pane"
+                            type="button" role="tab">
+                            Terbanyak
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="visit-worst-tab" data-bs-toggle="pill" data-bs-target="#visit-worst-pane"
+                            type="button" role="tab">
+                            Tersedikit
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" style="max-height: 220px; overflow-y: auto;">
+                    <div class="tab-pane fade show active" id="visit-best-pane" role="tabpanel">
+                        {% if top_visit_rankings %}
+                        <div class="list-group list-group-flush" id="visitBestList">
+                            {% for row in top_visit_rankings %}
+                            <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-bottom-0">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-muted small" style="width: 20px">{{ loop.index }}</span>
+                                    <div>
+                                        <div class="fw-semibold small">{{ row.school_name }}</div>
+                                        <div class="text-muted" style="font-size: 0.7rem">{{ row.jenjang or '-' }}</div>
+                                    </div>
+                                </div>
+                                <span class="badge bg-primary text-white rounded-pill">{{ row.visit_count or 0 }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="text-center mt-2">
+                            <button id="loadMoreVisitBest" class="btn btn-sm btn-link text-decoration-none"
+                                {% if (top_visit_rankings|length) < 10 %}style="display:none"{% endif %}>
+                                Lihat lagi <i class="bi bi-chevron-down"></i>
+                            </button>
+                        </div>
+                        {% else %}
+                        <p class="text-muted small text-center my-3">Belum ada data</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="tab-pane fade" id="visit-worst-pane" role="tabpanel">
+                        {% if bottom_visit_rankings %}
+                        <div class="list-group list-group-flush" id="visitWorstList">
+                            {% for row in bottom_visit_rankings %}
+                            <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-bottom-0">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-muted small" style="width: 20px">{{ loop.index }}</span>
+                                    <div>
+                                        <div class="fw-semibold small">{{ row.school_name }}</div>
+                                        <div class="text-muted" style="font-size: 0.7rem">{{ row.jenjang or '-' }}</div>
+                                    </div>
+                                </div>
+                                <span class="badge bg-danger text-white rounded-pill">{{ row.visit_count or 0 }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="text-center mt-2">
+                            <button id="loadMoreVisitWorst" class="btn btn-sm btn-link text-decoration-none"
+                                {% if (bottom_visit_rankings|length) < 10 %}style="display:none"{% endif %}>
+                                Lihat lagi <i class="bi bi-chevron-down"></i>
+                            </button>
+                        </div>
+                        {% else %}
+                        <p class="text-muted small text-center my-3">Belum ada data</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <section class="row g-3">
     <div class="col-xl-8">
         <div class="card border-0 shadow-sm">
@@ -410,9 +533,10 @@
                     <div>
                         <h2 class="h6 fw-bold mb-0">Ranking User Berdasarkan Kunjungan</h2>
                         <small class="text-muted">Urutan default: coordinator, lalu staff, kemudian role lainnya.</small>
+                        <small class="text-muted d-block">Mengikuti filter peta kunjungan: {{ user_rank_filter_label }}.</small>
                     </div>
                     <div class="d-flex flex-wrap gap-2 no-print">
-                        <a href="{{ url_for('daftar_tamu.export_user_rankings', format='excel', user_q=user_search_query, user_sort=user_sort, guest_scope=guest_scope) }}"
+                        <a href="{{ url_for('daftar_tamu.export_user_rankings', format='excel', user_q=user_search_query, user_sort=user_sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}"
                             class="btn btn-sm btn-outline-success">
                             <i class="bi bi-file-earmark-excel me-1"></i>Excel
                         </a>
@@ -797,6 +921,208 @@
 {% block portal_scripts %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+    (function () {
+        const detailBaseUrl = "{{ url_for('daftar_tamu.admin_visit_bucket_detail') }}";
+        const rankingEndpoint = "{{ url_for('daftar_tamu.admin_rankings_more') }}";
+        const dateFrom = "{{ date_from_str }}";
+        const dateTo = "{{ date_to_str }}";
+        const guestScope = "{{ guest_scope }}";
+
+        const distLabels = {{ visit_dist_labels | default([]) | tojson }};
+        const distValues = {{ visit_dist_values | default([]) | tojson }};
+        const distBucketKeys = ['d0', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8_plus'];
+        const frequencyRows = {{ visit_frequency_groups | default([]) | tojson }};
+
+        function buildSharedParams() {
+            const params = new URLSearchParams();
+            if (dateFrom) params.set('date_from', dateFrom);
+            if (dateTo) params.set('date_to', dateTo);
+            if (guestScope) params.set('guest_scope', guestScope);
+            return params;
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        if (window.Chart) {
+            const distEl = document.getElementById('visitDistChart');
+            if (distEl) {
+                const distChart = new Chart(distEl.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: distLabels,
+                        datasets: [{
+                            label: 'Jumlah Sekolah',
+                            data: distValues,
+                            backgroundColor: ['#0d6efd', '#0dcaf0', '#20c997', '#198754', '#ffc107', '#fd7e14', '#dc3545', '#6f42c1', '#6c757d'],
+                            borderRadius: 4,
+                            barPercentage: 0.75
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { precision: 0 } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+
+                distEl.addEventListener('click', function (evt) {
+                    const points = distChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                    if (!points || points.length === 0) return;
+                    const idx = points[0].index;
+                    const bucketKey = distBucketKeys[idx];
+                    if (!bucketKey) return;
+                    const params = buildSharedParams();
+                    params.set('source', 'distribution');
+                    params.set('bucket', bucketKey);
+                    window.open(detailBaseUrl + '?' + params.toString(), '_blank', 'noopener');
+                });
+            }
+
+            const pieEl = document.getElementById('visitFrequencyPieChart');
+            if (pieEl) {
+                const labels = frequencyRows.map(function (row) { return row.label; });
+                const values = frequencyRows.map(function (row) { return Number(row.school_count || 0); });
+                const pieChart = new Chart(pieEl.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: ['#0d6efd', '#20c997', '#fd7e14', '#dc3545'],
+                            borderWidth: 0,
+                            hoverOffset: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '55%',
+                        plugins: {
+                            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 14 } },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (ctx) {
+                                        const value = Number(ctx.raw || 0);
+                                        const total = values.reduce(function (acc, item) { return acc + Number(item || 0); }, 0);
+                                        const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+                                        return ctx.label + ': ' + value + ' sekolah (' + pct + '%)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                pieEl.addEventListener('dblclick', function (evt) {
+                    const points = pieChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                    if (!points || points.length === 0) return;
+                    const idx = points[0].index;
+                    const row = frequencyRows[idx] || null;
+                    if (!row || !row.key) return;
+                    const params = buildSharedParams();
+                    params.set('source', 'frequency');
+                    params.set('bucket', String(row.key));
+                    window.open(detailBaseUrl + '?' + params.toString(), '_blank', 'noopener');
+                });
+            }
+        }
+
+        const rankingOffset = { best: 10, worst: 10 };
+        const rankingLimit = 10;
+
+        function appendRankingRows(type, rows) {
+            const listId = type === 'best' ? 'visitBestList' : 'visitWorstList';
+            const listEl = document.getElementById(listId);
+            if (!listEl) return;
+            const badgeClass = type === 'best' ? 'bg-primary' : 'bg-danger';
+            const currentOffset = rankingOffset[type];
+
+            rows.forEach(function (row, index) {
+                const rank = currentOffset + index + 1;
+                const html = ''
+                    + '<div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-bottom-0">'
+                    + '<div class="d-flex align-items-center gap-2">'
+                    + '<span class="fw-bold text-muted small" style="width: 20px">' + rank + '</span>'
+                    + '<div>'
+                    + '<div class="fw-semibold small">' + escapeHtml(row.name || '-') + '</div>'
+                    + '<div class="text-muted" style="font-size: 0.7rem">' + escapeHtml(row.jenjang || '-') + '</div>'
+                    + '</div>'
+                    + '</div>'
+                    + '<span class="badge ' + badgeClass + ' text-white rounded-pill">' + Number(row.visit_count || 0) + '</span>'
+                    + '</div>';
+                listEl.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function loadMoreRankings(type) {
+            const buttonId = type === 'best' ? 'loadMoreVisitBest' : 'loadMoreVisitWorst';
+            const buttonEl = document.getElementById(buttonId);
+            if (!buttonEl) return;
+
+            buttonEl.disabled = true;
+            buttonEl.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...';
+
+            const params = buildSharedParams();
+            params.set('type', type);
+            params.set('limit', String(rankingLimit));
+            params.set('offset', String(rankingOffset[type]));
+
+            fetch(rankingEndpoint + '?' + params.toString())
+                .then(function (response) { return response.json(); })
+                .then(function (rows) {
+                    if (!Array.isArray(rows) || rows.length === 0) {
+                        buttonEl.style.display = 'none';
+                        return;
+                    }
+
+                    appendRankingRows(type, rows);
+                    rankingOffset[type] += rows.length;
+
+                    if (rows.length < rankingLimit) {
+                        buttonEl.style.display = 'none';
+                    } else {
+                        buttonEl.innerHTML = 'Lihat lagi <i class="bi bi-chevron-down"></i>';
+                        buttonEl.disabled = false;
+                    }
+                })
+                .catch(function () {
+                    buttonEl.innerHTML = 'Error';
+                    buttonEl.disabled = false;
+                });
+        }
+
+        const loadMoreBestBtn = document.getElementById('loadMoreVisitBest');
+        if (loadMoreBestBtn) {
+            loadMoreBestBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                loadMoreRankings('best');
+            });
+        }
+
+        const loadMoreWorstBtn = document.getElementById('loadMoreVisitWorst');
+        if (loadMoreWorstBtn) {
+            loadMoreWorstBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                loadMoreRankings('worst');
+            });
+        }
+    })();
+</script>
 <script>
     (function () {
         const map = L.map('guestMap').setView([-6.151, 106.897], 11);
