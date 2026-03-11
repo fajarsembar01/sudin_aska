@@ -146,21 +146,23 @@
                         </ul>
                     </li>
                     {% endif %}
-                    {% if is_admin %}
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'main.admin_performance' %}active{% endif %}"
-                            href="{{ url_for('main.admin_performance') }}">
-                            <i class="bi bi-person-lines-fill nav-icon"></i>Performa Admin
-                        </a>
-                    </li>
-                    {% endif %}
+
                     {% if is_admin %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['auth.manage_users', 'auth.manage_aska_users', 'auth.manage_monev_teams', 'auth.telegram_notifications', 'auth.whatsapp_link_settings', 'auth.whatsapp_bridge_settings'] %}active{% endif %}"
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['auth.manage_users', 'auth.manage_aska_users', 'auth.manage_monev_teams', 'auth.telegram_notifications', 'auth.whatsapp_link_settings', 'auth.whatsapp_bridge_settings', 'main.admin_performance'] %}active{% endif %}"
                             href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-gear nav-icon"></i>Manajemen
                         </a>
                         <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'main.admin_performance' %}active{% endif %}"
+                                    href="{{ url_for('main.admin_performance') }}">
+                                    <i class="bi bi-person-lines-fill me-2"></i>Performa Admin
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             <li>
                                 <a class="dropdown-item {% if request.endpoint == 'auth.manage_users' %}active{% endif %}"
                                     href="{{ url_for('auth.manage_users') }}">

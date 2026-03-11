@@ -182,6 +182,16 @@ ASKA_WHATSAPP_TIMEOUT_MS=45000
 ASKA_WHATSAPP_URL=082143646463       # dipakai tombol WhatsApp di ASKA Insight
 
 ###############################################################################
+# Call Center WhatsApp (bridge khusus dashboard)
+###############################################################################
+ASKA_CC_WHATSAPP_INTERNAL_TOKEN=ganti-token-acak-cc-min-24-char
+ASKA_CC_WHATSAPP_INTERNAL_URL=http://127.0.0.1:5001/api/callcenter/inbound
+ASKA_CC_WHATSAPP_SESSION_PATH=.wa_cc_session
+ASKA_CC_WHATSAPP_CLIENT_ID=cc-main
+ASKA_CC_WHATSAPP_STATUS_PATH=runtime/whatsapp_cc_status.json
+ASKA_CC_HTTP_PORT=3100
+
+###############################################################################
 # Dashboard Flask
 ###############################################################################
 DASHBOARD_SECRET_KEY=ubah-ke-random-32-karakter
@@ -273,6 +283,16 @@ npm run wa:start
 
 Saat pertama jalan, terminal menampilkan QR. Scan di WhatsApp:
 `Settings > Linked Devices > Link a Device`.
+
+### 4b. WhatsApp Bridge Call Center (untuk dashboard)
+
+```bash
+# variabel di .env: ASKA_CC_WHATSAPP_INTERNAL_TOKEN, ASKA_CC_HTTP_PORT (default 3100)
+ASKA_CC_HTTP_PORT=3200 npm run wa:cc   # lepas override bila port 3100 kosong
+```
+
+- Buka dashboard `Call Center > Settings > WhatsApp`, tekan Generate QR, lalu scan QR di WhatsApp `Linked Devices`.
+- Pastikan backend dashboard (`web_aska.app` port 5001) sudah jalan; bridge ini meneruskan chat ke endpoint `api/callcenter/inbound` dengan header `X-ASKA-CC-TOKEN` yang sama dengan `ASKA_CC_WHATSAPP_INTERNAL_TOKEN`.
 
 ### 5. Twitter Worker (opsional)
 

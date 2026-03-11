@@ -103,8 +103,10 @@ const client = new Client({
     authStrategy: new LocalAuth({ clientId: CLIENT_ID, dataPath: SESSION_PATH }),
     puppeteer: {
         headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        protocolTimeout: 300000,
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
     },
+    webVersionCache: { type: "remote", remotePath: "https://raw.githubusercontent.com/nicholasdai/nicholasdai/refs/heads/master/nicholasdai" },
 });
 
 client.on("qr", (qrText) => {
@@ -155,27 +157,36 @@ async function handleIncoming(msg) {
         const text = String(msg.body || "").trim();
         if (!text) return;
 
-        const number = normalizeNumber(msg.from);
-        if (!number) return;
+        // Get the JID first
+        const fromJid = String(msg.from || "");
+        if (!fromJid) return;
 
-        let displayName = number;
+        let realNumber = normalizeNumber(fromJid);
+        let displayName = realNumber;
+
         try {
             const contact = await msg.getContact();
+            if (contact && contact.number) {
+                realNumber = String(contact.number).replace(/\D/g, "");
+            }
             displayName = String(
-                contact?.pushname || contact?.name || contact?.shortName || number
-            ).trim() || number;
+                contact?.pushname || contact?.name || contact?.shortName || displayName
+            ).trim() || displayName;
         } catch (_) {
-            displayName = number;
+            // fallback to normalized fromJid
         }
 
-        console.log(`[CC] recv from=${number} name=${displayName} text="${text.slice(0, 80)}"`);
+        // Use real phone number (e.g. 62812...) as user_id for DB
+        const userId = realNumber || normalizeNumber(fromJid);
+
+        console.log(`[CC] recv from=${fromJid} number=${userId} name=${displayName} text="${text.slice(0, 80)}"`);
 
         // Forward to dashboard backend — do not wait for or send a reply
         axios
             .post(
                 INTERNAL_URL,
                 {
-                    user_id: number,
+                    user_id: userId,
                     username: displayName,
                     message: text,
                     message_id: mid || null,
@@ -223,8 +234,17 @@ app.post("/send", authCheck, async (req, res) => {
     if (!to || !message) {
         return res.status(400).json({ error: "Missing 'to' or 'message'" });
     }
-    const jid = `${String(to).replace(/\D/g, "")}@c.us`;
     try {
+        let jid;
+        const sanitized = String(to).replace(/\D/g, "");
+        if (String(to).includes("@")) {
+            // Already a JID
+            jid = String(to);
+        } else {
+            // Force @c.us for phone numbers
+            jid = `${sanitized}@c.us`;
+        }
+
         const sent = await client.sendMessage(jid, String(message));
         const sentId = sent?.id?._serialized || "";
         if (sentId) ignoredIds.add(sentId);

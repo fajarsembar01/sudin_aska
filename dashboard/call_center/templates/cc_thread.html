@@ -249,10 +249,12 @@
                     <i class="bi bi-arrow-counterclockwise me-1"></i>Reopen
                 </button>
                 {% endif %}
-                <a href="{{ url_for('call_center.settings_wa') }}" class="btn btn-outline-secondary btn-sm" title="Konfigurasi WhatsApp">
+                <a href="{{ url_for('call_center.settings_wa') }}" class="btn btn-outline-secondary btn-sm"
+                    title="Konfigurasi WhatsApp">
                     <i class="bi bi-whatsapp"></i>
                 </a>
-                <a href="{{ url_for('call_center.settings_telegram') }}" class="btn btn-outline-secondary btn-sm" title="Notifikasi Telegram">
+                <a href="{{ url_for('call_center.settings_telegram') }}" class="btn btn-outline-secondary btn-sm"
+                    title="Notifikasi Telegram">
                     <i class="bi bi-telegram"></i>
                 </a>
             </div>
@@ -291,14 +293,13 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block portal_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var chatBox = document.getElementById('chatMessages');
         var msgInput = document.getElementById('msgInput');
         var btnSend = document.getElementById('btnSend');
-        var convId = {{ conversation.id }
-    };
+        var convId = {{ conversation.id }};
     var csrfToken = '{{ csrf_token() }}';
     var lastMsgId = 0;
 

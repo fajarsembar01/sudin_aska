@@ -71,12 +71,14 @@
     <div class="col-lg-7">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-transparent">
-                <h6 class="mb-0"><i class="bi bi-person-check text-primary me-2"></i>Admin Telegram (penerima notifikasi Call Center)</h6>
+                <h6 class="mb-0"><i class="bi bi-person-check text-primary me-2"></i>Admin Telegram (penerima notifikasi
+                    Call Center)</h6>
             </div>
             <div class="card-body">
                 <p class="text-muted small mb-3">
                     Username Telegram + Admin Dashboard yang diizinkan menerima notifikasi Call Center. Flow sama dengan
-                    <a href="{{ url_for('auth.telegram_notifications') }}" target="_blank">Notifikasi Telegram umum</a>; data disimpan di tabel yang sama dengan kolom pembeda scope.
+                    <a href="{{ url_for('auth.telegram_notifications') }}" target="_blank">Notifikasi Telegram umum</a>;
+                    data disimpan di tabel yang sama dengan kolom pembeda scope.
                 </p>
 
                 <form method="post" id="ccTelegramAdminForm">
@@ -99,7 +101,8 @@
                                 </select>
                             </div>
                             <div class="col-md-1 d-grid">
-                                <button type="button" class="btn btn-outline-danger btn-sm remove-admin-row" title="Hapus baris">
+                                <button type="button" class="btn btn-outline-danger btn-sm remove-admin-row"
+                                    title="Hapus baris">
                                     <i class="bi bi-x-lg"></i>
                                 </button>
                             </div>
@@ -146,49 +149,51 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="3" class="text-center text-muted small">Belum ada admin Telegram untuk Call Center.</td>
+                                <td colspan="3" class="text-center text-muted small">Belum ada admin Telegram untuk Call
+                                    Center.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
-                <p class="text-muted small mb-0">Pastikan admin sudah chat ke bot Call Center agar notifikasi bisa terkirim.</p>
+                <p class="text-muted small mb-0">Pastikan admin sudah chat ke bot Call Center agar notifikasi bisa
+                    terkirim.</p>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block portal_scripts %}
 <script>
-(function () {
-    var adminRows = document.getElementById('ccAdminRows');
-    var addBtn = document.getElementById('ccAddAdminRow');
-    function clearRow(row) {
-        row.querySelectorAll('input[type="text"]').forEach(function (i) { i.value = ''; });
-        var sel = row.querySelector('select');
-        if (sel) sel.selectedIndex = 0;
-    }
-    function bindRemove(row) {
-        var btn = row.querySelector('.remove-admin-row');
-        if (!btn) return;
-        btn.addEventListener('click', function () {
-            var rows = adminRows.querySelectorAll('.admin-row');
-            if (rows.length > 1) row.remove();
-            else clearRow(row);
-        });
-    }
-    if (addBtn && adminRows) {
-        addBtn.addEventListener('click', function () {
-            var tpl = adminRows.querySelector('.admin-row');
-            if (!tpl) return;
-            var clone = tpl.cloneNode(true);
-            clearRow(clone);
-            adminRows.appendChild(clone);
-            bindRemove(clone);
-        });
-    }
-    if (adminRows) adminRows.querySelectorAll('.admin-row').forEach(bindRemove);
-})();
+    (function () {
+        var adminRows = document.getElementById('ccAdminRows');
+        var addBtn = document.getElementById('ccAddAdminRow');
+        function clearRow(row) {
+            row.querySelectorAll('input[type="text"]').forEach(function (i) { i.value = ''; });
+            var sel = row.querySelector('select');
+            if (sel) sel.selectedIndex = 0;
+        }
+        function bindRemove(row) {
+            var btn = row.querySelector('.remove-admin-row');
+            if (!btn) return;
+            btn.addEventListener('click', function () {
+                var rows = adminRows.querySelectorAll('.admin-row');
+                if (rows.length > 1) row.remove();
+                else clearRow(row);
+            });
+        }
+        if (addBtn && adminRows) {
+            addBtn.addEventListener('click', function () {
+                var tpl = adminRows.querySelector('.admin-row');
+                if (!tpl) return;
+                var clone = tpl.cloneNode(true);
+                clearRow(clone);
+                adminRows.appendChild(clone);
+                bindRemove(clone);
+            });
+        }
+        if (adminRows) adminRows.querySelectorAll('.admin-row').forEach(bindRemove);
+    })();
 </script>
 {% endblock %}

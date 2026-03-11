@@ -247,6 +247,9 @@ def api_send() -> Response:
     if not conv_id or not message_text:
         return jsonify({"error": "conversation_id and message required"}), 400
 
+    admin_name = user.get("full_name") or user.get("email") or "Admin"
+    message_text = f"{message_text}\n\n- {admin_name}"
+
     conv = fetch_cc_conversation(int(conv_id))
     if not conv:
         return jsonify({"error": "Conversation not found"}), 404
