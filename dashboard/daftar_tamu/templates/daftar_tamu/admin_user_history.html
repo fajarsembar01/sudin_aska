@@ -23,7 +23,7 @@
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="{{ url_for('daftar_tamu.admin_dashboard') }}" class="btn btn-outline-secondary">
+                    <a href="{{ url_for('daftar_tamu.admin_dashboard', date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-1"></i>Kembali
                     </a>
                 </div>
@@ -64,6 +64,7 @@
                                 <option value="all" {% if guest_scope=='all' %}selected{% endif %}>Semua</option>
                             </select>
                         </div>
+                        <input type="hidden" name="school_status" value="{{ school_status }}">
                         <div class="col-auto">
                             <label class="form-label small mb-1">Per halaman</label>
                             <select name="per_page" class="form-select form-select-sm">
@@ -136,20 +137,20 @@
                     <small class="text-muted">Menampilkan {{ start_row }}-{{ end_row }} dari {{ total_rows }} kunjungan</small>
                     <ul class="pagination pagination-sm mb-0">
                         <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-                            <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_user_history', user_id=user_profile.id, page=page-1, per_page=per_page, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}">Prev</a>
+                              <a class="page-link"
+                                 href="{{ url_for('daftar_tamu.admin_user_history', user_id=user_profile.id, page=page-1, per_page=per_page, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">Prev</a>
                         </li>
                         {% set start_page = 1 if page - 2 < 1 else page - 2 %}
                         {% set end_page = total_pages if page + 2 > total_pages else page + 2 %}
                         {% for p in range(start_page, end_page + 1) %}
                         <li class="page-item {% if p == page %}active{% endif %}">
-                            <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_user_history', user_id=user_profile.id, page=p, per_page=per_page, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}">{{ p }}</a>
+                              <a class="page-link"
+                                 href="{{ url_for('daftar_tamu.admin_user_history', user_id=user_profile.id, page=p, per_page=per_page, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">{{ p }}</a>
                         </li>
                         {% endfor %}
                         <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
-                            <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_user_history', user_id=user_profile.id, page=page+1, per_page=per_page, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}">Next</a>
+                              <a class="page-link"
+                                 href="{{ url_for('daftar_tamu.admin_user_history', user_id=user_profile.id, page=page+1, per_page=per_page, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">Next</a>
                         </li>
                     </ul>
                 </div>

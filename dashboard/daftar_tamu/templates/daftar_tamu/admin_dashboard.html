@@ -213,6 +213,14 @@
                         </select>
                     </div>
                     <div class="col-auto">
+                        <label class="form-label small mb-1">Jenis Sekolah</label>
+                        <select name="school_status" class="form-select form-select-sm">
+                            <option value="negeri" {% if school_status=='negeri' %}selected{% endif %}>Negeri</option>
+                            <option value="swasta" {% if school_status=='swasta' %}selected{% endif %}>Swasta</option>
+                            <option value="all" {% if school_status=='all' %}selected{% endif %}>Semua</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
                         <button type="submit" class="btn btn-sm btn-primary">Terapkan</button>
                     </div>
                     <div class="col-auto">
@@ -370,11 +378,11 @@
                         <small class="text-muted">Urutkan berdasarkan total kunjungan atau kunjungan terakhir.</small>
                     </div>
                     <div class="d-flex flex-wrap gap-2 no-print">
-                        <a href="{{ url_for('daftar_tamu.export_rankings', format='csv', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}"
+                        <a href="{{ url_for('daftar_tamu.export_rankings', format='csv', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}"
                             class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-filetype-csv me-1"></i>CSV
                         </a>
-                        <a href="{{ url_for('daftar_tamu.export_rankings', format='excel', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}"
+                        <a href="{{ url_for('daftar_tamu.export_rankings', format='excel', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}"
                             class="btn btn-sm btn-outline-success">
                             <i class="bi bi-file-earmark-excel me-1"></i>Excel
                         </a>
@@ -410,6 +418,7 @@
                     <input type="hidden" name="date_from" value="{{ date_from_str }}">
                     <input type="hidden" name="date_to" value="{{ date_to_str }}">
                     <input type="hidden" name="guest_scope" value="{{ guest_scope }}">
+                    <input type="hidden" name="school_status" value="{{ school_status }}">
                 </form>
 
                 <div class="table-responsive">
@@ -419,19 +428,19 @@
                                 <th class="ps-3">#</th>
                                 <th>
                                     <a class="text-decoration-none"
-                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_name, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}">
+                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_name, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
                                         Sekolah
                                     </a>
                                 </th>
                                 <th class="text-end">
                                     <a class="text-decoration-none"
-                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_visits, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}">
+                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_visits, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
                                         Kunjungan
                                     </a>
                                 </th>
                                 <th>
                                     <a class="text-decoration-none"
-                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_last_visit, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}">
+                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_last_visit, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
                                         Kunjungan Terakhir
                                     </a>
                                 </th>
@@ -508,19 +517,19 @@
                     <ul class="pagination pagination-sm mb-0">
                         <li class="page-item {% if page <= 1 %}disabled{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort, per_page=per_page, page=page-1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}">Prev</a>
+                                href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort, per_page=per_page, page=page-1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">Prev</a>
                         </li>
                         {% set start_page = 1 if page - 2 < 1 else page - 2 %}
                         {% set end_page = total_pages if page + 2 > total_pages else page + 2 %}
                         {% for p in range(start_page, end_page + 1) %}
                         <li class="page-item {% if p == page %}active{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort, per_page=per_page, page=p, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}">{{ p }}</a>
+                                href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort, per_page=per_page, page=p, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">{{ p }}</a>
                         </li>
                         {% endfor %}
                         <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort, per_page=per_page, page=page+1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}">Next</a>
+                                href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort, per_page=per_page, page=page+1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">Next</a>
                         </li>
                     </ul>
                 </div>
@@ -536,10 +545,10 @@
                         <small class="text-muted d-block">Mengikuti filter peta kunjungan: {{ user_rank_filter_label }}.</small>
                     </div>
                     <div class="d-flex flex-wrap gap-2 no-print">
-                        <a href="{{ url_for('daftar_tamu.export_user_rankings', format='excel', user_q=user_search_query, user_sort=user_sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}"
-                            class="btn btn-sm btn-outline-success">
-                            <i class="bi bi-file-earmark-excel me-1"></i>Excel
-                        </a>
+                    <a href="{{ url_for('daftar_tamu.export_user_rankings', format='excel', user_q=user_search_query, user_sort=user_sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}"
+                        class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-file-earmark-excel me-1"></i>Excel
+                    </a>
                     </div>
                 </div>
             </div>
@@ -552,6 +561,7 @@
                     <input type="hidden" name="date_from" value="{{ date_from_str }}">
                     <input type="hidden" name="date_to" value="{{ date_to_str }}">
                     <input type="hidden" name="guest_scope" value="{{ guest_scope }}">
+                    <input type="hidden" name="school_status" value="{{ school_status }}">
                     <input type="hidden" name="user_sort" value="{{ user_sort }}">
                     <input type="hidden" name="user_page" value="1">
                     <div class="col-md-6">
@@ -580,6 +590,7 @@
                                         href="{{ url_for('daftar_tamu.admin_dashboard',
                                             q=search_query, sort=sort, per_page=per_page, page=page,
                                             date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope,
+                                            school_status=school_status,
                                             user_q=user_search_query, user_per_page=user_per_page, user_page=1,
                                             user_sort=user_sort_visits) }}">
                                         Kunjungan
@@ -590,6 +601,7 @@
                                         href="{{ url_for('daftar_tamu.admin_dashboard',
                                             q=search_query, sort=sort, per_page=per_page, page=page,
                                             date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope,
+                                            school_status=school_status,
                                             user_q=user_search_query, user_per_page=user_per_page, user_page=1,
                                             user_sort=user_sort_last_visit) }}">
                                         Kunjungan Terakhir
@@ -647,7 +659,7 @@
                                 </td>
                                 <td class="text-end">
                                     <a class="btn btn-sm btn-outline-primary"
-                                        href="{{ url_for('daftar_tamu.admin_user_history', user_id=row.user_id, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}">
+                                        href="{{ url_for('daftar_tamu.admin_user_history', user_id=row.user_id, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
                                         Detail
                                     </a>
                                 </td>
@@ -670,7 +682,7 @@
                             <a class="page-link"
                                 href="{{ url_for('daftar_tamu.admin_dashboard',
                                     q=search_query, sort=sort, per_page=per_page, page=page,
-                                    date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope,
+                                    date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status,
                                     user_q=user_search_query, user_sort=user_sort, user_per_page=user_per_page, user_page=user_page-1) }}">Prev</a>
                         </li>
                         {% set user_start_page = 1 if user_page - 2 < 1 else user_page - 2 %}
@@ -680,7 +692,7 @@
                             <a class="page-link"
                                 href="{{ url_for('daftar_tamu.admin_dashboard',
                                     q=search_query, sort=sort, per_page=per_page, page=page,
-                                    date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope,
+                                    date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status,
                                     user_q=user_search_query, user_sort=user_sort, user_per_page=user_per_page, user_page=p) }}">{{ p }}</a>
                         </li>
                         {% endfor %}
@@ -688,7 +700,7 @@
                             <a class="page-link"
                                 href="{{ url_for('daftar_tamu.admin_dashboard',
                                     q=search_query, sort=sort, per_page=per_page, page=page,
-                                    date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope,
+                                    date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status,
                                     user_q=user_search_query, user_sort=user_sort, user_per_page=user_per_page, user_page=user_page+1) }}">Next</a>
                         </li>
                     </ul>
@@ -929,6 +941,7 @@
         const dateFrom = "{{ date_from_str }}";
         const dateTo = "{{ date_to_str }}";
         const guestScope = "{{ guest_scope }}";
+        const schoolStatus = "{{ school_status }}";
 
         const distLabels = {{ visit_dist_labels | default([]) | tojson }};
         const distValues = {{ visit_dist_values | default([]) | tojson }};
@@ -940,6 +953,7 @@
             if (dateFrom) params.set('date_from', dateFrom);
             if (dateTo) params.set('date_to', dateTo);
             if (guestScope) params.set('guest_scope', guestScope);
+            if (schoolStatus) params.set('school_status', schoolStatus);
             return params;
         }
 
@@ -1136,9 +1150,11 @@
         const dateFrom = "{{ date_from_str }}";
         const dateTo = "{{ date_to_str }}";
         const guestScope = "{{ guest_scope }}";
+        const schoolStatus = "{{ school_status }}";
         if (dateFrom) params.set('date_from', dateFrom);
         if (dateTo) params.set('date_to', dateTo);
         if (guestScope) params.set('guest_scope', guestScope);
+        if (schoolStatus) params.set('school_status', schoolStatus);
 
         const levels = {
             recent: { color: '#198754' },
@@ -1233,6 +1249,7 @@
         const nameEl = document.getElementById('schoolVisitModalName');
         const metaEl = document.getElementById('schoolVisitModalMeta');
         const guestScope = "{{ guest_scope }}";
+        const schoolStatus = "{{ school_status }}";
 
         let currentUrl = '';
         let currentExportUrl = '';
@@ -1345,6 +1362,7 @@
             params.set('sort', state.sort);
             if (state.q) params.set('q', state.q);
             if (guestScope) params.set('guest_scope', guestScope);
+            if (schoolStatus) params.set('school_status', schoolStatus);
             if (state.date_from) params.set('date_from', state.date_from);
             if (state.date_to) params.set('date_to', state.date_to);
 
@@ -1430,6 +1448,7 @@
             params.set('sort', state.sort);
             if (state.q) params.set('q', state.q);
             if (guestScope) params.set('guest_scope', guestScope);
+            if (schoolStatus) params.set('school_status', schoolStatus);
             if (state.date_from) params.set('date_from', state.date_from);
             if (state.date_to) params.set('date_to', state.date_to);
             return params;
@@ -1464,6 +1483,7 @@
         const nameEl = document.getElementById('userVisitModalName');
         const metaEl = document.getElementById('userVisitModalMeta');
         const guestScope = "{{ guest_scope }}";
+        const schoolStatus = "{{ school_status }}";
 
         let currentUrl = '';
         let currentExportUrl = '';
@@ -1576,6 +1596,7 @@
             params.set('sort', state.sort);
             if (state.q) params.set('q', state.q);
             if (guestScope) params.set('guest_scope', guestScope);
+            if (schoolStatus) params.set('school_status', schoolStatus);
             if (state.date_from) params.set('date_from', state.date_from);
             if (state.date_to) params.set('date_to', state.date_to);
 
@@ -1661,6 +1682,7 @@
             params.set('sort', state.sort);
             if (state.q) params.set('q', state.q);
             if (guestScope) params.set('guest_scope', guestScope);
+            if (schoolStatus) params.set('school_status', schoolStatus);
             if (state.date_from) params.set('date_from', state.date_from);
             if (state.date_to) params.set('date_to', state.date_to);
             return params;
