@@ -17,6 +17,7 @@ from flask import (
     Response,
     flash,
     jsonify,
+    make_response,
     redirect,
     render_template,
     request,
@@ -391,6 +392,14 @@ def _get_login_block_feedback(user: dict) -> Optional[tuple[str, str]]:
     )
 
 
+def _render_login_page(**context) -> Response:
+    response = make_response(render_template("login.html", **context))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register() -> Response:
@@ -628,23 +637,23 @@ def login() -> Response:
         user = get_user_by_email(email)
         if not user:
             flash("Email belum terdaftar. Hubungi admin untuk membuat akun.", "danger")
-            return render_template("login.html", email=email, coordinator_contacts=coordinator_contacts)
+            return _render_login_page(email=email, coordinator_contacts=coordinator_contacts)
 
         login_block = _get_login_block_feedback(user)
         if login_block:
             message, category = login_block
             flash(message, category)
-            return render_template("login.html", email=email, coordinator_contacts=coordinator_contacts)
+            return _render_login_page(email=email, coordinator_contacts=coordinator_contacts)
 
         if not check_password_hash(user["password_hash"], password):
             flash("Salah password, hubungi admin untuk reset akses.", "danger")
-            return render_template("login.html", email=email, coordinator_contacts=coordinator_contacts)
+            return _render_login_page(email=email, coordinator_contacts=coordinator_contacts)
 
         _establish_session(user, remember=remember, email_override=email)
         flash("Selamat datang kembali!", "success")
         return redirect(_redirect_after_login(user, request.args.get("next")))
 
-    return render_template("login.html", coordinator_contacts=coordinator_contacts)
+    return _render_login_page(coordinator_contacts=coordinator_contacts)
 
 
 @auth_bp.route("/logout")
