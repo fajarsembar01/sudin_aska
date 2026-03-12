@@ -975,6 +975,23 @@ CREATE TABLE IF NOT EXISTS cc_telegram_groups (
 );
 """
 
+_CC_MESSAGE_DRAFTS_SQL = """
+CREATE TABLE IF NOT EXISTS cc_message_drafts (
+    id SERIAL PRIMARY KEY,
+    admin_user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'Umum',
+    message_text TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_CC_MESSAGE_DRAFTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_cc_message_drafts_admin ON cc_message_drafts (admin_user_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cc_message_drafts_admin_category ON cc_message_drafts (admin_user_id, category);
+"""
+
 def ensure_dashboard_schema() -> None:
     """Create core dashboard tables when they do not yet exist."""
     statements: Iterable[str] = (
@@ -1209,6 +1226,8 @@ def ensure_dashboard_schema() -> None:
         _CC_MESSAGES_INDEX_SQL,
         _CC_TELEGRAM_SETTINGS_SQL,
         _CC_TELEGRAM_GROUPS_SQL,
+        _CC_MESSAGE_DRAFTS_SQL,
+        _CC_MESSAGE_DRAFTS_INDEX_SQL,
     )
     
     # Execute statements one by one to ensure partial success and better error reporting
