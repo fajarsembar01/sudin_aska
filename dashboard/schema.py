@@ -900,6 +900,33 @@ CREATE INDEX IF NOT EXISTS idx_daftar_tamu_contact_priority_active ON daftar_tam
 """
 
 
+# ===== CMS Schema =====
+
+_CMS_PROFIL_INSTANSI_SQL = """
+CREATE TABLE IF NOT EXISTS cms_profil_instansi (
+    id SERIAL PRIMARY KEY,
+    cms_deskripsi_utama TEXT,
+    cms_visi TEXT,
+    cms_misi TEXT,
+    cms_tugas_fungsi TEXT,
+    cms_motto_pelayanan TEXT,
+    cms_struktur_organisasi TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_CMS_INFORMASI_PUBLIK_SQL = """
+CREATE TABLE IF NOT EXISTS cms_informasi_publik (
+    id SERIAL PRIMARY KEY,
+    cms_jaminan_pelayanan TEXT,
+    cms_keamanan_keselamatan TEXT,
+    cms_kompensasi_pelayanan TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
 # ===== Call Center Schema =====
 
 _CC_CONVERSATIONS_SQL = """
@@ -1219,6 +1246,9 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS latitude DECIMAL(9,6)",
         "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS longitude DECIMAL(9,6)",
         "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS metadata JSONB",
+        # ===== CMS tables =====
+        _CMS_PROFIL_INSTANSI_SQL,
+        _CMS_INFORMASI_PUBLIK_SQL,
         # ===== Call Center tables =====
         _CC_CONVERSATIONS_SQL,
         _CC_CONVERSATIONS_INDEX_SQL,

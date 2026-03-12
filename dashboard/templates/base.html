@@ -202,6 +202,20 @@
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if 'cms' in request.endpoint %}active{% endif %}"
+                            href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-pencil-square nav-icon"></i>CMS
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'cms.profil' %}active{% endif %}"
+                                    href="{{ url_for('cms.profil') }}">
+                                    <i class="bi bi-building me-2 text-primary"></i>Profil Instansi
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if 'portal' in request.endpoint %}active{% endif %}"
                             href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-clipboard2-check nav-icon"></i>Portal

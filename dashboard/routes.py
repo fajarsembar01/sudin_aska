@@ -516,6 +516,12 @@ def admin_select_role() -> Response:
             "icon": "bi-headset",
             "href": url_for("call_center.inbox"),
         },
+        {
+            "title": "Content Management",
+            "description": "Kelola konten dan informasi Sudin Pendidikan.",
+            "icon": "bi-newspaper",
+            "href": url_for("cms.dashboard"),
+        },
     ]
     # Layout fleksibel: 1–3 card = 1 baris; 4+ card = 2 baris (2-2)
     n = len(cards)
