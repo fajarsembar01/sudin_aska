@@ -1,0 +1,579 @@
+{% extends 'cms/base_cms.html' %}
+{% block title %}Kelola Pengumuman - CMS{% endblock %}
+
+{% block cms_content %}
+<div class="container-lg px-lg-4 py-4">
+    <!-- Page Header -->
+    <div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="h3 fw-bold mb-1">Pengumuman</h1>
+            <p class="text-muted mb-0">Kelola daftar pengumuman dan pemberitahuan Sudin Pendidikan</p>
+        </div>
+        <div>
+            <button type="button" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#tambahModal">
+                <i class="bi bi-plus-lg"></i> Tambah Pengumuman
+            </button>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="py-3 px-4" width="5%">No</th>
+                            <th class="py-3 px-4" width="15%">Thumbnail</th>
+                            <th class="py-3 px-4" width="35%">Judul Pengumuman</th>
+                            <th class="py-3 px-4" width="15%">Kategori</th>
+                            <th class="py-3 px-4" width="10%">Status</th>
+                            <th class="py-3 px-4 text-center" width="20%">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if pengumuman %}
+                            {% for item in pengumuman %}
+                            <tr>
+                                <td class="px-4 text-muted">{{ loop.index }}</td>
+                                <td class="px-4">
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center overflow-hidden border shadow-sm" style="width: 80px; height: 60px;">
+                                        <!-- Dummy image placeholder if thumbnail not found -->
+                                        <div class="text-muted small fw-medium d-flex flex-column align-items-center">
+                                            <i class="bi bi-image text-secondary fs-5 mb-1"></i>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-4">
+                                    <div class="fw-semibold text-dark mb-1 d-block text-truncate" style="max-width: 300px;">{{ item.judul }}</div>
+                                    <div class="d-flex align-items-center text-muted fs-7 gap-3">
+                                        <span title="Penulis"><i class="bi bi-person me-1"></i>{{ item.penulis }}</span>
+                                        <span title="Tanggal Dibuat"><i class="bi bi-calendar3 me-1"></i>{{ item.tanggal }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-4">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded px-2 py-1">{{ item.kategori }}</span>
+                                </td>
+                                <td class="px-4">
+                                    <div class="d-flex flex-column gap-1">
+                                        {% if item.status_publikasi == 'Published' %}
+                                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 fw-medium border border-success border-opacity-25" style="width: fit-content;">Published</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-1 fw-medium border border-secondary border-opacity-25" style="width: fit-content;">Draft</span>
+                                        {% endif %}
+                                        
+                                        {% if item.status == 'Aktif' %}
+                                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1 fw-medium border border-primary border-opacity-25" style="width: fit-content;">Aktif</span>
+                                        {% else %}
+                                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-1 fw-medium border border-danger border-opacity-25" style="width: fit-content;">Tidak Aktif</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-4 text-center">
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-info d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#detailModal{{ item.id }}" title="Lihat">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#editModal{{ item.id }}" title="Edit">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1" title="Hapus">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="bi bi-journal-x fs-2 d-block mb-3 text-secondary opacity-50"></i>
+                                    Belum ada data pengumuman
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Pagination Placeholder -->
+        <div class="card-footer bg-white border-top p-3 d-flex justify-content-between align-items-center">
+            <span class="text-muted small">Menampilkan 1-3 dari 3 data</span>
+            <nav aria-label="Page navigation">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item disabled"><a class="page-link" href="#">Sebelumnya</a></li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item disabled"><a class="page-link" href="#">Selanjutnya</a></li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tambah Pengumuman -->
+<div class="modal fade" id="tambahModal" tabindex="-1" aria-labelledby="tambahModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-bottom-0 bg-light pb-3 pt-4 px-4">
+                <h5 class="modal-title fw-bold" id="tambahModalLabel"><i class="bi bi-plus-circle text-primary me-2"></i>Tambah Pengumuman Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 py-4">
+                <form id="formTambah">
+                    <div class="row g-4">
+                        <!-- Kolom Kiri: Info Dasar & Editor -->
+                        <div class="col-lg-8">
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Judul Pengumuman <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-lg fs-6" placeholder="Masukkan judul pengumuman..." required>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Isi Pengumuman / Deskripsi <span class="text-danger">*</span></label>
+                                <textarea id="deskripsiTambah" name="deskripsi" class="tinymce-editor"></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Kolom Kanan: Meta Data & Uploads -->
+                        <div class="col-lg-4">
+                            <div class="card border border-light-subtle shadow-sm mb-4">
+                                <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+                                    <h6 class="fw-bold mb-0">Meta Data</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold fs-7 text-muted">Kategori <span class="text-danger">*</span></label>
+                                        <select class="form-select" required>
+                                            <option value="" selected disabled>Pilih Kategori...</option>
+                                            <option value="Berita Utama">Berita Utama</option>
+                                            <option value="Pendidikan">Pendidikan</option>
+                                            <option value="Kegiatan">Kegiatan</option>
+                                            <option value="Pengumuman">Pengumuman</option>
+                                            <option value="Opini">Opini</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold fs-7 text-muted">Tanggal Publikasi <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold fs-7 text-muted">Penulis <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" placeholder="Nama penulis..." required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold fs-7 text-muted d-block">Status Aktif</label>
+                                        <div class="p-2 border rounded-3 bg-light d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <div class="fw-medium text-primary fs-7 mb-0" id="statusAktifLabelTambah">Aktif</div>
+                                            </div>
+                                            <div class="form-check form-switch fs-5 mb-0">
+                                                <input class="form-check-input mt-0" type="checkbox" role="switch" id="statusAktifTambah" name="statusAktif" value="Aktif" checked onchange="toggleStatusAktif(this, 'statusAktifLabelTambah')">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-1">
+                                        <label class="form-label fw-semibold fs-7 text-muted d-block">Status Publikasi</label>
+                                        <div class="p-2 border rounded-3 bg-light d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <div class="fw-medium text-success fs-7 mb-0" id="statusLabelTambah">Published</div>
+                                            </div>
+                                            <div class="form-check form-switch fs-5 mb-0">
+                                                <input class="form-check-input mt-0" type="checkbox" role="switch" id="statusPengumumanTambah" name="statusPublikasi" value="Published" checked onchange="toggleStatus(this, 'statusLabelTambah')">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card border border-light-subtle shadow-sm mb-4">
+                                <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+                                    <h6 class="fw-bold mb-0">Media Tambahan</h6>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Thumbnail Upload -->
+                                    <div class="mb-4">
+                                        <label class="form-label fw-semibold fs-7 text-muted">Gambar Utama (Thumbnail) <span class="text-danger">*</span></label>
+                                        <div class="text-center p-3 border rounded bg-light mb-2">
+                                            <img id="previewThumbnailTambah" src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20150%22%3E%3Crect%20fill%3D%22%23f8f9fa%22%20width%3D%22200%22%20height%3D%22150%22%2F%3E%3Ctext%20fill%3D%22%23adb5bd%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3EBelum%20ada%20gambar%3C%2Ftext%3E%3C%2Fsvg%3E" alt="Preview" class="img-fluid rounded" style="max-height: 150px; object-fit: cover;">
+                                        </div>
+                                        <input type="file" class="form-control form-control-sm" accept="image/*" required onchange="previewImage(this, 'previewThumbnailTambah')">
+                                        <div class="form-text fs-8 mt-1">Format: JPG, PNG. Maks: 2MB</div>
+                                    </div>
+
+                                    <!-- Multiple Files -->
+                                    <div class="mb-1">
+                                        <label class="form-label fw-semibold fs-7 text-muted">File Pendukung (Lampiran)</label>
+                                        <div class="file-upload-wrapper p-3 text-center border rounded-3 bg-light" style="border-style: dashed !important;">
+                                            <i class="bi bi-cloud-upload text-primary mb-1 d-block fs-4"></i>
+                                            <p class="mb-0 fs-7 text-muted">Klik untuk upload file pendukung</p>
+                                            <input type="file" class="form-control d-none" id="fileUploadTambah" multiple>
+                                        </div>
+                                        <ul class="list-group mt-2 d-none" id="filePreviewListTambah"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top-0 bg-light px-4 py-3">
+                <button type="button" class="btn btn-secondary px-4 fw-medium" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary px-4 fw-medium shadow-sm" onclick="tinymce.triggerSave()"><i class="bi bi-save me-2"></i>Simpan Pengumuman</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detail & Edit Iteration -->
+{% for item in pengumuman %}
+<!-- Modal Detail -->
+<div class="modal fade" id="detailModal{{ item.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-bottom position-relative bg-light pb-3">
+                <div class="d-flex flex-column w-100 pe-4">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge bg-primary">{{ item.kategori }}</span>
+                        {% if item.status_publikasi == 'Published' %}
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Published</span>
+                        {% else %}
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">Draft</span>
+                        {% endif %}
+
+                        {% if item.status == 'Aktif' %}
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">Aktif</span>
+                        {% else %}
+                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">Tidak Aktif</span>
+                        {% endif %}
+                    </div>
+                    <h4 class="modal-title fw-bold lh-base mb-2">{{ item.judul }}</h4>
+                    <div class="d-flex flex-wrap gap-3 text-muted fs-7">
+                        <span><i class="bi bi-person me-1"></i>{{ item.penulis }}</span>
+                        <span><i class="bi bi-calendar3 me-1"></i>{{ item.tanggal }}</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close position-absolute top-0 end-0 mt-3 me-3" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 py-4">
+                <div class="text-center mb-4 bg-light rounded border p-2">
+                    <!-- Dummy Image Display Placeholder -->
+                    <div class="d-flex align-items-center justify-content-center text-muted gap-2" style="height: 250px; background: #e9ecef border-radius: 6px;">
+                        <i class="bi bi-image fs-1"></i> <span class="fw-medium">Gambar Thumbnail ({{ item.thumbnail }})</span>
+                    </div>
+                </div>
+                
+                <div class="pengumuman-content bg-white p-4 rounded border shadow-sm mb-4">
+                    {{ item.deskripsi | safe }}
+                </div>
+                
+                {% if item.files %}
+                <div class="attachments mt-4">
+                    <h6 class="fw-bold fs-6 mb-3"><i class="bi bi-paperclip me-2 text-primary"></i>Lampiran File</h6>
+                    <div class="row g-2">
+                        {% for file in item.files %}
+                        <div class="col-md-6">
+                            <div class="p-3 border rounded bg-light d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center text-truncate pe-2">
+                                    <i class="bi bi-file-earmark-pdf fs-4 text-danger me-3"></i>
+                                    <span class="text-truncate fw-medium fs-7">{{ file }}</span>
+                                </div>
+                                <a href="#" class="btn btn-sm btn-outline-primary shadow-sm flex-shrink-0"><i class="bi bi-download"></i></a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer border-top bg-light px-4 py-3">
+                <button type="button" class="btn btn-primary px-4 fw-medium" data-bs-dismiss="modal">Tutup Detail</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit Pengumuman -->
+<div class="modal fade" id="editModal{{ item.id }}" tabindex="-1" aria-labelledby="editModalLabel{{ item.id }}" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-bottom-0 bg-light pb-3 pt-4 px-4">
+                <h5 class="modal-title fw-bold" id="editModalLabel{{ item.id }}"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Pengumuman</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 py-4">
+                <form id="formEdit{{ item.id }}">
+                    <div class="row g-4">
+                        <div class="col-lg-8">
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Judul Pengumuman <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-lg fs-6" value="{{ item.judul }}" required>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Isi Pengumuman / Deskripsi <span class="text-danger">*</span></label>
+                                <textarea id="deskripsiEdit{{ item.id }}" name="deskripsi" class="tinymce-editor">{{ item.deskripsi | safe }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-4">
+                            <div class="card border border-light-subtle shadow-sm mb-4">
+                                <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+                                    <h6 class="fw-bold mb-0">Meta Data</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold fs-7 text-muted">Kategori <span class="text-danger">*</span></label>
+                                        <select class="form-select" required>
+                                            <option value="Berita Utama" {% if item.kategori == 'Berita Utama' %}selected{% endif %}>Berita Utama</option>
+                                            <option value="Pendidikan" {% if item.kategori == 'Pendidikan' %}selected{% endif %}>Pendidikan</option>
+                                            <option value="Kegiatan" {% if item.kategori == 'Kegiatan' %}selected{% endif %}>Kegiatan</option>
+                                            <option value="Pengumuman" {% if item.kategori == 'Pengumuman' %}selected{% endif %}>Pengumuman</option>
+                                            <option value="Opini" {% if item.kategori == 'Opini' %}selected{% endif %}>Opini</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold fs-7 text-muted">Tanggal Publikasi <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control" value="{{ item.tanggal }}" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold fs-7 text-muted">Penulis <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" value="{{ item.penulis }}" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold fs-7 text-muted d-block">Status Aktif</label>
+                                        <div class="p-2 border rounded-3 bg-light d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <div class="fw-medium text-{% if item.status == 'Aktif' %}primary{% else %}danger{% endif %} fs-7 mb-0" id="statusAktifLabelEdit{{ item.id }}">{{ item.status }}</div>
+                                            </div>
+                                            <div class="form-check form-switch fs-5 mb-0">
+                                                <input class="form-check-input mt-0" type="checkbox" role="switch" id="statusAktifEdit{{ item.id }}" name="statusAktif" value="Aktif" {% if item.status == 'Aktif' %}checked{% endif %} onchange="toggleStatusAktif(this, 'statusAktifLabelEdit{{ item.id }}')">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-1">
+                                        <label class="form-label fw-semibold fs-7 text-muted d-block">Status Publikasi</label>
+                                        <div class="p-2 border rounded-3 bg-light d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <div class="fw-medium text-{% if item.status_publikasi == 'Published' %}success{% else %}secondary{% endif %} fs-7 mb-0" id="statusLabelEdit{{ item.id }}">{{ item.status_publikasi }}</div>
+                                            </div>
+                                            <div class="form-check form-switch fs-5 mb-0">
+                                                <input class="form-check-input mt-0" type="checkbox" role="switch" id="statusPengumumanEdit{{ item.id }}" name="statusPublikasi" value="Published" {% if item.status_publikasi == 'Published' %}checked{% endif %} onchange="toggleStatus(this, 'statusLabelEdit{{ item.id }}')">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card border border-light-subtle shadow-sm mb-4">
+                                <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+                                    <h6 class="fw-bold mb-0">Media Tambahan</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-4">
+                                        <label class="form-label fw-semibold fs-7 text-muted">Thumbnail Saat Ini</label>
+                                        <div class="text-center p-3 border rounded bg-light mb-2">
+                                            <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4 mb-2 bg-white rounded border">
+                                                <i class="bi bi-image fs-3 mb-1"></i>
+                                                <span class="fs-8">{{ item.thumbnail }}</span>
+                                            </div>
+                                            <img id="previewThumbnailEdit{{ item.id }}" src="" alt="" class="img-fluid rounded d-none" style="max-height: 150px; object-fit: cover;">
+                                        </div>
+                                        <label class="form-label fw-semibold fs-7 text-muted">Ganti Thumbnail (opsional)</label>
+                                        <input type="file" class="form-control form-control-sm" accept="image/*" onchange="previewImage(this, 'previewThumbnailEdit{{ item.id }}')">
+                                    </div>
+
+                                    <div class="mb-1">
+                                        <label class="form-label fw-semibold fs-7 text-muted">File Pendukung Tersimpan</label>
+                                        {% if item.files %}
+                                        <ul class="list-group mb-3">
+                                            {% for file in item.files %}
+                                            <li class="list-group-item d-flex justify-content-between align-items-center bg-light px-2 py-1">
+                                                <div class="d-flex align-items-center text-truncate fs-7">
+                                                    <i class="bi bi-paperclip text-secondary me-2"></i> {{ file }}
+                                                </div>
+                                                <button type="button" class="btn btn-sm text-danger border-0 p-1"><i class="bi bi-x-circle-fill"></i></button>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% else %}
+                                        <div class="alert alert-light border text-muted fs-8 py-2 px-3"><i class="bi bi-info-circle me-1"></i>Belum ada file.</div>
+                                        {% endif %}
+
+                                        <label class="form-label fw-semibold fs-7 text-muted mt-2">Upload File Baru</label>
+                                        <input type="file" class="form-control form-control-sm" multiple>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top-0 bg-light px-4 py-3">
+                <button type="button" class="btn btn-secondary px-4 fw-medium" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary px-4 fw-medium shadow-sm" onclick="tinymce.triggerSave()"><i class="bi bi-save me-2"></i>Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<style>
+    .fs-7 { font-size: 0.875rem; }
+    .fs-8 { font-size: 0.75rem; }
+    
+    .file-upload-wrapper {
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+    }
+    .file-upload-wrapper:hover {
+        background-color: var(--bs-primary-bg-subtle) !important;
+        border-color: var(--bs-primary) !important;
+    }
+    
+    .table-hover tbody tr {
+        transition: background-color 0.15s ease-in-out;
+    }
+    
+    .modal-content {
+        border-radius: 1rem;
+    }
+
+    /* Styling for the rich text editor */
+    .tox-tinymce {
+        border-radius: 0.5rem !important;
+        border: 1px solid var(--border-soft, #dee2e6) !important;
+        box-shadow: none !important;
+    }
+    
+    html[data-theme="dark"] .tox-tinymce {
+        border-color: #495057 !important;
+    }
+
+    .pengumuman-content p {
+        margin-bottom: 1rem;
+    }
+</style>
+
+<!-- TinyMCE Script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize TinyMCE for descriptive editors
+        const getTinyMceTheme = () => document.documentElement.getAttribute('data-theme') === 'dark' ? 'oxide-dark' : 'oxide';
+        const getTinyMceContentCss = () => document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default';
+
+        tinymce.init({
+            selector: '.tinymce-editor',
+            height: 450,
+            menubar: true,
+            skin: getTinyMceTheme(),
+            content_css: getTinyMceContentCss(),
+            plugins: [
+                'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                'insertdatetime', 'media', 'table', 'help', 'wordcount'
+            ],
+            toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | removeformat fullscreen',
+            content_style: 'body { font-family: "Plus Jakarta Sans", Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.6; }',
+            promotion: false,
+            branding: false
+        });
+
+        // Setup File Upload Wrapper Handlers (Tambah Modal) 
+        const fileInput = document.getElementById('fileUploadTambah');
+        const filePreviewList = document.getElementById('filePreviewListTambah');
+        const dropzone = document.querySelector('.file-upload-wrapper');
+        
+        if (fileInput && filePreviewList && dropzone) {
+            fileInput.addEventListener('change', function() {
+                filePreviewList.innerHTML = '';
+                if(this.files && this.files.length > 0) {
+                    filePreviewList.classList.remove('d-none');
+                    Array.from(this.files).forEach(file => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item d-flex justify-content-between align-items-center text-truncate bg-white mb-1 rounded border shadow-sm px-2 py-1';
+                        
+                        let iconClass = 'bi-file-earmark-text';
+                        if(file.type.includes('pdf')) iconClass = 'bi-file-earmark-pdf text-danger';
+                        else if(file.type.includes('word')) iconClass = 'bi-file-earmark-word text-primary';
+                        
+                        li.innerHTML = `
+                            <div class="d-flex align-items-center text-truncate">
+                                <i class="bi ${iconClass} fs-5 me-2"></i>
+                                <span class="text-truncate fw-medium fs-7">${file.name}</span>
+                            </div>
+                            <span class="badge bg-light text-secondary border px-2 py-1 flex-shrink-0">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                        `;
+                        filePreviewList.appendChild(li);
+                    });
+                } else {
+                    filePreviewList.classList.add('d-none');
+                }
+            });
+            
+            dropzone.addEventListener('click', () => fileInput.click());
+        }
+
+        // Re-focus TinyMCE bug fix in Bootstrap Modals
+        document.addEventListener('focusin', (e) => {
+            if (e.target.closest(".tox-tinymce, .tox-tinymce-aux, .moxman-window, .tam-assetmanager-root") !== null) {
+                e.stopImmediatePropagation();
+            }
+        });
+    });
+
+    // Toggle Status Logic
+    function toggleStatus(checkbox, labelId) {
+        const label = document.getElementById(labelId);
+        
+        if (checkbox.checked) {
+            checkbox.value = 'Published';
+            label.textContent = 'Published';
+            label.className = 'fw-medium text-success fs-7 mb-0';
+        } else {
+            checkbox.value = 'Draft';
+            label.textContent = 'Draft';
+            label.className = 'fw-medium text-secondary fs-7 mb-0';
+        }
+    }
+
+    function toggleStatusAktif(checkbox, labelId) {
+        const label = document.getElementById(labelId);
+        
+        if (checkbox.checked) {
+            checkbox.value = 'Aktif';
+            label.textContent = 'Aktif';
+            label.className = 'fw-medium text-primary fs-7 mb-0';
+        } else {
+            checkbox.value = 'Tidak Aktif';
+            label.textContent = 'Tidak Aktif';
+            label.className = 'fw-medium text-danger fs-7 mb-0';
+        }
+    }
+
+    // Image Preview Handlers
+    function previewImage(input, previewId) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById(previewId);
+                img.src = e.target.result;
+                img.classList.remove('d-none');
+                
+                // Hide generic placeholder if present in same parent
+                const placeholder = img.parentElement.querySelector('div.d-flex');
+                if (placeholder) placeholder.classList.add('d-none');
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+{% endblock %}
