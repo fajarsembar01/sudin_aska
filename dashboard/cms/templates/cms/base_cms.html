@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light" data-bs-theme="light">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Content Management System - Sudin Pendidikan{% endblock %}</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='logo/logo.png') }}" type="image/png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <script>
+        (function () {
+            try {
+                var storageKey = 'theme';
+                var storedTheme = localStorage.getItem(storageKey);
+                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var theme = storedTheme || (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+                document.documentElement.setAttribute('data-bs-theme', theme);
+            } catch (error) {
+                document.documentElement.setAttribute('data-theme', 'light');
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+        })();
+    </script>
+    <style>
+        .user-nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: nowrap;
+        }
+
+        .user-menu-toggle {
+            background: none;
+            border: none;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.65rem;
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            border-radius: 999px;
+            padding: 0.35rem 0.75rem;
+        }
+
+        .user-menu-toggle:hover {
+            color: var(--accent);
+            background-color: var(--bg-muted, #eef2ff);
+        }
+
+        .user-avatar {
+            width: 2.4rem;
+            height: 2.4rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0d6efd, #0dcaf0);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+            box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.3);
+        }
+
+        .user-avatar--image {
+            background: transparent;
+            padding: 0;
+            box-shadow: none;
+        }
+
+        .user-avatar--image img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .user-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: none;
+        }
+
+        .user-name.d-lg-inline {
+            display: inline !important;
+        }
+
+        .user-dropdown {
+            min-width: 19rem;
+            border: 0;
+            border-radius: 1rem;
+            padding: 1rem;
+            background-color: var(--bg-surface);
+            box-shadow: var(--shadow-soft, 0 10px 30px rgba(15, 23, 42, 0.08));
+        }
+
+        .user-dropdown .dropdown-divider {
+            margin: 0.5rem 0;
+        }
+
+        .user-dropdown .dropdown-item {
+            border-radius: 0.5rem;
+            margin-bottom: 0.25rem;
+            padding: 0.5rem 0.75rem;
+            transition: background-color 0.15s ease;
+        }
+
+        .user-dropdown .dropdown-item:hover {
+            background-color: var(--bg-subtle, #f8fafc);
+        }
+
+        .user-dropdown .dropdown-item.text-danger:hover {
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+
+        .theme-toggle-label {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0rem;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .theme-toggle-label:hover {
+            background-color: transparent;
+        }
+
+        .theme-icon {
+            font-size: 1rem;
+            width: 1.25rem;
+            height: 1.25rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            flex-shrink: 0;
+            color: var(--text-primary);
+            transform: translateY(0.15rem);
+        }
+
+        .theme-icon-sun {
+            display: inline;
+        }
+
+        .theme-icon-moon {
+            display: none;
+        }
+
+        html[data-theme="dark"] .theme-icon-sun {
+            display: none;
+        }
+
+        html[data-theme="dark"] .theme-icon-moon {
+            display: inline;
+        }
+
+        /* Home button styles */
+        .cms-home-btn {
+            font-size: 0.875rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.5rem;
+            background-color: transparent;
+            border: 1px solid var(--border-soft, rgba(148, 163, 184, 0.2));
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .cms-home-btn:hover {
+            background-color: var(--bg-subtle, #f8fafc);
+            border-color: var(--accent, #0d6efd);
+            color: var(--accent, #0d6efd);
+        }
+
+        .cms-home-label {
+            display: inline;
+        }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .form-check-input {
+            width: 2.5rem;
+            height: 1.25rem;
+            border-radius: 999px;
+            margin: 0;
+        }
+
+        /* Responsive for tablet and mobile */
+        @media (max-width: 991px) {
+            .navbar-collapse {
+                padding-top: 0.75rem;
+                border-top: 1px solid var(--border-soft, rgba(148, 163, 184, 0.2));
+                margin-top: 0.75rem;
+            }
+
+            .user-nav-actions {
+                gap: 0.5rem;
+                margin-top: 0.75rem;
+                width: auto;
+                flex-wrap: wrap;
+                border-top: 1px solid var(--border-soft, rgba(148, 163, 184, 0.2));
+                padding-top: 0.75rem;
+            }
+
+            .cms-home-label {
+                display: inline;
+            }
+
+            .cms-home-btn {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.8rem;
+                flex: none;
+                white-space: normal;
+            }
+
+            .user-menu-toggle {
+                font-size: 0.9rem;
+                padding: 0.35rem 0.5rem;
+                gap: 0.5rem;
+            }
+
+            .user-avatar {
+                width: 2rem;
+                height: 2rem;
+                font-size: 0.8rem;
+            }
+
+            .user-name {
+                display: inline;
+                font-size: 0.85rem;
+                font-weight: 600;
+            }
+
+            .user-dropdown {
+                min-width: 16rem;
+            }
+
+            .form-check {
+                margin-left: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .user-nav-actions {
+                gap: 0.35rem;
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .cms-home-btn {
+                padding: 0.25rem 0.4rem;
+                font-size: 0.75rem;
+                min-width: fit-content;
+            }
+
+            .form-check-input {
+                width: 2rem;
+                height: 1rem;
+            }
+
+            .user-avatar {
+                width: 1.875rem;
+                height: 1.875rem;
+                font-size: 0.7rem;
+            }
+
+            .user-name {
+                display: inline;
+                font-size: 0.8rem;
+            }
+
+            .user-dropdown {
+                min-width: 15rem;
+            }
+
+            .user-dropdown .dropdown-item {
+                font-size: 0.875rem;
+                padding: 0.4rem 0.6rem;
+            }
+
+            .theme-toggle-label {
+                padding: 0;
+            }
+
+            .theme-icon {
+                font-size: 0.9rem;
+                width: 1.15rem;
+                height: 1.15rem;
+            }
+
+            .form-check {
+                margin-left: 0;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .user-nav-actions {
+                gap: 0.25rem;
+                flex-wrap: wrap;
+            }
+
+            .cms-home-btn {
+                padding: 0.3rem 0.4rem;
+                font-size: 0.75rem;
+                flex: 1 1 auto;
+            }
+
+            .cms-home-label {
+                display: none;
+            }
+
+            .user-avatar {
+                width: 1.75rem;
+                height: 1.75rem;
+                font-size: 0.65rem;
+            }
+
+            .user-name {
+                display: inline;
+                font-size: 0.75rem;
+                font-weight: 600;
+                max-width: 80px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .user-menu-toggle {
+                padding: 0.25rem 0.4rem;
+                font-size: 0.85rem;
+                gap: 0.4rem;
+            }
+
+            .user-dropdown {
+                min-width: 13rem;
+                position: fixed !important;
+                left: 50% !important;
+                right: auto !important;
+                top: auto !important;
+                transform: translateX(-50%) !important;
+                max-width: 90vw;
+                width: min(90vw, 13rem);
+            }
+
+            .user-dropdown .dropdown-item {
+                font-size: 0.8rem;
+                padding: 0.35rem 0.5rem;
+            }
+
+            .form-check {
+                margin: 0;
+            }
+
+            .form-check-input {
+                width: 1.75rem;
+                height: 0.875rem;
+            }
+
+            .theme-toggle-label {
+                padding: 0;
+            }
+
+            .theme-icon {
+                font-size: 0.8rem;
+                width: 1.1rem;
+                height: 1.1rem;
+            }
+        }
+    </style>
+</head>
+
+<body style="font-family: 'Plus Jakarta Sans', sans-serif;">
+    <!-- CMS Navbar -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container-fluid px-lg-4">
+            <a class="navbar-brand" href="{{ url_for('cms.dashboard') }}">
+                <span class="icon-badge brand-icon text-primary">
+                    <i class="bi bi-newspaper"></i>
+                </span>
+                <span class="fw-bold">CMS</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#cmsNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="cmsNavbar">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    {% set cms_endpoints = ['cms.dashboard', 'cms.profil'] %}
+                    {% set cms_media_endpoints = ['cms.artikel', 'cms.pengumuman', 'cms.galeri_kegiatan'] %}
+
+                    <!-- Dashboard -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'cms.dashboard' %}active{% endif %}"
+                            href="{{ url_for('cms.dashboard') }}">
+                            <i class="bi bi-speedometer2 nav-icon"></i>Dashboard
+                        </a>
+                    </li>
+
+                    <!-- Profil Instansi -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'cms.profil' %}active{% endif %}" href="{{ url_for('cms.profil') }}">
+                            <i class="bi bi-building nav-icon"></i>Profil Instansi
+                        </a>
+                    </li>
+
+                    <!-- Informasi Publik -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'cms.informasi_publik' %}active{% endif %}" href="{{ url_for('cms.informasi_publik') }}">
+                            <i class="bi bi-info-circle nav-icon"></i>Informasi Publik
+                        </a>
+                    </li>
+
+                    <!-- Layanan Publik -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'cms.layanan_publik' %}active{% endif %}"
+                            href="{{ url_for('cms.layanan_publik') }}">
+                            <i class="bi bi-people nav-icon"></i>Layanan Publik
+                        </a>
+                    </li>
+
+                    <!-- Media & Publikasi (Dropdown) -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in cms_media_endpoints %}active{% endif %}"
+                            href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-megaphone nav-icon"></i>Media & Publikasi
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'cms.artikel' %}active{% endif %}" href="{{ url_for('cms.artikel') }}">
+                                    <i class="bi bi-file-earmark-text me-2"></i>Artikel
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'cms.pengumuman' %}active{% endif %}" href="{{ url_for('cms.pengumuman') }}">
+                                    <i class="bi bi-megaphone me-2"></i>Pengumuman
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'cms.galeri_kegiatan' %}active{% endif %}" href="{{ url_for('cms.galeri_kegiatan') }}">
+                                    <i class="bi bi-images me-2"></i>Galeri Kegiatan
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- Right side: User profile & Theme Toggle -->
+                <div class="user-nav-actions">
+                    <!-- Home Button -->
+                    {% if current_user %}
+                    <a href="{{ url_for('main.admin_select_role') if current_user.role == 'admin' else (url_for('portal.sekolah_home') if current_user.role == 'sekolah' else url_for('portal.home')) }}"
+                        class="btn btn-outline-secondary btn-sm text-nowrap cms-home-btn">
+                        <i class="bi bi-house me-1"></i><span class="cms-home-label">Home</span>
+                    </a>
+                    {% endif %}
+
+                    <!-- Theme Toggle -->
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="themeToggle" role="switch">
+                        <label class="theme-toggle-label" for="themeToggle">
+                            <i class="bi bi-sun-fill theme-icon theme-icon-sun"></i>
+                            <i class="bi bi-moon-fill theme-icon theme-icon-moon"></i>
+                        </label>
+                    </div>
+
+                    <!-- User Profile Dropdown with Avatar -->
+                    {% if current_user %}
+                    {% set user_photo_url = current_user.get('profile_photo_url', '') if current_user else '' %}
+                    <div class="dropdown user-menu">
+                        <button class="user-menu-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            {% if user_photo_url %}
+                            <span class="user-avatar user-avatar--image">
+                                <img src="{{ user_photo_url }}" alt="Foto profil" width="38" height="38">
+                            </span>
+                            {% else %}
+                            <span class="user-avatar">{{ current_user.get('full_name', 'A')[0].upper() if
+                                current_user.get('full_name') else current_user.get('email', 'A')[0].upper() }}</span>
+                            {% endif %}
+                            <span class="user-name d-none d-lg-inline">{{ current_user.get('full_name') or
+                                current_user.get('email', 'Admin') }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end user-dropdown">
+                            <li class="px-3 py-2">
+                                <small class="text-muted">{{ current_user.get('email', '') }}</small>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="bi bi-person-gear me-2"></i>Pengaturan Profil
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="bi bi-question-circle me-2"></i>Bantuan
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    {% block cms_content %}{% endblock %}
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Auto-close Navbar on Click Outside -->
+    <script>
+        (function () {
+            const navbarCollapse = document.getElementById('cmsNavbar');
+            const navbarToggler = document.querySelector('.navbar-toggler');
+            if (!navbarCollapse || !navbarToggler) return;
+
+            document.addEventListener('click', function (event) {
+                const isClickInsideNavbar = navbarCollapse.contains(event.target);
+                const isClickOnToggler = navbarToggler.contains(event.target);
+                const isNavbarOpen = navbarCollapse.classList.contains('show');
+
+                if (isNavbarOpen && !isClickInsideNavbar && !isClickOnToggler) {
+                    const bsCollapse = new bootstrap.Collapse(navbarCollapse, { toggle: false });
+                    bsCollapse.hide();
+                }
+            });
+
+            // Close only when clicking actual navigation links (not dropdowns)
+            const navLinks = navbarCollapse.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    // Don't close if this is a dropdown toggle (has data-bs-toggle="dropdown")
+                    if (link.getAttribute('data-bs-toggle') === 'dropdown') {
+                        return;
+                    }
+                    // Don't close if href is just "#"
+                    if (link.getAttribute('href') === '#' || !link.getAttribute('href')) {
+                        return;
+                    }
+                    // Close navbar only for actual page navigation links
+                    if (navbarCollapse.classList.contains('show')) {
+                        const bsCollapse = new bootstrap.Collapse(navbarCollapse, { toggle: false });
+                        bsCollapse.hide();
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <!-- Theme Toggle Script -->
+    <script>
+        (function () {
+            const toggle = document.getElementById('themeToggle');
+            if (!toggle) return;
+
+            const storageKey = 'theme';
+            const current = localStorage.getItem(storageKey) || 'light';
+            toggle.checked = current === 'dark';
+
+            function setTheme(theme) {
+                localStorage.setItem(storageKey, theme);
+                document.documentElement.setAttribute('data-theme', theme);
+                document.documentElement.setAttribute('data-bs-theme', theme);
+            }
+
+            toggle.addEventListener('change', () => {
+                setTheme(toggle.checked ? 'dark' : 'light');
+            });
+        })();
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

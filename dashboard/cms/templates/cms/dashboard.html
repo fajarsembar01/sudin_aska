@@ -1,0 +1,302 @@
+{% extends 'cms/base_cms.html' %}
+{% block title %}Dashboard CMS{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .stat-card {
+        border-left: 4px solid #0d6efd;
+    }
+    
+    .stat-card.warning {
+        border-left-color: #ffc107;
+    }
+    
+    .stat-card.success {
+        border-left-color: #198754;
+    }
+    
+    .stat-card.danger {
+        border-left-color: #dc3545;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #0d6efd;
+    }
+    
+    .stat-card.warning .stat-number {
+        color: #ffc107;
+    }
+    
+    .stat-card.success .stat-number {
+        color: #198754;
+    }
+    
+    .stat-card.danger .stat-number {
+        color: #dc3545;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block cms_content %}
+<div class="container-lg px-lg-4 py-4">
+    <!-- Page Header -->
+    <div class="mb-4">
+        <h1 class="h3 fw-bold mb-1">Dashboard CMS</h1>
+        <p class="text-muted">Ringkasan dan statistik konten Suku Dinas Pendidikan Jakarta Utara 2</p>
+    </div>
+
+    <!-- Stat Cards Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm stat-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small mb-1">Profil Tersimpan</p>
+                            <div class="stat-number">1</div>
+                        </div>
+                        <i class="bi bi-building" style="font-size: 2.5rem; color: #0d6efd; opacity: 0.1;"></i>
+                    </div>
+                    <small class="text-muted">Data utama</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm stat-card warning">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small mb-1">Gambar Struktur</p>
+                            <div class="stat-number">0</div>
+                        </div>
+                        <i class="bi bi-image" style="font-size: 2.5rem; color: #ffc107; opacity: 0.1;"></i>
+                    </div>
+                    <small class="text-muted">Sudah diupload</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm stat-card success">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small mb-1">Maklumat Pelayanan</p>
+                            <div class="stat-number">0</div>
+                        </div>
+                        <i class="bi bi-file-text" style="font-size: 2.5rem; color: #198754; opacity: 0.1;"></i>
+                    </div>
+                    <small class="text-muted">Sudah diupload</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm stat-card danger">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small mb-1">Terakhir Diubah</p>
+                            <div class="stat-number" style="font-size: 1rem; color: #dc3545;">Baru</div>
+                        </div>
+                        <i class="bi bi-clock-history" style="font-size: 2.5rem; color: #dc3545; opacity: 0.1;"></i>
+                    </div>
+                    <small class="text-muted">Status terbaru</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <!-- Content Status Chart -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom p-4">
+                    <h5 class="mb-0 fw-bold">Status Konten Profil Instansi</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="chart-container">
+                        <canvas id="contentStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CMS Activity Chart -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom p-4">
+                    <h5 class="mb-0 fw-bold">Aktivitas CMS (7 Hari Terakhir)</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="chart-container">
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom p-4">
+                    <h5 class="mb-0 fw-bold">Akses Cepat</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('cms.profil') }}" class="list-group-item list-group-item-action px-0 py-3 d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="mb-1 fw-bold">Kelola Profil Instansi</h6>
+                                <small class="text-muted">Edit visi, misi, dan informasi utama</small>
+                            </div>
+                            <i class="bi bi-arrow-right text-primary"></i>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action px-0 py-3 d-flex align-items-center justify-content-between disabled text-muted">
+                            <div>
+                                <h6 class="mb-1 fw-bold">Menu Halaman</h6>
+                                <small>Kelola struktur navigasi</small>
+                            </div>
+                            <span class="badge bg-secondary">Coming Soon</span>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action px-0 py-3 d-flex align-items-center justify-content-between disabled text-muted">
+                            <div>
+                                <h6 class="mb-1 fw-bold">Media Library</h6>
+                                <small>Kelola gambar dan dokumen</small>
+                            </div>
+                            <span class="badge bg-secondary">Coming Soon</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Updates -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom p-4">
+                    <h5 class="mb-0 fw-bold">Pembaruan Terbaru</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item px-0 py-3 border-bottom">
+                            <div class="d-flex align-items-start justify-content-between">
+                                <div>
+                                    <h6 class="mb-1">Profil Instansi</h6>
+                                    <small class="text-muted">Deskripsi, Visi & Misi diperbarui</small>
+                                </div>
+                                <span class="badge bg-light text-dark">Baru</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item px-0 py-3 border-bottom">
+                            <div class="d-flex align-items-start">
+                                <div>
+                                    <h6 class="mb-1">Gambar Struktur Organisasi</h6>
+                                    <small class="text-muted">Upload gambar struktur organisasi</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item px-0 py-3">
+                            <div class="d-flex align-items-start">
+                                <div>
+                                    <h6 class="mb-1">Tugas & Fungsi</h6>
+                                    <small class="text-muted">Konten tugas dan fungsi diperbarui</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Box -->
+    <div class="alert alert-info border-0" role="alert">
+        <div class="d-flex align-items-start gap-3">
+            <i class="bi bi-info-circle" style="font-size: 1.25rem; flex-shrink: 0;"></i>
+            <div>
+                <h5 class="alert-heading mb-1">Informasi CMS</h5>
+                <p class="mb-0">CMS (Content Management System) memungkinkan Anda mengelola konten Suku Dinas Pendidikan tanpa mengubah kode. Semua perubahan disimpan otomatis dan tersedia untuk pengguna website.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Content Status Chart
+    const ctxStatus = document.getElementById('contentStatusChart').getContext('2d');
+    const contentStatusChart = new Chart(ctxStatus, {
+        type: 'doughnut',
+        data: {
+            labels: ['Lengkap', 'Perlu Dilengkapi'],
+            datasets: [{
+                data: [60, 40],
+                backgroundColor: ['#198754', '#ffc107'],
+                borderColor: ['#fff', '#fff'],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Activity Chart
+    const ctxActivity = document.getElementById('activityChart').getContext('2d');
+    const activityChart = new Chart(ctxActivity, {
+        type: 'line',
+        data: {
+            labels: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'],
+            datasets: [{
+                label: 'Jumlah Edit',
+                data: [1, 0, 2, 1, 0, 0, 0],
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#0d6efd',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 3,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
