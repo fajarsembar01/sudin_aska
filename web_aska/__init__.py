@@ -8,7 +8,7 @@ import secrets
 import re
 from pathlib import Path
 from datetime import datetime, timezone
-from flask import Flask, request, jsonify, render_template, session, redirect, url_for, flash, send_from_directory, abort
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for, flash, send_from_directory, abort, make_response
 from authlib.integrations.flask_client import OAuth
 
 from .handlers import process_channel_request, process_web_request, web_sessions, reload_qa_chain
@@ -81,6 +81,12 @@ def create_app() -> Flask:
         server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
         client_kwargs={"scope": "openid email profile"},
     )
+
+    def _add_no_cache_headers(response):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
 
     def _serialize_quota_payload(quota_state: dict | None) -> dict:
         quota_state = quota_state or {}
@@ -321,7 +327,10 @@ def create_app() -> Flask:
 
     @app.route("/auth/login")
     def login_page():
-        return render_template("login.html", portal_register_url=_portal_register_url())
+        if session.get("user"):
+            return redirect(url_for("index"))
+        response = make_response(render_template("login.html", portal_register_url=_portal_register_url()))
+        return _add_no_cache_headers(response)
 
     @app.route('/login')
     def login_belajar():

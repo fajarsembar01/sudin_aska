@@ -14,6 +14,7 @@ from typing import Optional
 import requests
 from flask import (
     Response,
+    current_app,
     flash,
     jsonify,
     redirect,
@@ -46,6 +47,11 @@ from .queries import (
     list_cc_telegram_groups,
     delete_cc_telegram_group,
     send_cc_telegram_notification,
+    list_cc_message_drafts,
+    list_cc_message_draft_categories,
+    create_cc_message_draft,
+    update_cc_message_draft,
+    delete_cc_message_draft,
 )
 from . import call_center_bp
 
@@ -332,6 +338,117 @@ def api_reopen(conv_id: int) -> Response:
     except Exception:
         pass
     return jsonify({"ok": True})
+
+
+@call_center_bp.route("/api/drafts", methods=["GET", "POST"])
+@role_required("admin")
+def api_drafts() -> Response:
+    user = current_user() or {}
+    admin_user_id = user.get("id")
+    if not admin_user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        if request.method == "GET":
+            raw_category = (request.args.get("category") or "").strip()
+            category = raw_category if raw_category and raw_category.lower() != "all" else None
+            drafts = list_cc_message_drafts(admin_user_id=admin_user_id, category=category)
+            categories = list_cc_message_draft_categories(admin_user_id=admin_user_id)
+            return jsonify({"drafts": drafts, "categories": categories})
+
+        data = request.get_json(silent=True) or {}
+        title = (data.get("title") or "").strip()
+        category = (data.get("category") or "").strip() or "Umum"
+        message_text = (data.get("message_text") or "").strip()
+
+        if not title:
+            return jsonify({"error": "Judul draft wajib diisi."}), 400
+        if not message_text:
+            return jsonify({"error": "Isi draft wajib diisi."}), 400
+
+        draft = create_cc_message_draft(
+            admin_user_id=admin_user_id,
+            title=title,
+            category=category,
+            message_text=message_text,
+        )
+        try:
+            record_admin_action(
+                user_id=admin_user_id,
+                feature_key="call_center",
+                action="CREATE",
+                target_type="CALL_CENTER_DRAFT",
+                target_id=draft.get("id"),
+                target_name=title,
+            )
+        except Exception:
+            pass
+        return jsonify({"ok": True, "draft": draft})
+    except Exception as exc:
+        current_app.logger.exception("Call Center draft API error")
+        return jsonify({"error": f"Gagal memproses draft: {exc}"}), 500
+
+
+@call_center_bp.route("/api/drafts/<int:draft_id>", methods=["PUT", "DELETE"])
+@role_required("admin")
+def api_draft_detail(draft_id: int) -> Response:
+    user = current_user() or {}
+    admin_user_id = user.get("id")
+    if not admin_user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        if request.method == "DELETE":
+            deleted = delete_cc_message_draft(draft_id=draft_id, admin_user_id=admin_user_id)
+            if not deleted:
+                return jsonify({"error": "Draft tidak ditemukan."}), 404
+            try:
+                record_admin_action(
+                    user_id=admin_user_id,
+                    feature_key="call_center",
+                    action="DELETE",
+                    target_type="CALL_CENTER_DRAFT",
+                    target_id=draft_id,
+                    target_name=f"Draft #{draft_id}",
+                )
+            except Exception:
+                pass
+            return jsonify({"ok": True})
+
+        data = request.get_json(silent=True) or {}
+        title = (data.get("title") or "").strip()
+        category = (data.get("category") or "").strip() or "Umum"
+        message_text = (data.get("message_text") or "").strip()
+
+        if not title:
+            return jsonify({"error": "Judul draft wajib diisi."}), 400
+        if not message_text:
+            return jsonify({"error": "Isi draft wajib diisi."}), 400
+
+        updated = update_cc_message_draft(
+            draft_id=draft_id,
+            admin_user_id=admin_user_id,
+            title=title,
+            category=category,
+            message_text=message_text,
+        )
+        if not updated:
+            return jsonify({"error": "Draft tidak ditemukan."}), 404
+        try:
+            record_admin_action(
+                user_id=admin_user_id,
+                feature_key="call_center",
+                action="UPDATE",
+                target_type="CALL_CENTER_DRAFT",
+                target_id=draft_id,
+                target_name=title,
+            )
+        except Exception:
+            pass
+        return jsonify({"ok": True, "draft": updated})
+    except Exception as exc:
+        current_app.logger.exception("Call Center draft detail API error")
+        return jsonify({"error": f"Gagal memproses draft: {exc}"}), 500
 
 
 # ── Settings ──────────────────────────────────────────────────────────────────

@@ -463,6 +463,12 @@
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
     <script>
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
+
         const tooltipTriggerList = Array.from(document.querySelectorAll('[data-bs-toggle="tooltip"], [data-bs-tooltip="true"]'));
         tooltipTriggerList.forEach((tooltipTriggerEl) => {
             const options = {};
