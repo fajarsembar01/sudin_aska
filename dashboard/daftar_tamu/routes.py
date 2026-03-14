@@ -237,6 +237,19 @@ def _parse_guest_scope(value: Optional[str], default: str = "sudin") -> str:
     return scope
 
 
+def _parse_school_status(value: Optional[str], default: Optional[str] = None) -> str:
+    status = (value or "").strip().lower()
+    if not status:
+        return default or "all"
+    if status in {"all", "semua"}:
+        return "all"
+    if status in {"negeri", "state"}:
+        return "negeri"
+    if status in {"swasta", "private"}:
+        return "swasta"
+    return default or "all"
+
+
 def _normalize_staff_note_level(value: Optional[str], default: str = "") -> str:
     level = (value or "").strip().lower()
     if level in {"mendesak", "urgent", "critical", "sangat_mendesak", "sangat mendesak"}:
@@ -1120,11 +1133,18 @@ def admin_dashboard() -> Response:
     page = max(1, page)
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
-    summary = fetch_dashboard_summary(date_from=date_from, date_to=date_to, guest_scope=guest_scope)
+    school_status = _parse_school_status(request.args.get("school_status"), default="all")
+    summary = fetch_dashboard_summary(
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+        school_status=school_status,
+    )
     visit_histogram = fetch_school_visit_histogram(
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        school_status=school_status,
     )
 
     def _count_histogram_bucket(min_visits: int, max_visits: Optional[int]) -> int:
@@ -1165,6 +1185,7 @@ def admin_dashboard() -> Response:
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        school_status=school_status,
     )
     bottom_visit_rankings, _ = fetch_school_rankings(
         page=1,
@@ -1174,6 +1195,7 @@ def admin_dashboard() -> Response:
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        school_status=school_status,
     )
 
     rankings, total_rows = fetch_school_rankings(
@@ -1184,6 +1206,7 @@ def admin_dashboard() -> Response:
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        school_status=school_status,
     )
     user_search_query = (request.args.get("user_q") or "").strip()
     user_sort = (request.args.get("user_sort") or "").strip().lower() or "visits_desc"
@@ -1200,6 +1223,7 @@ def admin_dashboard() -> Response:
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        school_status=school_status,
     )
     user_total_pages = max(1, math.ceil(user_total_rows / user_per_page)) if user_total_rows else 1
     if user_page > user_total_pages:
@@ -1212,6 +1236,7 @@ def admin_dashboard() -> Response:
             date_from=date_from,
             date_to=date_to,
             guest_scope=guest_scope,
+            school_status=school_status,
         )
 
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
@@ -1225,6 +1250,7 @@ def admin_dashboard() -> Response:
             date_from=date_from,
             date_to=date_to,
             guest_scope=guest_scope,
+            school_status=school_status,
         )
 
     unvisited_schools = fetch_unvisited_schools(
@@ -1232,12 +1258,14 @@ def admin_dashboard() -> Response:
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        school_status=school_status,
     )
     recent_visits = fetch_recent_visits(
         limit=8,
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        school_status=school_status,
     )
 
     date_from_str = date_from.isoformat() if date_from else ""
@@ -1271,6 +1299,7 @@ def admin_dashboard() -> Response:
         date_to_str=date_to_str,
         today_str=_today_jakarta().isoformat(),
         guest_scope=guest_scope,
+        school_status=school_status,
     )
 
 
@@ -1290,6 +1319,7 @@ def admin_user_history(user_id: int) -> Response:
             date_from_str="",
             date_to_str="",
             guest_scope="all",
+            school_status="all",
             today_str=_today_jakarta().isoformat(),
             assigned_schools=[],
             assigned_kecamatan=[],
@@ -1302,6 +1332,7 @@ def admin_user_history(user_id: int) -> Response:
     if date_from and date_to and date_from > date_to:
         date_from, date_to = date_to, date_from
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    school_status = _parse_school_status(request.args.get("school_status"), default="all")
 
     per_page = _to_int(request.args.get("per_page"), 10)
     per_page = max(5, min(per_page, 100))
@@ -1314,6 +1345,7 @@ def admin_user_history(user_id: int) -> Response:
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        school_status=school_status,
         page=page,
         per_page=per_page,
     )
@@ -1326,6 +1358,7 @@ def admin_user_history(user_id: int) -> Response:
             date_from=date_from,
             date_to=date_to,
             guest_scope=guest_scope,
+            school_status=school_status,
             page=page,
             per_page=per_page,
         )
@@ -1346,6 +1379,7 @@ def admin_user_history(user_id: int) -> Response:
         date_from_str=date_from.isoformat() if date_from else "",
         date_to_str=date_to.isoformat() if date_to else "",
         guest_scope=guest_scope,
+        school_status=school_status,
         today_str=_today_jakarta().isoformat(),
         assigned_schools=assigned_schools,
         assigned_kecamatan=assigned_kecamatan,
@@ -1370,6 +1404,7 @@ def admin_user_visits(user_id: int) -> Response:
     sort = (request.args.get("sort") or "").strip().lower() or "date_desc"
     search_query = (request.args.get("q") or "").strip()
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    school_status = _parse_school_status(request.args.get("school_status"))
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
     if date_from and date_to and date_from > date_to:
@@ -1384,6 +1419,7 @@ def admin_user_visits(user_id: int) -> Response:
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        school_status=school_status,
     )
 
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
@@ -1398,6 +1434,7 @@ def admin_user_visits(user_id: int) -> Response:
             date_from=date_from,
             date_to=date_to,
             guest_scope=guest_scope,
+            school_status=school_status,
         )
 
     for row in rows:
@@ -1499,6 +1536,7 @@ def admin_user_visits_export(user_id: int) -> Response:
 
     search_query = (request.args.get("q") or "").strip()
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    school_status = _parse_school_status(request.args.get("school_status"))
     sort = (request.args.get("sort") or "").strip().lower() or "date_desc"
     if sort not in {"date_desc", "date_asc"}:
         sort = "date_desc"
@@ -1513,6 +1551,7 @@ def admin_user_visits_export(user_id: int) -> Response:
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        school_status=school_status,
     )
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
     if total_pages > 1:
@@ -1526,6 +1565,7 @@ def admin_user_visits_export(user_id: int) -> Response:
                 date_from=date_from,
                 date_to=date_to,
                 guest_scope=guest_scope,
+                school_status=school_status,
             )
             rows.extend(page_rows)
 
@@ -1638,7 +1678,15 @@ def admin_map_data() -> Response:
     if date_from and date_to and date_from > date_to:
         date_from, date_to = date_to, date_from
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
-    return jsonify(fetch_map_data(date_from=date_from, date_to=date_to, guest_scope=guest_scope))
+    school_status = _parse_school_status(request.args.get("school_status"))
+    return jsonify(
+        fetch_map_data(
+            date_from=date_from,
+            date_to=date_to,
+            guest_scope=guest_scope,
+            school_status=school_status,
+        )
+    )
 
 
 @daftar_tamu_bp.route("/admin/rankings/more")
@@ -1653,6 +1701,7 @@ def admin_rankings_more() -> Response:
         date_from, date_to = date_to, date_from
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    school_status = _parse_school_status(request.args.get("school_status"), default="all")
     ranking_type = (request.args.get("type") or "best").strip().lower()
     if ranking_type not in {"best", "worst"}:
         ranking_type = "best"
@@ -1671,6 +1720,7 @@ def admin_rankings_more() -> Response:
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        school_status=school_status,
     )
     if skip:
         rows = rows[skip:]
@@ -1735,6 +1785,7 @@ def admin_visit_bucket_detail() -> Response:
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        school_status=school_status,
     )
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
     if page > total_pages:
@@ -1748,6 +1799,7 @@ def admin_visit_bucket_detail() -> Response:
             date_from=date_from,
             date_to=date_to,
             guest_scope=guest_scope,
+            school_status=school_status,
         )
 
     date_from_str = date_from.isoformat() if date_from else ""
@@ -1767,6 +1819,7 @@ def admin_visit_bucket_detail() -> Response:
         date_from_str=date_from_str,
         date_to_str=date_to_str,
         guest_scope=guest_scope,
+        school_status=school_status,
         today_str=_today_jakarta().isoformat(),
     )
 
@@ -1788,6 +1841,7 @@ def export_rankings() -> Response:
         sort = DEFAULT_SORT
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    school_status = _parse_school_status(request.args.get("school_status"), default="all")
 
     rows, _ = fetch_school_rankings(
         page=1,
@@ -1797,6 +1851,7 @@ def export_rankings() -> Response:
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        school_status=school_status,
     )
 
     csv_headers = [
@@ -1959,6 +2014,7 @@ def export_user_rankings() -> Response:
         user_sort = DEFAULT_USER_SORT
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    school_status = _parse_school_status(request.args.get("school_status"))
 
     per_page = 100
     rows, total_rows = fetch_user_rankings(
@@ -1969,6 +2025,7 @@ def export_user_rankings() -> Response:
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        school_status=school_status,
     )
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
     if total_pages > 1:
@@ -1981,6 +2038,7 @@ def export_user_rankings() -> Response:
                 date_from=date_from,
                 date_to=date_to,
                 guest_scope=guest_scope,
+                school_status=school_status,
             )
             rows.extend(page_rows)
 
@@ -2015,6 +2073,7 @@ def export_user_rankings() -> Response:
             date_from=date_from,
             date_to=date_to,
             guest_scope=guest_scope,
+            school_status=school_status,
         )
         visit_total_pages = max(1, math.ceil(visit_total_rows / visit_page_size)) if visit_total_rows else 1
         if visit_total_pages > 1:
@@ -2028,6 +2087,7 @@ def export_user_rankings() -> Response:
                     date_from=date_from,
                     date_to=date_to,
                     guest_scope=guest_scope,
+                    school_status=school_status,
                 )
                 visit_rows.extend(page_rows)
 

@@ -17,7 +17,7 @@
                 <h1 class="h4 fw-bold mb-1">Detail Kelompok Kunjungan Sekolah</h1>
                 <p class="text-muted mb-0">Daftar sekolah untuk bucket kunjungan terpilih pada filter aktif.</p>
             </div>
-            <a href="{{ url_for('daftar_tamu.admin_dashboard', date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}"
+            <a href="{{ url_for('daftar_tamu.admin_dashboard', date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}"
                 class="btn btn-outline-primary">
                 <i class="bi bi-arrow-left me-1"></i>Kembali ke Dashboard
             </a>
@@ -31,6 +31,7 @@
             <input type="hidden" name="date_from" value="{{ date_from_str }}">
             <input type="hidden" name="date_to" value="{{ date_to_str }}">
             <input type="hidden" name="guest_scope" value="{{ guest_scope }}">
+            <input type="hidden" name="school_status" value="{{ school_status }}">
             <input type="hidden" name="page" value="1">
 
             <div class="col-md-3">
@@ -137,7 +138,8 @@
                         page=page-1,
                         date_from=date_from_str,
                         date_to=date_to_str,
-                        guest_scope=guest_scope) }}">Prev</a>
+                        guest_scope=guest_scope,
+                        school_status=school_status) }}">Prev</a>
                 </li>
                 {% set start_page = 1 if page - 2 < 1 else page - 2 %}
                 {% set end_page = total_pages if page + 2 > total_pages else page + 2 %}
@@ -151,7 +153,8 @@
                         page=p,
                         date_from=date_from_str,
                         date_to=date_to_str,
-                        guest_scope=guest_scope) }}">{{ p }}</a>
+                        guest_scope=guest_scope,
+                        school_status=school_status) }}">{{ p }}</a>
                 </li>
                 {% endfor %}
                 <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
@@ -163,7 +166,8 @@
                         page=page+1,
                         date_from=date_from_str,
                         date_to=date_to_str,
-                        guest_scope=guest_scope) }}">Next</a>
+                        guest_scope=guest_scope,
+                        school_status=school_status) }}">Next</a>
                 </li>
             </ul>
         </div>
