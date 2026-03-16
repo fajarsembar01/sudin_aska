@@ -1134,6 +1134,9 @@ def admin_dashboard() -> Response:
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
     school_status = _parse_school_status(request.args.get("school_status"), default="all")
+    show_user_rankings = guest_scope != "umum"
+    user_rank_guest_scope = "sudin" if guest_scope == "all" else guest_scope
+    user_rank_scope_label = "SUDIN" if user_rank_guest_scope == "sudin" else "Umum"
     summary = fetch_dashboard_summary(
         date_from=date_from,
         date_to=date_to,
@@ -1215,19 +1218,10 @@ def admin_dashboard() -> Response:
     user_page = _to_int(request.args.get("user_page"), 1)
     user_page = max(1, user_page)
 
-    user_rankings, user_total_rows = fetch_user_rankings(
-        page=user_page,
-        per_page=user_per_page,
-        sort_key=user_sort,
-        search_query=user_search_query,
-        date_from=date_from,
-        date_to=date_to,
-        guest_scope=guest_scope,
-        school_status=school_status,
-    )
-    user_total_pages = max(1, math.ceil(user_total_rows / user_per_page)) if user_total_rows else 1
-    if user_page > user_total_pages:
-        user_page = user_total_pages
+    user_rankings = []
+    user_total_rows = 0
+    user_total_pages = 1
+    if show_user_rankings:
         user_rankings, user_total_rows = fetch_user_rankings(
             page=user_page,
             per_page=user_per_page,
@@ -1235,9 +1229,22 @@ def admin_dashboard() -> Response:
             search_query=user_search_query,
             date_from=date_from,
             date_to=date_to,
-            guest_scope=guest_scope,
+            guest_scope=user_rank_guest_scope,
             school_status=school_status,
         )
+        user_total_pages = max(1, math.ceil(user_total_rows / user_per_page)) if user_total_rows else 1
+        if user_page > user_total_pages:
+            user_page = user_total_pages
+            user_rankings, user_total_rows = fetch_user_rankings(
+                page=user_page,
+                per_page=user_per_page,
+                sort_key=user_sort,
+                search_query=user_search_query,
+                date_from=date_from,
+                date_to=date_to,
+                guest_scope=user_rank_guest_scope,
+                school_status=school_status,
+            )
 
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
     if page > total_pages:
@@ -1287,6 +1294,9 @@ def admin_dashboard() -> Response:
         user_per_page=user_per_page,
         user_search_query=user_search_query,
         user_sort=user_sort,
+        show_user_rankings=show_user_rankings,
+        user_rank_guest_scope=user_rank_guest_scope,
+        user_rank_scope_label=user_rank_scope_label,
         unvisited_schools=unvisited_schools,
         recent_visits=recent_visits,
         page=page,
@@ -2014,33 +2024,37 @@ def export_user_rankings() -> Response:
         user_sort = DEFAULT_USER_SORT
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    user_rank_guest_scope = "sudin" if guest_scope == "all" else guest_scope
     school_status = _parse_school_status(request.args.get("school_status"))
 
     per_page = 100
-    rows, total_rows = fetch_user_rankings(
-        page=1,
-        per_page=per_page,
-        sort_key=user_sort,
-        search_query=user_search_query,
-        date_from=date_from,
-        date_to=date_to,
-        guest_scope=guest_scope,
-        school_status=school_status,
-    )
-    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
-    if total_pages > 1:
-        for page in range(2, total_pages + 1):
-            page_rows, _ = fetch_user_rankings(
-                page=page,
-                per_page=per_page,
-                sort_key=user_sort,
-                search_query=user_search_query,
-                date_from=date_from,
-                date_to=date_to,
-                guest_scope=guest_scope,
-                school_status=school_status,
-            )
-            rows.extend(page_rows)
+    rows: list[dict] = []
+    total_rows = 0
+    if user_rank_guest_scope != "umum":
+        rows, total_rows = fetch_user_rankings(
+            page=1,
+            per_page=per_page,
+            sort_key=user_sort,
+            search_query=user_search_query,
+            date_from=date_from,
+            date_to=date_to,
+            guest_scope=user_rank_guest_scope,
+            school_status=school_status,
+        )
+        total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+        if total_pages > 1:
+            for page in range(2, total_pages + 1):
+                page_rows, _ = fetch_user_rankings(
+                    page=page,
+                    per_page=per_page,
+                    sort_key=user_sort,
+                    search_query=user_search_query,
+                    date_from=date_from,
+                    date_to=date_to,
+                    guest_scope=user_rank_guest_scope,
+                    school_status=school_status,
+                )
+                rows.extend(page_rows)
 
     headers = [
         "Peringkat",
@@ -2072,7 +2086,7 @@ def export_user_rankings() -> Response:
             search_query="",
             date_from=date_from,
             date_to=date_to,
-            guest_scope=guest_scope,
+            guest_scope=user_rank_guest_scope,
             school_status=school_status,
         )
         visit_total_pages = max(1, math.ceil(visit_total_rows / visit_page_size)) if visit_total_rows else 1
@@ -2086,7 +2100,7 @@ def export_user_rankings() -> Response:
                     search_query="",
                     date_from=date_from,
                     date_to=date_to,
-                    guest_scope=guest_scope,
+                    guest_scope=user_rank_guest_scope,
                     school_status=school_status,
                 )
                 visit_rows.extend(page_rows)
