@@ -8,6 +8,8 @@ from typing import Optional, List, Dict, Any
 
 from ..db_access import get_cursor
 
+_CC_DRAFTS_SCHEMA_READY = False
+
 
 # ---------------------------------------------------------------------------
 # Conversations
@@ -224,6 +226,154 @@ def fetch_cc_messages(
             params,
         )
         return [dict(r) for r in cur.fetchall()]
+
+
+# ---------------------------------------------------------------------------
+# Message Drafts
+# ---------------------------------------------------------------------------
+
+def _ensure_cc_message_drafts_schema() -> None:
+    """Ensure draft table exists for older deployments that haven't run schema updates yet."""
+    global _CC_DRAFTS_SCHEMA_READY
+    if _CC_DRAFTS_SCHEMA_READY:
+        return
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS cc_message_drafts (
+                id SERIAL PRIMARY KEY,
+                admin_user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+                title TEXT NOT NULL,
+                category TEXT NOT NULL DEFAULT 'Umum',
+                message_text TEXT NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_cc_message_drafts_admin
+            ON cc_message_drafts (admin_user_id, updated_at DESC)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_cc_message_drafts_admin_category
+            ON cc_message_drafts (admin_user_id, category)
+            """
+        )
+    _CC_DRAFTS_SCHEMA_READY = True
+
+
+def list_cc_message_drafts(
+    admin_user_id: int,
+    category: Optional[str] = None,
+) -> list[dict]:
+    _ensure_cc_message_drafts_schema()
+    params: dict[str, Any] = {"admin_user_id": admin_user_id}
+    category_clause = ""
+    if category:
+        category_clause = "AND d.category = %(category)s"
+        params["category"] = category
+
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT d.id, d.admin_user_id, d.title, d.category, d.message_text, d.created_at, d.updated_at
+            FROM cc_message_drafts d
+            WHERE d.admin_user_id = %(admin_user_id)s {category_clause}
+            ORDER BY LOWER(d.category) ASC, d.updated_at DESC, d.id DESC
+            """,
+            params,
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def list_cc_message_draft_categories(admin_user_id: int) -> list[str]:
+    _ensure_cc_message_drafts_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT d.category
+            FROM cc_message_drafts d
+            WHERE d.admin_user_id = %(admin_user_id)s
+            GROUP BY d.category
+            ORDER BY LOWER(d.category) ASC
+            """,
+            {"admin_user_id": admin_user_id},
+        )
+        return [str(r.get("category") or "") for r in cur.fetchall() if (r.get("category") or "").strip()]
+
+
+def create_cc_message_draft(
+    admin_user_id: int,
+    title: str,
+    category: str,
+    message_text: str,
+) -> dict:
+    _ensure_cc_message_drafts_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO cc_message_drafts (admin_user_id, title, category, message_text, updated_at)
+            VALUES (%(admin_user_id)s, %(title)s, %(category)s, %(message_text)s, NOW())
+            RETURNING id, admin_user_id, title, category, message_text, created_at, updated_at
+            """,
+            {
+                "admin_user_id": admin_user_id,
+                "title": title,
+                "category": category,
+                "message_text": message_text,
+            },
+        )
+        row = cur.fetchone()
+    return dict(row) if row else {}
+
+
+def update_cc_message_draft(
+    draft_id: int,
+    admin_user_id: int,
+    title: str,
+    category: str,
+    message_text: str,
+) -> Optional[dict]:
+    _ensure_cc_message_drafts_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE cc_message_drafts
+            SET title = %(title)s,
+                category = %(category)s,
+                message_text = %(message_text)s,
+                updated_at = NOW()
+            WHERE id = %(draft_id)s AND admin_user_id = %(admin_user_id)s
+            RETURNING id, admin_user_id, title, category, message_text, created_at, updated_at
+            """,
+            {
+                "draft_id": draft_id,
+                "admin_user_id": admin_user_id,
+                "title": title,
+                "category": category,
+                "message_text": message_text,
+            },
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def delete_cc_message_draft(draft_id: int, admin_user_id: int) -> bool:
+    _ensure_cc_message_drafts_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            DELETE FROM cc_message_drafts
+            WHERE id = %(draft_id)s AND admin_user_id = %(admin_user_id)s
+            """,
+            {"draft_id": draft_id, "admin_user_id": admin_user_id},
+        )
+        return cur.rowcount > 0
 
 
 # ---------------------------------------------------------------------------

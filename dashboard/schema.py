@@ -900,6 +900,33 @@ CREATE INDEX IF NOT EXISTS idx_daftar_tamu_contact_priority_active ON daftar_tam
 """
 
 
+# ===== CMS Schema =====
+
+_CMS_PROFIL_INSTANSI_SQL = """
+CREATE TABLE IF NOT EXISTS cms_profil_instansi (
+    id SERIAL PRIMARY KEY,
+    cms_deskripsi_utama TEXT,
+    cms_visi TEXT,
+    cms_misi TEXT,
+    cms_tugas_fungsi TEXT,
+    cms_motto_pelayanan TEXT,
+    cms_struktur_organisasi TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_CMS_INFORMASI_PUBLIK_SQL = """
+CREATE TABLE IF NOT EXISTS cms_informasi_publik (
+    id SERIAL PRIMARY KEY,
+    cms_jaminan_pelayanan TEXT,
+    cms_keamanan_keselamatan TEXT,
+    cms_kompensasi_pelayanan TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
 # ===== Call Center Schema =====
 
 _CC_CONVERSATIONS_SQL = """
@@ -973,6 +1000,23 @@ CREATE TABLE IF NOT EXISTS cc_telegram_groups (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
 );
+"""
+
+_CC_MESSAGE_DRAFTS_SQL = """
+CREATE TABLE IF NOT EXISTS cc_message_drafts (
+    id SERIAL PRIMARY KEY,
+    admin_user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'Umum',
+    message_text TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_CC_MESSAGE_DRAFTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_cc_message_drafts_admin ON cc_message_drafts (admin_user_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cc_message_drafts_admin_category ON cc_message_drafts (admin_user_id, category);
 """
 
 def ensure_dashboard_schema() -> None:
@@ -1202,6 +1246,9 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS latitude DECIMAL(9,6)",
         "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS longitude DECIMAL(9,6)",
         "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS metadata JSONB",
+        # ===== CMS tables =====
+        _CMS_PROFIL_INSTANSI_SQL,
+        _CMS_INFORMASI_PUBLIK_SQL,
         # ===== Call Center tables =====
         _CC_CONVERSATIONS_SQL,
         _CC_CONVERSATIONS_INDEX_SQL,
@@ -1209,6 +1256,8 @@ def ensure_dashboard_schema() -> None:
         _CC_MESSAGES_INDEX_SQL,
         _CC_TELEGRAM_SETTINGS_SQL,
         _CC_TELEGRAM_GROUPS_SQL,
+        _CC_MESSAGE_DRAFTS_SQL,
+        _CC_MESSAGE_DRAFTS_INDEX_SQL,
     )
     
     # Execute statements one by one to ensure partial success and better error reporting

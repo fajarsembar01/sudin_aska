@@ -1,0 +1,330 @@
+{% extends 'cms/base_cms.html' %}
+{% block title %}Profil Instansi - CMS{% endblock %}
+
+{% block cms_content %}
+<div class="container-lg px-lg-4 py-4">
+    <!-- Page Header -->
+    <div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="h3 fw-bold mb-1">Profil Instansi</h1>
+            <p class="text-muted mb-0">Kelola informasi deskripsi, visi, misi, dan maklumat pelayanan</p>
+        </div>
+        <div>
+            <button type="submit" form="profilForm" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm d-flex align-items-center gap-2" id="btnSaveTop">
+                <i class="bi bi-save"></i> Simpan Perubahan
+            </button>
+        </div>
+    </div>
+
+    <!-- Alert placeholder -->
+    <div id="alertPlaceholder"></div>
+
+    <form id="profilForm" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="row g-4">
+            <!-- Left Column: Text Content -->
+            <div class="col-lg-8">
+                <!-- Deskripsi Utama -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-transparent border-bottom p-4 pb-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-card-text text-primary me-2"></i>Deskripsi Utama</h5>
+                        <small class="text-muted mt-1 d-block">Penjelasan umum tentang instansi Suku Dinas Pendidikan Wilayah II Jakarta Utara.</small>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-0">
+                            <textarea id="cms_deskripsi_utama" name="cms_deskripsi_utama" class="tinymce-editor">{{ profil.get('cms_deskripsi_utama', '') | safe }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visi & Misi -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-transparent border-bottom p-4 pb-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-eye text-primary me-2"></i>Visi & Misi</h5>
+                        <small class="text-muted mt-1 d-block">Tujuan strategis dan langkah-langkah pencapaian instansi.</small>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold text-uppercase">Visi Instansi</label>
+                            <textarea id="cms_visi" name="cms_visi" class="tinymce-editor">{{ profil.get('cms_visi', '') | safe }}</textarea>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label text-muted small fw-bold text-uppercase">Misi Instansi</label>
+                            <textarea id="cms_misi" name="cms_misi" class="tinymce-editor">{{ profil.get('cms_misi', '') | safe }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tugas dan Fungsi -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-transparent border-bottom p-4 pb-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-briefcase text-primary me-2"></i>Tugas & Fungsi</h5>
+                        <small class="text-muted mt-1 d-block">Rincian wewenang, tugas pokok, dan fungsi operasional instansi.</small>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-0">
+                            <textarea id="cms_tugas_fungsi" name="cms_tugas_fungsi" class="tinymce-editor">{{ profil.get('cms_tugas_fungsi', '') | safe }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Motto & Images -->
+            <div class="col-lg-4">
+                <!-- Motto Pelayanan -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-transparent border-bottom p-4 pb-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-chat-quote text-primary me-2"></i>Motto Pelayanan</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-0">
+                            <textarea id="cms_motto_pelayanan" name="cms_motto_pelayanan" class="tinymce-editor-minimal">{{ profil.get('cms_motto_pelayanan', '') | safe }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gambar Struktur Organisasi -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-transparent border-bottom p-4 pb-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-diagram-3 text-primary me-2"></i>Struktur Organisasi</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-semibold">Upload Gambar Baru</label>
+                            <input class="form-control" type="file" id="cms_struktur_organisasi" name="cms_struktur_organisasi" accept="image/*" onchange="previewImage(this, 'preview-struktur')">
+                            <small class="text-muted d-block mt-2" style="font-size: 0.75rem;">Format disarankan: PNG/JPG kualitas tinggi. Maks: 5MB.</small>
+                        </div>
+                        
+                        <div class="mt-4 text-center">
+                            <label class="text-muted small fw-bold mb-2">Pratinjau Saat Ini:</label>
+                            <div class="p-2 border rounded bg-light d-flex align-items-center justify-content-center overflow-hidden" style="min-height: 150px;">
+                                <img id="preview-struktur" 
+                                     src="{% if profil.get('cms_struktur_organisasi') %}{{ url_for('portal.uploaded_file', filename=profil.get('cms_struktur_organisasi').replace('uploads/portal/', '')) }}{% else %}data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20150%22%3E%3Crect%20fill%3D%22%23f8f9fa%22%20width%3D%22200%22%20height%3D%22150%22%2F%3E%3Ctext%20fill%3D%22%23adb5bd%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3EBelum%20ada%20gambar%3C%2Ftext%3E%3C%2Fsvg%3E{% endif %}" 
+                                     alt="Struktur Organisasi" 
+                                     class="img-fluid rounded shadow-sm" style="max-height: 250px; object-fit: contain; background: white; {% if not profil.get('cms_struktur_organisasi') %}opacity: 0.8; box-shadow: none !important;{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+
+        <!-- Sticky Bottom Save Button for Mobile -->
+        <div class="d-block d-lg-none position-fixed bottom-0 start-0 w-100 p-3 bg-white border-top shadow-lg z-3">
+            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-2" id="btnSaveBottom" style="border-radius: 0.5rem;">
+                <i class="bi bi-save fs-5"></i> Simpan Perubahan
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    /* Styling for the rich text editor containers */
+    .tox-tinymce {
+        border-radius: 0.75rem !important;
+        border: 1px solid var(--border-soft, #dee2e6) !important;
+        box-shadow: none !important;
+        overflow: hidden;
+    }
+    
+    .tox .tox-toolbar-overlord {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid var(--border-soft, #dee2e6) !important;
+    }
+    
+    html[data-theme="dark"] .tox-tinymce {
+        border-color: #495057 !important;
+    }
+    html[data-theme="dark"] .tox .tox-toolbar-overlord {
+        background-color: #2b3035 !important;
+        border-bottom: 1px solid #495057 !important;
+    }
+
+    /* Floating button space */
+    body {
+        padding-bottom: 80px; 
+    }
+    
+    @media (min-width: 992px) {
+        body {
+            padding-bottom: 0;
+        }
+    }
+    
+    .card {
+        border-radius: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<!-- TinyMCE Script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Theme setup for TinyMCE based on current CMS theme
+        const getTinyMceTheme = () => {
+            return document.documentElement.getAttribute('data-theme') === 'dark' ? 'oxide-dark' : 'oxide';
+        };
+
+        const getTinyMceContentCss = () => {
+            return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default';
+        };
+
+        const font_family_formats = "Plus Jakarta Sans=Plus Jakarta Sans, sans-serif; Arial=arial,helvetica,sans-serif; Tahoma=tahoma,arial,helvetica,sans-serif; Times New Roman=times new roman,times,serif;";
+
+        // Initialize full editor
+        tinymce.init({
+            selector: '.tinymce-editor',
+            height: 380,
+            menubar: true,
+            menu: {
+                edit: { title: 'Edit', items: 'undo redo | cut copy paste | selectall' },
+                view: { title: 'View', items: 'visualaid visualchars visualblocks | preview fullscreen' },
+                insert: { title: 'Insert', items: 'image link media template codesample | charmap emoticons hr | pagebreak nonbreaking anchor' },
+                format: { title: 'Format', items: 'bold italic underline strikethrough superscript subscript codeformat | formats blockformats fontformats fontsizes align | forecolor backcolor | removeformat' },
+                table: { title: 'Table', items: 'inserttable | cell row column | tableprops deletetable' },
+            },
+            skin: getTinyMceTheme(),
+            content_css: getTinyMceContentCss(),
+            plugins: [
+                'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                'insertdatetime', 'media', 'table', 'help', 'wordcount'
+            ],
+            toolbar1: 'undo redo | fontfamily fontsize blocks | bold italic underline forecolor backcolor highlight | alignleft aligncenter alignright alignjustify',
+            toolbar2: 'bullist numlist outdent indent | table link image media | removeformat fullscreen',
+            font_family_formats: font_family_formats,
+            content_style: 'body { font-family: "Plus Jakarta Sans", Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.6; }',
+            promotion: false,
+            branding: false,
+            setup: function (editor) {
+                editor.on('change', function () {
+                    editor.save();
+                });
+            }
+        });
+
+        // Initialize minimal editor (for motto)
+        tinymce.init({
+            selector: '.tinymce-editor-minimal',
+            height: 250,
+            menubar: false,
+            skin: getTinyMceTheme(),
+            content_css: getTinyMceContentCss(),
+            plugins: ['advlist', 'autolink', 'lists', 'link', 'wordcount'],
+            toolbar: 'undo redo | bold italic | alignleft aligncenter alignright alignjustify | forecolor backcolor',
+            content_style: 'body { font-family: "Plus Jakarta Sans", Helvetica, Arial, sans-serif; font-size: 16px; text-align: center; }',
+            promotion: false,
+            branding: false,
+            setup: function (editor) {
+                editor.on('change', function () {
+                    editor.save();
+                });
+            }
+        });
+
+        // Listen to theme changes in CMS to update TinyMCE
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('change', () => {
+                // Short timeout to let the theme apply to DOM, then reinit editors or reload
+                setTimeout(() => {
+                    location.reload(); 
+                }, 400);
+            });
+        }
+    });
+
+    // Image preview helper function
+    function previewImage(input, previewId) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById(previewId);
+                img.src = e.target.result;
+                img.style.opacity = '1';
+                img.style.boxShadow = '0 .125rem .25rem rgba(0,0,0,.075)';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Form submission processing
+    document.getElementById('profilForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Ensure TinyMCE content is saved back to original textareas before submission
+        tinymce.triggerSave();
+        
+        const form = this;
+        const submitBtnTop = document.getElementById('btnSaveTop');
+        const submitBtnBottom = document.getElementById('btnSaveBottom');
+        
+        // Disable buttons & show loading
+        if(submitBtnTop) { 
+            submitBtnTop.disabled = true; 
+            submitBtnTop.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...'; 
+        }
+        if(submitBtnBottom) { 
+            submitBtnBottom.disabled = true; 
+            submitBtnBottom.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...'; 
+        }
+        
+        const formData = new FormData(form);
+        
+        try {
+            const response = await fetch('{{ url_for("cms.profil") }}', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            const alertHtml = `
+                <div class="alert alert-${result.success ? 'success' : 'danger'} alert-dismissible fade show shadow-sm border-0 d-flex align-items-center mb-4" role="alert" style="border-radius: 0.75rem;">
+                    <i class="bi bi-${result.success ? 'check-circle-fill' : 'exclamation-triangle-fill'} fs-3 me-3 text-${result.success ? 'success' : 'danger'}"></i>
+                    <div>
+                        <strong class="d-block text-${result.success ? 'success' : 'danger'} mb-1">${result.success ? 'Berhasil Menyimpan!' : 'Gagal Menyimpan!'}</strong>
+                        <div class="text-secondary" style="font-size: 0.95rem;">${result.message || result.error || 'Terjadi kesalahan tidak terduga.'}</div>
+                    </div>
+                    <button type="button" class="btn-close ms-auto my-auto me-1" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            
+            const alertPlaceholder = document.getElementById('alertPlaceholder');
+            alertPlaceholder.innerHTML = alertHtml;
+            
+            // Scroll to top to see alert safely
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            const alertHtml = `
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 d-flex align-items-center mb-4" role="alert" style="border-radius: 0.75rem;">
+                    <i class="bi bi-x-circle-fill fs-3 me-3 text-danger"></i>
+                    <div>
+                        <strong class="d-block text-danger mb-1">Terjadi Kesalahan Jaringan!</strong>
+                        <div class="text-secondary" style="font-size: 0.95rem;">Tidak dapat terhubung ke server. Pastikan koneksi internet Anda stabil.</div>
+                    </div>
+                    <button type="button" class="btn-close ms-auto my-auto me-1" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            document.getElementById('alertPlaceholder').innerHTML = alertHtml;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } finally {
+            // Restore buttons
+            if(submitBtnTop) { 
+                submitBtnTop.disabled = false; 
+                submitBtnTop.innerHTML = '<i class="bi bi-save"></i> Simpan Perubahan'; 
+            }
+            if(submitBtnBottom) { 
+                submitBtnBottom.disabled = false; 
+                submitBtnBottom.innerHTML = '<i class="bi bi-save fs-5"></i> Simpan Perubahan'; 
+            }
+        }
+    });
+</script>
+{% endblock %}
