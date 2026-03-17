@@ -4733,13 +4733,23 @@ def sekolah_create_transaction() -> Response:
         "map_error": stamp_result.get("map_error"),
     }
 
-    auto_approve = user.get("role") == "sekolah" and not sudin_ids and bool(umum_ids)
-    status_value = "approved" if auto_approve else "pending"
-    reviewed_by = user.get("id") if auto_approve else None
-    reviewed_at = visit_at if auto_approve else None
-    reviewer_notes = "Auto konfirmasi sekolah" if auto_approve else None
+    has_sudin = bool(sudin_ids)
+    has_umum = bool(umum_ids)
+    pending_transaction_id = None
+    approved_transaction_id = None
 
-    with get_cursor(commit=True) as cur:
+    def _insert_transaction(
+        cur,
+        *,
+        guest_type: str,
+        guest_ids: list[int],
+        status_value: str,
+        reviewed_by: Optional[int],
+        reviewed_at: Optional[datetime],
+        reviewer_notes: Optional[str],
+    ) -> Optional[int]:
+        if not guest_ids:
+            return None
         cur.execute(
             """
             INSERT INTO daftar_tamu_transactions (
@@ -4780,34 +4790,62 @@ def sekolah_create_transaction() -> Response:
         )
         tx_row = cur.fetchone()
         transaction_id = int(tx_row["id"]) if tx_row else None
+        if not transaction_id:
+            return None
+        if guest_type == "sudin":
+            for guest_id in guest_ids:
+                cur.execute(
+                    """
+                    INSERT INTO daftar_tamu_transaction_guests (transaction_id, guest_type, user_id)
+                    VALUES (%s, 'sudin', %s)
+                    ON CONFLICT (transaction_id, user_id) DO NOTHING
+                    """,
+                    (transaction_id, guest_id),
+                )
+        else:
+            for guest_id in guest_ids:
+                cur.execute(
+                    """
+                    INSERT INTO daftar_tamu_transaction_guests (transaction_id, guest_type, general_guest_id)
+                    VALUES (%s, 'umum', %s)
+                    ON CONFLICT (transaction_id, general_guest_id) DO NOTHING
+                    """,
+                    (transaction_id, guest_id),
+                )
+        return transaction_id
 
-        for guest_id in sudin_ids:
-            cur.execute(
-                """
-                INSERT INTO daftar_tamu_transaction_guests (transaction_id, guest_type, user_id)
-                VALUES (%s, 'sudin', %s)
-                ON CONFLICT (transaction_id, user_id) DO NOTHING
-                """,
-                (transaction_id, guest_id),
+    with get_cursor(commit=True) as cur:
+        if has_sudin:
+            pending_transaction_id = _insert_transaction(
+                cur,
+                guest_type="sudin",
+                guest_ids=sudin_ids,
+                status_value="pending",
+                reviewed_by=None,
+                reviewed_at=None,
+                reviewer_notes=None,
             )
-        for guest_id in umum_ids:
-            cur.execute(
-                """
-                INSERT INTO daftar_tamu_transaction_guests (transaction_id, guest_type, general_guest_id)
-                VALUES (%s, 'umum', %s)
-                ON CONFLICT (transaction_id, general_guest_id) DO NOTHING
-                """,
-                (transaction_id, guest_id),
+        if has_umum:
+            approved_transaction_id = _insert_transaction(
+                cur,
+                guest_type="umum",
+                guest_ids=umum_ids,
+                status_value="approved",
+                reviewed_by=user.get("id"),
+                reviewed_at=visit_at,
+                reviewer_notes="Auto konfirmasi sekolah",
             )
 
-    if status_value == "pending" and transaction_id:
+    transaction_id = pending_transaction_id or approved_transaction_id
+
+    if pending_transaction_id:
         try:
             from dashboard.telegram_notifications import notify_guestbook_request
             import threading
 
-            detail = get_transaction_detail(transaction_id)
+            detail = get_transaction_detail(pending_transaction_id)
             photo_links = _build_guestbook_photo_links(
-                transaction_id=transaction_id,
+                transaction_id=pending_transaction_id,
                 detail=detail,
             )
             guest_names = _extract_guest_names_from_detail(detail)
@@ -4819,7 +4857,7 @@ def sekolah_create_transaction() -> Response:
                 with app.app_context():
                     try:
                         notify_guestbook_request(
-                            transaction_id=transaction_id,
+                            transaction_id=pending_transaction_id,
                             school_name=school.get("name") or "Sekolah",
                             npsn=None,
                             visit_at=visit_at,
