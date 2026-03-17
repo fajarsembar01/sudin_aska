@@ -1,6 +1,58 @@
 {% extends "daftar_tamu/base_daftar_tamu.html" %}
 {% set page_title = "Riwayat Tamu Kedinasan" %}
 
+{% block head_extra %}
+<style>
+    .detail-guest-trigger {
+        transition: transform .16s ease, box-shadow .16s ease;
+    }
+
+    .detail-guest-trigger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0.35rem 0.65rem rgba(0, 0, 0, 0.1);
+    }
+
+    .guest-profile-photo-modal .modal-content {
+        border: 0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 18px 36px rgba(0, 0, 0, 0.25);
+    }
+
+    .guest-profile-photo-modal .modal-header {
+        border-bottom: 1px solid var(--border-soft);
+    }
+
+    .guest-profile-photo-modal .modal-body {
+        padding: 0;
+        background: #f8f9fa;
+    }
+
+    .guest-profile-photo-view {
+        min-height: 280px;
+        max-height: 70vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f3f5;
+    }
+
+    .guest-profile-photo-view img {
+        width: 100%;
+        height: 100%;
+        max-height: 70vh;
+        object-fit: contain;
+        display: block;
+    }
+
+    .guest-profile-photo-fallback {
+        padding: 28px 20px;
+        text-align: center;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
 {% block portal_content %}
 <section class="mb-4">
     <div class="card portal-hero border-0 shadow-sm">
@@ -74,12 +126,12 @@
                         <th>Tamu</th>
                         <th>Status</th>
                         <th>Catatan Admin</th>
-                        <th class="text-end">Foto</th>
+                        <th class="text-end">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for row in rows %}
-                    <tr>
+                    <tr data-transaction-id="{{ row.id }}">
                         <td>
                             <div class="fw-semibold">{{ row.visit_at|jakarta('%d %b %Y') }}</div>
                             <div class="small text-muted">{{ row.visit_at|jakarta('%H:%M') }} WIB</div>
@@ -111,14 +163,58 @@
                             {% endif %}
                         </td>
                         <td class="text-end">
-                            {% if row.photo_path %}
-                            {% set photo_name = row.photo_path.split('uploads/portal/')[-1] %}
-                            <a class="btn btn-sm btn-outline-secondary" target="_blank"
-                                href="{{ url_for('portal.uploaded_file', filename=photo_name) }}">
-                                <i class="bi bi-camera"></i>
-                            </a>
+                            {% if row.guest_type == 'sudin' %}
+                                {% if row.photo_path %}
+                                {% set photo_name = row.photo_path.split('uploads/portal/')[-1] %}
+                                <a class="btn btn-sm btn-outline-secondary" target="_blank"
+                                    href="{{ url_for('portal.uploaded_file', filename=photo_name) }}">
+                                    <i class="bi bi-camera"></i>
+                                </a>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
                             {% else %}
-                            <span class="text-muted">-</span>
+                            <div class="d-inline-flex gap-1">
+                                {% if row.photo_path %}
+                                {% set photo_name = row.photo_path.split('uploads/portal/')[-1] %}
+                                <a href="{{ url_for('portal.uploaded_file', filename=photo_name) }}" target="_blank"
+                                    class="btn btn-sm btn-outline-info" title="Lihat foto" aria-label="Lihat foto">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% endif %}
+                                <button type="button" class="btn btn-sm btn-outline-primary" title="Detail"
+                                    aria-label="Detail" data-action="detail" data-transaction-id="{{ row.id }}">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                                {% if row.status == 'pending' %}
+                                <button type="button" class="btn btn-sm btn-outline-success" title="Setujui"
+                                    aria-label="Setujui" data-action="approve" data-transaction-id="{{ row.id }}">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Tolak"
+                                    aria-label="Tolak" data-action="reject" data-transaction-id="{{ row.id }}">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                                {% elif row.status == 'approved' %}
+                                <button type="button" class="btn btn-sm btn-outline-warning" title="Kembalikan ke pending"
+                                    aria-label="Kembalikan ke pending" data-action="pending" data-transaction-id="{{ row.id }}">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Tolak"
+                                    aria-label="Tolak" data-action="reject" data-transaction-id="{{ row.id }}">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                                {% elif row.status == 'rejected' %}
+                                <button type="button" class="btn btn-sm btn-outline-warning" title="Kembalikan ke pending"
+                                    aria-label="Kembalikan ke pending" data-action="pending" data-transaction-id="{{ row.id }}">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-success" title="Setujui"
+                                    aria-label="Setujui" data-action="approve" data-transaction-id="{{ row.id }}">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                                {% endif %}
+                            </div>
                             {% endif %}
                         </td>
                     </tr>
@@ -154,4 +250,535 @@
     </div>
 </section>
 {% endif %}
+{% endblock %}
+
+{% block portal_scripts %}
+<!-- Detail Modal -->
+<div class="modal fade" id="transactionDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detail Transaksi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="detailLoading" class="text-center py-4">
+                    <div class="spinner-border"></div>
+                </div>
+                <div id="detailContent" class="d-none">
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <div class="fw-semibold" id="detailSchoolName">-</div>
+                            <div class="small text-muted" id="detailSchoolMeta">-</div>
+                            <div class="mt-3">
+                                <div class="small text-muted">Waktu kunjungan</div>
+                                <div class="fw-semibold" id="detailVisitAt">-</div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="small text-muted">Dibuat oleh</div>
+                                <div class="fw-semibold" id="detailCreatedBy">-</div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="small text-muted">GPS</div>
+                                <div class="fw-semibold" id="detailGps">-</div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="small text-muted">Tujuan</div>
+                                <div class="fw-semibold" id="detailPurpose">-</div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="small text-muted">Catatan tamu</div>
+                                <div class="fw-semibold" id="detailNotes">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="border rounded-3 overflow-hidden bg-light">
+                                <img id="detailPhoto" src="" alt="Foto kunjungan" class="w-100" style="object-fit: cover; max-height: 240px;">
+                            </div>
+                            <div class="mt-3">
+                                <div class="small text-muted">Status</div>
+                                <div class="fw-semibold" id="detailStatus">-</div>
+                            </div>
+                            <div class="mt-3 d-none" id="detailReviewerWrap">
+                                <div class="small text-muted">Verifikator</div>
+                                <div class="fw-semibold" id="detailReviewer">-</div>
+                            </div>
+                            <div class="mt-2 d-none" id="detailReviewerTelegramWrap">
+                                <div class="small text-muted">Kontak Telegram</div>
+                                <div class="fw-semibold" id="detailReviewerTelegram">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="small text-muted">Daftar tamu</div>
+                        <div id="detailGuests" class="d-grid gap-2 mt-2"></div>
+                    </div>
+
+                    <div class="mt-4">
+                        <label class="form-label small">Catatan verifikasi</label>
+                        <input type="text" class="form-control" id="detailAdminNote"
+                            placeholder="Catatan verifikasi (opsional)">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-outline-warning" id="detailPendingBtn">Kembalikan ke Pending</button>
+                <button type="button" class="btn btn-danger" id="detailRejectBtn">Tolak</button>
+                <button type="button" class="btn btn-success" id="detailApproveBtn">Setujui</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade guest-profile-photo-modal" id="guestProfilePhotoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="guestProfilePhotoTitle">Foto Profil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="guest-profile-photo-view">
+                    <img id="guestProfilePhotoImage" src="" alt="Foto profil tamu" class="d-none">
+                    <div id="guestProfilePhotoFallback" class="guest-profile-photo-fallback d-none">
+                        <i class="bi bi-image fs-2 d-block mb-2"></i>
+                        Foto profil tidak tersedia.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var detailModal = new bootstrap.Modal(document.getElementById('transactionDetailModal'));
+        var guestPhotoModalEl = document.getElementById('guestProfilePhotoModal');
+        var guestPhotoModal = new bootstrap.Modal(guestPhotoModalEl);
+        var guestPhotoTitleEl = document.getElementById('guestProfilePhotoTitle');
+        var guestPhotoImageEl = document.getElementById('guestProfilePhotoImage');
+        var guestPhotoFallbackEl = document.getElementById('guestProfilePhotoFallback');
+        var activeStatusFilter = '{{ status }}';
+        var currentTransactionId = null;
+        var currentRow = null;
+        var currentDetailStatus = null;
+        var detailActionBusy = false;
+        var uploadBase = "{{ url_for('portal.uploaded_file', filename='__FILE__') }}";
+
+        function buildPhotoUrl(path) {
+            if (!path) return '';
+            var rel = String(path).split('uploads/portal/').pop();
+            return uploadBase.replace('__FILE__', rel);
+        }
+
+        function setButtonLoading(btn, isLoading, label) {
+            if (!btn) return;
+            if (isLoading) {
+                if (typeof btn.dataset.loadingDefaultHtml === 'undefined') {
+                    btn.dataset.loadingDefaultHtml = btn.innerHTML;
+                }
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>' + (label || 'Memproses...');
+                return;
+            }
+            if (typeof btn.dataset.loadingDefaultHtml !== 'undefined') {
+                btn.innerHTML = btn.dataset.loadingDefaultHtml;
+                delete btn.dataset.loadingDefaultHtml;
+            }
+        }
+
+        function setRowActionLoading(rowEl, triggerBtn, isLoading) {
+            if (!rowEl) return;
+            var actionButtons = Array.prototype.slice.call(rowEl.querySelectorAll('button[data-action]'));
+            actionButtons.forEach(function (btn) {
+                if (isLoading) {
+                    if (typeof btn.dataset.prevDisabled === 'undefined') {
+                        btn.dataset.prevDisabled = btn.disabled ? '1' : '0';
+                    }
+                    btn.disabled = true;
+                } else if (typeof btn.dataset.prevDisabled !== 'undefined') {
+                    btn.disabled = btn.dataset.prevDisabled === '1';
+                    delete btn.dataset.prevDisabled;
+                }
+                if (!isLoading || btn !== triggerBtn) {
+                    setButtonLoading(btn, false);
+                }
+            });
+            if (isLoading && triggerBtn) {
+                setButtonLoading(triggerBtn, true, 'Memproses...');
+            }
+            if (isLoading) {
+                rowEl.setAttribute('data-action-loading', '1');
+            } else {
+                rowEl.removeAttribute('data-action-loading');
+            }
+        }
+
+        function setDetailActionLoading(triggerBtn, isLoading) {
+            var detailButtons = [
+                document.getElementById('detailApproveBtn'),
+                document.getElementById('detailRejectBtn'),
+                document.getElementById('detailPendingBtn')
+            ].filter(Boolean);
+            detailButtons.forEach(function (btn) {
+                if (isLoading) {
+                    if (typeof btn.dataset.prevDisabled === 'undefined') {
+                        btn.dataset.prevDisabled = btn.disabled ? '1' : '0';
+                    }
+                    btn.disabled = true;
+                } else if (typeof btn.dataset.prevDisabled !== 'undefined') {
+                    btn.disabled = btn.dataset.prevDisabled === '1';
+                    delete btn.dataset.prevDisabled;
+                }
+                if (!isLoading || btn !== triggerBtn) {
+                    setButtonLoading(btn, false);
+                }
+            });
+            if (isLoading && triggerBtn) {
+                setButtonLoading(triggerBtn, true, 'Memproses...');
+                return;
+            }
+            configureDetailButtons(currentDetailStatus);
+        }
+
+        function showGuestPhotoFallback(show) {
+            if (guestPhotoImageEl) guestPhotoImageEl.classList.toggle('d-none', !!show);
+            if (guestPhotoFallbackEl) guestPhotoFallbackEl.classList.toggle('d-none', !show);
+        }
+
+        function openGuestProfilePhoto(name, photoUrl) {
+            if (!photoUrl) return;
+            if (guestPhotoTitleEl) {
+                guestPhotoTitleEl.textContent = name ? ('Foto Profil - ' + name) : 'Foto Profil Tamu';
+            }
+            showGuestPhotoFallback(false);
+            if (guestPhotoImageEl) {
+                guestPhotoImageEl.src = photoUrl;
+                guestPhotoImageEl.alt = name ? ('Foto profil ' + name) : 'Foto profil tamu';
+                guestPhotoImageEl.onerror = function () {
+                    showGuestPhotoFallback(true);
+                };
+                guestPhotoImageEl.onload = function () {
+                    showGuestPhotoFallback(false);
+                };
+            } else {
+                showGuestPhotoFallback(true);
+            }
+            guestPhotoModal.show();
+        }
+
+        function setStatusBadge(el, status) {
+            if (!el) return;
+            el.className = 'badge';
+            if (status === 'approved') {
+                el.classList.add('text-bg-success');
+                el.textContent = 'Disetujui';
+            } else if (status === 'rejected') {
+                el.classList.add('text-bg-danger');
+                el.textContent = 'Ditolak';
+            } else {
+                el.classList.add('text-bg-warning');
+                el.textContent = 'Menunggu';
+            }
+        }
+
+        function showDetailLoading(show) {
+            document.getElementById('detailLoading').classList.toggle('d-none', !show);
+            document.getElementById('detailContent').classList.toggle('d-none', show);
+        }
+
+        function configureDetailButtons(status) {
+            var approveBtn = document.getElementById('detailApproveBtn');
+            var rejectBtn = document.getElementById('detailRejectBtn');
+            var pendingBtn = document.getElementById('detailPendingBtn');
+            var isPending = status === 'pending';
+            var isApproved = status === 'approved';
+            var isRejected = status === 'rejected';
+
+            approveBtn.disabled = !(isPending || isRejected);
+            rejectBtn.disabled = !(isPending || isApproved);
+            pendingBtn.disabled = !(isApproved || isRejected);
+
+            approveBtn.classList.toggle('d-none', !(isPending || isRejected));
+            rejectBtn.classList.toggle('d-none', !(isPending || isApproved));
+            pendingBtn.classList.toggle('d-none', !(isApproved || isRejected));
+            var noteInput = document.getElementById('detailAdminNote');
+            if (noteInput) {
+                noteInput.disabled = !(isPending || isApproved || isRejected);
+            }
+        }
+
+        function addQuickActionButton(container, rowEl, action, label, btnClass, iconClass) {
+            if (!container) return;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm ' + btnClass;
+            btn.title = label;
+            btn.setAttribute('aria-label', label);
+            btn.setAttribute('data-action', action);
+            btn.setAttribute('data-transaction-id', rowEl.getAttribute('data-transaction-id'));
+            btn.innerHTML = '<i class="bi ' + iconClass + '"></i>';
+            btn.addEventListener('click', function () {
+                var transactionId = btn.getAttribute('data-transaction-id');
+                if (!transactionId) return;
+                if (action === 'reject') {
+                    var note = window.prompt('Catatan penolakan (wajib):');
+                    if (!note) return;
+                    submitQuickDecision(transactionId, action, rowEl, note, btn);
+                    return;
+                }
+                submitQuickDecision(transactionId, action, rowEl, '', btn);
+            });
+            container.appendChild(btn);
+        }
+
+        function loadTransactionDetail(transactionId, rowEl) {
+            currentTransactionId = transactionId;
+            currentRow = rowEl;
+            currentDetailStatus = null;
+            showDetailLoading(true);
+            configureDetailButtons(null);
+            document.getElementById('detailAdminNote').value = '';
+            fetch('/daftar-tamu/sekolah/transactions/' + transactionId)
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.success) throw new Error(data.message || 'Gagal memuat detail');
+                    var trx = data.transaction;
+                    document.getElementById('detailSchoolName').textContent = trx.school_name || '-';
+                    document.getElementById('detailSchoolMeta').textContent = [trx.npsn, trx.jenjang, trx.kecamatan, trx.kelurahan].filter(Boolean).join(' - ');
+                    var visitAt = trx.visit_at ? new Date(trx.visit_at) : null;
+                    document.getElementById('detailVisitAt').textContent = visitAt ? visitAt.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }) : '-';
+                    document.getElementById('detailCreatedBy').textContent = trx.created_by_name || '-';
+                    var hasLat = typeof trx.latitude === 'number' || typeof trx.latitude === 'string';
+                    var hasLon = typeof trx.longitude === 'number' || typeof trx.longitude === 'string';
+                    document.getElementById('detailGps').textContent = (hasLat && hasLon) ? (Number(trx.latitude).toFixed(5) + ', ' + Number(trx.longitude).toFixed(5)) : '-';
+                    document.getElementById('detailNotes').textContent = trx.notes || '-';
+                    document.getElementById('detailPurpose').textContent = trx.purpose || '-';
+                    var statusMap = { pending: 'Menunggu', approved: 'Disetujui', rejected: 'Ditolak' };
+                    document.getElementById('detailStatus').textContent = statusMap[trx.status] || trx.status || '-';
+                    document.getElementById('detailReviewer').textContent = trx.reviewer_name || '-';
+                    document.getElementById('detailReviewerWrap').classList.toggle('d-none', !trx.reviewer_name);
+                    var reviewerTelegramParts = [];
+                    var reviewerTelegramUsername = String(trx.reviewer_telegram_username || '').trim();
+                    if (reviewerTelegramUsername) {
+                        reviewerTelegramParts.push('@' + reviewerTelegramUsername.replace(/^@+/, ''));
+                    }
+                    var reviewerTelegramUserId = String(trx.reviewer_telegram_user_id || '').trim();
+                    if (reviewerTelegramUserId) {
+                        reviewerTelegramParts.push(reviewerTelegramUserId);
+                    }
+                    var reviewerTelegramText = reviewerTelegramParts.join(' - ');
+                    document.getElementById('detailReviewerTelegram').textContent = reviewerTelegramText || '-';
+                    document.getElementById('detailReviewerTelegramWrap').classList.toggle('d-none', !reviewerTelegramText);
+                    document.getElementById('detailAdminNote').value = trx.reviewer_notes || '';
+
+                    var guestWrap = document.getElementById('detailGuests');
+                    guestWrap.innerHTML = '';
+                    if (Array.isArray(trx.guests) && trx.guests.length > 0) {
+                        trx.guests.forEach(function (guest) {
+                            var isSudin = guest.guest_type !== 'umum';
+                            var metaParts = [];
+                            var badge = '';
+                            if (guest.guest_type === 'umum') {
+                                if (guest.instansi) metaParts.push(guest.instansi);
+                                if (guest.jabatan) metaParts.push(guest.jabatan);
+                                if (guest.phone) metaParts.push(guest.phone);
+                                badge = guest.is_verified ? '<span class="badge text-bg-success ms-2">Verified</span>' : '<span class="badge text-bg-secondary ms-2">Umum</span>';
+                            } else {
+                                if (guest.jabatan) metaParts.push(guest.jabatan);
+                                if (guest.nrk) metaParts.push('NRK ' + guest.nrk);
+                            }
+                            var guestName = guest.full_name || 'Tamu';
+                            var guestProfilePhotoUrl = isSudin ? buildPhotoUrl(guest.profile_photo_path || '') : '';
+                            var canOpenProfilePhoto = isSudin && !!guestProfilePhotoUrl;
+                            var guestEl = document.createElement(canOpenProfilePhoto ? 'button' : 'div');
+                            if (canOpenProfilePhoto) {
+                                guestEl.type = 'button';
+                                guestEl.className = 'btn btn-sm btn-outline-primary text-start detail-guest-trigger';
+                            } else {
+                                guestEl.className = 'border rounded-2 bg-light p-2 text-start';
+                            }
+                            var profilePhotoHtml = guestProfilePhotoUrl
+                                ? '<img src="' + guestProfilePhotoUrl + '" alt="Foto profil" class="rounded border" style="width:44px;height:44px;object-fit:cover;">'
+                                : '';
+                            var clickHintHtml = canOpenProfilePhoto
+                                ? '<span class="badge text-bg-primary ms-2"><i class="bi bi-image"></i></span>'
+                                : '';
+                            guestEl.innerHTML = '<div class="d-flex align-items-start gap-2">'
+                                + profilePhotoHtml
+                                + '<div class="pe-1 flex-grow-1">'
+                                + '<div class="fw-semibold">' + guestName + badge + clickHintHtml + '</div>'
+                                + '<div class="small text-muted">' + metaParts.join(' - ') + '</div>'
+                                + '</div>'
+                                + '</div>';
+                            if (canOpenProfilePhoto) {
+                                guestEl.addEventListener('click', function () {
+                                    openGuestProfilePhoto(guestName, guestProfilePhotoUrl);
+                                });
+                            }
+                            guestWrap.appendChild(guestEl);
+                        });
+                    } else {
+                        guestWrap.textContent = 'Tidak ada tamu.';
+                    }
+
+                    var photoEl = document.getElementById('detailPhoto');
+                    photoEl.src = buildPhotoUrl(trx.photo_path);
+                    currentDetailStatus = trx.status;
+                    configureDetailButtons(currentDetailStatus);
+                    showDetailLoading(false);
+                    detailModal.show();
+                })
+                .catch(function (err) {
+                    alert(err.message || 'Gagal memuat detail transaksi.');
+                    showDetailLoading(false);
+                });
+        }
+
+        if (guestPhotoModalEl) {
+            guestPhotoModalEl.addEventListener('hidden.bs.modal', function () {
+                if (guestPhotoImageEl) guestPhotoImageEl.src = '';
+                showGuestPhotoFallback(true);
+            });
+        }
+
+        function updateRowStatus(rowEl, status) {
+            if (!rowEl) return;
+            var badge = rowEl.querySelector('td:nth-child(3) .badge');
+            setStatusBadge(badge, status);
+            var approveBtn = rowEl.querySelector('[data-action="approve"]');
+            if (approveBtn) approveBtn.remove();
+            var rejectBtn = rowEl.querySelector('[data-action="reject"]');
+            if (rejectBtn) rejectBtn.remove();
+            var pendingBtn = rowEl.querySelector('[data-action="pending"]');
+            if (pendingBtn) pendingBtn.remove();
+            if (activeStatusFilter && activeStatusFilter !== status) {
+                rowEl.remove();
+                return;
+            }
+            var actionWrap = rowEl.querySelector('td.text-end .d-inline-flex');
+            if (actionWrap) {
+                if (status === 'approved') {
+                    addQuickActionButton(actionWrap, rowEl, 'pending', 'Kembalikan ke pending', 'btn-outline-warning', 'bi-arrow-counterclockwise');
+                    addQuickActionButton(actionWrap, rowEl, 'reject', 'Tolak', 'btn-outline-danger', 'bi-x-lg');
+                } else if (status === 'rejected') {
+                    addQuickActionButton(actionWrap, rowEl, 'pending', 'Kembalikan ke pending', 'btn-outline-warning', 'bi-arrow-counterclockwise');
+                    addQuickActionButton(actionWrap, rowEl, 'approve', 'Setujui', 'btn-outline-success', 'bi-check-lg');
+                } else {
+                    addQuickActionButton(actionWrap, rowEl, 'approve', 'Setujui', 'btn-outline-success', 'bi-check-lg');
+                    addQuickActionButton(actionWrap, rowEl, 'reject', 'Tolak', 'btn-outline-danger', 'bi-x-lg');
+                }
+            }
+        }
+
+        function submitDecision(action, triggerBtn) {
+            if (!currentTransactionId) return;
+            if (detailActionBusy) return;
+            var note = document.getElementById('detailAdminNote').value.trim();
+            if (action === 'reject' && !note) {
+                alert('Catatan penolakan wajib diisi.');
+                return;
+            }
+            detailActionBusy = true;
+            setDetailActionLoading(triggerBtn, true);
+            var formData = new FormData();
+            if (note) formData.append('reviewer_note', note);
+            fetch('/daftar-tamu/sekolah/transactions/' + currentTransactionId + '/' + action, {
+                method: 'POST',
+                body: formData
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.success) throw new Error(data.message || 'Gagal memperbarui status');
+                    detailModal.hide();
+                    var nextStatus = action === 'approve' ? 'approved' : (action === 'reject' ? 'rejected' : 'pending');
+                    currentDetailStatus = nextStatus;
+                    updateRowStatus(currentRow, nextStatus);
+                })
+                .catch(function (err) {
+                    alert(err.message || 'Gagal memperbarui status transaksi.');
+                })
+                .finally(function () {
+                    detailActionBusy = false;
+                    setDetailActionLoading(triggerBtn, false);
+                });
+        }
+
+        document.querySelectorAll('[data-action="detail"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var transactionId = btn.getAttribute('data-transaction-id');
+                var rowEl = btn.closest('tr');
+                loadTransactionDetail(transactionId, rowEl);
+            });
+        });
+
+        function submitQuickDecision(transactionId, action, rowEl, note, triggerBtn) {
+            if (!rowEl || rowEl.getAttribute('data-action-loading') === '1') return;
+            setRowActionLoading(rowEl, triggerBtn, true);
+            var formData = new FormData();
+            if (note) formData.append('reviewer_note', note);
+            fetch('/daftar-tamu/sekolah/transactions/' + transactionId + '/' + action, {
+                method: 'POST',
+                body: formData
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.success) throw new Error(data.message || 'Gagal memperbarui status');
+                    var nextStatus = action === 'approve' ? 'approved' : (action === 'reject' ? 'rejected' : 'pending');
+                    updateRowStatus(rowEl, nextStatus);
+                })
+                .catch(function (err) {
+                    alert(err.message || 'Gagal memperbarui status transaksi.');
+                })
+                .finally(function () {
+                    setRowActionLoading(rowEl, null, false);
+                });
+        }
+
+        document.querySelectorAll('[data-action="approve"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var transactionId = btn.getAttribute('data-transaction-id');
+                var rowEl = btn.closest('tr');
+                if (!transactionId) return;
+                submitQuickDecision(transactionId, 'approve', rowEl, '', btn);
+            });
+        });
+
+        document.querySelectorAll('[data-action="reject"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var transactionId = btn.getAttribute('data-transaction-id');
+                var rowEl = btn.closest('tr');
+                if (!transactionId) return;
+                var note = window.prompt('Catatan penolakan (wajib):');
+                if (!note) return;
+                submitQuickDecision(transactionId, 'reject', rowEl, note, btn);
+            });
+        });
+
+        document.querySelectorAll('[data-action="pending"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var transactionId = btn.getAttribute('data-transaction-id');
+                var rowEl = btn.closest('tr');
+                if (!transactionId) return;
+                submitQuickDecision(transactionId, 'pending', rowEl, '', btn);
+            });
+        });
+
+        document.getElementById('detailApproveBtn').addEventListener('click', function () {
+            submitDecision('approve', this);
+        });
+
+        document.getElementById('detailRejectBtn').addEventListener('click', function () {
+            submitDecision('reject', this);
+        });
+
+        document.getElementById('detailPendingBtn').addEventListener('click', function () {
+            submitDecision('pending', this);
+        });
+    })();
+</script>
 {% endblock %}

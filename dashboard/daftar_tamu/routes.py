@@ -2224,6 +2224,113 @@ def admin_transaction_detail(transaction_id: int) -> Response:
     return jsonify({"success": True, "transaction": detail})
 
 
+def _get_school_umum_transaction_detail(
+    *, transaction_id: int, school_id: int
+) -> tuple[Optional[dict], Optional[str]]:
+    detail = get_transaction_detail(transaction_id)
+    if not detail or detail.get("school_id") != school_id:
+        return None, "not_found"
+    guests = detail.get("guests") or []
+    has_umum = any((guest or {}).get("guest_type") == "umum" for guest in guests)
+    if not has_umum:
+        return None, "forbidden"
+    return detail, None
+
+
+@daftar_tamu_bp.route("/sekolah/transactions/<int:transaction_id>")
+@role_required("sekolah")
+def sekolah_transaction_detail(transaction_id: int) -> Response:
+    user = current_user()
+    school = _fetch_school_for_user(user.get("id"))
+    if not school:
+        return jsonify({"success": False, "message": "Akun sekolah belum terhubung."}), 400
+
+    detail, err = _get_school_umum_transaction_detail(
+        transaction_id=transaction_id,
+        school_id=school.get("id"),
+    )
+    if err == "not_found":
+        return jsonify({"success": False, "message": "Transaksi tidak ditemukan."}), 404
+    if err == "forbidden":
+        return jsonify({"success": False, "message": "Transaksi hanya untuk tamu Sudin."}), 403
+
+    return jsonify({"success": True, "transaction": detail})
+
+
+def _sekolah_update_transaction_status(
+    *, transaction_id: int, status: str
+) -> Response:
+    user = current_user()
+    school = _fetch_school_for_user(user.get("id"))
+    if not school:
+        return jsonify({"success": False, "message": "Akun sekolah belum terhubung."}), 400
+
+    _, err = _get_school_umum_transaction_detail(
+        transaction_id=transaction_id,
+        school_id=school.get("id"),
+    )
+    if err == "not_found":
+        return jsonify({"success": False, "message": "Transaksi tidak ditemukan."}), 404
+    if err == "forbidden":
+        return jsonify({"success": False, "message": "Transaksi hanya untuk tamu Sudin."}), 403
+
+    note = (request.form.get("reviewer_note") or "").strip()
+    if status == "rejected" and not note:
+        return jsonify({"success": False, "message": "Catatan penolakan wajib diisi."}), 400
+
+    try:
+        ok = update_transaction_status(
+            transaction_id=transaction_id,
+            status=status,
+            reviewer_id=user["id"],
+            reviewer_notes=note or None,
+        )
+    except ValueError:
+        ok = False
+    if not ok:
+        return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
+
+    try:
+        _notify_user_app_status_change(
+            transaction_id=transaction_id,
+            status=status,
+            actor=user,
+            reviewer_notes=note or None,
+        )
+    except Exception:
+        current_app.logger.exception("Gagal menyimpan notifikasi status buku tamu aplikasi.")
+
+    try:
+        _notify_guestbook_status_change(
+            transaction_id=transaction_id,
+            status=status,
+            actor=user,
+            is_public=False,
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu.")
+
+    return jsonify({"success": True})
+
+
+@daftar_tamu_bp.route("/sekolah/transactions/<int:transaction_id>/approve", methods=["POST"])
+@role_required("sekolah")
+def sekolah_transaction_approve(transaction_id: int) -> Response:
+    return _sekolah_update_transaction_status(transaction_id=transaction_id, status="approved")
+
+
+@daftar_tamu_bp.route("/sekolah/transactions/<int:transaction_id>/reject", methods=["POST"])
+@role_required("sekolah")
+def sekolah_transaction_reject(transaction_id: int) -> Response:
+    return _sekolah_update_transaction_status(transaction_id=transaction_id, status="rejected")
+
+
+@daftar_tamu_bp.route("/sekolah/transactions/<int:transaction_id>/pending", methods=["POST"])
+@role_required("sekolah")
+def sekolah_transaction_pending(transaction_id: int) -> Response:
+    return _sekolah_update_transaction_status(transaction_id=transaction_id, status="pending")
+
+
 def _guestbook_status_label(status: Optional[str]) -> str:
     normalized = (status or "").strip().lower()
     if normalized == "approved":
