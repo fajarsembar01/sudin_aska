@@ -3618,6 +3618,8 @@ def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dic
         icon = "bi-people-fill"
     elif category == "panbers_follow_up_status":
         icon = "bi-tools"
+    elif category == "hospitality_status":
+        icon = "bi-house-heart"
 
     tone = "secondary"
     if status_key == "approved":
@@ -3643,6 +3645,8 @@ def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dic
         fallback_title = "Notifikasi tim PANBERSS"
     elif category == "panbers_follow_up_status":
         fallback_title = "Notifikasi tindak lanjut PANBERSS"
+    elif category == "hospitality_status":
+        fallback_title = "Notifikasi Hospitality"
 
     return {
         "id": notification_id,

@@ -9,6 +9,7 @@ from flask import Flask
 from .auth import auth_bp, current_user, init_oauth
 from .routes import main_bp
 from .portal.routes import portal_bp
+from .hospitality import hospitality_bp
 from .daftar_tamu.routes import daftar_tamu_bp
 from .call_center import call_center_bp
 from .cms.routes import cms_bp
@@ -36,6 +37,7 @@ def create_app() -> Flask:
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(portal_bp)
+    app.register_blueprint(hospitality_bp)
     app.register_blueprint(daftar_tamu_bp)
     app.register_blueprint(call_center_bp)
     app.register_blueprint(cms_bp)

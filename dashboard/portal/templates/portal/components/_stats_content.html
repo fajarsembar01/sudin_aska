@@ -333,7 +333,7 @@
       <div class="card-body">
         {% if is_admin %}
         <h6 class="fw-bold mb-1">Jumlah Penilaian Sekolah</h6>
-        
+
         <div style="height: 300px; position: relative">
           <canvas id="negeriFrequencyPieChart"></canvas>
         </div>
@@ -531,20 +531,8 @@
   </div>
 
   <div class="col-lg-8" id="recent-assessments">
-    <div class="card border-0 shadow-sm">
-      <div class="card-body">
-        <div class="d-flex align-items-center gap-3 mb-3">
-          <span class="icon-badge section-icon text-primary">
-            <i class="bi bi-list-check"></i>
-          </span>
-          <div>
-            <h2 class="h6 fw-bold mb-0">Daftar Penilaian Terbaru</h2>
-            <p class="text-muted mb-0 small">
-              Klik nama sekolah untuk melihat detail skor
-            </p>
-          </div>
-        </div>
-
+    {% from 'shared/_recent_assessments_panel.html' import recent_assessments_panel %}
+    {% call recent_assessments_panel('Daftar Penilaian Terbaru', 'Klik nama sekolah untuk melihat detail skor') %}
         <form method="get" class="row g-2 mb-3" id="recentFilterForm">
           <input
             type="hidden"
@@ -778,8 +766,7 @@
           </a>
           {% endif %}
         </div>
-      </div>
-    </div>
+    {% endcall %}
   </div>
 
   {% if is_admin %}
@@ -1097,7 +1084,7 @@
               options: {
                   responsive: true,
                   maintainAspectRatio: false,
-                  cutout: '55%',
+                  cutout: '60%',
                   plugins: {
                       legend: { position: 'bottom', labels: { usePointStyle: true, padding: 14 } },
                       tooltip: {
@@ -1133,22 +1120,36 @@
       {% else %}
       const pieEl = document.getElementById('statusPieChart');
       if (pieEl) {
+          const pieValues = [{{ stats.assessments.drafts or 0 }}, {{ stats.assessments.submitted or 0 }}];
           new Chart(pieEl.getContext('2d'), {
               type: 'doughnut',
               data: {
                   labels: ['Draft', 'Submitted'],
                   datasets: [{
-                      data: [{{ stats.assessments.drafts or 0 }}, {{ stats.assessments.submitted or 0 }}],
+                      data: pieValues,
                       backgroundColor: ['#ffc107', '#198754'],
                       borderWidth: 0,
-                      hoverOffset: 4
+                      hoverOffset: 5
                   }]
               },
               options: {
                   responsive: true,
                   maintainAspectRatio: false,
-                  cutout: '70%',
-                  plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } }
+                  cutout: '60%',
+                  plugins: {
+                      legend: { position: 'bottom', labels: { usePointStyle: true, padding: 14 } },
+                      tooltip: {
+                          callbacks: {
+                              label: function (ctx) {
+                                  const val = Number(ctx.raw || 0);
+                                  const dataArr = ctx.dataset && Array.isArray(ctx.dataset.data) ? ctx.dataset.data : [];
+                                  const total = dataArr.reduce(function (acc, n) { return acc + (Number(n) || 0); }, 0);
+                                  const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+                                  return ctx.label + ': ' + val + ' penilaian (' + pct + '%)';
+                              }
+                          }
+                      }
+                  }
               }
           });
       }

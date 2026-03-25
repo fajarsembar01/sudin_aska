@@ -1708,6 +1708,13 @@ def home() -> Response:
                 "col_class": "col-md-6 col-12",
             },
             {
+                "title": "Hospitality",
+                "description": "Penilaian hospitality tanpa penugasan, terhubung buku tamu.",
+                "icon": "bi-house-heart",
+                "href": url_for("hospitality.staff_home"),
+                "col_class": "col-md-6 col-12",
+            },
+            {
                 "title": "Buku Tamu",
                 "description": "Lihat riwayat buku tamu yang pernah melibatkan Anda.",
                 "icon": "bi-person-vcard",
@@ -1732,6 +1739,13 @@ def home() -> Response:
                 "description": "Akses statistik dan monitoring PANBERSS tim Anda.",
                 "icon": "bi-building",
                 "href": url_for("portal.coordinator_stats"),
+                "col_class": "col-md-6 col-12",
+            },
+            {
+                "title": "Hospitality",
+                "description": "Pantau penilaian hospitality lintas sekolah.",
+                "icon": "bi-house-heart",
+                "href": url_for("hospitality.admin_home"),
                 "col_class": "col-md-6 col-12",
             },
             {
@@ -1826,6 +1840,13 @@ def sekolah_home() -> Response:
              "icon": "bi bi-building",
              "href": url_for("portal.sekolah_rooms"),
              "col_class": "col-md-6 col-12",
+        },
+        {
+            "title": "Hospitality",
+            "description": "Lihat hasil penilaian hospitality dan beri komentar.",
+            "icon": "bi-house-heart",
+            "href": url_for("hospitality.school_home"),
+            "col_class": "col-md-6 col-12",
         },
         {
             "title": "Buku Tamu",

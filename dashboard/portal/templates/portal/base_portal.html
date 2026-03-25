@@ -941,6 +941,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.blueprint == 'hospitality' %}active{% endif %}"
+                            href="{{ url_for('hospitality.staff_home') }}">
+                            <i class="bi bi-house-heart nav-icon"></i>Hospitality
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint in ['portal.staff_follow_ups', 'portal.follow_up_detail'] %}active{% endif %}"
                             href="{{ url_for('portal.staff_follow_ups') }}">
                             <i class="bi bi-tools nav-icon"></i>Tindak Lanjut

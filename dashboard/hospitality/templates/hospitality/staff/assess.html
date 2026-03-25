@@ -1,0 +1,72 @@
+{% extends "hospitality/base_hospitality.html" %}
+{% set page_title = "Penilaian Hospitality" %}
+
+{% block portal_content %}
+<div class="d-flex align-items-center gap-3 mb-4">
+  <a href="{{ url_for('hospitality.staff_home') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
+  <div>
+    <h1 class="h5 fw-bold mb-0">{{ school.name }}</h1>
+    <p class="text-muted small mb-0">NPSN {{ school.npsn }} • {{ school.jenjang }}</p>
+  </div>
+</div>
+
+<form method="post" class="needs-validation" novalidate>
+  {{ csrf_token() }}
+  <div class="mb-4">
+    <label class="form-label fw-semibold">Catatan umum</label>
+    <textarea name="note" class="form-control" rows="2" placeholder="Opsional"></textarea>
+  </div>
+
+  {% for comp in components %}
+  <div class="card shadow-sm mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <div>
+        <div class="fw-semibold">{{ comp.name }}</div>
+        {% if comp.description %}<div class="text-muted small">{{ comp.description }}</div>{% endif %}
+      </div>
+      <div class="text-muted small">Skor 1–5</div>
+    </div>
+    <div class="list-group list-group-flush">
+      {% for aspect in comp.aspects %}
+      <div class="list-group-item">
+        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+          <div>
+            <div class="fw-semibold">{{ aspect.name }}</div>
+            {% if aspect.description %}<div class="text-muted small">{{ aspect.description }}</div>{% endif %}
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            {% for val in score_scale %}
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="score_{{ aspect.id }}" id="score{{ aspect.id }}_{{ val }}" value="{{ val }}" {% if val==1 %}checked{% endif %} required>
+              <label class="form-check-label" for="score{{ aspect.id }}_{{ val }}">{{ val }}</label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="d-flex justify-content-end gap-2">
+    <button class="btn btn-primary" type="submit"><i class="bi bi-check2-circle"></i> Simpan &amp; Lanjut Verifikasi</button>
+  </div>
+</form>
+
+<script>
+(() => {
+  'use strict'
+  const forms = document.querySelectorAll('.needs-validation')
+  Array.from(forms).forEach(form => {
+    form.addEventListener('submit', event => {
+      if (!form.checkValidity()) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+      form.classList.add('was-validated')
+    }, false)
+  })
+})()
+</script>
+{% endblock %}

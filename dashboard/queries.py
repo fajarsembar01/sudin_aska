@@ -73,6 +73,7 @@ ADMIN_PERFORMANCE_FEATURE_LABELS: Dict[str, str] = {
     "all": "Semua Fitur",
     "aska_insight": "ASKA Insight",
     "panbers": "PANBERSS",
+    "hospitality": "Hospitality",
     "daftar_tamu": "Daftar Tamu",
     "call_center": "Call Center",
 }

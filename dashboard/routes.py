@@ -505,6 +505,12 @@ def admin_select_role() -> Response:
             "href": url_for("portal.home"),
         },
         {
+            "title": "Hospitality",
+            "description": "Penilaian hospitality terhubung buku tamu.",
+            "icon": "bi-house-heart",
+            "href": url_for("hospitality.admin_home"),
+        },
+        {
             "title": "Daftar Tamu",
             "description": "Dashboard pemantauan kunjungan tamu sekolah.",
             "icon": "bi-person-vcard",

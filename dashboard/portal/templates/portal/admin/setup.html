@@ -1,4 +1,5 @@
 {% extends "portal/base_portal.html" %}
+{% from 'shared/_setup_table.html' import setup_list_header, setup_table %}
 {% set page_title = "Setup Data Sekolah" %}
 
 {% block portal_content %}
@@ -1306,19 +1307,7 @@
 
                         <!-- Rooms List Tab -->
                         <div class="tab-pane fade show active" id="roomsListPane" role="tabpanel">
-                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
-                                <div>
-                                    <span class="text-muted small"><span id="roomCount">{{ display_rooms|length
-                                            }}</span>
-                                        ruangan terdaftar</span>
-                                </div>
-                                <div class="position-relative" style="min-width: 200px;">
-                                    <input type="text" id="roomSearch" class="form-control form-control-sm"
-                                        placeholder="Cari ruangan..." autocomplete="off">
-                                    <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-2 text-muted"
-                                        style="pointer-events: none;"></i>
-                                </div>
-                            </div>
+                            {{ setup_list_header('roomCount', display_rooms|length, 'ruangan terdaftar', 'roomSearch', 'Cari ruangan...') }}
                             {% if display_rooms %}
                             <div class="table-responsive">
                                 <style>
@@ -1571,18 +1560,15 @@
                                         }
                                     }
                                 </style>
-                                <table class="table table-hover align-middle mb-0" id="roomsTable">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 36%;">Nama Ruangan</th>
-                                            <th style="width: 16%;">Kategori</th>
-                                            <th style="width: 12%;">Aspek</th>
-                                            <th style="width: 10%;">Status</th>
-                                            <th style="width: 10%;">Wajib</th>
-                                            <th class="text-end" style="width: 20%;">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="roomsTableBody">
+                                {% set room_headers = [
+                                  {'label': 'Nama Ruangan', 'width': '36%'},
+                                  {'label': 'Kategori', 'width': '16%'},
+                                  {'label': 'Aspek', 'width': '12%'},
+                                  {'label': 'Status', 'width': '10%'},
+                                  {'label': 'Wajib', 'width': '10%'},
+                                  {'label': 'Aksi', 'width': '20%', 'align': 'end'}
+                                ] %}
+                                {% call setup_table('roomsTable', 'roomsTableBody', room_headers) %}
                                         {% for r in display_rooms %}
                                         <tr id="room-{{ r.id }}"
                                             class="room-row {% if not r.active %}room-inactive{% endif %}"
@@ -1729,67 +1715,8 @@
                                                         <div class="row g-1 mb-2 aspect-list"
                                                             id="room-aspects-{{ r.id }}" data-room-id="{{ r.id }}"
                                                             data-room-name="{{ r.name }}">
-                                                            {% if r.aspects %}
-                                                            {% for a in r.aspects %}
-                                                            <div class="col-12 col-sm-6 col-lg-4 aspect-item"
-                                                                data-aspect-id="{{ a.id }}">
-                                                                <div
-                                                                    class="d-flex align-items-center justify-content-between gap-2 rounded border px-2 py-1 bg-light small {% if not a.active %}opacity-75{% endif %}">
-                                                                    <div
-                                                                        class="d-flex align-items-center gap-2 text-truncate">
-                                                                        <span
-                                                                            class="badge bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center"
-                                                                            style="width: 20px; height: 20px;">
-                                                                            <i class="bi bi-check-lg"
-                                                                                style="font-size: 0.75rem;"></i>
-                                                                        </span>
-                                                                        <span class="text-truncate">{{ a.name }}</span>
-                                                                        <span
-                                                                            class="badge rounded-pill aspect-required-badge {% if a.is_required %}bg-warning-subtle text-warning{% else %}bg-secondary-subtle text-secondary{% endif %}"
-                                                                            data-aspect-id="{{ a.id }}"
-                                                                            data-room-id="{{ r.id }}"
-                                                                            data-is-required="{{ 'true' if a.is_required else 'false' }}"
-                                                                            style="cursor: pointer;">
-                                                                            {% if a.is_required %}Wajib{% else
-                                                                            %}Opsional{% endif %}
-                                                                        </span>
-                                                                        {% if not a.active %}
-                                                                        <span
-                                                                            class="badge bg-danger-subtle text-danger">Off</span>
-                                                                        {% endif %}
-                                                                    </div>
-                                                                    <div
-                                                                        class="d-flex align-items-center gap-1 flex-shrink-0">
-                                                                        <button type="button"
-                                                                            class="btn btn-link btn-sm p-0 text-primary"
-                                                                            data-edit-aspect="{{ a.id }}"
-                                                                            data-room-id="{{ r.id }}"
-                                                                            data-room-name="{{ r.name }}"
-                                                                            data-aspect-name="{{ a.name }}"
-                                                                            data-aspect-desc="{{ a.description or '' }}"
-                                                                            data-aspect-order="{{ a.sort_order or 0 }}"
-                                                                            data-aspect-active="{{ 'true' if a.active else 'false' }}"
-                                                                            data-aspect-required="{{ 'true' if a.is_required else 'false' }}"
-                                                                            title="Edit aspek">
-                                                                            <i class="bi bi-pencil"></i>
-                                                                        </button>
-                                                                        <button type="button"
-                                                                            class="btn btn-link btn-sm p-0 text-danger"
-                                                                            data-delete-aspect="{{ a.id }}"
-                                                                            data-room-id="{{ r.id }}"
-                                                                            data-room-name="{{ r.name }}"
-                                                                            data-aspect-name="{{ a.name }}"
-                                                                            title="Hapus aspek">
-                                                                            <i class="bi bi-trash"></i>
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            {% endfor %}
-                                                            {% else %}
-                                                            <p class="text-muted small mb-3">Belum ada aspek penilaian
-                                                            </p>
-                                                            {% endif %}
+                                                            {% from 'shared/_aspect_list.html' import aspect_list %}
+                                                            {{ aspect_list(r.aspects, r.id, r.name, 'room') }}
                                                         </div>
 
                                                         <!-- Add Aspect (Batch) -->
@@ -1826,8 +1753,7 @@
                                             </td>
                                         </tr>
                                         {% endfor %}
-                                    </tbody>
-                                </table>
+                                {% endcall %}
                             </div>
                             {% else %}
                             <p class="text-muted mb-0">Belum ada ruangan</p>

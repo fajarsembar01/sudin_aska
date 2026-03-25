@@ -485,6 +485,25 @@ sudo systemctl restart ai-bot.service aska-dashboard.service aska-webapp.service
 
 ---
 
+## 📥 Panduan Ekstra: Download File dari Server (ke Lokal Mac)
+
+Gunakan perintah bawaan `scp` (*Secure Copy*) di Terminal Mac Anda (pastikan posisi **tidak sedang login (SSH)** di dalam server). 
+
+Format dasar:
+```bash
+scp -r <username_server>@<ip_server>:<lokasi_folder_server> <lokasi_tujuan_lokal>
+```
+
+**Contoh 1: Download folder `uploads` ke Desktop Mac (menggunakan username `root`)**
+```bash
+scp -r root@202.10.37.22:/opt/sudin_aska/uploads ~/Desktop/
+```
+Lalu masukkan password server Anda (*ketikan tidak akan terlihat, biarkan saja lalu tekan Enter*).
+
+> **💡 Tips:** Jika Anda telanjur berada di dalam server karena menjalankan perintah `ssh`, ketik `exit` lalu Enter untuk kembali ke Terminal Mac, baru jalankan perintah `scp` di atas.
+
+---
+
 ## 🧪 Troubleshooting Cepat
 
 | Gejala | Langkah cek cepat |

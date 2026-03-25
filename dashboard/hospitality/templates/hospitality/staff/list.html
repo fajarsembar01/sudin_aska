@@ -1,0 +1,129 @@
+{% extends "hospitality/base_hospitality.html" %}
+{% set page_title = "Hospitality - Penilaian Staff" %}
+
+{% block portal_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+  <div>
+    <h1 class="h4 fw-bold mb-1">Penilaian Hospitality</h1>
+    <p class="text-muted mb-0">Skala 1–{{ score_max }}, <span class="badge text-bg-warning">1x per sekolah per hari</span>.</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap" style="min-width:280px;">
+    <div class="position-relative flex-grow-1" style="min-width:240px;">
+      <input type="text" class="form-control" id="schoolSearch" placeholder="Cari sekolah (min 3 huruf/NPSN)" autocomplete="off">
+      <div class="list-group position-absolute w-100 shadow-sm d-none" id="schoolSearchResults" style="z-index:1030; max-height:260px; overflow:auto;"></div>
+    </div>
+    <button class="btn btn-primary" type="button" onclick="startAssessFromInput()"><i class="bi bi-plus-lg"></i> Mulai Penilaian</button>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <form class="d-flex gap-2 flex-wrap" method="get">
+    <input type="text" class="form-control" name="q" value="{{ search_query }}" placeholder="Cari sekolah/NPSN" style="min-width:200px;">
+    <select class="form-select" name="status" style="min-width:160px;">
+      <option value="">Semua status</option>
+      <option value="draft" {% if status_filter=='draft' %}selected{% endif %}>Draft</option>
+      <option value="submitted" {% if status_filter=='submitted' %}selected{% endif %}>Submitted</option>
+      <option value="verified" {% if status_filter=='verified' %}selected{% endif %}>Verified</option>
+      <option value="reopened" {% if status_filter=='reopened' %}selected{% endif %}>Reopened</option>
+    </select>
+    <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-funnel"></i> Filter</button>
+  </form>
+</div>
+
+{% if assessments %}
+<div class="table-responsive shadow-sm rounded-3 bg-white">
+  <table class="table align-middle mb-0">
+    <thead class="table-light">
+      <tr>
+        <th>Sekolah</th>
+        <th>Status</th>
+        <th>Dibuat</th>
+        <th>Verifikasi</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in assessments %}
+      <tr>
+        <td>
+          <div class="fw-semibold">{{ item.school_name }}</div>
+          <div class="text-muted small">NPSN {{ item.npsn }} • {{ item.jenjang }}</div>
+        </td>
+        <td><span class="badge text-bg-secondary text-uppercase">{{ item.status }}</span></td>
+        <td class="text-muted small">{{ item.created_at|jakarta }}</td>
+        <td class="text-muted small">{% if item.verified_at %}{{ item.verified_at|jakarta }}{% else %}-{% endif %}</td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('hospitality.assessment_detail', assessment_id=item.id) }}">Buka</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">Belum ada penilaian. Mulai dengan memasukkan ID sekolah di kanan atas.</div>
+{% endif %}
+
+<script>
+let selectedSchoolId = null;
+const searchInput = document.getElementById('schoolSearch');
+const resultsBox = document.getElementById('schoolSearchResults');
+
+async function fetchSchools(query){
+  const url = `/portal/api/schools/search?q=${encodeURIComponent(query)}`;
+  const res = await fetch(url);
+  if(!res.ok) return [];
+  return await res.json();
+}
+
+searchInput.addEventListener('input', async (e)=>{
+  const q = e.target.value.trim();
+  selectedSchoolId = null;
+  resultsBox.innerHTML = '';
+  if(q.length < 3){
+    resultsBox.classList.add('d-none');
+    return;
+  }
+  const data = await fetchSchools(q);
+  if(!data.length){
+    resultsBox.classList.add('d-none');
+    return;
+  }
+  resultsBox.classList.remove('d-none');
+  data.forEach(item=>{
+    const a = document.createElement('a');
+    a.href = '#';
+    a.className = 'list-group-item list-group-item-action';
+    a.textContent = `${item.name} (NPSN ${item.npsn}) • ${item.jenjang}`;
+    a.dataset.id = item.id;
+    a.addEventListener('click',(ev)=>{
+      ev.preventDefault();
+      selectedSchoolId = item.id;
+      searchInput.value = `${item.name} - ${item.npsn}`;
+      resultsBox.classList.add('d-none');
+      startAssessFromInput();
+    });
+    resultsBox.appendChild(a);
+  });
+});
+
+document.addEventListener('click', (e)=>{
+  if(!resultsBox.contains(e.target) && e.target !== searchInput){
+    resultsBox.classList.add('d-none');
+  }
+});
+
+function startAssessFromInput(){
+  if(!selectedSchoolId){
+    const raw = searchInput.value.trim();
+    if(raw.length === 0) return;
+    const maybeId = parseInt(raw, 10);
+    if(!isNaN(maybeId)){
+      selectedSchoolId = maybeId;
+    }
+  }
+  if(!selectedSchoolId) return;
+  window.location.href = `/hospitality/staff/assess/${selectedSchoolId}`;
+}
+</script>
+{% endblock %}

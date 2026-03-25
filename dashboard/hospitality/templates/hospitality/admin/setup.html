@@ -1,0 +1,421 @@
+{% extends "hospitality/base_hospitality.html" %}
+{% from 'shared/_setup_table.html' import setup_list_header, setup_table %}
+{% set page_title = "Setup Komponen & Aspek Hospitality" %}
+
+{% block portal_content %}
+<section class="mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+      <a href="{{ url_for('hospitality.admin_home') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div>
+        <h1 class="h4 fw-bold mb-0">Setup Komponen & Aspek Hospitality</h1>
+        <p class="text-muted mb-0 small">Kelola komponen dan aspek penilaian hospitality</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12 d-lg-none">
+      <button class="btn btn-outline-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#setupFormPane" aria-expanded="false" aria-controls="setupFormPane">
+        <i class="bi bi-gear me-1"></i> Tampilkan Form Setup
+      </button>
+    </div>
+
+    <div class="col-lg-4 collapse d-lg-block" id="setupFormPane" style="position: sticky; top: 80px; align-self: flex-start;">
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <ul class="nav nav-pills nav-fill mb-3" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="addComponentTab" data-bs-toggle="pill" data-bs-target="#addComponentPane" type="button" role="tab">
+                <i class="bi bi-sliders me-1"></i>Komponen
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="addAspectTab" data-bs-toggle="pill" data-bs-target="#addAspectPane" type="button" role="tab">
+                <i class="bi bi-list-check me-1"></i>Aspek
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content">
+            <div class="tab-pane fade show active" id="addComponentPane" role="tabpanel">
+              <form method="post" action="{{ url_for('hospitality.admin_create_component') }}">
+                <div class="row g-2">
+                  <div class="col-12">
+                    <input type="text" name="name" class="form-control form-control-sm" placeholder="Nama komponen" required>
+                  </div>
+                  <div class="col-12">
+                    <input type="text" name="description" class="form-control form-control-sm" placeholder="Deskripsi (opsional)">
+                  </div>
+                  <div class="col-6">
+                    <input type="number" name="sort_order" class="form-control form-control-sm" placeholder="Urutan" value="0">
+                  </div>
+                  <div class="col-6 form-check form-switch mt-2">
+                    <input class="form-check-input" type="checkbox" name="is_required" id="addCompReq" checked>
+                    <label class="form-check-label" for="addCompReq">Wajib</label>
+                  </div>
+                  <div class="col-12">
+                    <button class="btn btn-primary btn-sm w-100" type="submit"><i class="bi bi-plus-lg me-1"></i>Tambah Komponen</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <div class="tab-pane fade" id="addAspectPane" role="tabpanel">
+              <form method="post" action="{{ url_for('hospitality.admin_create_aspect') }}">
+                <div class="row g-2">
+                  <div class="col-12">
+                    <select name="component_id" class="form-select form-select-sm" required>
+                      <option value="">-- Pilih Komponen --</option>
+                      {% for comp in components %}
+                      <option value="{{ comp.id }}">{{ comp.name }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-12">
+                    <input type="text" name="name" class="form-control form-control-sm" placeholder="Nama aspek" required>
+                  </div>
+                  <div class="col-12">
+                    <input type="text" name="description" class="form-control form-control-sm" placeholder="Deskripsi (opsional)">
+                  </div>
+                  <div class="col-6">
+                    <input type="number" name="sort_order" class="form-control form-control-sm" placeholder="Urutan" value="0">
+                  </div>
+                  <div class="col-6 form-check form-switch mt-2">
+                    <input class="form-check-input" type="checkbox" name="is_required" id="addAspectReq" checked>
+                    <label class="form-check-label" for="addAspectReq">Wajib</label>
+                  </div>
+                  <div class="col-12">
+                    <button class="btn btn-primary btn-sm w-100" type="submit"><i class="bi bi-plus-lg me-1"></i>Tambah Aspek</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent py-3">
+          <ul class="nav nav-tabs card-header-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="componentsListTab" data-bs-toggle="tab" data-bs-target="#componentsListPane" type="button" role="tab">
+                <i class="bi bi-sliders me-1"></i>Daftar Komponen & Aspek
+                <span class="badge bg-success ms-1">{{ components|length }}</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+        <div class="card-body" style="max-height: 65vh; overflow-y: auto;">
+          <div class="tab-content">
+            <div class="tab-pane fade show active" id="componentsListPane" role="tabpanel">
+              {{ setup_list_header('componentCount', components|length, 'komponen terdaftar', 'componentSearch', 'Cari komponen/aspek...') }}
+
+              {% if components %}
+              <div class="table-responsive">
+                <style>
+                  #componentsTable {
+                    background: var(--bg-surface);
+                    border-radius: 12px;
+                    overflow: hidden;
+                    border: 1px solid var(--border-soft);
+                  }
+
+                  #componentsTable thead th {
+                    background: var(--bg-subtle);
+                    font-weight: 700;
+                    color: var(--text-primary);
+                    border-bottom: 1px solid var(--border-soft);
+                  }
+
+                  #componentsTable tbody tr {
+                    background: var(--bg-surface);
+                  }
+
+                  #componentsTable tbody td {
+                    background: inherit;
+                    color: var(--text-primary);
+                    border: none !important;
+                  }
+
+                  #componentsTable.table>:not(caption)>*>* {
+                    border-bottom: 0 !important;
+                    box-shadow: none !important;
+                  }
+
+                  #componentsTable tbody tr:hover td {
+                    background: var(--bg-subtle);
+                  }
+
+                  #componentsTable tr.collapse>td {
+                    border: 0 !important;
+                    border-bottom: 0 !important;
+                    padding-top: 0;
+                    padding-bottom: 0;
+                  }
+
+                  #componentsTable tbody tr.component-inactive td {
+                    background: var(--bg-subtle);
+                    color: var(--text-muted);
+                  }
+                </style>
+
+                {% set component_headers = [
+                  {'label': 'Nama Komponen', 'width': '36%'},
+                  {'label': 'Aspek', 'width': '12%'},
+                  {'label': 'Status', 'width': '12%'},
+                  {'label': 'Wajib', 'width': '12%'},
+                  {'label': 'Aksi', 'width': '28%', 'align': 'end'}
+                ] %}
+                {% call setup_table('componentsTable', 'componentsTableBody', component_headers) %}
+                  {% for comp in components %}
+                    <tr id="component-{{ comp.id }}" class="component-row {% if not comp.active %}component-inactive{% endif %}"
+                        data-component-name="{{ comp.name|lower }}"
+                        data-component-aspects="{{ comp.aspects|map(attribute='name')|join(', ')|lower }}">
+                      <td data-label="Komponen">
+                        <div class="d-flex align-items-center gap-2">
+                          <span class="icon-badge text-success">
+                            <i class="bi bi-sliders"></i>
+                          </span>
+                          <div>
+                            <div class="fw-semibold">{{ comp.name }}</div>
+                            {% if comp.description %}<small class="text-muted">{{ comp.description }}</small>{% endif %}
+                          </div>
+                        </div>
+                      </td>
+                      <td data-label="Aspek"><span class="badge bg-primary">{{ comp.aspects|length }}</span></td>
+                      <td data-label="Status">
+                        <form method="post" action="{{ url_for('hospitality.admin_toggle_component_active', component_id=comp.id) }}" class="d-inline">
+                          <button type="submit" class="btn btn-sm d-inline-flex align-items-center gap-1 {% if comp.active %}btn-success{% else %}btn-outline-secondary{% endif %}">
+                            <i class="bi {% if comp.active %}bi-toggle-on{% else %}bi-toggle-off{% endif %}"></i>
+                            <span>{% if comp.active %}On{% else %}Off{% endif %}</span>
+                          </button>
+                        </form>
+                      </td>
+                      <td data-label="Wajib">
+                        <form method="post" action="{{ url_for('hospitality.admin_toggle_component_required', component_id=comp.id) }}" class="d-inline">
+                          <button type="submit" class="btn btn-sm d-inline-flex align-items-center gap-1 {% if comp.is_required %}btn-success{% else %}btn-outline-secondary{% endif %}">
+                            <i class="bi {% if comp.is_required %}bi-toggle-on{% else %}bi-toggle-off{% endif %}"></i>
+                            <span>{% if comp.is_required %}On{% else %}Off{% endif %}</span>
+                          </button>
+                        </form>
+                      </td>
+                      <td class="text-end" data-label="Aksi">
+                        <div class="btn-group btn-group-sm">
+                          <button type="button" class="btn btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#componentDetail{{ comp.id }}" title="Lihat Detail">
+                            <i class="bi bi-chevron-down"></i>
+                          </button>
+                          <form method="post" action="{{ url_for('hospitality.admin_delete_component', component_id=comp.id) }}" onsubmit="return confirm('Hapus/nonaktifkan komponen ini?');">
+                            <button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr class="collapse" id="componentDetail{{ comp.id }}">
+                      <td colspan="5">
+                        <div class="p-3 border rounded mb-3">
+                          <form method="post" action="{{ url_for('hospitality.admin_update_component', component_id=comp.id) }}" class="row g-2 align-items-end">
+                            <div class="col-md-4">
+                              <label class="form-label small mb-1">Nama</label>
+                              <input type="text" name="name" class="form-control form-control-sm" value="{{ comp.name }}" required>
+                            </div>
+                            <div class="col-md-4">
+                              <label class="form-label small mb-1">Deskripsi</label>
+                              <input type="text" name="description" class="form-control form-control-sm" value="{{ comp.description }}">
+                            </div>
+                            <div class="col-md-2">
+                              <label class="form-label small mb-1">Urutan</label>
+                              <input type="number" name="sort_order" class="form-control form-control-sm" value="{{ comp.sort_order }}">
+                            </div>
+                            <div class="col-md-1">
+                              <label class="form-label small mb-1">Wajib</label>
+                              <div class="form-check mt-1">
+                                <input class="form-check-input" type="checkbox" name="is_required" {% if comp.is_required %}checked{% endif %}>
+                                <label class="form-check-label small"></label>
+                              </div>
+                            </div>
+                            <div class="col-md-1">
+                              <label class="form-label small mb-1">Status</label>
+                              <div class="form-check mt-1">
+                                <input class="form-check-input" type="checkbox" name="active" {% if comp.active %}checked{% endif %}>
+                                <label class="form-check-label small"></label>
+                              </div>
+                            </div>
+                            <div class="col-md-2 d-flex">
+                              <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-check-lg me-1"></i>Simpan</button>
+                            </div>
+                          </form>
+                        </div>
+
+                        <div class="border-top pt-3">
+                          <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold small">
+                              <i class="bi bi-list-check text-primary me-1"></i>
+                              Aspek Penilaian (<span id="component-aspects-count-{{ comp.id }}">{{ comp.aspects|length }}</span>)
+                            </span>
+                          </div>
+                          <div class="row g-1 mb-2 aspect-list" id="component-aspects-{{ comp.id }}" data-component-id="{{ comp.id }}" data-component-name="{{ comp.name }}">
+                            {% from 'shared/_aspect_list.html' import aspect_list %}
+                            {{ aspect_list(comp.aspects, comp.id, comp.name, 'component') }}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% endcall %}
+              </div>
+              {% else %}
+              <div class="alert alert-info">Belum ada komponen. Tambah komponen di panel kiri.</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="modal fade" id="deleteAspectModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Hapus Aspek</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0">Hapus aspek <span class="fw-semibold" id="deleteAspectName">aspek</span> dari komponen <span class="fw-semibold" id="deleteAspectComponent">komponen</span>?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+        <form method="post" id="deleteAspectForm">
+          <button type="submit" class="btn btn-danger">Hapus</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editAspectModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Aspek</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form method="post" id="editAspectForm">
+          <div class="mb-2">
+            <label class="form-label small">Nama Aspek</label>
+            <input type="text" class="form-control" name="name" id="editAspectNameInput" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Deskripsi</label>
+            <input type="text" class="form-control" name="description" id="editAspectDescInput">
+          </div>
+          <div class="row g-2">
+            <div class="col-4">
+              <label class="form-label small">Urutan</label>
+              <input type="number" class="form-control" name="sort_order" id="editAspectOrderInput" value="0">
+            </div>
+            <div class="col-4">
+              <label class="form-label small">Aktif</label>
+              <div class="form-check mt-1">
+                <input class="form-check-input" type="checkbox" name="active" id="editAspectActiveInput">
+                <label class="form-check-label" for="editAspectActiveInput"></label>
+              </div>
+            </div>
+            <div class="col-4">
+              <label class="form-label small">Wajib</label>
+              <div class="form-check mt-1">
+                <input class="form-check-input" type="checkbox" name="is_required" id="editAspectRequiredInput">
+                <label class="form-check-label" for="editAspectRequiredInput"></label>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="submit" form="editAspectForm" class="btn btn-primary">Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const searchInput = document.getElementById('componentSearch');
+  const rows = Array.from(document.querySelectorAll('tr.component-row'));
+  const countEl = document.getElementById('componentCount');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.trim().toLowerCase();
+      let visible = 0;
+      rows.forEach(row => {
+        const name = row.dataset.componentName || '';
+        const aspects = row.dataset.componentAspects || '';
+        const match = !q || name.includes(q) || aspects.includes(q);
+        row.style.display = match ? '' : 'none';
+        const detail = document.getElementById(`componentDetail${row.id.replace('component-','')}`);
+        if (detail) detail.style.display = match ? '' : 'none';
+        if (match) visible += 1;
+      });
+      if (countEl) countEl.textContent = String(visible);
+    });
+  }
+
+  const deleteModal = document.getElementById('deleteAspectModal');
+  const editModal = document.getElementById('editAspectModal');
+  const deleteForm = document.getElementById('deleteAspectForm');
+  const deleteName = document.getElementById('deleteAspectName');
+  const deleteComponent = document.getElementById('deleteAspectComponent');
+  const editForm = document.getElementById('editAspectForm');
+  const editName = document.getElementById('editAspectNameInput');
+  const editDesc = document.getElementById('editAspectDescInput');
+  const editOrder = document.getElementById('editAspectOrderInput');
+  const editActive = document.getElementById('editAspectActiveInput');
+  const editRequired = document.getElementById('editAspectRequiredInput');
+
+  document.querySelectorAll('[data-delete-aspect]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const aspectId = btn.getAttribute('data-delete-aspect');
+      const aspectName = btn.getAttribute('data-aspect-name') || 'aspek';
+      const componentName = btn.getAttribute('data-component-name') || 'komponen';
+      if (deleteName) deleteName.textContent = aspectName;
+      if (deleteComponent) deleteComponent.textContent = componentName;
+      if (deleteForm) deleteForm.setAttribute('action', `/hospitality/admin/setup/aspect/${aspectId}/delete`);
+      if (deleteModal) new bootstrap.Modal(deleteModal).show();
+    });
+  });
+
+  document.querySelectorAll('[data-edit-aspect]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const aspectId = btn.getAttribute('data-edit-aspect');
+      editName.value = btn.getAttribute('data-aspect-name') || '';
+      editDesc.value = btn.getAttribute('data-aspect-desc') || '';
+      editOrder.value = btn.getAttribute('data-aspect-order') || '0';
+      editActive.checked = (btn.getAttribute('data-aspect-active') || '').toLowerCase() === 'true';
+      editRequired.checked = (btn.getAttribute('data-aspect-required') || '').toLowerCase() === 'true';
+      editForm.setAttribute('action', `/hospitality/admin/setup/aspect/${aspectId}`);
+      if (editModal) new bootstrap.Modal(editModal).show();
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    const badge = e.target.closest('.aspect-required-badge');
+    if (!badge) return;
+    const aspectId = badge.getAttribute('data-aspect-id');
+    if (!aspectId) return;
+    const form = document.createElement('form');
+    form.method = 'post';
+    form.action = `/hospitality/admin/setup/aspect/${aspectId}/toggle-required`;
+    document.body.appendChild(form);
+    form.submit();
+  });
+})();
+</script>
+{% endblock %}
