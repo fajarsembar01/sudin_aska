@@ -465,17 +465,7 @@ def create_app() -> Flask:
             return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
 
         def _is_valid_student_class(value: str) -> bool:
-            if not value:
-                return False
-            match = re.search(r"(\d{1,2})\s*([A-Za-z])?", value)
-            if not match:
-                return False
-            grade, letter = match.groups()
-            if grade not in allowed_grades:
-                return False
-            if letter and letter.upper() not in allowed_letters:
-                return False
-            return True
+            return bool((value or "").strip())
 
         if request.method == "POST":
             guest_type = (request.form.get("guest_type") or "umum").strip().lower()
@@ -536,7 +526,7 @@ def create_app() -> Flask:
                     student_name = (guest.get("student_name") or "").strip()
                     if is_parent:
                         if not student_class or not _is_valid_student_class(student_class):
-                            error = "Kelas siswa wajib dipilih dari daftar yang tersedia."
+                            error = "Kelas siswa wajib diisi."
                             break
                         if not student_name:
                             error = "Nama siswa wajib diisi untuk wali murid."
