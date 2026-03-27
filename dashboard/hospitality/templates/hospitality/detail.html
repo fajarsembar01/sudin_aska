@@ -316,7 +316,7 @@ portal_content %} {# ── Flash messages
             approve_endpoint='hospitality.approve_reopen',
             reject_endpoint='hospitality.reject_reopen',
             allow_statuses=['submitted', 'verified'], request_roles=['staff'],
-            admin_roles=['admin', 'coordinator'],
+            admin_roles=['admin'],
             csrf_token_value=(csrf_token() if csrf_token is defined else None) )
             }} {# Admin zone ─────────────────────────────────────────── #} {%
             if user_role in ['admin', 'coordinator'] and assessment.status !=

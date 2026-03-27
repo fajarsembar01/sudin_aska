@@ -494,49 +494,49 @@ def admin_select_role() -> Response:
     cards = [
         {
             "title": "ASKA Insight",
-            "description": "Dashboard analitik dan pemantauan data.",
+            "description": "Pantau data dan ringkasan aktivitas.",
             "icon": "bi-graph-up-arrow",
             "href": url_for("main.dashboard"),
         },
         {
             "title": "PANBERSS",
-            "description": "Dashboard pemantauan kebersihan dan sarana sekolah.",
+            "description": "Pantau kebersihan dan sarana sekolah.",
             "icon": "bi-building",
             "href": url_for("portal.home"),
         },
         {
             "title": "Hospitality",
-            "description": "Penilaian hospitality terhubung buku tamu.",
+            "description": "Pantau dan nilai layanan hospitality.",
             "icon": "bi-house-heart",
             "href": url_for("hospitality.admin_home"),
         },
         {
             "title": "Daftar Tamu",
-            "description": "Dashboard pemantauan kunjungan tamu sekolah.",
+            "description": "Pantau kunjungan tamu sekolah.",
             "icon": "bi-person-vcard",
             "href": url_for("daftar_tamu.admin_dashboard"),
         },
         {
             "title": "Call Center",
-            "description": "Layanan operasional dan notifikasi admin.",
+            "description": "Pantau operasional dan pesan masuk.",
             "icon": "bi-headset",
             "href": url_for("call_center.inbox"),
         },
         {
             "title": "Content Management",
-            "description": "Kelola konten dan informasi Sudin Pendidikan.",
+            "description": "Kelola berita dan informasi Sudin.",
             "icon": "bi-newspaper",
             "href": url_for("cms.dashboard"),
         },
     ]
-    # Layout fleksibel: 1–3 card = 1 baris; 4+ card = 2 baris (2-2)
+    # Layout fleksibel: desktop 3 kolom, tablet 2 kolom, mobile 1 kolom
     n = len(cards)
     if n >= 4:
-        default_col_class = "col-md-6 col-12"
+        default_col_class = "col-lg-4 col-md-6 col-12"
     elif n == 3:
-        default_col_class = "col-md-4 col-12"
+        default_col_class = "col-lg-4 col-md-6 col-12"
     elif n == 2:
-        default_col_class = "col-md-6 col-12"
+        default_col_class = "col-lg-6 col-md-6 col-12"
     else:
         default_col_class = "col-12"
     return render_template(

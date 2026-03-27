@@ -17,7 +17,7 @@
    - [5.4 Staff — Verifikasi (Menghubungkan Buku Tamu)](#54-staff--verifikasi-menghubungkan-buku-tamu)
    - [5.5 Sekolah — Melihat & Merespons Penilaian](#55-sekolah--melihat--merespons-penilaian)
    - [5.6 Admin / Koordinator — Memantau Dashboard](#56-admin--koordinator--memantau-dashboard)
-   - [5.7 Admin / Koordinator — Mengelola Reopen Request](#57-admin--koordinator--mengelola-reopen-request)
+   - [5.7 Admin — Mengelola Reopen Request](#57-admin--mengelola-reopen-request)
 6. [Alur Reopen (Buka Ulang Penilaian)](#6-alur-reopen-buka-ulang-penilaian)
 7. [Sistem Notifikasi](#7-sistem-notifikasi)
 8. [Referensi URL & Route](#8-referensi-url--route)
@@ -135,7 +135,7 @@ Sistem menolak keras jika transaksi belum `approved`, bahkan jika ID transaksi d
 | Hubungkan buku tamu (verifikasi) | ✅** | ❌ | ❌ | ❌ |
 | Tambah komentar | ✅ | ✅ | ✅ | ✅ |
 | Ajukan reopen | ✅ | ❌ | ❌ | ❌ |
-| Setujui / tolak reopen | ❌ | ❌ | ✅ | ✅ |
+| Setujui / tolak reopen | ❌ | ❌ | ❌ | ✅ |
 | Dashboard statistik | ❌ | ❌ | ✅ | ✅ |
 | Setup komponen/aspek | ❌ | ❌ | ✅ | ✅ |
 | Export CSV | ❌ | ❌ | ✅ | ✅ |
@@ -405,7 +405,7 @@ Admin bisa mencocokkan data di modul Daftar Tamu untuk tindak lanjut.
 
 ---
 
-### 5.7 Admin / Koordinator — Mengelola Reopen Request
+### 5.7 Admin — Mengelola Reopen Request
 
 #### Via Dashboard (`/hospitality/admin`)
 

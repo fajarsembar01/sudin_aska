@@ -348,7 +348,7 @@ def request_reopen(assessment_id: int) -> Response:
 
 
 @hospitality_bp.route("/admin/reopen/<int:request_id>/update", methods=["POST"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def handle_reopen_request(request_id: int) -> Response:
     status = request.form.get("status", "").lower()
     note = (request.form.get("note") or "").strip() or None
@@ -356,7 +356,7 @@ def handle_reopen_request(request_id: int) -> Response:
 
 
 @hospitality_bp.route("/admin/reopen/<int:assessment_id>/approve", methods=["POST"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def approve_reopen(assessment_id: int) -> Response:
     request_id = request.form.get("request_id", type=int)
     if not request_id:
@@ -369,7 +369,7 @@ def approve_reopen(assessment_id: int) -> Response:
 
 
 @hospitality_bp.route("/admin/reopen/<int:assessment_id>/reject", methods=["POST"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def reject_reopen(assessment_id: int) -> Response:
     request_id = request.form.get("request_id", type=int)
     if not request_id:
