@@ -32,6 +32,13 @@ portal_content %} {# ===== HERO SECTION ===== #}
                         <span>Reopen Request</span>
                     </a>
                     <a
+                        href="{{ url_for('hospitality.guestbook_review_dashboard') }}"
+                        class="btn btn-outline-primary d-inline-flex align-items-center gap-2"
+                    >
+                        <i class="bi bi-star-half"></i>
+                        <span>Review Pelayanan</span>
+                    </a>
+                    <a
                         href="{{ url_for('hospitality.admin_export_csv') }}"
                         class="btn btn-outline-success d-inline-flex align-items-center gap-2"
                     >
@@ -349,7 +356,7 @@ portal_content %} {# ===== HERO SECTION ===== #}
                     >
                         {% if p.photo_path %}
                         <img
-                            src="/{{ p.photo_path }}"
+                            src="{{ url_for('portal.uploaded_file', filename=p.photo_path.replace('uploads/portal/', '')) }}"
                             class="w-100 h-100 object-fit-cover"
                             alt="Foto {{ p.school_name }}"
                             loading="lazy"
@@ -462,6 +469,8 @@ portal_content %} {# ===== HERO SECTION ===== #}
         "sliders", url_for('hospitality.admin_setup')) }} {{
         quick_action("Permintaan Reopen", "arrow-counterclockwise",
         url_for('hospitality.admin_reopen_requests'), "warning") }} {{
+        quick_action("Review Pelayanan", "star-half",
+        url_for('hospitality.guestbook_review_dashboard'), "primary") }} {{
         quick_action("Export CSV", "file-earmark-excel",
         url_for('hospitality.admin_export_csv'), "secondary") }} {{
         quick_action("Dashboard Utama (PANBERSS)", "speedometer2",

@@ -402,6 +402,33 @@ CREATE INDEX IF NOT EXISTS idx_portal_preview_pins_admin
 ON portal_preview_pins (admin_user_id);
 """
 
+_HOSPITALITY_GUESTBOOK_REVIEWS_SQL = """
+CREATE TABLE IF NOT EXISTS hospitality_guestbook_reviews (
+    id SERIAL PRIMARY KEY,
+    transaction_id INTEGER NOT NULL REFERENCES daftar_tamu_general_transactions(id) ON DELETE CASCADE,
+    school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+    review_token TEXT NOT NULL UNIQUE,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed')),
+    rating SMALLINT,
+    comment TEXT,
+    completed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT hospitality_guestbook_reviews_rating_check CHECK (rating IS NULL OR rating BETWEEN 1 AND 5)
+);
+"""
+
+_HOSPITALITY_GUESTBOOK_REVIEWS_INDEX_SQL = """
+CREATE UNIQUE INDEX IF NOT EXISTS uq_hosp_guestbook_reviews_transaction
+ON hospitality_guestbook_reviews (transaction_id);
+CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_school
+ON hospitality_guestbook_reviews (school_id);
+CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_status
+ON hospitality_guestbook_reviews (status);
+CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_completed_at
+ON hospitality_guestbook_reviews (completed_at DESC);
+"""
+
 _PORTAL_SCHOOLS_SQL = """
 CREATE TABLE IF NOT EXISTS portal_schools (
     id SERIAL PRIMARY KEY,
@@ -1074,6 +1101,8 @@ def ensure_dashboard_schema() -> None:
         _PORTAL_UI_SETTINGS_SQL,
         _PORTAL_PREVIEW_PINS_SQL,
         _PORTAL_PREVIEW_PINS_INDEX_SQL,
+        _HOSPITALITY_GUESTBOOK_REVIEWS_SQL,
+        _HOSPITALITY_GUESTBOOK_REVIEWS_INDEX_SQL,
         _PORTAL_SCHOOLS_SQL,
         _PORTAL_SCHOOLS_INDEX_SQL,
         _PORTAL_ROOMS_SQL,

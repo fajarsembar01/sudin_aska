@@ -26,6 +26,8 @@ from db import (
     get_whatsapp_user_status,
     get_portal_school_by_npsn,
     create_public_guestbook_transaction,
+    get_public_guestbook_review_by_token,
+    submit_public_guestbook_review,
     find_general_guest_by_phone,
     list_guestbook_purpose_keywords,
     list_guestbook_contact_priorities,
@@ -33,7 +35,7 @@ from db import (
 from account_status import BLOCKING_STATUSES, build_status_notice, ACCOUNT_STATUS_ACTIVE
 from responses import detect_bullying_category, is_corruption_report_intent
 from reporting_flags import reporting_enabled
-from utils import normalize_input, replace_bot_mentions
+from utils import normalize_input, replace_bot_mentions, to_jakarta
 
 LIMIT_BLOCK_MESSAGE = (
     f"Ups! Kuota {DEFAULT_LIMITED_QUOTA} chat untuk akses Gmail sudah habis. "
@@ -81,6 +83,16 @@ def create_app() -> Flask:
         server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
         client_kwargs={"scope": "openid email profile"},
     )
+
+    @app.template_filter("jakarta")
+    def format_jakarta(value, fmt="%d %b %Y %H:%M"):
+        if value is None:
+            return ""
+        dt = to_jakarta(value)
+        try:
+            return dt.strftime(fmt)
+        except Exception:
+            return ""
 
     def _add_no_cache_headers(response):
         response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
@@ -233,6 +245,55 @@ def create_app() -> Flask:
 
     def _guestbook_class_letters() -> list[str]:
         return [chr(code) for code in range(ord("A"), ord("Z") + 1)]
+
+    def _guestbook_review_summary(review: dict | None, fallback_summary: dict | None = None) -> dict:
+        if not review:
+            return fallback_summary or {"names": [], "count": 0}
+        names_raw = review.get("guest_names") or ""
+        names = [name.strip() for name in str(names_raw).split(",") if name.strip()]
+        try:
+            count = int(review.get("guest_count") or len(names))
+        except (TypeError, ValueError):
+            count = len(names)
+        if not count and names:
+            count = len(names)
+        return {
+            "names": names,
+            "count": count,
+        }
+
+    def _guestbook_review_primary_name(summary: dict | None) -> str:
+        names = (summary or {}).get("names") or []
+        if names:
+            return names[0]
+        return "Tamu Umum"
+
+    def _activate_guest_chat_session(review: dict, summary: dict | None) -> None:
+        transaction_id = review.get("transaction_id")
+        session["guest_chat_tx_id"] = transaction_id
+        session["guest_chat_remaining"] = 2
+        session["guest_chat_npsn"] = review.get("npsn")
+        session["guest_chat_summary"] = summary or {"names": [], "count": 0}
+        session["guest_chat_name"] = _guestbook_review_primary_name(summary)
+        session.pop("guest_review_tx_id", None)
+        session.pop("guest_review_token", None)
+        session.pop("guest_review_npsn", None)
+        session.pop("guest_review_school_name", None)
+        session.pop("guest_review_summary", None)
+        session.pop("guest_chat_user_id", None)
+        session.modified = True
+
+    def _pending_guest_review_redirect(review_token: str | None) -> str | None:
+        pending_tx = session.get("guest_review_tx_id")
+        pending_token = (session.get("guest_review_token") or "").strip()
+        if not pending_tx or not pending_token:
+            return None
+        if review_token and pending_token != review_token:
+            return None
+        pending_npsn = (session.get("guest_review_npsn") or "").strip()
+        if not pending_npsn:
+            return None
+        return url_for("buku_tamu_review", npsn=pending_npsn, review_token=pending_token)
 
     def _sync_session_quota(quota_state: dict | None) -> None:
         if "user" not in session or not quota_state:
@@ -564,7 +625,7 @@ def create_app() -> Flask:
                         "source": "web_aska",
                     }
                     try:
-                        transaction_id = create_public_guestbook_transaction(
+                        transaction_result = create_public_guestbook_transaction(
                             school_id=school["id"],
                             purpose=purpose or None,
                             notes=notes or None,
@@ -575,20 +636,24 @@ def create_app() -> Flask:
                         error = f"Gagal mengirim buku tamu: {exc}"
                     else:
                         guest_names = [g.get("full_name") for g in guests if g.get("full_name")]
-                        guest_user_id = session.get("guest_chat_user_id")
-                        if not guest_user_id:
-                            guest_user_id = -1 * (secrets.randbelow(1_000_000_000) + 1)
-                            session["guest_chat_user_id"] = guest_user_id
-                        session["guest_chat_remaining"] = 2
-                        session["guest_chat_tx_id"] = transaction_id
-                        session["guest_chat_npsn"] = school.get("npsn")
-                        session["guest_chat_summary"] = {
+                        transaction_id = transaction_result.get("transaction_id")
+                        review_token = transaction_result.get("review_token")
+                        session.pop("guest_chat_tx_id", None)
+                        session.pop("guest_chat_remaining", None)
+                        session.pop("guest_chat_npsn", None)
+                        session.pop("guest_chat_summary", None)
+                        session.pop("guest_chat_name", None)
+                        session.pop("guest_chat_user_id", None)
+                        session["guest_review_tx_id"] = transaction_id
+                        session["guest_review_token"] = review_token
+                        session["guest_review_npsn"] = school.get("npsn")
+                        session["guest_review_school_name"] = school.get("name")
+                        session["guest_review_summary"] = {
                             "names": guest_names,
                             "count": len(guest_names),
                         }
-                        session["guest_chat_name"] = guest_names[0] if guest_names else "Tamu Umum"
                         session.modified = True
-                        return redirect(url_for("buku_tamu_selesai", npsn=school.get("npsn"), tx=transaction_id))
+                        return redirect(url_for("buku_tamu_review", npsn=school.get("npsn"), review_token=review_token))
 
         return render_template(
             "buku_tamu.html",
@@ -610,6 +675,79 @@ def create_app() -> Flask:
             "guest": guest,
         })
 
+    @app.route("/buku-tamu/<npsn>/review/<review_token>", methods=["GET", "POST"])
+    def buku_tamu_review(npsn: str, review_token: str):
+        school = get_portal_school_by_npsn(npsn)
+        review = get_public_guestbook_review_by_token(review_token)
+        error = None
+
+        if not school or not school.get("active"):
+            error = "Sekolah tidak ditemukan atau nonaktif."
+        elif not review:
+            error = "Link review tidak ditemukan atau sudah tidak valid."
+        elif (review.get("npsn") or "").strip() != (school.get("npsn") or "").strip():
+            error = "Link review tidak sesuai dengan sekolah yang dipilih."
+
+        if error:
+            return render_template(
+                "buku_tamu_review.html",
+                school=school,
+                review=None,
+                summary={"names": [], "count": 0},
+                review_url=None,
+                review_completed=False,
+                can_chat=False,
+                error=error,
+            ), 404
+
+        review_status = (review.get("review_status") or review.get("status") or "").strip().lower()
+        summary = _guestbook_review_summary(review, session.get("guest_review_summary"))
+        review_url = url_for("buku_tamu_review", npsn=npsn, review_token=review_token)
+        chat_url = url_for("buku_tamu_selesai", npsn=npsn, tx=review.get("transaction_id"))
+        can_chat = int(session.get("guest_chat_tx_id") or 0) == int(review.get("transaction_id") or 0)
+
+        if request.method == "POST" and review_status != "completed":
+            rating_raw = (request.form.get("rating") or "").strip()
+            comment = (request.form.get("comment") or "").strip()
+            try:
+                rating = int(rating_raw)
+            except (TypeError, ValueError):
+                rating = 0
+            if rating < 1 or rating > 5:
+                error = "Pilih rating bintang 1 sampai 5 dulu."
+            else:
+                try:
+                    submit_public_guestbook_review(
+                        review_token=review_token,
+                        rating=rating,
+                        comment=comment or None,
+                    )
+                except Exception as exc:
+                    error = f"Gagal menyimpan review: {exc}"
+                else:
+                    fresh_review = get_public_guestbook_review_by_token(review_token) or review
+                    summary = _guestbook_review_summary(fresh_review, summary)
+                    _activate_guest_chat_session(fresh_review, summary)
+                    return redirect(chat_url)
+
+        if review_status == "completed":
+            if not can_chat:
+                _activate_guest_chat_session(review, summary)
+            return redirect(chat_url)
+
+        completed = review_status == "completed"
+        return render_template(
+            "buku_tamu_review.html",
+            school=school,
+            review=review,
+            summary=summary,
+            review_url=review_url,
+            review_completed=completed,
+            can_chat=can_chat,
+            chat_url=chat_url,
+            error=error,
+        )
+
     @app.route("/buku-tamu/<npsn>/selesai")
     def buku_tamu_selesai(npsn: str):
         school = get_portal_school_by_npsn(npsn)
@@ -617,6 +755,7 @@ def create_app() -> Flask:
         can_chat = False
         remaining = 0
         summary = session.get("guest_chat_summary") or {}
+        review_redirect = _pending_guest_review_redirect(None)
         try:
             tx_id_int = int(tx_id) if tx_id else None
         except (TypeError, ValueError):
@@ -624,12 +763,16 @@ def create_app() -> Flask:
         if tx_id_int and session.get("guest_chat_tx_id") == tx_id_int:
             can_chat = True
             remaining = int(session.get("guest_chat_remaining") or 0)
+        if not can_chat and review_redirect:
+            return redirect(review_redirect)
         return render_template(
             "buku_tamu_selesai.html",
             school=school,
             can_chat=can_chat,
             remaining=remaining,
             summary=summary,
+            review_pending=bool(session.get("guest_review_tx_id") and session.get("guest_review_token")),
+            review_url=review_redirect,
         )
 
     @app.route("/api/guest-chat", methods=["POST"])

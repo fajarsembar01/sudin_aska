@@ -1,4 +1,6 @@
-﻿import os
+from __future__ import annotations
+
+import os
 from contextlib import contextmanager
 from typing import Generator, Optional
 
@@ -7,6 +9,15 @@ from psycopg2.extras import DictCursor
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+def _normalize_db_host(value: str | None) -> str | None:
+    clean = (value or "").strip()
+    if not clean:
+        return clean
+    if clean.lower() == "localhost":
+        return "127.0.0.1"
+    return clean
 
 REQUIRED_KEYS = [
     "DB_NAME",
@@ -30,23 +41,30 @@ conn_kwargs = dict(
     dbname=_DB_CONFIG["DB_NAME"],
     user=_DB_CONFIG["DB_USER"],
     password=_DB_CONFIG["DB_PASS"],
-    host=_DB_CONFIG["DB_HOST"],
+    host=_normalize_db_host(_DB_CONFIG["DB_HOST"]),
     port=_DB_CONFIG["DB_PORT"],
 )
 if optional_sslmode:
     conn_kwargs["sslmode"] = optional_sslmode
 
-_POOL: pool.SimpleConnectionPool = pool.SimpleConnectionPool(
-    minconn=1,
-    maxconn=int(os.getenv("DASHBOARD_DB_MAX_CONN", "8")),
-    **conn_kwargs,
-)
+_POOL: pool.SimpleConnectionPool | None = None
+
+
+def _get_pool() -> pool.SimpleConnectionPool:
+    global _POOL
+    if _POOL is None:
+        _POOL = pool.SimpleConnectionPool(
+            minconn=1,
+            maxconn=int(os.getenv("DASHBOARD_DB_MAX_CONN", "8")),
+            **conn_kwargs,
+        )
+    return _POOL
 
 
 @contextmanager
 def get_cursor(commit: bool = False) -> Generator[DictCursor, None, None]:
     """Yield a DictCursor from the shared connection pool."""
-    connection = _POOL.getconn()
+    connection = _get_pool().getconn()
     try:
         cursor = connection.cursor(cursor_factory=DictCursor)
         yield cursor
@@ -62,5 +80,7 @@ def get_cursor(commit: bool = False) -> Generator[DictCursor, None, None]:
 
 def shutdown_pool() -> None:
     """Close all pooled connections. Call from application teardown."""
+    global _POOL
     if _POOL:
         _POOL.closeall()
+        _POOL = None

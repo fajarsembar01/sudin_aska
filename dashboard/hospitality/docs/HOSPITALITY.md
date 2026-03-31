@@ -25,6 +25,7 @@
 10. [Konfigurasi Komponen & Aspek](#10-konfigurasi-komponen--aspek)
 11. [Export Data CSV](#11-export-data-csv)
 12. [Aturan Bisnis Penting](#12-aturan-bisnis-penting)
+13. [Checklist Rollout](#13-checklist-rollout)
 
 ---
 
@@ -83,6 +84,18 @@ Staff isi form penilaian           Tamu isi form Buku Tamu
 > - Penilaian hospitality (pengisian skor) **tidak membutuhkan** buku tamu sama sekali.
 > - Verifikasi (menghubungkan buku tamu) **hanya bisa dilakukan** setelah ada transaksi Buku Tamu berstatus `approved`.
 
+### Alur Review Pelayanan QR
+
+Untuk buku tamu umum yang dibuka via QR di `web_aska`, alurnya sekarang menjadi:
+
+1. Pengunjung mengisi buku tamu umum.
+2. Sistem menyimpan transaksi buku tamu terlebih dahulu.
+3. Sistem membuat review pelayanan dengan status `pending`.
+4. Pengunjung wajib memberi rating bintang 1-5 dan komentar opsional.
+5. Setelah review selesai, chat ASKA baru diaktifkan.
+
+Jika pengguna menutup halaman sebelum review selesai, transaksi tetap tersimpan dan halaman review tetap bisa dibuka lagi dari session browser yang sama.
+
 ### Mengapa Buku Tamu Diperlukan untuk Verifikasi?
 
 Buku Tamu berfungsi sebagai **bukti fisik** bahwa kunjungan benar-benar terjadi. Tanpa transaksi yang sudah disetujui, penilaian akan tetap berstatus `submitted` dan tidak bisa dianggap terverifikasi.
@@ -133,6 +146,8 @@ Sistem menolak keras jika transaksi belum `approved`, bahkan jika ID transaksi d
 | Buat penilaian hospitality | ✅ | ❌ | ❌ | ❌ |
 | Lihat penilaian | ✅* | ✅* | ✅ | ✅ |
 | Hubungkan buku tamu (verifikasi) | ✅** | ❌ | ❌ | ❌ |
+| Dashboard review buku tamu | ❌ | ✅ | ✅ | ✅ |
+| Detail review buku tamu | ❌ | ✅ | ✅ | ✅ |
 | Tambah komentar | ✅ | ✅ | ✅ | ✅ |
 | Ajukan reopen | ✅ | ❌ | ❌ | ❌ |
 | Setujui / tolak reopen | ❌ | ❌ | ❌ | ✅ |
@@ -533,17 +548,22 @@ Staff / Sekolah                   Sistem                        Admin
 | `POST` | `/hospitality/assessment/<id>/link-guestbook` | Hubungkan transaksi Buku Tamu (approved) & verifikasi |
 | `POST` | `/hospitality/assessment/<id>/comment` | Tambah komentar |
 | `POST` | `/hospitality/assessment/<id>/reopen` | Ajukan permintaan reopen |
+| `GET` | `/hospitality/guestbook-reviews` | Dashboard review buku tamu umum |
+| `GET` | `/hospitality/guestbook-reviews/<id>` | Detail review buku tamu umum |
+| `GET` | `/hospitality/guestbook-reviews/export` | Export CSV review buku tamu |
 
 ### Sekolah Routes
 | Method | URL | Deskripsi |
 |--------|-----|-----------|
 | `GET` | `/hospitality/sekolah` | Daftar penilaian sekolah sendiri |
+| `GET` | `/hospitality/guestbook-reviews` | Dashboard review buku tamu umum milik sekolah |
 
 ### Admin / Koordinator Routes
 | Method | URL | Deskripsi |
 |--------|-----|-----------|
 | `GET` | `/hospitality/admin` | Dashboard utama + statistik |
 | `GET` | `/hospitality/admin/reopen-requests` | Daftar semua reopen request |
+| `GET` | `/hospitality/guestbook-reviews` | Dashboard review buku tamu umum |
 | `POST` | `/hospitality/admin/reopen/<id>/approve` | Setujui reopen request |
 | `POST` | `/hospitality/admin/reopen/<id>/reject` | Tolak reopen request |
 | `GET` | `/hospitality/admin/export` | Download data penilaian sebagai CSV |
@@ -896,6 +916,14 @@ Hanya satu reopen request `pending` per penilaian dalam satu waktu. Selama ada y
   │  → Hubungkan → status kembali: verified                        │
   └─────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 13. Checklist Rollout
+
+Checklist deploy fitur review buku tamu hospitality tersedia di:
+
+- [GUESTBOOK_REVIEW_ROLLOUT.md](./GUESTBOOK_REVIEW_ROLLOUT.md)
 
 ---
 

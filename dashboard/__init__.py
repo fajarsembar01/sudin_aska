@@ -43,10 +43,11 @@ def create_app() -> Flask:
     app.register_blueprint(cms_bp)
     init_oauth(app)
 
-    try:
-        ensure_dashboard_schema()
-    except Exception:
-        pass
+    if os.getenv("ASKA_DASHBOARD_AUTO_INIT", "0").strip().lower() in {"1", "true", "yes"}:
+        try:
+            ensure_dashboard_schema()
+        except Exception:
+            pass
 
     @app.context_processor
     def inject_globals() -> dict:

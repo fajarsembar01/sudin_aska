@@ -27,6 +27,7 @@ from flask import (
     request,
     url_for,
     current_app,
+    send_file,
     send_from_directory,
     abort,
     session,
@@ -553,7 +554,24 @@ def uploaded_file(filename):
     requested_path = PurePosixPath(normalized)
     if requested_path.is_absolute() or ".." in requested_path.parts:
         abort(404)
-    return send_from_directory(UPLOAD_FOLDER, requested_path.as_posix())
+
+    target_path = (UPLOAD_FOLDER / requested_path.as_posix()).resolve()
+    try:
+        target_path.relative_to(UPLOAD_FOLDER.resolve())
+    except ValueError:
+        abort(404)
+
+    if target_path.is_file():
+        return send_from_directory(UPLOAD_FOLDER, requested_path.as_posix())
+
+    # Guestbook photos may be cleaned up while historical rows still reference them.
+    # Fall back to a local placeholder so dashboard pages do not emit avoidable 404s.
+    if requested_path.parts and requested_path.parts[0] == "daftar_tamu":
+        placeholder = Path(__file__).resolve().parent.parent / "static" / "logo" / "logo.png"
+        if placeholder.is_file():
+            return send_file(placeholder)
+
+    abort(404)
 
 
 def _allowed_file(filename: str) -> bool:

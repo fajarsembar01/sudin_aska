@@ -388,7 +388,10 @@
                     </div>
 
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-success">Kirim Buku Tamu</button>
+                        <button type="submit" class="btn btn-success">Kirim &amp; Lanjut Review</button>
+                    </div>
+                    <div class="note-text mt-2 text-center">
+                        Setelah buku tamu tersimpan, kamu akan diminta kasih review 1-5 bintang dulu sebelum chat ASKA aktif.
                     </div>
                 </form>
                 {% endif %}
@@ -451,6 +454,7 @@
             var registerInputs = registerForm ? registerForm.querySelectorAll('input, select, textarea, button') : [];
             var purposeInput = document.getElementById('purposeInput');
             var purposeError = document.getElementById('purposeError');
+            var hasSubmitted = false;
 
             var regName = document.getElementById('regName');
             var regPhone = document.getElementById('regPhone');
@@ -585,9 +589,11 @@
                 if (!submitBtn) return;
                 var hasGuests = selectedGuests.size > 0;
                 var hasPurpose = purposeInput ? purposeInput.value.trim().length > 0 : false;
-                if (selectedGuestsField) selectedGuestsField.classList.toggle('is-invalid', !hasGuests);
-                if (selectedGuestsError) selectedGuestsError.classList.toggle('d-none', hasGuests);
-                if (purposeInput) purposeInput.classList.toggle('is-invalid', !hasPurpose);
+                var showErrors = hasSubmitted;
+                if (selectedGuestsField) selectedGuestsField.classList.toggle('is-invalid', showErrors && !hasGuests);
+                if (selectedGuestsError) selectedGuestsError.classList.toggle('d-none', !(showErrors && !hasGuests));
+                if (purposeInput) purposeInput.classList.toggle('is-invalid', showErrors && !hasPurpose);
+                if (purposeError) purposeError.style.display = showErrors && !hasPurpose ? 'block' : 'none';
                 submitBtn.disabled = !(hasGuests && hasPurpose);
             }
 
@@ -833,6 +839,7 @@
             }
 
             guestForm.addEventListener('submit', function (e) {
+                hasSubmitted = true;
                 if (guestTypeInput.value !== 'umum') {
                     e.preventDefault();
                     if (sudinModal) sudinModal.show();

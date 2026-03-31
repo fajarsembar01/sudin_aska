@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
 from flask import (
@@ -42,6 +42,14 @@ from .queries import (
     get_component,
     get_hosp_aspect,
     get_latest_reopen_request,
+    get_guestbook_review_detail,
+    fetch_guestbook_review_bottom_schools,
+    fetch_guestbook_review_rating_distribution,
+    fetch_guestbook_review_stats,
+    fetch_guestbook_review_top_schools,
+    fetch_guestbook_review_trend,
+    fetch_guestbook_reviews_export,
+    list_guestbook_reviews,
     list_assessments_for_school,
     list_assessments_for_staff,
     list_components_with_aspects,
@@ -91,6 +99,59 @@ def _school_user_ids(school_id: int) -> List[int]:
             (school_id,),
         )
         return [int(row["id"]) for row in cur.fetchall() if row.get("id")]
+
+
+def _school_by_id(school_id: int) -> Optional[Dict[str, Any]]:
+    if not school_id:
+        return None
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, name, npsn, jenjang, alamat, active
+            FROM portal_schools
+            WHERE id = %s
+            LIMIT 1
+            """,
+            (school_id,),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def _parse_guestbook_date(raw_value: Optional[str]) -> Optional[date]:
+    value = (raw_value or "").strip()
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _list_active_schools(*, limit: int = 500) -> List[Dict[str, Any]]:
+    safe_limit = max(1, min(int(limit or 500), 2000))
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, name, npsn, jenjang
+            FROM portal_schools
+            WHERE active = TRUE
+            ORDER BY name ASC
+            LIMIT %s
+            """,
+            (safe_limit,),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def _guestbook_review_scope_for_user(user: Dict[str, Any]) -> tuple[Optional[Dict[str, Any]], Optional[int]]:
+    role = (user.get("role") or "").strip().lower()
+    if role == "sekolah":
+        school = _fetch_user_school(user.get("id"))
+        if not school:
+            return None, None
+        return dict(school), int(school.get("id"))
+    return None, None
 
 
 # ===== Routing =====
@@ -438,6 +499,230 @@ def school_home() -> Response:
         school=school,
         assessments=assessments,
     )
+
+
+@hospitality_bp.route("/guestbook-reviews")
+@role_required("admin", "coordinator", "sekolah")
+def guestbook_review_dashboard() -> Response:
+    user = current_user()
+    role = (user.get("role") or "").strip().lower()
+
+    school_scope: Optional[Dict[str, Any]] = None
+    scope_school_id: Optional[int] = None
+    if role == "sekolah":
+        school_scope, scope_school_id = _guestbook_review_scope_for_user(user)
+        if not school_scope:
+            flash("Akun sekolah belum terhubung ke data sekolah.", "warning")
+            return redirect(url_for("hospitality.school_home"))
+    else:
+        school_id_arg = request.args.get("school_id", type=int)
+        if school_id_arg:
+            school_scope = _school_by_id(school_id_arg)
+            if school_scope:
+                scope_school_id = int(school_scope.get("id"))
+            else:
+                flash("Sekolah tidak ditemukan.", "warning")
+
+    review_status = (request.args.get("review_status") or "").strip().lower() or None
+    transaction_status = (request.args.get("transaction_status") or "").strip().lower() or None
+    rating_filter = request.args.get("rating", type=int)
+    search = (request.args.get("q") or "").strip() or None
+    start_date = _parse_guestbook_date(request.args.get("start"))
+    end_date = _parse_guestbook_date(request.args.get("end"))
+    page = request.args.get("page", type=int) or 1
+    per_page = request.args.get("per_page", type=int) or 25
+    per_page = max(5, min(int(per_page or 25), 100))
+
+    reviews, total_rows = list_guestbook_reviews(
+        school_id=scope_school_id,
+        review_status=review_status,
+        transaction_status=transaction_status,
+        rating=rating_filter,
+        search=search,
+        start_date=start_date,
+        end_date=end_date,
+        page=page,
+        per_page=per_page,
+    )
+    stats = fetch_guestbook_review_stats(
+        school_id=scope_school_id,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    trend = fetch_guestbook_review_trend(days=30, school_id=scope_school_id)
+    rating_distribution = fetch_guestbook_review_rating_distribution(school_id=scope_school_id)
+    top_schools = []
+    bottom_schools = []
+    if role in {"admin", "coordinator"} and not scope_school_id:
+        top_schools = fetch_guestbook_review_top_schools(limit=10)
+        bottom_schools = fetch_guestbook_review_bottom_schools(limit=10)
+
+    filter_params = {key: value for key, value in request.args.items() if value not in ("", None)}
+    filter_params.pop("page", None)
+    filter_params.pop("per_page", None)
+    prev_url = None
+    next_url = None
+    total_pages = max(1, (total_rows + per_page - 1) // per_page)
+    if page > 1:
+        prev_url = url_for("hospitality.guestbook_review_dashboard", **filter_params, page=page - 1, per_page=per_page)
+    if page < total_pages:
+        next_url = url_for("hospitality.guestbook_review_dashboard", **filter_params, page=page + 1, per_page=per_page)
+
+    school_options = _list_active_schools() if role in {"admin", "coordinator"} else []
+
+    start_item = ((page - 1) * per_page + 1) if total_rows else 0
+    end_item = min(page * per_page, total_rows) if total_rows else 0
+
+    return render_template(
+        "hospitality/guestbook/list.html",
+        reviews=reviews,
+        stats=stats,
+        trend=trend,
+        rating_distribution=rating_distribution,
+        top_schools=top_schools,
+        bottom_schools=bottom_schools,
+        school_scope=school_scope,
+        school_options=school_options,
+        review_status_filter=review_status or "",
+        transaction_status_filter=transaction_status or "",
+        rating_filter=rating_filter or "",
+        search_query=search or "",
+        start_filter=start_date.isoformat() if start_date else "",
+        end_filter=end_date.isoformat() if end_date else "",
+        per_page=per_page,
+        page=page,
+        total_pages=total_pages,
+        total_rows=total_rows,
+        start_item=start_item,
+        end_item=end_item,
+        prev_url=prev_url,
+        next_url=next_url,
+        export_url=url_for("hospitality.guestbook_review_export", **filter_params),
+        is_admin=role in {"admin", "coordinator"},
+    )
+
+
+@hospitality_bp.route("/guestbook-reviews/<int:review_id>")
+@role_required("admin", "coordinator", "sekolah")
+def guestbook_review_detail(review_id: int) -> Response:
+    user = current_user()
+    role = (user.get("role") or "").strip().lower()
+    review = get_guestbook_review_detail(review_id)
+    if not review:
+        abort(404)
+
+    if role == "sekolah":
+        school_scope, scope_school_id = _guestbook_review_scope_for_user(user)
+        if not school_scope or int(scope_school_id or 0) != int(review.get("school_id") or 0):
+            abort(403)
+
+    school = _school_by_id(int(review.get("school_id") or 0))
+    linked_assessment_url = (
+        url_for("hospitality.assessment_detail", assessment_id=review.get("linked_assessment_id"))
+        if review.get("linked_assessment_id")
+        else None
+    )
+    referrer = request.referrer or ""
+    back_url = referrer if referrer.startswith(request.host_url) else url_for("hospitality.guestbook_review_dashboard")
+    return render_template(
+        "hospitality/guestbook/detail.html",
+        review=review,
+        school=school,
+        linked_assessment_url=linked_assessment_url,
+        back_url=back_url,
+        is_admin=role in {"admin", "coordinator"},
+    )
+
+
+@hospitality_bp.route("/guestbook-reviews/export")
+@role_required("admin", "coordinator", "sekolah")
+def guestbook_review_export() -> Response:
+    user = current_user()
+    role = (user.get("role") or "").strip().lower()
+
+    school_scope_id: Optional[int] = None
+    if role == "sekolah":
+        school_scope, school_scope_id = _guestbook_review_scope_for_user(user)
+        if not school_scope:
+            flash("Akun sekolah belum terhubung ke data sekolah.", "warning")
+            return redirect(url_for("hospitality.school_home"))
+    else:
+        school_id_arg = request.args.get("school_id", type=int)
+        if school_id_arg:
+            school_scope = _school_by_id(school_id_arg)
+            if school_scope:
+                school_scope_id = int(school_scope.get("id"))
+
+    review_status = (request.args.get("review_status") or "").strip().lower() or None
+    transaction_status = (request.args.get("transaction_status") or "").strip().lower() or None
+    rating_filter = request.args.get("rating", type=int)
+    search = (request.args.get("q") or "").strip() or None
+    start_date = _parse_guestbook_date(request.args.get("start"))
+    end_date = _parse_guestbook_date(request.args.get("end"))
+
+    rows = fetch_guestbook_reviews_export(
+        school_id=school_scope_id,
+        review_status=review_status,
+        transaction_status=transaction_status,
+        rating=rating_filter,
+        search=search,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+    import csv
+    from io import StringIO
+
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(
+        [
+            "review_id",
+            "transaction_id",
+            "school_name",
+            "npsn",
+            "jenjang",
+            "guest_display",
+            "guest_count",
+            "review_status",
+            "rating",
+            "comment",
+            "transaction_status",
+            "visit_at",
+            "completed_at",
+            "activity_at",
+            "linked_assessment_id",
+            "linked_assessment_status",
+            "linked_assessment_staff_name",
+        ]
+    )
+    for row in rows:
+        writer.writerow(
+            [
+                row.get("review_id"),
+                row.get("transaction_id"),
+                row.get("school_name"),
+                row.get("npsn"),
+                row.get("jenjang"),
+                row.get("guest_display"),
+                row.get("guest_count"),
+                row.get("review_status"),
+                row.get("rating"),
+                row.get("comment"),
+                row.get("transaction_status"),
+                row.get("visit_at"),
+                row.get("completed_at"),
+                row.get("activity_at"),
+                row.get("linked_assessment_id"),
+                row.get("linked_assessment_status"),
+                row.get("linked_assessment_staff_name"),
+            ]
+        )
+
+    response = Response(output.getvalue(), mimetype="text/csv")
+    filename = f"hospitality_guestbook_reviews_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    response.headers.set("Content-Disposition", "attachment", filename=filename)
+    return response
 
 
 @hospitality_bp.route("/admin")

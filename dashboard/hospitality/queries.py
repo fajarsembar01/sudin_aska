@@ -22,6 +22,7 @@ else:
 HOSPITALITY_SCORE_MAX = 5
 HOSPITALITY_STATUSES = ("draft", "submitted", "verified", "reopened")
 REOPEN_STATUSES = ("pending", "approved", "rejected")
+GUESTBOOK_REVIEW_STATUSES = ("pending", "completed")
 
 
 def _today_jakarta() -> date:
@@ -426,6 +427,575 @@ def fetch_linked_photos(*, limit: int = 12) -> List[Dict[str, Any]]:
             (limit,),
         )
         return [dict(row) for row in cur.fetchall()]
+
+
+def _build_guestbook_review_filters(
+    *,
+    school_id: int | None = None,
+    review_status: str | None = None,
+    transaction_status: str | None = None,
+    rating: int | None = None,
+    search: str | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+) -> tuple[str, list[Any]]:
+    clauses = ["TRUE"]
+    params: list[Any] = []
+
+    if school_id:
+        clauses.append("r.school_id = %s")
+        params.append(school_id)
+
+    clean_review_status = (review_status or "").strip().lower()
+    if clean_review_status and clean_review_status != "all" and clean_review_status in GUESTBOOK_REVIEW_STATUSES:
+        clauses.append("LOWER(r.status) = %s")
+        params.append(clean_review_status)
+
+    clean_transaction_status = (transaction_status or "").strip().lower()
+    if clean_transaction_status and clean_transaction_status != "all" and clean_transaction_status in {"pending", "approved", "rejected"}:
+        clauses.append("LOWER(t.status) = %s")
+        params.append(clean_transaction_status)
+
+    if rating is not None:
+        try:
+            clean_rating = int(rating)
+        except (TypeError, ValueError):
+            clean_rating = 0
+        if 1 <= clean_rating <= 5:
+            clauses.append("r.rating = %s")
+            params.append(clean_rating)
+
+    if start_date:
+        clauses.append("COALESCE(r.completed_at, r.created_at)::date >= %s::date")
+        params.append(start_date)
+    if end_date:
+        clauses.append("COALESCE(r.completed_at, r.created_at)::date <= %s::date")
+        params.append(end_date)
+
+    clean_search = (search or "").strip()
+    if clean_search:
+        like = f"%{clean_search}%"
+        clauses.append(
+            """
+            (
+                s.name ILIKE %s
+                OR s.npsn ILIKE %s
+                OR COALESCE(t.purpose, '') ILIKE %s
+                OR COALESCE(t.notes, '') ILIKE %s
+                OR COALESCE(r.comment, '') ILIKE %s
+                OR EXISTS (
+                    SELECT 1
+                    FROM daftar_tamu_general_transaction_guests g
+                    WHERE g.transaction_id = t.id
+                      AND (
+                        g.full_name ILIKE %s
+                        OR COALESCE(g.phone, '') ILIKE %s
+                        OR COALESCE(g.email, '') ILIKE %s
+                    )
+                )
+            )
+            """
+        )
+        params.extend([like, like, like, like, like, like, like, like])
+
+    return " AND ".join(clauses), params
+
+
+def fetch_guestbook_review_stats(
+    *,
+    school_id: int | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+) -> Dict[str, Any]:
+    where_sql, params = _build_guestbook_review_filters(
+        school_id=school_id,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT
+                COUNT(*) AS total_reviews,
+                COUNT(*) FILTER (WHERE r.status = 'completed') AS completed_reviews,
+                COUNT(*) FILTER (WHERE r.status = 'pending') AS pending_reviews,
+                COUNT(*) FILTER (WHERE gl.assessment_id IS NOT NULL) AS linked_reviews,
+                COUNT(*) FILTER (WHERE gl.assessment_id IS NULL) AS unlinked_reviews,
+                COUNT(*) FILTER (
+                    WHERE r.status = 'completed'
+                      AND (r.completed_at AT TIME ZONE 'Asia/Jakarta')::date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
+                ) AS completed_today,
+                COUNT(*) FILTER (
+                    WHERE (r.created_at AT TIME ZONE 'Asia/Jakarta')::date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
+                ) AS created_today,
+                COALESCE(AVG(r.rating) FILTER (WHERE r.status = 'completed'), 0) AS avg_rating,
+                COALESCE(AVG(r.rating) FILTER (WHERE r.status = 'completed' AND r.rating IS NOT NULL), 0) AS avg_rating_completed
+            FROM hospitality_guestbook_reviews r
+            JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
+            JOIN portal_schools s ON s.id = r.school_id
+            LEFT JOIN hospitality_assessment_guestbook_links gl ON gl.transaction_id = t.id
+            WHERE {where_sql}
+            """,
+            params,
+        )
+        row = cur.fetchone() or {}
+
+    total_reviews = int(row.get("total_reviews") or 0)
+    completed_reviews = int(row.get("completed_reviews") or 0)
+    pending_reviews = int(row.get("pending_reviews") or 0)
+    linked_reviews = int(row.get("linked_reviews") or 0)
+    unlinked_reviews = int(row.get("unlinked_reviews") or 0)
+    completion_rate = (completed_reviews / total_reviews * 100) if total_reviews else 0.0
+    linked_rate = (linked_reviews / total_reviews * 100) if total_reviews else 0.0
+    avg_rating = float(row.get("avg_rating") or 0)
+    return {
+        "total_reviews": total_reviews,
+        "completed_reviews": completed_reviews,
+        "pending_reviews": pending_reviews,
+        "linked_reviews": linked_reviews,
+        "unlinked_reviews": unlinked_reviews,
+        "completed_today": int(row.get("completed_today") or 0),
+        "created_today": int(row.get("created_today") or 0),
+        "avg_rating": avg_rating,
+        "avg_rating_completed": float(row.get("avg_rating_completed") or 0),
+        "completion_rate": round(completion_rate, 2),
+        "linked_rate": round(linked_rate, 2),
+    }
+
+
+def fetch_guestbook_review_trend(
+    *,
+    days: int = 30,
+    school_id: int | None = None,
+) -> List[Dict[str, Any]]:
+    safe_days = max(1, int(days or 30))
+    today = _today_jakarta()
+    start = today - timedelta(days=safe_days - 1)
+    where_sql, params = _build_guestbook_review_filters(
+        school_id=school_id,
+        start_date=start,
+    )
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT
+                (COALESCE(r.completed_at, r.created_at) AT TIME ZONE 'Asia/Jakarta')::date AS day,
+                COUNT(*) AS total_reviews,
+                COUNT(*) FILTER (WHERE r.status = 'completed') AS completed_reviews,
+                COUNT(*) FILTER (WHERE r.status = 'pending') AS pending_reviews,
+                COALESCE(AVG(r.rating) FILTER (WHERE r.status = 'completed'), 0) AS avg_rating
+            FROM hospitality_guestbook_reviews r
+            JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
+            JOIN portal_schools s ON s.id = r.school_id
+            WHERE {where_sql}
+            GROUP BY day
+            ORDER BY day ASC
+            """,
+            params,
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+
+    rows_by_day = {row.get("day"): row for row in rows}
+    trend_rows: List[Dict[str, Any]] = []
+    current = start
+    while current <= today:
+        row = rows_by_day.get(current) or {}
+        trend_rows.append(
+            {
+                "day": current.isoformat(),
+                "total_reviews": int(row.get("total_reviews") or 0),
+                "completed_reviews": int(row.get("completed_reviews") or 0),
+                "pending_reviews": int(row.get("pending_reviews") or 0),
+                "avg_rating": float(row.get("avg_rating") or 0),
+            }
+        )
+        current += timedelta(days=1)
+    return trend_rows
+
+
+def fetch_guestbook_review_rating_distribution(
+    *,
+    school_id: int | None = None,
+) -> List[Dict[str, Any]]:
+    where_sql, params = _build_guestbook_review_filters(
+        school_id=school_id,
+        review_status="completed",
+    )
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT
+                r.rating,
+                COUNT(*) AS total
+            FROM hospitality_guestbook_reviews r
+            JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
+            JOIN portal_schools s ON s.id = r.school_id
+            WHERE {where_sql}
+              AND r.rating IS NOT NULL
+            GROUP BY r.rating
+            ORDER BY r.rating ASC
+            """,
+            params,
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+
+    counts = {int(row.get("rating") or 0): int(row.get("total") or 0) for row in rows}
+    return [
+        {"rating": rating, "total": counts.get(rating, 0)}
+        for rating in range(1, 6)
+    ]
+
+
+def fetch_guestbook_review_top_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
+    safe_limit = max(1, min(int(limit or 10), 100))
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH scored AS (
+                SELECT
+                    r.school_id,
+                    r.rating,
+                    r.completed_at
+                FROM hospitality_guestbook_reviews r
+                WHERE r.status = 'completed'
+                  AND r.rating IS NOT NULL
+            )
+            SELECT
+                s.id AS school_id,
+                s.name AS school_name,
+                s.npsn,
+                s.jenjang,
+                COUNT(*) AS review_count,
+                AVG(scored.rating)::DECIMAL(5,2) AS avg_rating,
+                MAX(scored.completed_at) AS last_completed_at
+            FROM scored
+            JOIN portal_schools s ON s.id = scored.school_id
+            GROUP BY s.id, s.name, s.npsn, s.jenjang
+            HAVING COUNT(*) > 0
+            ORDER BY avg_rating DESC NULLS LAST, review_count DESC, s.name ASC
+            LIMIT %s
+            """,
+            (safe_limit,),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def fetch_guestbook_review_bottom_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
+    safe_limit = max(1, min(int(limit or 10), 100))
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH scored AS (
+                SELECT
+                    r.school_id,
+                    r.rating,
+                    r.completed_at
+                FROM hospitality_guestbook_reviews r
+                WHERE r.status = 'completed'
+                  AND r.rating IS NOT NULL
+            )
+            SELECT
+                s.id AS school_id,
+                s.name AS school_name,
+                s.npsn,
+                s.jenjang,
+                COUNT(*) AS review_count,
+                AVG(scored.rating)::DECIMAL(5,2) AS avg_rating,
+                MAX(scored.completed_at) AS last_completed_at
+            FROM scored
+            JOIN portal_schools s ON s.id = scored.school_id
+            GROUP BY s.id, s.name, s.npsn, s.jenjang
+            HAVING COUNT(*) > 0
+            ORDER BY avg_rating ASC NULLS LAST, review_count DESC, s.name ASC
+            LIMIT %s
+            """,
+            (safe_limit,),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def list_guestbook_reviews(
+    *,
+    school_id: int | None = None,
+    review_status: str | None = None,
+    transaction_status: str | None = None,
+    rating: int | None = None,
+    search: str | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    page: int = 1,
+    per_page: int = 25,
+) -> Tuple[List[Dict[str, Any]], int]:
+    safe_page = max(1, int(page or 1))
+    safe_per_page = max(1, min(int(per_page or 25), 200))
+    offset = (safe_page - 1) * safe_per_page
+    where_sql, params = _build_guestbook_review_filters(
+        school_id=school_id,
+        review_status=review_status,
+        transaction_status=transaction_status,
+        rating=rating,
+        search=search,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+    count_query = f"""
+        SELECT COUNT(*) AS total
+        FROM hospitality_guestbook_reviews r
+        JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
+        JOIN portal_schools s ON s.id = r.school_id
+        WHERE {where_sql}
+    """
+    data_query = f"""
+        SELECT
+            r.id AS review_id,
+            r.transaction_id,
+            r.school_id,
+            s.name AS school_name,
+            s.npsn,
+            s.jenjang,
+            r.review_token,
+            r.status AS review_status,
+            r.rating,
+            r.comment,
+            r.completed_at,
+            r.created_at AS review_created_at,
+            r.updated_at AS review_updated_at,
+            t.visit_at,
+            t.status AS transaction_status,
+            t.purpose,
+            t.notes,
+            t.created_at AS transaction_created_at,
+            gl.assessment_id AS linked_assessment_id,
+            gl.linked_by AS linked_by,
+            gl.linked_at AS linked_at,
+            ha.status AS linked_assessment_status,
+            ha.created_at AS linked_assessment_created_at,
+            hu.full_name AS linked_assessment_staff_name,
+            (
+                SELECT STRING_AGG(g.full_name, ', ' ORDER BY g.full_name)
+                FROM daftar_tamu_general_transaction_guests g
+                WHERE g.transaction_id = t.id
+            ) AS guest_names,
+            (
+                SELECT COUNT(*)
+                FROM daftar_tamu_general_transaction_guests g
+                WHERE g.transaction_id = t.id
+            ) AS guest_count,
+            COALESCE(r.completed_at, r.created_at) AS activity_at
+        FROM hospitality_guestbook_reviews r
+        JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
+        JOIN portal_schools s ON s.id = r.school_id
+        LEFT JOIN hospitality_assessment_guestbook_links gl ON gl.transaction_id = t.id
+        LEFT JOIN hospitality_assessments ha ON ha.id = gl.assessment_id
+        LEFT JOIN dashboard_users hu ON hu.id = ha.staff_id
+        WHERE {where_sql}
+        ORDER BY COALESCE(r.completed_at, r.created_at) DESC NULLS LAST, r.id DESC
+        LIMIT %s OFFSET %s
+    """
+
+    with get_cursor() as cur:
+        cur.execute(count_query, params)
+        total_rows = int((cur.fetchone() or {}).get("total") or 0)
+        cur.execute(data_query, params + [safe_per_page, offset])
+        rows = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        names_raw = row.get("guest_names") or ""
+        names = [name.strip() for name in names_raw.split(",") if name.strip()]
+        row["guest_names_list"] = names
+        row["guest_count"] = int(row.get("guest_count") or len(names))
+        if names:
+            if len(names) > 2:
+                row["guest_display"] = f"{names[0]} +{len(names) - 1}"
+            elif len(names) == 2:
+                row["guest_display"] = f"{names[0]} & {names[1]}"
+            else:
+                row["guest_display"] = names[0]
+        else:
+            row["guest_display"] = None
+        row["review_status"] = (row.get("review_status") or "").strip().lower()
+        row["transaction_status"] = (row.get("transaction_status") or "").strip().lower()
+        row["linked_assessment_id"] = int(row.get("linked_assessment_id")) if row.get("linked_assessment_id") is not None else None
+        rating_val = row.get("rating")
+        row["rating"] = int(rating_val) if rating_val is not None else None
+        comment = (row.get("comment") or "").strip()
+        row["comment_preview"] = comment[:140] if comment else ""
+
+    return rows, total_rows
+
+
+def fetch_guestbook_reviews_export(
+    *,
+    school_id: int | None = None,
+    review_status: str | None = None,
+    transaction_status: str | None = None,
+    rating: int | None = None,
+    search: str | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+) -> List[Dict[str, Any]]:
+    where_sql, params = _build_guestbook_review_filters(
+        school_id=school_id,
+        review_status=review_status,
+        transaction_status=transaction_status,
+        rating=rating,
+        search=search,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    query = f"""
+        SELECT
+            r.id AS review_id,
+            r.transaction_id,
+            r.school_id,
+            s.name AS school_name,
+            s.npsn,
+            s.jenjang,
+            r.review_token,
+            r.status AS review_status,
+            r.rating,
+            r.comment,
+            r.completed_at,
+            r.created_at AS review_created_at,
+            r.updated_at AS review_updated_at,
+            t.visit_at,
+            t.status AS transaction_status,
+            t.purpose,
+            t.notes,
+            t.created_at AS transaction_created_at,
+            gl.assessment_id AS linked_assessment_id,
+            gl.linked_by AS linked_by,
+            gl.linked_at AS linked_at,
+            ha.status AS linked_assessment_status,
+            ha.created_at AS linked_assessment_created_at,
+            hu.full_name AS linked_assessment_staff_name,
+            (
+                SELECT STRING_AGG(g.full_name, ', ' ORDER BY g.full_name)
+                FROM daftar_tamu_general_transaction_guests g
+                WHERE g.transaction_id = t.id
+            ) AS guest_names,
+            (
+                SELECT COUNT(*)
+                FROM daftar_tamu_general_transaction_guests g
+                WHERE g.transaction_id = t.id
+            ) AS guest_count,
+            COALESCE(r.completed_at, r.created_at) AS activity_at
+        FROM hospitality_guestbook_reviews r
+        JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
+        JOIN portal_schools s ON s.id = r.school_id
+        LEFT JOIN hospitality_assessment_guestbook_links gl ON gl.transaction_id = t.id
+        LEFT JOIN hospitality_assessments ha ON ha.id = gl.assessment_id
+        LEFT JOIN dashboard_users hu ON hu.id = ha.staff_id
+        WHERE {where_sql}
+        ORDER BY COALESCE(r.completed_at, r.created_at) DESC NULLS LAST, r.id DESC
+    """
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        rows = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        names_raw = row.get("guest_names") or ""
+        names = [name.strip() for name in names_raw.split(",") if name.strip()]
+        row["guest_names_list"] = names
+        row["guest_count"] = int(row.get("guest_count") or len(names))
+        if names:
+            if len(names) > 2:
+                row["guest_display"] = f"{names[0]} +{len(names) - 1}"
+            elif len(names) == 2:
+                row["guest_display"] = f"{names[0]} & {names[1]}"
+            else:
+                row["guest_display"] = names[0]
+        else:
+            row["guest_display"] = None
+        row["review_status"] = (row.get("review_status") or "").strip().lower()
+        row["transaction_status"] = (row.get("transaction_status") or "").strip().lower()
+        row["linked_assessment_id"] = int(row.get("linked_assessment_id")) if row.get("linked_assessment_id") is not None else None
+        rating_val = row.get("rating")
+        row["rating"] = int(rating_val) if rating_val is not None else None
+        comment = (row.get("comment") or "").strip()
+        row["comment_preview"] = comment[:140] if comment else ""
+
+    return rows
+
+
+def get_guestbook_review_detail(review_id: int) -> Dict[str, Any] | None:
+    if not review_id:
+        return None
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                r.id AS review_id,
+                r.transaction_id,
+                r.school_id,
+                s.name AS school_name,
+                s.npsn,
+                s.jenjang,
+                r.review_token,
+                r.status AS review_status,
+                r.rating,
+                r.comment,
+                r.completed_at,
+                r.created_at AS review_created_at,
+                r.updated_at AS review_updated_at,
+                t.visit_at,
+                t.status AS transaction_status,
+                t.purpose,
+                t.notes,
+                t.created_at AS transaction_created_at,
+                gl.assessment_id AS linked_assessment_id,
+                gl.linked_by AS linked_by,
+                gl.linked_at AS linked_at,
+                ha.status AS linked_assessment_status,
+                ha.created_at AS linked_assessment_created_at,
+                hu.full_name AS linked_assessment_staff_name,
+                (
+                    SELECT STRING_AGG(g.full_name, ', ' ORDER BY g.full_name)
+                    FROM daftar_tamu_general_transaction_guests g
+                    WHERE g.transaction_id = t.id
+                ) AS guest_names,
+                (
+                    SELECT COUNT(*)
+                    FROM daftar_tamu_general_transaction_guests g
+                    WHERE g.transaction_id = t.id
+                ) AS guest_count,
+                COALESCE(r.completed_at, r.created_at) AS activity_at
+            FROM hospitality_guestbook_reviews r
+            JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
+            JOIN portal_schools s ON s.id = r.school_id
+            LEFT JOIN hospitality_assessment_guestbook_links gl ON gl.transaction_id = t.id
+            LEFT JOIN hospitality_assessments ha ON ha.id = gl.assessment_id
+            LEFT JOIN dashboard_users hu ON hu.id = ha.staff_id
+            WHERE r.id = %s
+            LIMIT 1
+            """,
+            (review_id,),
+        )
+        row = cur.fetchone()
+
+    if not row:
+        return None
+    detail = dict(row)
+    names_raw = detail.get("guest_names") or ""
+    names = [name.strip() for name in names_raw.split(",") if name.strip()]
+    detail["guest_names_list"] = names
+    detail["guest_count"] = int(detail.get("guest_count") or len(names))
+    if names:
+        if len(names) > 2:
+            detail["guest_display"] = f"{names[0]} +{len(names) - 1}"
+        elif len(names) == 2:
+            detail["guest_display"] = f"{names[0]} & {names[1]}"
+        else:
+            detail["guest_display"] = names[0]
+    else:
+        detail["guest_display"] = None
+    detail["review_status"] = (detail.get("review_status") or "").strip().lower()
+    detail["transaction_status"] = (detail.get("transaction_status") or "").strip().lower()
+    detail["linked_assessment_id"] = int(detail.get("linked_assessment_id")) if detail.get("linked_assessment_id") is not None else None
+    rating_val = detail.get("rating")
+    detail["rating"] = int(rating_val) if rating_val is not None else None
+    return detail
 
 
 # ===== Master data (component / aspect) =====

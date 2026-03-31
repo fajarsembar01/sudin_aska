@@ -38,6 +38,11 @@
             <i class="bi bi-download nav-icon"></i>Export
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ['hospitality.guestbook_review_dashboard', 'hospitality.guestbook_review_detail', 'hospitality.guestbook_review_export'] %}active{% endif %}" href="{{ url_for('hospitality.guestbook_review_dashboard') }}">
+            <i class="bi bi-star-half nav-icon"></i>Review Pelayanan
+          </a>
+        </li>
         {% endif %}
         {% if current_user and current_user.role == 'staff' %}
         <li class="nav-item">
@@ -50,6 +55,11 @@
         <li class="nav-item">
           <a class="nav-link {% if request.endpoint == 'hospitality.school_home' %}active{% endif %}" href="{{ url_for('hospitality.school_home') }}">
             <i class="bi bi-journal-text nav-icon"></i>Hospitality Sekolah
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ['hospitality.guestbook_review_dashboard', 'hospitality.guestbook_review_detail', 'hospitality.guestbook_review_export'] %}active{% endif %}" href="{{ url_for('hospitality.guestbook_review_dashboard') }}">
+            <i class="bi bi-star-half nav-icon"></i>Review Pelayanan
           </a>
         </li>
         {% endif %}

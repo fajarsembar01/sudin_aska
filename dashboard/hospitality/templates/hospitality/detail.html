@@ -225,7 +225,7 @@ portal_content %} {# ── Flash messages
                         class="ratio ratio-4x3 rounded overflow-hidden border mb-2"
                     >
                         <img
-                            src="/{{ assessment.guestbook_photo_path }}"
+                            src="{{ url_for('portal.uploaded_file', filename=assessment.guestbook_photo_path.replace('uploads/portal/', '')) }}"
                             class="w-100 h-100 object-fit-cover"
                             alt="Foto buku tamu {{ assessment.school_name }}"
                         />
