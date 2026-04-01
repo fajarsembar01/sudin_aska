@@ -1,7 +1,9 @@
 {% extends "portal/base_portal.html" %}
+{% from "shared/_assessment_ui.html" import assessment_aspect_row, floating_score_card, score_badge_class %}
 {% set page_title = "Penilaian " ~ school.name %}
 
 {% block portal_content %}
+<script src="{{ url_for('static', filename='js/assessment-ui.js') }}"></script>
 <section class="mb-4 assessment-page">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div class="d-flex align-items-center gap-3">
@@ -105,15 +107,12 @@
                 {% endfor %}
                 {% set room_avg = (sum_scores / total_aspects_room) if total_aspects_room > 0 else 0 %}
                 {% set room_pct = (room_avg / score_scale.max * 100) %}
-                {% if room_pct < 55 %} {% set room_score_class="score-badge-red" %} {% elif room_pct < 70 %} {% set
-                    room_score_class="score-badge-orange" %} {% elif room_pct < 85 %} {% set
-                    room_score_class="score-badge-yellow" %} {% else %} {% set room_score_class="score-badge-green" %}
-                    {% endif %} <div class="room-item shadow-sm" data-room-name="{{ room.room_name|lower }}"
+                <div class="room-item shadow-sm" data-room-name="{{ room.room_name|lower }}"
                     data-school-room-id="{{ room.school_room_id }}">
                     <div class="room-header collapsed" data-bs-toggle="collapse"
                         data-bs-target="#room{{ room.school_room_id }}" aria-expanded="false">
                         <div class="d-flex align-items-center gap-2">
-                            <span class="room-score-badge {{ room_score_class }}"
+                            <span class="room-score-badge {{ score_badge_class(room_pct) }}"
                                 id="roomScore{{ room.school_room_id }}">{{ '%.1f'|format(room_pct) }}</span>
                             <h5 class="mb-0">{{ room.room_name }}</h5>
                         </div>
@@ -125,42 +124,16 @@
                     <div class="collapse" id="room{{ room.school_room_id }}" data-bs-parent="#roomAccordion">
                         <div class="room-body">
                             {% for aspect in room.aspects %}
-                            <div class="aspect-item">
-                                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
-                                    <div class="flex-grow-1">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="aspect-name">{{ aspect.name }}</div>
-                                            <button class="btn btn-link btn-sm p-0 text-muted" type="button"
-                                                data-bs-toggle="collapse" data-bs-target="#assess-desc-{{ aspect.id }}"
-                                                title="Lihat deskripsi">
-                                                <i class="bi bi-info-circle"></i>
-                                            </button>
-                                        </div>
-                                        <div class="collapse mt-2" id="assess-desc-{{ aspect.id }}">
-                                            <div class="ps-3 border-start border-2 border-primary">
-                                                {% if aspect.description %}
-                                                <small class="text-muted fst-italic">{{ aspect.description }}</small>
-                                                {% else %}
-                                                <small class="text-muted fst-italic">Tidak ada deskripsi untuk aspek
-                                                    ini.</small>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="score-group flex-shrink-0"
-                                        data-school-room-id="{{ room.school_room_id }}"
-                                        data-aspect-id="{{ aspect.id }}"
-                                        data-scale-max="{{ score_scale.max }}">
-                                        {% for score in score_scale.options %}
-                                        <button type="button"
-                                            class="score-btn {% if scores_map.get((room.school_room_id, aspect.id)) == score %}selected{% elif scores_map.get((room.school_room_id, aspect.id)) is none and score == score_scale.default %}selected{% endif %}"
-                                            data-score="{{ score }}" onclick="selectScore(this)">
-                                            {{ score }}
-                                        </button>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </div>
+                            {{ assessment_aspect_row(
+                                aspect,
+                                score_scale.options,
+                                scores_map.get((room.school_room_id, aspect.id))
+                                    if scores_map.get((room.school_room_id, aspect.id)) is not none
+                                    else score_scale.default,
+                                mode='buttons',
+                                room_id=room.school_room_id,
+                                helper_text=aspect.description
+                            ) }}
                             {% endfor %}
 
                             <div class="mt-3 pt-3 border-top">
@@ -463,25 +436,7 @@
 </div>
 
 <!-- Floating Score Summary -->
-<div class="floating-score shadow-sm">
-    <div class="d-flex justify-content-between align-items-center mb-1">
-        <div class="small text-muted text-uppercase fw-bold">Skor Saat Ini</div>
-        <button type="button" class="btn btn-sm btn-outline-secondary p-1 px-2" id="hideScoreCardBtn"
-            aria-label="Sembunyikan skor">
-            <i class="bi bi-dash-lg"></i>
-        </button>
-    </div>
-    <div class="d-flex align-items-center gap-2">
-        <div class="display-6 fw-bold text-primary" id="floatingScoreValue">0,0</div>
-        <div class="small text-muted lh-sm">
-            Rata-rata<br>
-            <span id="floatingScoreCount">0/0</span> Aspek
-        </div>
-    </div>
-</div>
-<button type="button" class="btn btn-primary btn-sm floating-score-trigger d-none" id="showScoreCardBtn">
-    Lihat Skor
-</button>
+{{ floating_score_card(value='0,0', count='0/0') }}
 
 <!-- Submit Requirement Modal -->
 <div class="modal fade" id="photoRequirementModal" tabindex="-1" aria-labelledby="photoRequirementModalLabel"
@@ -800,7 +755,6 @@
     var uploadInProgress = false;
     var pendingRotationRoomSet = new Set();
     var rotationPersistPromises = {};
-    var pendingScoreRequests = {};
     var bypassSubmitRotationSync = false;
     var bypassDraftRotationSync = false;
     var locationRequestInFlight = null;
@@ -1342,8 +1296,6 @@
         return false;
     }
 
-    // Initial Score Calculation
-    calculateOverallScore();
     updatePhotoRequirementUI();
     // Force prompt lokasi saat halaman dibuka
     document.addEventListener('DOMContentLoaded', function () {
@@ -1422,24 +1374,17 @@
                 }
 
                 var pendingRotations = getPendingRotationRoomIds();
-                var pendingScores = countPendingScoreRequests();
-                if (!pendingRotations.length && pendingScores === 0) return;
+                if (!pendingRotations.length) return;
 
                 event.preventDefault();
                 var submitBtn = document.getElementById('submitAssessmentBtn');
                 var submitBtnHtml = submitBtn ? submitBtn.innerHTML : '';
                 if (submitBtn) {
                     submitBtn.disabled = true;
-                    submitBtn.innerHTML = pendingScores > 0
-                        ? '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan nilai...'
-                        : '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan rotasi foto...';
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan rotasi foto...';
                 }
 
-                syncPendingScoreSavesBeforeForm()
-                    .then(function (scoreOk) {
-                        if (!scoreOk) throw new Error('score_sync_failed');
-                        return syncPendingPhotoRotationsBeforeForm();
-                    })
+                syncPendingPhotoRotationsBeforeForm()
                     .then(function (rotationOk) {
                         if (!rotationOk) throw new Error('rotation_sync_failed');
                         bypassSubmitRotationSync = true;
@@ -1450,10 +1395,6 @@
                         }
                     })
                     .catch(function (err) {
-                        if (err && err.message === 'score_sync_failed') {
-                            showToast('Ada nilai yang gagal disimpan. Periksa koneksi lalu coba submit lagi.');
-                            return;
-                        }
                         if (err && err.message === 'rotation_sync_failed') {
                             showToast('Ada rotasi foto yang gagal disimpan. Coba lagi sebelum submit.');
                             return;
@@ -1478,24 +1419,17 @@
                 }
 
                 var pendingRotations = getPendingRotationRoomIds();
-                var pendingScores = countPendingScoreRequests();
-                if (!pendingRotations.length && pendingScores === 0) return;
+                if (!pendingRotations.length) return;
 
                 event.preventDefault();
                 var draftBtn = draftForm.querySelector('button[type="submit"]');
                 var draftBtnHtml = draftBtn ? draftBtn.innerHTML : '';
                 if (draftBtn) {
                     draftBtn.disabled = true;
-                    draftBtn.innerHTML = pendingScores > 0
-                        ? '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan nilai...'
-                        : '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan rotasi foto...';
+                    draftBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan rotasi foto...';
                 }
 
-                syncPendingScoreSavesBeforeForm()
-                    .then(function (scoreOk) {
-                        if (!scoreOk) throw new Error('score_sync_failed');
-                        return syncPendingPhotoRotationsBeforeForm();
-                    })
+                syncPendingPhotoRotationsBeforeForm()
                     .then(function (rotationOk) {
                         if (!rotationOk) throw new Error('rotation_sync_failed');
                         bypassDraftRotationSync = true;
@@ -1506,10 +1440,6 @@
                         }
                     })
                     .catch(function (err) {
-                        if (err && err.message === 'score_sync_failed') {
-                            showToast('Ada nilai yang gagal disimpan. Periksa koneksi lalu coba simpan draft lagi.');
-                            return;
-                        }
                         if (err && err.message === 'rotation_sync_failed') {
                             showToast('Ada rotasi foto yang gagal disimpan. Coba lagi sebelum simpan draft.');
                             return;
@@ -1561,203 +1491,32 @@
         }
     });
 
-    function getScoreRequestKey(schoolRoomId, aspectId) {
-        return String(schoolRoomId) + ':' + String(aspectId);
-    }
-
-    function countPendingScoreRequests() {
-        return Object.keys(pendingScoreRequests).length;
-    }
-
-    function saveScoreRequest(schoolRoomId, aspectId, score) {
-        var key = getScoreRequestKey(schoolRoomId, aspectId);
-        var previousPromise = pendingScoreRequests[key] || Promise.resolve();
-
-        var requestPromise = previousPromise
-            .catch(function () { return null; })
-            .then(function () {
-                return fetch('/portal/assess/' + schoolId + '/score', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        assessment_id: assessmentId,
-                        school_room_id: schoolRoomId,
-                        aspect_id: aspectId,
-                        score: score
-                    })
-                })
-                    .then(function (res) { return res.json(); })
-                    .then(function (data) {
-                        if (!data.success) {
-                            throw new Error(data.message || 'Gagal menyimpan skor');
-                        }
-                        return data;
-                    });
-            });
-
-        pendingScoreRequests[key] = requestPromise;
-        return requestPromise.finally(function () {
-            if (pendingScoreRequests[key] === requestPromise) {
-                delete pendingScoreRequests[key];
-            }
-        });
-    }
-
-    function syncPendingScoreSavesBeforeForm() {
-        var pendingKeys = Object.keys(pendingScoreRequests);
-        if (!pendingKeys.length) {
-            return Promise.resolve(true);
-        }
-
-        return Promise.all(
-            pendingKeys.map(function (key) {
-                return pendingScoreRequests[key]
-                    .then(function () { return true; })
-                    .catch(function () { return false; });
-            })
-        ).then(function (results) {
-            return results.every(function (ok) { return ok; });
-        });
-    }
-
-    function selectScore(btn) {
-        var group = btn.closest('.score-group');
-        if (!group) return;
-
-        var schoolRoomId = parseInt(group.dataset.schoolRoomId, 10);
-        var aspectId = parseInt(group.dataset.aspectId, 10);
-        var score = parseInt(btn.dataset.score, 10);
-        if (Number.isNaN(schoolRoomId) || Number.isNaN(aspectId) || Number.isNaN(score)) {
-            showToast('Data penilaian tidak valid.');
-            return;
-        }
-
-        // Update UI
-        group.querySelectorAll('.score-btn').forEach(function (b) { b.classList.remove('selected'); });
-        btn.classList.add('selected');
-
-        // Update floating score immediately
-        calculateOverallScore();
-        updateRoomProgress(schoolRoomId);
-        updateRoomScore(schoolRoomId);
-
-        saveScoreRequest(schoolRoomId, aspectId, score)
-            .then(function () {
-                updateRoomProgress(schoolRoomId);
-                updateRoomScore(schoolRoomId);
-            })
-            .catch(function (err) {
-                showToast('Gagal menyimpan: ' + err.message);
-            });
-    }
-
-    function calculateOverallScore() {
-        var totalScore = 0;
-        var scoredCount = 0;
-        var totalAspects = document.querySelectorAll('.score-group').length;
-
-        document.querySelectorAll('.score-btn.selected').forEach(function (btn) {
-            totalScore += parseInt(btn.dataset.score);
-            scoredCount++;
-        });
-
-        // Convert active score scale to 0-100 scale
-        var avg = scoredCount > 0 ? (totalScore / scoredCount) : 0;
-        var finalScore = (avg / scoreScaleMax) * 100;
-
-        // Format with comma, 1 decimal place (e.g. 91,1)
-        var formatted = finalScore.toFixed(1).replace('.', ',');
-
-        document.getElementById('floatingScoreValue').textContent = formatted;
-        document.getElementById('floatingScoreCount').textContent = scoredCount + '/' + totalAspects;
-    }
-
-    function saveNoteWithDebounce(textarea, schoolRoomId) {
-        if (noteTimeout) clearTimeout(noteTimeout);
-        noteTimeout = setTimeout(function () {
-            var notes = textarea.value;
-            fetch('/portal/assess/' + schoolId + '/note', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    assessment_id: assessmentId,
-                    school_room_id: schoolRoomId,
-                    notes: notes
-                })
-            })
-                .then(function (res) { return res.json(); })
-                .then(function (data) {
-                    if (!data.success) {
-                        showToast('Gagal menyimpan keterangan');
-                    }
-                })
-                .catch(function (err) { console.error(err); });
-        }, 1000); // 1s debounce
-    }
-
-    function updateRoomProgress(schoolRoomId) {
-        var room = document.getElementById('room' + schoolRoomId);
-        if (!room) return;
-
-        var badge = document.getElementById('roomBadge' + schoolRoomId);
-        var groups = room.querySelectorAll('.score-group');
-        var scored = 0;
-
-        groups.forEach(function (g) {
-            if (g.querySelector('.score-btn.selected')) scored++;
-        });
-
-        badge.textContent = scored + '/' + groups.length;
-        updateRoomScore(schoolRoomId);
-    }
-
-    // Initialize progress
-    document.querySelectorAll('.room-item').forEach(function (room) {
-        var header = room.querySelector('.room-header');
-        if (header && header.dataset.bsTarget) {
-            var roomId = header.dataset.bsTarget.replace('#room', '');
-            updateRoomProgress(roomId);
-        }
+    window.initAssessmentUI({
+        assessmentId: assessmentId,
+        schoolId: schoolId,
+        scaleMax: scoreScaleMax,
+        scoreEndpoint: '/portal/assess/' + schoolId + '/score',
+        noteEndpoint: '/portal/assess/' + schoolId + '/note',
+        scoreProgressBarId: 'scoreProgressBar',
+        floatingScoreValueId: 'floatingScoreValue',
+        floatingScoreCountId: 'floatingScoreCount',
+        floatingScoreCardId: 'floatingScoreCard',
+        showScoreCardBtnId: 'showScoreCardBtn',
+        hideScoreCardBtnId: 'hideScoreCardBtn',
+        searchInputId: 'roomSearchAssessment',
+        roomSelector: '.room-item',
+        groupSelector: '.score-group',
+        itemSelector: '.aspect-item',
+        roomBadgePrefix: 'roomBadge',
+        roomScorePrefix: 'roomScore',
+        scorePayloadFactory: function (schoolRoomId, aspectId, score) {
+            return {
+                school_room_id: schoolRoomId,
+                aspect_id: aspectId,
+                score: score
+            };
+        },
     });
-
-    function updateRoomScore(schoolRoomId) {
-        var room = document.getElementById('room' + schoolRoomId);
-        var scoreDisplay = document.getElementById('roomScore' + schoolRoomId);
-        if (!room || !scoreDisplay) return;
-
-        var totalScore = 0;
-        var totalAspects = 0;
-
-        room.querySelectorAll('.score-group').forEach(function (g) {
-            var selected = g.querySelector('.score-btn.selected');
-            if (selected) {
-                totalScore += parseInt(selected.dataset.score, 10);
-                totalAspects += 1;
-            }
-        });
-
-        if (totalAspects === 0) {
-            scoreDisplay.textContent = '0.0';
-            return;
-        }
-
-        var avg = totalScore / totalAspects;
-        var pct = (avg / scoreScaleMax) * 100;
-        scoreDisplay.textContent = pct.toFixed(1);
-
-        // Update color class
-        scoreDisplay.classList.remove('score-badge-red', 'score-badge-orange', 'score-badge-yellow', 'score-badge-green');
-        if (pct < 55) {
-            scoreDisplay.classList.add('score-badge-red');
-        } else if (pct < 70) {
-            scoreDisplay.classList.add('score-badge-orange');
-        } else if (pct < 85) {
-            scoreDisplay.classList.add('score-badge-yellow');
-        } else {
-            scoreDisplay.classList.add('score-badge-green');
-        }
-
-    }
 
     function roomHasPhoto(roomId) {
         var preview = document.getElementById('photoPreview' + roomId);

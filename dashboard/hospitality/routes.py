@@ -39,6 +39,9 @@ from .queries import (
     delete_hosp_aspect,
     get_assessment,
     get_assessment_scores,
+    get_draft_assessment,
+    get_latest_assessment_for_staff_school,
+    get_latest_draft_assessment_for_staff,
     get_component,
     get_hosp_aspect,
     get_latest_reopen_request,
@@ -154,6 +157,21 @@ def _guestbook_review_scope_for_user(user: Dict[str, Any]) -> tuple[Optional[Dic
     return None, None
 
 
+def _hospitality_required_aspect_count() -> int:
+    components = list_components_with_aspects(active_only=True)
+    return sum(len(comp.get("aspects") or []) for comp in components)
+
+
+def _hospitality_scored_aspect_count(assessment_id: int) -> int:
+    scores = get_assessment_scores(assessment_id)
+    scored_aspects = {
+        int(item["aspect_id"])
+        for item in scores
+        if item.get("aspect_id") is not None and item.get("score") is not None
+    }
+    return len(scored_aspects)
+
+
 # ===== Routing =====
 
 
@@ -181,9 +199,15 @@ def staff_home() -> Response:
         status=status_filter,
         search=search,
     )
+    draft_assessment = get_latest_draft_assessment_for_staff(staff_id=int(user.get("id")))
+    if draft_assessment and (not status_filter or status_filter == "draft"):
+        draft_id = draft_assessment.get("id")
+        assessments = [item for item in assessments if item.get("id") != draft_id]
+        assessments = [draft_assessment] + assessments
     return render_template(
         "hospitality/staff/list.html",
         assessments=assessments,
+        draft_assessment=draft_assessment,
         score_max=HOSPITALITY_SCORE_MAX,
         status_filter=status_filter or "",
         search_query=search or "",
@@ -205,16 +229,21 @@ def staff_assess(school_id: int) -> Response:
     if not school:
         abort(404)
 
+    assessment = get_draft_assessment(school_id=school_id, staff_id=int(user.get("id")))
+    if not assessment:
+        assessment = get_latest_assessment_for_staff_school(school_id=school_id, staff_id=int(user.get("id")))
+    if not assessment:
+        assessment = create_assessment(
+            school_id=school_id,
+            staff_id=int(user.get("id")),
+            score_scale_max=HOSPITALITY_SCORE_MAX,
+            note_text=None,
+        )
+
     if request.method == "POST":
+        note_text = (request.form.get("note") or "").strip() or None
+        status_action = (request.form.get("action") or "draft").strip().lower()
         try:
-            note_text = (request.form.get("note") or "").strip() or None
-            assessment = create_assessment(
-                school_id=school_id,
-                staff_id=int(user.get("id")),
-                score_scale_max=HOSPITALITY_SCORE_MAX,
-                note_text=note_text,
-            )
-            # Parse scores from form: fields score_<aspect_id>
             scores_payload: List[Dict[str, Any]] = []
             for comp in components:
                 for aspect in comp.get("aspects") or []:
@@ -235,22 +264,137 @@ def staff_assess(school_id: int) -> Response:
                         }
                     )
             upsert_scores(assessment_id=int(assessment["id"]), scores=scores_payload)
-            submit_assessment(
-                assessment_id=int(assessment["id"]),
-                note_text=note_text,
-                score_scale_max=HOSPITALITY_SCORE_MAX,
-            )
-            flash("Penilaian tersimpan. Silakan hubungkan dengan buku tamu untuk verifikasi.", "success")
-            return redirect(url_for("hospitality.assessment_detail", assessment_id=assessment["id"]))
+            if status_action == "submit":
+                submit_assessment(
+                    assessment_id=int(assessment["id"]),
+                    note_text=note_text,
+                    score_scale_max=HOSPITALITY_SCORE_MAX,
+                )
+                flash("Penilaian tersimpan dan dikirim.", "success")
+                return redirect(url_for("hospitality.assessment_detail", assessment_id=assessment["id"]))
+            with get_cursor(commit=True) as cur:
+                cur.execute(
+                    """
+                    UPDATE hospitality_assessments
+                    SET note_text = %s,
+                        updated_at = NOW()
+                    WHERE id = %s
+                    """,
+                    (note_text, int(assessment["id"])),
+                )
+            flash("Draft penilaian disimpan.", "success")
+            return redirect(url_for("hospitality.staff_assess", school_id=school_id))
         except Exception as exc:  # pragma: no cover
             flash(str(exc), "danger")
+
+    assessment_scores = get_assessment_scores(int(assessment["id"])) if assessment else []
+    scores_map = {s.get("aspect_id"): s.get("score") for s in assessment_scores}
+    notes_by_component = {s.get("component_id"): s.get("note") for s in assessment_scores if s.get("note")}
 
     return render_template(
         "hospitality/staff/assess.html",
         school=school,
         components=components,
+        assessment=assessment,
+        assessment_status=assessment.get("status") if assessment else "draft",
+        scores_map=scores_map,
+        notes_by_component=notes_by_component,
         score_scale=list(range(1, HOSPITALITY_SCORE_MAX + 1)),
     )
+
+
+@hospitality_bp.route("/staff/assess/<int:school_id>/score", methods=["POST"])
+@role_required("staff")
+def staff_save_score(school_id: int) -> Response:
+    data = request.get_json(silent=True) or {}
+    try:
+        assessment_id = int(data.get("assessment_id"))
+        aspect_id = int(data.get("aspect_id"))
+        component_id = int(data.get("component_id"))
+        score = int(data.get("score"))
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "message": "Data tidak valid"}), 400
+    assessment = get_assessment(assessment_id)
+    if not assessment or int(assessment.get("school_id")) != school_id:
+        return jsonify({"success": False, "message": "Assessment tidak ditemukan"}), 404
+    if assessment.get("status") != "draft":
+        return jsonify({"success": False, "message": "Penilaian sudah dikirim."}), 400
+    try:
+        upsert_scores(
+            assessment_id=assessment_id,
+            scores=[{"component_id": component_id, "aspect_id": aspect_id, "score": score, "note": None}],
+        )
+        return jsonify({"success": True})
+    except Exception as exc:
+        return jsonify({"success": False, "message": str(exc)}), 500
+
+
+@hospitality_bp.route("/staff/assess/<int:school_id>/note", methods=["POST"])
+@role_required("staff")
+def staff_save_note(school_id: int) -> Response:
+    data = request.get_json(silent=True) or {}
+    try:
+        assessment_id = int(data.get("assessment_id"))
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "message": "Data tidak valid"}), 400
+    note = (data.get("note") or "").strip() or None
+    assessment = get_assessment(assessment_id)
+    if not assessment or int(assessment.get("school_id")) != school_id:
+        return jsonify({"success": False, "message": "Assessment tidak ditemukan"}), 404
+    if assessment.get("status") != "draft":
+        return jsonify({"success": False, "message": "Penilaian sudah dikirim."}), 400
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            "UPDATE hospitality_assessments SET note_text = %s, updated_at = NOW() WHERE id = %s",
+            (note, assessment_id),
+        )
+    return jsonify({"success": True})
+
+
+@hospitality_bp.route("/staff/assess/<int:school_id>/draft", methods=["POST"])
+@role_required("staff")
+def staff_save_draft(school_id: int) -> Response:
+    assessment_id = request.form.get("assessment_id", type=int)
+    if not assessment_id:
+        flash("Assessment ID tidak valid.", "danger")
+        return redirect(url_for("hospitality.staff_assess", school_id=school_id))
+    assessment = get_assessment(assessment_id)
+    if not assessment or int(assessment.get("school_id")) != school_id:
+        flash("Assessment tidak ditemukan.", "danger")
+        return redirect(url_for("hospitality.staff_assess", school_id=school_id))
+    if assessment.get("status") != "draft":
+        flash("Penilaian sudah dikirim.", "warning")
+        return redirect(url_for("hospitality.assessment_detail", assessment_id=assessment_id))
+    flash("Draft penilaian disimpan.", "success")
+    return redirect(url_for("hospitality.staff_assess", school_id=school_id))
+
+
+@hospitality_bp.route("/staff/assess/<int:school_id>/submit", methods=["POST"])
+@role_required("staff")
+def staff_submit_assessment(school_id: int) -> Response:
+    assessment_id = request.form.get("assessment_id", type=int)
+    if not assessment_id:
+        flash("Assessment ID tidak valid.", "danger")
+        return redirect(url_for("hospitality.staff_assess", school_id=school_id))
+    assessment = get_assessment(assessment_id)
+    if not assessment or int(assessment.get("school_id")) != school_id:
+        flash("Assessment tidak ditemukan.", "danger")
+        return redirect(url_for("hospitality.staff_assess", school_id=school_id))
+    if assessment.get("status") != "draft":
+        flash("Penilaian sudah dikirim.", "warning")
+        return redirect(url_for("hospitality.assessment_detail", assessment_id=assessment_id))
+    required_aspects = _hospitality_required_aspect_count()
+    scored_aspects = _hospitality_scored_aspect_count(assessment_id)
+    if required_aspects > 0 and scored_aspects < required_aspects:
+        flash("Semua aspek harus dinilai sebelum submit.", "warning")
+        return redirect(url_for("hospitality.staff_assess", school_id=school_id))
+    submit_assessment(
+        assessment_id=assessment_id,
+        note_text=assessment.get("note_text"),
+        score_scale_max=HOSPITALITY_SCORE_MAX,
+    )
+    flash("Penilaian tersimpan dan dikirim.", "success")
+    return redirect(url_for("hospitality.assessment_detail", assessment_id=assessment_id))
 
 
 @hospitality_bp.route("/assessment/<int:assessment_id>")
@@ -964,8 +1108,72 @@ def admin_create_aspect() -> Response:
             active=True,
         )
         flash("Aspek ditambahkan.", "success")
+        if request.is_json:
+            component = get_component(component_id)
+            return jsonify({
+                "success": True,
+                "component_id": component_id,
+                "aspects": list_components_with_aspects(active_only=False),
+                "component_name": component.get("name") if component else None,
+            })
     except Exception as exc:
+        if request.is_json:
+            return jsonify({"success": False, "error": str(exc)}), 400
         flash(str(exc), "danger")
+    return redirect(url_for("hospitality.admin_setup"))
+
+
+@hospitality_bp.route("/admin/setup/aspects/batch", methods=["POST"])
+@role_required("admin", "coordinator")
+def admin_create_aspects_batch() -> Response:
+    data = request.get_json(silent=True) or {}
+    aspects = data.get("aspects", [])
+    is_required_default = bool(data.get("is_required", True))
+
+    if not aspects:
+        return jsonify({"success": False, "error": "Tidak ada aspek yang dikirim"}), 400
+
+    created_count = 0
+    errors: list[str] = []
+    touched_components: set[int] = set()
+
+    for item in aspects:
+        component_id = item.get("componentId")
+        name = (item.get("name") or "").strip()
+        is_required = bool(item.get("is_required", is_required_default))
+
+        if not component_id or not name:
+            errors.append("Missing component_id or name for aspect")
+            continue
+
+        try:
+            cid = int(component_id)
+            create_hosp_aspect(
+                component_id=cid,
+                name=name,
+                description=None,
+                sort_order=0,
+                is_required=is_required,
+                active=True,
+            )
+            created_count += 1
+            touched_components.add(cid)
+        except Exception as exc:
+            errors.append(f"Error creating '{name}': {exc}")
+
+    if request.is_json:
+        return jsonify({
+            "success": created_count > 0,
+            "created": created_count,
+            "errors": errors,
+            "components": list_components_with_aspects(active_only=False),
+            "touched_components": list(touched_components),
+        })
+
+    if created_count > 0:
+        flash(f"{created_count} aspek berhasil ditambahkan.", "success")
+    if errors:
+        flash("; ".join(errors), "warning")
     return redirect(url_for("hospitality.admin_setup"))
 
 

@@ -35,7 +35,7 @@ def list_components_with_aspects(*, active_only: bool = True) -> List[Dict[str, 
     params: List[Any] = []
     if active_only:
         conditions.append("c.active = TRUE")
-        conditions.append("a.active = TRUE")
+        conditions.append("(a.id IS NULL OR a.active = TRUE)")
     where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
     with get_cursor() as cur:
         cur.execute(
@@ -45,13 +45,16 @@ def list_components_with_aspects(*, active_only: bool = True) -> List[Dict[str, 
                 c.name AS component_name,
                 c.description AS component_description,
                 c.sort_order AS component_sort,
+                c.active AS component_active,
+                c.is_required AS component_required,
                 a.id AS aspect_id,
                 a.name AS aspect_name,
                 a.description AS aspect_description,
                 a.sort_order AS aspect_sort,
-                a.is_required AS aspect_required
+                a.is_required AS aspect_required,
+                a.active AS aspect_active
             FROM hospitality_components c
-            JOIN hospitality_aspects a ON a.component_id = c.id
+            LEFT JOIN hospitality_aspects a ON a.component_id = c.id
             {where}
             ORDER BY c.sort_order, c.id, a.sort_order, a.id
             """,
@@ -69,18 +72,22 @@ def list_components_with_aspects(*, active_only: bool = True) -> List[Dict[str, 
                 "name": row["component_name"],
                 "description": row["component_description"],
                 "sort_order": row["component_sort"],
+                "active": row.get("component_active", True),
+                "is_required": row.get("component_required", True),
                 "aspects": [],
             }
             components.append(current)
-        current["aspects"].append(
-            {
-                "id": row["aspect_id"],
-                "name": row["aspect_name"],
-                "description": row["aspect_description"],
-                "sort_order": row["aspect_sort"],
-                "is_required": bool(row["aspect_required"]),
-            }
-        )
+        if row["aspect_id"] is not None:
+            current["aspects"].append(
+                {
+                    "id": row["aspect_id"],
+                    "name": row["aspect_name"],
+                    "description": row["aspect_description"],
+                    "sort_order": row["aspect_sort"],
+                    "is_required": bool(row["aspect_required"]),
+                    "active": row.get("aspect_active", True),
+                }
+            )
     return components
 
 
@@ -119,6 +126,63 @@ def create_assessment(
             (school_id, staff_id, score_scale_max, note_text),
         )
         return dict(cur.fetchone())
+
+
+def get_draft_assessment(*, school_id: int, staff_id: int) -> Optional[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT a.*, s.name AS school_name, s.npsn, s.jenjang,
+                   u.full_name AS staff_name
+            FROM hospitality_assessments a
+            JOIN portal_schools s ON s.id = a.school_id
+            LEFT JOIN dashboard_users u ON u.id = a.staff_id
+            WHERE a.school_id = %s AND a.staff_id = %s AND a.status = 'draft'
+            ORDER BY a.updated_at DESC, a.created_at DESC
+            LIMIT 1
+            """,
+            (school_id, staff_id),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def get_latest_draft_assessment_for_staff(*, staff_id: int) -> Optional[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT a.*, s.name AS school_name, s.npsn, s.jenjang,
+                   u.full_name AS staff_name
+            FROM hospitality_assessments a
+            JOIN portal_schools s ON s.id = a.school_id
+            LEFT JOIN dashboard_users u ON u.id = a.staff_id
+            WHERE a.staff_id = %s AND a.status = 'draft'
+            ORDER BY a.updated_at DESC, a.created_at DESC
+            LIMIT 1
+            """,
+            (staff_id,),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def get_latest_assessment_for_staff_school(*, school_id: int, staff_id: int) -> Optional[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT a.*, s.name AS school_name, s.npsn, s.jenjang,
+                   u.full_name AS staff_name
+            FROM hospitality_assessments a
+            JOIN portal_schools s ON s.id = a.school_id
+            LEFT JOIN dashboard_users u ON u.id = a.staff_id
+            WHERE a.school_id = %s AND a.staff_id = %s
+            ORDER BY a.updated_at DESC, a.created_at DESC
+            LIMIT 1
+            """,
+            (school_id, staff_id),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
 
 
 def upsert_scores(

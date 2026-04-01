@@ -239,7 +239,7 @@ portal_content %} {# ── Flash messages
                         method="post"
                         action="{{ url_for('hospitality.link_guestbook', assessment_id=assessment.id) }}"
                     >
-                        {{ csrf_token() }}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-3">
                             <label class="form-label small fw-semibold"
                                 >Pilih Transaksi</label
@@ -516,7 +516,7 @@ portal_content %} {# ── Flash messages
                         method="post"
                         action="{{ url_for('hospitality.add_comment', assessment_id=assessment.id) }}"
                     >
-                        {{ csrf_token() }}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-2">
                             <textarea
                                 name="message"

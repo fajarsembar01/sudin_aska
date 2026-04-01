@@ -262,6 +262,30 @@
                             {% from 'shared/_aspect_list.html' import aspect_list %}
                             {{ aspect_list(comp.aspects, comp.id, comp.name, 'component') }}
                           </div>
+
+                          <div class="row g-2 align-items-end">
+                            <div class="col-md-6">
+                              <input type="text"
+                                     class="form-control form-control-sm inline-aspect-input"
+                                     data-component-id="{{ comp.id }}"
+                                     placeholder="Nama aspek baru (Enter untuk tambah ke list)">
+                            </div>
+                            <div class="col-md-3">
+                              <button type="button"
+                                      class="btn btn-outline-secondary btn-sm w-100 inline-add-btn"
+                                      data-component-id="{{ comp.id }}">
+                                <i class="bi bi-plus"></i> Ke List
+                              </button>
+                            </div>
+                            <div class="col-md-3">
+                              <button type="button"
+                                      class="btn btn-success btn-sm w-100 inline-save-btn d-none"
+                                      data-component-id="{{ comp.id }}">
+                                <i class="bi bi-check-lg me-1"></i>Simpan <span class="inline-aspect-count">0</span>
+                              </button>
+                            </div>
+                          </div>
+                          <div class="inline-aspect-preview mt-2" data-component-id="{{ comp.id }}" style="max-height: 150px; overflow-y: auto;"></div>
                         </div>
                       </td>
                     </tr>
@@ -367,6 +391,107 @@
       if (countEl) countEl.textContent = String(visible);
     });
   }
+
+  const inlineAspectLists = {};
+
+  function updateInlinePreview(componentId) {
+    const list = inlineAspectLists[componentId] || [];
+    const previewDiv = document.querySelector(`.inline-aspect-preview[data-component-id="${componentId}"]`);
+    const saveBtn = document.querySelector(`.inline-save-btn[data-component-id="${componentId}"]`);
+    const countSpan = saveBtn?.querySelector('.inline-aspect-count');
+    if (!previewDiv) return;
+
+    if (list.length === 0) {
+      previewDiv.innerHTML = '';
+      saveBtn?.classList.add('d-none');
+      if (countSpan) countSpan.textContent = '0';
+      return;
+    }
+
+    previewDiv.innerHTML = list.map((name) => `
+      <span class="badge bg-primary me-1 mb-1" style="font-weight: normal;">
+        ${name}
+        <i class="bi bi-x-lg ms-1 inline-remove-aspect" style="cursor: pointer;"></i>
+      </span>
+    `).join('');
+    saveBtn?.classList.remove('d-none');
+    if (countSpan) countSpan.textContent = String(list.length);
+  }
+
+  document.addEventListener('click', (e) => {
+    const addBtn = e.target.closest('.inline-add-btn');
+    if (addBtn) {
+      const componentId = addBtn.getAttribute('data-component-id');
+      const input = document.querySelector(`input.inline-aspect-input[data-component-id="${componentId}"]`);
+      if (!input) return;
+      const name = input.value.trim();
+      if (!name) return;
+      if (!inlineAspectLists[componentId]) inlineAspectLists[componentId] = [];
+      inlineAspectLists[componentId].push(name);
+      input.value = '';
+      input.focus();
+      updateInlinePreview(componentId);
+      return;
+    }
+
+    const removeIcon = e.target.closest('.inline-remove-aspect');
+    if (removeIcon) {
+      const previewDiv = removeIcon.closest('.inline-aspect-preview');
+      const componentId = previewDiv?.getAttribute('data-component-id');
+      if (!componentId) return;
+      const badge = removeIcon.closest('.badge');
+      const badges = Array.from(previewDiv.querySelectorAll('.badge'));
+      const index = badges.indexOf(badge);
+      if (index !== -1 && inlineAspectLists[componentId]) {
+        inlineAspectLists[componentId].splice(index, 1);
+        updateInlinePreview(componentId);
+      }
+    }
+  });
+
+  document.addEventListener('keypress', (e) => {
+    if (e.key !== 'Enter' || !e.target.classList.contains('inline-aspect-input')) return;
+    e.preventDefault();
+    const componentId = e.target.getAttribute('data-component-id');
+    const btn = document.querySelector(`button.inline-add-btn[data-component-id="${componentId}"]`);
+    btn?.click();
+  });
+
+  document.querySelectorAll('.inline-save-btn').forEach(btn => {
+    btn.addEventListener('click', async function () {
+      const componentId = this.dataset.componentId;
+      const list = inlineAspectLists[componentId] || [];
+      if (list.length === 0) return;
+
+      this.disabled = true;
+      const originalHtml = this.innerHTML;
+      this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+      try {
+        const aspects = list.map(name => ({ componentId, name, is_required: true }));
+        const response = await fetch('/hospitality/admin/setup/aspects/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ aspects })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          inlineAspectLists[componentId] = [];
+          updateInlinePreview(componentId);
+          window.location.reload();
+        } else {
+          alert(data.error || 'Gagal menyimpan aspek');
+          this.disabled = false;
+          this.innerHTML = originalHtml;
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+        this.disabled = false;
+        this.innerHTML = originalHtml;
+      }
+    });
+  });
 
   const deleteModal = document.getElementById('deleteAspectModal');
   const editModal = document.getElementById('editAspectModal');
