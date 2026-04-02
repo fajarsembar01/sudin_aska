@@ -52,6 +52,7 @@ from .queries import (
     create_cc_message_draft,
     update_cc_message_draft,
     delete_cc_message_draft,
+    toggle_cc_message_draft_pin,
 )
 from . import call_center_bp
 
@@ -249,6 +250,7 @@ def api_send() -> Response:
     data = request.get_json(silent=True) or {}
     conv_id = data.get("conversation_id")
     message_text = (data.get("message") or "").strip()
+    draft_id = data.get("draft_id")
 
     if not conv_id or not message_text:
         return jsonify({"error": "conversation_id and message required"}), 400
@@ -276,6 +278,19 @@ def api_send() -> Response:
         wa_message_id=result.get("messageId"),
     )
 
+    if draft_id:
+        try:
+            record_admin_action(
+                user_id=user.get("id"),
+                feature_key="call_center",
+                action="SEND",
+                target_type="CALL_CENTER_DRAFT",
+                target_id=int(draft_id),
+                target_name=f"Draft #{draft_id}",
+            )
+        except Exception:
+            pass
+
     return jsonify({"ok": True, "message": msg})
 
 
@@ -300,6 +315,24 @@ def api_messages(conv_id: int) -> Response:
     after_id = request.args.get("after_id", type=int)
     messages = fetch_cc_messages(conv_id, limit=200, after_id=after_id)
     return jsonify({"messages": messages})
+
+
+@call_center_bp.route("/api/drafts/<int:draft_id>/use", methods=["POST"])
+@role_required("admin")
+def api_draft_use(draft_id: int) -> Response:
+    user = current_user() or {}
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="call_center",
+            action="USE",
+            target_type="CALL_CENTER_DRAFT",
+            target_id=draft_id,
+            target_name=f"Draft #{draft_id}",
+        )
+    except Exception:
+        pass
+    return jsonify({"ok": True})
 
 
 @call_center_bp.route("/api/close/<int:conv_id>", methods=["POST"])
@@ -449,6 +482,37 @@ def api_draft_detail(draft_id: int) -> Response:
     except Exception as exc:
         current_app.logger.exception("Call Center draft detail API error")
         return jsonify({"error": f"Gagal memproses draft: {exc}"}), 500
+
+
+@call_center_bp.route("/api/drafts/<int:draft_id>/pin", methods=["POST"])
+@role_required("admin")
+def api_draft_pin(draft_id: int) -> Response:
+    user = current_user() or {}
+    admin_user_id = user.get("id")
+    if not admin_user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        updated = toggle_cc_message_draft_pin(draft_id=draft_id, admin_user_id=admin_user_id)
+        if not updated:
+            return jsonify({"error": "Draft tidak ditemukan."}), 404
+
+        action = "PIN" if updated.get("pinned") else "UNPIN"
+        try:
+            record_admin_action(
+                user_id=admin_user_id,
+                feature_key="call_center",
+                action=action,
+                target_type="CALL_CENTER_DRAFT",
+                target_id=draft_id,
+                target_name=updated.get("title") or f"Draft #{draft_id}",
+            )
+        except Exception:
+            pass
+        return jsonify({"ok": True, "draft": updated})
+    except Exception as exc:
+        current_app.logger.exception("Call Center draft pin API error")
+        return jsonify({"error": f"Gagal mengubah pin draft: {exc}"}), 500
 
 
 # ── Settings ──────────────────────────────────────────────────────────────────
