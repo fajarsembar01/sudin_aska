@@ -247,9 +247,16 @@ def _ensure_cc_message_drafts_schema() -> None:
                 title TEXT NOT NULL,
                 category TEXT NOT NULL DEFAULT 'Umum',
                 message_text TEXT NOT NULL,
+                pinned BOOLEAN NOT NULL DEFAULT FALSE,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
+            """
+        )
+        cur.execute(
+            """
+            ALTER TABLE cc_message_drafts
+            ADD COLUMN IF NOT EXISTS pinned BOOLEAN NOT NULL DEFAULT FALSE
             """
         )
         cur.execute(
@@ -281,10 +288,22 @@ def list_cc_message_drafts(
     with get_cursor() as cur:
         cur.execute(
             f"""
-            SELECT d.id, d.admin_user_id, d.title, d.category, d.message_text, d.created_at, d.updated_at
+            WITH draft_usage AS (
+                SELECT
+                    target_id,
+                    COUNT(*)::int AS usage_count
+                FROM dashboard_admin_action_logs
+                WHERE feature_key = 'call_center'
+                  AND target_type = 'CALL_CENTER_DRAFT'
+                  AND action IN ('USE', 'SEND')
+                GROUP BY target_id
+            )
+            SELECT d.id, d.admin_user_id, d.title, d.category, d.message_text, d.pinned, d.created_at, d.updated_at
+                 , COALESCE(du.usage_count, 0) AS usage_count
             FROM cc_message_drafts d
+            LEFT JOIN draft_usage du ON du.target_id = d.id
             WHERE d.admin_user_id = %(admin_user_id)s {category_clause}
-            ORDER BY LOWER(d.category) ASC, d.updated_at DESC, d.id DESC
+            ORDER BY d.pinned DESC, COALESCE(du.usage_count, 0) DESC, d.updated_at DESC, d.id DESC
             """,
             params,
         )
@@ -317,9 +336,9 @@ def create_cc_message_draft(
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
-            INSERT INTO cc_message_drafts (admin_user_id, title, category, message_text, updated_at)
-            VALUES (%(admin_user_id)s, %(title)s, %(category)s, %(message_text)s, NOW())
-            RETURNING id, admin_user_id, title, category, message_text, created_at, updated_at
+            INSERT INTO cc_message_drafts (admin_user_id, title, category, message_text, pinned, updated_at)
+            VALUES (%(admin_user_id)s, %(title)s, %(category)s, %(message_text)s, FALSE, NOW())
+            RETURNING id, admin_user_id, title, category, message_text, pinned, created_at, updated_at
             """,
             {
                 "admin_user_id": admin_user_id,
@@ -349,7 +368,7 @@ def update_cc_message_draft(
                 message_text = %(message_text)s,
                 updated_at = NOW()
             WHERE id = %(draft_id)s AND admin_user_id = %(admin_user_id)s
-            RETURNING id, admin_user_id, title, category, message_text, created_at, updated_at
+            RETURNING id, admin_user_id, title, category, message_text, pinned, created_at, updated_at
             """,
             {
                 "draft_id": draft_id,
@@ -361,6 +380,25 @@ def update_cc_message_draft(
         )
         row = cur.fetchone()
     return dict(row) if row else None
+
+
+def toggle_cc_message_draft_pin(draft_id: int, admin_user_id: int) -> Optional[dict]:
+    _ensure_cc_message_drafts_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE cc_message_drafts
+            SET pinned = NOT pinned,
+                updated_at = NOW()
+            WHERE id = %(draft_id)s
+            RETURNING id, admin_user_id, title, category, message_text, pinned, created_at, updated_at
+            """,
+            {"draft_id": draft_id},
+        )
+        row = cur.fetchone()
+        if row:
+            return dict(row)
+    return None
 
 
 def delete_cc_message_draft(draft_id: int, admin_user_id: int) -> bool:

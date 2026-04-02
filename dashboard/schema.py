@@ -1036,6 +1036,7 @@ CREATE TABLE IF NOT EXISTS cc_message_drafts (
     title TEXT NOT NULL,
     category TEXT NOT NULL DEFAULT 'Umum',
     message_text TEXT NOT NULL,
+    pinned BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

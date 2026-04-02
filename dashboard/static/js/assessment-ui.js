@@ -30,6 +30,8 @@
       roomBadgePrefix: config.roomBadgePrefix || 'roomBadge',
       roomScorePrefix: config.roomScorePrefix || 'roomScore',
       scoreBtnSelector: config.scoreBtnSelector || '.score-btn',
+      aspectCountFilledId: config.aspectCountFilledId || null,
+      aspectCountTotalId: config.aspectCountTotalId || null,
       pendingRequests: {},
     };
 
@@ -65,9 +67,13 @@
       const valueEl = document.getElementById(state.floatingScoreValueId);
       const countEl = document.getElementById(state.floatingScoreCountId);
       const bar = document.getElementById(state.scoreProgressBarId);
+      const aspectCountEl = state.aspectCountFilledId ? document.getElementById(state.aspectCountFilledId) : null;
+      const aspectTotalEl = state.aspectCountTotalId ? document.getElementById(state.aspectCountTotalId) : null;
       if (valueEl) valueEl.textContent = pct.toFixed(1).replace('.', ',');
       if (countEl) countEl.textContent = `${count}/${totalItems}`;
       if (bar) bar.style.width = `${totalItems ? (count / totalItems) * 100 : 0}%`;
+      if (aspectCountEl) aspectCountEl.textContent = count;
+      if (aspectTotalEl) aspectTotalEl.textContent = totalItems;
     }
 
     function updateGroupScore(groupEl) {

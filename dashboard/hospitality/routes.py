@@ -63,6 +63,7 @@ from .queries import (
     reorder_components,
     reorder_hosp_aspects,
     submit_assessment,
+    delete_draft_assessment,
     toggle_aspect_active,
     toggle_aspect_required,
     toggle_component_active,
@@ -303,6 +304,22 @@ def staff_assess(school_id: int) -> Response:
     )
 
 
+@hospitality_bp.route("/staff/draft/<int:assessment_id>/delete", methods=["POST"])
+@role_required("staff")
+def staff_delete_draft(assessment_id: int) -> Response:
+    user = current_user()
+    assessment = get_assessment(assessment_id)
+    if not assessment or int(assessment.get("staff_id") or 0) != int(user.get("id")):
+        return jsonify({"success": False, "message": "Penilaian tidak ditemukan."}), 404
+    if (assessment.get("status") or "").lower() != "draft":
+        return jsonify({"success": False, "message": "Hanya draft yang dapat dihapus."}), 400
+    try:
+        delete_draft_assessment(assessment_id=assessment_id)
+    except ValueError as exc:  # pragma: no cover
+        return jsonify({"success": False, "message": str(exc)}), 400
+    return jsonify({"success": True})
+
+
 @hospitality_bp.route("/staff/assess/<int:school_id>/score", methods=["POST"])
 @role_required("staff")
 def staff_save_score(school_id: int) -> Response:
@@ -414,7 +431,10 @@ def assessment_detail(assessment_id: int) -> Response:
     scores = get_assessment_scores(assessment_id)
     components = list_components_with_aspects(active_only=False)
     scores_map = {s.get("aspect_id"): s for s in scores}
-    guestbook_options = list_guestbook_candidates(school_id=int(assessment.get("school_id")))
+    guestbook_options = list_guestbook_candidates(
+        school_id=int(assessment.get("school_id")),
+        user_id=int(user.get("id")) if user.get("role") == "staff" else None,
+    )
     comments = list_comments(assessment_id)
     latest_reopen_request = get_latest_reopen_request(assessment_id)
 
@@ -444,7 +464,7 @@ def link_guestbook(assessment_id: int) -> Response:
 
     transaction_id = request.form.get("transaction_id", type=int)
     if not transaction_id:
-        flash("Pilih transaksi buku tamu.", "warning")
+        flash("Pilih kunjungan buku tamu.", "warning")
         return redirect(url_for("hospitality.assessment_detail", assessment_id=assessment_id))
 
     try:
@@ -453,6 +473,9 @@ def link_guestbook(assessment_id: int) -> Response:
             transaction_id=transaction_id,
             linked_by=int(user.get("id")),
         )
+        if result.get("already_processed"):
+            return redirect(url_for("hospitality.assessment_detail", assessment_id=assessment_id))
+
         # Notify school users and staff
         recipients = set(_school_user_ids(assessment.get("school_id")))
         recipients.add(int(user.get("id")))
