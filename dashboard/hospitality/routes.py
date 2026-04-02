@@ -63,6 +63,7 @@ from .queries import (
     reorder_components,
     reorder_hosp_aspects,
     submit_assessment,
+    delete_draft_assessment,
     toggle_aspect_active,
     toggle_aspect_required,
     toggle_component_active,
@@ -301,6 +302,22 @@ def staff_assess(school_id: int) -> Response:
         notes_by_component=notes_by_component,
         score_scale=list(range(1, HOSPITALITY_SCORE_MAX + 1)),
     )
+
+
+@hospitality_bp.route("/staff/draft/<int:assessment_id>/delete", methods=["POST"])
+@role_required("staff")
+def staff_delete_draft(assessment_id: int) -> Response:
+    user = current_user()
+    assessment = get_assessment(assessment_id)
+    if not assessment or int(assessment.get("staff_id") or 0) != int(user.get("id")):
+        return jsonify({"success": False, "message": "Penilaian tidak ditemukan."}), 404
+    if (assessment.get("status") or "").lower() != "draft":
+        return jsonify({"success": False, "message": "Hanya draft yang dapat dihapus."}), 400
+    try:
+        delete_draft_assessment(assessment_id=assessment_id)
+    except ValueError as exc:  # pragma: no cover
+        return jsonify({"success": False, "message": str(exc)}), 400
+    return jsonify({"success": True})
 
 
 @hospitality_bp.route("/staff/assess/<int:school_id>/score", methods=["POST"])
