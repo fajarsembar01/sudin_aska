@@ -1454,11 +1454,7 @@ def get_assessment_room_score_pct(assessment_id: int, school_room_id: int) -> fl
 
 
 def submit_assessment(assessment_id: int) -> bool:
-    """Submit an assessment and calculate total score.
-    
-    Missing aspects are auto-filled with scale baseline:
-    legacy scale=3 -> 0, new scale=5 -> 1.
-    """
+    """Submit an assessment and calculate total score from saved aspect scores."""
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
@@ -1541,9 +1537,9 @@ def submit_assessment(assessment_id: int) -> bool:
             (assessment_id,),
         )
         row = cur.fetchone()
-        avg_score = row["avg_score"] if row else 0.00
-        
-        # 4. Update assessment
+        avg_score = row["avg_score"] if row and row["avg_score"] is not None else 0.00
+
+        # Update assessment.
         cur.execute(
             """
             UPDATE portal_assessments
