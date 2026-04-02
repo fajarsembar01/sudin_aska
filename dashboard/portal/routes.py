@@ -3133,7 +3133,16 @@ def submit(school_id: int) -> Response:
     except Exception as e:
         current_app.logger.exception("Error submitting assessment")
         flash(f"Error: {e}", "danger")
-    
+
+    period_id = assessment.get("period_id") if assessment else None
+    if user.get("role") == "staff":
+        if period_id:
+            return redirect(url_for("portal.staff_assignments", period_id=period_id))
+        return redirect(url_for("portal.staff_assignments"))
+    if user.get("role") == "coordinator":
+        if period_id:
+            return redirect(url_for("portal.coordinator_assessments", period_id=period_id))
+        return redirect(url_for("portal.coordinator_assessments"))
     return redirect(url_for("portal.home"))
 
 

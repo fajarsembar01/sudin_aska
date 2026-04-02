@@ -1472,7 +1472,36 @@ def submit_assessment(assessment_id: int) -> bool:
         score_scale_max = _normalize_score_scale_max(assessment.get("score_scale_max"))
         default_score = PORTAL_NEW_SCORE_MIN if score_scale_max == PORTAL_NEW_SCORE_SCALE_MAX else PORTAL_LEGACY_SCORE_MIN
 
-        # 1. Fill missing scores with scale-aware default
+        # 1. Drop scores for aspects that are no longer active/selected for this school room.
+        cur.execute(
+            """
+            DELETE FROM portal_assessment_scores s
+            WHERE s.assessment_id = %s
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM portal_school_rooms sr
+                  JOIN portal_assessments a ON a.id = %s
+                  JOIN portal_aspects pa
+                    ON pa.id = s.aspect_id
+                   AND pa.room_id = sr.room_id
+                   AND pa.active = TRUE
+                  WHERE sr.id = s.school_room_id
+                    AND sr.school_id = a.school_id
+                    AND (
+                        pa.is_required = TRUE
+                        OR EXISTS (
+                            SELECT 1
+                            FROM portal_school_room_aspects psra
+                            WHERE psra.school_room_id = sr.id
+                              AND psra.aspect_id = pa.id
+                        )
+                    )
+              )
+            """,
+            (assessment_id, assessment_id),
+        )
+
+        # 2. Fill missing scores with scale-aware default for active/selected aspects only.
         cur.execute(
             """
             INSERT INTO portal_assessment_scores (assessment_id, school_room_id, aspect_id, score, created_at, updated_at)
@@ -1481,6 +1510,16 @@ def submit_assessment(assessment_id: int) -> bool:
             JOIN portal_assessments a ON a.id = %s
             JOIN portal_aspects pa ON pa.room_id = sr.room_id
             WHERE sr.school_id = a.school_id
+              AND pa.active = TRUE
+              AND (
+                  pa.is_required = TRUE
+                  OR EXISTS (
+                      SELECT 1
+                      FROM portal_school_room_aspects psra
+                      WHERE psra.school_room_id = sr.id
+                        AND psra.aspect_id = pa.id
+                  )
+              )
               AND NOT EXISTS (
                   SELECT 1 
                   FROM portal_assessment_scores s 
@@ -1492,7 +1531,7 @@ def submit_assessment(assessment_id: int) -> bool:
             (assessment_id, default_score, assessment_id, assessment_id),
         )
 
-        # 2. Calculate average score
+        # 3. Calculate average score
         cur.execute(
             """
             SELECT AVG(score)::DECIMAL(5,2) as avg_score
@@ -1504,7 +1543,7 @@ def submit_assessment(assessment_id: int) -> bool:
         row = cur.fetchone()
         avg_score = row["avg_score"] if row else 0.00
         
-        # 3. Update assessment
+        # 4. Update assessment
         cur.execute(
             """
             UPDATE portal_assessments
