@@ -219,7 +219,7 @@
           </div>
           <div class="d-flex justify-content-between small text-muted">
             <span>Aspek Terisi</span>
-            <span class="fw-semibold"><span id="photoUploadedCount">{{ scored_count.count }}</span>/<span id="photoRequiredCount">{{ total_aspects.count }}</span></span>
+            <span class="fw-semibold"><span id="aspectFilledCount">{{ scored_count.count }}</span>/<span id="aspectTotalCount">{{ total_aspects.count }}</span></span>
           </div>
           <div class="progress my-2 photo-progress-inline" style="height: 6px;">
             <div class="progress-bar bg-primary" id="scoreProgressBar" style="width: {{ (scored_count.count / total_aspects.count * 100) if total_aspects.count else 0 }}%"></div>
@@ -273,28 +273,30 @@
 <script>
 (() => {
   'use strict';
-  window.initAssessmentUI({
-    assessmentId: document.getElementById('assessmentId').value,
-    schoolId: document.getElementById('schoolId').value,
-    scoreEndpoint: '/hospitality/staff/assess/' + document.getElementById('schoolId').value + '/score',
-    noteEndpoint: '/hospitality/staff/assess/' + document.getElementById('schoolId').value + '/note',
-    scaleMax: 5,
-    scoreProgressBarId: 'scoreProgressBar',
-    floatingScoreValueId: 'floatingScoreValue',
-    floatingScoreCountId: 'floatingScoreCount',
-    floatingScoreCardId: 'floatingScoreCard',
-    showScoreCardBtnId: 'showScoreCardBtn',
-    hideScoreCardBtnId: 'hideScoreCardBtn',
-    searchInputId: 'roomSearchAssessment',
-    roomSelector: '.room-item',
-    groupSelector: '.score-group',
-    itemSelector: '.aspect-item',
-    roomBadgePrefix: 'roomBadge',
-    roomScorePrefix: 'roomScore',
-    scorePayloadFactory: function (ownerId, aspectId, score) {
-      return { component_id: ownerId, aspect_id: aspectId, score: score };
-    },
-  });
+    window.initAssessmentUI({
+      assessmentId: document.getElementById('assessmentId').value,
+      schoolId: document.getElementById('schoolId').value,
+      scoreEndpoint: '/hospitality/staff/assess/' + document.getElementById('schoolId').value + '/score',
+      noteEndpoint: '/hospitality/staff/assess/' + document.getElementById('schoolId').value + '/note',
+      scaleMax: 5,
+      scoreProgressBarId: 'scoreProgressBar',
+      aspectCountFilledId: 'aspectFilledCount',
+      aspectCountTotalId: 'aspectTotalCount',
+      floatingScoreValueId: 'floatingScoreValue',
+      floatingScoreCountId: 'floatingScoreCount',
+      floatingScoreCardId: 'floatingScoreCard',
+      showScoreCardBtnId: 'showScoreCardBtn',
+      hideScoreCardBtnId: 'hideScoreCardBtn',
+      searchInputId: 'roomSearchAssessment',
+      roomSelector: '.room-item',
+      groupSelector: '.score-group',
+      itemSelector: '.aspect-item',
+      roomBadgePrefix: 'roomBadge',
+      roomScorePrefix: 'roomScore',
+      scorePayloadFactory: function (ownerId, aspectId, score) {
+        return { component_id: ownerId, aspect_id: aspectId, score: score };
+      },
+    });
 
   function hasUnscoredAspect() {
     const groups = document.querySelectorAll('.score-group');
