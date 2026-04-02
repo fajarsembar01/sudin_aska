@@ -1748,6 +1748,7 @@ def home() -> Response:
             header_subtitle="Silakan pilih layanan ASKA Portal",
             cards=cards,
             default_col_class="col-md-6 col-12",
+            enable_odd_center=True,
             show_logout=True,
         )
     if role == "coordinator":
@@ -1782,6 +1783,7 @@ def home() -> Response:
             header_subtitle="Silakan pilih layanan ASKA Portal",
             cards=cards,
             default_col_class="col-md-6 col-12",
+            enable_odd_center=True,
             show_logout=True,
         )
 
@@ -1882,6 +1884,7 @@ def sekolah_home() -> Response:
         header_subtitle=subtitle,
         cards=cards,
         default_col_class="col-md-6 col-12",
+        enable_odd_center=True,
         show_logout=True,
     )
 
