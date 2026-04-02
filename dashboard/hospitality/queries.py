@@ -243,6 +243,39 @@ def submit_assessment(
     return dict(row) if row else {}
 
 
+def delete_draft_assessment(*, assessment_id: int) -> None:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT status
+            FROM hospitality_assessments
+            WHERE id = %s
+            """,
+            (assessment_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            raise ValueError("Penilaian tidak ditemukan.")
+        if (row.get("status") or "").lower() != "draft":
+            raise ValueError("Hanya draft penilaian yang bisa dihapus.")
+        cur.execute(
+            "DELETE FROM hospitality_assessment_comments WHERE assessment_id = %s",
+            (assessment_id,),
+        )
+        cur.execute(
+            "DELETE FROM hospitality_assessment_guestbook_links WHERE assessment_id = %s",
+            (assessment_id,),
+        )
+        cur.execute(
+            "DELETE FROM hospitality_assessment_scores WHERE assessment_id = %s",
+            (assessment_id,),
+        )
+        cur.execute(
+            "DELETE FROM hospitality_assessments WHERE id = %s",
+            (assessment_id,),
+        )
+
+
 def list_assessments_for_staff(
     *,
     staff_id: int,
