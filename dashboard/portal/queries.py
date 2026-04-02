@@ -1454,45 +1454,9 @@ def get_assessment_room_score_pct(assessment_id: int, school_room_id: int) -> fl
 
 
 def submit_assessment(assessment_id: int) -> bool:
-    """Submit an assessment and calculate total score.
-    
-    Missing aspects are auto-filled with scale baseline:
-    legacy scale=3 -> 0, new scale=5 -> 1.
-    """
+    """Submit an assessment and calculate total score from saved aspect scores."""
     with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
-            SELECT COALESCE(score_scale_max, %s) AS score_scale_max
-            FROM portal_assessments
-            WHERE id = %s
-            """,
-            (PORTAL_LEGACY_SCORE_SCALE_MAX, assessment_id),
-        )
-        assessment = cur.fetchone() or {}
-        score_scale_max = _normalize_score_scale_max(assessment.get("score_scale_max"))
-        default_score = PORTAL_NEW_SCORE_MIN if score_scale_max == PORTAL_NEW_SCORE_SCALE_MAX else PORTAL_LEGACY_SCORE_MIN
-
-        # 1. Fill missing scores with scale-aware default
-        cur.execute(
-            """
-            INSERT INTO portal_assessment_scores (assessment_id, school_room_id, aspect_id, score, created_at, updated_at)
-            SELECT %s, sr.id, pa.id, %s, NOW(), NOW()
-            FROM portal_school_rooms sr
-            JOIN portal_assessments a ON a.id = %s
-            JOIN portal_aspects pa ON pa.room_id = sr.room_id
-            WHERE sr.school_id = a.school_id
-              AND NOT EXISTS (
-                  SELECT 1 
-                  FROM portal_assessment_scores s 
-                  WHERE s.assessment_id = %s 
-                    AND s.school_room_id = sr.id 
-                    AND s.aspect_id = pa.id
-              )
-            """,
-            (assessment_id, default_score, assessment_id, assessment_id),
-        )
-
-        # 2. Calculate average score
+        # Calculate average only from aspects that were explicitly scored.
         cur.execute(
             """
             SELECT AVG(score)::DECIMAL(5,2) as avg_score
@@ -1502,9 +1466,9 @@ def submit_assessment(assessment_id: int) -> bool:
             (assessment_id,),
         )
         row = cur.fetchone()
-        avg_score = row["avg_score"] if row else 0.00
-        
-        # 3. Update assessment
+        avg_score = row["avg_score"] if row and row["avg_score"] is not None else 0.00
+
+        # Update assessment.
         cur.execute(
             """
             UPDATE portal_assessments
