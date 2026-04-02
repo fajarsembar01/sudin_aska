@@ -67,18 +67,27 @@ Edit nilai di bawah ini untuk mengubah batas skor:
 {%- if _scale not in [3, 5] -%}
 {%- set _scale = 3 -%}
 {%- endif -%}
-{%- if _raw <= 0 and _scale == 3 -%}
-bg-dark
+{%- if _scale == 5 -%}
+    {%- if _raw <= 1 -%}
+score-badge-red
+    {%- elif _raw <= 2 -%}
+score-badge-orange
+    {%- elif _raw <= 3 -%}
+score-badge-yellow
+    {%- elif _raw <= 4 -%}
+score-badge-lime
+    {%- else -%}
+score-badge-green
+    {%- endif -%}
 {%- else -%}
-{%- set _pct = (_raw / _scale * 100) if _scale > 0 else 0 -%}
-{%- if _pct >= COLOR_THRESHOLDS.excellent -%}
-bg-success
-{%- elif _pct >= COLOR_THRESHOLDS.good -%}
-bg-warning text-dark
-{%- elif _pct >= COLOR_THRESHOLDS.poor -%}
-bg-orange text-white
-{%- else -%}
-bg-danger
-{%- endif -%}
+    {%- if _raw <= 0 -%}
+score-badge-red
+    {%- elif _raw <= 1 -%}
+score-badge-orange
+    {%- elif _raw <= 2 -%}
+score-badge-yellow
+    {%- else -%}
+score-badge-green
+    {%- endif -%}
 {%- endif -%}
 {%- endmacro %}
