@@ -1683,17 +1683,17 @@
     function capturePhoto() {
         if (!cameraStream) return;
         var video = cameraPreview;
-        var size = Math.min(video.videoWidth, video.videoHeight);
-        if (!size) {
+        var videoWidth = video.videoWidth;
+        var videoHeight = video.videoHeight;
+        if (!videoWidth || !videoHeight) {
             alert('Preview kamera belum siap.');
             return;
         }
-        photoCanvas.width = size;
-        photoCanvas.height = size;
+        // Simpan full frame tanpa cropping.
+        photoCanvas.width = videoWidth;
+        photoCanvas.height = videoHeight;
         var ctx = photoCanvas.getContext('2d');
-        var sx = (video.videoWidth - size) / 2;
-        var sy = (video.videoHeight - size) / 2;
-        ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
+        ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
         compressAndStore(photoCanvas, 0.85);
     }
 
