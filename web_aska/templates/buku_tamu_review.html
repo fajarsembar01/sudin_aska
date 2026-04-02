@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Pelayanan - {{ school.name if school else 'Sekolah' }}</title>
+    <meta name="color-scheme" content="light dark">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <style>
+        :root {
+            color-scheme: light dark;
+            --bg: #f4f6fb;
+            --bg-subtle: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --input-bg: #ffffff;
+            --input-text: #0f172a;
+            --input-border: #e5e7eb;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0b1220;
+                --bg-subtle: #111827;
+                --card-bg: #0f172a;
+                --text: #e5e7eb;
+                --muted: #94a3b8;
+                --border: #1f2937;
+                --input-bg: #0b1220;
+                --input-text: #e5e7eb;
+                --input-border: #1f2937;
+            }
+        }
+        html[data-theme="light"] { color-scheme: light; --bg:#f4f6fb; --bg-subtle:#f8fafc; --card-bg:#fff; --text:#0f172a; --muted:#6b7280; --border:#e5e7eb; --input-bg:#fff; --input-text:#0f172a; --input-border:#e5e7eb; }
+        html[data-theme="dark"] { color-scheme: dark; --bg:#0b1220; --bg-subtle:#111827; --card-bg:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --border:#1f2937; --input-bg:#0b1220; --input-text:#e5e7eb; --input-border:#1f2937; }
+        body { background: var(--bg); color: var(--text); }
+        .hero-card { border-radius: 16px; background: var(--card-bg); color: var(--text); }
+        .theme-toggle { border: 1px solid var(--border); background: var(--card-bg); color: var(--text); transition: transform 0.3s ease-in-out, background 0.2s ease; }
+        .theme-toggle:hover { background: var(--bg-subtle); }
+        .theme-toggle.rotating { transform: rotate(360deg); }
+        .review-pill { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; border:1px solid var(--border); background:var(--bg-subtle); font-size:0.85rem; }
+        .rating-picker { display:flex; align-items:center; justify-content:center; gap:.35rem; flex-wrap:wrap; margin: 10px 0 4px; }
+        .rating-star { border:0; background:transparent; color:#d8dde6; font-size:2rem; line-height:1; padding:.2rem .15rem; transition: transform .18s ease, color .18s ease, filter .18s ease; }
+        .rating-star:hover, .rating-star.active { color:#f4b400; transform: translateY(-2px) scale(1.05); filter: drop-shadow(0 6px 12px rgba(244,180,0,.18)); }
+        .rating-scale { display:flex; justify-content:space-between; gap:12px; font-size:.78rem; color:var(--muted); margin-top:2px; }
+        .note-text { font-size:.85rem; color:var(--muted); }
+        .form-control, .form-select { background-color: var(--input-bg); color: var(--input-text); border-color: var(--input-border); }
+        .form-control:focus, .form-select:focus { border-color:#4c89ff; box-shadow:0 0 0 .2rem rgba(76,137,255,.2); }
+    </style>
+</head>
+{% set current_rating = review.rating if review and review.rating else 0 %}
+<body>
+    <div class="container py-4">
+        <div class="card shadow-sm border-0 hero-card">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                    <div>
+                        <h1 class="h4 fw-bold mb-1">{{ school.name if school else 'Review Pelayanan Sekolah' }}</h1>
+                        {% if school %}
+                        <div class="text-muted">Buku Tamu | {{ school.npsn }}</div>
+                        {% endif %}
+                    </div>
+                    <button type="button" class="btn btn-sm theme-toggle" id="themeToggle" aria-label="Ubah mode">
+                        <i class="bi bi-moon-stars"></i>
+                    </button>
+                </div>
+                <hr class="my-3">
+
+                {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <span class="review-pill"><i class="bi bi-star-fill text-warning"></i> Review pelayanan</span>
+                </div>
+
+                <p class="mb-3 text-muted">Berikan rating pelayanan sekolah.</p>
+
+                {% if review_completed %}
+                <div class="alert alert-success">Review sudah tersimpan.</div>
+                {% else %}
+                <form method="post" id="reviewForm">
+                    <div class="mb-3 text-center">
+                        <label class="form-label fw-semibold mb-2">Kasih bintang</label>
+                        <input type="hidden" name="rating" id="ratingInput" value="{{ current_rating }}">
+                        <div class="rating-picker" id="ratingPicker" role="radiogroup" aria-label="Rating pelayanan">
+                            {% for value in range(1, 6) %}
+                            <button type="button" class="rating-star{% if current_rating >= value %} active{% endif %}" data-rating="{{ value }}" aria-label="{{ value }} bintang" {% if review_completed %}disabled{% endif %}>
+                                <i class="bi bi-star-fill"></i>
+                            </button>
+                            {% endfor %}
+                        </div>
+                        <div class="rating-scale">
+                            <span>Sangat kurang</span>
+                            <span>Sangat puas</span>
+                        </div>
+                        <div class="small text-muted mt-2" id="ratingHint">
+                            {% if current_rating %}{{ current_rating }} bintang dipilih{% else %}Pilih 1 sampai 5 bintang{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="commentInput" class="form-label fw-semibold">Keterangan tambahan <span class="text-muted fw-normal">(opsional)</span></label>
+                        <textarea id="commentInput" name="comment" class="form-control" rows="3" placeholder="Tulis komentar singkat tentang pelayanan...">{{
+                            review.comment if review and review.comment else ''
+                        }}</textarea>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg fw-semibold">Simpan</button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+    <script>
+        (function () {
+            var themeToggle = document.getElementById('themeToggle');
+            var ratingInput = document.getElementById('ratingInput');
+            var ratingHint = document.getElementById('ratingHint');
+            var stars = Array.prototype.slice.call(document.querySelectorAll('.rating-star'));
+
+            function applyTheme(theme, animate) {
+                if (animate && themeToggle) {
+                    themeToggle.classList.add('rotating');
+                    setTimeout(function () { themeToggle.classList.remove('rotating'); }, 300);
+                }
+                if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+                else if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+                else document.documentElement.removeAttribute('data-theme');
+                updateThemeToggle();
+            }
+            function detectPreferredTheme() {
+                var saved = localStorage.getItem('bukuTamuTheme');
+                if (saved === 'dark' || saved === 'light') return saved;
+                return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            function updateThemeToggle() {
+                if (!themeToggle) return;
+                var current = document.documentElement.getAttribute('data-theme') || detectPreferredTheme();
+                if (current === 'dark') {
+                    themeToggle.innerHTML = '<i class="bi bi-sun"></i>';
+                } else {
+                    themeToggle.innerHTML = '<i class="bi bi-moon-stars"></i>';
+                }
+            }
+            if (themeToggle) {
+                applyTheme(detectPreferredTheme(), false);
+                themeToggle.addEventListener('click', function () {
+                    var current = document.documentElement.getAttribute('data-theme') || detectPreferredTheme();
+                    var next = current === 'dark' ? 'light' : 'dark';
+                    localStorage.setItem('bukuTamuTheme', next);
+                    applyTheme(next, true);
+                });
+            }
+
+            function setRating(value) {
+                var rating = Number(value || 0);
+                if (ratingInput) ratingInput.value = rating > 0 ? String(rating) : '0';
+                stars.forEach(function (button) {
+                    var buttonRating = Number(button.getAttribute('data-rating') || 0);
+                    button.classList.toggle('active', buttonRating <= rating);
+                });
+                if (ratingHint) {
+                    ratingHint.textContent = rating > 0 ? rating + ' bintang dipilih' : 'Pilih 1 sampai 5 bintang';
+                }
+            }
+            stars.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    if (button.disabled) return;
+                    setRating(button.getAttribute('data-rating'));
+                });
+            });
+            setRating(ratingInput ? ratingInput.value : '0');
+        })();
+    </script>
+</body>
+</html>

@@ -337,25 +337,8 @@
                             </div>
                             <div class="col-12" data-parent-field>
                                 <label class="form-label">Kelas Siswa *</label>
-                                <div class="row g-2">
-                                    <div class="col-6 col-md-5">
-                                        <select id="regStudentGrade" class="form-select">
-                                            <option value="">Kelas</option>
-                                            {% for grade in grade_options|default([]) %}
-                                            <option value="{{ grade }}">{{ grade }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                    <div class="col-6 col-md-7">
-                                        <select id="regStudentSection" class="form-select">
-                                            <option value="">Abjad</option>
-                                            {% for letter in class_letters|default([]) %}
-                                            <option value="{{ letter }}">{{ letter }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="form-text">Contoh: 3C</div>
+                                <input type="text" id="regStudentClass" class="form-control" placeholder="Contoh: 3C, Kelompok Matahari">
+                                <div class="form-text">Contoh: 3C, Kelompok Matahari</div>
                             </div>
                             <div class="col-12" data-parent-field>
                                 <label class="form-label">Nama Siswa *</label>
@@ -405,7 +388,10 @@
                     </div>
 
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-success">Kirim Buku Tamu</button>
+                        <button type="submit" class="btn btn-success">Kirim &amp; Lanjut Review</button>
+                    </div>
+                    <div class="note-text mt-2 text-center">
+                        Setelah buku tamu tersimpan, kamu akan diminta kasih review 1-5 bintang dulu sebelum chat ASKA aktif.
                     </div>
                 </form>
                 {% endif %}
@@ -468,6 +454,7 @@
             var registerInputs = registerForm ? registerForm.querySelectorAll('input, select, textarea, button') : [];
             var purposeInput = document.getElementById('purposeInput');
             var purposeError = document.getElementById('purposeError');
+            var hasSubmitted = false;
 
             var regName = document.getElementById('regName');
             var regPhone = document.getElementById('regPhone');
@@ -478,8 +465,7 @@
             var regParentNo = document.getElementById('regParentNo');
             var workFields = document.querySelectorAll('[data-work-field]');
             var parentFields = document.querySelectorAll('[data-parent-field]');
-            var regStudentGrade = document.getElementById('regStudentGrade');
-            var regStudentSection = document.getElementById('regStudentSection');
+            var regStudentClass = document.getElementById('regStudentClass');
             var regStudentName = document.getElementById('regStudentName');
 
             var selectedGuests = new Map();
@@ -547,15 +533,11 @@
             }
 
             function buildStudentClass() {
-                var grade = regStudentGrade ? (regStudentGrade.value || '').trim() : '';
-                var section = regStudentSection ? (regStudentSection.value || '').trim() : '';
-                if (!grade || !section) return '';
-                return grade + String(section).toUpperCase();
+                return regStudentClass ? (regStudentClass.value || '').trim() : '';
             }
 
             function resetStudentClass() {
-                if (regStudentGrade) regStudentGrade.value = '';
-                if (regStudentSection) regStudentSection.value = '';
+                if (regStudentClass) regStudentClass.value = '';
             }
 
             function setParentMode(isParent) {
@@ -572,14 +554,12 @@
                 if (isParent) {
                     if (regInstansi) regInstansi.value = '';
                     if (regJabatan) regJabatan.value = '';
-                    if (regStudentGrade) regStudentGrade.required = true;
-                    if (regStudentSection) regStudentSection.required = true;
+                    if (regStudentClass) regStudentClass.required = true;
                     if (regStudentName) {
                         regStudentName.required = true;
                     }
                 } else {
-                    if (regStudentGrade) regStudentGrade.required = false;
-                    if (regStudentSection) regStudentSection.required = false;
+                    if (regStudentClass) regStudentClass.required = false;
                     resetStudentClass();
                     if (regStudentName) {
                         regStudentName.required = false;
@@ -594,8 +574,7 @@
                     el.disabled = !isActive;
                 });
                 if (!isActive) {
-                    if (regStudentGrade) regStudentGrade.required = false;
-                    if (regStudentSection) regStudentSection.required = false;
+                    if (regStudentClass) regStudentClass.required = false;
                     if (regStudentName) regStudentName.required = false;
                     return;
                 }
@@ -610,9 +589,11 @@
                 if (!submitBtn) return;
                 var hasGuests = selectedGuests.size > 0;
                 var hasPurpose = purposeInput ? purposeInput.value.trim().length > 0 : false;
-                if (selectedGuestsField) selectedGuestsField.classList.toggle('is-invalid', !hasGuests);
-                if (selectedGuestsError) selectedGuestsError.classList.toggle('d-none', hasGuests);
-                if (purposeInput) purposeInput.classList.toggle('is-invalid', !hasPurpose);
+                var showErrors = hasSubmitted;
+                if (selectedGuestsField) selectedGuestsField.classList.toggle('is-invalid', showErrors && !hasGuests);
+                if (selectedGuestsError) selectedGuestsError.classList.toggle('d-none', !(showErrors && !hasGuests));
+                if (purposeInput) purposeInput.classList.toggle('is-invalid', showErrors && !hasPurpose);
+                if (purposeError) purposeError.style.display = showErrors && !hasPurpose ? 'block' : 'none';
                 submitBtn.disabled = !(hasGuests && hasPurpose);
             }
 
@@ -791,7 +772,7 @@
                 }
                 if (isParent) {
                     if (!studentClass) {
-                        alert('Kelas siswa wajib dipilih.');
+                        alert('Kelas siswa wajib diisi.');
                         return;
                     }
                     if (!studentName) {
@@ -858,6 +839,7 @@
             }
 
             guestForm.addEventListener('submit', function (e) {
+                hasSubmitted = true;
                 if (guestTypeInput.value !== 'umum') {
                     e.preventDefault();
                     if (sudinModal) sudinModal.show();

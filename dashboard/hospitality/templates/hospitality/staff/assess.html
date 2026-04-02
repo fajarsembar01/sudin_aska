@@ -1,0 +1,333 @@
+{% extends "hospitality/base_hospitality.html" %}
+{% from "shared/_assessment_ui.html" import assessment_aspect_row, floating_score_card, score_badge_class %}
+{% set page_title = "Penilaian Hospitality" %}
+{% set total_aspects = namespace(count=0) %}
+{% set total_score = namespace(sum=0) %}
+{% set scored_count = namespace(count=0) %}
+{% for comp in components %}
+  {% for aspect in comp.aspects %}
+    {% set total_aspects.count = total_aspects.count + 1 %}
+    {% set current_score = scores_map.get(aspect.id) %}
+    {% if current_score is not none %}
+      {% set total_score.sum = total_score.sum + current_score %}
+      {% set scored_count.count = scored_count.count + 1 %}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+{% set current_avg = (total_score.sum / scored_count.count) if scored_count.count else 0 %}
+{% set current_pct = (current_avg / 5 * 100) if scored_count.count else 0 %}
+
+{% block portal_content %}
+<style>
+  .floating-score {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    padding: 1rem 1.25rem;
+    border-radius: 16px;
+    z-index: 1040;
+    border: 1px solid var(--border-soft);
+    min-width: 160px;
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(6px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .floating-score-trigger {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    z-index: 1039;
+    box-shadow: var(--shadow-soft);
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .room-score-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 54px;
+    padding: 0.3rem 0.6rem;
+    border-radius: 12px;
+    background: var(--bg-subtle);
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 0.95rem;
+    border: 1px solid var(--border-soft);
+  }
+  .score-badge-red {
+    background: #dc3545;
+    color: #fff;
+    border-color: transparent;
+  }
+  .score-badge-orange {
+    background: #fd7e14;
+    color: #fff;
+    border-color: transparent;
+  }
+  .score-badge-yellow {
+    background: #ffc107;
+    color: #212529;
+    border-color: transparent;
+  }
+  .score-badge-green {
+    background: #198754;
+    color: #fff;
+    border-color: transparent;
+  }
+  .score-group {
+    gap: 0;
+  }
+  .score-btn {
+    min-width: 56px;
+    height: 56px;
+    padding: 0;
+    line-height: 1;
+    margin: 0;
+    border-width: 2px;
+    font-size: 1.15rem;
+  }
+  #roomAccordion .room-item {
+    margin-bottom: 0.35rem;
+  }
+  .room-header {
+    padding: 0.75rem 0.9rem;
+  }
+  .room-body {
+    padding: 0.65rem 0.9rem 0.8rem;
+  }
+  .aspect-item { margin-bottom: 0.15rem; }
+</style>
+<script src="{{ url_for('static', filename='js/assessment-ui.js') }}"></script>
+<section class="mb-4 assessment-page">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+      <a href="{{ url_for('hospitality.staff_home') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div>
+        <h1 class="h4 fw-bold mb-0">{{ school.name }}</h1>
+        <p class="text-muted mb-0 small">{{ school.npsn }} • {{ school.jenjang }}</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <span class="badge text-bg-light border d-inline-flex align-items-center gap-1">
+        <i class="bi bi-file-earmark-text"></i>
+        Assessment #{{ assessment.id }}
+      </span>
+      <span class="badge bg-primary-subtle text-primary border">
+        {{ assessment_status|capitalize }}
+      </span>
+    </div>
+  </div>
+
+  <input type="hidden" id="assessmentId" value="{{ assessment.id }}">
+  <input type="hidden" id="schoolId" value="{{ school.id }}">
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="alert alert-info mb-3 d-flex flex-wrap align-items-center gap-3">
+        <button class="btn btn-sm btn-outline-secondary" type="button" id="scoreLegendToggle"
+          data-bs-toggle="collapse" data-bs-target="#scoreLegendDetails" aria-expanded="false"
+          aria-controls="scoreLegendDetails">
+          Show
+        </button>
+        <span>
+          Tap skor 1-5 untuk setiap aspek. Perubahan tersimpan otomatis.
+        </span>
+        <div class="collapse mt-2" id="scoreLegendDetails">
+          <div class="small text-muted">
+            {% for val in score_scale %}
+            <div><strong>{{ val }}</strong> Nilai {{ val }}</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div id="roomAccordion" class="d-flex flex-column gap-2">
+        {% for comp in components %}
+        {% set comp_scored = namespace(count=0) %}
+        {% set comp_sum = namespace(val=0) %}
+        {% for aspect in comp.aspects %}
+          {% set cur = scores_map.get(aspect.id) %}
+          {% if cur is not none %}
+            {% set comp_scored.count = comp_scored.count + 1 %}
+            {% set comp_sum.val = comp_sum.val + cur %}
+          {% endif %}
+        {% endfor %}
+        {% set comp_avg = (comp_sum.val / comp_scored.count) if comp_scored.count else 0 %}
+        {% set comp_pct = (comp_avg / 5 * 100) if comp_scored.count else 0 %}
+        <div class="room-item shadow-sm" data-room-name="{{ comp.name|lower }}" data-school-room-id="{{ comp.id }}">
+          <div class="room-header collapsed" data-bs-toggle="collapse" data-bs-target="#room{{ comp.id }}" aria-expanded="false">
+            <div class="d-flex align-items-center gap-2">
+              <span class="room-score-badge {{ score_badge_class(comp_pct) }}"
+                    id="roomScore{{ comp.id }}">{{ "%.1f"|format(comp_pct) }}</span>
+              <h5 class="mb-0">{{ comp.name }}</h5>
+            </div>
+            <span class="badge rounded-pill bg-secondary text-white" id="roomBadge{{ comp.id }}">
+              {{ comp_scored.count }}/{{ comp.aspects|length }}
+            </span>
+          </div>
+          <div class="collapse" id="room{{ comp.id }}" data-bs-parent="#roomAccordion">
+            <div class="room-body">
+              {% for aspect in comp.aspects %}
+              {{ assessment_aspect_row(
+                aspect,
+                score_scale,
+                scores_map.get(aspect.id),
+                mode='buttons',
+                room_id=comp.id,
+                helper_text=aspect.description
+              ) }}
+              {% endfor %}
+              <div class="mt-3 pt-3 border-top">
+                <label class="form-label small text-muted">Keterangan (Opsional)</label>
+                <textarea class="form-control form-control-sm"
+                  rows="2"
+                  placeholder="Tambahkan catatan jika perlu..."
+                  oninput="saveNoteWithDebounce(this, {{ comp.id }})">{{ notes_by_component.get(comp.id, '') }}</textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm position-sticky" style="top: 88px;">
+        <div class="card-body">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <span class="icon-badge section-icon text-success">
+              <i class="bi bi-check2-square"></i>
+            </span>
+            <div>
+              <h2 class="h6 fw-bold mb-0">Submit Penilaian</h2>
+              <p class="text-muted small mb-0">Cek ulang sebelum kirim</p>
+            </div>
+          </div>
+          <div class="d-flex justify-content-between small text-muted">
+            <span>Komponen</span>
+            <span class="fw-semibold">{{ components|length }}</span>
+          </div>
+          <div class="d-flex justify-content-between small text-muted mb-3">
+            <span>Total Aspek</span>
+            <span class="fw-semibold">{{ total_aspects.count }}</span>
+          </div>
+          <div class="d-flex justify-content-between small text-muted">
+            <span>Aspek Terisi</span>
+            <span class="fw-semibold"><span id="aspectFilledCount">{{ scored_count.count }}</span>/<span id="aspectTotalCount">{{ total_aspects.count }}</span></span>
+          </div>
+          <div class="progress my-2 photo-progress-inline" style="height: 6px;">
+            <div class="progress-bar bg-primary" id="scoreProgressBar" style="width: {{ (scored_count.count / total_aspects.count * 100) if total_aspects.count else 0 }}%"></div>
+          </div>
+          <p class="text-muted small mb-3">Pastikan semua aspek sudah dinilai sebelum submit.</p>
+          <form action="{{ url_for('hospitality.staff_save_draft', school_id=school.id) }}" method="POST" class="mb-2" id="saveDraftForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="assessment_id" value="{{ assessment.id }}">
+            <button type="submit" class="btn btn-outline-secondary w-100 d-inline-flex align-items-center justify-content-center gap-2">
+              <i class="bi bi-save"></i>
+              <span>Simpan Draft</span>
+            </button>
+          </form>
+          <form action="{{ url_for('hospitality.staff_submit_assessment', school_id=school.id) }}" method="POST" id="submitAssessmentForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="assessment_id" value="{{ assessment.id }}">
+            <input type="hidden" name="note" id="noteInputHidden" value="{{ assessment.note_text or '' }}">
+            <button type="submit" id="submitAssessmentBtn" class="btn btn-success w-100 d-inline-flex align-items-center justify-content-center gap-2">
+              <i class="bi bi-check-circle"></i>
+              <span>Submit Penilaian</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="modal fade" id="assessmentRequirementModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle text-warning me-2"></i>Peringatan
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-2">Persyaratan submit belum terpenuhi:</p>
+        <ul class="mb-0 ps-3 small" id="submitRequirementList"></ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Oke</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{ floating_score_card(value="%.1f"|format(current_pct), count=scored_count.count ~ "/" ~ total_aspects.count) }}
+
+<script>
+(() => {
+  'use strict';
+    window.initAssessmentUI({
+      assessmentId: document.getElementById('assessmentId').value,
+      schoolId: document.getElementById('schoolId').value,
+      scoreEndpoint: '/hospitality/staff/assess/' + document.getElementById('schoolId').value + '/score',
+      noteEndpoint: '/hospitality/staff/assess/' + document.getElementById('schoolId').value + '/note',
+      scaleMax: 5,
+      scoreProgressBarId: 'scoreProgressBar',
+      aspectCountFilledId: 'aspectFilledCount',
+      aspectCountTotalId: 'aspectTotalCount',
+      floatingScoreValueId: 'floatingScoreValue',
+      floatingScoreCountId: 'floatingScoreCount',
+      floatingScoreCardId: 'floatingScoreCard',
+      showScoreCardBtnId: 'showScoreCardBtn',
+      hideScoreCardBtnId: 'hideScoreCardBtn',
+      searchInputId: 'roomSearchAssessment',
+      roomSelector: '.room-item',
+      groupSelector: '.score-group',
+      itemSelector: '.aspect-item',
+      roomBadgePrefix: 'roomBadge',
+      roomScorePrefix: 'roomScore',
+      scorePayloadFactory: function (ownerId, aspectId, score) {
+        return { component_id: ownerId, aspect_id: aspectId, score: score };
+      },
+    });
+
+  function hasUnscoredAspect() {
+    const groups = document.querySelectorAll('.score-group');
+    for (const group of groups) {
+      if (!group.querySelector('.score-btn.selected')) return true;
+    }
+    return false;
+  }
+
+  const submitForm = document.getElementById('submitAssessmentForm');
+  if (submitForm) {
+    submitForm.addEventListener('submit', function (event) {
+      if (!hasUnscoredAspect()) return;
+      event.preventDefault();
+      const listEl = document.getElementById('submitRequirementList');
+      if (listEl) {
+        listEl.innerHTML = '';
+        const li = document.createElement('li');
+        li.textContent = 'Terdapat aspek yang masih belum dinilai.';
+        listEl.appendChild(li);
+      }
+      if (window.bootstrap) {
+        const modalEl = document.getElementById('assessmentRequirementModal');
+        if (modalEl) {
+          bootstrap.Modal.getOrCreateInstance(modalEl).show();
+          return;
+        }
+      }
+      alert('Terdapat aspek yang masih belum dinilai.');
+    });
+  }
+})();
+</script>
+{% endblock %}

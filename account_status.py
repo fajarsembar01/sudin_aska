@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Dict, Literal, Optional
 
 AccountStatus = Literal["active", "suspended", "under_review"]
-Channel = Literal["web", "telegram", "generic"]
+Channel = Literal["web", "telegram", "whatsapp", "generic"]
 
 ACCOUNT_STATUS_ACTIVE: AccountStatus = "active"
 ACCOUNT_STATUS_SUSPENDED: AccountStatus = "suspended"
@@ -46,6 +46,10 @@ _STATUS_RESPONSES: Dict[AccountStatus, Dict[str, str]] = {
             "Akun Telegram kamu lagi di-suspend 😔\n"
             "Silakan hubungi pihak sekolah kalau ingin pulihin akses."
         ),
+        "whatsapp": (
+            "Akun WhatsApp kamu lagi di-suspend 😔\n"
+            "Silakan hubungi pihak sekolah kalau ingin pulihin akses."
+        ),
         "generic": "Akun kamu lagi tidak aktif. Hubungi sekolah untuk info lanjut.",
     },
     ACCOUNT_STATUS_UNDER_REVIEW: {
@@ -56,6 +60,10 @@ _STATUS_RESPONSES: Dict[AccountStatus, Dict[str, str]] = {
         ),
         "telegram": (
             "Akun kamu lagi dalam proses review sama sekolah. "
+            "Tunggu kabar berikutnya atau hubungi sekolah kalau mendesak."
+        ),
+        "whatsapp": (
+            "Akun WhatsApp kamu lagi dalam proses review sama sekolah. "
             "Tunggu kabar berikutnya atau hubungi sekolah kalau mendesak."
         ),
         "generic": "Akun kamu lagi ditinjau. Silakan cek ke sekolah untuk info detailnya.",
@@ -86,7 +94,7 @@ def build_status_notice(
     meta = _STATUS_RESPONSES.get(status)
     if not meta:
         return None
-    channel_key = channel if channel in {"web", "telegram"} else "generic"
+    channel_key = channel if channel in {"web", "telegram", "whatsapp"} else "generic"
     body = meta.get(channel_key) or meta.get("generic")
     if not body:
         body = ACCOUNT_STATUS_LABELS.get(status, "Status akun tidak aktif.")

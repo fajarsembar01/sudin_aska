@@ -1,0 +1,144 @@
+{% extends "portal/base_portal.html" %}
+
+{% block portal_nav %}
+<nav class="navbar navbar-expand-lg sticky-top">
+  <div class="container-fluid px-lg-4">
+
+    <a class="navbar-brand" href="{{ url_for('hospitality.admin_home') if current_user and current_user.role in ['admin','coordinator'] else (url_for('hospitality.staff_home') if current_user and current_user.role == 'staff' else (url_for('hospitality.school_home') if current_user and current_user.role == 'sekolah' else url_for('portal.home'))) }}">
+      <span class="icon-badge brand-icon text-primary"><i class="bi bi-house-heart"></i></span>
+      <span class="fw-bold">Hospitality</span>
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#hospitalityNavbar">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="hospitalityNavbar">
+
+      <!-- ── Left nav items ── -->
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        {% if current_user and current_user.role in ['admin', 'coordinator'] %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'hospitality.admin_home' %}active{% endif %}" href="{{ url_for('hospitality.admin_home') }}">
+            <i class="bi bi-bar-chart nav-icon"></i>Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'hospitality.admin_reopen_requests' %}active{% endif %}" href="{{ url_for('hospitality.admin_reopen_requests') }}">
+            <i class="bi bi-arrow-counterclockwise nav-icon"></i>Reopen
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'hospitality.admin_setup' %}active{% endif %}" href="{{ url_for('hospitality.admin_setup') }}">
+            <i class="bi bi-sliders nav-icon"></i>Setup
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'hospitality.admin_export_csv' %}active{% endif %}" href="{{ url_for('hospitality.admin_export_csv') }}">
+            <i class="bi bi-download nav-icon"></i>Export
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ['hospitality.guestbook_review_dashboard', 'hospitality.guestbook_review_detail', 'hospitality.guestbook_review_export'] %}active{% endif %}" href="{{ url_for('hospitality.guestbook_review_dashboard') }}">
+            <i class="bi bi-star-half nav-icon"></i>Review Pelayanan
+          </a>
+        </li>
+        {% endif %}
+        {% if current_user and current_user.role == 'staff' %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'hospitality.staff_home' %}active{% endif %}" href="{{ url_for('hospitality.staff_home') }}">
+            <i class="bi bi-clipboard-check nav-icon"></i>Penilaian Saya
+          </a>
+        </li>
+        {% endif %}
+        {% if current_user and current_user.role == 'sekolah' %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'hospitality.school_home' %}active{% endif %}" href="{{ url_for('hospitality.school_home') }}">
+            <i class="bi bi-journal-text nav-icon"></i>Hospitality Sekolah
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ['hospitality.guestbook_review_dashboard', 'hospitality.guestbook_review_detail', 'hospitality.guestbook_review_export'] %}active{% endif %}" href="{{ url_for('hospitality.guestbook_review_dashboard') }}">
+            <i class="bi bi-star-half nav-icon"></i>Review Pelayanan
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+
+      <!-- ── Right-side navbar (sama persis dengan portal base) ── -->
+      <div class="d-flex align-items-center gap-3 user-nav-actions">
+
+        <!-- Home Button -->
+        {% if current_user and current_user.role in ['admin', 'sekolah', 'staff', 'coordinator'] %}
+        <a href="{{ url_for('main.admin_select_role') if current_user.role == 'admin' else url_for('portal.home') }}"
+           class="btn btn-outline-secondary btn-sm text-nowrap oss-home-btn">
+          <i class="bi bi-house me-1"></i><span class="oss-home-label">Home</span>
+        </a>
+        {% endif %}
+
+        <!-- Theme Toggle -->
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="themeToggle" role="switch">
+          <label class="theme-toggle-label" for="themeToggle">
+            <i class="bi bi-sun-fill theme-icon theme-icon-sun"></i>
+            <i class="bi bi-moon-fill theme-icon theme-icon-moon"></i>
+          </label>
+        </div>
+
+        <!-- Notifikasi Admin -->
+        {% if current_user and current_user.role == 'admin' %}
+        {% set pending_total = admin_pending.total if admin_pending else 0 %}
+        {% set total_count = pending_total %}
+        {% set notification_items = admin_notification_items %}
+        {% set notification_extra_include = 'portal/components/_notification_admin_quick.html' %}
+        {% include "portal/components/_notification_dropdown.html" with context %}
+        {% endif %}
+
+        <!-- Notifikasi Staff / Coordinator / Sekolah -->
+        {% if current_user and current_user.role in ['staff', 'coordinator', 'sekolah'] %}
+        {% set user_notif_unread = user_app_notifications.unread_count if user_app_notifications else 0 %}
+        <div class="dropdown notification-menu" id="userGuestbookNotifRoot"
+             data-list-url="{{ url_for('portal.user_app_notifications') }}"
+             data-read-url="{{ url_for('portal.user_app_notifications_mark_read') }}"
+             data-history-url="{% if current_user.role == 'sekolah' %}{{ url_for('daftar_tamu.sekolah_riwayat') }}{% else %}{{ url_for('portal.home') }}{% endif %}">
+          <button class="notification-toggle" type="button" data-bs-toggle="dropdown"
+                  id="userGuestbookNotifToggle" aria-expanded="false" aria-label="Notifikasi pengguna">
+            <i class="bi bi-bell"></i>
+            <span class="notification-badge{% if user_notif_unread == 0 %} d-none{% endif %}"
+                  id="userGuestbookNotifBadge" data-count="{{ user_notif_unread }}">{{ user_notif_unread }}</span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end notification-dropdown">
+            <div class="notification-header">
+              <span class="fw-semibold">Notifikasi Saya</span>
+              <div class="notification-controls">
+                <button type="button" class="btn btn-outline-secondary btn-sm notification-refresh"
+                        id="userGuestbookNotifRefresh" title="Perbarui">
+                  <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                <button type="button" class="btn btn-link btn-sm text-decoration-none px-0"
+                        id="userGuestbookNotifMarkAll" {% if user_notif_unread == 0 %}disabled{% endif %}>
+                  Tandai semua
+                </button>
+                <span class="badge bg-info-subtle text-info-emphasis{% if user_notif_unread == 0 %} d-none{% endif %}"
+                      id="userGuestbookNotifUnreadLabel" data-count="{{ user_notif_unread }}">{{ user_notif_unread }}</span>
+              </div>
+            </div>
+            <div id="userGuestbookNotifEmpty"
+                 class="notification-empty text-muted small{% if user_notif_unread > 0 %} d-none{% endif %}">
+              Belum ada notifikasi terbaru.
+            </div>
+            <div class="notification-quick" id="userGuestbookNotifList"></div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- User Menu (avatar + nama + dropdown) -->
+        {% include "portal/components/_user_menu.html" %}
+
+      </div>
+      <!-- ── end right-side navbar ── -->
+
+    </div>
+  </div>
+</nav>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'hospitality/base_hospitality.html' %}
+{% from 'shared/_reopen_requests.html' import reopen_requests_panel %}
+{% set page_title = "Permintaan Reopen Hospitality" %}
+
+{% block portal_content %}
+{{ reopen_requests_panel(
+    title='Permintaan Reopen Hospitality',
+    subtitle='Pantau dan proses pengajuan buka ulang penilaian hospitality.',
+    requests=reopen_requests,
+    status_filter=status_filter,
+    list_endpoint='hospitality.admin_reopen_requests',
+    view_endpoint='hospitality.assessment_detail',
+    approve_endpoint='hospitality.approve_reopen',
+    reject_endpoint='hospitality.reject_reopen',
+    feature_label='Hospitality',
+    csrf_token_value=(csrf_token() if csrf_token is defined else None)
+) }}
+{% endblock %}

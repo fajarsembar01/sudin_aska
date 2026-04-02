@@ -1,0 +1,16 @@
+{% macro recent_assessments_panel(title, subtitle) %}
+<div class="card border-0 shadow-sm">
+  <div class="card-body">
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <span class="icon-badge section-icon text-primary">
+        <i class="bi bi-list-check"></i>
+      </span>
+      <div>
+        <h2 class="h6 fw-bold mb-0">{{ title }}</h2>
+        <p class="text-muted mb-0 small">{{ subtitle }}</p>
+      </div>
+    </div>
+    {{ caller() }}
+  </div>
+</div>
+{% endmacro %}

@@ -26,7 +26,7 @@ Repo ini awalnya diproduksi untuk satu sekolah, namun seluruh konfigurasi dipisa
 ## 🧱 Arsitektur Singkat
 
 ```
-Telegram / Web / Twitter
+Telegram / Web / WhatsApp / Twitter
         │
         ▼
    handlers.py
@@ -50,6 +50,7 @@ Direktori penting:
 - `responses/` – template jawaban dan detektor niat.
 - `knowledge_loader.py` + `kecerdasan/` – sumber pengetahuan sekolah.
 - `twitter_bot.py` – worker balas mention & auto-post.
+- `scripts/whatsapp_bridge.js` – worker WhatsApp QR bridge (chat pribadi).
 - `db.py` & `scripts/init_db.py` – koneksi dan bootstrap PostgreSQL.
 - `scripts/` – kumpulan skrip maintenance (migrasi, seed, export).
 
@@ -63,12 +64,14 @@ Direktori penting:
 
 - Ubuntu 22.04 LTS atau setara.
 - Python 3.10+, `python3-venv`, `pip`, `git`.
+- Node.js 18+ dan npm (untuk WhatsApp QR bridge).
 - PostgreSQL 13+ (boleh layanan _managed_ seperti Supabase/Railway).
 - Nginx + Certbot bila ingin HTTPS.
 
 **Akun & Token**
 
 - Token Bot Telegram dari `@BotFather`.
+- Token internal untuk endpoint WhatsApp bridge (`ASKA_WHATSAPP_INTERNAL_TOKEN`).
 - Groq API key **atau** OpenAI API key (untuk LLM + embedding).
 - (Opsional) OpenAI/HuggingFace key untuk embedding/STT lokal.
 - Google OAuth client (untuk login web, bisa satu project per sekolah).
@@ -81,7 +84,7 @@ Direktori penting:
 ```bash
 # 0. Sistem dasar
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y git python3-venv python3-pip nginx certbot python3-certbot-nginx postgresql
+sudo apt install -y git python3-venv python3-pip nginx certbot python3-certbot-nginx postgresql nodejs npm
 
 # 1. Clone repo
 cd /opt
@@ -110,6 +113,8 @@ python -m dashboard.cli create-user admin@sekolah.sch.id "Admin Sekolah"
 
 # 7. Uji komponen
 python bot_sekolah.py          # hentikan dengan Ctrl+C setelah tes
+python -m web_aska.app &
+npm run wa:start
 python -m dashboard.app &
 ```
 
@@ -167,6 +172,26 @@ DB_SSLMODE=                       # isi require bila perlu
 TELEGRAM_BOT_TOKEN=123456:ABC
 
 ###############################################################################
+# Kanal WhatsApp (gratis, scan QR sekali via worker)
+###############################################################################
+ASKA_WHATSAPP_INTERNAL_TOKEN=ganti-token-acak-min-24-char
+ASKA_WHATSAPP_INTERNAL_URL=http://127.0.0.1:5001/api/whatsapp/inbound
+ASKA_WHATSAPP_SESSION_PATH=.wa_session
+ASKA_WHATSAPP_CLIENT_ID=aska-main
+ASKA_WHATSAPP_TIMEOUT_MS=45000
+ASKA_WHATSAPP_URL=082143646463       # dipakai tombol WhatsApp di ASKA Insight
+
+###############################################################################
+# Call Center WhatsApp (bridge khusus dashboard)
+###############################################################################
+ASKA_CC_WHATSAPP_INTERNAL_TOKEN=ganti-token-acak-cc-min-24-char
+ASKA_CC_WHATSAPP_INTERNAL_URL=http://127.0.0.1:5001/api/callcenter/inbound
+ASKA_CC_WHATSAPP_SESSION_PATH=.wa_cc_session
+ASKA_CC_WHATSAPP_CLIENT_ID=cc-main
+ASKA_CC_WHATSAPP_STATUS_PATH=runtime/whatsapp_cc_status.json
+ASKA_CC_HTTP_PORT=3100
+
+###############################################################################
 # Dashboard Flask
 ###############################################################################
 DASHBOARD_SECRET_KEY=ubah-ke-random-32-karakter
@@ -216,7 +241,7 @@ TWITTER_SPAM_KEYWORDS=promo,follback
 ## 🗄️ Inisialisasi Database & Data Referensi
 
 - Jalankan `python -m scripts.init_db` setiap kali mengubah struktur atau saat setup baru. Skrip ini memanggil `db.py` dan `dashboard/schema.py` untuk menyiapkan:
-  - `chat_logs`, `web_users`, `telegram_users`, `corruption_reports`, `bullying_reports`, `psych_reports`, `twitter_worker_logs`.
+  - `chat_logs`, `web_users`, `telegram_users`, `whatsapp_users`, `corruption_reports`, `bullying_reports`, `psych_reports`, `twitter_worker_logs`.
   - Tabel dashboard (`dashboard_users`, `bullying_report_events`, `notifications`).
 - Buat akun dashboard dengan CLI:
 
@@ -242,17 +267,84 @@ flask run --host 0.0.0.0 --port 8000
 # produksi: gunicorn -w 2 -k gthread -b 127.0.0.1:8000 dashboard.app:app
 ```
 
-### 3. Twitter Worker (opsional)
+### 3. Web Chat (OAuth Google)
+
+```bash
+python -m web_aska.app
+# produksi: gunicorn -w 2 -k gthread -b 127.0.0.1:5001 web_aska.app:app
+```
+
+### 4. WhatsApp Bridge (QR sekali, chat pribadi)
+
+```bash
+npm install
+npm run wa:start
+```
+
+Saat pertama jalan, terminal menampilkan QR. Scan di WhatsApp:
+`Settings > Linked Devices > Link a Device`.
+
+### 4b. WhatsApp Bridge Call Center (untuk dashboard)
+
+```bash
+# variabel di .env: ASKA_CC_WHATSAPP_INTERNAL_TOKEN, ASKA_CC_HTTP_PORT (default 3100)
+ASKA_CC_HTTP_PORT=3200 npm run wa:cc   # lepas override bila port 3100 kosong
+```
+
+- Buka dashboard `Call Center > Settings > WhatsApp`, tekan Generate QR, lalu scan QR di WhatsApp `Linked Devices`.
+- Pastikan backend dashboard (`web_aska.app` port 5001) sudah jalan; bridge ini meneruskan chat ke endpoint `api/callcenter/inbound` dengan header `X-ASKA-CC-TOKEN` yang sama dengan `ASKA_CC_WHATSAPP_INTERNAL_TOKEN`.
+
+### 5. Twitter Worker (opsional)
 
 ```bash
 python twitter_bot.py
 ```
 
-### 4. Regenerasi Knowledge & Cache
+### 6. Regenerasi Knowledge & Cache
 
 ```bash
 python knowledge_loader.py
 rm -rf .aska_vectorstore && python bot_sekolah.py   # paksa rebuild
+```
+
+---
+
+## ⏹️ Menghentikan Komponen
+
+### Menghentikan Semua (lokal)
+
+```bash
+# Telegram Bot — tekan Ctrl+C di terminal yang menjalankan bot_sekolah.py
+
+# Dashboard Admin (port 8000)
+lsof -ti :8000 | xargs kill -9
+
+# Web Chat / WhatsApp Backend (port 5001)
+lsof -ti :5001 | xargs kill -9
+
+# WhatsApp Bridge
+pkill -f "whatsapp_bridge"
+
+# Twitter Worker — tekan Ctrl+C di terminal yang menjalankan twitter_bot.py
+```
+
+### Menghentikan per Komponen
+
+| Komponen | Perintah stop |
+| --- | --- |
+| Telegram Bot | `Ctrl+C` di terminal |
+| Dashboard Admin | `lsof -ti :8000 \| xargs kill -9` |
+| Web Chat (port 5001) | `lsof -ti :5001 \| xargs kill -9` |
+| WhatsApp Bridge | `pkill -f "whatsapp_bridge"` |
+| Twitter Worker | `Ctrl+C` di terminal |
+
+### Menghentikan di Produksi (systemd)
+
+```bash
+sudo systemctl stop ai-bot.service            # Telegram Bot
+sudo systemctl stop aska-dashboard.service     # Dashboard
+sudo systemctl stop aska-webapp.service        # Web Chat
+sudo systemctl stop aska-whatsapp.service      # WhatsApp Bridge
 ```
 
 ---
@@ -293,6 +385,26 @@ ExecStart=/opt/ai-agent-sekolah/venv/bin/gunicorn -w 2 -k gthread -b 127.0.0.1:8
 User=www-data
 Group=www-data
 Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### `aska-whatsapp.service`
+
+```ini
+[Unit]
+Description=ASKA WhatsApp Bridge (QR Session)
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/ai-agent-sekolah
+EnvironmentFile=/opt/ai-agent-sekolah/.env
+ExecStart=/usr/bin/npm run wa:start --silent
+Restart=always
+RestartSec=5
+User=www-data
+Group=www-data
 
 [Install]
 WantedBy=multi-user.target
@@ -357,6 +469,7 @@ sudo certbot --nginx -d dashboard.sekolah.sch.id -d aska.sekolah.sch.id
 sudo systemctl status ai-bot.service
 sudo systemctl status aska-dashboard.service
 sudo systemctl status aska-webapp.service
+sudo systemctl status aska-whatsapp.service
 sudo journalctl -u ai-bot.service -f   # lihat log real-time
 ```
 
@@ -367,8 +480,27 @@ cd /opt/ai-agent-sekolah
 git pull origin main
 source venv/bin/activate
 pip install -r requirements.txt
-sudo systemctl restart ai-bot.service aska-dashboard.service aska-webapp.service
+sudo systemctl restart ai-bot.service aska-dashboard.service aska-webapp.service aska-whatsapp.service
 ```
+
+---
+
+## 📥 Panduan Ekstra: Download File dari Server (ke Lokal Mac)
+
+Gunakan perintah bawaan `scp` (*Secure Copy*) di Terminal Mac Anda (pastikan posisi **tidak sedang login (SSH)** di dalam server). 
+
+Format dasar:
+```bash
+scp -r <username_server>@<ip_server>:<lokasi_folder_server> <lokasi_tujuan_lokal>
+```
+
+**Contoh 1: Download folder `uploads` ke Desktop Mac (menggunakan username `root`)**
+```bash
+scp -r root@202.10.37.22:/opt/sudin_aska/uploads ~/Desktop/
+```
+Lalu masukkan password server Anda (*ketikan tidak akan terlihat, biarkan saja lalu tekan Enter*).
+
+> **💡 Tips:** Jika Anda telanjur berada di dalam server karena menjalankan perintah `ssh`, ketik `exit` lalu Enter untuk kembali ke Terminal Mac, baru jalankan perintah `scp` di atas.
 
 ---
 
@@ -378,6 +510,7 @@ sudo systemctl restart ai-bot.service aska-dashboard.service aska-webapp.service
 | --- | --- |
 | Tidak bisa membuat `venv` | `sudo apt install python3-venv -y` |
 | Bot diam | Pastikan `.env` benar, cek `journalctl -u ai-bot.service -f` |
+| WhatsApp tidak membalas | Pastikan `npm run wa:start` aktif, token internal cocok, dan scan QR sudah sukses |
 | Error `faiss` | `pip install faiss-cpu` (atau pasang dari conda pada CPU lawas) |
 | Google login gagal | Pastikan domain di konsol Google sudah memasukkan URL callback `/authorize` |
 | Dashboard blank | Periksa koneksi DB (`psql`), jalankan ulang `python -m scripts.init_db` |

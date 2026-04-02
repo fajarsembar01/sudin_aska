@@ -1,8 +1,17 @@
+from __future__ import annotations
+
 import os
+import re
+import json
+import signal
 import secrets
+import shutil
+import subprocess
+from pathlib import Path
 from pathlib import PurePosixPath
 from functools import wraps
 from typing import Callable, Optional
+from dotenv import dotenv_values
 
 from authlib.integrations.flask_client import OAuth
 from flask import (
@@ -10,6 +19,7 @@ from flask import (
     Response,
     flash,
     jsonify,
+    make_response,
     redirect,
     render_template,
     request,
@@ -28,9 +38,12 @@ from .queries import (
     summarize_aska_users,
     update_web_user_status,
     update_telegram_user_status,
+    update_whatsapp_user_status,
     list_admin_users,
     fetch_telegram_notification_settings,
+    fetch_whatsapp_link_settings,
     upsert_telegram_notification_settings,
+    upsert_whatsapp_link_settings,
     list_telegram_admin_accounts,
     upsert_telegram_admin_accounts,
     delete_telegram_admin_account,
@@ -49,6 +62,7 @@ oauth = OAuth()
 
 GMAIL_ALLOWED_DOMAINS = {"gmail.com", "googlemail.com"}
 _OAUTH_REGISTERED = False
+_WA_ME_PATTERN = re.compile(r"^https?://(www\.)?wa\.me/\d+/?$", re.IGNORECASE)
 
 
 def _normalize_profile_photo_path(photo_path: Optional[str]) -> Optional[str]:
@@ -69,6 +83,169 @@ def _build_profile_photo_url(photo_path: Optional[str]) -> Optional[str]:
     if not rel_path:
         return None
     return url_for("portal.uploaded_file", filename=rel_path)
+
+
+def _normalize_whatsapp_link(raw_value: Optional[str]) -> str:
+    clean = (raw_value or "").strip()
+    if not clean:
+        return "https://wa.me/6282143646463"
+    if _WA_ME_PATTERN.match(clean):
+        return clean.rstrip("/")
+    digits = "".join(ch for ch in clean if ch.isdigit())
+    if not digits:
+        return "https://wa.me/6282143646463"
+    if digits.startswith("0"):
+        digits = f"62{digits[1:]}"
+    return f"https://wa.me/{digits}"
+
+
+def _load_whatsapp_bridge_status() -> dict:
+    status_path = Path(
+        os.getenv("ASKA_WHATSAPP_STATUS_PATH", "runtime/whatsapp_bridge_status.json")
+    )
+    if not status_path.is_absolute():
+        status_path = (Path(__file__).resolve().parent.parent / status_path).resolve()
+
+    if not status_path.exists():
+        return {
+            "state": "offline",
+            "message": "Status file belum ada. Jalankan worker: npm run wa:start",
+            "qrText": "",
+            "statusPath": str(status_path),
+        }
+    try:
+        raw = json.loads(status_path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            raw = {}
+    except Exception:
+        raw = {}
+    raw.setdefault("state", "unknown")
+    raw.setdefault("message", "Status WhatsApp bridge belum tersedia.")
+    raw.setdefault("qrText", "")
+    raw["statusPath"] = str(status_path)
+    return raw
+
+
+def _resolve_whatsapp_runtime_paths() -> dict:
+    root_dir = Path(__file__).resolve().parent.parent
+    session_path = Path(os.getenv("ASKA_WHATSAPP_SESSION_PATH", ".wa_session"))
+    if not session_path.is_absolute():
+        session_path = (root_dir / session_path).resolve()
+    status_path = Path(os.getenv("ASKA_WHATSAPP_STATUS_PATH", "runtime/whatsapp_bridge_status.json"))
+    if not status_path.is_absolute():
+        status_path = (root_dir / status_path).resolve()
+    log_path = (root_dir / "runtime" / "whatsapp_bridge.log").resolve()
+    pid_path = (root_dir / "runtime" / "whatsapp_bridge.pid").resolve()
+    return {
+        "root": root_dir,
+        "session": session_path,
+        "status": status_path,
+        "log": log_path,
+        "pid": pid_path,
+    }
+
+
+def _read_pid(pid_path: Path) -> Optional[int]:
+    try:
+        raw = pid_path.read_text(encoding="utf-8").strip()
+        if not raw:
+            return None
+        return int(raw)
+    except Exception:
+        return None
+
+
+def _pid_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+        return True
+    except Exception:
+        return False
+
+
+def _stop_existing_bridge(pid_path: Path) -> None:
+    pid = _read_pid(pid_path)
+    if not pid or not _pid_alive(pid):
+        pass
+    else:
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except Exception:
+            pass
+    # Safety net: kill stale WA worker/chrome processes tied to this session.
+    try:
+        subprocess.run(
+            [
+                "pkill",
+                "-f",
+                "node scripts/whatsapp_bridge.js|npm run wa:start|session-aska-main|Google Chrome for Testing.*wa_session",
+            ],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        pass
+    try:
+        pid_path.unlink(missing_ok=True)
+    except Exception:
+        pass
+
+
+def _restart_whatsapp_bridge(reset_session: bool = True) -> dict:
+    paths = _resolve_whatsapp_runtime_paths()
+    root_dir = paths["root"]
+    session_path = paths["session"]
+    pid_path = paths["pid"]
+    log_path = paths["log"]
+
+    _stop_existing_bridge(pid_path)
+    # Remove stale Chromium lock files before boot.
+    try:
+        session_client_dir = session_path / "session-aska-main"
+        for lock_name in ("SingletonLock", "SingletonCookie", "SingletonSocket", "lockfile"):
+            for lock_path in session_client_dir.rglob(lock_name):
+                try:
+                    lock_path.unlink()
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    if reset_session and session_path.exists():
+        shutil.rmtree(session_path, ignore_errors=True)
+
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    env = os.environ.copy()
+    env_file = root_dir / ".env"
+    if env_file.exists():
+        loaded = dotenv_values(env_file)
+        for key, value in loaded.items():
+            if key and value is not None and key not in env:
+                env[key] = str(value)
+
+    if not (env.get("ASKA_WHATSAPP_INTERNAL_TOKEN") or "").strip():
+        raise RuntimeError("ASKA_WHATSAPP_INTERNAL_TOKEN belum diset di environment/.env")
+
+    if "ASKA_WHATSAPP_STATUS_PATH" not in env:
+        env["ASKA_WHATSAPP_STATUS_PATH"] = str(paths["status"])
+
+    with log_path.open("a", encoding="utf-8") as log_file:
+        process = subprocess.Popen(
+            ["npm", "run", "wa:start"],
+            cwd=str(root_dir),
+            env=env,
+            stdout=log_file,
+            stderr=log_file,
+            start_new_session=True,
+        )
+
+    pid_path.write_text(str(process.pid), encoding="utf-8")
+    return {
+        "pid": process.pid,
+        "log_path": str(log_path),
+        "status_path": str(paths["status"]),
+    }
 
 
 def init_oauth(app) -> None:
@@ -215,6 +392,14 @@ def _get_login_block_feedback(user: dict) -> Optional[tuple[str, str]]:
         "Akun Anda belum dapat digunakan saat ini. Silakan hubungi admin wilayah.",
         "danger",
     )
+
+
+def _render_login_page(**context) -> Response:
+    response = make_response(render_template("login.html", **context))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 
 
@@ -454,23 +639,23 @@ def login() -> Response:
         user = get_user_by_email(email)
         if not user:
             flash("Email belum terdaftar. Hubungi admin untuk membuat akun.", "danger")
-            return render_template("login.html", email=email, coordinator_contacts=coordinator_contacts)
+            return _render_login_page(email=email, coordinator_contacts=coordinator_contacts)
 
         login_block = _get_login_block_feedback(user)
         if login_block:
             message, category = login_block
             flash(message, category)
-            return render_template("login.html", email=email, coordinator_contacts=coordinator_contacts)
+            return _render_login_page(email=email, coordinator_contacts=coordinator_contacts)
 
         if not check_password_hash(user["password_hash"], password):
             flash("Salah password, hubungi admin untuk reset akses.", "danger")
-            return render_template("login.html", email=email, coordinator_contacts=coordinator_contacts)
+            return _render_login_page(email=email, coordinator_contacts=coordinator_contacts)
 
         _establish_session(user, remember=remember, email_override=email)
         flash("Selamat datang kembali!", "success")
         return redirect(_redirect_after_login(user, request.args.get("next")))
 
-    return render_template("login.html", coordinator_contacts=coordinator_contacts)
+    return _render_login_page(coordinator_contacts=coordinator_contacts)
 
 
 @auth_bp.route("/logout")
@@ -779,6 +964,62 @@ def telegram_notifications() -> Response:
     )
 
 
+@auth_bp.route("/settings/whatsapp-link", methods=["GET", "POST"])
+@role_required("admin")
+def whatsapp_link_settings() -> Response:
+    """Configure WhatsApp entry link shown in ASKA Insight dashboard."""
+    actor = current_user() or {}
+
+    if request.method == "POST":
+        raw_value = request.form.get("wa_link") or ""
+        normalized_link = _normalize_whatsapp_link(raw_value)
+        upsert_whatsapp_link_settings(normalized_link, actor.get("id"))
+        flash("Link WhatsApp berhasil disimpan.", "success")
+
+    settings = fetch_whatsapp_link_settings()
+    current_link = _normalize_whatsapp_link(settings.get("wa_link") or os.getenv("ASKA_WHATSAPP_URL", "082143646463"))
+
+    return render_template(
+        "whatsapp_link_settings.html",
+        settings=settings,
+        current_link=current_link,
+    )
+
+
+@auth_bp.route("/settings/whatsapp-bridge")
+@role_required("admin")
+def whatsapp_bridge_settings() -> Response:
+    """Show WhatsApp bridge/QR connection guide."""
+    status = _load_whatsapp_bridge_status()
+    return render_template("whatsapp_bridge_settings.html", status=status)
+
+
+@auth_bp.route("/settings/whatsapp-bridge/status")
+@role_required("admin")
+def whatsapp_bridge_status() -> Response:
+    """Return current WhatsApp bridge status payload for polling."""
+    return jsonify({"success": True, "status": _load_whatsapp_bridge_status()})
+
+
+@auth_bp.route("/settings/whatsapp-bridge/generate-qr", methods=["POST"])
+@role_required("admin")
+def whatsapp_bridge_generate_qr() -> Response:
+    """Force restart WA bridge and regenerate a fresh QR login."""
+    try:
+        runtime = _restart_whatsapp_bridge(reset_session=True)
+        message = "Worker WhatsApp direstart. Tunggu 5-15 detik sampai QR muncul."
+        if request.is_json or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"success": True, "message": message, "runtime": runtime})
+        flash(message, "success")
+        return redirect(url_for("auth.whatsapp_bridge_settings"))
+    except Exception as exc:
+        message = f"Gagal generate QR: {exc}"
+        if request.is_json or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"success": False, "message": message}), 500
+        flash(message, "danger")
+        return redirect(url_for("auth.whatsapp_bridge_settings"))
+
+
 @auth_bp.route("/my-team")
 @role_required("coordinator", "staff")
 def view_my_team() -> Response:
@@ -821,9 +1062,9 @@ def view_my_team() -> Response:
 @auth_bp.route("/settings/aska-users")
 @role_required("admin")
 def manage_aska_users() -> Response:
-    source = (request.args.get("source") or "web").strip().lower()
-    if source not in {"web", "telegram", "all"}:
-        source = "web"
+    source = (request.args.get("source") or "all").strip().lower()
+    if source not in {"web", "telegram", "whatsapp", "all"}:
+        source = "all"
     status_filter = (request.args.get("status") or "all").strip().lower()
     normalized_status = status_filter if status_filter in ACCOUNT_STATUS_CHOICES else None
     search = (request.args.get("q") or "").strip()
@@ -869,6 +1110,8 @@ def update_aska_user_status() -> Response:
             updated = update_web_user_status(user_id_int, normalized_status, reason, changed_by=actor)
         elif channel == "telegram":
             updated = update_telegram_user_status(user_id_int, normalized_status, reason, changed_by=actor)
+        elif channel == "whatsapp":
+            updated = update_whatsapp_user_status(user_id_int, normalized_status, reason, changed_by=actor)
         else:
             return jsonify({"success": False, "message": "Channel tidak dikenal."}), 400
     except ValueError as exc:

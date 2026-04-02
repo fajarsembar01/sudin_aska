@@ -650,7 +650,7 @@ def list_reopen_requests(status: Optional[str] = None) -> List[Dict[str, Any]]:
 
 
 def fetch_admin_pending_summary() -> Dict[str, int]:
-    """Return counts of pending admin confirmations for Portal."""
+    """Return counts of pending admin confirmations for Portal (termasuk Call Center unread)."""
     query = """
         SELECT
             (SELECT COUNT(*) FROM dashboard_users WHERE account_status = 'pending') AS pending_users,
@@ -664,28 +664,36 @@ def fetch_admin_pending_summary() -> Dict[str, int]:
         row = cur.fetchone()
 
     if not row:
-        return {
+        summary = {
             "pending_users": 0,
             "pending_assignment_requests": 0,
             "pending_team_member_requests": 0,
             "pending_reopen_requests": 0,
             "pending_guestbook": 0,
-            "total": 0,
+            "pending_call_center": 0,
         }
+    else:
+        summary = {
+            "pending_users": int(row["pending_users"] or 0),
+            "pending_assignment_requests": int(row["pending_assignment_requests"] or 0),
+            "pending_team_member_requests": int(row["pending_team_member_requests"] or 0),
+            "pending_reopen_requests": int(row["pending_reopen_requests"] or 0),
+            "pending_guestbook": int(row["pending_guestbook"] or 0),
+            "pending_call_center": 0,
+        }
+        try:
+            from dashboard.call_center.queries import fetch_cc_unread_total
+            summary["pending_call_center"] = fetch_cc_unread_total()
+        except Exception:
+            summary["pending_call_center"] = 0
 
-    summary = {
-        "pending_users": int(row["pending_users"] or 0),
-        "pending_assignment_requests": int(row["pending_assignment_requests"] or 0),
-        "pending_team_member_requests": int(row["pending_team_member_requests"] or 0),
-        "pending_reopen_requests": int(row["pending_reopen_requests"] or 0),
-        "pending_guestbook": int(row["pending_guestbook"] or 0),
-    }
     summary["total"] = (
         summary["pending_users"]
         + summary["pending_assignment_requests"]
         + summary["pending_team_member_requests"]
         + summary["pending_reopen_requests"]
         + summary["pending_guestbook"]
+        + summary["pending_call_center"]
     )
     return summary
 
@@ -1464,7 +1472,36 @@ def submit_assessment(assessment_id: int) -> bool:
         score_scale_max = _normalize_score_scale_max(assessment.get("score_scale_max"))
         default_score = PORTAL_NEW_SCORE_MIN if score_scale_max == PORTAL_NEW_SCORE_SCALE_MAX else PORTAL_LEGACY_SCORE_MIN
 
-        # 1. Fill missing scores with scale-aware default
+        # 1. Drop scores for aspects that are no longer active/selected for this school room.
+        cur.execute(
+            """
+            DELETE FROM portal_assessment_scores s
+            WHERE s.assessment_id = %s
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM portal_school_rooms sr
+                  JOIN portal_assessments a ON a.id = %s
+                  JOIN portal_aspects pa
+                    ON pa.id = s.aspect_id
+                   AND pa.room_id = sr.room_id
+                   AND pa.active = TRUE
+                  WHERE sr.id = s.school_room_id
+                    AND sr.school_id = a.school_id
+                    AND (
+                        pa.is_required = TRUE
+                        OR EXISTS (
+                            SELECT 1
+                            FROM portal_school_room_aspects psra
+                            WHERE psra.school_room_id = sr.id
+                              AND psra.aspect_id = pa.id
+                        )
+                    )
+              )
+            """,
+            (assessment_id, assessment_id),
+        )
+
+        # 2. Fill missing scores with scale-aware default for active/selected aspects only.
         cur.execute(
             """
             INSERT INTO portal_assessment_scores (assessment_id, school_room_id, aspect_id, score, created_at, updated_at)
@@ -1473,6 +1510,16 @@ def submit_assessment(assessment_id: int) -> bool:
             JOIN portal_assessments a ON a.id = %s
             JOIN portal_aspects pa ON pa.room_id = sr.room_id
             WHERE sr.school_id = a.school_id
+              AND pa.active = TRUE
+              AND (
+                  pa.is_required = TRUE
+                  OR EXISTS (
+                      SELECT 1
+                      FROM portal_school_room_aspects psra
+                      WHERE psra.school_room_id = sr.id
+                        AND psra.aspect_id = pa.id
+                  )
+              )
               AND NOT EXISTS (
                   SELECT 1 
                   FROM portal_assessment_scores s 
@@ -1484,7 +1531,7 @@ def submit_assessment(assessment_id: int) -> bool:
             (assessment_id, default_score, assessment_id, assessment_id),
         )
 
-        # 2. Calculate average score
+        # 3. Calculate average score
         cur.execute(
             """
             SELECT AVG(score)::DECIMAL(5,2) as avg_score
@@ -1496,7 +1543,7 @@ def submit_assessment(assessment_id: int) -> bool:
         row = cur.fetchone()
         avg_score = row["avg_score"] if row else 0.00
         
-        # 3. Update assessment
+        # 4. Update assessment
         cur.execute(
             """
             UPDATE portal_assessments
@@ -4382,7 +4429,10 @@ def assign_staff_to_school(
 def get_staff_assigned_schools(staff_id: int, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
     """Get all schools assigned to a staff member.
 
-    If ``period_id`` is provided, draft/last assessment status is scoped to that period.
+    If ``period_id`` is provided, draft/last assessment status is scoped to
+    that period.  Additionally, ``old_draft_id`` / ``old_draft_period_name``
+    return the most recent draft from a *different* period so the UI can show
+    a secondary "Lanjutkan draft <bulan>" link.
     """
     with get_cursor() as cur:
         cur.execute(
@@ -4399,7 +4449,7 @@ def get_staff_assigned_schools(staff_id: int, period_id: Optional[int] = None) -
                 l.name as kelurahan_name,
                 k.name as kecamatan_name,
                 u.full_name as assigned_by_name,
-                -- Get latest assessment status for this school by this staff
+                -- Latest assessment (filtered by selected period)
                 (
                     SELECT a.status
                     FROM portal_assessments a
@@ -4418,6 +4468,7 @@ def get_staff_assigned_schools(staff_id: int, period_id: Optional[int] = None) -
                     ORDER BY a.created_at DESC
                     LIMIT 1
                 ) as last_assessment_id,
+                -- Draft for the SELECTED period (primary action button)
                 (
                     SELECT a.id
                     FROM portal_assessments a
@@ -4452,6 +4503,31 @@ def get_staff_assigned_schools(staff_id: int, period_id: Optional[int] = None) -
                         LIMIT 1
                     )
                 ) as draft_period_name,
+                -- Draft from a DIFFERENT period (secondary link)
+                (
+                    SELECT a.id
+                    FROM portal_assessments a
+                    WHERE a.school_id = s.id
+                      AND a.staff_id = %s
+                      AND a.status = 'draft'
+                      AND (%s IS NULL OR a.period_id <> %s)
+                    ORDER BY a.created_at DESC
+                    LIMIT 1
+                ) as old_draft_id,
+                (
+                    SELECT p.name
+                    FROM portal_assessment_periods p
+                    WHERE p.id = (
+                        SELECT a.period_id
+                        FROM portal_assessments a
+                        WHERE a.school_id = s.id
+                          AND a.staff_id = %s
+                          AND a.status = 'draft'
+                          AND (%s IS NULL OR a.period_id <> %s)
+                        ORDER BY a.created_at DESC
+                        LIMIT 1
+                    )
+                ) as old_draft_period_name,
                 (
                     SELECT a.period_id
                     FROM portal_assessments a
@@ -4490,28 +4566,16 @@ def get_staff_assigned_schools(staff_id: int, period_id: Optional[int] = None) -
             ORDER BY k.name, s.name
             """,
             (
+                staff_id, period_id, period_id,
+                staff_id, period_id, period_id,
+                staff_id, period_id, period_id,
+                staff_id, period_id, period_id,
+                staff_id, period_id, period_id,
+                staff_id, period_id, period_id,
+                staff_id, period_id, period_id,
+                staff_id, period_id, period_id,
                 staff_id,
-                period_id,
-                period_id,
-                staff_id,
-                period_id,
-                period_id,
-                staff_id,
-                period_id,
-                period_id,
-                staff_id,
-                period_id,
-                period_id,
-                staff_id,
-                period_id,
-                period_id,
-                staff_id,
-                period_id,
-                period_id,
-                staff_id,
-                staff_id,
-                period_id,
-                period_id,
+                staff_id, period_id, period_id,
                 staff_id,
             )
         )

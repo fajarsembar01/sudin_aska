@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 
 from ai_core import build_qa_chain
 from db import save_chat, get_chat_history, get_telegram_user_status
+from rag_logger import save_rag_log
 from responses import (
     ASKA_NO_DATA_RESPONSE,
     ASKA_TECHNICAL_ISSUE_RESPONSE,
@@ -352,6 +353,16 @@ async def handle_user_query(
         print(f"[{now_str()}] ?? ASKA AMBIL {len(result['context'])} KONTEN:")
         for i, doc in enumerate(result["context"], 1):
             print(f"  {i}. {doc.page_content[:200]}...")
+
+        save_rag_log(
+            user_id=user_id,
+            username=username,
+            channel="telegram",
+            question=normalized_input,
+            chunks=[doc.page_content[:300] for doc in result["context"]],
+            answer=coerce_to_text(result)[:500],
+            response_ms=int((time.perf_counter() - start_time) * 1000),
+        )
 
         response = coerce_to_text(result)
         if not response.strip():

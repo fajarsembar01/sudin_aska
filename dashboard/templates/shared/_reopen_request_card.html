@@ -1,0 +1,92 @@
+{% macro reopen_request_card(
+    assessment,
+    latest_request,
+    current_role,
+    request_endpoint,
+    approve_endpoint,
+    reject_endpoint,
+    allow_statuses,
+    request_roles,
+    admin_roles,
+    csrf_token_value=None
+) %}
+{% if assessment and assessment.status in allow_statuses %}
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body">
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <i class="bi bi-arrow-counterclockwise text-primary"></i>
+      <h6 class="fw-bold mb-0">Permintaan Reopen</h6>
+    </div>
+    {% set req = latest_request %}
+    {% if current_role in request_roles %}
+      {% if req and req.status == 'pending' %}
+        <div class="alert alert-info small mb-2">
+          Menunggu persetujuan admin. Diajukan {{ req.created_at }}.
+          {% if req.reason %}<br><span class="fw-semibold">Alasan:</span> {{ req.reason }}{% endif %}
+        </div>
+      {% elif req and req.status == 'rejected' %}
+        <div class="alert alert-warning small mb-2">
+          Permintaan ditolak {{ req.reviewed_at or '' }}.
+          {% if req.reviewer_note %}<br><span class="fw-semibold">Catatan admin:</span> {{ req.reviewer_note }}{% endif %}
+        </div>
+      {% elif req and req.status == 'approved' %}
+        <div class="alert alert-success small mb-2">
+          Permintaan sebelumnya sudah disetujui {{ req.reviewed_at or '' }}.
+        </div>
+      {% endif %}
+      <form method="post" action="{{ url_for(request_endpoint, assessment_id=assessment.id) }}">
+        {% if csrf_token_value %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token_value }}">
+        {% endif %}
+        <label class="form-label small text-muted">Alasan (opsional)</label>
+        <textarea class="form-control form-control-sm mb-2" name="reason" rows="2"
+            placeholder="Jelaskan kenapa perlu dibuka kembali..."></textarea>
+        <button type="submit" class="btn btn-outline-primary w-100"
+            {% if req and req.status == 'pending' %}disabled{% endif %}>
+            <i class="bi bi-send"></i> Ajukan ke Admin
+        </button>
+        {% if req and req.status == 'pending' %}
+        <div class="small text-muted mt-1">Sudah ada permintaan menunggu persetujuan.</div>
+        {% endif %}
+      </form>
+    {% elif current_role in admin_roles %}
+      {% if req %}
+        <div class="small text-muted mb-2">Diajukan oleh {{ req.staff_name or 'Staff' }} pada {{ req.created_at }}</div>
+        {% if req.reason %}
+        <div class="alert alert-secondary small">Alasan: {{ req.reason }}</div>
+        {% endif %}
+        {% if req.status == 'pending' %}
+        <form class="mb-2" method="post" action="{{ url_for(approve_endpoint, assessment_id=assessment.id) }}">
+          {% if csrf_token_value %}
+          <input type="hidden" name="csrf_token" value="{{ csrf_token_value }}">
+          {% endif %}
+          <input type="hidden" name="request_id" value="{{ req.id }}">
+          <label class="form-label small text-muted mb-1">Catatan admin (opsional)</label>
+          <textarea class="form-control form-control-sm mb-2" name="reviewer_note" rows="2"
+              placeholder="Catatan persetujuan"></textarea>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success w-50">
+              <i class="bi bi-check-circle"></i> Setujui &amp; Reopen
+            </button>
+            <button type="submit" formaction="{{ url_for(reject_endpoint, assessment_id=assessment.id) }}"
+              class="btn btn-outline-danger w-50">
+              <i class="bi bi-x-circle"></i> Tolak
+            </button>
+          </div>
+        </form>
+        {% elif req.status == 'approved' %}
+        <div class="alert alert-success small mb-0">Sudah disetujui {{ req.reviewed_at or '' }} oleh {{ req.reviewer_name or 'Admin' }}.</div>
+        {% elif req.status == 'rejected' %}
+        <div class="alert alert-warning small mb-0">
+          Ditolak {{ req.reviewed_at or '' }} oleh {{ req.reviewer_name or 'Admin' }}.
+          {% if req.reviewer_note %}<br>Catatan: {{ req.reviewer_note }}{% endif %}
+        </div>
+        {% endif %}
+      {% else %}
+        <div class="small text-muted">Belum ada permintaan reopen.</div>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endmacro %}

@@ -1,0 +1,28 @@
+{% macro setup_list_header(count_id, count_value, label, search_id, placeholder) %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+  <div>
+    <span class="text-muted small"><span id="{{ count_id }}">{{ count_value }}</span> {{ label }}</span>
+  </div>
+  <div class="position-relative" style="min-width: 200px;">
+    <input type="text" id="{{ search_id }}" class="form-control form-control-sm" placeholder="{{ placeholder }}" autocomplete="off">
+    <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-2 text-muted" style="pointer-events: none;"></i>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro setup_table(table_id, body_id, headers, table_class='table table-hover align-middle mb-0') %}
+<table class="{{ table_class }}" id="{{ table_id }}">
+  <thead>
+    <tr>
+      {% for h in headers %}
+      <th{% if h.width %} style="width: {{ h.width }};"{% endif %}{% if h.align %} class="text-{{ h.align }}"{% endif %}>
+        {{ h.label }}
+      </th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody id="{{ body_id }}">
+    {{ caller() }}
+  </tbody>
+</table>
+{% endmacro %}

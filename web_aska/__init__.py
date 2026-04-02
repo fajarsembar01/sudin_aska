@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 import json
 import os
 import secrets
 import re
 from pathlib import Path
 from datetime import datetime, timezone
-from flask import Flask, request, jsonify, render_template, session, redirect, url_for, flash, send_from_directory, abort
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for, flash, send_from_directory, abort, make_response
 from authlib.integrations.flask_client import OAuth
 
-from .handlers import process_web_request, web_sessions, reload_qa_chain
+from .handlers import process_channel_request, process_web_request, web_sessions, reload_qa_chain
 from .feedback_routes import feedback_bp
 from db import (
+    save_chat,
     get_or_create_web_user,
     get_chat_history,
     get_corruption_report,
@@ -21,8 +23,11 @@ from db import (
     get_web_user_status,
     DEFAULT_LIMITED_QUOTA,
     DEFAULT_LIMITED_REASON,
+    get_whatsapp_user_status,
     get_portal_school_by_npsn,
     create_public_guestbook_transaction,
+    get_public_guestbook_review_by_token,
+    submit_public_guestbook_review,
     find_general_guest_by_phone,
     list_guestbook_purpose_keywords,
     list_guestbook_contact_priorities,
@@ -30,7 +35,7 @@ from db import (
 from account_status import BLOCKING_STATUSES, build_status_notice, ACCOUNT_STATUS_ACTIVE
 from responses import detect_bullying_category, is_corruption_report_intent
 from reporting_flags import reporting_enabled
-from utils import normalize_input, replace_bot_mentions
+from utils import normalize_input, replace_bot_mentions, to_jakarta
 
 LIMIT_BLOCK_MESSAGE = (
     f"Ups! Kuota {DEFAULT_LIMITED_QUOTA} chat untuk akses Gmail sudah habis. "
@@ -38,6 +43,22 @@ LIMIT_BLOCK_MESSAGE = (
 )
 GMAIL_ALLOWED_DOMAINS = {"gmail.com", "googlemail.com"}
 WEB_BOT_USERNAME = "ASKA_WEB"
+
+
+def _run_async(coro):
+    """Safely run an async coroutine from a sync Flask/gunicorn context."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        # Already inside a running loop — offload to a new thread
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(asyncio.run, coro)
+            return future.result()
+    else:
+        return asyncio.run(coro)
 
 
 def create_app() -> Flask:
@@ -62,6 +83,22 @@ def create_app() -> Flask:
         server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
         client_kwargs={"scope": "openid email profile"},
     )
+
+    @app.template_filter("jakarta")
+    def format_jakarta(value, fmt="%d %b %Y %H:%M"):
+        if value is None:
+            return ""
+        dt = to_jakarta(value)
+        try:
+            return dt.strftime(fmt)
+        except Exception:
+            return ""
+
+    def _add_no_cache_headers(response):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
 
     def _serialize_quota_payload(quota_state: dict | None) -> dict:
         quota_state = quota_state or {}
@@ -129,6 +166,15 @@ def create_app() -> Flask:
         if digits.startswith("0"):
             digits = "62" + digits[1:]
         return digits
+
+    def _normalize_whatsapp_user_id(value: object) -> Optional[int]:
+        digits = "".join(ch for ch in str(value or "") if ch.isdigit())
+        if not digits:
+            return None
+        try:
+            return int(digits)
+        except (TypeError, ValueError):
+            return None
 
     def _build_contact_buttons(school: dict | None) -> list[dict]:
         if not school:
@@ -199,6 +245,55 @@ def create_app() -> Flask:
 
     def _guestbook_class_letters() -> list[str]:
         return [chr(code) for code in range(ord("A"), ord("Z") + 1)]
+
+    def _guestbook_review_summary(review: dict | None, fallback_summary: dict | None = None) -> dict:
+        if not review:
+            return fallback_summary or {"names": [], "count": 0}
+        names_raw = review.get("guest_names") or ""
+        names = [name.strip() for name in str(names_raw).split(",") if name.strip()]
+        try:
+            count = int(review.get("guest_count") or len(names))
+        except (TypeError, ValueError):
+            count = len(names)
+        if not count and names:
+            count = len(names)
+        return {
+            "names": names,
+            "count": count,
+        }
+
+    def _guestbook_review_primary_name(summary: dict | None) -> str:
+        names = (summary or {}).get("names") or []
+        if names:
+            return names[0]
+        return "Tamu Umum"
+
+    def _activate_guest_chat_session(review: dict, summary: dict | None) -> None:
+        transaction_id = review.get("transaction_id")
+        session["guest_chat_tx_id"] = transaction_id
+        session["guest_chat_remaining"] = 2
+        session["guest_chat_npsn"] = review.get("npsn")
+        session["guest_chat_summary"] = summary or {"names": [], "count": 0}
+        session["guest_chat_name"] = _guestbook_review_primary_name(summary)
+        session.pop("guest_review_tx_id", None)
+        session.pop("guest_review_token", None)
+        session.pop("guest_review_npsn", None)
+        session.pop("guest_review_school_name", None)
+        session.pop("guest_review_summary", None)
+        session.pop("guest_chat_user_id", None)
+        session.modified = True
+
+    def _pending_guest_review_redirect(review_token: str | None) -> str | None:
+        pending_tx = session.get("guest_review_tx_id")
+        pending_token = (session.get("guest_review_token") or "").strip()
+        if not pending_tx or not pending_token:
+            return None
+        if review_token and pending_token != review_token:
+            return None
+        pending_npsn = (session.get("guest_review_npsn") or "").strip()
+        if not pending_npsn:
+            return None
+        return url_for("buku_tamu_review", npsn=pending_npsn, review_token=pending_token)
 
     def _sync_session_quota(quota_state: dict | None) -> None:
         if "user" not in session or not quota_state:
@@ -293,7 +388,10 @@ def create_app() -> Flask:
 
     @app.route("/auth/login")
     def login_page():
-        return render_template("login.html", portal_register_url=_portal_register_url())
+        if session.get("user"):
+            return redirect(url_for("index"))
+        response = make_response(render_template("login.html", portal_register_url=_portal_register_url()))
+        return _add_no_cache_headers(response)
 
     @app.route('/login')
     def login_belajar():
@@ -428,17 +526,7 @@ def create_app() -> Flask:
             return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
 
         def _is_valid_student_class(value: str) -> bool:
-            if not value:
-                return False
-            match = re.search(r"(\d{1,2})\s*([A-Za-z])?", value)
-            if not match:
-                return False
-            grade, letter = match.groups()
-            if grade not in allowed_grades:
-                return False
-            if letter and letter.upper() not in allowed_letters:
-                return False
-            return True
+            return bool((value or "").strip())
 
         if request.method == "POST":
             guest_type = (request.form.get("guest_type") or "umum").strip().lower()
@@ -499,7 +587,7 @@ def create_app() -> Flask:
                     student_name = (guest.get("student_name") or "").strip()
                     if is_parent:
                         if not student_class or not _is_valid_student_class(student_class):
-                            error = "Kelas siswa wajib dipilih dari daftar yang tersedia."
+                            error = "Kelas siswa wajib diisi."
                             break
                         if not student_name:
                             error = "Nama siswa wajib diisi untuk wali murid."
@@ -537,7 +625,7 @@ def create_app() -> Flask:
                         "source": "web_aska",
                     }
                     try:
-                        transaction_id = create_public_guestbook_transaction(
+                        transaction_result = create_public_guestbook_transaction(
                             school_id=school["id"],
                             purpose=purpose or None,
                             notes=notes or None,
@@ -548,20 +636,24 @@ def create_app() -> Flask:
                         error = f"Gagal mengirim buku tamu: {exc}"
                     else:
                         guest_names = [g.get("full_name") for g in guests if g.get("full_name")]
-                        guest_user_id = session.get("guest_chat_user_id")
-                        if not guest_user_id:
-                            guest_user_id = -1 * (secrets.randbelow(1_000_000_000) + 1)
-                            session["guest_chat_user_id"] = guest_user_id
-                        session["guest_chat_remaining"] = 2
-                        session["guest_chat_tx_id"] = transaction_id
-                        session["guest_chat_npsn"] = school.get("npsn")
-                        session["guest_chat_summary"] = {
+                        transaction_id = transaction_result.get("transaction_id")
+                        review_token = transaction_result.get("review_token")
+                        session.pop("guest_chat_tx_id", None)
+                        session.pop("guest_chat_remaining", None)
+                        session.pop("guest_chat_npsn", None)
+                        session.pop("guest_chat_summary", None)
+                        session.pop("guest_chat_name", None)
+                        session.pop("guest_chat_user_id", None)
+                        session["guest_review_tx_id"] = transaction_id
+                        session["guest_review_token"] = review_token
+                        session["guest_review_npsn"] = school.get("npsn")
+                        session["guest_review_school_name"] = school.get("name")
+                        session["guest_review_summary"] = {
                             "names": guest_names,
                             "count": len(guest_names),
                         }
-                        session["guest_chat_name"] = guest_names[0] if guest_names else "Tamu Umum"
                         session.modified = True
-                        return redirect(url_for("buku_tamu_selesai", npsn=school.get("npsn"), tx=transaction_id))
+                        return redirect(url_for("buku_tamu_review", npsn=school.get("npsn"), review_token=review_token))
 
         return render_template(
             "buku_tamu.html",
@@ -583,6 +675,79 @@ def create_app() -> Flask:
             "guest": guest,
         })
 
+    @app.route("/buku-tamu/<npsn>/review/<review_token>", methods=["GET", "POST"])
+    def buku_tamu_review(npsn: str, review_token: str):
+        school = get_portal_school_by_npsn(npsn)
+        review = get_public_guestbook_review_by_token(review_token)
+        error = None
+
+        if not school or not school.get("active"):
+            error = "Sekolah tidak ditemukan atau nonaktif."
+        elif not review:
+            error = "Link review tidak ditemukan atau sudah tidak valid."
+        elif (review.get("npsn") or "").strip() != (school.get("npsn") or "").strip():
+            error = "Link review tidak sesuai dengan sekolah yang dipilih."
+
+        if error:
+            return render_template(
+                "buku_tamu_review.html",
+                school=school,
+                review=None,
+                summary={"names": [], "count": 0},
+                review_url=None,
+                review_completed=False,
+                can_chat=False,
+                error=error,
+            ), 404
+
+        review_status = (review.get("review_status") or review.get("status") or "").strip().lower()
+        summary = _guestbook_review_summary(review, session.get("guest_review_summary"))
+        review_url = url_for("buku_tamu_review", npsn=npsn, review_token=review_token)
+        chat_url = url_for("buku_tamu_selesai", npsn=npsn, tx=review.get("transaction_id"))
+        can_chat = int(session.get("guest_chat_tx_id") or 0) == int(review.get("transaction_id") or 0)
+
+        if request.method == "POST" and review_status != "completed":
+            rating_raw = (request.form.get("rating") or "").strip()
+            comment = (request.form.get("comment") or "").strip()
+            try:
+                rating = int(rating_raw)
+            except (TypeError, ValueError):
+                rating = 0
+            if rating < 1 or rating > 5:
+                error = "Pilih rating bintang 1 sampai 5 dulu."
+            else:
+                try:
+                    submit_public_guestbook_review(
+                        review_token=review_token,
+                        rating=rating,
+                        comment=comment or None,
+                    )
+                except Exception as exc:
+                    error = f"Gagal menyimpan review: {exc}"
+                else:
+                    fresh_review = get_public_guestbook_review_by_token(review_token) or review
+                    summary = _guestbook_review_summary(fresh_review, summary)
+                    _activate_guest_chat_session(fresh_review, summary)
+                    return redirect(chat_url)
+
+        if review_status == "completed":
+            if not can_chat:
+                _activate_guest_chat_session(review, summary)
+            return redirect(chat_url)
+
+        completed = review_status == "completed"
+        return render_template(
+            "buku_tamu_review.html",
+            school=school,
+            review=review,
+            summary=summary,
+            review_url=review_url,
+            review_completed=completed,
+            can_chat=can_chat,
+            chat_url=chat_url,
+            error=error,
+        )
+
     @app.route("/buku-tamu/<npsn>/selesai")
     def buku_tamu_selesai(npsn: str):
         school = get_portal_school_by_npsn(npsn)
@@ -590,6 +755,7 @@ def create_app() -> Flask:
         can_chat = False
         remaining = 0
         summary = session.get("guest_chat_summary") or {}
+        review_redirect = _pending_guest_review_redirect(None)
         try:
             tx_id_int = int(tx_id) if tx_id else None
         except (TypeError, ValueError):
@@ -597,12 +763,16 @@ def create_app() -> Flask:
         if tx_id_int and session.get("guest_chat_tx_id") == tx_id_int:
             can_chat = True
             remaining = int(session.get("guest_chat_remaining") or 0)
+        if not can_chat and review_redirect:
+            return redirect(review_redirect)
         return render_template(
             "buku_tamu_selesai.html",
             school=school,
             can_chat=can_chat,
             remaining=remaining,
             summary=summary,
+            review_pending=bool(session.get("guest_review_tx_id") and session.get("guest_review_token")),
+            review_url=review_redirect,
         )
 
     @app.route("/api/guest-chat", methods=["POST"])
@@ -624,18 +794,141 @@ def create_app() -> Flask:
             guest_user_id = -1 * (secrets.randbelow(1_000_000_000) + 1)
             session["guest_chat_user_id"] = guest_user_id
 
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
         guest_name = session.get("guest_chat_name") or "Tamu Umum"
-        response, _ = loop.run_until_complete(process_web_request(guest_user_id, message, username=guest_name))
+        response, _ = _run_async(process_web_request(guest_user_id, message, username=guest_name))
         remaining -= 1
         session["guest_chat_remaining"] = remaining
         session.modified = True
         return jsonify({"response": response, "remaining": remaining})
+
+    @app.route("/api/whatsapp/inbound", methods=["POST"])
+    def whatsapp_inbound():
+        token_expected = (os.getenv("ASKA_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+        if not token_expected:
+            return jsonify({"error": "ASKA_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}), 501
+
+        provided_token = (
+            request.headers.get("X-ASKA-WHATSAPP-TOKEN")
+            or request.args.get("token")
+            or request.form.get("token")
+        )
+        if provided_token != token_expected:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        data = request.get_json(silent=True) or {}
+        user_id = _normalize_whatsapp_user_id(data.get("user_id") or data.get("from"))
+        if not user_id:
+            return jsonify({"error": "Nomor WhatsApp tidak valid"}), 400
+
+        username = (data.get("username") or data.get("name") or "WhatsApp User").strip()[:120]
+        message_type = (data.get("message_type") or "text").strip().lower()
+        message = (data.get("message") or "").strip()
+
+        if message_type != "text":
+            return jsonify(
+                {
+                    "response": "Saat ini ASKA via WhatsApp baru support pesan teks dulu ya 🙏",
+                    "blocked": False,
+                    "blockType": "unsupported_type",
+                    "chat_log_id": None,
+                }
+            )
+        if not message:
+            return jsonify({"error": "Message is required"}), 400
+
+        status_info = get_whatsapp_user_status(user_id)
+        status_value = (status_info or {}).get("status")
+        if status_value in BLOCKING_STATUSES:
+            notice = build_status_notice(
+                status_value,
+                reason=(status_info or {}).get("status_reason"),
+                channel="whatsapp",
+            )
+            save_chat(user_id, username, message, role="user", topic="whatsapp")
+            response_text = notice.message if notice else "Akses WhatsApp kamu sedang dibatasi oleh sekolah."
+            save_chat(user_id, "ASKA", response_text, role="aska", topic="whatsapp")
+            return jsonify(
+                {
+                    "response": response_text,
+                    "blocked": True,
+                    "blockType": "status",
+                    "chat_log_id": None,
+                    "statusBlock": notice.__dict__ if notice else None,
+                }
+            )
+
+        response, chat_log_id = _run_async(
+            process_channel_request(
+                user_id,
+                message,
+                username=username,
+                topic="whatsapp",
+            )
+        )
+        return jsonify(
+            {
+                "response": response,
+                "blocked": False,
+                "blockType": None,
+                "chat_log_id": chat_log_id,
+            }
+        )
+
+    @app.route("/api/callcenter/inbound", methods=["POST"])
+    def callcenter_inbound():
+        """Receive inbound messages from the Call Center WhatsApp bridge.
+
+        Unlike the ASKA bot, this does NOT generate an AI reply.
+        It stores the message and notifies admins via Telegram.
+        """
+        token_expected = (os.getenv("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+        if not token_expected:
+            return jsonify({"error": "ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}), 501
+
+        provided_token = (
+            request.headers.get("X-ASKA-CC-TOKEN")
+            or request.args.get("token")
+            or ""
+        )
+        if provided_token != token_expected:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        data = request.get_json(silent=True) or {}
+        raw_user_id = str(data.get("user_id") or "").strip()
+        if not raw_user_id:
+            return jsonify({"error": "user_id required"}), 400
+
+        username = (data.get("username") or raw_user_id).strip()[:120]
+        message = (data.get("message") or "").strip()
+        message_id = data.get("message_id") or None
+        if not message:
+            return jsonify({"error": "message required"}), 400
+
+        try:
+            from dashboard.call_center.queries import (
+                upsert_cc_conversation,
+                save_cc_message,
+                send_cc_telegram_notification,
+            )
+
+            conv = upsert_cc_conversation(wa_user_id=raw_user_id, display_name=username)
+            msg = save_cc_message(
+                conversation_id=conv["id"],
+                direction="inbound",
+                message_text=message,
+                wa_message_id=message_id,
+            )
+
+            # Fire-and-forget Telegram notification
+            try:
+                send_cc_telegram_notification(username, message)
+            except Exception:
+                pass
+
+            return jsonify({"ok": True, "conversation_id": conv.get("id"), "message_id": msg.get("id")})
+        except Exception as exc:
+            current_app.logger.exception("callcenter_inbound error")
+            return jsonify({"error": str(exc)}), 500
 
     @app.route("/api/chat", methods=["POST"])
     def chat():
@@ -691,14 +984,7 @@ def create_app() -> Flask:
                 "serverTime": server_now,
             })
 
-        # Run the async function in a managed event loop
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:  # 'get_running_loop' fails if no loop is running
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        response, chat_log_id = loop.run_until_complete(process_web_request(user_id, message, username=full_name))
+        response, chat_log_id = _run_async(process_web_request(user_id, message, username=full_name))
         server_now = datetime.now(timezone.utc).isoformat()
         return jsonify({
             "response": response,

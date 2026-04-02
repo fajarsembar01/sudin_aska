@@ -132,11 +132,11 @@
         <div class="card login-card shadow-sm border-0">
             <div class="login-header">
                 <h1>Selamat Datang, Admin</h1>
-                <p>Silakan pilih dashboard yang ingin Anda akses</p>
+                <p>Silakan pilih layanan yang ingin Anda akses</p>
             </div>
             <div class="login-body">
                 <div class="row g-3">
-                    <div class="col-md-4 col-12">
+                    <div class="col-md-6 col-lg-3 col-6">
                         <a href="{{ url_for('main.dashboard') }}" class="selection-card">
                             <div class="icon-wrapper">
                                 <i class="bi bi-graph-up-arrow"></i>
@@ -145,7 +145,7 @@
                             <p>Dashboard analitik dan pemantauan data.</p>
                         </a>
                     </div>
-                    <div class="col-md-4 col-12">
+                    <div class="col-md-6 col-lg-3 col-6">
                         <a href="{{ url_for('portal.home') }}" class="selection-card">
                             <div class="icon-wrapper">
                                 <i class="bi bi-building"></i>
@@ -154,23 +154,43 @@
                             <p>Dashboard pemantauan kebersihan dan sarana sekolah.</p>
                         </a>
                     </div>
-                    <div class="col-md-4 col-12">
+                    <div class="col-md-6 col-lg-3 col-6">
                         <a href="{{ url_for('daftar_tamu.admin_dashboard') }}" class="selection-card">
                             <div class="icon-wrapper">
                                 <i class="bi bi-person-vcard"></i>
                             </div>
-                            <h3>Daftar Tamu</h3>
+                            <h3 class="text-nowrap">Daftar Tamu</h3>
                             <p>Dashboard pemantauan kunjungan tamu sekolah.</p>
+                        </a>
+                    </div>
+                    <div class="col-md-6 col-lg-3 col-6">
+                        <a href="{{ url_for('call_center.inbox') }}" class="selection-card">
+                            <div class="icon-wrapper">
+                                <i class="bi bi-headset"></i>
+                            </div>
+                            <h3 class="text-nowrap">Call Center</h3>
+                            <p>Layanan operasional dan notifikasi admin.</p>
+                        </a>
+                    </div>
+                    <div class="col-md-6 col-lg-3 col-6">
+                        <a href="{{ url_for('cms.dashboard') }}" class="selection-card">
+                            <div class="icon-wrapper">
+                                <i class="bi bi-newspaper"></i>
+                            </div>
+                            <h3 class="text-nowrap">Content Management</h3>
+                            <p>Kelola konten dan informasi Sudin Pendidikan.</p>
                         </a>
                     </div>
                 </div>
             </div>
-            <div class="card-footer bg-transparent border-top p-3 text-center">
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-link text-muted text-decoration-none btn-sm d-flex justify-content-center align-items-center">
-                    Logout<i class="ms-2 bi bi-box-arrow-right"></i>
-                </a>
-            </div>
         </div>
+        <div class="card-footer bg-transparent border-top p-3 text-center">
+            <a href="{{ url_for('auth.logout') }}"
+                class="btn btn-link text-muted text-decoration-none btn-sm d-flex justify-content-center align-items-center">
+                Logout<i class="ms-2 bi bi-box-arrow-right"></i>
+            </a>
+        </div>
+    </div>
     </div>
 </body>
 

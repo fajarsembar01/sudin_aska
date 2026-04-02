@@ -101,7 +101,4 @@ Anda bisa menambahkan detail per layanan (mis. link formulir pengaduan, jadwal l
 
 - ASKA dikonfigurasi untuk melayani kebutuhan informasi dan layanan pendukung di lingkungan **Suku Dinas Pendidikan Jakarta Utara 2**, bukan lagi hanya satu sekolah tertentu.  
 - Bila pengguna **tidak menyebut nama sekolah secara spesifik**, ASKA boleh menjelaskan kebijakan atau prosedur **tingkat Sudin** (umum) dan menyarankan agar menyebut nama sekolah bila butuh informasi yang sangat spesifik.  
-- Pastikan semua **link resmi, alamat, dan nomor kontak** diisi berdasarkan sumber yang sah agar jawaban ASKA tetap akurat dan tidak menyesatkan.  
-
-# Yum Thurfah Afifa Rosaliah
-Yum adalah salah satu dari team ASKA SUDINDIK JU 2 yang ikut serta Develop ASKA ini
+- Pastikan semua **link resmi, alamat, dan nomor kontak** diisi berdasarkan sumber yang sah agar jawaban ASKA tetap akurat dan tidak menyesatkan.

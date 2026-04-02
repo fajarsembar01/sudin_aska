@@ -1,0 +1,57 @@
+{% macro assessment_aspect_item(aspect, score_values, selected_score=None, score_id_prefix='score', mode='buttons', helper_text=None, room_id=None) %}
+<div class="aspect-item">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div class="flex-grow-1">
+      <div class="d-flex align-items-center gap-2">
+        <div class="aspect-name">{{ aspect.name }}</div>
+        {% if helper_text %}
+        <button class="btn btn-link btn-sm p-0 text-muted" type="button"
+                data-bs-toggle="collapse" data-bs-target="#assess-desc-{{ aspect.id }}"
+                title="Lihat deskripsi">
+          <i class="bi bi-info-circle"></i>
+        </button>
+        {% endif %}
+      </div>
+      {% if helper_text %}
+      <div class="collapse mt-2" id="assess-desc-{{ aspect.id }}">
+        <div class="ps-3 border-start border-2 border-primary">
+          <small class="text-muted fst-italic">{{ helper_text }}</small>
+        </div>
+      </div>
+      {% elif aspect.description %}
+      <div class="text-muted small">{{ aspect.description }}</div>
+      {% endif %}
+    </div>
+
+    {% if mode == 'buttons' %}
+    <div class="score-group flex-shrink-0"
+         data-school-room-id="{{ room_id }}"
+         data-aspect-id="{{ aspect.id }}"
+         data-scale-max="{{ score_values|max }}">
+      {% for score in score_values %}
+      <button type="button"
+              class="score-btn {% if selected_score == score %}selected{% endif %}"
+              data-score="{{ score }}"
+              onclick="selectScore(this)">
+        {{ score }}
+      </button>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="d-flex align-items-center gap-2">
+      {% for score in score_values %}
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio"
+               name="score_{{ aspect.id }}"
+               id="{{ score_id_prefix }}{{ aspect.id }}_{{ score }}"
+               value="{{ score }}"
+               {% if selected_score is not none and selected_score == score %}checked{% elif selected_score is none and score == 1 %}checked{% endif %}
+               required>
+        <label class="form-check-label" for="{{ score_id_prefix }}{{ aspect.id }}_{{ score }}">{{ score }}</label>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endmacro %}

@@ -1,0 +1,630 @@
+{% extends "base_cc.html" %}
+{% set page_title = "Call Center" %}
+
+{% block head_extra %}
+<style>
+    .cc-container {
+        display: flex;
+        gap: 1rem;
+        min-height: 72vh;
+    }
+
+    .cc-sidebar {
+        width: 360px;
+        min-width: 300px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--bs-border-color);
+        border-radius: .75rem;
+        overflow: hidden;
+    }
+
+    .cc-sidebar-header {
+        padding: .75rem 1rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        background: var(--bs-tertiary-bg);
+    }
+
+    .cc-conv-list {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .cc-conv-item {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        padding: .75rem 1rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        text-decoration: none;
+        color: inherit;
+        transition: background .15s;
+    }
+
+    .cc-conv-item:hover,
+    .cc-conv-item.active {
+        background: var(--bs-primary-bg-subtle);
+    }
+
+    .cc-conv-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: var(--bs-primary);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: .95rem;
+        flex-shrink: 0;
+    }
+
+    .cc-conv-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .cc-conv-name {
+        font-weight: 600;
+        font-size: .9rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .cc-conv-preview {
+        font-size: .8rem;
+        color: var(--bs-secondary-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .cc-conv-meta {
+        text-align: right;
+        flex-shrink: 0;
+    }
+
+    .cc-conv-time {
+        font-size: .72rem;
+        color: var(--bs-secondary-color);
+    }
+
+    .cc-main {
+        flex: 1;
+        border: 1px solid var(--bs-border-color);
+        border-radius: .75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--bs-secondary-color);
+    }
+
+    .cc-drafts-desktop {
+        width: 340px;
+        min-width: 300px;
+        flex-shrink: 0;
+    }
+
+    .cc-draft-card {
+        border: 1px solid var(--bs-border-color);
+        border-radius: .75rem;
+        overflow: hidden;
+        background: var(--bs-body-bg);
+        position: sticky;
+        top: 84px;
+        max-height: calc(100vh - 110px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .cc-draft-header {
+        padding: .75rem .9rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        background: var(--bs-tertiary-bg);
+    }
+
+    .cc-draft-controls {
+        display: flex;
+        gap: .5rem;
+        margin-top: .5rem;
+    }
+
+    .cc-draft-list {
+        padding: .7rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: .6rem;
+    }
+
+    .cc-draft-item {
+        border: 1px solid var(--bs-border-color);
+        border-radius: .6rem;
+        padding: .65rem .7rem;
+        background: var(--bs-tertiary-bg);
+    }
+
+    .cc-draft-item-title {
+        font-size: .84rem;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    .cc-draft-item-preview {
+        font-size: .76rem;
+        color: var(--bs-secondary-color);
+        margin-top: .35rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 5.2em;
+        overflow: hidden;
+    }
+
+    .cc-draft-item-actions {
+        display: flex;
+        gap: .35rem;
+        margin-top: .45rem;
+    }
+
+    .cc-draft-empty {
+        text-align: center;
+        color: var(--bs-secondary-color);
+        font-size: .82rem;
+        padding: 1.2rem .8rem;
+    }
+
+    .cc-draft-modal textarea {
+        min-height: 140px;
+        resize: vertical;
+    }
+
+    .cc-empty-state {
+        text-align: center;
+    }
+
+    .cc-empty-state i {
+        font-size: 3rem;
+        opacity: .4;
+    }
+
+    @media (max-width: 768px) {
+        .cc-container {
+            flex-direction: column;
+        }
+
+        .cc-sidebar {
+            width: 100%;
+            min-height: 50vh;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .cc-drafts-desktop {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-headset text-primary me-2"></i>Call Center</h4>
+        <small class="text-secondary">{{ total }} percakapan</small>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-outline-secondary btn-sm d-lg-none" type="button" data-bs-toggle="offcanvas"
+            data-bs-target="#ccInboxDraftsOffcanvas" aria-controls="ccInboxDraftsOffcanvas">
+            <i class="bi bi-journal-text me-1"></i>Draft
+        </button>
+        <a href="{{ url_for('call_center.settings_wa') }}" class="btn btn-outline-secondary btn-sm me-1">
+            <i class="bi bi-whatsapp me-1"></i>WhatsApp
+        </a>
+        <a href="{{ url_for('call_center.settings_telegram') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-telegram me-1"></i>Telegram
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-info py-2 small mb-3 border-0">
+    <i class="bi bi-info-circle me-1"></i>Draft membantu menyiapkan template balasan. Saat membuka thread chat, draft bisa langsung diisikan ke textbox.
+</div>
+
+<div class="cc-container">
+    <div class="cc-sidebar">
+        <div class="cc-sidebar-header">
+            <form method="get" class="d-flex gap-2 mb-2">
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari nama/nomor…"
+                    value="{{ search }}">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i></button>
+            </form>
+            <div class="btn-group btn-group-sm w-100" role="group">
+                <a href="{{ url_for('call_center.inbox') }}"
+                    class="btn btn-outline-secondary {% if status_filter == 'all' %}active{% endif %}">Semua</a>
+                <a href="{{ url_for('call_center.inbox', status='open') }}"
+                    class="btn btn-outline-secondary {% if status_filter == 'open' %}active{% endif %}">Open</a>
+                <a href="{{ url_for('call_center.inbox', status='closed') }}"
+                    class="btn btn-outline-secondary {% if status_filter == 'closed' %}active{% endif %}">Closed</a>
+            </div>
+        </div>
+        <div class="cc-conv-list">
+            {% for conv in conversations %}
+            <a href="{{ url_for('call_center.thread', conv_id=conv.id) }}" class="cc-conv-item">
+                <div class="cc-conv-avatar">
+                    {{ (conv.display_name or conv.wa_user_id)[:1].upper() }}
+                </div>
+                <div class="cc-conv-info">
+                    <div class="cc-conv-name">{{ conv.display_name or conv.wa_user_id }}</div>
+                    <div class="cc-conv-preview">{{ conv.last_message_preview or '—' }}</div>
+                </div>
+                <div class="cc-conv-meta">
+                    {% if conv.last_message_at %}
+                    <div class="cc-conv-time">{{ conv.last_message_at|jakarta('%d/%m %H:%M') }}</div>
+                    {% endif %}
+                    {% if conv.unread_count %}
+                    <span class="badge rounded-pill text-bg-primary mt-1">{{ conv.unread_count }}</span>
+                    {% endif %}
+                </div>
+            </a>
+            {% else %}
+            <div class="text-center text-secondary py-5">
+                <i class="bi bi-inbox" style="font-size:2rem;opacity:.4"></i>
+                <p class="mt-2 mb-0 small">Belum ada percakapan</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% if total_pages > 1 %}
+        <div class="cc-sidebar-header d-flex justify-content-between align-items-center">
+            {% if page > 1 %}
+            <a href="{{ url_for('call_center.inbox', page=page-1, status=status_filter if status_filter != 'all' else '', search=search) }}"
+                class="btn btn-sm btn-outline-secondary">&laquo;</a>
+            {% else %}<span></span>{% endif %}
+            <small>{{ page }} / {{ total_pages }}</small>
+            {% if page < total_pages %} <a
+                href="{{ url_for('call_center.inbox', page=page+1, status=status_filter if status_filter != 'all' else '', search=search) }}"
+                class="btn btn-sm btn-outline-secondary">&raquo;</a>
+                {% else %}<span></span>{% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="cc-main">
+        <div class="cc-empty-state">
+            <i class="bi bi-chat-square-text"></i>
+            <p class="mt-2 mb-0">Pilih percakapan untuk memulai</p>
+        </div>
+    </div>
+
+    <aside class="cc-drafts-desktop">
+        <div class="cc-draft-card cc-draft-panel">
+            <div class="cc-draft-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="fw-semibold" style="font-size:.88rem;">
+                        <i class="bi bi-journal-text me-1 text-primary"></i>Draft Call Center
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm js-open-draft-modal">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                </div>
+                <small class="text-secondary d-block mt-1">Draft ini hanya untuk akun admin kamu.</small>
+                <div class="cc-draft-controls">
+                    <select class="form-select form-select-sm js-draft-category-filter">
+                        <option value="all">Semua kategori</option>
+                    </select>
+                </div>
+            </div>
+            <div class="cc-draft-list js-draft-list">
+                <div class="cc-draft-empty">Memuat draft...</div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<div class="offcanvas offcanvas-end d-lg-none" tabindex="-1" id="ccInboxDraftsOffcanvas"
+    aria-labelledby="ccInboxDraftsOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="ccInboxDraftsOffcanvasLabel">
+            <i class="bi bi-journal-text me-1 text-primary"></i>Draft Call Center
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+        <div class="cc-draft-panel h-100 d-flex flex-column">
+            <div class="cc-draft-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-secondary">Draft pribadi admin</small>
+                    <button type="button" class="btn btn-primary btn-sm js-open-draft-modal">
+                        <i class="bi bi-plus-lg"></i> Baru
+                    </button>
+                </div>
+                <div class="cc-draft-controls">
+                    <select class="form-select form-select-sm js-draft-category-filter">
+                        <option value="all">Semua kategori</option>
+                    </select>
+                </div>
+            </div>
+            <div class="cc-draft-list js-draft-list">
+                <div class="cc-draft-empty">Memuat draft...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade cc-draft-modal" id="draftModal" tabindex="-1" aria-labelledby="draftModalTitle" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="draftModalTitle">Draft Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="draftTitleInput" class="form-label">Judul</label>
+                    <input type="text" id="draftTitleInput" class="form-control" placeholder="Contoh: Salam pembuka">
+                </div>
+                <div class="mb-3">
+                    <label for="draftCategoryInput" class="form-label">Kategori</label>
+                    <input type="text" id="draftCategoryInput" class="form-control" placeholder="Contoh: Salam">
+                </div>
+                <div class="mb-0">
+                    <label for="draftMessageInput" class="form-label">Isi Draft</label>
+                    <textarea id="draftMessageInput" class="form-control" placeholder="Tulis template balasan di sini..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnSaveDraft">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var draftsApiUrl = '{{ url_for("call_center.api_drafts") }}';
+        var draftDetailApiBase = '{{ url_for("call_center.api_draft_detail", draft_id=0) }}';
+        var csrfToken = '{{ csrf_token() }}';
+        var selectedDraftCategory = 'all';
+        var draftItems = [];
+        var draftCategories = [];
+        var editingDraftId = null;
+        var draftModalEl = document.getElementById('draftModal');
+        var draftModal = (draftModalEl && window.bootstrap) ? new window.bootstrap.Modal(draftModalEl) : null;
+        var draftTitleInput = document.getElementById('draftTitleInput');
+        var draftCategoryInput = document.getElementById('draftCategoryInput');
+        var draftMessageInput = document.getElementById('draftMessageInput');
+        var btnSaveDraft = document.getElementById('btnSaveDraft');
+        var draftModalTitle = document.getElementById('draftModalTitle');
+
+        function escapeHtml(text) {
+            var el = document.createElement('span');
+            el.textContent = text || '';
+            return el.innerHTML;
+        }
+
+        function parseApiResponse(response) {
+            var contentType = (response.headers.get('content-type') || '').toLowerCase();
+            if (contentType.indexOf('application/json') !== -1) {
+                return response.json();
+            }
+            return response.text().then(function (text) {
+                var cleaned = (text || '').replace(/\s+/g, ' ').trim();
+                throw new Error(cleaned.slice(0, 180) || ('HTTP ' + response.status));
+            });
+        }
+
+        function draftDetailUrl(draftId) {
+            return draftDetailApiBase.replace(/0$/, String(draftId));
+        }
+
+        function upsertUniqueCategory(list, value) {
+            if (!value) return;
+            if (list.indexOf(value) !== -1) return;
+            list.push(value);
+        }
+
+        function buildCategoryFilters() {
+            var uniqueCategories = [];
+            draftCategories.forEach(function (cat) {
+                if ((cat || '').trim()) {
+                    upsertUniqueCategory(uniqueCategories, cat);
+                }
+            });
+            draftItems.forEach(function (item) {
+                var cat = (item.category || '').trim();
+                if (cat) upsertUniqueCategory(uniqueCategories, cat);
+            });
+            uniqueCategories.sort(function (a, b) {
+                return a.localeCompare(b, 'id');
+            });
+
+            document.querySelectorAll('.js-draft-category-filter').forEach(function (selectEl) {
+                var previous = selectedDraftCategory;
+                selectEl.innerHTML = '';
+                var allOpt = document.createElement('option');
+                allOpt.value = 'all';
+                allOpt.textContent = 'Semua kategori';
+                selectEl.appendChild(allOpt);
+                uniqueCategories.forEach(function (cat) {
+                    var opt = document.createElement('option');
+                    opt.value = cat;
+                    opt.textContent = cat;
+                    selectEl.appendChild(opt);
+                });
+                selectEl.value = previous;
+                if (selectEl.value !== previous) {
+                    selectEl.value = 'all';
+                    selectedDraftCategory = 'all';
+                }
+            });
+        }
+
+        function renderDraftLists() {
+            document.querySelectorAll('.js-draft-list').forEach(function (container) {
+                if (!draftItems.length) {
+                    container.innerHTML = '<div class="cc-draft-empty"><i class="bi bi-journal-x d-block mb-1" style="font-size:1.2rem;opacity:.55"></i>Belum ada draft. Klik tombol <strong>+</strong> untuk menambah.</div>';
+                    return;
+                }
+
+                var html = '';
+                draftItems.forEach(function (draft) {
+                    var preview = escapeHtml((draft.message_text || '').trim());
+                    var title = escapeHtml(draft.title || '');
+                    var category = escapeHtml(draft.category || 'Umum');
+                    html += ''
+                        + '<div class="cc-draft-item" data-draft-id="' + draft.id + '">'
+                        + '<div class="cc-draft-item-title">' + title + '</div>'
+                        + '<div class="mt-2"><span class="badge text-bg-light border">' + category + '</span></div>'
+                        + '<div class="cc-draft-item-preview">' + preview + '</div>'
+                        + '<div class="cc-draft-item-actions">'
+                        + '<button type="button" class="btn btn-outline-secondary btn-sm flex-fill" data-draft-action="edit" data-draft-id="' + draft.id + '"><i class="bi bi-pencil me-1"></i>Edit</button>'
+                        + '<button type="button" class="btn btn-outline-danger btn-sm" data-draft-action="delete" data-draft-id="' + draft.id + '"><i class="bi bi-trash"></i></button>'
+                        + '</div>'
+                        + '</div>';
+                });
+                container.innerHTML = html;
+            });
+        }
+
+        function loadDrafts() {
+            var url = draftsApiUrl;
+            if (selectedDraftCategory !== 'all') {
+                url += '?category=' + encodeURIComponent(selectedDraftCategory);
+            }
+            fetch(url)
+                .then(parseApiResponse)
+                .then(function (data) {
+                    if (data.error) throw new Error(data.error);
+                    draftItems = data.drafts || [];
+                    draftCategories = data.categories || [];
+                    buildCategoryFilters();
+                    renderDraftLists();
+                })
+                .catch(function (err) {
+                    document.querySelectorAll('.js-draft-list').forEach(function (container) {
+                        container.innerHTML = '<div class="cc-draft-empty text-danger">Gagal memuat draft: ' + escapeHtml(err.message || 'Unknown error') + '</div>';
+                    });
+                });
+        }
+
+        function openDraftModal(draft) {
+            if (!draftModal || !draftTitleInput || !draftCategoryInput || !draftMessageInput) return;
+            editingDraftId = draft ? draft.id : null;
+            draftModalTitle.textContent = draft ? 'Edit Draft' : 'Draft Baru';
+            draftTitleInput.value = draft ? (draft.title || '') : '';
+            draftCategoryInput.value = draft ? (draft.category || '') : (selectedDraftCategory !== 'all' ? selectedDraftCategory : '');
+            draftMessageInput.value = draft ? (draft.message_text || '') : '';
+            draftModal.show();
+            setTimeout(function () {
+                draftTitleInput.focus();
+            }, 50);
+        }
+
+        function saveDraft() {
+            var title = (draftTitleInput.value || '').trim();
+            var category = (draftCategoryInput.value || '').trim() || 'Umum';
+            var messageText = (draftMessageInput.value || '').trim();
+            if (!title) {
+                alert('Judul draft wajib diisi.');
+                draftTitleInput.focus();
+                return;
+            }
+            if (!messageText) {
+                alert('Isi draft wajib diisi.');
+                draftMessageInput.focus();
+                return;
+            }
+
+            var isEdit = editingDraftId !== null;
+            var url = isEdit ? draftDetailUrl(editingDraftId) : draftsApiUrl;
+            var method = isEdit ? 'PUT' : 'POST';
+            btnSaveDraft.disabled = true;
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    title: title,
+                    category: category,
+                    message_text: messageText
+                })
+            })
+                .then(parseApiResponse)
+                .then(function (data) {
+                    if (data.error) throw new Error(data.error);
+                    if (draftModal) draftModal.hide();
+                    loadDrafts();
+                })
+                .catch(function (err) {
+                    alert('Gagal menyimpan draft: ' + err.message);
+                })
+                .finally(function () {
+                    btnSaveDraft.disabled = false;
+                });
+        }
+
+        function deleteDraft(draftId) {
+            if (!confirm('Hapus draft ini?')) return;
+            fetch(draftDetailUrl(draftId), {
+                method: 'DELETE',
+                headers: { 'X-CSRFToken': csrfToken }
+            })
+                .then(parseApiResponse)
+                .then(function (data) {
+                    if (data.error) throw new Error(data.error);
+                    loadDrafts();
+                })
+                .catch(function (err) {
+                    alert('Gagal menghapus draft: ' + err.message);
+                });
+        }
+
+        document.querySelectorAll('.js-draft-category-filter').forEach(function (selectEl) {
+            selectEl.addEventListener('change', function () {
+                selectedDraftCategory = this.value || 'all';
+                document.querySelectorAll('.js-draft-category-filter').forEach(function (other) {
+                    other.value = selectedDraftCategory;
+                });
+                loadDrafts();
+            });
+        });
+
+        document.querySelectorAll('.js-open-draft-modal').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                openDraftModal(null);
+            });
+        });
+
+        if (btnSaveDraft) {
+            btnSaveDraft.addEventListener('click', saveDraft);
+        }
+
+        document.addEventListener('click', function (evt) {
+            var actionBtn = evt.target.closest('[data-draft-action]');
+            if (!actionBtn) return;
+            var action = actionBtn.getAttribute('data-draft-action');
+            var draftId = parseInt(actionBtn.getAttribute('data-draft-id') || '0', 10);
+            if (!draftId) return;
+
+            if (action === 'edit') {
+                var draft = draftItems.find(function (item) { return item.id === draftId; });
+                if (draft) openDraftModal(draft);
+                return;
+            }
+            if (action === 'delete') {
+                deleteDraft(draftId);
+            }
+        });
+
+        loadDrafts();
+    });
+</script>
+{% endblock %}

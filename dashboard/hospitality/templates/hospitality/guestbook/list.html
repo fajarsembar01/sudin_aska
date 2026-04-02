@@ -1,0 +1,670 @@
+{% extends "hospitality/base_hospitality.html" %}
+{% set page_title = "Review Pelayanan Hospitality" %}
+
+{% block head_extra %}
+<style>
+  .guestbook-hero {
+    background:
+      radial-gradient(circle at top right, rgba(13, 110, 253, 0.12), transparent 35%),
+      linear-gradient(135deg, rgba(13, 110, 253, 0.14), rgba(32, 201, 151, 0.08));
+    border: 1px solid var(--border-soft);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+  }
+
+  .guestbook-hero .badge {
+    border-radius: 999px;
+    padding: 0.55rem 0.85rem;
+  }
+
+  .guestbook-panel,
+  .guestbook-chart-card,
+  .guestbook-table-card,
+  .guestbook-rank-card {
+    border: 1px solid var(--border-soft);
+    border-radius: 20px;
+    background: var(--bg-surface);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+  }
+
+  .guestbook-stat {
+    border: 1px solid var(--border-soft);
+    border-radius: 18px;
+    background: linear-gradient(180deg, var(--bg-surface), var(--bg-subtle));
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.05);
+    height: 100%;
+  }
+
+  .guestbook-stat .metric-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(13, 110, 253, 0.12);
+    color: #0d6efd;
+    flex: 0 0 auto;
+  }
+
+  .guestbook-stat .metric-value {
+    font-size: clamp(1.5rem, 3vw, 2.1rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .guestbook-stat .metric-subtitle {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .review-filter {
+    border: 1px solid var(--border-soft);
+    border-radius: 18px;
+    background: linear-gradient(180deg, var(--bg-surface), var(--bg-subtle));
+  }
+
+  .review-table thead th {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-soft);
+    white-space: nowrap;
+  }
+
+  .review-table tbody td {
+    vertical-align: top;
+    border-color: rgba(0, 0, 0, 0.04);
+  }
+
+  .review-row:hover {
+    background: var(--bg-subtle);
+  }
+
+  .review-school {
+    font-weight: 700;
+  }
+
+  .review-meta {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+  }
+
+  .rating-stars {
+    color: #f4b400;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+
+  .status-pill {
+    border-radius: 999px;
+    padding: 0.45rem 0.7rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .status-pill.pending {
+    background: rgba(255, 193, 7, 0.14);
+    color: #8a5d00;
+  }
+
+  .status-pill.completed,
+  .status-pill.approved {
+    background: rgba(25, 135, 84, 0.14);
+    color: #0f5132;
+  }
+
+  .status-pill.rejected {
+    background: rgba(220, 53, 69, 0.14);
+    color: #842029;
+  }
+
+  .status-pill.info {
+    background: rgba(13, 110, 253, 0.12);
+    color: #0d6efd;
+  }
+
+  .small-note {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .rank-list .list-group-item {
+    border-color: rgba(0, 0, 0, 0.05);
+    background: transparent;
+  }
+
+  .rank-score {
+    min-width: 76px;
+    text-align: right;
+  }
+
+  .truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<section class="mb-4">
+  <div class="guestbook-hero card border-0">
+    <div class="card-body p-4 p-lg-5">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div class="d-flex align-items-start gap-3">
+          <span class="icon-badge feature-icon text-primary">
+            <i class="bi bi-star-half"></i>
+          </span>
+          <div>
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+              <h1 class="h3 fw-bold mb-0">Dashboard Review Pelayanan</h1>
+              {% if school_scope %}
+              <span class="badge text-bg-primary-subtle text-primary border">
+                <i class="bi bi-building me-1"></i>{{ school_scope.name }} • {{ school_scope.npsn }}
+              </span>
+              {% else %}
+              <span class="badge text-bg-success-subtle text-success border">
+                <i class="bi bi-globe2 me-1"></i>Semua sekolah
+              </span>
+              {% endif %}
+            </div>
+            <p class="page-subtitle mb-0">
+              Review wajib dari buku tamu umum sebelum chat ASKA aktif. Admin bisa analisis seluruh sekolah, sekolah hanya melihat datanya sendiri.
+            </p>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{{ export_url }}" class="btn btn-outline-success d-inline-flex align-items-center gap-2">
+            <i class="bi bi-download"></i>
+            <span>Export CSV</span>
+          </a>
+          <a href="{{ url_for('hospitality.admin_home') if is_admin else url_for('hospitality.school_home') }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
+            <i class="bi bi-arrow-left"></i>
+            <span>Kembali</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="review-filter card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-3 align-items-end">
+      {% if is_admin %}
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label small fw-semibold">Sekolah</label>
+        <select class="form-select" name="school_id">
+          <option value="">Semua sekolah</option>
+          {% for school in school_options %}
+          <option value="{{ school.id }}" {% if school_scope and school_scope.id == school.id %}selected{% endif %}>
+            {{ school.name }} • {{ school.npsn }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label small fw-semibold">Cari</label>
+        <input type="text" class="form-control" name="q" value="{{ search_query }}" placeholder="Sekolah, NPSN, tamu, komentar">
+      </div>
+      <div class="col-lg-2 col-md-4">
+        <label class="form-label small fw-semibold">Status Review</label>
+        <select class="form-select" name="review_status">
+          <option value="">Semua</option>
+          <option value="pending" {% if review_status_filter == 'pending' %}selected{% endif %}>Pending</option>
+          <option value="completed" {% if review_status_filter == 'completed' %}selected{% endif %}>Completed</option>
+        </select>
+      </div>
+      <div class="col-lg-2 col-md-4">
+        <label class="form-label small fw-semibold">Status Transaksi</label>
+        <select class="form-select" name="transaction_status">
+          <option value="">Semua</option>
+          <option value="pending" {% if transaction_status_filter == 'pending' %}selected{% endif %}>Pending</option>
+          <option value="approved" {% if transaction_status_filter == 'approved' %}selected{% endif %}>Approved</option>
+          <option value="rejected" {% if transaction_status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+        </select>
+      </div>
+      <div class="col-lg-1 col-md-4">
+        <label class="form-label small fw-semibold">Bintang</label>
+        <select class="form-select" name="rating">
+          <option value="">All</option>
+          {% for value in range(1, 6) %}
+          <option value="{{ value }}" {% if rating_filter|string == value|string %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-lg-2 col-md-6">
+        <label class="form-label small fw-semibold">Dari</label>
+        <input type="date" class="form-control" name="start" value="{{ start_filter }}">
+      </div>
+      <div class="col-lg-2 col-md-6">
+        <label class="form-label small fw-semibold">Sampai</label>
+        <input type="date" class="form-control" name="end" value="{{ end_filter }}">
+      </div>
+      <div class="col-lg-1 col-md-4">
+        <label class="form-label small fw-semibold">Tampil</label>
+        <select class="form-select" name="per_page">
+          {% for option in [10, 25, 50, 100] %}
+          <option value="{{ option }}" {% if per_page == option %}selected{% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-lg-2 col-md-6 d-grid">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-funnel me-1"></i>Filter
+        </button>
+      </div>
+      <div class="col-lg-2 col-md-6 d-grid">
+        <a href="{{ url_for('hospitality.guestbook_review_dashboard') }}" class="btn btn-outline-secondary">
+          Reset
+        </a>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section class="row g-3 mb-4">
+  <div class="col-xl-3 col-lg-6">
+    <div class="guestbook-stat card border-0">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-3">
+          <span class="metric-icon"><i class="bi bi-journal-text"></i></span>
+          <div>
+            <div class="small text-uppercase fw-semibold text-muted">Total Review</div>
+            <div class="metric-value">{{ stats.total_reviews }}</div>
+          </div>
+        </div>
+        <div class="metric-subtitle mt-3">
+          {{ stats.created_today }} masuk hari ini
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-lg-6">
+    <div class="guestbook-stat card border-0">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-3">
+          <span class="metric-icon"><i class="bi bi-check-circle"></i></span>
+          <div>
+            <div class="small text-uppercase fw-semibold text-muted">Review Selesai</div>
+            <div class="metric-value">{{ stats.completed_reviews }}</div>
+          </div>
+        </div>
+        <div class="metric-subtitle mt-3">
+          {{ stats.completed_today }} selesai hari ini
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-lg-6">
+    <div class="guestbook-stat card border-0">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-3">
+          <span class="metric-icon"><i class="bi bi-hourglass-split"></i></span>
+          <div>
+            <div class="small text-uppercase fw-semibold text-muted">Menunggu</div>
+            <div class="metric-value">{{ stats.pending_reviews }}</div>
+          </div>
+        </div>
+        <div class="metric-subtitle mt-3">
+          Completion rate {{ "%.1f"|format(stats.completion_rate)|replace('.', ',') }}%
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-lg-6">
+    <div class="guestbook-stat card border-0">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-3">
+          <span class="metric-icon"><i class="bi bi-star-fill"></i></span>
+          <div>
+            <div class="small text-uppercase fw-semibold text-muted">Rata-rata Rating</div>
+            <div class="metric-value">{{ "%.2f"|format(stats.avg_rating)|replace('.', ',') }}</div>
+          </div>
+        </div>
+        <div class="metric-subtitle mt-3">
+          {{ stats.linked_reviews }} review sudah terhubung ke hospitality
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="row g-3 mb-4">
+  <div class="col-lg-8">
+    <div class="guestbook-chart-card card border-0 h-100">
+      <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div>
+            <h2 class="h6 fw-bold mb-1">Tren Review 30 Hari</h2>
+            <p class="small text-muted mb-0">Pergerakan review yang selesai dibanding total review harian.</p>
+          </div>
+          <span class="badge text-bg-primary-subtle text-primary border">30 hari terakhir</span>
+        </div>
+      </div>
+      <div class="card-body p-4">
+        <div style="height: 300px;">
+          <canvas id="reviewTrendChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="guestbook-chart-card card border-0 h-100">
+      <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+        <h2 class="h6 fw-bold mb-1">Distribusi Bintang</h2>
+        <p class="small text-muted mb-0">Hanya review berstatus completed.</p>
+      </div>
+      <div class="card-body p-4">
+        <div style="height: 300px;">
+          <canvas id="ratingDistributionChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if is_admin and not school_scope %}
+<section class="row g-3 mb-4">
+  <div class="col-lg-6">
+    <div class="guestbook-rank-card card border-0 h-100">
+      <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+        <h2 class="h6 fw-bold mb-1">Sekolah Terbaik</h2>
+        <p class="small text-muted mb-0">Rata-rata rating tertinggi dari review selesai.</p>
+      </div>
+      <div class="card-body px-4 pb-4">
+        {% if top_schools %}
+        <div class="list-group list-group-flush rank-list">
+          {% for school in top_schools %}
+          <div class="list-group-item px-0 py-3">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+              <div>
+                <div class="fw-semibold">{{ loop.index }}. {{ school.school_name }}</div>
+                <div class="small text-muted">{{ school.npsn }} • {{ school.jenjang }} • {{ school.review_count }} review</div>
+                {% if school.last_completed_at %}
+                <div class="small-note mt-1">Terakhir selesai {{ school.last_completed_at|jakarta }}</div>
+                {% endif %}
+              </div>
+              <div class="rank-score">
+                <div class="badge text-bg-success-subtle text-success border">
+                  {{ "%.2f"|format(school.avg_rating or 0)|replace('.', ',') }}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-muted small py-3">Belum ada data peringkat.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="guestbook-rank-card card border-0 h-100">
+      <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+        <h2 class="h6 fw-bold mb-1">Sekolah Terendah</h2>
+        <p class="small text-muted mb-0">Rata-rata rating terendah dari review selesai.</p>
+      </div>
+      <div class="card-body px-4 pb-4">
+        {% if bottom_schools %}
+        <div class="list-group list-group-flush rank-list">
+          {% for school in bottom_schools %}
+          <div class="list-group-item px-0 py-3">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+              <div>
+                <div class="fw-semibold">{{ loop.index }}. {{ school.school_name }}</div>
+                <div class="small text-muted">{{ school.npsn }} • {{ school.jenjang }} • {{ school.review_count }} review</div>
+                {% if school.last_completed_at %}
+                <div class="small-note mt-1">Terakhir selesai {{ school.last_completed_at|jakarta }}</div>
+                {% endif %}
+              </div>
+              <div class="rank-score">
+                <div class="badge text-bg-danger-subtle text-danger border">
+                  {{ "%.2f"|format(school.avg_rating or 0)|replace('.', ',') }}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-muted small py-3">Belum ada data peringkat.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="guestbook-table-card card border-0 mb-4">
+  <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+      <div>
+        <h2 class="h6 fw-bold mb-1">Daftar Review</h2>
+        <p class="small text-muted mb-0">
+          Menampilkan {{ start_item }}-{{ end_item }} dari {{ total_rows }} review.
+        </p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        {% if prev_url %}
+        <a href="{{ prev_url }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-chevron-left"></i>
+        </a>
+        {% endif %}
+        {% if next_url %}
+        <a href="{{ next_url }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-chevron-right"></i>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table review-table align-middle mb-0">
+        <thead>
+          <tr>
+            <th class="ps-4">Waktu</th>
+            <th>Sekolah</th>
+            <th>Tamu</th>
+            <th>Rating</th>
+            <th>Review</th>
+            <th>Transaksi</th>
+            <th>Terkait</th>
+            <th class="text-end pe-4">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in reviews %}
+          <tr class="review-row">
+            <td class="ps-4">
+              <div class="fw-semibold">{{ item.activity_at|jakarta }}</div>
+              <div class="review-meta">Transaksi #{{ item.transaction_id }}</div>
+            </td>
+            <td>
+              <div class="review-school">{{ item.school_name }}</div>
+              <div class="review-meta">{{ item.npsn }} • {{ item.jenjang }}</div>
+            </td>
+            <td>
+              <div class="fw-semibold">{{ item.guest_display or 'Tamu umum' }}</div>
+              <div class="review-meta">{{ item.guest_count }} orang</div>
+              {% if item.comment_preview %}
+              <div class="small-note truncate-2 mt-1">{{ item.comment_preview }}</div>
+              {% endif %}
+            </td>
+            <td>
+              {% if item.rating %}
+              <div class="rating-stars">
+                {% for star in range(1, 6) %}
+                <i class="bi {% if star <= item.rating %}bi-star-fill{% else %}bi-star{% endif %}"></i>
+                {% endfor %}
+              </div>
+              <div class="fw-semibold small mt-1">{{ item.rating }}/5</div>
+              {% else %}
+              <span class="status-pill pending">Menunggu</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="status-pill {{ item.review_status }}">{{ item.review_status }}</span>
+              {% if item.review_status == 'completed' and item.completed_at %}
+              <div class="review-meta mt-1">{{ item.completed_at|jakarta }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <span class="status-pill {{ item.transaction_status }}">{{ item.transaction_status }}</span>
+              {% if item.visit_at %}
+              <div class="review-meta mt-1">{{ item.visit_at|jakarta }}</div>
+              {% endif %}
+            </td>
+            <td>
+              {% if item.linked_assessment_id %}
+              <a href="{{ url_for('hospitality.assessment_detail', assessment_id=item.linked_assessment_id) }}" class="text-decoration-none">
+                <span class="status-pill info">#{{ item.linked_assessment_id }}</span>
+              </a>
+              {% if item.linked_assessment_status %}
+              <div class="review-meta mt-1">{{ item.linked_assessment_status }}</div>
+              {% endif %}
+              {% else %}
+              <span class="status-pill pending">Belum</span>
+              {% endif %}
+            </td>
+            <td class="text-end pe-4">
+              <a href="{{ url_for('hospitality.guestbook_review_detail', review_id=item.review_id) }}" class="btn btn-sm btn-outline-primary">
+                Detail
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" class="text-center py-5 text-muted">
+              <i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>
+              Belum ada review pelayanan yang cocok dengan filter ini.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card-footer bg-transparent border-0 px-4 pb-4 pt-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 small text-muted">
+      <div>
+        Halaman {{ page }} dari {{ total_pages }}
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        {% if prev_url %}
+        <a href="{{ prev_url }}" class="btn btn-outline-secondary btn-sm">Sebelumnya</a>
+        {% endif %}
+        {% if next_url %}
+        <a href="{{ next_url }}" class="btn btn-outline-secondary btn-sm">Berikutnya</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block portal_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  (function () {
+    const trend = {{ trend | tojson }};
+    const ratingDistribution = {{ rating_distribution | tojson }};
+
+    const trendCanvas = document.getElementById('reviewTrendChart');
+    if (trendCanvas && trend.length) {
+      const labels = trend.map(function (item) {
+        const d = new Date(item.day);
+        return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+      });
+      const totalData = trend.map(function (item) { return Number(item.total_reviews || 0); });
+      const completedData = trend.map(function (item) { return Number(item.completed_reviews || 0); });
+
+      new Chart(trendCanvas, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Total review',
+              data: totalData,
+              borderColor: '#0d6efd',
+              backgroundColor: 'rgba(13, 110, 253, 0.12)',
+              borderWidth: 2,
+              tension: 0.35,
+              fill: true,
+              pointRadius: 3,
+            },
+            {
+              label: 'Completed',
+              data: completedData,
+              borderColor: '#198754',
+              backgroundColor: 'rgba(25, 135, 84, 0.12)',
+              borderWidth: 2,
+              tension: 0.35,
+              fill: true,
+              pointRadius: 3,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { usePointStyle: true, boxWidth: 10, padding: 16 }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { precision: 0 },
+              grid: { borderDash: [4, 4], color: 'rgba(0,0,0,0.06)' }
+            },
+            x: {
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    const distCanvas = document.getElementById('ratingDistributionChart');
+    if (distCanvas && ratingDistribution.length) {
+      new Chart(distCanvas, {
+        type: 'doughnut',
+        data: {
+          labels: ratingDistribution.map(function (item) { return item.rating + ' bintang'; }),
+          datasets: [{
+            data: ratingDistribution.map(function (item) { return Number(item.total || 0); }),
+            backgroundColor: ['#dc3545', '#fd7e14', '#ffc107', '#8bc34a', '#198754'],
+            borderWidth: 0,
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '62%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { usePointStyle: true, padding: 14 }
+            }
+          }
+        }
+      });
+    }
+  })();
+</script>
+{% endblock %}

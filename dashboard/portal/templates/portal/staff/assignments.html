@@ -1,4 +1,5 @@
 {% extends "portal/base_portal.html" %}
+{% set periods_sorted = periods|default([]) | sort(attribute='start_date') %}
 
 {% block title %}Sekolah Saya - Portal PANBERSS{% endblock %}
 
@@ -86,11 +87,11 @@
                             <div class="col-12 col-md-auto">
                                 <label class="form-label small text-muted mb-1 d-none d-sm-block"
                                     for="periodSelect">Periode penilaian</label>
-                                <select id="periodSelect" class="form-select form-select-sm"
+                                <select class="form-select form-select-sm border-primary text-primary" id="periodSelect"
                                     aria-label="Periode penilaian">
                                     <option value="" {% if not selected_period_id %}selected{% endif %}>{% if active_period_id %}Periode aktif (default){% else %}-- Pilih
                                         periode (boleh periode mendatang) --{% endif %}</option>
-                                    {% for p in periods %}
+                                    {% for p in periods_sorted %}
                                     <option value="{{ p.id }}" {% if selected_period_id and selected_period_id==p.id
                                         %}selected{% endif %}>{{ p.name }}</option>
                                     {% endfor %}
@@ -193,6 +194,12 @@
                                                 <i class="bi bi-clipboard-check"></i> Mulai Penilaian
                                             </a>
                                             {% endif %}
+                                            {% if school.old_draft_id and school.old_draft_id != school.draft_assessment_id %}
+                                            <a href="{{ url_for('portal.assess', school_id=school.school_id, assessment_id=school.old_draft_id) }}"
+                                                class="btn btn-outline-warning btn-sm w-100">
+                                                <i class="bi bi-clock-history"></i> Lanjutkan draft {{ school.old_draft_period_name or 'bulan lalu' }}
+                                            </a>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -284,6 +291,12 @@
                                         <a href="{{ url_for('portal.assess', school_id=school.school_id) }}"
                                             class="btn btn-sm btn-primary start-assessment-btn" data-has-draft="false">
                                             <i class="bi bi-clipboard-check"></i> Mulai Penilaian
+                                        </a>
+                                        {% endif %}
+                                        {% if school.old_draft_id and school.old_draft_id != school.draft_assessment_id %}
+                                        <a href="{{ url_for('portal.assess', school_id=school.school_id, assessment_id=school.old_draft_id) }}"
+                                            class="btn btn-sm btn-outline-warning mt-1">
+                                            <i class="bi bi-clock-history"></i> Draft {{ school.old_draft_period_name or 'bulan lalu' }}
                                         </a>
                                         {% endif %}
                                     </td>

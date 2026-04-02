@@ -1,5 +1,4 @@
 # Data Sekolah SUDINDIK JU 2
-# Subjudul Data Sekolah SUDINDIK JU 2
 
 Berikut adalah daftar sekolah di wilayah Suku Dinas Pendidikan Jakarta Utara 2, dikelompokkan berdasarkan Kecamatan dan Kelurahan.
 

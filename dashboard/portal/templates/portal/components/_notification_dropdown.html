@@ -1,0 +1,50 @@
+{# Komponen dropdown notifikasi (lonceng) — UI/UX seragam, isi bisa dikustom lewat variabel #}
+{# Variabel: notification_toggle_id, notification_badge_id, total_count, header_title, empty_id, empty_message,
+   show_refresh, notification_refresh_id, total_label_id, notification_items (list of dict: href, title, subtitle, count, item_id, count_id, badge_class),
+   notification_extra_include (optional: path ke template fragment tambahan, mis. quick list) #}
+<div class="dropdown notification-menu">
+    <button class="notification-toggle" type="button" data-bs-toggle="dropdown"
+        id="{{ notification_toggle_id | default('adminNotificationToggle') }}"
+        aria-expanded="false" aria-label="{{ header_title | default('Notifikasi') }}">
+        <i class="bi bi-bell"></i>
+        <span class="notification-badge{% if (total_count | default(0)) == 0 %} d-none{% endif %}"
+            id="{{ notification_badge_id | default('adminPendingTotalBadge') }}"
+            data-count="{{ total_count | default(0) }}">{{ total_count | default(0) }}</span>
+    </button>
+    <div class="dropdown-menu dropdown-menu-end notification-dropdown">
+        <div class="notification-header">
+            <span class="fw-semibold">{{ header_title | default('Notifikasi') }}</span>
+            <div class="notification-controls">
+                {% if show_refresh | default(true) %}
+                <button type="button" class="btn btn-outline-secondary btn-sm notification-refresh"
+                    id="{{ notification_refresh_id | default('adminPendingRefresh') }}" title="Perbarui">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                {% endif %}
+                <span class="badge bg-danger-subtle text-danger{% if (total_count | default(0)) == 0 %} d-none{% endif %}"
+                    id="{{ total_label_id | default('adminPendingTotalLabel') }}"
+                    data-count="{{ total_count | default(0) }}">{{ total_count | default(0) }}</span>
+            </div>
+        </div>
+        <div id="{{ empty_id | default('adminPendingEmpty') }}"
+            class="notification-empty text-muted small{% if (total_count | default(0)) > 0 %} d-none{% endif %}">
+            {{ empty_message | default('Tidak ada permintaan yang menunggu.') }}
+        </div>
+        {% for item in (notification_items | default([])) %}
+        <a class="notification-item{% if (item.count | default(0)) == 0 %} d-none{% endif %}"
+            id="{{ item.item_id }}"
+            href="{{ item.href }}">
+            <div>
+                <div class="fw-semibold">{{ item.title }}</div>
+                <small>{{ item.subtitle | default('') }}</small>
+            </div>
+            <span class="badge {{ item.badge_class | default('bg-secondary') }}"
+                id="{{ item.count_id }}"
+                data-count="{{ item.count | default(0) }}">{{ item.count | default(0) }}</span>
+        </a>
+        {% endfor %}
+        {% if notification_extra_include %}
+        {% include notification_extra_include with context %}
+        {% endif %}
+    </div>
+</div>

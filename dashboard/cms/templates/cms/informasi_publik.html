@@ -1,0 +1,242 @@
+{% extends 'cms/base_cms.html' %}
+{% block title %}Informasi Publik - CMS{% endblock %}
+
+{% block cms_content %}
+<div class="container-lg px-lg-4 py-4">
+    <!-- Page Header -->
+    <div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="h3 fw-bold mb-1">Informasi Publik</h1>
+            <p class="text-muted mb-0">Kelola informasi jaminan pelayanan, keamanan dan keselamatan, serta kompensasi pelayanan</p>
+        </div>
+        <div>
+            <button type="submit" form="infoForm" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm d-flex align-items-center gap-2" id="btnSaveTop">
+                <i class="bi bi-save"></i> Simpan Perubahan
+            </button>
+        </div>
+    </div>
+
+    <!-- Alert placeholder -->
+    <div id="alertPlaceholder"></div>
+
+    <form id="infoForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="row g-4">
+            <div class="col-12">
+                <!-- Jaminan Pelayanan -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-transparent border-bottom p-4 pb-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-shield-check text-primary me-2"></i>Jaminan Pelayanan</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-0">
+                            <textarea id="cms_jaminan_pelayanan" name="cms_jaminan_pelayanan" class="tinymce-editor">{{ info.get('cms_jaminan_pelayanan', '') | safe }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keamanan dan Keselamatan -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-transparent border-bottom p-4 pb-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-shield-lock text-primary me-2"></i>Keamanan dan Keselamatan</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-0">
+                            <textarea id="cms_keamanan_keselamatan" name="cms_keamanan_keselamatan" class="tinymce-editor">{{ info.get('cms_keamanan_keselamatan', '') | safe }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kompensasi Pelayanan -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-transparent border-bottom p-4 pb-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-coin text-primary me-2"></i>Kompensasi Pelayanan</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-0">
+                            <textarea id="cms_kompensasi_pelayanan" name="cms_kompensasi_pelayanan" class="tinymce-editor">{{ info.get('cms_kompensasi_pelayanan', '') | safe }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sticky Bottom Save Button for Mobile -->
+        <div class="d-block d-lg-none position-fixed bottom-0 start-0 w-100 p-3 bg-white border-top shadow-lg z-3">
+            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-2" id="btnSaveBottom" style="border-radius: 0.5rem;">
+                <i class="bi bi-save fs-5"></i> Simpan Perubahan
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    /* Styling for the rich text editor containers */
+    .tox-tinymce {
+        border-radius: 0.75rem !important;
+        border: 1px solid var(--border-soft, #dee2e6) !important;
+        box-shadow: none !important;
+        overflow: hidden;
+    }
+    
+    .tox .tox-toolbar-overlord {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid var(--border-soft, #dee2e6) !important;
+    }
+    
+    html[data-theme="dark"] .tox-tinymce {
+        border-color: #495057 !important;
+    }
+    html[data-theme="dark"] .tox .tox-toolbar-overlord {
+        background-color: #2b3035 !important;
+        border-bottom: 1px solid #495057 !important;
+    }
+
+    /* Floating button space */
+    body {
+        padding-bottom: 80px; 
+    }
+    
+    @media (min-width: 992px) {
+        body {
+            padding-bottom: 0;
+        }
+    }
+    
+    .card {
+        border-radius: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<!-- TinyMCE Script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const getTinyMceTheme = () => {
+            return document.documentElement.getAttribute('data-theme') === 'dark' ? 'oxide-dark' : 'oxide';
+        };
+
+        const getTinyMceContentCss = () => {
+            return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default';
+        };
+
+        const font_family_formats = "Plus Jakarta Sans=Plus Jakarta Sans, sans-serif; Arial=arial,helvetica,sans-serif; Tahoma=tahoma,arial,helvetica,sans-serif; Times New Roman=times new roman,times,serif;";
+
+        // Initialize full editor
+        tinymce.init({
+            selector: '.tinymce-editor',
+            height: 380,
+            menubar: true,
+            menu: {
+                edit: { title: 'Edit', items: 'undo redo | cut copy paste | selectall' },
+                view: { title: 'View', items: 'visualaid visualchars visualblocks | preview fullscreen' },
+                insert: { title: 'Insert', items: 'image link media template codesample | charmap emoticons hr | pagebreak nonbreaking anchor' },
+                format: { title: 'Format', items: 'bold italic underline strikethrough superscript subscript codeformat | formats blockformats fontformats fontsizes align | forecolor backcolor | removeformat' },
+                table: { title: 'Table', items: 'inserttable | cell row column | tableprops deletetable' },
+            },
+            skin: getTinyMceTheme(),
+            content_css: getTinyMceContentCss(),
+            plugins: [
+                'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                'insertdatetime', 'media', 'table', 'help', 'wordcount'
+            ],
+            toolbar1: 'undo redo | fontfamily fontsize blocks | bold italic underline forecolor backcolor highlight | alignleft aligncenter alignright alignjustify',
+            toolbar2: 'bullist numlist outdent indent | table link image media | removeformat fullscreen',
+            font_family_formats: font_family_formats,
+            content_style: 'body { font-family: "Plus Jakarta Sans", Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.6; }',
+            promotion: false,
+            branding: false,
+            setup: function (editor) {
+                editor.on('change', function () {
+                    editor.save();
+                });
+            }
+        });
+
+        // Listen to theme changes in CMS to update TinyMCE
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('change', () => {
+                setTimeout(() => {
+                    location.reload(); 
+                }, 400);
+            });
+        }
+    });
+
+    // Form submission processing
+    document.getElementById('infoForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Ensure TinyMCE content is saved back to original textareas before submission
+        tinymce.triggerSave();
+        
+        const form = this;
+        const submitBtnTop = document.getElementById('btnSaveTop');
+        const submitBtnBottom = document.getElementById('btnSaveBottom');
+        
+        if(submitBtnTop) { 
+            submitBtnTop.disabled = true; 
+            submitBtnTop.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...'; 
+        }
+        if(submitBtnBottom) { 
+            submitBtnBottom.disabled = true; 
+            submitBtnBottom.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...'; 
+        }
+        
+        const formData = new FormData(form);
+        
+        try {
+            const response = await fetch('{{ url_for("cms.informasi_publik") }}', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            const alertHtml = `
+                <div class="alert alert-${result.success ? 'success' : 'danger'} alert-dismissible fade show shadow-sm border-0 d-flex align-items-center mb-4" role="alert" style="border-radius: 0.75rem;">
+                    <i class="bi bi-${result.success ? 'check-circle-fill' : 'exclamation-triangle-fill'} fs-3 me-3 text-${result.success ? 'success' : 'danger'}"></i>
+                    <div>
+                        <strong class="d-block text-${result.success ? 'success' : 'danger'} mb-1">${result.success ? 'Berhasil Menyimpan!' : 'Gagal Menyimpan!'}</strong>
+                        <div class="text-secondary" style="font-size: 0.95rem;">${result.message || result.error || 'Terjadi kesalahan tidak terduga.'}</div>
+                    </div>
+                    <button type="button" class="btn-close ms-auto my-auto me-1" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            
+            const alertPlaceholder = document.getElementById('alertPlaceholder');
+            alertPlaceholder.innerHTML = alertHtml;
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            const alertHtml = `
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 d-flex align-items-center mb-4" role="alert" style="border-radius: 0.75rem;">
+                    <i class="bi bi-x-circle-fill fs-3 me-3 text-danger"></i>
+                    <div>
+                        <strong class="d-block text-danger mb-1">Terjadi Kesalahan Jaringan!</strong>
+                        <div class="text-secondary" style="font-size: 0.95rem;">Tidak dapat terhubung ke server. Pastikan koneksi internet Anda stabil.</div>
+                    </div>
+                    <button type="button" class="btn-close ms-auto my-auto me-1" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            document.getElementById('alertPlaceholder').innerHTML = alertHtml;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } finally {
+            if(submitBtnTop) { 
+                submitBtnTop.disabled = false; 
+                submitBtnTop.innerHTML = '<i class="bi bi-save"></i> Simpan Perubahan'; 
+            }
+            if(submitBtnBottom) { 
+                submitBtnBottom.disabled = false; 
+                submitBtnBottom.innerHTML = '<i class="bi bi-save fs-5"></i> Simpan Perubahan'; 
+            }
+        }
+    });
+</script>
+{% endblock %}

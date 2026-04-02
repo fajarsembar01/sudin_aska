@@ -87,10 +87,10 @@
                             <input type="email" name="email" class="form-control" placeholder="Email (opsional)">
                         </div>
                         <div class="col-12">
-                            <input type="text" name="instansi" class="form-control" placeholder="Instansi (opsional)">
+                            <input type="text" name="instansi" class="form-control" placeholder="Instansi *" required>
                         </div>
                         <div class="col-12 col-md-6">
-                            <input type="text" name="jabatan" class="form-control" placeholder="Jabatan (opsional)">
+                            <input type="text" name="jabatan" class="form-control" placeholder="Jabatan *" required>
                         </div>
                         <div class="col-12 col-md-6">
                             <input type="text" name="phone" class="form-control" placeholder="Telepon (opsional)">
@@ -205,6 +205,19 @@
                                     title="Edit" aria-label="Edit">
                                     <i class="bi bi-pencil-square"></i>
                                 </button>
+                                {% if not row.is_deleted %}
+                                    {% if row.is_verified %}
+                                    <button type="button" class="btn btn-sm btn-outline-warning" data-action="unverify"
+                                        title="Batalkan verifikasi" aria-label="Batalkan verifikasi tamu umum">
+                                        <i class="bi bi-patch-minus"></i>
+                                    </button>
+                                    {% else %}
+                                    <button type="button" class="btn btn-sm btn-outline-success" data-action="verify"
+                                        title="Verifikasi" aria-label="Verifikasi tamu umum">
+                                        <i class="bi bi-patch-check"></i>
+                                    </button>
+                                    {% endif %}
+                                {% endif %}
                                 <button type="button" class="btn btn-sm {% if row.is_deleted %}btn-outline-primary{% else %}btn-outline-danger{% endif %}"
                                     data-action="toggle-delete" data-deleted="{{ '1' if row.is_deleted else '0' }}"
                                     title="{% if row.is_deleted %}Pulihkan{% else %}Hapus{% endif %}"
@@ -523,6 +536,128 @@
                     });
             });
         });
+        function buildGuestVerificationAction(row, targetVerified) {
+            if (!row) return null;
+            var guestId = row.getAttribute('data-guest-id');
+            if (!guestId) return null;
+            var guestName = (row.getAttribute('data-full-name') || '').trim();
+            var instansi = (row.getAttribute('data-instansi') || '').trim();
+            var jabatan = (row.getAttribute('data-jabatan') || '').trim();
+            var email = (row.getAttribute('data-email') || '').trim();
+            var phone = (row.getAttribute('data-phone') || '').trim();
+            var contactParts = [];
+            if (email) contactParts.push(email);
+            if (phone) contactParts.push(phone);
+            var contactValue = contactParts.length ? contactParts.join(' / ') : '-';
+            var meta = targetVerified
+                ? {
+                    confirmTitle: 'Verifikasi Tamu Umum',
+                    confirmText: 'Tandai tamu umum ini sebagai verified? Pastikan data sudah sesuai sebelum melanjutkan.',
+                    label: 'Verifikasi',
+                    buttonClass: 'btn-primary',
+                    toastMessage: 'Tamu umum berhasil diverifikasi.',
+                    undoLabel: 'Verifikasi dijadwalkan'
+                }
+                : {
+                    confirmTitle: 'Batalkan Verifikasi Tamu Umum',
+                    confirmText: 'Batalkan status verified untuk tamu umum ini? Pastikan perubahan sudah diperiksa karena data akan kembali ke belum verified.',
+                    label: 'Batalkan verifikasi',
+                    buttonClass: 'btn-warning',
+                    toastMessage: 'Verifikasi tamu umum berhasil dibatalkan.',
+                    undoLabel: 'Pembatalan verifikasi dijadwalkan'
+                };
+
+            return {
+                id: 'general-guest-verify-' + guestId + '-' + (targetVerified ? 'on' : 'off'),
+                url: '/daftar-tamu/admin/umum/' + guestId + '/verify',
+                method: 'POST',
+                payload: {
+                    is_verified: targetVerified ? 'true' : 'false'
+                },
+                confirmTitle: meta.confirmTitle,
+                confirmText: meta.confirmText,
+                details: [
+                    { label: 'Nama', value: guestName || '-' },
+                    { label: 'Instansi', value: instansi || '-' },
+                    { label: 'Jabatan', value: jabatan || '-' },
+                    { label: 'Kontak', value: contactValue }
+                ],
+                label: meta.label,
+                buttonClass: meta.buttonClass,
+                toastMessage: meta.toastMessage,
+                undoLabel: meta.undoLabel,
+                onSuccess: function () {
+                    window.location.reload();
+                },
+                onFailure: function (err) {
+                    alert((err && err.message) || 'Gagal memperbarui status verifikasi.');
+                },
+                onUndo: function () {
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('Perubahan dibatalkan.');
+                    }
+                }
+            };
+        }
+
+        function performActionDirectly(action) {
+            if (!action) return;
+            var runner = action.execute;
+            if (!runner && typeof window.executeAdminAction === 'function') {
+                runner = function () {
+                    return window.executeAdminAction(action);
+                };
+            }
+            if (!runner) return;
+            runner()
+                .then(function (data) {
+                    if (typeof action.onSuccess === 'function') {
+                        action.onSuccess(data);
+                    }
+                    if (action.toastMessage && typeof window.showToast === 'function') {
+                        window.showToast(action.toastMessage);
+                    }
+                })
+                .catch(function (err) {
+                    if (typeof action.onFailure === 'function') {
+                        action.onFailure(err);
+                        return;
+                    }
+                    alert((err && err.message) || 'Gagal memproses verifikasi.');
+                });
+        }
+
+        function queueGuestVerification(row, targetVerified) {
+            if (!row) return;
+            var action = buildGuestVerificationAction(row, targetVerified);
+            if (!action) return;
+            if (!targetVerified && typeof window.confirmAdminAction === 'function') {
+                window.confirmAdminAction(action);
+                return;
+            }
+            if (typeof window.scheduleAdminAction === 'function') {
+                scheduleAdminAction(action);
+                return;
+            }
+            performActionDirectly(action);
+        }
+
+        function attachGuestVerificationListeners() {
+            document.querySelectorAll('[data-action="verify"]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var row = btn.closest('tr');
+                    queueGuestVerification(row, true);
+                });
+            });
+            document.querySelectorAll('[data-action="unverify"]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var row = btn.closest('tr');
+                    queueGuestVerification(row, false);
+                });
+            });
+        }
+
+        attachGuestVerificationListeners();
     })();
 </script>
 {% endblock %}

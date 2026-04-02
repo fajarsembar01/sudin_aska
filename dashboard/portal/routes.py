@@ -27,6 +27,7 @@ from flask import (
     request,
     url_for,
     current_app,
+    send_file,
     send_from_directory,
     abort,
     session,
@@ -553,7 +554,24 @@ def uploaded_file(filename):
     requested_path = PurePosixPath(normalized)
     if requested_path.is_absolute() or ".." in requested_path.parts:
         abort(404)
-    return send_from_directory(UPLOAD_FOLDER, requested_path.as_posix())
+
+    target_path = (UPLOAD_FOLDER / requested_path.as_posix()).resolve()
+    try:
+        target_path.relative_to(UPLOAD_FOLDER.resolve())
+    except ValueError:
+        abort(404)
+
+    if target_path.is_file():
+        return send_from_directory(UPLOAD_FOLDER, requested_path.as_posix())
+
+    # Guestbook photos may be cleaned up while historical rows still reference them.
+    # Fall back to a local placeholder so dashboard pages do not emit avoidable 404s.
+    if requested_path.parts and requested_path.parts[0] == "daftar_tamu":
+        placeholder = Path(__file__).resolve().parent.parent / "static" / "logo" / "logo.png"
+        if placeholder.is_file():
+            return send_file(placeholder)
+
+    abort(404)
 
 
 def _allowed_file(filename: str) -> bool:
@@ -1708,6 +1726,13 @@ def home() -> Response:
                 "col_class": "col-md-6 col-12",
             },
             {
+                "title": "Hospitality",
+                "description": "Penilaian hospitality tanpa penugasan, terhubung buku tamu.",
+                "icon": "bi-house-heart",
+                "href": url_for("hospitality.staff_home"),
+                "col_class": "col-md-6 col-12",
+            },
+            {
                 "title": "Buku Tamu",
                 "description": "Lihat riwayat buku tamu yang pernah melibatkan Anda.",
                 "icon": "bi-person-vcard",
@@ -1717,10 +1742,10 @@ def home() -> Response:
         ]
         return render_template(
             "role_selection.html",
-            page_title="Pilih Layanan Staff - ASKA Portal",
-            page_description="Pilih layanan untuk Staff",
+            page_title="ASKA Portal - Pilih Layanan Staff ",
+            page_description="Pilih layanan ASKA Portal untuk Staff",
             header_title=header_title,
-            header_subtitle="Silakan pilih layanan yang ingin Anda akses",
+            header_subtitle="Silakan pilih layanan ASKA Portal",
             cards=cards,
             default_col_class="col-md-6 col-12",
             show_logout=True,
@@ -1735,6 +1760,13 @@ def home() -> Response:
                 "col_class": "col-md-6 col-12",
             },
             {
+                "title": "Hospitality",
+                "description": "Pantau penilaian hospitality lintas sekolah.",
+                "icon": "bi-house-heart",
+                "href": url_for("hospitality.admin_home"),
+                "col_class": "col-md-6 col-12",
+            },
+            {
                 "title": "Buku Tamu",
                 "description": "Lihat riwayat buku tamu yang pernah melibatkan Anda.",
                 "icon": "bi-person-vcard",
@@ -1744,10 +1776,10 @@ def home() -> Response:
         ]
         return render_template(
             "role_selection.html",
-            page_title="Pilih Layanan Koordinator - ASKA Portal",
-            page_description="Pilih layanan untuk Koordinator",
+            page_title="ASKA Portal - Pilih Layanan Koordinator",
+            page_description="Pilih layanan ASKA Portal untuk Koordinator",
             header_title=header_title,
-            header_subtitle="Silakan pilih layanan yang ingin Anda akses",
+            header_subtitle="Silakan pilih layanan ASKA Portal",
             cards=cards,
             default_col_class="col-md-6 col-12",
             show_logout=True,
@@ -1816,7 +1848,7 @@ def sekolah_home() -> Response:
     school = _fetch_user_school(user.get("id"))
     if not school:
         flash("Akun belum terhubung dengan sekolah. Hubungi admin.", "warning")
-    subtitle = "Silakan pilih layanan yang ingin Anda akses"
+    subtitle = ""
     if school and school.get("name") and school.get("npsn"):
         subtitle = f"{school.get('name')} • NPSN {school.get('npsn')}"
     cards = [
@@ -1828,6 +1860,13 @@ def sekolah_home() -> Response:
              "col_class": "col-md-6 col-12",
         },
         {
+            "title": "Hospitality",
+            "description": "Lihat hasil penilaian hospitality dan beri komentar.",
+            "icon": "bi-house-heart",
+            "href": url_for("hospitality.school_home"),
+            "col_class": "col-md-6 col-12",
+        },
+        {
             "title": "Buku Tamu",
             "description": "Input kunjungan tamu dan pantau status verifikasi kunjungan.",
             "icon": "bi-person-vcard",
@@ -1837,8 +1876,8 @@ def sekolah_home() -> Response:
     ]
     return render_template(
         "role_selection.html",
-        page_title="Pilih Layanan Sekolah - ASKA Portal",
-        page_description="Pilih layanan untuk sekolah",
+        page_title="ASKA Portal - Pilih Layanan Sekola",
+        page_description="Pilih layanan ASKA Portal yang ingin Anda akses",
         header_title="Selamat Datang",
         header_subtitle=subtitle,
         cards=cards,
@@ -1847,8 +1886,6 @@ def sekolah_home() -> Response:
     )
 
 
-def _filter_assessment_rooms(rooms: list[dict], jenjang: str | None = None) -> list[dict]:
-    """Filter rooms to hide base classrooms and drop classroom names from other jenjangs."""
 def _annotate_follow_up_ticket(ticket: dict) -> dict:
     row = dict(ticket or {})
     status_value = (row.get("status") or "").strip().lower()
@@ -2451,31 +2488,8 @@ def follow_up_verify(follow_up_id: int) -> Response:
     return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
 
 
-def _filter_assessment_rooms(rooms: list[dict]) -> list[dict]:
+def _filter_assessment_rooms(rooms: list[dict], jenjang: str | None = None) -> list[dict]:
     """Filter rooms to hide base kelas when variant rooms exist."""
-    def _grade_and_variant(name: str) -> tuple[int | None, str | None]:
-        match = re.search(r"\bKelas\s+TK\s+([AB])\s*(\d+)\b", name or "", flags=re.IGNORECASE)
-        if match:
-            grade = -1 if match.group(1).upper() == "A" else 0
-            variant = match.group(2).strip() or None
-            return grade, variant
-        match = re.search(r"\bKelas\s+(\d+)(\s*[A-Za-z]+)?$", name or "", flags=re.IGNORECASE)
-        if not match:
-            return None, None
-        try:
-            grade = int(match.group(1))
-        except (TypeError, ValueError):
-            return None, None
-        variant = (match.group(2) or "").strip().upper() or None
-        return grade, variant
-
-    rooms_by_grade: dict[int, list[dict]] = {}
-    for room in rooms:
-        grade, variant = _grade_and_variant(room.get("room_name") or "")
-        if grade is None:
-            continue
-        rooms_by_grade.setdefault(grade, []).append({"room": room, "variant": variant})
-
     filtered_rooms: list[dict] = []
     rooms_by_key: dict[tuple[str | None, int], list[dict]] = {}
 
@@ -2483,7 +2497,11 @@ def _filter_assessment_rooms(rooms: list[dict]) -> list[dict]:
         name = (room.get("room_name") or "").strip()
         parsed = parse_room_info(name, jenjang)
         if parsed:
-            key = (parsed.get("bucket"), int(parsed.get("grade_level")))
+            try:
+                key = (parsed.get("bucket"), int(parsed.get("grade_level")))
+            except (TypeError, ValueError):
+                filtered_rooms.append(room)
+                continue
             rooms_by_key.setdefault(key, []).append({"room": room, "parsed": parsed})
             continue
         if parse_room_info(name):
@@ -2579,29 +2597,6 @@ def _augment_rooms_with_assessment_data(
     return rooms, existing_scores, photos_list, room_notes
 
 
-def _sync_assessment_period_to_active(assessment: dict) -> None:
-    """Force draft period to match the currently active period."""
-    if not assessment or assessment.get("status") != "draft":
-        return
-    active_period = get_active_period()
-    if not active_period:
-        return
-    period_id = active_period.get("id")
-    if not period_id:
-        return
-    if assessment.get("period_id") == period_id:
-        return
-    with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
-            UPDATE portal_assessments
-            SET period_id = %s,
-                updated_at = NOW()
-            WHERE id = %s AND status = 'draft'
-            """,
-            (period_id, assessment.get("id")),
-        )
-    assessment["period_id"] = period_id
 
 
 @portal_bp.route("/assess/<int:school_id>")
@@ -2682,7 +2677,7 @@ def assess(school_id: int) -> Response:
             
     assessment_id = assessment["id"]
     score_scale = _build_assessment_score_config(assessment)
-    _sync_assessment_period_to_active(assessment)
+
     
     # Ensure classroom variants are materialized as rooms for this school
     try:
@@ -2789,6 +2784,34 @@ def save_score(school_id: int) -> Response:
         if assessment["staff_id"] != user["id"] and user["role"] != "admin":
             return jsonify({"success": False, "message": "Unauthorized access to this assessment"}), 403
 
+        with get_cursor() as cur:
+            cur.execute(
+                """
+                SELECT 1
+                FROM portal_assessments asses
+                JOIN portal_school_rooms sr
+                  ON sr.id = %s
+                 AND sr.school_id = asses.school_id
+                JOIN portal_aspects asp
+                  ON asp.id = %s
+                 AND asp.room_id = sr.room_id
+                 AND asp.active = TRUE
+                WHERE asses.id = %s
+                  AND (
+                    asp.is_required = TRUE
+                    OR EXISTS (
+                        SELECT 1
+                        FROM portal_school_room_aspects psra
+                        WHERE psra.school_room_id = sr.id
+                          AND psra.aspect_id = asp.id
+                    )
+                  )
+                """,
+                (school_room_id, aspect_id, assessment_id),
+            )
+            if not cur.fetchone():
+                return jsonify({"success": False, "message": "Aspek tidak sesuai dengan ruangan yang dinilai"}), 400
+
         score_config = _build_assessment_score_config(assessment)
         min_score = score_config["min"]
         max_score = score_config["max"]
@@ -2797,7 +2820,7 @@ def save_score(school_id: int) -> Response:
                 return jsonify({"success": False, "message": "Nilai harus dalam rentang 1-5"}), 400
             return jsonify({"success": False, "message": "Nilai harus dalam rentang 0-3"}), 400
 
-        _sync_assessment_period_to_active(assessment)
+
 
         success = save_assessment_score(
             assessment_id,
@@ -2845,7 +2868,7 @@ def save_note(school_id: int) -> Response:
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     try:
-        _sync_assessment_period_to_active(assessment)
+
         result = save_room_details(
             assessment_id=assessment_id,
             school_room_id=school_room_id,
@@ -2887,7 +2910,7 @@ def upload_photo(school_id: int) -> Response:
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     try:
-        _sync_assessment_period_to_active(assessment)
+
         all_rooms = list_school_rooms(school_id)
         school = get_school_by_id(school_id)
         rooms = _filter_assessment_rooms(all_rooms, school.get("jenjang") if school else None)
@@ -3082,7 +3105,7 @@ def submit(school_id: int) -> Response:
         return redirect(url_for("portal.assess", school_id=school_id))
     
     try:
-        _sync_assessment_period_to_active(assessment)
+
         success = submit_assessment(assessment_id_int)
         if success:
             try:
@@ -3110,7 +3133,16 @@ def submit(school_id: int) -> Response:
     except Exception as e:
         current_app.logger.exception("Error submitting assessment")
         flash(f"Error: {e}", "danger")
-    
+
+    period_id = assessment.get("period_id") if assessment else None
+    if user.get("role") == "staff":
+        if period_id:
+            return redirect(url_for("portal.staff_assignments", period_id=period_id))
+        return redirect(url_for("portal.staff_assignments"))
+    if user.get("role") == "coordinator":
+        if period_id:
+            return redirect(url_for("portal.coordinator_assessments", period_id=period_id))
+        return redirect(url_for("portal.coordinator_assessments"))
     return redirect(url_for("portal.home"))
 
 
@@ -3153,7 +3185,7 @@ def save_draft(school_id: int) -> Response:
             return redirect(url_for("portal.staff_assignments"))
 
     try:
-        _sync_assessment_period_to_active(assessment)
+
         with get_cursor(commit=True) as cur:
             cur.execute(
                 """
@@ -3464,7 +3496,7 @@ def view_assessment(assessment_id: int) -> Response:
         return redirect(url_for("portal.home"))
     
     # Security check: Only owner or admin can view
-    if assessment["staff_id"] != user["id"] and user["role"] != "admin":
+    if assessment["staff_id"] != user["id"] and user["role"] != "admin" and user["role"] != "coordinator":
         flash("Anda tidak memiliki akses untuk melihat penilaian ini.", "danger")
         return redirect(url_for("portal.home"))
 
@@ -5183,6 +5215,8 @@ def admin_pending_summary() -> Response:
                 "pending_assignment_requests": 0,
                 "pending_team_member_requests": 0,
                 "pending_reopen_requests": 0,
+                "pending_guestbook": 0,
+                "pending_call_center": 0,
                 "total": 0,
             }
         )
@@ -5205,6 +5239,8 @@ def admin_pending_preview() -> Response:
                     "pending_assignment_requests": 0,
                     "pending_team_member_requests": 0,
                     "pending_reopen_requests": 0,
+                    "pending_guestbook": 0,
+                    "pending_call_center": 0,
                     "total": 0,
                 },
                 "users": [],
@@ -7524,6 +7560,66 @@ def inject_permissions():
 
     require_profile_photo_upload = _needs_profile_photo_completion(user)
 
+    admin_notification_items = []
+    if user.get("role") == "admin" and admin_pending:
+        from flask import url_for
+        admin_notification_items = [
+            {
+                "href": url_for("portal.manage_users"),
+                "title": "User baru",
+                "subtitle": "Menunggu verifikasi akun",
+                "count": admin_pending.get("pending_users", 0),
+                "item_id": "adminPendingUsersItem",
+                "count_id": "adminPendingUsersCount",
+                "badge_class": "bg-warning text-dark",
+            },
+            {
+                "href": url_for("portal.admin_manage_staff"),
+                "title": "Permintaan penugasan",
+                "subtitle": "Koordinator ajukan penugasan staff",
+                "count": admin_pending.get("pending_assignment_requests", 0),
+                "item_id": "adminPendingAssignmentItem",
+                "count_id": "adminPendingAssignmentCount",
+                "badge_class": "bg-info text-dark",
+            },
+            {
+                "href": url_for("portal.manage_monev_teams"),
+                "title": "Permintaan anggota tim",
+                "subtitle": "Persetujuan anggota monev",
+                "count": admin_pending.get("pending_team_member_requests", 0),
+                "item_id": "adminPendingTeamItem",
+                "count_id": "adminPendingTeamCount",
+                "badge_class": "bg-primary",
+            },
+            {
+                "href": url_for("portal.admin_reopen_requests"),
+                "title": "Permintaan reopen",
+                "subtitle": "Penilaian diajukan untuk dibuka",
+                "count": admin_pending.get("pending_reopen_requests", 0),
+                "item_id": "adminPendingReopenItem",
+                "count_id": "adminPendingReopenCount",
+                "badge_class": "bg-danger",
+            },
+            {
+                "href": url_for("daftar_tamu.admin_validation"),
+                "title": "Verifikasi daftar tamu",
+                "subtitle": "Transaksi buku tamu menunggu validasi",
+                "count": admin_pending.get("pending_guestbook", 0),
+                "item_id": "adminPendingGuestbookItem",
+                "count_id": "adminPendingGuestbookCount",
+                "badge_class": "bg-success",
+            },
+            {
+                "href": url_for("call_center.inbox"),
+                "title": "Call Center",
+                "subtitle": "Pesan masuk belum dibaca",
+                "count": admin_pending.get("pending_call_center", 0),
+                "item_id": "adminPendingCCItem",
+                "count_id": "adminPendingCCCount",
+                "badge_class": "text-bg-danger",
+            },
+        ]
+
     return {
         'permissions': get_permission_summary(user),
         'is_superadmin': is_superadmin(user),
@@ -7531,6 +7627,7 @@ def inject_permissions():
         'user_school': user_school,
         'area_contacts': area_contacts,
         'admin_pending': admin_pending,
+        'admin_notification_items': admin_notification_items,
         'user_app_notifications': user_app_notifications,
         'follow_up_nav_badge_count': follow_up_nav_badge_count,
         'undo_window_seconds': undo_window_seconds,
@@ -8888,14 +8985,20 @@ def coordinator_assignment_requests() -> Response:
 def coordinator_assessments() -> Response:
     """Coordinator can start/continue their own assessments."""
     user = current_user()
-    assigned_schools = get_staff_assigned_schools(user["id"])
     periods = list_periods()
     active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
     
+    selected_period_id = request.args.get("period_id", type=int)
+    if selected_period_id is None:
+        selected_period_id = active_period_id
+
+    assigned_schools = get_staff_assigned_schools(user["id"], period_id=selected_period_id)
+
     return render_template(
         "portal/coordinator/assessments.html",
         assigned_schools=assigned_schools,
         periods=periods,
         active_period_id=active_period_id,
+        selected_period_id=selected_period_id,
         user=user,
     )

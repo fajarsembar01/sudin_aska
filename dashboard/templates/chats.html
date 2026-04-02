@@ -20,11 +20,11 @@
 </section>
 
 <form class="row g-3 mb-4" method="get">
-    <div class="col-md-3">
+    <div class="col-md-2">
         <label class="form-label">Tanggal Mulai</label>
         <input type="date" class="form-control" name="start" value="{{ filters.start.strftime('%Y-%m-%d') if filters.start }}">
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
         <label class="form-label">Tanggal Selesai</label>
         <input type="date" class="form-control" name="end" value="{{ filters.end.strftime('%Y-%m-%d') if filters.end }}">
     </div>
@@ -34,6 +34,16 @@
             <option value="">Semua</option>
             <option value="user" {% if filters.role == 'user' %}selected{% endif %}>User</option>
             <option value="aska" {% if filters.role == 'aska' %}selected{% endif %}>ASKA</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Channel</label>
+        <select class="form-select" name="channel">
+            <option value="">Semua</option>
+            <option value="telegram" {% if filters.channel == 'telegram' %}selected{% endif %}>Telegram</option>
+            <option value="web" {% if filters.channel == 'web' %}selected{% endif %}>Web</option>
+            <option value="whatsapp" {% if filters.channel == 'whatsapp' %}selected{% endif %}>WhatsApp</option>
+            <option value="twitter" {% if filters.channel == 'twitter' %}selected{% endif %}>Twitter</option>
         </select>
     </div>
     <div class="col-md-2">
@@ -62,6 +72,7 @@
                     <tr>
                         <th scope="col" style="width: 120px;"><i class="bi bi-clock-history"></i>Waktu</th>
                         <th scope="col" style="width: 110px;"><i class="bi bi-person-bounding-box"></i>User ID</th>
+                        <th scope="col" style="width: 120px;"><i class="bi bi-broadcast"></i>Channel</th>
                         <th scope="col" style="width: 110px;"><i class="bi bi-robot"></i>Role</th>
                         <th scope="col"><i class="bi bi-chat-text"></i>Pesan</th>
                         <th scope="col" style="width: 130px;"><i class="bi bi-speedometer2"></i>Response (ms)</th>
@@ -73,6 +84,9 @@
                     <tr>
                         <td><span class="badge text-bg-light">{{ row.created_at|jakarta('%d %b %Y %H:%M') }}</span></td>
                         <td class="fw-semibold">{{ row.user_id }}</td>
+                        <td>
+                            <span class="badge text-bg-info text-uppercase">{{ row.channel or 'telegram' }}</span>
+                        </td>
                         <td>
                             {% if row.role == 'aska' %}
                                 <span class="badge rounded-pill text-bg-primary">ASKA</span>
@@ -90,7 +104,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-5">Tidak ada data sesuai filter.</td>
+                        <td colspan="7" class="text-center text-muted py-5">Tidak ada data sesuai filter.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -102,11 +116,11 @@
 <nav class="mt-3" aria-label="Pagination">
     <ul class="pagination justify-content-end">
         <li class="page-item {% if page == 1 %}disabled{% endif %}">
-            <a class="page-link" href="{{ url_for('main.chats', page=page-1, start=request.args.get('start'), end=request.args.get('end'), role=request.args.get('role'), search=request.args.get('search'), user_id=request.args.get('user_id')) }}">Previous</a>
+            <a class="page-link" href="{{ url_for('main.chats', page=page-1, start=request.args.get('start'), end=request.args.get('end'), role=request.args.get('role'), channel=request.args.get('channel'), search=request.args.get('search'), user_id=request.args.get('user_id')) }}">Previous</a>
         </li>
         <li class="page-item disabled"><span class="page-link">Halaman {{ page }} / {{ total_pages }}</span></li>
         <li class="page-item {% if page == total_pages %}disabled{% endif %}">
-            <a class="page-link" href="{{ url_for('main.chats', page=page+1, start=request.args.get('start'), end=request.args.get('end'), role=request.args.get('role'), search=request.args.get('search'), user_id=request.args.get('user_id')) }}">Next</a>
+            <a class="page-link" href="{{ url_for('main.chats', page=page+1, start=request.args.get('start'), end=request.args.get('end'), role=request.args.get('role'), channel=request.args.get('channel'), search=request.args.get('search'), user_id=request.args.get('user_id')) }}">Next</a>
         </li>
     </ul>
 </nav>

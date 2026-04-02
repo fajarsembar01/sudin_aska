@@ -67,7 +67,16 @@ STOPWORDS = {
 }
 
 _CHAT_TOPIC_AVAILABLE: Optional[bool] = None
+_CHAT_CHANNEL_AVAILABLE: Optional[bool] = None
 _TESTER_IDS_CACHE: Optional[List[int]] = None
+ADMIN_PERFORMANCE_FEATURE_LABELS: Dict[str, str] = {
+    "all": "Semua Fitur",
+    "aska_insight": "ASKA Insight",
+    "panbers": "PANBERSS",
+    "hospitality": "Hospitality",
+    "daftar_tamu": "Daftar Tamu",
+    "call_center": "Call Center",
+}
 
 
 def _load_tester_ids() -> List[int]:
@@ -129,6 +138,48 @@ def chat_topic_available() -> bool:
         )
         _CHAT_TOPIC_AVAILABLE = cur.fetchone() is not None
     return _CHAT_TOPIC_AVAILABLE
+
+
+def chat_channel_available() -> bool:
+    """Check once whether chat_logs table has channel column."""
+    global _CHAT_CHANNEL_AVAILABLE
+    if _CHAT_CHANNEL_AVAILABLE is not None:
+        return _CHAT_CHANNEL_AVAILABLE
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = current_schema()
+              AND table_name = 'chat_logs'
+              AND column_name = 'channel'
+            LIMIT 1
+            """
+        )
+        _CHAT_CHANNEL_AVAILABLE = cur.fetchone() is not None
+    return _CHAT_CHANNEL_AVAILABLE
+
+
+def _chat_channel_expression_sql() -> str:
+    has_topic = chat_topic_available()
+    has_channel = chat_channel_available()
+    if has_channel and has_topic:
+        return (
+            "COALESCE(channel, CASE WHEN topic = 'web' THEN 'web' "
+            "WHEN topic = 'twitter' THEN 'twitter' "
+            "WHEN topic = 'whatsapp' THEN 'whatsapp' ELSE 'telegram' END)"
+        )
+    if has_channel:
+        return "COALESCE(channel, 'telegram')"
+    if has_topic:
+        return (
+            "CASE WHEN topic = 'web' THEN 'web' "
+            "WHEN topic = 'twitter' THEN 'twitter' "
+            "WHEN topic = 'whatsapp' THEN 'whatsapp' ELSE 'telegram' END"
+        )
+    return "'telegram'"
+
+
 BULLYING_STATUSES = (
     'pending',
     'in_progress',
@@ -164,6 +215,8 @@ class ChatFilters:
     search: Optional[str] = None
     user_id: Optional[int] = None
     topic: Optional[str] = None
+    exclude_topic: Optional[str] = None
+    channel: Optional[str] = None
 
 def _apply_filters(conditions: List[str], params: List[Any], filters: ChatFilters) -> None:
     if filters.start:
@@ -184,6 +237,14 @@ def _apply_filters(conditions: List[str], params: List[Any], filters: ChatFilter
     if filters.topic and chat_topic_available():
         conditions.append("topic = %s")
         params.append(filters.topic)
+    if filters.exclude_topic and chat_topic_available():
+        conditions.append("(topic IS NULL OR topic != %s)")
+        params.append(filters.exclude_topic)
+    if filters.channel:
+        normalized_channel = str(filters.channel).strip().lower()
+        if normalized_channel in {"telegram", "web", "twitter", "whatsapp"}:
+            conditions.append(f"{_chat_channel_expression_sql()} = %s")
+            params.append(normalized_channel)
 
 def fetch_overview_metrics(window_days: int = 7) -> Dict[str, Any]:
     """Aggregate key performance indicators for the dashboard landing page."""
@@ -192,6 +253,7 @@ def fetch_overview_metrics(window_days: int = 7) -> Dict[str, Any]:
 
     bullying_rows: List[Dict[str, Any]] = []
     escalated_total = 0
+    channel_row: Dict[str, Any] = {}
 
     with get_cursor() as cur:
         clause, params = _tester_condition("user_id")
@@ -250,6 +312,26 @@ def fetch_overview_metrics(window_days: int = 7) -> Dict[str, Any]:
 
         active_today = unique_users_today
 
+        channel_expr = _chat_channel_expression_sql()
+        channel_query = f"""
+            SELECT
+                COUNT(*) FILTER (WHERE {channel_expr} = 'telegram') AS telegram_total,
+                COUNT(*) FILTER (WHERE {channel_expr} = 'web') AS web_total,
+                COUNT(*) FILTER (WHERE {channel_expr} = 'twitter') AS twitter_total,
+                COUNT(*) FILTER (WHERE {channel_expr} = 'whatsapp') AS whatsapp_total,
+                COUNT(*) FILTER (WHERE role = 'user' AND {channel_expr} = 'telegram') AS telegram_user_total,
+                COUNT(*) FILTER (WHERE role = 'user' AND {channel_expr} = 'web') AS web_user_total,
+                COUNT(*) FILTER (WHERE role = 'user' AND {channel_expr} = 'twitter') AS twitter_user_total,
+                COUNT(*) FILTER (WHERE role = 'user' AND {channel_expr} = 'whatsapp') AS whatsapp_user_total
+            FROM chat_logs
+        """
+        channel_params: List[Any] = []
+        if clause:
+            channel_query += f" WHERE {clause}"
+            channel_params.append(tester_param)
+        cur.execute(channel_query, tuple(channel_params))
+        channel_row = cur.fetchone() or {}
+
         cur.execute(
             """
             SELECT status, COUNT(*) AS total
@@ -291,6 +373,19 @@ def fetch_overview_metrics(window_days: int = 7) -> Dict[str, Any]:
     bullying_active_total = int(bullying_total - bullying_summary.get("spam", 0))
     psych_active_total = int(psych_summary.get("total", 0)) if psych_summary else 0
 
+    channel_totals = {
+        "telegram": int(channel_row.get("telegram_total") or 0),
+        "web": int(channel_row.get("web_total") or 0),
+        "twitter": int(channel_row.get("twitter_total") or 0),
+        "whatsapp": int(channel_row.get("whatsapp_total") or 0),
+    }
+    channel_user_totals = {
+        "telegram": int(channel_row.get("telegram_user_total") or 0),
+        "web": int(channel_row.get("web_user_total") or 0),
+        "twitter": int(channel_row.get("twitter_user_total") or 0),
+        "whatsapp": int(channel_row.get("whatsapp_user_total") or 0),
+    }
+
     return {
         "total_messages": int(total_messages or 0),
         "total_incoming_messages": int(total_incoming_messages or 0),
@@ -315,6 +410,8 @@ def fetch_overview_metrics(window_days: int = 7) -> Dict[str, Any]:
         "corruption_active_total": corruption_active_total,
         "psych_summary": psych_summary,
         "psych_active_total": psych_active_total,
+        "channel_totals": channel_totals,
+        "channel_user_totals": channel_user_totals,
     }
 
 def fetch_daily_activity(days: int = 14, role: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -445,9 +542,12 @@ def fetch_chat_logs(
     if conditions:
         where_clause = " WHERE " + " AND ".join(conditions)
 
-    select_columns = "id, user_id, username, text, role, created_at, response_time_ms"
-    if chat_topic_available():
-        select_columns = "id, user_id, username, text, role, topic, created_at, response_time_ms"
+    topic_select = "topic" if chat_topic_available() else "NULL::TEXT AS topic"
+    channel_select = f"{_chat_channel_expression_sql()} AS channel"
+    select_columns = (
+        "id, user_id, username, text, role, "
+        f"{topic_select}, {channel_select}, created_at, response_time_ms"
+    )
 
     query = (
         f"SELECT {select_columns} "
@@ -474,6 +574,7 @@ def fetch_conversation_thread(user_id: int, limit: int = 200) -> List[Dict[str, 
             SELECT id, user_id, username, text, role, created_at, response_time_ms
             FROM chat_logs
             WHERE user_id = %s
+              AND (topic IS NULL OR topic != 'notif')
             ORDER BY created_at DESC
             LIMIT %s
             """,
@@ -495,6 +596,7 @@ def fetch_all_chat_users() -> List[Dict[str, Any]]:
             "    COUNT(*) AS message_count",
             "FROM chat_logs",
             "WHERE role = 'user'",
+            "AND (topic IS NULL OR topic != 'notif')",
         ]
         if clause:
             query_parts.append(f"AND {clause}")
@@ -1943,8 +2045,50 @@ def upsert_telegram_notification_settings(bot_token: Optional[str], updated_by: 
         return True
 
 
-def list_telegram_admin_accounts() -> List[Dict[str, Any]]:
-    """List Telegram admin username mappings."""
+def fetch_whatsapp_link_settings() -> Dict[str, Any]:
+    """Fetch stored WhatsApp entry link configuration."""
+    try:
+        with get_cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    s.wa_link,
+                    s.updated_at,
+                    s.updated_by,
+                    u.full_name AS updated_by_name,
+                    u.email AS updated_by_email
+                FROM whatsapp_link_settings s
+                LEFT JOIN dashboard_users u ON u.id = s.updated_by
+                WHERE s.id = 1
+                LIMIT 1
+                """
+            )
+            row = cur.fetchone()
+    except Exception:
+        return {}
+    return dict(row) if row else {}
+
+
+def upsert_whatsapp_link_settings(wa_link: Optional[str], updated_by: Optional[int]) -> bool:
+    """Insert/update WhatsApp entry link configuration."""
+    clean_link = (wa_link or "").strip() or None
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO whatsapp_link_settings (id, wa_link, updated_at, updated_by)
+            VALUES (1, %s, NOW(), %s)
+            ON CONFLICT (id) DO UPDATE
+            SET wa_link = EXCLUDED.wa_link,
+                updated_at = NOW(),
+                updated_by = EXCLUDED.updated_by
+            """,
+            (clean_link, updated_by),
+        )
+        return True
+
+
+def list_telegram_admin_accounts(scope: str = "default") -> List[Dict[str, Any]]:
+    """List Telegram admin username mappings. scope: 'default' (umum) or 'call_center'."""
     with get_cursor() as cur:
         cur.execute(
             """
@@ -1952,14 +2096,17 @@ def list_telegram_admin_accounts() -> List[Dict[str, Any]]:
                 ta.id,
                 ta.telegram_username,
                 ta.dashboard_user_id,
+                ta.notification_scope,
                 ta.created_at,
                 u.full_name AS admin_name,
                 u.email AS admin_email,
                 u.role AS admin_role
             FROM telegram_admin_accounts ta
             LEFT JOIN dashboard_users u ON u.id = ta.dashboard_user_id
+            WHERE ta.notification_scope = %s
             ORDER BY LOWER(ta.telegram_username) ASC
-            """
+            """,
+            (scope,),
         )
         rows = cur.fetchall()
     return [dict(row) for row in rows]
@@ -2019,23 +2166,29 @@ def delete_telegram_notification_group_by_chat_id(chat_id: int) -> bool:
         return cur.rowcount > 0
 
 
-def upsert_telegram_admin_accounts(entries: List[Dict[str, Any]], created_by: Optional[int]) -> int:
-    """Upsert multiple Telegram admin mappings."""
+def upsert_telegram_admin_accounts(
+    entries: List[Dict[str, Any]], created_by: Optional[int], scope: str = "default"
+) -> int:
+    """Upsert multiple Telegram admin mappings. scope: 'default' or 'call_center'."""
     if not entries:
         return 0
     with get_cursor(commit=True) as cur:
         for entry in entries:
+            username = (entry.get("telegram_username") or "").strip().lstrip("@").lower()
+            if not username:
+                continue
             cur.execute(
                 """
-                INSERT INTO telegram_admin_accounts (dashboard_user_id, telegram_username, created_by)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (telegram_username) DO UPDATE
+                INSERT INTO telegram_admin_accounts (dashboard_user_id, telegram_username, notification_scope, created_by)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (telegram_username, notification_scope) DO UPDATE
                 SET dashboard_user_id = EXCLUDED.dashboard_user_id,
                     created_by = EXCLUDED.created_by
                 """,
                 (
                     entry.get("dashboard_user_id"),
-                    entry.get("telegram_username"),
+                    username,
+                    scope,
                     created_by,
                 ),
             )
@@ -2049,7 +2202,7 @@ def delete_telegram_admin_account(mapping_id: int) -> bool:
         return cur.rowcount > 0
 
 
-def get_telegram_admin_by_username(username: str) -> Optional[Dict[str, Any]]:
+def get_telegram_admin_by_username(username: str, scope: str = "default") -> Optional[Dict[str, Any]]:
     """Return admin mapping if username is authorized and linked to admin user."""
     if not username:
         return None
@@ -2068,10 +2221,11 @@ def get_telegram_admin_by_username(username: str) -> Optional[Dict[str, Any]]:
             FROM telegram_admin_accounts ta
             JOIN dashboard_users u ON u.id = ta.dashboard_user_id
             WHERE ta.telegram_username = %s
+              AND ta.notification_scope = %s
               AND u.role = 'admin'
             LIMIT 1
             """,
-            (normalized,),
+            (normalized, scope),
         )
         row = cur.fetchone()
     return dict(row) if row else None
@@ -2648,14 +2802,15 @@ def _normalize_status_filter(value: Optional[str]) -> Optional[str]:
 
 
 def fetch_aska_users(source: str, status: Optional[str], search: Optional[str], *, limit: int = 200) -> List[Dict[str, Any]]:
-    """Gabungkan daftar user web & Telegram sesuai filter."""
-    normalized_source = (source or "web").strip().lower()
+    """Gabungkan daftar user web, Telegram, dan WhatsApp sesuai filter."""
+    normalized_source = (source or "all").strip().lower()
     normalized_status = _normalize_status_filter(status)
     normalized_search = (search or "").strip()
 
     rows: List[Dict[str, Any]] = []
     fetch_web = normalized_source in {"web", "all"}
     fetch_telegram = normalized_source in {"telegram", "all"}
+    fetch_whatsapp = normalized_source in {"whatsapp", "all"}
 
     if fetch_web:
         conditions: List[str] = []
@@ -2752,15 +2907,63 @@ def fetch_aska_users(source: str, status: Optional[str], search: Optional[str], 
                     }
                 )
 
+    if fetch_whatsapp:
+        conditions = []
+        params = []
+        if normalized_status:
+            conditions.append("status = %s")
+            params.append(normalized_status)
+        if normalized_search:
+            conditions.append("(display_name ILIKE %s OR CAST(whatsapp_user_id AS TEXT) ILIKE %s)")
+            term = f"%{normalized_search}%"
+            params.extend([term, term])
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        query = f"""
+            SELECT
+                whatsapp_user_id,
+                display_name,
+                first_seen_at,
+                last_seen_at,
+                status,
+                status_reason,
+                status_changed_at,
+                status_changed_by,
+                last_message_preview
+            FROM whatsapp_users
+            {where_clause}
+            ORDER BY COALESCE(last_seen_at, first_seen_at) DESC
+            LIMIT %s
+        """
+        params.append(limit)
+        with get_cursor() as cur:
+            cur.execute(query, params)
+            for row in cur.fetchall():
+                rows.append(
+                    {
+                        "channel": "whatsapp",
+                        "id": row["whatsapp_user_id"],
+                        "display_name": row["display_name"] or f"ID {row['whatsapp_user_id']}",
+                        "identifier": f"+{row['whatsapp_user_id']}",
+                        "status": row["status"],
+                        "status_reason": row["status_reason"],
+                        "status_changed_at": row["status_changed_at"],
+                        "status_changed_by": row["status_changed_by"],
+                        "last_activity": row["last_seen_at"] or row["first_seen_at"],
+                        "created_at": row["first_seen_at"],
+                        "extra": {"last_message_preview": row["last_message_preview"]},
+                    }
+                )
+
     rows.sort(key=lambda item: item.get("last_activity") or item.get("created_at") or datetime.min, reverse=True)
     return rows[:limit]
 
 
 def summarize_aska_users() -> Dict[str, Dict[str, int]]:
-    """Hitung total user per status untuk web dan Telegram."""
+    """Hitung total user per status untuk web, Telegram, dan WhatsApp."""
     summary = {
         "web": {status: 0 for status in ACCOUNT_STATUS_CHOICES},
         "telegram": {status: 0 for status in ACCOUNT_STATUS_CHOICES},
+        "whatsapp": {status: 0 for status in ACCOUNT_STATUS_CHOICES},
     }
     with get_cursor() as cur:
         cur.execute("SELECT status, COUNT(*) FROM web_users GROUP BY status")
@@ -2769,13 +2972,24 @@ def summarize_aska_users() -> Dict[str, Dict[str, int]]:
         cur.execute("SELECT status, COUNT(*) FROM telegram_users GROUP BY status")
         for status, total in cur.fetchall():
             summary["telegram"][status] = int(total)
+        cur.execute("SELECT status, COUNT(*) FROM whatsapp_users GROUP BY status")
+        for status, total in cur.fetchall():
+            summary["whatsapp"][status] = int(total)
     for scope in summary.values():
         scope["total"] = sum(scope.get(status, 0) for status in ACCOUNT_STATUS_CHOICES)
     summary["combined"] = {
-        status: summary["web"].get(status, 0) + summary["telegram"].get(status, 0)
+        status: (
+            summary["web"].get(status, 0)
+            + summary["telegram"].get(status, 0)
+            + summary["whatsapp"].get(status, 0)
+        )
         for status in ACCOUNT_STATUS_CHOICES
     }
-    summary["combined"]["total"] = summary["web"].get("total", 0) + summary["telegram"].get("total", 0)
+    summary["combined"]["total"] = (
+        summary["web"].get("total", 0)
+        + summary["telegram"].get("total", 0)
+        + summary["whatsapp"].get("total", 0)
+    )
     return summary
 
 
@@ -2817,6 +3031,28 @@ def update_telegram_user_status(user_id: int, status: str, reason: Optional[str]
                 status_changed_at = NOW(),
                 status_changed_by = %s
             WHERE telegram_user_id = %s
+            """,
+            (normalized, cleaned_reason, changed_by, user_id),
+        )
+        return cur.rowcount > 0
+
+
+def update_whatsapp_user_status(user_id: int, status: str, reason: Optional[str], *, changed_by: str) -> bool:
+    normalized = _normalize_status_filter(status)
+    if normalized is None:
+        raise ValueError("Status tidak valid.")
+    cleaned_reason = (reason or "").strip() or None
+    if cleaned_reason:
+        cleaned_reason = cleaned_reason[:500]
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE whatsapp_users
+            SET status = %s,
+                status_reason = %s,
+                status_changed_at = NOW(),
+                status_changed_by = %s
+            WHERE whatsapp_user_id = %s
             """,
             (normalized, cleaned_reason, changed_by, user_id),
         )
@@ -3009,3 +3245,646 @@ def fetch_feedback_by_message(chat_log_id: int) -> Optional[Dict[str, Any]]:
         row = cur.fetchone()
 
     return dict(row) if row else None
+
+
+def record_admin_action(
+    *,
+    user_id: Optional[int],
+    feature_key: str,
+    action: str,
+    target_type: str,
+    target_id: Optional[int] = None,
+    target_name: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+) -> None:
+    """Persist a normalized admin action for modules without dedicated audit tables."""
+    normalized_feature = (feature_key or "").strip().lower() or "unknown"
+    normalized_action = (action or "").strip().upper() or "UPDATE"
+    normalized_target = (target_type or "").strip().upper() or "UNKNOWN"
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO dashboard_admin_action_logs
+                (user_id, feature_key, action, target_type, target_id, target_name, metadata)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """,
+            (
+                user_id,
+                normalized_feature,
+                normalized_action,
+                normalized_target,
+                target_id,
+                target_name,
+                Json(metadata) if metadata else None,
+            ),
+        )
+
+
+def fetch_aska_knowledge_history(
+    *,
+    file_path: Optional[str] = None,
+    limit: int = 50,
+) -> List[Dict[str, Any]]:
+    """
+    Ambil riwayat aksi admin terkait berkas kecerdasan ASKA.
+    Bersumber dari dashboard_admin_action_logs dengan feature_key 'aska_insight'
+    dan target_type 'ASKA_KNOWLEDGE_FILE'.
+    """
+    where_clauses = [
+        "a.feature_key = 'aska_insight'",
+        "a.target_type = 'ASKA_KNOWLEDGE_FILE'",
+    ]
+    params: list[Any] = []
+    if file_path:
+        where_clauses.append("a.target_name = %s")
+        params.append(file_path)
+    where_sql = " AND ".join(where_clauses)
+
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT
+                a.id,
+                a.created_at,
+                a.user_id,
+                u.full_name,
+                u.email,
+                COALESCE(u.full_name, u.email, 'Admin') AS actor_label,
+                a.action,
+                a.target_name,
+                a.metadata
+            FROM dashboard_admin_action_logs a
+            LEFT JOIN dashboard_users u ON u.id = a.user_id
+            WHERE {where_sql}
+            ORDER BY a.created_at DESC
+            LIMIT %s
+            """,
+            (*params, limit),
+        )
+        rows = cur.fetchall()
+
+    history: List[Dict[str, Any]] = []
+    for row in rows:
+        item = dict(row)
+        history.append(item)
+    return history
+
+
+def _map_guestbook_action(status_value: Optional[str]) -> str:
+    normalized = (status_value or "").strip().lower()
+    if normalized == "approved":
+        return "VERIFY_APPROVE"
+    if normalized == "rejected":
+        return "VERIFY_REJECT"
+    return "VERIFY_PENDING"
+
+
+def _build_admin_label(name: Optional[str], email: Optional[str]) -> str:
+    if name and email:
+        return f"{name} ({email})"
+    return name or email or "Admin"
+
+
+def _normalize_admin_performance_event(row: Dict[str, Any]) -> Dict[str, Any]:
+    created_at = row.get("created_at")
+    actor_name = row.get("actor_name")
+    actor_email = row.get("actor_email")
+    actor_label = row.get("actor_label") or _build_admin_label(actor_name, actor_email)
+    feature_key = (row.get("feature_key") or "").strip().lower() or "unknown"
+    action = (row.get("action") or "").strip().upper() or "UPDATE"
+    target_type = (row.get("target_type") or "").strip().upper() or "UNKNOWN"
+    detail_text = row.get("detail_text")
+    if detail_text is None:
+        detail_text = ""
+    elif not isinstance(detail_text, str):
+        detail_text = json.dumps(detail_text, ensure_ascii=True)
+    event = {
+        "source": row.get("source") or feature_key,
+        "feature_key": feature_key,
+        "feature_label": ADMIN_PERFORMANCE_FEATURE_LABELS.get(feature_key, feature_key.replace("_", " ").title()),
+        "created_at": created_at,
+        "actor_user_id": row.get("actor_user_id"),
+        "actor_name": actor_name,
+        "actor_email": actor_email,
+        "actor_label": actor_label,
+        "action": action,
+        "target_type": target_type,
+        "target_id": row.get("target_id"),
+        "target_name": row.get("target_name") or "-",
+        "detail_text": detail_text,
+    }
+    search_parts = [
+        event["feature_label"],
+        actor_label,
+        actor_name or "",
+        actor_email or "",
+        action,
+        target_type,
+        event["target_name"],
+        detail_text,
+    ]
+    event["search_text"] = " ".join(part for part in search_parts if part).lower()
+    return event
+
+
+def fetch_admin_activity_events() -> List[Dict[str, Any]]:
+    """Collect admin activity events across all dashboard apps."""
+    events: List[Dict[str, Any]] = []
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                'portal_activity_logs' AS source,
+                'panbers' AS feature_key,
+                l.created_at,
+                l.user_id AS actor_user_id,
+                u.full_name AS actor_name,
+                u.email AS actor_email,
+                COALESCE(u.full_name, u.email, 'Admin') AS actor_label,
+                l.action,
+                l.target_type,
+                l.target_id,
+                COALESCE(l.target_name, '-') AS target_name,
+                COALESCE(l.details::text, '') AS detail_text
+            FROM portal_activity_logs l
+            JOIN dashboard_users u ON u.id = l.user_id
+            WHERE l.user_id IS NOT NULL
+              AND u.role = 'admin'
+            """
+        )
+        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
+
+        cur.execute(
+            """
+            SELECT
+                'bullying_report_events' AS source,
+                'aska_insight' AS feature_key,
+                e.created_at,
+                actor_match.id AS actor_user_id,
+                actor_match.full_name AS actor_name,
+                actor_match.email AS actor_email,
+                COALESCE(actor_match.full_name, actor_match.email, e.actor, 'Admin') AS actor_label,
+                UPPER(e.event_type) AS action,
+                'BULLYING_REPORT' AS target_type,
+                e.report_id AS target_id,
+                COALESCE(br.username, 'Bullying Report #' || e.report_id::text) AS target_name,
+                COALESCE(e.payload::text, '') AS detail_text
+            FROM bullying_report_events e
+            LEFT JOIN bullying_reports br ON br.id = e.report_id
+            LEFT JOIN LATERAL (
+                SELECT u.id, u.full_name, u.email
+                FROM dashboard_users u
+                WHERE (
+                    LOWER(COALESCE(u.email, '')) = LOWER(COALESCE(e.actor, ''))
+                    OR LOWER(COALESCE(u.full_name, '')) = LOWER(COALESCE(e.actor, ''))
+                )
+                  AND u.role = 'admin'
+                ORDER BY
+                    CASE
+                        WHEN LOWER(COALESCE(u.email, '')) = LOWER(COALESCE(e.actor, '')) THEN 0
+                        ELSE 1
+                    END,
+                    u.id ASC
+                LIMIT 1
+            ) actor_match ON TRUE
+            WHERE COALESCE(TRIM(e.actor), '') <> ''
+              AND actor_match.id IS NOT NULL
+            """
+        )
+        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
+
+        cur.execute(
+            """
+            SELECT
+                'psych_report_snapshot' AS source,
+                'aska_insight' AS feature_key,
+                p.updated_at AS created_at,
+                actor_match.id AS actor_user_id,
+                actor_match.full_name AS actor_name,
+                actor_match.email AS actor_email,
+                COALESCE(actor_match.full_name, actor_match.email, p.metadata->>'last_updated_by', 'Admin') AS actor_label,
+                'UPDATE' AS action,
+                'PSYCH_REPORT' AS target_type,
+                p.id AS target_id,
+                COALESCE(p.username, 'Psych Report #' || p.id::text) AS target_name,
+                COALESCE(p.metadata::text, '') AS detail_text
+            FROM psych_reports p
+            LEFT JOIN LATERAL (
+                SELECT u.id, u.full_name, u.email
+                FROM dashboard_users u
+                WHERE (
+                    LOWER(COALESCE(u.email, '')) = LOWER(COALESCE(p.metadata->>'last_updated_by', ''))
+                    OR LOWER(COALESCE(u.full_name, '')) = LOWER(COALESCE(p.metadata->>'last_updated_by', ''))
+                )
+                  AND u.role = 'admin'
+                ORDER BY
+                    CASE
+                        WHEN LOWER(COALESCE(u.email, '')) = LOWER(COALESCE(p.metadata->>'last_updated_by', '')) THEN 0
+                        ELSE 1
+                    END,
+                    u.id ASC
+                LIMIT 1
+            ) actor_match ON TRUE
+            WHERE COALESCE(TRIM(p.metadata->>'last_updated_by'), '') <> ''
+              AND actor_match.id IS NOT NULL
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM dashboard_admin_action_logs a
+                  WHERE a.target_type = 'PSYCH_REPORT'
+                    AND a.target_id = p.id
+              )
+            """
+        )
+        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
+
+        cur.execute(
+            """
+            SELECT
+                'guestbook_transactions' AS source,
+                'daftar_tamu' AS feature_key,
+                t.reviewed_at AS created_at,
+                reviewer.id AS actor_user_id,
+                reviewer.full_name AS actor_name,
+                reviewer.email AS actor_email,
+                COALESCE(reviewer.full_name, reviewer.email, 'Admin') AS actor_label,
+                CASE
+                    WHEN t.status = 'approved' THEN 'VERIFY_APPROVE'
+                    WHEN t.status = 'rejected' THEN 'VERIFY_REJECT'
+                    ELSE 'VERIFY_PENDING'
+                END AS action,
+                'GUESTBOOK_TRANSACTION' AS target_type,
+                t.id AS target_id,
+                COALESCE(s.name, 'Transaksi #' || t.id::text) AS target_name,
+                jsonb_build_object(
+                    'status', t.status,
+                    'reviewer_notes', t.reviewer_notes,
+                    'school_name', s.name
+                )::text AS detail_text
+            FROM daftar_tamu_transactions t
+            JOIN dashboard_users reviewer ON reviewer.id = t.reviewed_by
+            LEFT JOIN portal_schools s ON s.id = t.school_id
+            WHERE t.reviewed_by IS NOT NULL
+              AND t.reviewed_at IS NOT NULL
+              AND reviewer.role = 'admin'
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM dashboard_admin_action_logs a
+                  WHERE a.target_type = 'GUESTBOOK_TRANSACTION'
+                    AND a.target_id = t.id
+              )
+            """
+        )
+        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
+
+        cur.execute(
+            """
+            SELECT
+                'general_guest_verification' AS source,
+                'daftar_tamu' AS feature_key,
+                g.verified_at AS created_at,
+                verifier.id AS actor_user_id,
+                verifier.full_name AS actor_name,
+                verifier.email AS actor_email,
+                COALESCE(verifier.full_name, verifier.email, 'Admin') AS actor_label,
+                'VERIFY_GENERAL_GUEST' AS action,
+                'GENERAL_GUEST' AS target_type,
+                g.id AS target_id,
+                COALESCE(g.full_name, 'Tamu Umum #' || g.id::text) AS target_name,
+                jsonb_build_object('is_verified', g.is_verified)::text AS detail_text
+            FROM daftar_tamu_general_guests g
+            JOIN dashboard_users verifier ON verifier.id = g.verified_by
+            WHERE g.verified_by IS NOT NULL
+              AND g.verified_at IS NOT NULL
+              AND verifier.role = 'admin'
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM dashboard_admin_action_logs a
+                  WHERE a.target_type = 'GENERAL_GUEST'
+                    AND a.target_id = g.id
+              )
+            """
+        )
+        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
+
+        cur.execute(
+            """
+            SELECT
+                'general_guest_delete' AS source,
+                'daftar_tamu' AS feature_key,
+                g.deleted_at AS created_at,
+                deleter.id AS actor_user_id,
+                deleter.full_name AS actor_name,
+                deleter.email AS actor_email,
+                COALESCE(deleter.full_name, deleter.email, 'Admin') AS actor_label,
+                'DELETE_GENERAL_GUEST' AS action,
+                'GENERAL_GUEST' AS target_type,
+                g.id AS target_id,
+                COALESCE(g.full_name, 'Tamu Umum #' || g.id::text) AS target_name,
+                jsonb_build_object('is_deleted', g.is_deleted)::text AS detail_text
+            FROM daftar_tamu_general_guests g
+            JOIN dashboard_users deleter ON deleter.id = g.deleted_by
+            WHERE g.deleted_by IS NOT NULL
+              AND g.deleted_at IS NOT NULL
+              AND deleter.role = 'admin'
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM dashboard_admin_action_logs a
+                  WHERE a.target_type = 'GENERAL_GUEST'
+                    AND a.target_id = g.id
+              )
+            """
+        )
+        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
+
+        cur.execute(
+            """
+            SELECT
+                'call_center_messages' AS source,
+                'call_center' AS feature_key,
+                m.created_at,
+                m.admin_user_id AS actor_user_id,
+                u.full_name AS actor_name,
+                u.email AS actor_email,
+                COALESCE(u.full_name, u.email, m.admin_display_name, 'Admin') AS actor_label,
+                'REPLY' AS action,
+                'CALL_CENTER_MESSAGE' AS target_type,
+                m.id AS target_id,
+                COALESCE(c.display_name, c.wa_user_id, 'Conversation #' || m.conversation_id::text) AS target_name,
+                m.message_text AS detail_text
+            FROM cc_messages m
+            JOIN dashboard_users u ON u.id = m.admin_user_id
+            LEFT JOIN cc_conversations c ON c.id = m.conversation_id
+            WHERE m.direction = 'outbound'
+              AND m.admin_user_id IS NOT NULL
+              AND u.role = 'admin'
+            """
+        )
+        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
+
+        cur.execute(
+            """
+            SELECT
+                'dashboard_admin_action_logs' AS source,
+                a.feature_key,
+                a.created_at,
+                a.user_id AS actor_user_id,
+                u.full_name AS actor_name,
+                u.email AS actor_email,
+                COALESCE(u.full_name, u.email, 'Admin') AS actor_label,
+                a.action,
+                a.target_type,
+                a.target_id,
+                COALESCE(a.target_name, '-') AS target_name,
+                COALESCE(a.metadata::text, '') AS detail_text
+            FROM dashboard_admin_action_logs a
+            JOIN dashboard_users u ON u.id = a.user_id
+            WHERE u.role = 'admin'
+            """
+        )
+        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
+
+    events.sort(
+        key=lambda item: item["created_at"].timestamp() if item.get("created_at") else 0,
+        reverse=True,
+    )
+    return events
+
+
+def fetch_admin_performance_data(
+    *,
+    feature_key: str = "all",
+    admin_id: Optional[int] = None,
+    action: Optional[str] = None,
+    target_type: Optional[str] = None,
+    search: Optional[str] = None,
+    start: Optional[datetime] = None,
+    end: Optional[datetime] = None,
+    detail_limit: int = 300,
+) -> Dict[str, Any]:
+    """Build aggregated admin performance data for the insight dashboard."""
+    raw_events = fetch_admin_activity_events()
+    selected_feature = (feature_key or "all").strip().lower() or "all"
+    search_text = (search or "").strip().lower()
+    selected_action = (action or "").strip().upper()
+    selected_target = (target_type or "").strip().upper()
+
+    def _match_base(event: Dict[str, Any]) -> bool:
+        created_at = event.get("created_at")
+        if start and created_at and created_at.date() < start.date():
+            return False
+        if end and created_at and created_at.date() > end.date():
+            return False
+        if admin_id and int(event.get("actor_user_id") or 0) != int(admin_id):
+            return False
+        if selected_action and event.get("action") != selected_action:
+            return False
+        if selected_target and event.get("target_type") != selected_target:
+            return False
+        if search_text and search_text not in event.get("search_text", ""):
+            return False
+        return True
+
+    base_events = [event for event in raw_events if _match_base(event)]
+    if selected_feature != "all":
+        filtered_events = [event for event in base_events if event.get("feature_key") == selected_feature]
+    else:
+        filtered_events = list(base_events)
+
+    feature_counts = {key: 0 for key in ADMIN_PERFORMANCE_FEATURE_LABELS if key != "all"}
+    for event in base_events:
+        key = event.get("feature_key")
+        if key in feature_counts:
+            feature_counts[key] += 1
+
+    admin_options: List[Dict[str, Any]] = []
+    admin_lookup: Dict[int, Dict[str, Any]] = {}
+    for event in raw_events:
+        actor_id = event.get("actor_user_id")
+        if not actor_id:
+            continue
+        actor_id = int(actor_id)
+        if actor_id in admin_lookup:
+            continue
+        admin_lookup[actor_id] = {
+            "id": actor_id,
+            "label": event.get("actor_label") or "Admin",
+            "name": event.get("actor_name"),
+            "email": event.get("actor_email"),
+        }
+    admin_options = sorted(admin_lookup.values(), key=lambda item: (item["label"] or "").lower())
+
+    action_options = sorted({event.get("action") for event in raw_events if event.get("action")})
+    target_options = sorted({event.get("target_type") for event in raw_events if event.get("target_type")})
+
+    leaderboard_map: Dict[str, Dict[str, Any]] = {}
+    action_totals: Dict[str, int] = {}
+    target_totals: Dict[str, int] = {}
+    daily_totals: Dict[str, int] = {}
+    feature_totals: Dict[str, int] = {}
+    for event in filtered_events:
+        actor_key = str(event.get("actor_user_id") or event.get("actor_label") or "unknown")
+        bucket = leaderboard_map.setdefault(
+            actor_key,
+            {
+                "actor_user_id": event.get("actor_user_id"),
+                "actor_label": event.get("actor_label"),
+                "actor_name": event.get("actor_name"),
+                "actor_email": event.get("actor_email"),
+                "total_actions": 0,
+                "last_action_at": event.get("created_at"),
+                "feature_counts": {},
+                "action_counts": {},
+            },
+        )
+        bucket["total_actions"] += 1
+        if event.get("created_at") and (
+            not bucket.get("last_action_at") or event["created_at"] > bucket["last_action_at"]
+        ):
+            bucket["last_action_at"] = event["created_at"]
+        feature_bucket = bucket["feature_counts"]
+        feature_bucket[event["feature_key"]] = feature_bucket.get(event["feature_key"], 0) + 1
+        action_bucket = bucket["action_counts"]
+        action_bucket[event["action"]] = action_bucket.get(event["action"], 0) + 1
+
+        action_totals[event["action"]] = action_totals.get(event["action"], 0) + 1
+        target_totals[event["target_type"]] = target_totals.get(event["target_type"], 0) + 1
+        feature_totals[event["feature_key"]] = feature_totals.get(event["feature_key"], 0) + 1
+        created_at = event.get("created_at")
+        if created_at:
+            day_key = created_at.date().isoformat()
+            daily_totals[day_key] = daily_totals.get(day_key, 0) + 1
+
+    leaderboard = sorted(
+        leaderboard_map.values(),
+        key=lambda item: (-item["total_actions"], item["actor_label"] or ""),
+    )
+    top_actions = sorted(
+        [{"action": key, "count": value} for key, value in action_totals.items()],
+        key=lambda item: (-item["count"], item["action"]),
+    )
+    top_targets = sorted(
+        [{"target_type": key, "count": value} for key, value in target_totals.items()],
+        key=lambda item: (-item["count"], item["target_type"]),
+    )
+    top_features = sorted(
+        [
+            {
+                "feature_key": key,
+                "feature_label": ADMIN_PERFORMANCE_FEATURE_LABELS.get(key, key.replace("_", " ").title()),
+                "count": value,
+            }
+            for key, value in feature_totals.items()
+        ],
+        key=lambda item: (-item["count"], item["feature_label"]),
+    )
+    daily_series = [
+        {"day": key, "count": daily_totals[key]}
+        for key in sorted(daily_totals.keys())
+    ]
+    detail_rows: List[Dict[str, Any]] = []
+    for event in filtered_events[: max(50, min(detail_limit, 1000))]:
+        row = dict(event)
+        created_at = row.get("created_at")
+        row["created_at_iso"] = created_at.isoformat() if created_at and hasattr(created_at, "isoformat") else None
+        detail_rows.append(row)
+
+    return {
+        "feature_options": ADMIN_PERFORMANCE_FEATURE_LABELS,
+        "selected_feature": selected_feature,
+        "selected_admin_id": int(admin_id) if admin_id else None,
+        "selected_action": selected_action or "",
+        "selected_target_type": selected_target or "",
+        "search": search or "",
+        "start": start,
+        "end": end,
+        "feature_counts": feature_counts,
+        "all_feature_total": sum(feature_counts.values()),
+        "admin_options": admin_options,
+        "action_options": action_options,
+        "target_options": target_options,
+        "summary": {
+            "total_actions": len(filtered_events),
+            "unique_admins": len({event.get("actor_user_id") or event.get("actor_label") for event in filtered_events}),
+            "total_features": len({event.get("feature_key") for event in filtered_events}),
+            "latest_action_at": filtered_events[0]["created_at"] if filtered_events else None,
+        },
+        "leaderboard": leaderboard,
+        "top_actions": top_actions,
+        "top_targets": top_targets,
+        "top_features": top_features,
+        "daily_series": daily_series,
+        "detail_rows": detail_rows,
+        "detail_total": len(filtered_events),
+    }
+
+
+def fetch_admin_activity_page(
+    *,
+    admin_id: int,
+    feature_key: str = "all",
+    action: Optional[str] = None,
+    target_type: Optional[str] = None,
+    search: Optional[str] = None,
+    start: Optional[datetime] = None,
+    end: Optional[datetime] = None,
+    page: int = 1,
+    per_page: int = 10,
+) -> Dict[str, Any]:
+    """Return paginated admin activity rows using the same filters as the main performance page."""
+    raw_events = fetch_admin_activity_events()
+    selected_feature = (feature_key or "all").strip().lower() or "all"
+    selected_action = (action or "").strip().upper()
+    selected_target = (target_type or "").strip().upper()
+    search_text = (search or "").strip().lower()
+    safe_page = max(1, int(page or 1))
+    safe_per_page = max(1, min(int(per_page or 10), 50))
+
+    def _matches(event: Dict[str, Any]) -> bool:
+        if int(event.get("actor_user_id") or 0) != int(admin_id):
+            return False
+        created_at = event.get("created_at")
+        if start and created_at and created_at.date() < start.date():
+            return False
+        if end and created_at and created_at.date() > end.date():
+            return False
+        if selected_feature != "all" and event.get("feature_key") != selected_feature:
+            return False
+        if selected_action and event.get("action") != selected_action:
+            return False
+        if selected_target and event.get("target_type") != selected_target:
+            return False
+        if search_text and search_text not in event.get("search_text", ""):
+            return False
+        return True
+
+    matched = [event for event in raw_events if _matches(event)]
+    total = len(matched)
+    total_pages = max(1, (total + safe_per_page - 1) // safe_per_page)
+    if safe_page > total_pages:
+        safe_page = total_pages
+    start_idx = (safe_page - 1) * safe_per_page
+    end_idx = start_idx + safe_per_page
+
+    rows: List[Dict[str, Any]] = []
+    for event in matched[start_idx:end_idx]:
+        row = dict(event)
+        created_at = row.get("created_at")
+        row["created_at_iso"] = created_at.isoformat() if created_at and hasattr(created_at, "isoformat") else None
+        rows.append(row)
+
+    actor_label = rows[0].get("actor_label") if rows else None
+    if not actor_label:
+        for event in matched:
+            if event.get("actor_label"):
+                actor_label = event["actor_label"]
+                break
+
+    return {
+        "rows": rows,
+        "total": total,
+        "page": safe_page,
+        "per_page": safe_per_page,
+        "total_pages": total_pages,
+        "actor_label": actor_label or "Admin",
+    }

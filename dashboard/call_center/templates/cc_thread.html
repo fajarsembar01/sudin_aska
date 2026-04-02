@@ -1,0 +1,994 @@
+{% extends "base_cc.html" %}
+{% set page_title = "Chat — " ~ (conversation.display_name or conversation.wa_user_id) %}
+
+{% block head_extra %}
+<style>
+    .cc-container {
+        display: flex;
+        gap: 1rem;
+        min-height: calc(100vh - 140px);
+        height: calc(100vh - 140px);
+    }
+
+    /* ── Sidebar ── */
+    .cc-sidebar {
+        width: 300px;
+        min-width: 260px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--bs-border-color);
+        border-radius: .75rem;
+        overflow: hidden;
+    }
+
+    .cc-sidebar-header {
+        padding: .6rem .75rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        background: var(--bs-tertiary-bg);
+    }
+
+    .cc-conv-list {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .cc-conv-item {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        padding: .6rem .75rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        text-decoration: none;
+        color: inherit;
+        transition: background .15s;
+        font-size: .85rem;
+    }
+
+    .cc-conv-item:hover,
+    .cc-conv-item.active {
+        background: var(--bs-primary-bg-subtle);
+    }
+
+    .cc-conv-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--bs-primary);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: .85rem;
+        flex-shrink: 0;
+    }
+
+    .cc-conv-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .cc-conv-name {
+        font-weight: 600;
+        font-size: .82rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .cc-conv-preview {
+        font-size: .75rem;
+        color: var(--bs-secondary-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* ── Chat area ── */
+    .cc-chat {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--bs-border-color);
+        border-radius: .75rem;
+        overflow: hidden;
+        min-height: 0;
+    }
+
+    .cc-chat-header {
+        padding: .75rem 1rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        background: var(--bs-tertiary-bg);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+    }
+
+    .cc-chat-header-info {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .cc-chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+        background: var(--bs-body-bg);
+        min-height: 0;
+    }
+
+    .cc-bubble {
+        max-width: 75%;
+        padding: .6rem .85rem;
+        border-radius: 1rem;
+        font-size: .88rem;
+        line-height: 1.45;
+        word-wrap: break-word;
+        position: relative;
+    }
+
+    .cc-bubble-in {
+        align-self: flex-start;
+        background: var(--bs-tertiary-bg);
+        border-bottom-left-radius: .25rem;
+    }
+
+    .cc-bubble-out {
+        align-self: flex-end;
+        background: var(--bs-primary);
+        color: #fff;
+        border-bottom-right-radius: .25rem;
+    }
+
+    .cc-bubble-meta {
+        font-size: .7rem;
+        margin-top: .2rem;
+        opacity: .7;
+    }
+
+    .cc-bubble-out .cc-bubble-meta {
+        color: rgba(255, 255, 255, .8);
+    }
+
+    .cc-bubble-admin {
+        font-size: .68rem;
+        font-weight: 600;
+        margin-top: .15rem;
+        opacity: .85;
+    }
+
+    .cc-bubble-out .cc-bubble-admin {
+        color: rgba(255, 255, 255, .9);
+    }
+
+    /* ── Input bar ── */
+    .cc-input-bar {
+        padding: .75rem 1rem;
+        border-top: 1px solid var(--bs-border-color);
+        background: var(--bs-tertiary-bg);
+        flex-shrink: 0;
+    }
+
+    .cc-input-bar .input-group {
+        gap: .5rem;
+    }
+
+    .cc-input-bar textarea {
+        resize: none;
+        min-height: 42px;
+        max-height: 120px;
+        border-radius: .75rem;
+        font-size: .88rem;
+    }
+
+    .cc-input-bar .btn-send {
+        border-radius: .75rem;
+        padding: .5rem 1.25rem;
+    }
+
+    /* ── Draft panel ── */
+    .cc-drafts-desktop {
+        width: 340px;
+        min-width: 300px;
+        flex-shrink: 0;
+    }
+
+    .cc-draft-card {
+        border: 1px solid var(--bs-border-color);
+        border-radius: .75rem;
+        overflow: hidden;
+        background: var(--bs-body-bg);
+        position: sticky;
+        top: 84px;
+        max-height: calc(100vh - 110px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    @media (max-width: 991.98px) {
+        .cc-container {
+            height: auto;
+            min-height: calc(100vh - 140px);
+        }
+    }
+
+    .cc-draft-header {
+        padding: .75rem .9rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        background: var(--bs-tertiary-bg);
+    }
+
+    .cc-draft-controls {
+        display: flex;
+        gap: .5rem;
+        margin-top: .5rem;
+    }
+
+    .cc-draft-list {
+        padding: .7rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: .6rem;
+    }
+
+    .cc-draft-item {
+        border: 1px solid var(--bs-border-color);
+        border-radius: .6rem;
+        padding: .65rem .7rem;
+        background: var(--bs-tertiary-bg);
+    }
+
+    .cc-draft-item-title {
+        font-size: .84rem;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    .cc-draft-item-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        margin-top: .3rem;
+    }
+
+    .cc-draft-pin-btn {
+        width: 1.5rem;
+        height: 1.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        color: var(--bs-secondary-color);
+        background: transparent;
+        transition: color .15s ease, background-color .15s ease, transform .15s ease;
+    }
+
+    .cc-draft-pin-btn:hover {
+        background: var(--bs-secondary-bg);
+        transform: translateY(-1px);
+    }
+
+    .cc-draft-item.pinned {
+        border-color: rgba(var(--bs-warning-rgb), .4);
+        box-shadow: 0 0 0 1px rgba(var(--bs-warning-rgb), .15);
+    }
+
+    .cc-draft-item.pinned .cc-draft-pin-btn {
+        color: var(--bs-warning);
+        background: rgba(var(--bs-warning-rgb), .12);
+    }
+
+    .cc-draft-item-preview {
+        font-size: .76rem;
+        color: var(--bs-secondary-color);
+        margin-top: .35rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 5.2em;
+        overflow: hidden;
+    }
+
+    .cc-draft-item-actions {
+        display: flex;
+        gap: .35rem;
+        margin-top: .45rem;
+    }
+
+    .cc-draft-empty {
+        text-align: center;
+        color: var(--bs-secondary-color);
+        font-size: .82rem;
+        padding: 1.2rem .8rem;
+    }
+
+    .cc-draft-modal textarea {
+        min-height: 140px;
+        resize: vertical;
+    }
+
+    @media (max-width: 992px) {
+        .cc-sidebar {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<div class="cc-container">
+    <!-- Sidebar (mini) -->
+    <div class="cc-sidebar">
+        <div class="cc-sidebar-header">
+            <a href="{{ url_for('call_center.inbox') }}" class="btn btn-outline-secondary btn-sm w-100">
+                <i class="bi bi-arrow-left me-1"></i>Semua Chat
+            </a>
+        </div>
+        <div class="cc-conv-list">
+            {% for c in conversations %}
+            <a href="{{ url_for('call_center.thread', conv_id=c.id) }}"
+                class="cc-conv-item {% if c.id == conversation.id %}active{% endif %}">
+                <div class="cc-conv-avatar">{{ (c.display_name or c.wa_user_id)[:1].upper() }}</div>
+                <div class="cc-conv-info">
+                    <div class="cc-conv-name">{{ c.display_name or c.wa_user_id }}</div>
+                    {% if c.unread_count %}
+                    <span class="badge rounded-pill text-bg-primary" style="font-size:.65rem">{{ c.unread_count
+                        }}</span>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Chat area -->
+    <div class="cc-chat">
+        <div class="cc-chat-header">
+            <div class="cc-chat-header-info">
+                <a href="{{ url_for('call_center.inbox') }}" class="d-lg-none btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <div class="cc-conv-avatar">{{ (conversation.display_name or conversation.wa_user_id)[:1].upper() }}
+                </div>
+                <div>
+                    <div class="fw-bold" style="font-size:.92rem">{{ conversation.display_name or
+                        conversation.wa_user_id }}</div>
+                    <small class="text-secondary">{{ conversation.wa_user_id }}</small>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary btn-sm d-lg-none" type="button" data-bs-toggle="offcanvas"
+                    data-bs-target="#ccDraftsOffcanvas" aria-controls="ccDraftsOffcanvas" title="Buka draft">
+                    <i class="bi bi-journal-text"></i>
+                </button>
+                {% if conversation.status == 'open' %}
+                <button class="btn btn-outline-danger btn-sm" id="btnCloseConv" title="Tutup percakapan">
+                    <i class="bi bi-x-circle me-1"></i>Close
+                </button>
+                {% else %}
+                <button class="btn btn-outline-success btn-sm" id="btnReopenConv" title="Buka kembali">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Reopen
+                </button>
+                {% endif %}
+                <a href="{{ url_for('call_center.settings_wa') }}" class="btn btn-outline-secondary btn-sm"
+                    title="Konfigurasi WhatsApp">
+                    <i class="bi bi-whatsapp"></i>
+                </a>
+                <a href="{{ url_for('call_center.settings_telegram') }}" class="btn btn-outline-secondary btn-sm"
+                    title="Notifikasi Telegram">
+                    <i class="bi bi-telegram"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="cc-chat-messages" id="chatMessages">
+            {% for m in messages %}
+            <div class="cc-bubble {% if m.direction == 'inbound' %}cc-bubble-in{% else %}cc-bubble-out{% endif %}"
+                data-msg-id="{{ m.id }}">
+                <div class="cc-bubble-text">{{ m.message_text }}</div>
+                <div class="cc-bubble-meta">
+                    {{ m.created_at|jakarta('%H:%M') }}
+                </div>
+                {% if m.direction == 'outbound' and m.admin_display_name %}
+                <div class="cc-bubble-admin"><i class="bi bi-person-fill me-1"></i>{{ m.admin_display_name }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if conversation.status == 'open' %}
+        <div class="cc-input-bar">
+            <div class="input-group">
+                <textarea class="form-control" id="msgInput" placeholder="Ketik pesan…" rows="1"></textarea>
+                <button class="btn btn-primary btn-send" id="btnSend" type="button">
+                    <i class="bi bi-send-fill me-1"></i>Kirim
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div class="cc-input-bar text-center text-secondary small">
+            <i class="bi bi-lock me-1"></i>Percakapan ditutup. Klik <strong>Reopen</strong> untuk melanjutkan.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Draft card (desktop) -->
+    <aside class="cc-drafts-desktop d-none d-lg-block">
+        <div class="cc-draft-card cc-draft-panel">
+            <div class="cc-draft-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="fw-semibold" style="font-size:.88rem;">
+                        <i class="bi bi-journal-text me-1 text-primary"></i>Draft Call Center
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm js-open-draft-modal">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                </div>
+                <small class="text-secondary d-block mt-1">Draft ini hanya untuk akun admin kamu.</small>
+                <div class="cc-draft-controls">
+                    <select class="form-select form-select-sm js-draft-category-filter">
+                        <option value="all">Semua kategori</option>
+                    </select>
+                </div>
+            </div>
+            <div class="cc-draft-list js-draft-list">
+                <div class="cc-draft-empty">Memuat draft...</div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<!-- Draft panel (mobile) -->
+<div class="offcanvas offcanvas-end d-lg-none" tabindex="-1" id="ccDraftsOffcanvas" aria-labelledby="ccDraftsOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="ccDraftsOffcanvasLabel">
+            <i class="bi bi-journal-text me-1 text-primary"></i>Draft Call Center
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+        <div class="cc-draft-panel h-100 d-flex flex-column">
+            <div class="cc-draft-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-secondary">Draft pribadi admin</small>
+                    <button type="button" class="btn btn-primary btn-sm js-open-draft-modal">
+                        <i class="bi bi-plus-lg"></i> Baru
+                    </button>
+                </div>
+                <div class="cc-draft-controls">
+                    <select class="form-select form-select-sm js-draft-category-filter">
+                        <option value="all">Semua kategori</option>
+                    </select>
+                </div>
+            </div>
+            <div class="cc-draft-list js-draft-list">
+                <div class="cc-draft-empty">Memuat draft...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Draft modal -->
+<div class="modal fade cc-draft-modal" id="draftModal" tabindex="-1" aria-labelledby="draftModalTitle" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="draftModalTitle">Draft Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="draftTitleInput" class="form-label">Judul</label>
+                    <input type="text" id="draftTitleInput" class="form-control" placeholder="Contoh: Salam pembuka">
+                </div>
+                <div class="mb-3">
+                    <label for="draftCategoryInput" class="form-label">Kategori</label>
+                    <input type="text" id="draftCategoryInput" class="form-control" placeholder="Contoh: Salam">
+                </div>
+                <div class="mb-0">
+                    <label for="draftMessageInput" class="form-label">Isi Draft</label>
+                    <textarea id="draftMessageInput" class="form-control" placeholder="Tulis template balasan di sini..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnSaveDraft">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var chatBox = document.getElementById('chatMessages');
+        var msgInput = document.getElementById('msgInput');
+        var btnSend = document.getElementById('btnSend');
+        var convId = {{ conversation.id }};
+    var draftsApiUrl = '{{ url_for("call_center.api_drafts") }}';
+    var draftDetailApiBase = '{{ url_for("call_center.api_draft_detail", draft_id=0) }}';
+    var draftUseApiBase = '{{ url_for("call_center.api_draft_use", draft_id=0) }}';
+    var draftPinApiBase = '{{ url_for("call_center.api_draft_pin", draft_id=0) }}';
+    var csrfToken = '{{ csrf_token() }}';
+    var lastMsgId = 0;
+    var selectedDraftCategory = 'all';
+    var draftItems = [];
+    var draftCategories = [];
+    var editingDraftId = null;
+    var draftModalEl = document.getElementById('draftModal');
+    var draftModal = (draftModalEl && window.bootstrap) ? new window.bootstrap.Modal(draftModalEl) : null;
+    var draftTitleInput = document.getElementById('draftTitleInput');
+    var draftCategoryInput = document.getElementById('draftCategoryInput');
+    var draftMessageInput = document.getElementById('draftMessageInput');
+    var btnSaveDraft = document.getElementById('btnSaveDraft');
+    var draftModalTitle = document.getElementById('draftModalTitle');
+
+    // Scroll to bottom
+    function scrollBottom() {
+        if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+    }
+    scrollBottom();
+
+    // Get last message ID
+    var allBubbles = chatBox ? chatBox.querySelectorAll('.cc-bubble') : [];
+    if (allBubbles.length) {
+        lastMsgId = parseInt(allBubbles[allBubbles.length - 1].getAttribute('data-msg-id') || '0', 10);
+    }
+
+    // Send message
+    function sendMessage(draftId) {
+        if (!msgInput || !msgInput.value.trim()) return;
+        var text = msgInput.value.trim();
+        btnSend.disabled = true;
+        msgInput.disabled = true;
+
+        var payload = { conversation_id: convId, message: text };
+        if (draftId) {
+            payload.draft_id = draftId;
+        }
+
+        fetch('{{ url_for("call_center.api_send") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(payload)
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    alert('Gagal kirim: ' + data.error);
+                } else {
+                    msgInput.value = '';
+                    pollMessages(); // immediate refresh
+                }
+            })
+            .catch(function (err) { alert('Error: ' + err.message); })
+            .finally(function () {
+                btnSend.disabled = false;
+                msgInput.disabled = false;
+                msgInput.focus();
+            });
+    }
+
+    if (btnSend) {
+        btnSend.addEventListener('click', sendMessage);
+    }
+    if (msgInput) {
+        msgInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        // Auto-resize textarea
+        msgInput.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+    }
+
+    // Poll for new messages
+    function pollMessages() {
+        fetch('{{ url_for("call_center.api_messages", conv_id=conversation.id) }}?after_id=' + lastMsgId)
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                var msgs = data.messages || [];
+                if (!msgs.length) return;
+                msgs.forEach(function (m) {
+                    if (m.id <= lastMsgId) return;
+                    lastMsgId = m.id;
+                    var div = document.createElement('div');
+                    div.className = 'cc-bubble ' + (m.direction === 'inbound' ? 'cc-bubble-in' : 'cc-bubble-out');
+                    div.setAttribute('data-msg-id', m.id);
+                    var time = '';
+                    try {
+                        var d = new Date(m.created_at);
+                        time = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    } catch (_) { }
+                    var html = '<div class="cc-bubble-text">' + escapeHtml(m.message_text) + '</div>';
+                    html += '<div class="cc-bubble-meta">' + time + '</div>';
+                    if (m.direction === 'outbound' && m.admin_display_name) {
+                        html += '<div class="cc-bubble-admin"><i class="bi bi-person-fill me-1"></i>' + escapeHtml(m.admin_display_name) + '</div>';
+                    }
+                    div.innerHTML = html;
+                    chatBox.appendChild(div);
+                });
+                scrollBottom();
+            })
+            .catch(function () { });
+    }
+
+    // Poll every 5 seconds
+    setInterval(pollMessages, 5000);
+
+    function draftDetailUrl(draftId) {
+        return draftDetailApiBase.replace(/0$/, String(draftId));
+    }
+
+    function draftUseUrl(draftId) {
+        return draftUseApiBase.replace(/\/0\/use$/, '/' + String(draftId) + '/use');
+    }
+
+    function draftPinUrl(draftId) {
+        return draftPinApiBase.replace(/\/0\/pin$/, '/' + String(draftId) + '/pin');
+    }
+
+    function parseApiResponse(response) {
+        var contentType = (response.headers.get('content-type') || '').toLowerCase();
+        if (contentType.indexOf('application/json') !== -1) {
+            return response.json();
+        }
+        return response.text().then(function (text) {
+            var cleaned = (text || '').replace(/\s+/g, ' ').trim();
+            throw new Error(cleaned.slice(0, 180) || ('HTTP ' + response.status));
+        });
+    }
+
+    function upsertUniqueCategory(list, value) {
+        if (!value) return;
+        if (list.indexOf(value) !== -1) return;
+        list.push(value);
+    }
+
+    function buildCategoryFilters() {
+        var uniqueCategories = [];
+        draftCategories.forEach(function (cat) {
+            if ((cat || '').trim()) {
+                upsertUniqueCategory(uniqueCategories, cat);
+            }
+        });
+        draftItems.forEach(function (item) {
+            var cat = (item.category || '').trim();
+            if (cat) upsertUniqueCategory(uniqueCategories, cat);
+        });
+        uniqueCategories.sort(function (a, b) {
+            return a.localeCompare(b, 'id');
+        });
+
+        document.querySelectorAll('.js-draft-category-filter').forEach(function (selectEl) {
+            var previous = selectedDraftCategory;
+            selectEl.innerHTML = '';
+            var allOpt = document.createElement('option');
+            allOpt.value = 'all';
+            allOpt.textContent = 'Semua kategori';
+            selectEl.appendChild(allOpt);
+            uniqueCategories.forEach(function (cat) {
+                var opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                selectEl.appendChild(opt);
+            });
+            selectEl.value = previous;
+            if (selectEl.value !== previous) {
+                selectEl.value = 'all';
+                selectedDraftCategory = 'all';
+            }
+        });
+    }
+
+    function renderDraftLists() {
+        var canUseDraft = !!msgInput;
+        document.querySelectorAll('.js-draft-list').forEach(function (container) {
+            if (!draftItems.length) {
+                container.innerHTML = '<div class="cc-draft-empty"><i class="bi bi-journal-x d-block mb-1" style="font-size:1.2rem;opacity:.55"></i>Belum ada draft. Klik tombol <strong>+</strong> untuk menambah.</div>';
+                return;
+            }
+
+            var html = '';
+            draftItems.forEach(function (draft) {
+                var preview = escapeHtml((draft.message_text || '').trim());
+                var title = escapeHtml(draft.title || '');
+                var category = escapeHtml(draft.category || 'Umum');
+                var isPinned = !!draft.pinned;
+                html += ''
+                    + '<div class="cc-draft-item' + (isPinned ? ' pinned' : '') + '" data-draft-id="' + draft.id + '">'
+                    + '<div class="cc-draft-item-title">' + title + '</div>'
+                    + '<div class="cc-draft-item-meta">'
+                    + '<span class="badge text-bg-light border">' + category + '</span>'
+                    + '<button type="button" class="btn btn-link btn-sm p-0 text-decoration-none cc-draft-pin-btn" data-draft-action="pin" data-draft-id="' + draft.id + '" aria-pressed="' + (isPinned ? 'true' : 'false') + '" title="' + (isPinned ? 'Pinned. Klik untuk lepas pin.' : 'Belum dipin. Klik untuk pin.') + '">'
+                    + '<i class="bi ' + (isPinned ? 'bi-pin-fill text-warning' : 'bi-pin') + '"></i>'
+                    + '</button>'
+                    + '</div>'
+                    + '<div class="cc-draft-item-preview">' + preview + '</div>'
+                    + '<div class="cc-draft-item-actions">'
+                    + '<button type="button" class="btn btn-primary btn-sm flex-fill" data-draft-action="use" data-draft-id="' + draft.id + '"' + (canUseDraft ? '' : ' disabled') + '><i class="bi bi-chat-left-text me-1"></i>Isi</button>'
+                    + '<button type="button" class="btn btn-success btn-sm flex-fill" data-draft-action="send" data-draft-id="' + draft.id + '"' + (canUseDraft ? '' : ' disabled') + '><i class="bi bi-send-fill me-1"></i>Kirim</button>'
+                    + '<button type="button" class="btn btn-outline-secondary btn-sm" data-draft-action="edit" data-draft-id="' + draft.id + '" title="Edit"><i class="bi bi-pencil"></i></button>'
+                    + '<button type="button" class="btn btn-outline-danger btn-sm" data-draft-action="delete" data-draft-id="' + draft.id + '" title="Hapus"><i class="bi bi-trash"></i></button>'
+                    + '</div>'
+                    + '</div>';
+            });
+            container.innerHTML = html;
+        });
+    }
+
+    function loadDrafts() {
+        var url = draftsApiUrl;
+        if (selectedDraftCategory !== 'all') {
+            url += '?category=' + encodeURIComponent(selectedDraftCategory);
+        }
+        fetch(url)
+            .then(parseApiResponse)
+            .then(function (data) {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                draftItems = data.drafts || [];
+                draftCategories = data.categories || [];
+                buildCategoryFilters();
+                renderDraftLists();
+            })
+            .catch(function (err) {
+                document.querySelectorAll('.js-draft-list').forEach(function (container) {
+                    container.innerHTML = '<div class="cc-draft-empty text-danger">Gagal memuat draft: ' + escapeHtml(err.message || 'Unknown error') + '</div>';
+                });
+            });
+    }
+
+    function openDraftModal(draft) {
+        if (!draftModal || !draftTitleInput || !draftCategoryInput || !draftMessageInput) {
+            return;
+        }
+        editingDraftId = draft ? draft.id : null;
+        draftModalTitle.textContent = draft ? 'Edit Draft' : 'Draft Baru';
+        draftTitleInput.value = draft ? (draft.title || '') : '';
+        draftCategoryInput.value = draft ? (draft.category || '') : (selectedDraftCategory !== 'all' ? selectedDraftCategory : '');
+        draftMessageInput.value = draft ? (draft.message_text || '') : '';
+        draftModal.show();
+        setTimeout(function () {
+            draftTitleInput.focus();
+        }, 50);
+    }
+
+    function saveDraft() {
+        if (!btnSaveDraft || !draftTitleInput || !draftCategoryInput || !draftMessageInput) {
+            return;
+        }
+        var title = (draftTitleInput.value || '').trim();
+        var category = (draftCategoryInput.value || '').trim() || 'Umum';
+        var messageText = (draftMessageInput.value || '').trim();
+        if (!title) {
+            alert('Judul draft wajib diisi.');
+            draftTitleInput.focus();
+            return;
+        }
+        if (!messageText) {
+            alert('Isi draft wajib diisi.');
+            draftMessageInput.focus();
+            return;
+        }
+
+        var isEdit = editingDraftId !== null;
+        var url = isEdit ? draftDetailUrl(editingDraftId) : draftsApiUrl;
+        var method = isEdit ? 'PUT' : 'POST';
+        btnSaveDraft.disabled = true;
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                title: title,
+                category: category,
+                message_text: messageText
+            })
+        })
+            .then(parseApiResponse)
+            .then(function (data) {
+                if (data.error) throw new Error(data.error);
+                if (draftModal) draftModal.hide();
+                loadDrafts();
+            })
+            .catch(function (err) {
+                alert('Gagal menyimpan draft: ' + err.message);
+            })
+            .finally(function () {
+                btnSaveDraft.disabled = false;
+            });
+    }
+
+    function deleteDraft(draftId) {
+        if (!confirm('Hapus draft ini?')) return;
+        fetch(draftDetailUrl(draftId), {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': csrfToken }
+        })
+            .then(parseApiResponse)
+            .then(function (data) {
+                if (data.error) throw new Error(data.error);
+                loadDrafts();
+            })
+            .catch(function (err) {
+                alert('Gagal menghapus draft: ' + err.message);
+            });
+    }
+
+    function toggleDraftPin(draftId) {
+        fetch(draftPinUrl(draftId), {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken }
+        })
+            .then(parseApiResponse)
+            .then(function (data) {
+                if (data.error) throw new Error(data.error);
+                var updatedDraft = data.draft || null;
+                if (updatedDraft) {
+                    draftItems = draftItems.map(function (item) {
+                        return item.id === updatedDraft.id ? updatedDraft : item;
+                    });
+                    renderDraftLists();
+                } else {
+                    loadDrafts();
+                }
+            })
+            .catch(function (err) {
+                alert('Gagal mengubah pin draft: ' + err.message);
+            });
+    }
+
+    function useDraft(draftId) {
+        var draft = draftItems.find(function (item) { return item.id === draftId; });
+        if (!draft) return;
+        if (!msgInput) {
+            alert('Percakapan sedang ditutup. Buka kembali chat untuk memakai draft.');
+            return;
+        }
+        var draftText = draft.message_text || '';
+        if (!draftText.trim()) return;
+        fetch(draftUseUrl(draftId), {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken }
+        }).catch(function () {});
+        if (msgInput.value && msgInput.value.trim()) {
+            msgInput.value = msgInput.value.replace(/\s+$/, '') + '\n' + draftText;
+        } else {
+            msgInput.value = draftText;
+        }
+        msgInput.dispatchEvent(new Event('input'));
+        msgInput.focus();
+
+        var offcanvasEl = document.getElementById('ccDraftsOffcanvas');
+        if (offcanvasEl && window.bootstrap) {
+            var offcanvasInstance = window.bootstrap.Offcanvas.getInstance(offcanvasEl);
+            if (offcanvasInstance) {
+                offcanvasInstance.hide();
+            }
+        }
+    }
+
+    function sendDraftDirect(draftId) {
+        var draft = draftItems.find(function (item) { return item.id === draftId; });
+        if (!draft) return;
+        var draftText = (draft.message_text || '').trim();
+        if (!draftText) return;
+        if (!msgInput || !btnSend) {
+            alert('Percakapan sedang ditutup. Buka kembali chat untuk mengirim draft.');
+            return;
+        }
+
+        msgInput.value = draftText;
+        sendMessage(draftId);
+
+        var offcanvasEl = document.getElementById('ccDraftsOffcanvas');
+        if (offcanvasEl && window.bootstrap) {
+            var offcanvasInstance = window.bootstrap.Offcanvas.getInstance(offcanvasEl);
+            if (offcanvasInstance) {
+                offcanvasInstance.hide();
+            }
+        }
+    }
+
+    function escapeHtml(text) {
+        var el = document.createElement('span');
+        el.textContent = text || '';
+        return el.innerHTML;
+    }
+
+    // Close / Reopen conversation
+    var btnClose = document.getElementById('btnCloseConv');
+    var btnReopen = document.getElementById('btnReopenConv');
+    if (btnClose) {
+        btnClose.addEventListener('click', function () {
+            if (!confirm('Tutup percakapan ini?')) return;
+            fetch('{{ url_for("call_center.api_close", conv_id=conversation.id) }}', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            }).then(function () { location.reload(); });
+        });
+    }
+    if (btnReopen) {
+        btnReopen.addEventListener('click', function () {
+            fetch('{{ url_for("call_center.api_reopen", conv_id=conversation.id) }}', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            }).then(function () { location.reload(); });
+        });
+    }
+
+    document.querySelectorAll('.js-draft-category-filter').forEach(function (selectEl) {
+        selectEl.addEventListener('change', function () {
+            selectedDraftCategory = this.value || 'all';
+            document.querySelectorAll('.js-draft-category-filter').forEach(function (other) {
+                other.value = selectedDraftCategory;
+            });
+            loadDrafts();
+        });
+    });
+
+    document.querySelectorAll('.js-open-draft-modal').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            openDraftModal(null);
+        });
+    });
+
+    if (btnSaveDraft) {
+        btnSaveDraft.addEventListener('click', saveDraft);
+    }
+
+    document.addEventListener('click', function (evt) {
+        var actionBtn = evt.target.closest('[data-draft-action]');
+        if (!actionBtn) return;
+        var action = actionBtn.getAttribute('data-draft-action');
+        var draftId = parseInt(actionBtn.getAttribute('data-draft-id') || '0', 10);
+        if (!draftId) return;
+
+        if (action === 'send') {
+            sendDraftDirect(draftId);
+            return;
+        }
+        if (action === 'use') {
+            useDraft(draftId);
+            return;
+        }
+        if (action === 'pin') {
+            toggleDraftPin(draftId);
+            return;
+        }
+        if (action === 'edit') {
+            var draft = draftItems.find(function (item) { return item.id === draftId; });
+            if (draft) openDraftModal(draft);
+            return;
+        }
+        if (action === 'delete') {
+            deleteDraft(draftId);
+        }
+    });
+
+    loadDrafts();
+});
+</script>
+{% endblock %}

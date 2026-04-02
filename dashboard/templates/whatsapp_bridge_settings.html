@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}WhatsApp QR Connect - ASKA Insights{% endblock %}
+{% block content %}
+<section class="page-header">
+    <div class="page-title-group">
+        <span class="icon-badge feature-icon text-success">
+            <i class="bi bi-qr-code-scan"></i>
+        </span>
+        <div>
+            <h1 class="h4 fw-bold page-title mb-0">WhatsApp QR Connect</h1>
+            <p class="page-subtitle">Panduan koneksi WhatsApp bridge (scan QR satu kali, sesi tersimpan).</p>
+        </div>
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Cara scan QR</h5>
+                <ol class="mb-3">
+                    <li>Jalankan worker WhatsApp bridge di server: <code>npm run wa:start</code></li>
+                    <li>QR code akan muncul di terminal proses tersebut.</li>
+                    <li>Buka WhatsApp di HP: <code>Perangkat tertaut</code> -&gt; <code>Tautkan perangkat</code>.</li>
+                    <li>Scan QR yang tampil di terminal.</li>
+                </ol>
+                <div class="alert alert-info small mb-0">
+                    Jalankan worker dulu, lalu QR akan muncul otomatis di panel "QR Live" di halaman ini.
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="fw-semibold">QR Live</h6>
+                <form method="post" action="{{ url_for('auth.whatsapp_bridge_generate_qr') }}" class="mb-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="bi bi-arrow-repeat me-2"></i>Generate QR Baru
+                    </button>
+                </form>
+                <div id="waBridgeState" class="badge text-bg-secondary mb-2">{{ status.state }}</div>
+                <div id="waBridgeMessage" class="small text-muted mb-3">{{ status.message }}</div>
+                <div id="waQrWrap" class="d-flex justify-content-center align-items-center border rounded p-3 bg-light">
+                    <div id="waQrCanvas"></div>
+                </div>
+                <div class="small text-muted mt-2">
+                    Auto-refresh status tiap 5 detik.
+                </div>
+                <hr>
+                <h6 class="fw-semibold">Catatan sesi</h6>
+                <ul class="small text-muted mb-0">
+                    <li>Jika sesi login masih valid, biasanya tidak perlu scan ulang.</li>
+                    <li>Kalau WA logout dari device linked, jalankan lagi worker dan scan QR baru.</li>
+                    <li>Chat yang diproses: private chat text-only (sesuai konfigurasi awal).</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+    (function () {
+        const stateEl = document.getElementById('waBridgeState');
+        const messageEl = document.getElementById('waBridgeMessage');
+        const qrCanvas = document.getElementById('waQrCanvas');
+        let qrInstance = null;
+
+        function stateBadgeClass(state) {
+            const value = String(state || '').toLowerCase();
+            if (value === 'ready') return 'badge text-bg-success mb-2';
+            if (value === 'qr') return 'badge text-bg-warning mb-2';
+            if (value === 'authenticated') return 'badge text-bg-info mb-2';
+            if (value === 'offline' || value === 'error' || value === 'auth_failure') return 'badge text-bg-danger mb-2';
+            return 'badge text-bg-secondary mb-2';
+        }
+
+        function renderQr(text) {
+            qrCanvas.innerHTML = '';
+            qrInstance = null;
+            const value = String(text || '').trim();
+            if (!value) {
+                qrCanvas.innerHTML = '<div class="small text-muted text-center">QR belum tersedia.<br>Pastikan worker aktif.</div>';
+                return;
+            }
+            qrInstance = new QRCode(qrCanvas, {
+                text: value,
+                width: 220,
+                height: 220,
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        async function refreshStatus() {
+            try {
+                const res = await fetch("{{ url_for('auth.whatsapp_bridge_status') }}", { headers: { 'Accept': 'application/json' } });
+                const data = await res.json();
+                const status = (data && data.status) || {};
+                stateEl.textContent = status.state || 'unknown';
+                stateEl.className = stateBadgeClass(status.state);
+                messageEl.textContent = status.message || '';
+                renderQr(status.qrText || '');
+            } catch (err) {
+                stateEl.textContent = 'offline';
+                stateEl.className = stateBadgeClass('offline');
+                messageEl.textContent = 'Gagal mengambil status WA bridge.';
+                renderQr('');
+            }
+        }
+
+        renderQr({{ (status.get('qrText') or '')|tojson }});
+        setInterval(refreshStatus, 5000);
+        refreshStatus();
+    })();
+</script>
+{% endblock %}

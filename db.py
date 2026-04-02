@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import os
 import random
 import re
+import secrets
 from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime, timedelta, timezone
 
@@ -12,6 +15,15 @@ from account_status import ACCOUNT_STATUS_CHOICES, ACCOUNT_STATUS_ACTIVE
 
 # Muat variabel dari file .env
 load_dotenv()
+
+
+def _normalize_db_host(value: str | None) -> str | None:
+    clean = (value or "").strip()
+    if not clean:
+        return clean
+    if clean.lower() == "localhost":
+        return "127.0.0.1"
+    return clean
 
 # Ambil variabel koneksi dari environment
 DB_NAME = os.getenv("DB_NAME")
@@ -40,7 +52,7 @@ conn_args = dict(
     dbname=DB_NAME,
     user=DB_USER,
     password=DB_PASS,
-    host=DB_HOST,
+    host=_normalize_db_host(DB_HOST),
     port=DB_PORT,
 )
 
@@ -63,7 +75,8 @@ DEFAULT_LIMITED_REASON = (
 STATUS_ENUM_SQL = ", ".join(f"'{status}'" for status in ACCOUNT_STATUS_CHOICES)
 CHAT_CHANNEL_EXPRESSION = (
     "COALESCE(channel, CASE WHEN topic = 'web' THEN 'web' "
-    "WHEN topic = 'twitter' THEN 'twitter' ELSE 'telegram' END)"
+    "WHEN topic = 'twitter' THEN 'twitter' "
+    "WHEN topic = 'whatsapp' THEN 'whatsapp' ELSE 'telegram' END)"
 )
 def _chat_logs_has_topic_column(force_refresh: bool = False) -> bool:
     """
@@ -136,6 +149,7 @@ def _ensure_chat_logs_schema() -> None:
                 SET channel = CASE
                     WHEN topic = 'web' THEN 'web'
                     WHEN topic = 'twitter' THEN 'twitter'
+                    WHEN topic = 'whatsapp' THEN 'whatsapp'
                     ELSE 'telegram'
                 END
                 WHERE channel IS NULL
@@ -143,6 +157,19 @@ def _ensure_chat_logs_schema() -> None:
             )
             cur.execute("ALTER TABLE chat_logs ALTER COLUMN channel SET DEFAULT 'telegram'")
             _CHAT_CHANNEL_AVAILABLE = True
+        else:
+            cur.execute(
+                """
+                UPDATE chat_logs
+                SET channel = CASE
+                    WHEN topic = 'web' THEN 'web'
+                    WHEN topic = 'twitter' THEN 'twitter'
+                    WHEN topic = 'whatsapp' THEN 'whatsapp'
+                    ELSE 'telegram'
+                END
+                WHERE channel IS NULL
+                """
+            )
     conn.commit()
 
 def _ensure_bullying_schema() -> None:
@@ -810,6 +837,53 @@ def _ensure_guestbook_general_schema() -> None:
         )
 
 
+def _ensure_guestbook_hospitality_schema() -> None:
+    """Pastikan tabel review hospitality untuk buku tamu umum tersedia."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS hospitality_guestbook_reviews (
+                id SERIAL PRIMARY KEY,
+                transaction_id INTEGER NOT NULL REFERENCES daftar_tamu_general_transactions(id) ON DELETE CASCADE,
+                school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+                review_token TEXT NOT NULL UNIQUE,
+                status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed')),
+                rating SMALLINT,
+                comment TEXT,
+                completed_at TIMESTAMPTZ,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                CONSTRAINT hospitality_guestbook_reviews_rating_check CHECK (rating IS NULL OR rating BETWEEN 1 AND 5)
+            );
+            """
+        )
+        cur.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_hosp_guestbook_reviews_transaction
+            ON hospitality_guestbook_reviews (transaction_id);
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_school
+            ON hospitality_guestbook_reviews (school_id);
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_status
+            ON hospitality_guestbook_reviews (status);
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_completed_at
+            ON hospitality_guestbook_reviews (completed_at DESC);
+            """
+        )
+    conn.commit()
+
+
 def list_guestbook_purpose_keywords(*, active_only: bool = True, limit: int = 50) -> List[str]:
     _ensure_guestbook_general_schema()
     safe_limit = max(1, min(int(limit or 50), 500))
@@ -998,6 +1072,108 @@ def _sync_telegram_user_profile(
             (telegram_user_id, clean_username, preview),
         )
 
+
+def _backfill_whatsapp_users() -> None:
+    """Buat data user WhatsApp dari chat_logs jika table kosong/belum lengkap."""
+    _ensure_chat_logs_schema()
+    with conn.cursor() as cur:
+        cur.execute(
+            f"""
+            INSERT INTO whatsapp_users (
+                whatsapp_user_id,
+                display_name,
+                first_seen_at,
+                last_seen_at
+            )
+            SELECT
+                user_id,
+                MAX(username) FILTER (WHERE username IS NOT NULL),
+                MIN(created_at),
+                MAX(created_at)
+            FROM chat_logs
+            WHERE user_id IS NOT NULL
+              AND {CHAT_CHANNEL_EXPRESSION} = 'whatsapp'
+            GROUP BY user_id
+            ON CONFLICT (whatsapp_user_id) DO NOTHING
+            """
+        )
+    conn.commit()
+
+
+def _ensure_whatsapp_user_schema() -> None:
+    """Pastikan tabel whatsapp_users tersedia dan terisi dari chat_logs."""
+    with conn.cursor() as cur:
+        cur.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS whatsapp_users (
+                id SERIAL PRIMARY KEY,
+                whatsapp_user_id BIGINT UNIQUE NOT NULL,
+                display_name TEXT,
+                first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                last_message_preview TEXT,
+                status TEXT NOT NULL DEFAULT '{ACCOUNT_STATUS_ACTIVE}',
+                status_reason TEXT,
+                status_changed_at TIMESTAMPTZ,
+                status_changed_by TEXT,
+                metadata JSONB,
+                CONSTRAINT whatsapp_users_status_check CHECK (status IN ({STATUS_ENUM_SQL}))
+            );
+            """
+        )
+        cur.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_whatsapp_users_user
+            ON whatsapp_users (whatsapp_user_id)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_whatsapp_users_status
+            ON whatsapp_users (status)
+            """
+        )
+    conn.commit()
+    _backfill_whatsapp_users()
+
+
+def _sync_whatsapp_user_profile(
+    whatsapp_user_id: Optional[int],
+    display_name: Optional[str],
+    last_message: Optional[str],
+) -> None:
+    """Upsert profil WhatsApp berdasarkan chat terbaru."""
+    if not whatsapp_user_id:
+        return
+    _ensure_whatsapp_user_schema()
+    clean_name = (display_name or "").strip() or None
+    preview = (last_message or "").strip()
+    if preview:
+        preview = preview[:280]
+    else:
+        preview = None
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO whatsapp_users (
+                whatsapp_user_id,
+                display_name,
+                last_message_preview
+            )
+            VALUES (%s, %s, %s)
+            ON CONFLICT (whatsapp_user_id) DO UPDATE
+            SET
+                display_name = COALESCE(EXCLUDED.display_name, whatsapp_users.display_name),
+                last_seen_at = NOW(),
+                last_message_preview = COALESCE(
+                    EXCLUDED.last_message_preview,
+                    whatsapp_users.last_message_preview
+                )
+            """,
+            (whatsapp_user_id, clean_name, preview),
+        )
+
+
 def _calculate_due_at(category: str) -> datetime:
     base = datetime.now(timezone.utc)
     category = (category or "general").lower()
@@ -1110,6 +1286,8 @@ def _resolve_channel(topic: Optional[str]) -> str:
         return "web"
     if value == "twitter":
         return "twitter"
+    if value in {"whatsapp", "wa"}:
+        return "whatsapp"
     return "telegram"
 
 
@@ -1230,8 +1408,11 @@ def save_chat(
             raise
         _reset_chat_logs_sequence()
         inserted_id = _insert_row()
-    if channel_value == "telegram" and role == "user" and user_id is not None:
-        _sync_telegram_user_profile(user_id, username, message)
+    if role == "user" and user_id is not None:
+        if channel_value == "telegram":
+            _sync_telegram_user_profile(user_id, username, message)
+        elif channel_value == "whatsapp":
+            _sync_whatsapp_user_profile(user_id, username, message)
 
     conn.commit()
     return inserted_id
@@ -1311,158 +1492,310 @@ def create_public_guestbook_transaction(
     notes: Optional[str],
     guests: List[Dict[str, Any]],
     metadata: Optional[Dict[str, Any]] = None,
-) -> int:
+) -> Dict[str, Any]:
     if not guests:
         raise ValueError("Guests are required")
     _ensure_guestbook_general_schema()
+    _ensure_guestbook_hospitality_schema()
+    review_token = secrets.token_urlsafe(24)
+    transaction_id: Optional[int] = None
+    review_row: Optional[Dict[str, Any]] = None
 
-    with conn.cursor(cursor_factory=RealDictCursor) as cur:
-        cur.execute(
-            """
-            INSERT INTO daftar_tamu_general_transactions (
-                school_id,
-                visit_at,
-                purpose,
-                notes,
-                status,
-                reviewed_by,
-                reviewed_at,
-                reviewer_notes,
-                metadata
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                INSERT INTO daftar_tamu_general_transactions (
+                    school_id,
+                    visit_at,
+                    purpose,
+                    notes,
+                    status,
+                    reviewed_by,
+                    reviewed_at,
+                    reviewer_notes,
+                    metadata
+                )
+                VALUES (%s, NOW(), %s, %s, 'pending', NULL, NULL, NULL, %s)
+                RETURNING id
+                """,
+                (
+                    school_id,
+                    (purpose or None),
+                    (notes or None),
+                    Json(metadata) if metadata else None,
+                ),
             )
-            VALUES (%s, NOW(), %s, %s, 'pending', NULL, NULL, NULL, %s)
-            RETURNING id
-            """,
-            (
-                school_id,
-                (purpose or None),
-                (notes or None),
-                Json(metadata) if metadata else None,
-            ),
-        )
-        tx_row = cur.fetchone()
-        transaction_id = int(tx_row["id"]) if tx_row else None
+            tx_row = cur.fetchone()
+            transaction_id = int(tx_row["id"]) if tx_row else None
 
-        for guest in guests:
-            full_name = (guest.get("full_name") or "").strip()
-            if not full_name:
-                continue
-            phone_raw = (guest.get("phone") or "").strip()
-            phone = _normalize_phone(phone_raw) or None
-            instansi = (guest.get("instansi") or "").strip() or None
-            jabatan = (guest.get("jabatan") or "").strip() or None
-            email = (guest.get("email") or "").strip() or None
-            student_class = (guest.get("student_class") or "").strip() or None
-            student_name = (guest.get("student_name") or "").strip() or None
-            is_parent = bool(guest.get("is_parent"))
+            for guest in guests:
+                full_name = (guest.get("full_name") or "").strip()
+                if not full_name:
+                    continue
+                phone_raw = (guest.get("phone") or "").strip()
+                phone = _normalize_phone(phone_raw) or None
+                instansi = (guest.get("instansi") or "").strip() or None
+                jabatan = (guest.get("jabatan") or "").strip() or None
+                email = (guest.get("email") or "").strip() or None
+                student_class = (guest.get("student_class") or "").strip() or None
+                student_name = (guest.get("student_name") or "").strip() or None
+                is_parent = bool(guest.get("is_parent"))
 
-            if is_parent:
-                instansi = None
-                jabatan = None
-            else:
-                student_class = None
-                student_name = None
+                if is_parent:
+                    instansi = None
+                    jabatan = None
+                else:
+                    student_class = None
+                    student_name = None
 
-            if phone:
-                cur.execute(
-                    """
-                    SELECT id
-                    FROM daftar_tamu_general_guests
-                    WHERE is_deleted = FALSE
-                      AND regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') = %s
-                    ORDER BY is_verified DESC, id DESC
-                    LIMIT 1
-                    """,
-                    (phone,),
-                )
-            else:
-                cur.execute(
-                    """
-                    SELECT id
-                    FROM daftar_tamu_general_guests
-                    WHERE lower(full_name) = lower(%s)
-                      AND COALESCE(instansi, '') = COALESCE(%s, '')
-                      AND COALESCE(jabatan, '') = COALESCE(%s, '')
-                      AND COALESCE(email, '') = COALESCE(%s, '')
-                      AND is_deleted = FALSE
-                    ORDER BY is_verified DESC, id DESC
-                    LIMIT 1
-                    """,
-                    (full_name, instansi or "", jabatan or "", email or ""),
-                )
-            existing = cur.fetchone()
-            if existing:
-                guest_id = int(existing["id"])
-                cur.execute(
-                    """
-                    UPDATE daftar_tamu_general_guests
-                    SET full_name = %s,
-                        email = %s,
-                        phone = %s,
-                        instansi = %s,
-                        jabatan = %s,
-                        is_parent = %s,
-                        student_class = %s,
-                        student_name = %s,
-                        updated_at = NOW()
-                    WHERE id = %s
-                    """,
-                    (
-                        full_name,
-                        email,
-                        phone,
-                        instansi,
-                        jabatan,
-                        is_parent,
-                        student_class,
-                        student_name,
-                        guest_id,
-                    ),
-                )
-            else:
-                cur.execute(
-                    """
-                    INSERT INTO daftar_tamu_general_guests (
-                        full_name,
-                        email,
-                        phone,
-                        instansi,
-                        jabatan,
-                        is_parent,
-                        student_class,
-                        student_name,
-                        created_by
+                if phone:
+                    cur.execute(
+                        """
+                        SELECT id
+                        FROM daftar_tamu_general_guests
+                        WHERE is_deleted = FALSE
+                          AND regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') = %s
+                        ORDER BY is_verified DESC, id DESC
+                        LIMIT 1
+                        """,
+                        (phone,),
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NULL)
-                    RETURNING id
+                else:
+                    cur.execute(
+                        """
+                        SELECT id
+                        FROM daftar_tamu_general_guests
+                        WHERE lower(full_name) = lower(%s)
+                          AND COALESCE(instansi, '') = COALESCE(%s, '')
+                          AND COALESCE(jabatan, '') = COALESCE(%s, '')
+                          AND COALESCE(email, '') = COALESCE(%s, '')
+                          AND is_deleted = FALSE
+                        ORDER BY is_verified DESC, id DESC
+                        LIMIT 1
+                        """,
+                        (full_name, instansi or "", jabatan or "", email or ""),
+                    )
+                existing = cur.fetchone()
+                if existing:
+                    guest_id = int(existing["id"])
+                    cur.execute(
+                        """
+                        UPDATE daftar_tamu_general_guests
+                        SET full_name = %s,
+                            email = %s,
+                            phone = %s,
+                            instansi = %s,
+                            jabatan = %s,
+                            is_parent = %s,
+                            student_class = %s,
+                            student_name = %s,
+                            updated_at = NOW()
+                        WHERE id = %s
+                        """,
+                        (
+                            full_name,
+                            email,
+                            phone,
+                            instansi,
+                            jabatan,
+                            is_parent,
+                            student_class,
+                            student_name,
+                            guest_id,
+                        ),
+                    )
+                else:
+                    cur.execute(
+                        """
+                        INSERT INTO daftar_tamu_general_guests (
+                            full_name,
+                            email,
+                            phone,
+                            instansi,
+                            jabatan,
+                            is_parent,
+                            student_class,
+                            student_name,
+                            created_by
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NULL)
+                        RETURNING id
+                        """,
+                        (full_name, email, phone, instansi, jabatan, is_parent, student_class, student_name),
+                    )
+                    guest_row = cur.fetchone()
+                    guest_id = int(guest_row["id"]) if guest_row else None
+
+                cur.execute(
+                    """
+                    INSERT INTO daftar_tamu_general_transaction_guests (
+                        transaction_id,
+                        general_guest_id,
+                        full_name,
+                        phone,
+                        instansi,
+                        jabatan,
+                        email,
+                        student_class,
+                        student_name
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
-                    (full_name, email, phone, instansi, jabatan, is_parent, student_class, student_name),
+                    (transaction_id, guest_id, full_name, phone, instansi, jabatan, email, student_class, student_name),
                 )
-                guest_row = cur.fetchone()
-                guest_id = int(guest_row["id"]) if guest_row else None
+
+            if transaction_id:
+                cur.execute(
+                    """
+                    INSERT INTO hospitality_guestbook_reviews (
+                        transaction_id,
+                        school_id,
+                        review_token,
+                        status
+                    )
+                    VALUES (%s, %s, %s, 'pending')
+                    ON CONFLICT (transaction_id) DO UPDATE
+                    SET school_id = EXCLUDED.school_id,
+                        review_token = COALESCE(hospitality_guestbook_reviews.review_token, EXCLUDED.review_token),
+                        updated_at = NOW()
+                    RETURNING id, transaction_id, school_id, review_token, status, rating, comment, completed_at, created_at, updated_at
+                    """,
+                    (transaction_id, school_id, review_token),
+                )
+                review_row = cur.fetchone()
+
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+
+    if not transaction_id:
+        raise ValueError("Failed to create transaction")
+    return {
+        "transaction_id": transaction_id,
+        "review_id": int(review_row["id"]) if review_row and review_row.get("id") is not None else None,
+        "review_token": review_row["review_token"] if review_row and review_row.get("review_token") else review_token,
+    }
+
+
+def _fetch_public_guestbook_review_detail(where_sql: str, params: tuple[Any, ...]) -> Optional[Dict[str, Any]]:
+    _ensure_guestbook_hospitality_schema()
+    query = f"""
+        SELECT
+            r.id AS review_id,
+            r.transaction_id,
+            r.school_id,
+            r.review_token,
+            r.status AS review_status,
+            r.rating,
+            r.comment,
+            r.completed_at,
+            r.created_at,
+            r.updated_at,
+            t.visit_at,
+            t.status AS transaction_status,
+            t.purpose,
+            t.notes,
+            t.reviewed_by,
+            t.reviewed_at,
+            t.reviewer_notes,
+            s.name AS school_name,
+            s.npsn,
+            s.jenjang,
+            (
+                SELECT STRING_AGG(g.full_name, ', ' ORDER BY g.full_name)
+                FROM daftar_tamu_general_transaction_guests g
+                WHERE g.transaction_id = t.id
+            ) AS guest_names,
+            (
+                SELECT COUNT(*)
+                FROM daftar_tamu_general_transaction_guests g
+                WHERE g.transaction_id = t.id
+            ) AS guest_count
+        FROM hospitality_guestbook_reviews r
+        JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
+        JOIN portal_schools s ON s.id = r.school_id
+        WHERE {where_sql}
+        LIMIT 1
+    """
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(query, params)
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def get_public_guestbook_review_by_token(review_token: str) -> Optional[Dict[str, Any]]:
+    clean_token = (review_token or "").strip()
+    if not clean_token:
+        return None
+    return _fetch_public_guestbook_review_detail("r.review_token = %s", (clean_token,))
+
+
+def get_public_guestbook_review_by_transaction(transaction_id: int) -> Optional[Dict[str, Any]]:
+    if not transaction_id:
+        return None
+    return _fetch_public_guestbook_review_detail("r.transaction_id = %s", (transaction_id,))
+
+
+def submit_public_guestbook_review(
+    *,
+    review_token: str,
+    rating: int,
+    comment: Optional[str] = None,
+) -> Dict[str, Any]:
+    _ensure_guestbook_hospitality_schema()
+    clean_token = (review_token or "").strip()
+    if not clean_token:
+        raise ValueError("Review token wajib diisi")
+    try:
+        clean_rating = int(rating)
+    except (TypeError, ValueError):
+        raise ValueError("Rating harus berupa angka 1 sampai 5")
+    if clean_rating < 1 or clean_rating > 5:
+        raise ValueError("Rating harus antara 1 sampai 5")
+    clean_comment = (comment or "").strip() or None
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT id, transaction_id, school_id, review_token, status, rating, comment, completed_at, created_at, updated_at
+                FROM hospitality_guestbook_reviews
+                WHERE review_token = %s
+                LIMIT 1
+                """,
+                (clean_token,),
+            )
+            row = cur.fetchone()
+            if not row:
+                raise ValueError("Review tidak ditemukan")
+            if (row.get("status") or "").lower() == "completed":
+                return dict(row)
 
             cur.execute(
                 """
-                INSERT INTO daftar_tamu_general_transaction_guests (
-                    transaction_id,
-                    general_guest_id,
-                    full_name,
-                    phone,
-                    instansi,
-                    jabatan,
-                    email,
-                    student_class,
-                    student_name
-                )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                UPDATE hospitality_guestbook_reviews
+                SET status = 'completed',
+                    rating = %s,
+                    comment = %s,
+                    completed_at = NOW(),
+                    updated_at = NOW()
+                WHERE review_token = %s
+                RETURNING id, transaction_id, school_id, review_token, status, rating, comment, completed_at, created_at, updated_at
                 """,
-                (transaction_id, guest_id, full_name, phone, instansi, jabatan, email, student_class, student_name),
+                (clean_rating, clean_comment, clean_token),
             )
+            updated = cur.fetchone()
 
-    conn.commit()
-    if not transaction_id:
-        raise ValueError("Failed to create transaction")
-    return transaction_id
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+
+    if not updated:
+        return dict(row)
+    return dict(updated)
 
 def get_or_create_web_user(
     email: str,
@@ -1713,6 +2046,36 @@ def get_telegram_user_status(user_id: int) -> Dict[str, Any]:
     if not row:
         return {
             "telegram_user_id": user_id,
+            "status": ACCOUNT_STATUS_ACTIVE,
+            "status_reason": None,
+            "status_changed_at": None,
+            "status_changed_by": None,
+        }
+    return dict(row)
+
+
+def get_whatsapp_user_status(user_id: int) -> Dict[str, Any]:
+    """Ambil status akun WhatsApp berdasarkan whatsapp_user_id."""
+    _ensure_whatsapp_user_schema()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            """
+            SELECT
+                whatsapp_user_id,
+                display_name,
+                status,
+                status_reason,
+                status_changed_at,
+                status_changed_by
+            FROM whatsapp_users
+            WHERE whatsapp_user_id = %s
+            """,
+            (user_id,),
+        )
+        row = cur.fetchone()
+    if not row:
+        return {
+            "whatsapp_user_id": user_id,
             "status": ACCOUNT_STATUS_ACTIVE,
             "status_reason": None,
             "status_changed_at": None,
@@ -2031,12 +2394,19 @@ def record_twitter_log(
                 )
     conn.commit()
 
-# Call schema functions on startup
-_ensure_chat_logs_schema()
-_ensure_bullying_schema()
-_ensure_psych_schema()
-_ensure_user_schema()
-_ensure_guestbook_general_schema()
-_ensure_telegram_user_schema()
-_ensure_corruption_schema()
-_ensure_twitter_log_schema()
+def ensure_db_schema() -> None:
+    """Create or update core database tables when explicitly requested."""
+    _ensure_chat_logs_schema()
+    _ensure_bullying_schema()
+    _ensure_psych_schema()
+    _ensure_user_schema()
+    _ensure_guestbook_general_schema()
+    _ensure_guestbook_hospitality_schema()
+    _ensure_telegram_user_schema()
+    _ensure_whatsapp_user_schema()
+    _ensure_corruption_schema()
+    _ensure_twitter_log_schema()
+
+
+if os.getenv("ASKA_DB_AUTO_INIT", "").strip().lower() in {"1", "true", "yes"}:
+    ensure_db_schema()

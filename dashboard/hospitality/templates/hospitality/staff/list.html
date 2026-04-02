@@ -1,0 +1,564 @@
+{% extends "hospitality/base_hospitality.html" %}
+{% set page_title = "Hospitality - Penilaian Staff" %}
+
+{% block head_extra %}
+<style>
+  .hosp-hero {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-soft);
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .hosp-hero h1 { font-size: 1.25rem; font-weight: 700; margin: 0 0 0.2rem; color: var(--text-primary); }
+  .hosp-hero p  { margin: 0; font-size: 0.85rem; color: var(--text-muted); }
+
+  /* Search / new assessment bar */
+  .hosp-search-bar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: stretch;
+    margin-bottom: 1rem;
+  }
+  .hosp-search-bar .search-wrap {
+    position: relative;
+    flex: 1 1 260px;
+    min-width: 0;
+  }
+  .hosp-search-bar .search-wrap .form-control {
+    border-radius: 0.75rem;
+    padding-left: 2.4rem;
+  }
+  .hosp-search-bar .search-wrap .search-icon {
+    position: absolute;
+    left: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+  #schoolSearchResults {
+    border-radius: 0.75rem;
+    overflow: hidden;
+    border: 1px solid var(--border-soft);
+  }
+  #schoolSearchResults .list-group-item { border: 0; padding: 0.65rem 1rem; font-size: 0.88rem; }
+  .hosp-search-bar .btn-new {
+    border-radius: 0.75rem;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+
+  /* Filter pills */
+  .hosp-filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+  }
+  .hosp-filters .filter-pill {
+    border-radius: 999px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    border: 1px solid var(--border-soft);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: all 0.18s ease;
+  }
+  .hosp-filters .filter-pill:hover { border-color: var(--accent); color: var(--accent); }
+  .hosp-filters .filter-pill.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* Assessment cards for mobile */
+  .hosp-card {
+    border: 1px solid var(--border-soft);
+    border-radius: 1rem;
+    background: var(--bg-surface);
+    padding: 1rem 1.15rem;
+    margin-bottom: 0.75rem;
+    transition: box-shadow 0.18s ease, transform 0.18s ease;
+  }
+  .hosp-card:hover {
+    box-shadow: var(--shadow-soft);
+    transform: translateY(-1px);
+  }
+  .hosp-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .hosp-card-school { font-weight: 600; font-size: 0.95rem; line-height: 1.3; }
+  .hosp-card-meta { font-size: 0.78rem; color: var(--text-muted); }
+  .hosp-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.65rem;
+  }
+  .hosp-card-footer .btn { border-radius: 0.6rem; font-size: 0.82rem; }
+
+  /* Status badges */
+  .badge-draft      { background: #fef3c7; color: #92400e; }
+  .badge-submitted  { background: #dbeafe; color: #1e40af; }
+  .badge-verified   { background: #d1fae5; color: #065f46; }
+  .badge-reopened   { background: #fce7f3; color: #9d174d; }
+
+  /* Desktop table */
+  .hosp-table th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); font-weight: 600; }
+  .hosp-table td { vertical-align: middle; }
+  .hosp-table .school-cell { min-width: 200px; }
+
+  .assessment-item {
+    align-items: center;
+  }
+  .assessment-item .assessment-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .assessment-item .assessment-meta .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .assessment-item .assessment-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .assessment-status-pill {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .btn-draft-delete {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(220, 53, 69, 0.4);
+    background: rgba(220, 53, 69, 0.12);
+    color: #dc3545;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+  }
+  .btn-draft-delete:disabled {
+    opacity: 0.6;
+  }
+  .draft-delete-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1080;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    background: rgba(15, 23, 42, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.18s ease, visibility 0.18s ease;
+  }
+  .draft-delete-modal.show {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .draft-delete-card {
+    width: min(100%, 420px);
+    border-radius: 1rem;
+    border: 1px solid rgba(220, 53, 69, 0.14);
+    background: var(--bg-surface);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+    overflow: hidden;
+    transform: translateY(12px) scale(0.98);
+    transition: transform 0.18s ease;
+  }
+  .draft-delete-modal.show .draft-delete-card {
+    transform: translateY(0) scale(1);
+  }
+  .draft-delete-card-head {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 1.1rem 1.2rem 0.8rem;
+  }
+  .draft-delete-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(220, 53, 69, 0.12);
+    color: #dc3545;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .draft-delete-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .draft-delete-subtitle {
+    margin: 0.15rem 0 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+  .draft-delete-close {
+    margin-left: auto;
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+  }
+  .draft-delete-close:hover {
+    background: var(--bg-subtle);
+    color: var(--text-primary);
+  }
+  .draft-delete-body {
+    padding: 0 1.2rem 1rem;
+    color: var(--text-secondary);
+  }
+  .draft-delete-school {
+    margin: 0.75rem 0 0;
+    padding: 0.7rem 0.85rem;
+    border-radius: 0.8rem;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-soft);
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  .draft-delete-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.65rem;
+    padding: 0 1.2rem 1.2rem;
+  }
+  .draft-delete-actions .btn {
+    min-width: 118px;
+    border-radius: 0.75rem;
+  }
+
+  /* Empty state */
+  .hosp-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    border-radius: 1rem;
+    border: 2px dashed var(--border-soft);
+    background: var(--bg-subtle);
+  }
+  .hosp-empty i { font-size: 2.5rem; color: var(--text-muted); margin-bottom: 0.75rem; display: block; }
+  .hosp-empty h5 { font-weight: 600; margin-bottom: 0.35rem; }
+
+  /* Responsive: hide table on mobile, show cards */
+  @media (max-width: 768px) {
+    .hosp-table-wrap { display: none !important; }
+    .hosp-cards { display: block !important; }
+    .hosp-hero { padding: 1.15rem 1.25rem; border-radius: 0.85rem; }
+    .hosp-hero h1 { font-size: 1.15rem; }
+  }
+  @media (min-width: 769px) {
+    .hosp-cards { display: none !important; }
+    .hosp-table-wrap { display: block !important; }
+  }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+
+<!-- Hero -->
+<div class="hosp-hero">
+  <h1><i class="bi bi-house-heart me-2"></i>Penilaian Hospitality</h1>
+  <p>Catat penilaian hospitality sekolah — skala 1–{{ score_max }}, maks 1× per sekolah per hari.</p>
+</div>
+
+<!-- Search + New Assessment -->
+<div class="hosp-search-bar">
+  <div class="search-wrap">
+    <i class="bi bi-search search-icon"></i>
+    <input type="text" class="form-control" id="schoolSearch" placeholder="Cari sekolah untuk mulai penilaian baru..." autocomplete="off">
+    <div class="list-group position-absolute w-100 shadow-sm d-none" id="schoolSearchResults" style="z-index:1030; max-height:260px; overflow:auto;"></div>
+  </div>
+  <button class="btn btn-primary btn-new" type="button" onclick="startAssessFromInput()">
+    <i class="bi bi-plus-lg me-1"></i>Mulai Penilaian
+  </button>
+</div>
+
+<!-- Filter pills -->
+<div class="hosp-filters">
+  <a href="{{ url_for('hospitality.staff_home') }}" class="filter-pill {% if not status_filter %}active{% endif %}">Semua</a>
+  <a href="{{ url_for('hospitality.staff_home', status='draft') }}" class="filter-pill {% if status_filter == 'draft' %}active{% endif %}">
+    <i class="bi bi-pencil me-1"></i>Draft
+  </a>
+  <a href="{{ url_for('hospitality.staff_home', status='submitted') }}" class="filter-pill {% if status_filter == 'submitted' %}active{% endif %}">
+    <i class="bi bi-send me-1"></i>Submitted
+  </a>
+  <a href="{{ url_for('hospitality.staff_home', status='verified') }}" class="filter-pill {% if status_filter == 'verified' %}active{% endif %}">
+    <i class="bi bi-patch-check me-1"></i>Verified
+  </a>
+  <a href="{{ url_for('hospitality.staff_home', status='reopened') }}" class="filter-pill {% if status_filter == 'reopened' %}active{% endif %}">
+    <i class="bi bi-arrow-repeat me-1"></i>Reopened
+  </a>
+</div>
+
+{% if assessments %}
+<div class="list-group shadow-sm">
+  {% for item in assessments %}
+  <a href="{% if item.status == 'draft' %}{{ url_for('hospitality.staff_assess', school_id=item.school_id) }}{% else %}{{ url_for('hospitality.assessment_detail', assessment_id=item.id) }}{% endif %}"
+     class="list-group-item list-group-item-action assessment-item d-flex align-items-center gap-3 px-3 py-3"
+     data-search="{{ ((item.school_name or '') ~ ' ' ~ (item.npsn or '') ~ ' ' ~ (item.jenjang or '') ~ ' ' ~ (item.status or ''))|lower }}">
+    <span class="icon-badge timeline-icon text-primary">
+      <i class="bi bi-building"></i>
+    </span>
+    <div class="flex-grow-1 assessment-meta">
+      <div class="top-row">
+        <div>
+          <div class="fw-semibold">{{ item.school_name }}</div>
+          <small class="text-muted">{{ item.npsn }} • {{ item.jenjang }}</small>
+        </div>
+      </div>
+      <div class="small text-muted mt-1">
+        {% if item.status == 'draft' %}
+          Draft terakhir {{ item.updated_at|jakarta if item.updated_at else item.created_at|jakarta }}
+        {% else %}
+          Dibuat {{ item.created_at|jakarta }}{% if item.verified_at %} • Verifikasi {{ item.verified_at|jakarta }}{% endif %}
+        {% endif %}
+      </div>
+    </div>
+    <div class="assessment-actions ms-auto">
+      <span class="assessment-status-pill badge-{{ item.status }} text-uppercase">
+        {% if item.status == 'draft' %}<i class="bi bi-pencil me-1"></i>{% elif item.status == 'submitted' %}<i class="bi bi-send me-1"></i>{% elif item.status == 'verified' %}<i class="bi bi-patch-check me-1"></i>{% elif item.status == 'reopened' %}<i class="bi bi-arrow-repeat me-1"></i>{% endif %}
+        {{ item.status }}
+      </span>
+      {% if item.status == 'draft' %}
+      <button type="button"
+              class="btn-draft-delete"
+              data-draft-delete
+              data-draft-delete-url="{{ url_for('hospitality.staff_delete_draft', assessment_id=item.id) }}"
+              data-draft-school="{{ item.school_name|e }}"
+              title="Hapus draft"
+              aria-label="Hapus draft {{ item.school_name|e }}">
+        <i class="bi bi-trash"></i>
+      </button>
+      {% endif %}
+      <i class="bi bi-chevron-right text-muted"></i>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+{% else %}
+
+<!-- Empty State -->
+<div class="hosp-empty">
+  <i class="bi bi-clipboard-x"></i>
+  <h5>Belum ada penilaian{% if status_filter %} dengan status "{{ status_filter }}"{% endif %}</h5>
+  <p class="text-muted small mb-3">Cari sekolah di kolom pencarian di atas untuk memulai penilaian baru.</p>
+  {% if status_filter %}
+  <a href="{{ url_for('hospitality.staff_home') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-x-circle me-1"></i>Hapus filter
+  </a>
+  {% endif %}
+</div>
+
+{% endif %}
+
+<script>
+let selectedSchoolId = null;
+const searchInput = document.getElementById('schoolSearch');
+const resultsBox = document.getElementById('schoolSearchResults');
+
+async function fetchSchools(query) {
+  const res = await fetch(`/portal/api/schools/search?q=${encodeURIComponent(query)}`);
+  if (!res.ok) return [];
+  return await res.json();
+}
+
+let searchTimer = null;
+searchInput.addEventListener('input', (e) => {
+  const q = e.target.value.trim();
+  selectedSchoolId = null;
+  clearTimeout(searchTimer);
+  if (q.length < 3) {
+    resultsBox.innerHTML = '';
+    resultsBox.classList.add('d-none');
+    return;
+  }
+  searchTimer = setTimeout(async () => {
+    const data = await fetchSchools(q);
+    resultsBox.innerHTML = '';
+    if (!data.length) {
+      resultsBox.classList.add('d-none');
+      return;
+    }
+    resultsBox.classList.remove('d-none');
+    data.forEach(item => {
+      const a = document.createElement('a');
+      a.href = '#';
+      a.className = 'list-group-item list-group-item-action';
+      a.innerHTML = `<span class="fw-semibold">${item.name}</span> <span class="text-muted small">NPSN ${item.npsn} · ${item.jenjang}</span>`;
+      a.dataset.id = item.id;
+      a.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        selectedSchoolId = item.id;
+        searchInput.value = `${item.name} - ${item.npsn}`;
+        resultsBox.classList.add('d-none');
+        startAssessFromInput();
+      });
+      resultsBox.appendChild(a);
+    });
+  }, 250);
+});
+
+document.addEventListener('click', (e) => {
+  if (!resultsBox.contains(e.target) && e.target !== searchInput) {
+    resultsBox.classList.add('d-none');
+  }
+});
+
+function startAssessFromInput() {
+  if (!selectedSchoolId) {
+    const raw = searchInput.value.trim();
+    if (!raw) return;
+    const maybeId = parseInt(raw, 10);
+    if (!isNaN(maybeId)) selectedSchoolId = maybeId;
+  }
+  if (!selectedSchoolId) return;
+  window.location.href = `/hospitality/staff/assess/${selectedSchoolId}`;
+}
+</script>
+
+<div class="draft-delete-modal" id="draftDeleteModal" aria-hidden="true">
+  <div class="draft-delete-card" role="dialog" aria-modal="true" aria-labelledby="draftDeleteModalLabel">
+    <div class="draft-delete-card-head">
+      <span class="draft-delete-icon">
+        <i class="bi bi-trash3"></i>
+      </span>
+      <div>
+        <h5 class="draft-delete-title" id="draftDeleteModalLabel">Hapus Draft Penilaian</h5>
+        <p class="draft-delete-subtitle">Tindakan ini akan menghapus seluruh isi draft.</p>
+      </div>
+      <button type="button" class="draft-delete-close" id="closeDraftDeleteBtn" aria-label="Tutup">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="draft-delete-body">
+      <p class="mb-0">Draft berikut akan dihapus permanen:</p>
+      <div class="draft-delete-school" id="draftDeleteMessage">Nama sekolah</div>
+    </div>
+    <div class="draft-delete-actions">
+      <button type="button" class="btn btn-outline-secondary" id="cancelDraftDeleteBtn">Batal</button>
+      <button type="button" class="btn btn-danger" id="confirmDraftDeleteBtn">Hapus Draft</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  document.addEventListener('click', function (event) {
+    const btn = event.target.closest('[data-draft-delete]');
+    if (!btn) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const schoolName = btn.dataset.draftSchool || 'penilaian';
+    const url = btn.dataset.draftDeleteUrl;
+    if (!url) return;
+    openDraftDeleteModal(url, schoolName, btn);
+  });
+  const deleteModalEl = document.getElementById('draftDeleteModal');
+  const deleteModalMessage = deleteModalEl ? deleteModalEl.querySelector('#draftDeleteMessage') : null;
+  const deleteModalConfirmBtn = deleteModalEl ? deleteModalEl.querySelector('#confirmDraftDeleteBtn') : null;
+  const deleteModalCancelBtn = deleteModalEl ? deleteModalEl.querySelector('#cancelDraftDeleteBtn') : null;
+  const deleteModalCloseBtn = deleteModalEl ? deleteModalEl.querySelector('#closeDraftDeleteBtn') : null;
+  let activeDraftDelete = null;
+
+  function setModalOpen(isOpen) {
+    if (!deleteModalEl) return;
+    deleteModalEl.classList.toggle('show', isOpen);
+    deleteModalEl.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    document.body.classList.toggle('overflow-hidden', isOpen);
+  }
+
+  function openDraftDeleteModal(url, schoolName, button) {
+    button.dataset.pendingDeleteUrl = url;
+    activeDraftDelete = button;
+    if (deleteModalMessage) {
+      deleteModalMessage.textContent = schoolName;
+    }
+    setModalOpen(true);
+  }
+
+  async function performDraftDelete(url, button) {
+    button.setAttribute('disabled', 'disabled');
+    if (deleteModalConfirmBtn) deleteModalConfirmBtn.setAttribute('disabled', 'disabled');
+    try {
+      const res = await fetch(url, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Gagal menghapus draft.');
+      }
+      setModalOpen(false);
+      window.location.reload();
+    } catch (err) {
+      button.removeAttribute('disabled');
+      if (deleteModalConfirmBtn) deleteModalConfirmBtn.removeAttribute('disabled');
+      alert(err.message || 'Gagal menghapus draft.');
+    }
+  }
+
+  if (deleteModalConfirmBtn) {
+    deleteModalConfirmBtn.addEventListener('click', function () {
+      if (!activeDraftDelete) return;
+      const url = activeDraftDelete.dataset.pendingDeleteUrl || activeDraftDelete.dataset.draftDeleteUrl;
+      if (!url) return;
+      performDraftDelete(url, activeDraftDelete);
+    });
+  }
+
+  function closeDraftDeleteModal() {
+    setModalOpen(false);
+    if (deleteModalConfirmBtn) deleteModalConfirmBtn.removeAttribute('disabled');
+    if (activeDraftDelete) activeDraftDelete.removeAttribute('data-pending-delete-url');
+  }
+
+  if (deleteModalCancelBtn) {
+    deleteModalCancelBtn.addEventListener('click', closeDraftDeleteModal);
+  }
+  if (deleteModalCloseBtn) {
+    deleteModalCloseBtn.addEventListener('click', closeDraftDeleteModal);
+  }
+  if (deleteModalEl) {
+    deleteModalEl.addEventListener('click', function (event) {
+      if (event.target === deleteModalEl) {
+        closeDraftDeleteModal();
+      }
+    });
+  }
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && deleteModalEl && deleteModalEl.classList.contains('show')) {
+      closeDraftDeleteModal();
+    }
+  });
+})();
+</script>
+
+{% endblock %}

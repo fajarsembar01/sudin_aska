@@ -1,0 +1,542 @@
+{% extends "hospitality/base_hospitality.html" %} {% from
+"shared/_reopen_request_card.html" import reopen_request_card %} {% from
+"portal/components/_color_macros.html" import get_aspect_badge_class,
+get_score_bootstrap_class %} {% set page_title = "Detail Penilaian — " ~
+(assessment.school_name or "") %} {% set scale_max = assessment.score_scale_max
+or 5 %} {# ── Pre-compute overall totals
+─────────────────────────────────────────────── #} {% set _ns =
+namespace(total_score=0, scored_count=0) %} {% for comp in components %} {% for
+aspect in comp.aspects %} {% set _s = scores_map.get(aspect.id) %} {% if _s and
+_s.score is not none %} {% set _ns.total_score = _ns.total_score + _s.score %}
+{% set _ns.scored_count = _ns.scored_count + 1 %} {% endif %} {% endfor %} {%
+endfor %} {% set max_possible = _ns.scored_count * scale_max %} {% set pct_total
+= (_ns.total_score / max_possible * 100) if max_possible > 0 else 0 %} {% block
+portal_content %} {# ── Flash messages
+──────────────────────────────────────────────────────────── #} {% with messages
+= get_flashed_messages(with_categories=true) %} {% if messages %}
+<div class="mb-3">
+    {% for category, msg in messages %}
+    <div
+        class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'danger' else 'info' }} alert-dismissible fade show py-2"
+        role="alert"
+    >
+        {{ msg }}
+        <button
+            type="button"
+            class="btn-close btn-sm"
+            data-bs-dismiss="alert"
+        ></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %} {% endwith %}
+
+<section class="mb-4">
+    {# ── Page header
+    ─────────────────────────────────────────────────────────────── #}
+    <div
+        class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4"
+    >
+        <div class="d-flex align-items-center gap-3">
+            <a
+                href="{{
+          url_for('hospitality.admin_home')  if user_role in ['admin', 'coordinator'] else
+          url_for('hospitality.staff_home')  if is_staff else
+          url_for('hospitality.school_home')
+        }}"
+                class="btn btn-outline-secondary"
+            >
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="h4 fw-bold mb-0">Hasil Penilaian Hospitality</h1>
+                <p class="text-muted mb-0 small">
+                    {{ assessment.school_name }}
+                </p>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span class="status-badge status-{{ assessment.status }}">
+                <i
+                    class="bi bi-{% if assessment.status == 'verified' %}patch-check {% elif assessment.status == 'submitted' %}check-circle {% elif assessment.status == 'reopened' %}arrow-counterclockwise {% else %}pencil{% endif %}"
+                ></i>
+                {{ assessment.status | capitalize }}
+            </span>
+            <span
+                class="badge bg-primary-subtle text-primary border d-inline-flex align-items-center gap-1"
+            >
+                <i class="bi bi-house-heart"></i>
+                Hospitality
+            </span>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {# ════════════════════════════════════════════════════════ LEFT SIDEBAR
+        — col-lg-4 ════════════════════════════════════════════════════════ #}
+        <div class="col-lg-4">
+            {# Score summary ───────────────────────────────────────── #}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body text-center py-4">
+                    <div class="score-summary">
+                        <div class="big-score">
+                            {{ "%.1f" | format(pct_total) }}
+                        </div>
+                        <div class="score-label">Skor Rata-rata (0–100)</div>
+                        {% if _ns.scored_count > 0 %}
+                        <div class="small text-muted mt-1">
+                            {{ _ns.total_score }} / {{ max_possible }} (raw)
+                            &bull; {{ _ns.scored_count }} aspek
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if _ns.scored_count > 0 %}
+                    <div class="mt-3">
+                        {% set _badge = get_score_bootstrap_class(pct_total) %}
+                        <span
+                            class="badge {{ _badge }} rounded-pill px-3 py-2"
+                            style="font-size: 0.85rem"
+                        >
+                            {% if pct_total >= 85 %}Sangat Baik {% elif
+                            pct_total >= 70 %}Baik {% elif pct_total >= 55
+                            %}Kurang {% else %}Kritis {% endif %}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Staff penilai ───────────────────────────────────────── #}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="icon-badge section-icon text-primary">
+                            <i class="bi bi-person-badge"></i>
+                        </span>
+                        <div>
+                            <h2 class="h6 fw-bold mb-0">Staff Penilai</h2>
+                            <p class="text-muted small mb-0">Data individu</p>
+                        </div>
+                    </div>
+                    <div class="small text-muted">Nama</div>
+                    <div class="fw-semibold mb-2">
+                        {{ assessment.staff_name or '—' }}
+                    </div>
+                    <div class="small text-muted">Tanggal Dibuat</div>
+                    <div class="fw-semibold mb-2">
+                        {{ assessment.created_at | jakarta }}
+                    </div>
+                    {% if assessment.submitted_at %}
+                    <div class="small text-muted">Tanggal Submit</div>
+                    <div class="fw-semibold mb-2">
+                        {{ assessment.submitted_at | jakarta }}
+                    </div>
+                    {% endif %} {% if assessment.verified_at %}
+                    <div class="small text-muted">Tanggal Verifikasi</div>
+                    <div class="fw-semibold text-success">
+                        {{ assessment.verified_at | jakarta }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Info sekolah ────────────────────────────────────────── #}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="icon-badge section-icon text-primary">
+                            <i class="bi bi-building"></i>
+                        </span>
+                        <h2 class="h6 fw-bold mb-0">Info Sekolah</h2>
+                    </div>
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            <tr>
+                                <td class="text-muted border-0 ps-0">NPSN</td>
+                                <td class="text-end fw-medium border-0 pe-0">
+                                    {{ assessment.npsn or '—' }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted ps-0">Jenjang</td>
+                                <td class="text-end pe-0">
+                                    {{ assessment.jenjang or '—' }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted ps-0">Status</td>
+                                <td class="text-end pe-0">
+                                    <span
+                                        class="badge text-bg-{% if assessment.status == 'verified' %}success{% elif assessment.status == 'submitted' %}warning{% elif assessment.status == 'reopened' %}info{% else %}secondary{% endif %} text-uppercase"
+                                    >
+                                        {{ assessment.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted ps-0">Skala Skor</td>
+                                <td class="text-end pe-0">
+                                    0 – {{ scale_max }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted ps-0">Aspek Dinilai</td>
+                                <td class="text-end fw-medium pe-0">
+                                    {{ _ns.scored_count }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# Verifikasi Buku Tamu ────────────────────────────────── #}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span
+                            class="icon-badge section-icon text-{{ 'success' if assessment.guestbook_transaction_id else 'warning' }}"
+                        >
+                            <i
+                                class="bi bi-book{% if assessment.guestbook_transaction_id %}-fill{% endif %}"
+                            ></i>
+                        </span>
+                        <div>
+                            <h2 class="h6 fw-bold mb-0">
+                                Verifikasi Buku Tamu
+                            </h2>
+                            <p class="text-muted small mb-0">
+                                {{ 'Sudah terhubung' if
+                                assessment.guestbook_transaction_id else 'Belum
+                                terhubung' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    {% if assessment.guestbook_transaction_id %}
+                    <div
+                        class="alert alert-success py-2 px-3 small mb-3 d-flex align-items-center gap-2"
+                    >
+                        <i class="bi bi-check-circle-fill"></i>
+                        Transaksi #{{ assessment.guestbook_transaction_id }}
+                    </div>
+                    {% if assessment.guestbook_photo_path %}
+                    <div
+                        class="ratio ratio-4x3 rounded overflow-hidden border mb-2"
+                    >
+                        <img
+                            src="{{ url_for('portal.uploaded_file', filename=assessment.guestbook_photo_path.replace('uploads/portal/', '')) }}"
+                            class="w-100 h-100 object-fit-cover"
+                            alt="Foto buku tamu {{ assessment.school_name }}"
+                        />
+                    </div>
+                    <div class="text-muted small">
+                        {{ assessment.guestbook_visit_at | jakarta }}
+                    </div>
+                    {% endif %} {% elif is_staff and assessment.status not in
+                    ['verified'] %}
+                    <form
+                        method="post"
+                        action="{{ url_for('hospitality.link_guestbook', assessment_id=assessment.id) }}"
+                    >
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold"
+                                >Pilih Transaksi</label
+                            >
+                            {% if guestbook_options %}
+                            <select
+                                class="form-select form-select-sm"
+                                name="transaction_id"
+                                required
+                            >
+                                <option value="">
+                                    — pilih transaksi approved —
+                                </option>
+                                {% for tx in guestbook_options %}
+                                <option
+                                    value="{{ tx.id }}"
+                                    {%
+                                    if
+                                    tx.is_linked
+                                    %}disabled{%
+                                    endif
+                                    %}
+                                >
+                                    {{ tx.visit_at | jakarta }} — {{ tx.purpose
+                                    or 'Kunjungan' }} {% if tx.is_same_day %} •
+                                    Hari ini{% endif %} {% if tx.is_linked %} •
+                                    sudah terhubung{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Transaksi hari yang sama diprioritaskan.
+                            </div>
+                            {% else %}
+                            <div class="alert alert-warning small py-2 mb-0">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                Belum ada transaksi Buku Tamu approved untuk
+                                sekolah ini.
+                            </div>
+                            {% endif %}
+                        </div>
+                        <button
+                            class="btn btn-primary btn-sm w-100"
+                            type="submit"
+                            {%
+                            if
+                            not
+                            guestbook_options
+                            %}disabled{%
+                            endif
+                            %}
+                        >
+                            <i class="bi bi-link-45deg me-1"></i>Hubungkan &amp;
+                            Verifikasi
+                        </button>
+                    </form>
+
+                    {% else %}
+                    <div
+                        class="alert alert-warning small py-2 px-3 mb-0 d-flex align-items-center gap-2"
+                    >
+                        <i class="bi bi-hourglass-split"></i>
+                        Menunggu staff menghubungkan transaksi buku tamu untuk
+                        verifikasi.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Reopen request ──────────────────────────────────────── #} {{
+            reopen_request_card( assessment=assessment,
+            latest_request=latest_reopen_request, current_role=user_role,
+            request_endpoint='hospitality.request_reopen',
+            approve_endpoint='hospitality.approve_reopen',
+            reject_endpoint='hospitality.reject_reopen',
+            allow_statuses=['submitted', 'verified'], request_roles=['staff'],
+            admin_roles=['admin'],
+            csrf_token_value=(csrf_token() if csrf_token is defined else None) )
+            }} {# Admin zone ─────────────────────────────────────────── #} {%
+            if user_role in ['admin', 'coordinator'] and assessment.status !=
+            'draft' %}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-shield-lock text-danger"></i> Admin Zone
+                    </h6>
+                    <div class="d-grid gap-2">
+                        <a
+                            href="{{ url_for('hospitality.admin_reopen_requests') }}"
+                            class="btn btn-sm btn-outline-warning d-flex align-items-center gap-2"
+                        >
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                            <span>Kelola Reopen Request</span>
+                        </a>
+                        <a
+                            href="{{ url_for('hospitality.admin_home') }}"
+                            class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2"
+                        >
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Kembali ke Dashboard</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {# ── end left col ── #} {#
+        ════════════════════════════════════════════════════════ RIGHT MAIN
+        CONTENT — col-lg-8
+        ════════════════════════════════════════════════════════ #}
+        <div class="col-lg-8">
+            {# Detail penilaian ────────────────────────────────────── #}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <span class="icon-badge section-icon text-success">
+                            <i class="bi bi-list-check"></i>
+                        </span>
+                        <div>
+                            <h2 class="h6 fw-bold mb-0">Detail Penilaian</h2>
+                            <p class="text-muted mb-0 small">
+                                Skor per komponen dan aspek hospitality
+                            </p>
+                        </div>
+                    </div>
+
+                    {% if components %} {% for comp in components %} {#
+                    Per-component totals #} {% set _cns = namespace(total=0,
+                    max_score=0) %} {% for aspect in comp.aspects %} {% set _cs
+                    = scores_map.get(aspect.id) %} {% if _cs and _cs.score is
+                    not none %} {% set _cns.total = _cns.total + _cs.score %} {%
+                    set _cns.max_score = _cns.max_score + scale_max %} {% endif
+                    %} {% endfor %} {% set comp_pct = (_cns.total /
+                    _cns.max_score * 100) if _cns.max_score > 0 else 0 %}
+
+                    <div class="room-item mb-3">
+                        <div class="room-header">
+                            <h5>
+                                <i class="bi bi-grid-3x3-gap me-2"></i>{{
+                                comp.name }} {% if comp.description %}
+                                <span class="fw-normal text-muted small ms-1"
+                                    >— {{ comp.description }}</span
+                                >
+                                {% endif %}
+                            </h5>
+                            {% if _cns.max_score > 0 %}
+                            <span class="badge bg-light text-dark">
+                                {{ _cns.total }}/{{ _cns.max_score }} &bull; {{
+                                "%.0f" | format(comp_pct) }}%
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="room-body">
+                            <table class="table table-sm align-middle mb-0">
+                                <tbody>
+                                    {% for aspect in comp.aspects %} {% set _as
+                                    = scores_map.get(aspect.id) %} {% set
+                                    score_val = _as.score if _as else none %}
+                                    <tr>
+                                        <td class="py-2">
+                                            <div
+                                                class="fw-semibold small d-flex align-items-center gap-1"
+                                            >
+                                                {{ aspect.name }} {% if
+                                                aspect.is_required %}
+                                                <span
+                                                    class="badge bg-danger-subtle text-danger"
+                                                    style="font-size: 0.6rem"
+                                                    >Wajib</span
+                                                >
+                                                {% endif %}
+                                            </div>
+                                            {% if aspect.description %}
+                                            <div
+                                                class="text-muted"
+                                                style="font-size: 0.75rem"
+                                            >
+                                                {{ aspect.description }}
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                        <td
+                                            class="text-end py-2"
+                                            style="width: 90px"
+                                        >
+                                            {% if score_val is not none %}
+                                            <span
+                                                class="badge {{ get_aspect_badge_class(score_val, scale_max) }}"
+                                            >
+                                                {{ score_val }}/{{ scale_max }}
+                                            </span>
+                                            {% else %}
+                                            <span
+                                                class="badge bg-secondary opacity-50"
+                                                >—</span
+                                            >
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% if _as and _as.note %}
+                                    <tr>
+                                        <td colspan="2" class="pt-0 pb-2">
+                                            <div
+                                                class="alert alert-info py-1 px-2 mb-0 small d-flex align-items-start gap-2"
+                                            >
+                                                <i
+                                                    class="bi bi-chat-right-text flex-shrink-0 mt-1"
+                                                ></i>
+                                                <span>{{ _as.note }}</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endif %} {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {% endfor %} {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>
+                        Belum ada komponen penilaian.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Komentar ────────────────────────────────────────────── #}
+            <div class="card border-0 shadow-sm" id="comments">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="icon-badge section-icon text-info">
+                            <i class="bi bi-chat-dots"></i>
+                        </span>
+                        <div>
+                            <h2 class="h6 fw-bold mb-0">Komentar</h2>
+                            <p class="text-muted small mb-0">
+                                {{ comments | length }} komentar
+                            </p>
+                        </div>
+                    </div>
+
+                    {% if comments %}
+                    <div class="d-flex flex-column gap-3 mb-4">
+                        {% for c in comments %}
+                        <div class="border rounded-3 p-3">
+                            <div
+                                class="d-flex justify-content-between align-items-start small mb-1"
+                            >
+                                <span class="fw-semibold">
+                                    {{ c.author_name or 'Pengguna' }}
+                                    <span
+                                        class="badge bg-light text-secondary ms-1 fw-normal"
+                                        >{{ c.author_role or '—' }}</span
+                                    >
+                                </span>
+                                <span class="text-muted"
+                                    >{{ c.created_at | jakarta }}</span
+                                >
+                            </div>
+                            <div class="small">{{ c.message }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted small mb-4">
+                        <i class="bi bi-chat-square-dots me-1 opacity-50"></i>
+                        Belum ada komentar.
+                    </p>
+                    {% endif %}
+
+                    <form
+                        method="post"
+                        action="{{ url_for('hospitality.add_comment', assessment_id=assessment.id) }}"
+                    >
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-2">
+                            <textarea
+                                name="message"
+                                class="form-control form-control-sm"
+                                rows="2"
+                                placeholder="Tulis komentar..."
+                                required
+                            ></textarea>
+                        </div>
+                        <button
+                            class="btn btn-outline-primary btn-sm"
+                            type="submit"
+                        >
+                            <i class="bi bi-send me-1"></i>Kirim Komentar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {# ── end right col ── #}
+    </div>
+</section>
+{% endblock %}

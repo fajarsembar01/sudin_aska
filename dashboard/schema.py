@@ -115,6 +115,35 @@ CREATE INDEX IF NOT EXISTS idx_bullying_report_events_report
 ON bullying_report_events (report_id);
 """
 
+_DASHBOARD_ADMIN_ACTION_LOGS_SQL = """
+CREATE TABLE IF NOT EXISTS dashboard_admin_action_logs (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    feature_key TEXT NOT NULL,
+    action TEXT NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id INTEGER,
+    target_name TEXT,
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_DASHBOARD_ADMIN_ACTION_LOGS_INDEX_CREATED = """
+CREATE INDEX IF NOT EXISTS idx_dashboard_admin_action_logs_created
+ON dashboard_admin_action_logs (created_at DESC);
+"""
+
+_DASHBOARD_ADMIN_ACTION_LOGS_INDEX_FEATURE = """
+CREATE INDEX IF NOT EXISTS idx_dashboard_admin_action_logs_feature
+ON dashboard_admin_action_logs (feature_key, created_at DESC);
+"""
+
+_DASHBOARD_ADMIN_ACTION_LOGS_INDEX_USER = """
+CREATE INDEX IF NOT EXISTS idx_dashboard_admin_action_logs_user
+ON dashboard_admin_action_logs (user_id, created_at DESC);
+"""
+
 _NOTIFICATIONS_SQL = """
 CREATE TABLE IF NOT EXISTS notifications (
     id SERIAL PRIMARY KEY,
@@ -223,10 +252,40 @@ _TELEGRAM_USERS_INDEX_STATUS = """
 CREATE INDEX IF NOT EXISTS idx_telegram_users_status ON telegram_users (status);
 """
 
+_WHATSAPP_USERS_SQL = """
+CREATE TABLE IF NOT EXISTS whatsapp_users (
+    id SERIAL PRIMARY KEY,
+    whatsapp_user_id BIGINT UNIQUE NOT NULL,
+    display_name TEXT,
+    first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_message_preview TEXT,
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','suspended','under_review')),
+    status_reason TEXT,
+    status_changed_at TIMESTAMPTZ,
+    status_changed_by TEXT,
+    metadata JSONB
+);
+"""
+
+_WHATSAPP_USERS_INDEX_STATUS = """
+CREATE INDEX IF NOT EXISTS idx_whatsapp_users_status ON whatsapp_users (status);
+"""
+
 _TELEGRAM_NOTIFICATION_SETTINGS_SQL = """
 CREATE TABLE IF NOT EXISTS telegram_notification_settings (
     id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
     bot_token TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+"""
+
+_WHATSAPP_LINK_SETTINGS_SQL = """
+CREATE TABLE IF NOT EXISTS whatsapp_link_settings (
+    id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    wa_link TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
@@ -238,9 +297,10 @@ CREATE TABLE IF NOT EXISTS telegram_admin_accounts (
     id SERIAL PRIMARY KEY,
     dashboard_user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
     telegram_username TEXT NOT NULL,
+    notification_scope TEXT NOT NULL DEFAULT 'default',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
-    UNIQUE (telegram_username)
+    UNIQUE (telegram_username, notification_scope)
 );
 """
 
@@ -340,6 +400,33 @@ CREATE TABLE IF NOT EXISTS portal_preview_pins (
 _PORTAL_PREVIEW_PINS_INDEX_SQL = """
 CREATE INDEX IF NOT EXISTS idx_portal_preview_pins_admin
 ON portal_preview_pins (admin_user_id);
+"""
+
+_HOSPITALITY_GUESTBOOK_REVIEWS_SQL = """
+CREATE TABLE IF NOT EXISTS hospitality_guestbook_reviews (
+    id SERIAL PRIMARY KEY,
+    transaction_id INTEGER NOT NULL REFERENCES daftar_tamu_general_transactions(id) ON DELETE CASCADE,
+    school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+    review_token TEXT NOT NULL UNIQUE,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed')),
+    rating SMALLINT,
+    comment TEXT,
+    completed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT hospitality_guestbook_reviews_rating_check CHECK (rating IS NULL OR rating BETWEEN 1 AND 5)
+);
+"""
+
+_HOSPITALITY_GUESTBOOK_REVIEWS_INDEX_SQL = """
+CREATE UNIQUE INDEX IF NOT EXISTS uq_hosp_guestbook_reviews_transaction
+ON hospitality_guestbook_reviews (transaction_id);
+CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_school
+ON hospitality_guestbook_reviews (school_id);
+CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_status
+ON hospitality_guestbook_reviews (status);
+CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_completed_at
+ON hospitality_guestbook_reviews (completed_at DESC);
 """
 
 _PORTAL_SCHOOLS_SQL = """
@@ -840,6 +927,126 @@ CREATE INDEX IF NOT EXISTS idx_daftar_tamu_contact_priority_active ON daftar_tam
 """
 
 
+# ===== CMS Schema =====
+
+_CMS_PROFIL_INSTANSI_SQL = """
+CREATE TABLE IF NOT EXISTS cms_profil_instansi (
+    id SERIAL PRIMARY KEY,
+    cms_deskripsi_utama TEXT,
+    cms_visi TEXT,
+    cms_misi TEXT,
+    cms_tugas_fungsi TEXT,
+    cms_motto_pelayanan TEXT,
+    cms_struktur_organisasi TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_CMS_INFORMASI_PUBLIK_SQL = """
+CREATE TABLE IF NOT EXISTS cms_informasi_publik (
+    id SERIAL PRIMARY KEY,
+    cms_jaminan_pelayanan TEXT,
+    cms_keamanan_keselamatan TEXT,
+    cms_kompensasi_pelayanan TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+# ===== Call Center Schema =====
+
+_CC_CONVERSATIONS_SQL = """
+CREATE TABLE IF NOT EXISTS cc_conversations (
+    id SERIAL PRIMARY KEY,
+    wa_user_id TEXT UNIQUE NOT NULL,
+    display_name TEXT,
+    status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','closed')),
+    last_message_at TIMESTAMPTZ,
+    unread_count INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_CC_CONVERSATIONS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_cc_conversations_status ON cc_conversations (status);
+CREATE INDEX IF NOT EXISTS idx_cc_conversations_last_msg ON cc_conversations (last_message_at DESC NULLS LAST);
+"""
+
+_CC_MESSAGES_SQL = """
+CREATE TABLE IF NOT EXISTS cc_messages (
+    id SERIAL PRIMARY KEY,
+    conversation_id INTEGER NOT NULL REFERENCES cc_conversations(id) ON DELETE CASCADE,
+    direction TEXT NOT NULL CHECK (direction IN ('inbound','outbound')),
+    message_text TEXT NOT NULL,
+    admin_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    admin_display_name TEXT,
+    wa_message_id TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_CC_MESSAGES_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_cc_messages_conversation ON cc_messages (conversation_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_cc_messages_created ON cc_messages (created_at DESC);
+"""
+
+_CC_TELEGRAM_SETTINGS_SQL = """
+CREATE TABLE IF NOT EXISTS cc_telegram_settings (
+    id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    bot_token TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+"""
+
+# Migration: add notification_scope to telegram_admin_accounts (existing DBs)
+_TELEGRAM_ADMIN_SCOPE_MIGRATION = """
+ALTER TABLE telegram_admin_accounts ADD COLUMN IF NOT EXISTS notification_scope TEXT NOT NULL DEFAULT 'default';
+"""
+_TELEGRAM_ADMIN_DROP_OLD_UNIQUE = """
+ALTER TABLE telegram_admin_accounts DROP CONSTRAINT IF EXISTS telegram_admin_accounts_telegram_username_key;
+"""
+_TELEGRAM_ADMIN_ADD_SCOPE_UNIQUE = """
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'telegram_admin_accounts_telegram_username_scope_key') THEN
+    ALTER TABLE telegram_admin_accounts ADD CONSTRAINT telegram_admin_accounts_telegram_username_scope_key UNIQUE (telegram_username, notification_scope);
+  END IF;
+END $$;
+"""
+
+_CC_TELEGRAM_GROUPS_SQL = """
+CREATE TABLE IF NOT EXISTS cc_telegram_groups (
+    id SERIAL PRIMARY KEY,
+    chat_id BIGINT UNIQUE NOT NULL,
+    title TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+"""
+
+_CC_MESSAGE_DRAFTS_SQL = """
+CREATE TABLE IF NOT EXISTS cc_message_drafts (
+    id SERIAL PRIMARY KEY,
+    admin_user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'Umum',
+    message_text TEXT NOT NULL,
+    pinned BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_CC_MESSAGE_DRAFTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_cc_message_drafts_admin ON cc_message_drafts (admin_user_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cc_message_drafts_admin_category ON cc_message_drafts (admin_user_id, category);
+"""
+
 def ensure_dashboard_schema() -> None:
     """Create core dashboard tables when they do not yet exist."""
     statements: Iterable[str] = (
@@ -851,6 +1058,10 @@ def ensure_dashboard_schema() -> None:
         _BULLYING_STATUS_INDEX_SQL,
         _BULLYING_EVENTS_SQL,
         _BULLYING_EVENTS_INDEX_SQL,
+        _DASHBOARD_ADMIN_ACTION_LOGS_SQL,
+        _DASHBOARD_ADMIN_ACTION_LOGS_INDEX_CREATED,
+        _DASHBOARD_ADMIN_ACTION_LOGS_INDEX_FEATURE,
+        _DASHBOARD_ADMIN_ACTION_LOGS_INDEX_USER,
         _NOTIFICATIONS_SQL,
         "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES dashboard_users(id) ON DELETE CASCADE",
         _NOTIFICATIONS_INDEX_STATUS,
@@ -867,9 +1078,15 @@ def ensure_dashboard_schema() -> None:
         _CHAT_FEEDBACK_CREATED_INDEX_SQL,
         _TELEGRAM_USERS_SQL,
         _TELEGRAM_USERS_INDEX_STATUS,
+        _WHATSAPP_USERS_SQL,
+        _WHATSAPP_USERS_INDEX_STATUS,
         _TELEGRAM_NOTIFICATION_SETTINGS_SQL,
+        _WHATSAPP_LINK_SETTINGS_SQL,
         _TELEGRAM_ADMIN_ACCOUNTS_SQL,
         _TELEGRAM_ADMIN_ACCOUNTS_INDEX_USER,
+        _TELEGRAM_ADMIN_SCOPE_MIGRATION,
+        _TELEGRAM_ADMIN_DROP_OLD_UNIQUE,
+        _TELEGRAM_ADMIN_ADD_SCOPE_UNIQUE,
         _TELEGRAM_NOTIFICATION_GROUPS_SQL,
         # Portal PANBERSS tables
         _PORTAL_KECAMATAN_SQL,
@@ -885,6 +1102,8 @@ def ensure_dashboard_schema() -> None:
         _PORTAL_UI_SETTINGS_SQL,
         _PORTAL_PREVIEW_PINS_SQL,
         _PORTAL_PREVIEW_PINS_INDEX_SQL,
+        _HOSPITALITY_GUESTBOOK_REVIEWS_SQL,
+        _HOSPITALITY_GUESTBOOK_REVIEWS_INDEX_SQL,
         _PORTAL_SCHOOLS_SQL,
         _PORTAL_SCHOOLS_INDEX_SQL,
         _PORTAL_ROOMS_SQL,
@@ -1027,7 +1246,16 @@ def ensure_dashboard_schema() -> None:
           AND a.created_at < b.created_at
         """,
         # Enforce unique constraint for atomic upserts
-        "ALTER TABLE portal_assessment_photos ADD CONSTRAINT portal_assessment_photos_assessment_id_school_room_id_key UNIQUE (assessment_id, school_room_id)", 
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'portal_assessment_photos_assessment_id_school_room_id_key'
+            ) THEN
+                ALTER TABLE portal_assessment_photos ADD CONSTRAINT portal_assessment_photos_assessment_id_school_room_id_key UNIQUE (assessment_id, school_room_id);
+            END IF;
+        END $$;
+        """,
         # Portal schools additional columns
         "ALTER TABLE portal_schools ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'NEGERI'",
         "ALTER TABLE portal_schools ADD COLUMN IF NOT EXISTS kelurahan_id INTEGER REFERENCES portal_kelurahan(id) ON DELETE SET NULL",
@@ -1048,6 +1276,18 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS latitude DECIMAL(9,6)",
         "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS longitude DECIMAL(9,6)",
         "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS metadata JSONB",
+        # ===== CMS tables =====
+        _CMS_PROFIL_INSTANSI_SQL,
+        _CMS_INFORMASI_PUBLIK_SQL,
+        # ===== Call Center tables =====
+        _CC_CONVERSATIONS_SQL,
+        _CC_CONVERSATIONS_INDEX_SQL,
+        _CC_MESSAGES_SQL,
+        _CC_MESSAGES_INDEX_SQL,
+        _CC_TELEGRAM_SETTINGS_SQL,
+        _CC_TELEGRAM_GROUPS_SQL,
+        _CC_MESSAGE_DRAFTS_SQL,
+        _CC_MESSAGE_DRAFTS_INDEX_SQL,
     )
     
     # Execute statements one by one to ensure partial success and better error reporting

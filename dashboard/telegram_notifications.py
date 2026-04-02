@@ -440,6 +440,27 @@ def _broadcast_notification(
     }
 
 
+def notify_hospitality_verified(
+    *,
+    assessment_id: int,
+    school_name: Optional[str],
+    staff_name: Optional[str],
+    transaction_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    lines = [
+        "Hospitality terverifikasi",
+        f"Assessment ID: {assessment_id}",
+        f"Sekolah: {school_name or '-'}",
+        f"Staff: {staff_name or '-'}",
+    ]
+    if transaction_id:
+        lines.append(f"Buku Tamu ID: {transaction_id}")
+    time_label = _time_label()
+    if time_label:
+        lines.append(f"Waktu: {time_label}")
+    return _broadcast_notification(text="\\n".join(lines))
+
+
 def notify_verification_status_update(
     *,
     user_id: int,

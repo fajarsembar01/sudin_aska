@@ -61,6 +61,21 @@
         background: #000;
     }
 
+    #photoResult {
+        transform: rotate(0deg);
+        transform-origin: center center;
+        transition: transform 0.2s ease;
+    }
+
+    .photo-rotate-controls {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .photo-rotate-controls .btn {
+        flex: 1;
+    }
+
     .gps-pill {
         display: inline-flex;
         align-items: center;
@@ -331,7 +346,7 @@
             <div class="card-body">
                 <h2 class="h6 fw-bold mb-3">Input Tamu Kedinasan</h2>
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Cari Tamu</label>
+                    <label class="form-label fw-semibold">Pilih / Input Tamu</label>
                     <ul class="nav nav-pills gap-2" id="guestTypeTabs" role="tablist">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="guest-tab-sudin" data-bs-toggle="pill"
@@ -353,12 +368,8 @@
                                 style="max-height: 220px; overflow: auto;"></div>
                         </div>
                         <div class="tab-pane fade" id="guestTabUmum" role="tabpanel" aria-labelledby="guest-tab-umum">
-                            <input type="text" id="generalSearchInput" class="form-control"
-                                placeholder="Nama, instansi, telepon...">
-                            <div id="generalSearchResults" class="border rounded-3 mt-2 d-none"
-                                style="max-height: 220px; overflow: auto;"></div>
-                            <div class="mt-3 border rounded-3 p-3 bg-light d-none" id="addGeneralGuestContainer">
-                                <div class="fw-semibold mb-2">Tambah Tamu Instansi Lain</div>
+                            <div class="border rounded-3 p-3 bg-light" id="addGeneralGuestContainer">
+                                <div class="fw-semibold mb-2">Input Tamu Instansi Lain</div>
                                 <div class="row g-2">
                                     <div class="col-12">
                                         <input type="text" id="generalNameInput" class="form-control"
@@ -388,7 +399,7 @@
                                     </div>
                                 </div>
                                 <div class="small text-muted mt-2">
-                                    Tamu instansi lain yang ditambahkan sekolah akan otomatis terverifikasi.
+                                    Pengisian instansi lain dilakukan langsung oleh sekolah.
                                 </div>
                             </div>
                         </div>
@@ -447,6 +458,14 @@
                     <button type="button" class="btn btn-outline-secondary" id="retakePhotoBtn" disabled>
                         <i class="bi bi-arrow-counterclockwise me-1"></i>Ulangi
                     </button>
+                    <div class="photo-rotate-controls flex-grow-1">
+                        <button type="button" class="btn btn-outline-secondary" id="rotatePhotoLeftBtn" disabled>
+                            <i class="bi bi-arrow-counterclockwise"></i> Putar Kiri
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="rotatePhotoRightBtn" disabled>
+                            <i class="bi bi-arrow-clockwise"></i> Putar Kanan
+                        </button>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <span class="gps-pill" id="gpsStatus">GPS belum aktif</span>
@@ -538,14 +557,12 @@
     (function () {
         var selectedGuests = new Map();
         var guestResults = document.getElementById('guestSearchResults');
-        var generalResults = document.getElementById('generalSearchResults');
         var addGeneralGuestContainer = document.getElementById('addGeneralGuestContainer');
         var selectedContainer = document.getElementById('selectedGuests');
         var selectedEmpty = document.getElementById('selectedGuestsEmpty');
         var selectedField = document.getElementById('selectedGuestsField');
         var selectedError = document.getElementById('selectedGuestsError');
         var searchInput = document.getElementById('guestSearchInput');
-        var generalSearchInput = document.getElementById('generalSearchInput');
         var guestPhotoModalEl = document.getElementById('guestProfilePhotoModal');
         var guestPhotoTitleEl = document.getElementById('guestProfilePhotoTitle');
         var guestPhotoImageEl = document.getElementById('guestProfilePhotoImage');
@@ -571,6 +588,8 @@
     var photoResult = document.getElementById('photoResult');
     var photoCanvas = document.getElementById('photoCanvas');
     var retakePhotoBtn = document.getElementById('retakePhotoBtn');
+    var rotatePhotoLeftBtn = document.getElementById('rotatePhotoLeftBtn');
+    var rotatePhotoRightBtn = document.getElementById('rotatePhotoRightBtn');
     var submitBtn = document.getElementById('submitTransactionBtn');
     var gpsStatus = document.getElementById('gpsStatus');
 
@@ -580,22 +599,21 @@
 
     var cameraStream = null;
     var photoBlob = null;
+    var sourcePhotoBlob = null;
+    var photoRotationDeg = 0;
+    var isPhotoRotationProcessing = false;
+    var photoRotationRequestToken = 0;
+    var photoPreviewObjectUrl = '';
     var currentLatitude = null;
     var currentLongitude = null;
     var currentAccuracy = null;
     var guestPhotoModal = null;
     var hasSudinResultsVisible = false;
-    var hasGeneralResultsVisible = false;
     var hasTriedSubmit = false;
 
     function setSudinResultsVisible(visible) {
         hasSudinResultsVisible = visible;
         if (guestResults) guestResults.classList.toggle('d-none', !visible);
-    }
-
-    function setGeneralResultsVisible(visible) {
-        hasGeneralResultsVisible = visible;
-        if (generalResults) generalResults.classList.toggle('d-none', !visible);
     }
 
     function setInputInvalidState(inputEl, errorEl, isInvalid) {
@@ -676,9 +694,13 @@
             submitBtn.className = 'btn btn-primary';
             submitBtn.disabled = false;
         } else {
-            submitBtn.innerHTML = '<i class="bi bi-send-check me-1"></i>Simpan Tamu Kedinasan';
+            if (isPhotoRotationProcessing) {
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memproses Foto...';
+            } else {
+                submitBtn.innerHTML = '<i class="bi bi-send-check me-1"></i>Simpan Tamu Kedinasan';
+            }
             submitBtn.className = 'btn btn-success';
-            submitBtn.disabled = false;
+            submitBtn.disabled = !!isPhotoRotationProcessing;
         }
     }
 
@@ -1128,70 +1150,9 @@
         setSudinResultsVisible(true);
     }
 
-    function renderGeneralGuestResults(items) {
-        if (!generalResults) return;
-        generalResults.innerHTML = '';
-        if (!items || items.length === 0) {
-            generalResults.innerHTML = '<div class="px-3 py-3 text-center">' +
-                '<div class="text-muted small mb-2">Tidak menemukan tamu/instansi?</div>' +
-                '<button type="button" class="btn btn-sm btn-outline-primary rounded-pill" id="btnShowAddGeneralGuest">' +
-                '<i class="bi bi-plus-circle me-1"></i>Tambah Tamu Baru' +
-                '</button></div>';
-            var btnAdd = document.getElementById('btnShowAddGeneralGuest');
-            if (btnAdd) {
-                btnAdd.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    if (addGeneralGuestContainer) addGeneralGuestContainer.classList.remove('d-none');
-                    setGeneralResultsVisible(false);
-                });
-            }
-            setGeneralResultsVisible(true);
-            return;
-        }
-        if (addGeneralGuestContainer) addGeneralGuestContainer.classList.add('d-none');
-        items.forEach(function (item) {
-            var row = document.createElement('div');
-            row.className = 'guest-result';
-            var meta = [];
-            if (item.instansi) meta.push(item.instansi);
-            if (item.jabatan) meta.push(item.jabatan);
-            if (item.phone) meta.push(item.phone);
-            var badges = [];
-            if (item.is_verified) badges.push('<span class="badge text-bg-success ms-2">Verified</span>');
-            if (item.has_duplicate) badges.push('<span class="badge text-bg-warning ms-2">Duplikat</span>');
-            var title = escapeHtml(item.full_name || 'Tamu');
-            var metaText = escapeHtml(meta.join(' • '));
-            row.innerHTML = '<div class="fw-semibold">' + title + (badges.join('')) + '</div>'
-                + '<div class="small text-muted">' + metaText + '</div>';
-            row.addEventListener('click', function () {
-                if (item.has_duplicate && !item.is_verified) {
-                    alert('Nama tamu ganda. Pilih yang sudah verified atau minta admin memverifikasi.');
-                    return;
-                }
-                var label = (item.full_name || 'Tamu') + (meta.length ? ' • ' + meta.join(' • ') : '');
-                addSelectedGuest({
-                    id: item.id,
-                    type: 'umum',
-                    name: item.full_name || 'Tamu',
-                    label: label,
-                });
-                if (generalSearchInput) generalSearchInput.value = '';
-                generalResults.innerHTML = '';
-                setGeneralResultsVisible(false);
-                if (addGeneralGuestContainer) addGeneralGuestContainer.classList.add('d-none');
-            });
-            generalResults.appendChild(row);
-        });
-        setGeneralResultsVisible(true);
-    }
-
     document.addEventListener('click', function (event) {
         if (guestResults && searchInput && !guestResults.contains(event.target) && event.target !== searchInput) {
             setSudinResultsVisible(false);
-        }
-        if (generalResults && generalSearchInput && !generalResults.contains(event.target) && event.target !== generalSearchInput && !(addGeneralGuestContainer && addGeneralGuestContainer.contains(event.target))) {
-            setGeneralResultsVisible(false);
-            if (addGeneralGuestContainer) addGeneralGuestContainer.classList.add('d-none');
         }
         if (purposeSuggestions && purposeInput) {
             var insideSuggestions = purposeSuggestions.contains(event.target);
@@ -1329,47 +1290,6 @@
         });
     }
 
-    var generalDebounceTimer = null;
-    function searchGeneralGuests() {
-        if (!generalSearchInput || !generalResults) return;
-        var query = (generalSearchInput.value || '').trim();
-        if (!query) {
-            generalResults.innerHTML = '';
-            setGeneralResultsVisible(false);
-            if (addGeneralGuestContainer) addGeneralGuestContainer.classList.add('d-none');
-            return;
-        }
-        fetch('/daftar-tamu/sekolah/guest-search-umum?q=' + encodeURIComponent(query))
-            .then(function (res) { return res.json(); })
-            .then(function (data) {
-                if (!data.success) throw new Error(data.message || 'Gagal memuat data');
-                renderGeneralGuestResults(data.results || []);
-            })
-            .catch(function () {
-                generalResults.innerHTML = '<div class="px-3 py-3 text-center">' +
-                    '<div class="text-danger small mb-2">Gagal memuat data tamu umum.</div>' +
-                    '<button type="button" class="btn btn-sm btn-outline-primary rounded-pill" id="btnShowAddGeneralGuestErr">' +
-                    '<i class="bi bi-plus-circle me-1"></i>Tambah Tamu Baru' +
-                    '</button></div>';
-                var btnAddErr = document.getElementById('btnShowAddGeneralGuestErr');
-                if (btnAddErr) {
-                    btnAddErr.addEventListener('click', function (e) {
-                        e.stopPropagation();
-                        if (addGeneralGuestContainer) addGeneralGuestContainer.classList.remove('d-none');
-                        setGeneralResultsVisible(false);
-                    });
-                }
-                setGeneralResultsVisible(true);
-            });
-    }
-
-    if (generalSearchInput) {
-        generalSearchInput.addEventListener('input', function () {
-            clearTimeout(generalDebounceTimer);
-            generalDebounceTimer = setTimeout(searchGeneralGuests, 300);
-        });
-    }
-
     if (generalNameInput) {
         generalNameInput.addEventListener('input', function () {
             setInputInvalidState(generalNameInput, generalNameError, false);
@@ -1435,16 +1355,12 @@
                     if (guest.jabatan) meta.push(guest.jabatan);
                     if (guest.phone) meta.push(guest.phone);
                     var label = (guest.full_name || nameVal) + (meta.length ? ' • ' + meta.join(' • ') : '');
-                    if (guest.has_duplicate && !guest.is_verified) {
-                        alert('Tamu ditambahkan, tetapi nama ganda. Minta admin memberi badge verified sebelum dipilih.');
-                    } else {
-                        addSelectedGuest({
-                            id: guest.id,
-                            type: 'umum',
-                            name: guest.full_name || nameVal,
-                            label: label,
-                        });
-                    }
+                    addSelectedGuest({
+                        id: guest.id,
+                        type: 'umum',
+                        name: guest.full_name || nameVal,
+                        label: label,
+                    });
                     if (generalNameInput) generalNameInput.value = '';
                     if (generalInstansiInput) generalInstansiInput.value = '';
                     if (generalJabatanInput) generalJabatanInput.value = '';
@@ -1495,6 +1411,10 @@
             cameraStream.getTracks().forEach(function (track) { track.stop(); });
             cameraStream = null;
         }
+        if (photoPreviewObjectUrl) {
+            URL.revokeObjectURL(photoPreviewObjectUrl);
+            photoPreviewObjectUrl = '';
+        }
     }
 
     function requestUserMedia(constraints) {
@@ -1538,12 +1458,164 @@
         return 'Tidak bisa mengakses kamera. Pastikan izin kamera diaktifkan.';
     }
 
+    function normalizeRotationDegrees(rawRotation) {
+        var parsed = Number(rawRotation);
+        if (Number.isNaN(parsed)) parsed = 0;
+        return ((parsed % 360) + 360) % 360;
+    }
+
+    function applyCapturedPhotoRotation(rotationDeg) {
+        if (!photoResult) return;
+        var normalized = normalizeRotationDegrees(rotationDeg);
+        photoResult.dataset.rotation = String(normalized);
+        photoResult.style.transform = 'rotate(' + normalized + 'deg)';
+    }
+
+    function setRotationButtonsDisabled(disabled) {
+        var shouldDisable = !!disabled || !sourcePhotoBlob;
+        if (rotatePhotoLeftBtn) rotatePhotoLeftBtn.disabled = shouldDisable;
+        if (rotatePhotoRightBtn) rotatePhotoRightBtn.disabled = shouldDisable;
+    }
+
+    function clearPhotoPreviewObjectUrl() {
+        if (!photoPreviewObjectUrl) return;
+        URL.revokeObjectURL(photoPreviewObjectUrl);
+        photoPreviewObjectUrl = '';
+    }
+
+    function updatePhotoPreviewSource(blob) {
+        clearPhotoPreviewObjectUrl();
+        if (!blob) {
+            photoResult.removeAttribute('src');
+            return;
+        }
+        photoPreviewObjectUrl = URL.createObjectURL(blob);
+        photoResult.src = photoPreviewObjectUrl;
+    }
+
+    function waitForImageReady(img) {
+        return new Promise(function (resolve, reject) {
+            if (!img) {
+                reject(new Error('Foto tidak ditemukan.'));
+                return;
+            }
+            if (img.complete && img.naturalWidth && img.naturalHeight) {
+                resolve(img);
+                return;
+            }
+            var onLoad = function () {
+                cleanup();
+                resolve(img);
+            };
+            var onError = function () {
+                cleanup();
+                reject(new Error('Gagal memuat foto untuk rotasi.'));
+            };
+            var cleanup = function () {
+                img.removeEventListener('load', onLoad);
+                img.removeEventListener('error', onError);
+            };
+            img.addEventListener('load', onLoad);
+            img.addEventListener('error', onError);
+        });
+    }
+
+    function buildRotatedBlobFromImage(img, rotationDeg) {
+        return waitForImageReady(img).then(function (readyImg) {
+            return new Promise(function (resolve, reject) {
+                var naturalW = readyImg.naturalWidth || 0;
+                var naturalH = readyImg.naturalHeight || 0;
+                if (!naturalW || !naturalH) {
+                    reject(new Error('Ukuran foto tidak valid.'));
+                    return;
+                }
+
+                var normalized = normalizeRotationDegrees(rotationDeg);
+                var canvas = document.createElement('canvas');
+                var isQuarterTurn = normalized % 180 !== 0;
+                canvas.width = isQuarterTurn ? naturalH : naturalW;
+                canvas.height = isQuarterTurn ? naturalW : naturalH;
+
+                var ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error('Canvas tidak tersedia.'));
+                    return;
+                }
+
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate(normalized * Math.PI / 180);
+                ctx.drawImage(readyImg, -naturalW / 2, -naturalH / 2, naturalW, naturalH);
+
+                canvas.toBlob(function (blob) {
+                    if (!blob) {
+                        reject(new Error('Gagal membuat file foto hasil rotasi.'));
+                        return;
+                    }
+                    resolve(blob);
+                }, 'image/jpeg', 0.9);
+            });
+        });
+    }
+
+    function syncCapturedPhotoBlobWithRotation() {
+        var requestToken = ++photoRotationRequestToken;
+        if (!sourcePhotoBlob) {
+            photoBlob = null;
+            isPhotoRotationProcessing = false;
+            setRotationButtonsDisabled(true);
+            updateSubmitState();
+            return Promise.resolve(null);
+        }
+
+        var normalized = normalizeRotationDegrees(photoRotationDeg);
+        if (normalized === 0) {
+            photoBlob = sourcePhotoBlob;
+            isPhotoRotationProcessing = false;
+            setRotationButtonsDisabled(false);
+            updateSubmitState();
+            return Promise.resolve(photoBlob);
+        }
+
+        isPhotoRotationProcessing = true;
+        setRotationButtonsDisabled(true);
+        updateSubmitState();
+
+        return buildRotatedBlobFromImage(photoResult, normalized)
+            .then(function (rotatedBlob) {
+                if (requestToken !== photoRotationRequestToken) return null;
+                photoBlob = rotatedBlob;
+                return rotatedBlob;
+            })
+            .catch(function (err) {
+                if (requestToken !== photoRotationRequestToken) return null;
+                photoRotationDeg = 0;
+                applyCapturedPhotoRotation(photoRotationDeg);
+                photoBlob = sourcePhotoBlob;
+                alert((err && err.message) ? err.message : 'Gagal memproses rotasi foto.');
+                return null;
+            })
+            .finally(function () {
+                if (requestToken !== photoRotationRequestToken) return;
+                isPhotoRotationProcessing = false;
+                setRotationButtonsDisabled(false);
+                updateSubmitState();
+            });
+    }
+
+    function rotateCapturedPhoto(delta) {
+        if (!sourcePhotoBlob || isPhotoRotationProcessing) return;
+        photoRotationDeg = normalizeRotationDegrees(photoRotationDeg + Number(delta || 0));
+        applyCapturedPhotoRotation(photoRotationDeg);
+        syncCapturedPhotoBlobWithRotation();
+    }
+
     function applyCameraStream(stream) {
         cameraStream = stream;
         cameraPreview.srcObject = stream;
         cameraPreview.classList.remove('d-none');
         photoResult.classList.add('d-none');
         if (retakePhotoBtn) retakePhotoBtn.disabled = true;
+        setRotationButtonsDisabled(true);
         if (typeof cameraPreview.play === 'function') {
             cameraPreview.play().catch(function () { });
         }
@@ -1594,10 +1666,16 @@
                 return;
             }
             photoBlob = blob;
-            photoResult.src = URL.createObjectURL(blob);
+            sourcePhotoBlob = blob;
+            photoRotationDeg = 0;
+            photoRotationRequestToken += 1;
+            isPhotoRotationProcessing = false;
+            updatePhotoPreviewSource(blob);
+            applyCapturedPhotoRotation(photoRotationDeg);
             photoResult.classList.remove('d-none');
             cameraPreview.classList.add('d-none');
             if (retakePhotoBtn) retakePhotoBtn.disabled = false;
+            setRotationButtonsDisabled(false);
             updateSubmitState();
         }, 'image/jpeg', quality);
     }
@@ -1621,16 +1699,39 @@
 
     if (retakePhotoBtn) {
         retakePhotoBtn.addEventListener('click', function () {
+            photoRotationRequestToken += 1;
+            isPhotoRotationProcessing = false;
             photoBlob = null;
+            sourcePhotoBlob = null;
+            photoRotationDeg = 0;
+            applyCapturedPhotoRotation(photoRotationDeg);
+            updatePhotoPreviewSource(null);
             photoResult.classList.add('d-none');
             cameraPreview.classList.remove('d-none');
             retakePhotoBtn.disabled = true;
+            setRotationButtonsDisabled(true);
             updateSubmitState();
+        });
+    }
+
+    if (rotatePhotoLeftBtn) {
+        rotatePhotoLeftBtn.addEventListener('click', function () {
+            rotateCapturedPhoto(-90);
+        });
+    }
+
+    if (rotatePhotoRightBtn) {
+        rotatePhotoRightBtn.addEventListener('click', function () {
+            rotateCapturedPhoto(90);
         });
     }
 
     if (submitBtn) {
         submitBtn.addEventListener('click', function (e) {
+            if (isPhotoRotationProcessing) {
+                e.preventDefault();
+                return;
+            }
             var hasPhoto = !!photoBlob;
             if (!cameraStream) {
                 e.preventDefault();
@@ -1764,8 +1865,9 @@
     }
 
     window.addEventListener('beforeunload', stopCamera);
+    applyCapturedPhotoRotation(0);
+    setRotationButtonsDisabled(true);
     setSudinResultsVisible(false);
-    setGeneralResultsVisible(false);
     renderSelectedGuests();
     }) ();
 </script>

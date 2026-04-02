@@ -32,7 +32,7 @@ async def notif_start(update, context):
     if user:
         username = user.username or user.first_name or "admin"
         text = message_obj.text if message_obj else "/start"
-        save_chat(user.id, username, text, role="user", topic=None)
+        save_chat(user.id, username, text, role="user", topic="notif")
 
     message = (
         "Halo! Ini bot notifikasi admin ASKA.\n"
@@ -41,7 +41,7 @@ async def notif_start(update, context):
     )
     await update.effective_message.reply_text(message)
     if user:
-        save_chat(user.id, username, message, role="aska", topic=None)
+        save_chat(user.id, username, message, role="aska", topic="notif")
 
 
 def _load_token() -> str:
