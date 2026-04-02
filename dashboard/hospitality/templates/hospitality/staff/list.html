@@ -117,6 +117,147 @@
   .hosp-table td { vertical-align: middle; }
   .hosp-table .school-cell { min-width: 200px; }
 
+  .assessment-item {
+    align-items: center;
+  }
+  .assessment-item .assessment-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .assessment-item .assessment-meta .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .assessment-item .assessment-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .assessment-status-pill {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .btn-draft-delete {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(220, 53, 69, 0.4);
+    background: rgba(220, 53, 69, 0.12);
+    color: #dc3545;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+  }
+  .btn-draft-delete:disabled {
+    opacity: 0.6;
+  }
+  .draft-delete-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1080;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    background: rgba(15, 23, 42, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.18s ease, visibility 0.18s ease;
+  }
+  .draft-delete-modal.show {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .draft-delete-card {
+    width: min(100%, 420px);
+    border-radius: 1rem;
+    border: 1px solid rgba(220, 53, 69, 0.14);
+    background: var(--bg-surface);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+    overflow: hidden;
+    transform: translateY(12px) scale(0.98);
+    transition: transform 0.18s ease;
+  }
+  .draft-delete-modal.show .draft-delete-card {
+    transform: translateY(0) scale(1);
+  }
+  .draft-delete-card-head {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 1.1rem 1.2rem 0.8rem;
+  }
+  .draft-delete-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(220, 53, 69, 0.12);
+    color: #dc3545;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .draft-delete-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .draft-delete-subtitle {
+    margin: 0.15rem 0 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+  .draft-delete-close {
+    margin-left: auto;
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+  }
+  .draft-delete-close:hover {
+    background: var(--bg-subtle);
+    color: var(--text-primary);
+  }
+  .draft-delete-body {
+    padding: 0 1.2rem 1rem;
+    color: var(--text-secondary);
+  }
+  .draft-delete-school {
+    margin: 0.75rem 0 0;
+    padding: 0.7rem 0.85rem;
+    border-radius: 0.8rem;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-soft);
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  .draft-delete-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.65rem;
+    padding: 0 1.2rem 1.2rem;
+  }
+  .draft-delete-actions .btn {
+    min-width: 118px;
+    border-radius: 0.75rem;
+  }
+
   /* Empty state */
   .hosp-empty {
     text-align: center;
@@ -188,16 +329,12 @@
     <span class="icon-badge timeline-icon text-primary">
       <i class="bi bi-building"></i>
     </span>
-    <div class="flex-grow-1">
-      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div class="flex-grow-1 assessment-meta">
+      <div class="top-row">
         <div>
           <div class="fw-semibold">{{ item.school_name }}</div>
           <small class="text-muted">{{ item.npsn }} • {{ item.jenjang }}</small>
         </div>
-        <span class="badge badge-{{ item.status }} text-uppercase">
-          {% if item.status == 'draft' %}<i class="bi bi-pencil me-1"></i>{% elif item.status == 'submitted' %}<i class="bi bi-send me-1"></i>{% elif item.status == 'verified' %}<i class="bi bi-patch-check me-1"></i>{% elif item.status == 'reopened' %}<i class="bi bi-arrow-repeat me-1"></i>{% endif %}
-          {{ item.status }}
-        </span>
       </div>
       <div class="small text-muted mt-1">
         {% if item.status == 'draft' %}
@@ -207,7 +344,24 @@
         {% endif %}
       </div>
     </div>
-    <i class="bi bi-chevron-right text-muted"></i>
+    <div class="assessment-actions ms-auto">
+      <span class="assessment-status-pill badge-{{ item.status }} text-uppercase">
+        {% if item.status == 'draft' %}<i class="bi bi-pencil me-1"></i>{% elif item.status == 'submitted' %}<i class="bi bi-send me-1"></i>{% elif item.status == 'verified' %}<i class="bi bi-patch-check me-1"></i>{% elif item.status == 'reopened' %}<i class="bi bi-arrow-repeat me-1"></i>{% endif %}
+        {{ item.status }}
+      </span>
+      {% if item.status == 'draft' %}
+      <button type="button"
+              class="btn-draft-delete"
+              data-draft-delete
+              data-draft-delete-url="{{ url_for('hospitality.staff_delete_draft', assessment_id=item.id) }}"
+              data-draft-school="{{ item.school_name|e }}"
+              title="Hapus draft"
+              aria-label="Hapus draft {{ item.school_name|e }}">
+        <i class="bi bi-trash"></i>
+      </button>
+      {% endif %}
+      <i class="bi bi-chevron-right text-muted"></i>
+    </div>
   </a>
   {% endfor %}
 </div>
@@ -291,6 +445,120 @@ function startAssessFromInput() {
   if (!selectedSchoolId) return;
   window.location.href = `/hospitality/staff/assess/${selectedSchoolId}`;
 }
+</script>
+
+<div class="draft-delete-modal" id="draftDeleteModal" aria-hidden="true">
+  <div class="draft-delete-card" role="dialog" aria-modal="true" aria-labelledby="draftDeleteModalLabel">
+    <div class="draft-delete-card-head">
+      <span class="draft-delete-icon">
+        <i class="bi bi-trash3"></i>
+      </span>
+      <div>
+        <h5 class="draft-delete-title" id="draftDeleteModalLabel">Hapus Draft Penilaian</h5>
+        <p class="draft-delete-subtitle">Tindakan ini akan menghapus seluruh isi draft.</p>
+      </div>
+      <button type="button" class="draft-delete-close" id="closeDraftDeleteBtn" aria-label="Tutup">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="draft-delete-body">
+      <p class="mb-0">Draft berikut akan dihapus permanen:</p>
+      <div class="draft-delete-school" id="draftDeleteMessage">Nama sekolah</div>
+    </div>
+    <div class="draft-delete-actions">
+      <button type="button" class="btn btn-outline-secondary" id="cancelDraftDeleteBtn">Batal</button>
+      <button type="button" class="btn btn-danger" id="confirmDraftDeleteBtn">Hapus Draft</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  document.addEventListener('click', function (event) {
+    const btn = event.target.closest('[data-draft-delete]');
+    if (!btn) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const schoolName = btn.dataset.draftSchool || 'penilaian';
+    const url = btn.dataset.draftDeleteUrl;
+    if (!url) return;
+    openDraftDeleteModal(url, schoolName, btn);
+  });
+  const deleteModalEl = document.getElementById('draftDeleteModal');
+  const deleteModalMessage = deleteModalEl ? deleteModalEl.querySelector('#draftDeleteMessage') : null;
+  const deleteModalConfirmBtn = deleteModalEl ? deleteModalEl.querySelector('#confirmDraftDeleteBtn') : null;
+  const deleteModalCancelBtn = deleteModalEl ? deleteModalEl.querySelector('#cancelDraftDeleteBtn') : null;
+  const deleteModalCloseBtn = deleteModalEl ? deleteModalEl.querySelector('#closeDraftDeleteBtn') : null;
+  let activeDraftDelete = null;
+
+  function setModalOpen(isOpen) {
+    if (!deleteModalEl) return;
+    deleteModalEl.classList.toggle('show', isOpen);
+    deleteModalEl.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    document.body.classList.toggle('overflow-hidden', isOpen);
+  }
+
+  function openDraftDeleteModal(url, schoolName, button) {
+    button.dataset.pendingDeleteUrl = url;
+    activeDraftDelete = button;
+    if (deleteModalMessage) {
+      deleteModalMessage.textContent = schoolName;
+    }
+    setModalOpen(true);
+  }
+
+  async function performDraftDelete(url, button) {
+    button.setAttribute('disabled', 'disabled');
+    if (deleteModalConfirmBtn) deleteModalConfirmBtn.setAttribute('disabled', 'disabled');
+    try {
+      const res = await fetch(url, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Gagal menghapus draft.');
+      }
+      setModalOpen(false);
+      window.location.reload();
+    } catch (err) {
+      button.removeAttribute('disabled');
+      if (deleteModalConfirmBtn) deleteModalConfirmBtn.removeAttribute('disabled');
+      alert(err.message || 'Gagal menghapus draft.');
+    }
+  }
+
+  if (deleteModalConfirmBtn) {
+    deleteModalConfirmBtn.addEventListener('click', function () {
+      if (!activeDraftDelete) return;
+      const url = activeDraftDelete.dataset.pendingDeleteUrl || activeDraftDelete.dataset.draftDeleteUrl;
+      if (!url) return;
+      performDraftDelete(url, activeDraftDelete);
+    });
+  }
+
+  function closeDraftDeleteModal() {
+    setModalOpen(false);
+    if (deleteModalConfirmBtn) deleteModalConfirmBtn.removeAttribute('disabled');
+    if (activeDraftDelete) activeDraftDelete.removeAttribute('data-pending-delete-url');
+  }
+
+  if (deleteModalCancelBtn) {
+    deleteModalCancelBtn.addEventListener('click', closeDraftDeleteModal);
+  }
+  if (deleteModalCloseBtn) {
+    deleteModalCloseBtn.addEventListener('click', closeDraftDeleteModal);
+  }
+  if (deleteModalEl) {
+    deleteModalEl.addEventListener('click', function (event) {
+      if (event.target === deleteModalEl) {
+        closeDraftDeleteModal();
+      }
+    });
+  }
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && deleteModalEl && deleteModalEl.classList.contains('show')) {
+      closeDraftDeleteModal();
+    }
+  });
+})();
 </script>
 
 {% endblock %}
