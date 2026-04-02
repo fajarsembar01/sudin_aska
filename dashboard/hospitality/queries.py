@@ -1370,18 +1370,21 @@ def get_assessment_scores(assessment_id: int) -> List[Dict[str, Any]]:
 def list_guestbook_candidates(
     *,
     school_id: int,
+    user_id: Optional[int] = None,
     limit: int = 30,
 ) -> List[Dict[str, Any]]:
-    """List approved guestbook transactions for a school with flags for linking priority."""
+    """List guestbook transactions for a school and user with linking flags."""
     today = _today_jakarta()
+    statuses = ["approved", "pending"]
     with get_cursor() as cur:
-        cur.execute(
-            """
+        params: List[Any] = [school_id, statuses]
+        query = """
             SELECT
                 t.id,
                 t.visit_at,
                 t.status,
                 t.purpose,
+                t.notes,
                 t.photo_path,
                 t.latitude,
                 t.longitude,
@@ -1392,12 +1395,27 @@ def list_guestbook_candidates(
                 ) AS is_linked
             FROM daftar_tamu_transactions t
             WHERE t.school_id = %s
-              AND t.status = 'approved'
+              AND t.status = ANY(%s)
+        """
+        if user_id is not None:
+            query += """
+              AND (
+                    t.created_by = %s
+                    OR EXISTS (
+                        SELECT 1
+                        FROM daftar_tamu_transaction_guests g
+                        WHERE g.transaction_id = t.id
+                          AND g.user_id = %s
+                    )
+                )
+            """
+            params.extend([user_id, user_id])
+        query += """
             ORDER BY t.visit_at DESC, t.id DESC
             LIMIT %s
-            """,
-            (school_id, limit),
-        )
+            """
+        params.append(limit)
+        cur.execute(query, params)
         rows = [dict(row) for row in cur.fetchall()]
     for row in rows:
         visit_date = row.get("visit_at")
@@ -1410,11 +1428,13 @@ def list_guestbook_candidates(
         if isinstance(visit_date, date):
             is_same_day = visit_date == today
         row["is_same_day"] = is_same_day
-    # Sort: same-day & not linked first, then others, linked last
+        row["can_link"] = (row.get("status") or "").lower() == "approved" and not bool(row.get("is_linked"))
+    # Sort: approved + same-day + unlinked first, pending after approved, linked last
     rows.sort(
         key=lambda r: (
+            0 if (r.get("status") or "").lower() == "approved" else 1,
             0 if (r.get("is_same_day") and not r.get("is_linked")) else 1,
-            1 if not r.get("is_linked") else 2,
+            0 if not r.get("is_linked") else 1,
             -(r.get("visit_at").timestamp() if isinstance(r.get("visit_at"), datetime) else 0),
         )
     )
@@ -1428,16 +1448,62 @@ def link_guestbook_transaction(
     linked_by: Optional[int] = None,
 ) -> Dict[str, Any]:
     with get_cursor(commit=True) as cur:
-        # Ensure transaction approved and not already linked
         cur.execute(
-            "SELECT status FROM daftar_tamu_transactions WHERE id = %s",
-            (transaction_id,),
+            """
+            SELECT transaction_id, linked_at
+            FROM hospitality_assessment_guestbook_links
+            WHERE assessment_id = %s
+            """,
+            (assessment_id,),
+        )
+        existing_link = cur.fetchone()
+
+        # Ensure transaction belongs to the acting user and is approved.
+        cur.execute(
+            """
+            SELECT
+                t.status,
+                (
+                    t.created_by = %s
+                    OR EXISTS (
+                        SELECT 1
+                        FROM daftar_tamu_transaction_guests g
+                        WHERE g.transaction_id = t.id
+                          AND g.user_id = %s
+                    )
+                ) AS is_owner
+            FROM daftar_tamu_transactions t
+            WHERE t.id = %s
+            """,
+            (linked_by, linked_by, transaction_id),
         )
         row = cur.fetchone()
         if not row:
-            raise ValueError("Transaksi buku tamu tidak ditemukan")
-        if (row.get("status") or "").lower() != "approved":
-            raise ValueError("Transaksi buku tamu belum terverifikasi")
+            raise ValueError("Kunjungan buku tamu tidak ditemukan")
+        if not row.get("is_owner"):
+            raise ValueError("Kunjungan buku tamu ini bukan milik akun Anda")
+
+        transaction_status = (row.get("status") or "").lower()
+        if transaction_status == "pending":
+            raise ValueError("Kunjungan buku tamu masih pending dan belum bisa diverifikasi")
+        if transaction_status != "approved":
+            raise ValueError("Kunjungan buku tamu belum terverifikasi")
+
+        if existing_link and int(existing_link.get("transaction_id") or 0) == int(transaction_id):
+            cur.execute(
+                """
+                SELECT *
+                FROM hospitality_assessments
+                WHERE id = %s
+                """,
+                (assessment_id,),
+            )
+            assessment = cur.fetchone()
+            return {
+                "link": dict(existing_link),
+                "assessment": dict(assessment) if assessment else None,
+                "already_processed": True,
+            }
 
         cur.execute(
             """
@@ -1464,7 +1530,11 @@ def link_guestbook_transaction(
         )
         assessment = cur.fetchone()
 
-    return {"link": dict(link_row), "assessment": dict(assessment) if assessment else None}
+    return {
+        "link": dict(link_row),
+        "assessment": dict(assessment) if assessment else None,
+        "already_processed": False,
+    }
 
 
 def create_comment(

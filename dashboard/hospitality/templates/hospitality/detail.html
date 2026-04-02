@@ -10,27 +10,97 @@ aspect in comp.aspects %} {% set _s = scores_map.get(aspect.id) %} {% if _s and
 _s.score is not none %} {% set _ns.total_score = _ns.total_score + _s.score %}
 {% set _ns.scored_count = _ns.scored_count + 1 %} {% endif %} {% endfor %} {%
 endfor %} {% set max_possible = _ns.scored_count * scale_max %} {% set pct_total
-= (_ns.total_score / max_possible * 100) if max_possible > 0 else 0 %} {% block
-portal_content %} {# ── Flash messages
-──────────────────────────────────────────────────────────── #} {% with messages
-= get_flashed_messages(with_categories=true) %} {% if messages %}
-<div class="mb-3">
-    {% for category, msg in messages %}
-    <div
-        class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'danger' else 'info' }} alert-dismissible fade show py-2"
-        role="alert"
-    >
-        {{ msg }}
-        <button
-            type="button"
-            class="btn-close btn-sm"
-            data-bs-dismiss="alert"
-        ></button>
-    </div>
-    {% endfor %}
-</div>
-{% endif %} {% endwith %}
+= (_ns.total_score / max_possible * 100) if max_possible > 0 else 0 %}
+{% block head_extra %}
+<style>
+    .guestbook-picker-toggle {
+        min-height: 46px;
+        white-space: normal;
+    }
 
+    .guestbook-picker-value {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        min-width: 0;
+    }
+
+    .guestbook-picker-text {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .guestbook-picker-menu {
+        max-height: 22rem;
+        overflow-y: auto;
+    }
+
+    .guestbook-picker-option {
+        border-radius: 0.85rem;
+        padding: 0.7rem 0.8rem;
+        white-space: normal;
+    }
+
+    .guestbook-picker-option + .guestbook-picker-option {
+        margin-top: 0.35rem;
+    }
+
+    html[data-theme="light"] .guestbook-picker-option:hover,
+    html[data-theme="light"] .guestbook-picker-option:focus,
+    html[data-theme="light"] .guestbook-picker-option:active {
+        background: rgba(13, 110, 253, 0.08);
+        color: inherit;
+    }
+
+    html[data-theme="dark"] .guestbook-picker-option:hover,
+    html[data-theme="dark"] .guestbook-picker-option:focus,
+    html[data-theme="dark"] .guestbook-picker-option:active {
+        background: transparent;
+        color: inherit;
+    }
+
+    .guestbook-picker-option.is-selected {
+        background: rgba(13, 110, 253, 0.08);
+    }
+
+    .guestbook-picker-option:disabled {
+        opacity: 0.72;
+    }
+
+    .guestbook-status-icon {
+        width: 1rem;
+        text-align: center;
+    }
+
+    .guestbook-option-title {
+        font-weight: 600;
+        line-height: 1.3;
+    }
+
+    .guestbook-option-meta {
+        font-size: 0.78rem;
+        color: var(--bs-secondary-color);
+    }
+
+    .guestbook-confirm-photo {
+        max-height: 300px;
+        object-fit: cover;
+    }
+
+    .guestbook-picker-toggle.is-invalid {
+        border-color: var(--bs-danger);
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.12);
+    }
+
+    .guestbook-invalid-popover .popover-body {
+        color: var(--bs-body-color);
+        font-size: 0.84rem;
+    }
+</style>
+{% endblock %}
+{% block portal_content %}
 <section class="mb-4">
     {# ── Page header
     ─────────────────────────────────────────────────────────────── #}
@@ -152,8 +222,14 @@ portal_content %} {# ── Flash messages
                     <table class="table table-sm mb-0">
                         <tbody>
                             <tr>
-                                <td class="text-muted border-0 ps-0">NPSN</td>
+                                <td class="text-muted border-0 ps-0">Nama</td>
                                 <td class="text-end fw-medium border-0 pe-0">
+                                    {{ assessment.school_name or '—' }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted ps-0">NPSN</td>
+                                <td class="text-end fw-medium pe-0">
                                     {{ assessment.npsn or '—' }}
                                 </td>
                             </tr>
@@ -235,59 +311,86 @@ portal_content %} {# ── Flash messages
                     </div>
                     {% endif %} {% elif is_staff and assessment.status not in
                     ['verified'] %}
+                    {% set guestbook_ns = namespace(has_linkable=false) %}
+                    {% for tx in guestbook_options %}
+                        {% if tx.can_link %}
+                            {% set guestbook_ns.has_linkable = true %}
+                        {% endif %}
+                    {% endfor %}
                     <form
                         method="post"
                         action="{{ url_for('hospitality.link_guestbook', assessment_id=assessment.id) }}"
+                        data-guestbook-confirm-form
                     >
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-3">
                             <label class="form-label small fw-semibold"
-                                >Pilih Transaksi</label
+                                >Pilih Kunjungan ({{ assessment.school_name or 'sekolah yang sedang dinilai' }})</label
                             >
                             {% if guestbook_options %}
-                            <select
-                                class="form-select form-select-sm"
-                                name="transaction_id"
-                                required
-                            >
-                                <option value="">
-                                    — pilih transaksi approved —
-                                </option>
-                                {% for tx in guestbook_options %}
-                                <option
-                                    value="{{ tx.id }}"
-                                    {%
-                                    if
-                                    tx.is_linked
-                                    %}disabled{%
-                                    endif
-                                    %}
+                            <div class="dropdown" data-guestbook-picker>
+                                <input type="hidden" name="transaction_id" value="">
+                                <button
+                                    class="btn btn-outline-secondary btn-sm w-100 d-flex align-items-center justify-content-between guestbook-picker-toggle"
+                                    type="button"
+                                    data-bs-toggle="dropdown"
+                                    data-bs-auto-close="true"
+                                    aria-expanded="false"
                                 >
-                                    {{ tx.visit_at | jakarta }} — {{ tx.purpose
-                                    or 'Kunjungan' }} {% if tx.is_same_day %} •
-                                    Hari ini{% endif %} {% if tx.is_linked %} •
-                                    sudah terhubung{% endif %}
-                                </option>
+                                    <span class="guestbook-picker-value">
+                                        <i class="bi bi-list-ul text-muted guestbook-picker-icon" data-picker-icon></i>
+                                        <span class="text-muted guestbook-picker-text" data-picker-label>
+                                            Pilih Kujungan
+                                        </span>
+                                    </span>
+                                    <i class="bi bi-chevron-down text-muted"></i>
+                                </button>
+                                <div class="dropdown-menu w-100 p-2 shadow-sm guestbook-picker-menu">
+                                {% for tx in guestbook_options %}
+                                {% set tx_status = (tx.status or '')|lower %}
+                                {% set tx_can_pick = tx.can_link %}
+                                {% set tx_title = tx.purpose or 'Kunjungan' %}
+                                <button
+                                    type="button"
+                                    class="dropdown-item guestbook-picker-option{% if tx_can_pick %} is-pickable{% endif %}"
+                                    data-value="{{ tx.id }}"
+                                    data-icon-class="{{ 'bi-check-circle-fill text-success' if tx_status == 'approved' else 'bi-clock-fill text-warning' }}"
+                                    data-label="{{ tx_title }} • {{ tx.visit_at | jakarta('%d %b %Y, %H:%M') }} WIB"
+                                    data-visit-at="{{ tx.visit_at | jakarta('%d %b %Y, %H:%M') }} WIB"
+                                    data-purpose="{{ tx_title }}"
+                                    data-notes="{{ tx.notes or '' }}"
+                                    data-photo-url="{% if tx.photo_path %}{{ url_for('portal.uploaded_file', filename=tx.photo_path.replace('uploads/portal/', '')) }}{% endif %}"
+                                    {% if not tx_can_pick %}disabled{% endif %}
+                                >
+                                    <div class="d-flex align-items-start gap-2">
+                                        <i class="bi {{ 'bi-check-circle-fill text-success' if tx_status == 'approved' else 'bi-clock-fill text-warning' }} guestbook-status-icon mt-1"></i>
+                                        <div class="flex-grow-1">
+                                            <div class="guestbook-option-title">
+                                                {{ tx_title }}
+                                            </div>
+                                            <div class="guestbook-option-meta">
+                                                {{ tx.visit_at | jakarta('%d %b %Y, %H:%M') }} WIB • {{ 'Telah diverifikasi' if tx_status == 'approved' else 'Masih pending' }}{% if tx.is_same_day %} • Hari ini{% endif %}{% if tx.is_linked %} • sudah terhubung{% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </button>
                                 {% endfor %}
-                            </select>
-                            <div class="form-text">
-                                Transaksi hari yang sama diprioritaskan.
+                                </div>
                             </div>
                             {% else %}
                             <div class="alert alert-warning small py-2 mb-0">
                                 <i class="bi bi-exclamation-triangle me-1"></i>
-                                Belum ada transaksi Buku Tamu approved untuk
-                                sekolah ini.
+                                Belum ada kunjungan milik Anda dengan status pending atau telah diverifikasi untuk sekolah ini.
                             </div>
                             {% endif %}
                         </div>
                         <button
                             class="btn btn-primary btn-sm w-100"
                             type="submit"
+                            data-guestbook-submit-button
                             {%
                             if
-                            not
-                            guestbook_options
+                            not guestbook_ns.has_linkable
                             %}disabled{%
                             endif
                             %}
@@ -296,6 +399,62 @@ portal_content %} {# ── Flash messages
                             Verifikasi
                         </button>
                     </form>
+
+                    <div
+                        class="modal fade"
+                        id="guestbookConfirmModal"
+                        tabindex="-1"
+                        aria-labelledby="guestbookConfirmModalLabel"
+                        aria-hidden="true"
+                    >
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                            <div class="modal-content border-0 shadow">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold" id="guestbookConfirmModalLabel">
+                                        Konfirmasi Verifikasi Buku Tamu
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="card border-0 bg-body-tertiary">
+                                        <div class="card-body">
+                                            <div class="row g-3 align-items-start">
+                                                <div class="col-md-6">
+                                                    <div class="small text-muted mb-1">Tanggal</div>
+                                                    <div class="fw-semibold mb-3" data-confirm-visit-at>—</div>
+
+                                                    <div class="small text-muted mb-1">Tujuan</div>
+                                                    <div class="fw-semibold mb-3" data-confirm-purpose>—</div>
+
+                                                    <div class="small text-muted mb-1">Catatan</div>
+                                                    <div class="mb-0" data-confirm-notes>—</div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="small text-muted mb-2">Foto Kunjungan</div>
+                                                    <div class="ratio ratio-4x3 rounded overflow-hidden border bg-body">
+                                                        <img
+                                                            src=""
+                                                            alt="Foto kunjungan"
+                                                            class="w-100 h-100 guestbook-confirm-photo"
+                                                            data-confirm-photo
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                        Batal
+                                    </button>
+                                    <button type="button" class="btn btn-primary" data-confirm-submit>
+                                        Setuju
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     {% else %}
                     <div
@@ -539,4 +698,157 @@ portal_content %} {# ── Flash messages
         {# ── end right col ── #}
     </div>
 </section>
+{% endblock %}
+{% block portal_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var confirmModalEl = document.getElementById('guestbookConfirmModal');
+        var confirmModal = confirmModalEl && window.bootstrap
+            ? window.bootstrap.Modal.getOrCreateInstance(confirmModalEl)
+            : null;
+        var confirmForm = document.querySelector('[data-guestbook-confirm-form]');
+        var confirmSubmitButton = document.querySelector('[data-confirm-submit]');
+        var primarySubmitButton = document.querySelector('[data-guestbook-submit-button]');
+        var confirmVisitAt = document.querySelector('[data-confirm-visit-at]');
+        var confirmPurpose = document.querySelector('[data-confirm-purpose]');
+        var confirmNotes = document.querySelector('[data-confirm-notes]');
+        var confirmPhoto = document.querySelector('[data-confirm-photo]');
+
+        function fillConfirmation(option) {
+            if (!option) return;
+            if (confirmVisitAt) confirmVisitAt.textContent = option.getAttribute('data-visit-at') || '—';
+            if (confirmPurpose) confirmPurpose.textContent = option.getAttribute('data-purpose') || '—';
+            if (confirmNotes) {
+                var notes = option.getAttribute('data-notes') || '';
+                confirmNotes.textContent = notes.trim() ? notes : '—';
+            }
+            if (confirmPhoto) {
+                var photoUrl = option.getAttribute('data-photo-url') || '';
+                confirmPhoto.src = photoUrl;
+                confirmPhoto.classList.toggle('d-none', !photoUrl);
+            }
+        }
+
+        document.querySelectorAll('[data-guestbook-picker]').forEach(function (picker) {
+            var hiddenInput = picker.querySelector('input[name="transaction_id"]');
+            var label = picker.querySelector('[data-picker-label]');
+            var icon = picker.querySelector('[data-picker-icon]');
+            var toggle = picker.querySelector('[data-bs-toggle="dropdown"]');
+            var options = picker.querySelectorAll('.guestbook-picker-option');
+            var invalidPopover = null;
+            var invalidPopoverTimer = null;
+
+            function hideInvalidPopover() {
+                if (invalidPopoverTimer) {
+                    clearTimeout(invalidPopoverTimer);
+                    invalidPopoverTimer = null;
+                }
+                if (toggle) {
+                    toggle.classList.remove('is-invalid');
+                }
+                if (invalidPopover) {
+                    invalidPopover.hide();
+                }
+            }
+
+            function showInvalidPopover() {
+                if (!window.bootstrap || !toggle) return;
+                toggle.classList.add('is-invalid');
+                invalidPopover = window.bootstrap.Popover.getOrCreateInstance(toggle, {
+                    container: 'body',
+                    customClass: 'guestbook-invalid-popover',
+                    content: '<span class="d-inline-flex align-items-center gap-2"><i class="bi bi-x-circle-fill text-danger"></i><span>Pilih kunjungan terlebih dulu!</span></span>',
+                    html: true,
+                    placement: 'top',
+                    trigger: 'manual'
+                });
+                invalidPopover.show();
+                if (invalidPopoverTimer) {
+                    clearTimeout(invalidPopoverTimer);
+                }
+                invalidPopoverTimer = window.setTimeout(function () {
+                    hideInvalidPopover();
+                }, 2000);
+            }
+
+            options.forEach(function (option) {
+                option.addEventListener('click', function () {
+                    if (option.disabled || !hiddenInput || !label || !icon) return;
+
+                    hideInvalidPopover();
+                    hiddenInput.value = option.getAttribute('data-value') || '';
+                    label.textContent = option.getAttribute('data-label') || 'Pilih kunjungan';
+                    label.classList.remove('text-muted');
+                    icon.className = 'bi guestbook-picker-icon ' + (option.getAttribute('data-icon-class') || 'bi-list-ul text-muted');
+
+                    options.forEach(function (item) {
+                        item.classList.remove('is-selected');
+                    });
+                    option.classList.add('is-selected');
+
+                    if (window.bootstrap && toggle) {
+                        window.bootstrap.Dropdown.getOrCreateInstance(toggle).hide();
+                    }
+                });
+            });
+
+            if (toggle) {
+                toggle.addEventListener('click', function () {
+                    hideInvalidPopover();
+                });
+            }
+
+            picker.showInvalidPopover = showInvalidPopover;
+        });
+
+        if (confirmForm && confirmModalEl && confirmModal) {
+            confirmForm.addEventListener('submit', function (event) {
+                if (confirmForm.dataset.confirmed === 'true') {
+                    delete confirmForm.dataset.confirmed;
+                    return;
+                }
+
+                var selectedId = (confirmForm.querySelector('input[name="transaction_id"]') || {}).value || '';
+                if (!selectedId) {
+                    event.preventDefault();
+                    var picker = confirmForm.querySelector('[data-guestbook-picker]');
+                    if (picker && typeof picker.showInvalidPopover === 'function') {
+                        picker.showInvalidPopover();
+                    }
+                    return;
+                }
+
+                var selectedOption = document.querySelector('.guestbook-picker-option[data-value="' + selectedId + '"]');
+                if (!selectedOption) {
+                    return;
+                }
+
+                event.preventDefault();
+                fillConfirmation(selectedOption);
+                confirmModal.show();
+            });
+
+            confirmModalEl.addEventListener('hidden.bs.modal', function () {
+                if (confirmForm) {
+                    delete confirmForm.dataset.confirmed;
+                }
+            });
+        }
+
+        if (confirmSubmitButton && confirmForm) {
+            confirmSubmitButton.addEventListener('click', function () {
+                if (primarySubmitButton) {
+                    primarySubmitButton.disabled = true;
+                    primarySubmitButton.innerHTML = 'Sedang Proses <span class="spinner-border spinner-border-sm ms-1" role="status" aria-hidden="true"></span>';
+                }
+                confirmSubmitButton.disabled = true;
+                confirmForm.dataset.confirmed = 'true';
+                if (confirmModal) {
+                    confirmModal.hide();
+                }
+                confirmForm.requestSubmit();
+            });
+        }
+    });
+</script>
 {% endblock %}
