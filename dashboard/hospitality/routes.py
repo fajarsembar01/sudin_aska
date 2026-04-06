@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from functools import wraps
 from typing import Any, Dict, List, Optional
 
 from flask import (
@@ -24,7 +25,6 @@ from dashboard.daftar_tamu.queries import (
 from dashboard.telegram_notifications import (
     notify_reopen_request,
     notify_reopen_status_update,
-    notify_hospitality_verified,
 )
 from dashboard.portal.routes import _fetch_user_school, inject_permissions as portal_inject_permissions
 from .queries import (
@@ -64,10 +64,18 @@ from .queries import (
     reorder_hosp_aspects,
     submit_assessment,
     delete_draft_assessment,
+    delete_assessment,
+    delete_guestbook_review,
+    grant_hospitality_preview_access,
+    has_hospitality_preview_access,
+    list_assessments_for_preview,
+    list_hospitality_preview_access_users,
+    list_hospitality_preview_candidates,
     toggle_aspect_active,
     toggle_aspect_required,
     toggle_component_active,
     toggle_component_required,
+    revoke_hospitality_preview_access,
     update_component,
     update_hosp_aspect,
     update_reopen_request_status,
@@ -82,10 +90,18 @@ hospitality_bp = Blueprint(
     url_prefix="/hospitality",
 )
 
+# Roles that are allowed to perform hospitality assessments (staff-like flow).
+ASSESSOR_ROLES = ("staff", "coordinator")
+
 # Reuse portal context (permissions, badges, etc.) so base_portal works on hospitality pages.
 @hospitality_bp.context_processor
 def inject_portal_context():
-    return portal_inject_permissions() or {}
+    context = portal_inject_permissions() or {}
+    user = current_user() or {}
+    user_id = int(user.get("id") or 0)
+    can_preview = bool(user_id and has_hospitality_preview_access(user_id=user_id))
+    context["can_preview_hospitality"] = can_preview
+    return context
 
 
 # ===== Helper =====
@@ -173,6 +189,27 @@ def _hospitality_scored_aspect_count(assessment_id: int) -> int:
     return len(scored_aspects)
 
 
+def _can_preview_hospitality(user: Optional[Dict[str, Any]]) -> bool:
+    if not user:
+        return False
+    user_id = int(user.get("id") or 0)
+    return bool(user_id and has_hospitality_preview_access(user_id=user_id))
+
+
+def _hospitality_preview_required(view):
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        user = current_user()
+        if not user:
+            return redirect(url_for("auth.login", next=request.path))
+        if not _can_preview_hospitality(user):
+            flash("Anda tidak memiliki akses preview hospitality.", "danger")
+            return redirect(url_for("portal.home"))
+        return view(*args, **kwargs)
+
+    return wrapper
+
+
 # ===== Routing =====
 
 
@@ -182,15 +219,17 @@ def landing() -> Response:
     if not user:
         return redirect(url_for("auth.login"))
     role = (user.get("role") or "").lower()
-    if role == "staff":
+    if role in ASSESSOR_ROLES:
         return redirect(url_for("hospitality.staff_home"))
     if role == "sekolah":
         return redirect(url_for("hospitality.school_home"))
+    if _can_preview_hospitality(user):
+        return redirect(url_for("hospitality.preview_home"))
     return redirect(url_for("hospitality.admin_home"))
 
 
 @hospitality_bp.route("/staff")
-@role_required("staff")
+@role_required(*ASSESSOR_ROLES)
 def staff_home() -> Response:
     user = current_user()
     status_filter = (request.args.get("status") or "").strip().lower() or None
@@ -216,7 +255,7 @@ def staff_home() -> Response:
 
 
 @hospitality_bp.route("/staff/assess/<int:school_id>", methods=["GET", "POST"])
-@role_required("staff")
+@role_required(*ASSESSOR_ROLES)
 def staff_assess(school_id: int) -> Response:
     user = current_user()
     components = list_components_with_aspects(active_only=True)
@@ -305,7 +344,7 @@ def staff_assess(school_id: int) -> Response:
 
 
 @hospitality_bp.route("/staff/draft/<int:assessment_id>/delete", methods=["POST"])
-@role_required("staff")
+@role_required(*ASSESSOR_ROLES)
 def staff_delete_draft(assessment_id: int) -> Response:
     user = current_user()
     assessment = get_assessment(assessment_id)
@@ -320,8 +359,25 @@ def staff_delete_draft(assessment_id: int) -> Response:
     return jsonify({"success": True})
 
 
+@hospitality_bp.route("/admin/assessment/<int:assessment_id>/delete", methods=["POST"])
+@role_required("admin")
+def admin_delete_assessment(assessment_id: int) -> Response:
+    user = current_user()
+    try:
+        deleted = delete_assessment(assessment_id=assessment_id, deleted_by=int(user.get("id")))
+        if deleted:
+            flash("Penilaian hospitality berhasil dihapus.", "success")
+        else:
+            flash("Penilaian hospitality tidak ditemukan.", "warning")
+    except Exception as exc:  # pragma: no cover
+        flash(str(exc), "danger")
+    fallback = url_for("hospitality.admin_home")
+    referrer = request.referrer or ""
+    return redirect(referrer if referrer.startswith(request.host_url) else fallback)
+
+
 @hospitality_bp.route("/staff/assess/<int:school_id>/score", methods=["POST"])
-@role_required("staff")
+@role_required(*ASSESSOR_ROLES)
 def staff_save_score(school_id: int) -> Response:
     data = request.get_json(silent=True) or {}
     try:
@@ -347,7 +403,7 @@ def staff_save_score(school_id: int) -> Response:
 
 
 @hospitality_bp.route("/staff/assess/<int:school_id>/note", methods=["POST"])
-@role_required("staff")
+@role_required(*ASSESSOR_ROLES)
 def staff_save_note(school_id: int) -> Response:
     data = request.get_json(silent=True) or {}
     try:
@@ -369,7 +425,7 @@ def staff_save_note(school_id: int) -> Response:
 
 
 @hospitality_bp.route("/staff/assess/<int:school_id>/draft", methods=["POST"])
-@role_required("staff")
+@role_required(*ASSESSOR_ROLES)
 def staff_save_draft(school_id: int) -> Response:
     assessment_id = request.form.get("assessment_id", type=int)
     if not assessment_id:
@@ -387,7 +443,7 @@ def staff_save_draft(school_id: int) -> Response:
 
 
 @hospitality_bp.route("/staff/assess/<int:school_id>/submit", methods=["POST"])
-@role_required("staff")
+@role_required(*ASSESSOR_ROLES)
 def staff_submit_assessment(school_id: int) -> Response:
     assessment_id = request.form.get("assessment_id", type=int)
     if not assessment_id:
@@ -421,7 +477,7 @@ def assessment_detail(assessment_id: int) -> Response:
     if not assessment:
         abort(404)
     user = current_user()
-    if (user.get("role") == "staff" and int(user.get("id")) != int(assessment.get("staff_id"))):
+    if user.get("role") in ASSESSOR_ROLES and int(user.get("id")) != int(assessment.get("staff_id")):
         abort(403)
     if user.get("role") == "sekolah":
         school = _fetch_user_school(user.get("id"))
@@ -433,7 +489,7 @@ def assessment_detail(assessment_id: int) -> Response:
     scores_map = {s.get("aspect_id"): s for s in scores}
     guestbook_options = list_guestbook_candidates(
         school_id=int(assessment.get("school_id")),
-        user_id=int(user.get("id")) if user.get("role") == "staff" else None,
+        user_id=int(user.get("id")) if user.get("role") in ASSESSOR_ROLES else None,
     )
     comments = list_comments(assessment_id)
     latest_reopen_request = get_latest_reopen_request(assessment_id)
@@ -447,13 +503,13 @@ def assessment_detail(assessment_id: int) -> Response:
         comments=comments,
         latest_reopen_request=latest_reopen_request,
         user_role=user.get("role"),
-        is_staff=user.get("role") == "staff",
+        is_staff=user.get("role") in ASSESSOR_ROLES,
         is_school=user.get("role") == "sekolah",
     )
 
 
 @hospitality_bp.route("/assessment/<int:assessment_id>/link-guestbook", methods=["POST"])
-@role_required("staff")
+@role_required(*ASSESSOR_ROLES)
 def link_guestbook(assessment_id: int) -> Response:
     user = current_user()
     assessment = get_assessment(assessment_id)
@@ -488,12 +544,6 @@ def link_guestbook(assessment_id: int) -> Response:
             reference_id=assessment_id,
             link=url_for("hospitality.assessment_detail", assessment_id=assessment_id),
             metadata={"transaction_id": transaction_id},
-        )
-        notify_hospitality_verified(
-            assessment_id=assessment_id,
-            school_name=assessment.get("school_name"),
-            staff_name=assessment.get("staff_name"),
-            transaction_id=transaction_id,
         )
         flash("Berhasil menghubungkan buku tamu dan memverifikasi penilaian.", "success")
     except Exception as exc:  # pragma: no cover
@@ -536,14 +586,14 @@ def add_comment(assessment_id: int) -> Response:
 
 
 @hospitality_bp.route("/assessment/<int:assessment_id>/reopen", methods=["POST"])
-@role_required("staff")
+@role_required(*ASSESSOR_ROLES)
 def request_reopen(assessment_id: int) -> Response:
     user = current_user()
     reason = (request.form.get("reason") or "").strip() or None
     assessment = get_assessment(assessment_id)
     if not assessment:
         abort(404)
-    if user.get("role") == "staff" and int(user.get("id")) != int(assessment.get("staff_id")):
+    if user.get("role") in ASSESSOR_ROLES and int(user.get("id")) != int(assessment.get("staff_id")):
         abort(403)
 
     req = create_reopen_request(assessment_id=assessment_id, staff_id=int(user.get("id")), reason=reason)
@@ -586,10 +636,13 @@ def handle_reopen_request(request_id: int) -> Response:
 @hospitality_bp.route("/admin/reopen/<int:assessment_id>/approve", methods=["POST"])
 @role_required("admin")
 def approve_reopen(assessment_id: int) -> Response:
+    wants_json = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     request_id = request.form.get("request_id", type=int)
     if not request_id:
         request_id = get_latest_reopen_request_id(assessment_id)
     if not request_id:
+        if wants_json:
+            return jsonify({"success": False, "message": "Permintaan reopen tidak ditemukan."}), 404
         flash("Permintaan reopen tidak ditemukan.", "warning")
         return redirect(url_for("hospitality.admin_reopen_requests"))
     note = (request.form.get("reviewer_note") or "").strip() or None
@@ -599,10 +652,13 @@ def approve_reopen(assessment_id: int) -> Response:
 @hospitality_bp.route("/admin/reopen/<int:assessment_id>/reject", methods=["POST"])
 @role_required("admin")
 def reject_reopen(assessment_id: int) -> Response:
+    wants_json = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     request_id = request.form.get("request_id", type=int)
     if not request_id:
         request_id = get_latest_reopen_request_id(assessment_id)
     if not request_id:
+        if wants_json:
+            return jsonify({"success": False, "message": "Permintaan reopen tidak ditemukan."}), 404
         flash("Permintaan reopen tidak ditemukan.", "warning")
         return redirect(url_for("hospitality.admin_reopen_requests"))
     note = (request.form.get("reviewer_note") or "").strip() or None
@@ -611,6 +667,7 @@ def reject_reopen(assessment_id: int) -> Response:
 
 def _update_reopen_status(*, request_id: int, status: str, reviewer_note: Optional[str]) -> Response:
     user = current_user()
+    wants_json = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     try:
         req = update_reopen_request_status(
             request_id=request_id,
@@ -645,10 +702,23 @@ def _update_reopen_status(*, request_id: int, status: str, reviewer_note: Option
                 reviewer_note=reviewer_note,
             )
             flash("Status reopen diperbarui.", "success")
+            if wants_json:
+                return jsonify(
+                    {
+                        "success": True,
+                        "request_id": req.get("id"),
+                        "assessment_id": req.get("assessment_id"),
+                        "status": status,
+                    }
+                )
         else:
             flash("Permintaan tidak ditemukan.", "warning")
+            if wants_json:
+                return jsonify({"success": False, "message": "Permintaan tidak ditemukan."}), 404
     except Exception as exc:  # pragma: no cover
         flash(str(exc), "danger")
+        if wants_json:
+            return jsonify({"success": False, "message": str(exc)}), 500
     return redirect(url_for("hospitality.admin_reopen_requests"))
 
 
@@ -668,27 +738,72 @@ def school_home() -> Response:
     )
 
 
-@hospitality_bp.route("/guestbook-reviews")
-@role_required("admin", "coordinator", "sekolah")
-def guestbook_review_dashboard() -> Response:
-    user = current_user()
-    role = (user.get("role") or "").strip().lower()
+@hospitality_bp.route("/preview")
+@_hospitality_preview_required
+def preview_home() -> Response:
+    status_filter = (request.args.get("status") or "").strip().lower() or None
+    search = (request.args.get("q") or "").strip() or None
+    assessments = list_assessments_for_preview(
+        status=status_filter,
+        search=search,
+        limit=250,
+    )
+    return render_template(
+        "hospitality/preview/list.html",
+        assessments=assessments,
+        status_filter=status_filter or "",
+        search_query=search or "",
+    )
 
+
+@hospitality_bp.route("/preview/<int:assessment_id>")
+@_hospitality_preview_required
+def preview_detail(assessment_id: int) -> Response:
+    assessment = get_assessment(assessment_id)
+    if not assessment:
+        abort(404)
+    scores = get_assessment_scores(assessment_id)
+    components = list_components_with_aspects(active_only=False)
+    scores_map = {s.get("aspect_id"): s for s in scores}
+    comments = list_comments(assessment_id)
+    return render_template(
+        "hospitality/detail.html",
+        assessment=assessment,
+        components=components,
+        scores_map=scores_map,
+        guestbook_options=[],
+        comments=comments,
+        latest_reopen_request=None,
+        user_role="preview",
+        is_staff=False,
+        is_school=False,
+        preview_read_only=True,
+        preview_back_url=url_for("hospitality.preview_home"),
+    )
+
+
+@hospitality_bp.route("/preview/pelayanan")
+@_hospitality_preview_required
+def preview_guestbook_dashboard() -> Response:
+    return _render_preview_guestbook_dashboard(mode="all")
+
+
+@hospitality_bp.route("/preview/pelayanan/per-sekolah")
+@_hospitality_preview_required
+def preview_guestbook_dashboard_by_school() -> Response:
+    return _render_preview_guestbook_dashboard(mode="school")
+
+
+def _render_preview_guestbook_dashboard(*, mode: str) -> Response:
     school_scope: Optional[Dict[str, Any]] = None
     scope_school_id: Optional[int] = None
-    if role == "sekolah":
-        school_scope, scope_school_id = _guestbook_review_scope_for_user(user)
-        if not school_scope:
-            flash("Akun sekolah belum terhubung ke data sekolah.", "warning")
-            return redirect(url_for("hospitality.school_home"))
-    else:
-        school_id_arg = request.args.get("school_id", type=int)
-        if school_id_arg:
-            school_scope = _school_by_id(school_id_arg)
-            if school_scope:
-                scope_school_id = int(school_scope.get("id"))
-            else:
-                flash("Sekolah tidak ditemukan.", "warning")
+    school_id_arg = request.args.get("school_id", type=int)
+    if school_id_arg:
+        school_scope = _school_by_id(school_id_arg)
+        if school_scope:
+            scope_school_id = int(school_scope.get("id"))
+        else:
+            flash("Sekolah tidak ditemukan.", "warning")
 
     review_status = (request.args.get("review_status") or "").strip().lower() or None
     transaction_status = (request.args.get("transaction_status") or "").strip().lower() or None
@@ -720,7 +835,178 @@ def guestbook_review_dashboard() -> Response:
     rating_distribution = fetch_guestbook_review_rating_distribution(school_id=scope_school_id)
     top_schools = []
     bottom_schools = []
-    if role in {"admin", "coordinator"} and not scope_school_id:
+    if not scope_school_id:
+        top_schools = fetch_guestbook_review_top_schools(limit=10)
+        bottom_schools = fetch_guestbook_review_bottom_schools(limit=10)
+
+    dashboard_endpoint = (
+        "hospitality.preview_guestbook_dashboard_by_school"
+        if (mode or "").strip().lower() == "school"
+        else "hospitality.preview_guestbook_dashboard"
+    )
+
+    filter_params = {key: value for key, value in request.args.items() if value not in ("", None)}
+    filter_params.pop("page", None)
+    filter_params.pop("per_page", None)
+    prev_url = None
+    next_url = None
+    total_pages = max(1, (total_rows + per_page - 1) // per_page)
+    if page > 1:
+        prev_url = url_for(dashboard_endpoint, **filter_params, page=page - 1, per_page=per_page)
+    if page < total_pages:
+        next_url = url_for(dashboard_endpoint, **filter_params, page=page + 1, per_page=per_page)
+
+    school_options = _list_active_schools()
+    start_item = ((page - 1) * per_page + 1) if total_rows else 0
+    end_item = min(page * per_page, total_rows) if total_rows else 0
+
+    return render_template(
+        "hospitality/guestbook/list.html",
+        reviews=reviews,
+        stats=stats,
+        trend=trend,
+        rating_distribution=rating_distribution,
+        top_schools=top_schools,
+        bottom_schools=bottom_schools,
+        school_scope=school_scope,
+        school_options=school_options,
+        review_status_filter=review_status or "",
+        transaction_status_filter=transaction_status or "",
+        rating_filter=rating_filter or "",
+        search_query=search or "",
+        start_filter=start_date.isoformat() if start_date else "",
+        end_filter=end_date.isoformat() if end_date else "",
+        per_page=per_page,
+        page=page,
+        total_pages=total_pages,
+        total_rows=total_rows,
+        start_item=start_item,
+        end_item=end_item,
+        prev_url=prev_url,
+        next_url=next_url,
+        export_url=None,
+        is_admin=False,
+        can_delete_reviews=False,
+        can_export=False,
+        allow_school_filter=True,
+        show_rankings=not scope_school_id,
+        back_url=url_for("hospitality.preview_home"),
+        dashboard_endpoint=dashboard_endpoint,
+        detail_endpoint="hospitality.preview_guestbook_review_detail",
+        assessment_endpoint="hospitality.preview_detail",
+        is_preview_mode=True,
+        current_preview_mode="school" if dashboard_endpoint.endswith("by_school") else "all",
+        all_schools_url=url_for("hospitality.preview_guestbook_dashboard"),
+        per_school_endpoint="hospitality.preview_guestbook_dashboard_by_school",
+        per_school_url=url_for("hospitality.preview_guestbook_dashboard_by_school"),
+    )
+
+
+@hospitality_bp.route("/preview/pelayanan/review/<int:review_id>")
+@_hospitality_preview_required
+def preview_guestbook_review_detail(review_id: int) -> Response:
+    review = get_guestbook_review_detail(review_id)
+    if not review:
+        abort(404)
+    school = _school_by_id(int(review.get("school_id") or 0))
+    linked_assessment_url = (
+        url_for("hospitality.preview_detail", assessment_id=review.get("linked_assessment_id"))
+        if review.get("linked_assessment_id")
+        else None
+    )
+    referrer = request.referrer or ""
+    dashboard_endpoint = (
+        "hospitality.preview_guestbook_dashboard_by_school"
+        if "/preview/pelayanan/per-sekolah" in referrer
+        else "hospitality.preview_guestbook_dashboard"
+    )
+    back_url = referrer if referrer.startswith(request.host_url) else url_for("hospitality.preview_guestbook_dashboard")
+    return render_template(
+        "hospitality/guestbook/detail.html",
+        review=review,
+        school=school,
+        linked_assessment_url=linked_assessment_url,
+        back_url=back_url,
+        is_admin=False,
+        dashboard_endpoint=dashboard_endpoint,
+    )
+
+
+@hospitality_bp.route("/guestbook-reviews")
+@role_required("admin", "sekolah")
+def guestbook_review_dashboard() -> Response:
+    user = current_user()
+    role = (user.get("role") or "").strip().lower()
+    view_mode = (request.args.get("view") or "all").strip().lower()
+    if view_mode not in {"all", "school"}:
+        view_mode = "all"
+    if role != "admin":
+        view_mode = "school" if role == "sekolah" else "all"
+
+    school_scope: Optional[Dict[str, Any]] = None
+    scope_school_id: Optional[int] = None
+    if role == "sekolah":
+        school_scope, scope_school_id = _guestbook_review_scope_for_user(user)
+        if not school_scope:
+            flash("Akun sekolah belum terhubung ke data sekolah.", "warning")
+            return redirect(url_for("hospitality.school_home"))
+    else:
+        school_id_arg = request.args.get("school_id", type=int)
+        if school_id_arg:
+            school_scope = _school_by_id(school_id_arg)
+            if school_scope:
+                scope_school_id = int(school_scope.get("id"))
+            else:
+                flash("Sekolah tidak ditemukan.", "warning")
+
+    review_status = (request.args.get("review_status") or "").strip().lower() or None
+    transaction_status = (request.args.get("transaction_status") or "").strip().lower() or None
+    rating_filter = request.args.get("rating", type=int)
+    search = (request.args.get("q") or "").strip() or None
+    start_date = _parse_guestbook_date(request.args.get("start"))
+    end_date = _parse_guestbook_date(request.args.get("end"))
+    page = request.args.get("page", type=int) or 1
+    per_page = request.args.get("per_page", type=int) or 25
+    per_page = max(5, min(int(per_page or 25), 100))
+
+    should_require_school_pick = role == "admin" and view_mode == "school" and not scope_school_id
+    if should_require_school_pick:
+        reviews, total_rows = [], 0
+        stats = {
+            "total_reviews": 0,
+            "completed_reviews": 0,
+            "pending_reviews": 0,
+            "completion_rate": 0.0,
+            "avg_rating": 0.0,
+            "created_today": 0,
+            "completed_today": 0,
+            "linked_reviews": 0,
+            "linked_rate": 0.0,
+        }
+        trend = []
+        rating_distribution = []
+    else:
+        reviews, total_rows = list_guestbook_reviews(
+            school_id=scope_school_id,
+            review_status=review_status,
+            transaction_status=transaction_status,
+            rating=rating_filter,
+            search=search,
+            start_date=start_date,
+            end_date=end_date,
+            page=page,
+            per_page=per_page,
+        )
+        stats = fetch_guestbook_review_stats(
+            school_id=scope_school_id,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        trend = fetch_guestbook_review_trend(days=30, school_id=scope_school_id)
+        rating_distribution = fetch_guestbook_review_rating_distribution(school_id=scope_school_id)
+    top_schools = []
+    bottom_schools = []
+    if role == "admin" and view_mode == "all" and not scope_school_id:
         top_schools = fetch_guestbook_review_top_schools(limit=10)
         bottom_schools = fetch_guestbook_review_bottom_schools(limit=10)
 
@@ -735,7 +1021,7 @@ def guestbook_review_dashboard() -> Response:
     if page < total_pages:
         next_url = url_for("hospitality.guestbook_review_dashboard", **filter_params, page=page + 1, per_page=per_page)
 
-    school_options = _list_active_schools() if role in {"admin", "coordinator"} else []
+    school_options = _list_active_schools() if role == "admin" else []
 
     start_item = ((page - 1) * per_page + 1) if total_rows else 0
     end_item = min(page * per_page, total_rows) if total_rows else 0
@@ -765,12 +1051,26 @@ def guestbook_review_dashboard() -> Response:
         prev_url=prev_url,
         next_url=next_url,
         export_url=url_for("hospitality.guestbook_review_export", **filter_params),
-        is_admin=role in {"admin", "coordinator"},
+        is_admin=role == "admin",
+        can_delete_reviews=role == "admin",
+        can_export=True,
+        allow_school_filter=role == "admin",
+        show_rankings=(role == "admin" and view_mode == "all" and not scope_school_id),
+        back_url=url_for("hospitality.admin_home") if role == "admin" else url_for("hospitality.school_home"),
+        dashboard_endpoint="hospitality.guestbook_review_dashboard",
+        detail_endpoint="hospitality.guestbook_review_detail",
+        assessment_endpoint="hospitality.assessment_detail",
+        is_preview_mode=False,
+        current_preview_mode=view_mode,
+        all_schools_url=url_for("hospitality.guestbook_review_dashboard", view="all"),
+        per_school_url=url_for("hospitality.guestbook_review_dashboard", view="school"),
+        per_school_endpoint="hospitality.guestbook_review_dashboard",
+        require_school_pick=should_require_school_pick,
     )
 
 
 @hospitality_bp.route("/guestbook-reviews/<int:review_id>")
-@role_required("admin", "coordinator", "sekolah")
+@role_required("admin", "sekolah")
 def guestbook_review_detail(review_id: int) -> Response:
     user = current_user()
     role = (user.get("role") or "").strip().lower()
@@ -797,12 +1097,13 @@ def guestbook_review_detail(review_id: int) -> Response:
         school=school,
         linked_assessment_url=linked_assessment_url,
         back_url=back_url,
-        is_admin=role in {"admin", "coordinator"},
+        is_admin=role == "admin",
+        dashboard_endpoint="hospitality.guestbook_review_dashboard",
     )
 
 
 @hospitality_bp.route("/guestbook-reviews/export")
-@role_required("admin", "coordinator", "sekolah")
+@role_required("admin", "sekolah")
 def guestbook_review_export() -> Response:
     user = current_user()
     role = (user.get("role") or "").strip().lower()
@@ -892,8 +1193,25 @@ def guestbook_review_export() -> Response:
     return response
 
 
+@hospitality_bp.route("/admin/guestbook-reviews/<int:review_id>/delete", methods=["POST"])
+@role_required("admin")
+def admin_delete_guestbook_review(review_id: int) -> Response:
+    user = current_user()
+    try:
+        deleted = delete_guestbook_review(review_id=review_id, deleted_by=int(user.get("id")))
+        if deleted:
+            flash("Review pelayanan berhasil dihapus.", "success")
+        else:
+            flash("Review pelayanan tidak ditemukan.", "warning")
+    except Exception as exc:  # pragma: no cover
+        flash(str(exc), "danger")
+    fallback = url_for("hospitality.guestbook_review_dashboard")
+    referrer = request.referrer or ""
+    return redirect(referrer if referrer.startswith(request.host_url) else fallback)
+
+
 @hospitality_bp.route("/admin")
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_home() -> Response:
     status = (request.args.get("status") or "").strip().lower() or None
     reopen_requests = list_reopen_requests(status=status, limit=200)
@@ -925,7 +1243,7 @@ def admin_home() -> Response:
 
 
 @hospitality_bp.route("/admin/reopen-requests")
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_reopen_requests() -> Response:
     status = (request.args.get("status") or "").strip().lower() or None
     requests = list_reopen_requests(status=status, limit=500)
@@ -937,7 +1255,7 @@ def admin_reopen_requests() -> Response:
 
 
 @hospitality_bp.route("/admin/export")
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_export_csv() -> Response:
     """Export hospitality assessments with scores to CSV."""
     import csv
@@ -1012,7 +1330,7 @@ def admin_export_csv() -> Response:
 
 
 @hospitality_bp.route("/admin/setup", methods=["GET"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_setup() -> Response:
     components = list_components_with_aspects(active_only=False)
     return render_template(
@@ -1021,8 +1339,49 @@ def admin_setup() -> Response:
     )
 
 
+@hospitality_bp.route("/admin/preview-access", methods=["GET", "POST"])
+@role_required("admin")
+def admin_preview_access() -> Response:
+    user = current_user()
+    if request.method == "POST":
+        target_user_id = request.form.get("user_id", type=int)
+        if not target_user_id:
+            flash("Pilih user terlebih dahulu.", "warning")
+            return redirect(url_for("hospitality.admin_preview_access"))
+        try:
+            grant_hospitality_preview_access(user_id=target_user_id, granted_by=int(user.get("id")))
+            flash("Akses preview hospitality diberikan.", "success")
+        except Exception as exc:  # pragma: no cover
+            flash(str(exc), "danger")
+        return redirect(url_for("hospitality.admin_preview_access"))
+
+    search = (request.args.get("q") or "").strip() or None
+    granted_users = list_hospitality_preview_access_users(search=search, limit=500)
+    candidates = list_hospitality_preview_candidates(search=search, limit=100)
+    return render_template(
+        "hospitality/admin/preview_access.html",
+        granted_users=granted_users,
+        candidates=candidates,
+        search_query=search or "",
+    )
+
+
+@hospitality_bp.route("/admin/preview-access/<int:user_id>/delete", methods=["POST"])
+@role_required("admin")
+def admin_preview_access_delete(user_id: int) -> Response:
+    try:
+        revoked = revoke_hospitality_preview_access(user_id=user_id)
+        if revoked:
+            flash("Akses preview hospitality dicabut.", "success")
+        else:
+            flash("Akses preview tidak ditemukan.", "warning")
+    except Exception as exc:  # pragma: no cover
+        flash(str(exc), "danger")
+    return redirect(url_for("hospitality.admin_preview_access"))
+
+
 @hospitality_bp.route("/admin/setup/component", methods=["POST"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_create_component() -> Response:
     name = (request.form.get("name") or "").strip()
     description = (request.form.get("description") or "").strip() or None
@@ -1038,7 +1397,7 @@ def admin_create_component() -> Response:
 
 
 @hospitality_bp.route("/admin/setup/component/<int:component_id>", methods=["POST"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_update_component(component_id: int) -> Response:
     comp = get_component(component_id)
     if not comp:
@@ -1065,7 +1424,7 @@ def admin_update_component(component_id: int) -> Response:
 
 
 @hospitality_bp.route("/admin/setup/component/<int:component_id>/delete", methods=["POST"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_delete_component(component_id: int) -> Response:
     try:
         if delete_component(component_id):
@@ -1078,7 +1437,7 @@ def admin_delete_component(component_id: int) -> Response:
 
 
 @hospitality_bp.route("/admin/setup/component/<int:component_id>/toggle-active", methods=["POST"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_toggle_component_active(component_id: int) -> Response:
     if toggle_component_active(component_id):
         flash("Status komponen diperbarui.", "success")
@@ -1088,7 +1447,7 @@ def admin_toggle_component_active(component_id: int) -> Response:
 
 
 @hospitality_bp.route("/admin/setup/component/<int:component_id>/toggle-required", methods=["POST"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_toggle_component_required(component_id: int) -> Response:
     if toggle_component_required(component_id):
         flash("Status wajib komponen diperbarui.", "success")
@@ -1098,7 +1457,7 @@ def admin_toggle_component_required(component_id: int) -> Response:
 
 
 @hospitality_bp.route("/admin/setup/components/reorder", methods=["POST"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_reorder_components() -> Response:
     data = request.get_json(silent=True) or {}
     order_ids = data.get("component_ids") or []
@@ -1111,7 +1470,7 @@ def admin_reorder_components() -> Response:
 
 
 @hospitality_bp.route("/admin/setup/aspect", methods=["POST"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_create_aspect() -> Response:
     component_id = request.form.get("component_id", type=int)
     name = (request.form.get("name") or "").strip()
@@ -1147,7 +1506,7 @@ def admin_create_aspect() -> Response:
 
 
 @hospitality_bp.route("/admin/setup/aspects/batch", methods=["POST"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_create_aspects_batch() -> Response:
     data = request.get_json(silent=True) or {}
     aspects = data.get("aspects", [])
@@ -1201,7 +1560,7 @@ def admin_create_aspects_batch() -> Response:
 
 
 @hospitality_bp.route("/admin/setup/aspect/<int:aspect_id>", methods=["POST"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_update_aspect(aspect_id: int) -> Response:
     aspect = get_hosp_aspect(aspect_id)
     if not aspect:
@@ -1228,7 +1587,7 @@ def admin_update_aspect(aspect_id: int) -> Response:
 
 
 @hospitality_bp.route("/admin/setup/aspect/<int:aspect_id>/delete", methods=["POST"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_delete_aspect_route(aspect_id: int) -> Response:
     try:
         if delete_hosp_aspect(aspect_id):
@@ -1241,7 +1600,7 @@ def admin_delete_aspect_route(aspect_id: int) -> Response:
 
 
 @hospitality_bp.route("/admin/setup/aspect/<int:aspect_id>/toggle-active", methods=["POST"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_toggle_aspect_active(aspect_id: int) -> Response:
     if toggle_aspect_active(aspect_id):
         flash("Status aspek diperbarui.", "success")
@@ -1251,7 +1610,7 @@ def admin_toggle_aspect_active(aspect_id: int) -> Response:
 
 
 @hospitality_bp.route("/admin/setup/aspect/<int:aspect_id>/toggle-required", methods=["POST"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_toggle_aspect_required(aspect_id: int) -> Response:
     if toggle_aspect_required(aspect_id):
         flash("Status wajib aspek diperbarui.", "success")
@@ -1261,7 +1620,7 @@ def admin_toggle_aspect_required(aspect_id: int) -> Response:
 
 
 @hospitality_bp.route("/admin/setup/aspects/reorder", methods=["POST"])
-@role_required("admin", "coordinator")
+@role_required("admin")
 def admin_reorder_aspects() -> Response:
     data = request.get_json(silent=True) or {}
     order_ids = data.get("aspect_ids") or []

@@ -110,9 +110,11 @@ endfor %} {% set max_possible = _ns.scored_count * scale_max %} {% set pct_total
         <div class="d-flex align-items-center gap-3">
             <a
                 href="{{
-          url_for('hospitality.admin_home')  if user_role in ['admin', 'coordinator'] else
-          url_for('hospitality.staff_home')  if is_staff else
-          url_for('hospitality.school_home')
+          preview_back_url if preview_read_only else (
+            url_for('hospitality.admin_home')  if user_role == 'admin' else
+            url_for('hospitality.staff_home')  if is_staff else
+            url_for('hospitality.school_home')
+          )
         }}"
                 class="btn btn-outline-secondary"
             >
@@ -468,17 +470,24 @@ endfor %} {% set max_possible = _ns.scored_count * scale_max %} {% set pct_total
                 </div>
             </div>
 
+            {% if preview_read_only %}
+            <div class="alert alert-info small py-2 px-3 mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-eye"></i>
+                Mode preview aktif: halaman ini read-only.
+            </div>
+            {% endif %}
+
             {# Reopen request ──────────────────────────────────────── #} {{
             reopen_request_card( assessment=assessment,
             latest_request=latest_reopen_request, current_role=user_role,
             request_endpoint='hospitality.request_reopen',
             approve_endpoint='hospitality.approve_reopen',
             reject_endpoint='hospitality.reject_reopen',
-            allow_statuses=['submitted', 'verified'], request_roles=['staff'],
+            allow_statuses=['submitted', 'verified'], request_roles=['staff', 'coordinator'],
             admin_roles=['admin'],
             csrf_token_value=(csrf_token() if csrf_token is defined else None) )
             }} {# Admin zone ─────────────────────────────────────────── #} {%
-            if user_role in ['admin', 'coordinator'] and assessment.status !=
+            if user_role == 'admin' and assessment.status !=
             'draft' %}
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-body">
@@ -671,6 +680,7 @@ endfor %} {% set max_possible = _ns.scored_count * scale_max %} {% set pct_total
                     </p>
                     {% endif %}
 
+                    {% if not preview_read_only %}
                     <form
                         method="post"
                         action="{{ url_for('hospitality.add_comment', assessment_id=assessment.id) }}"
@@ -692,6 +702,7 @@ endfor %} {% set max_possible = _ns.scored_count * scale_max %} {% set pct_total
                             <i class="bi bi-send me-1"></i>Kirim Komentar
                         </button>
                     </form>
+                    {% endif %}
                 </div>
             </div>
         </div>

@@ -325,6 +325,13 @@
         <div>
           <div class="fw-semibold">{{ item.school_name }}</div>
           <small class="text-muted">{{ item.npsn }} • {{ item.jenjang }}</small>
+          {% if can_preview_hospitality %}
+          <div class="mt-1">
+            <a class="small text-decoration-none" href="{{ url_for('hospitality.preview_guestbook_dashboard_by_school', school_id=item.school_id) }}">
+              <i class="bi bi-star-half me-1"></i>Preview pelayanan sekolah ini
+            </a>
+          </div>
+          {% endif %}
         </div>
       </div>
       <div class="small text-muted mt-1">

@@ -412,6 +412,12 @@ portal_content %} {# ===== HERO SECTION ===== #}
                             <div class="small text-muted">
                                 NPSN {{ item.npsn }}
                             </div>
+                            <a
+                                href="{{ url_for('hospitality.guestbook_review_dashboard', school_id=item.school_id) }}"
+                                class="small text-decoration-none"
+                            >
+                                <i class="bi bi-star-half me-1"></i>Review Pelayanan Sekolah
+                            </a>
                         </td>
                         <td class="small text-muted">
                             {{ item.staff_name or '—' }}
@@ -439,13 +445,30 @@ portal_content %} {# ===== HERO SECTION ===== #}
                             {{ item.created_at|jakarta }}
                         </td>
                         <td class="text-end pe-3">
-                            <a
-                                class="btn btn-sm btn-light rounded-circle"
-                                href="{{ url_for('hospitality.assessment_detail', assessment_id=item.id) }}"
-                                title="Buka Detail"
-                            >
-                                <i class="bi bi-chevron-right"></i>
-                            </a>
+                            <div class="d-inline-flex align-items-center gap-1">
+                                <a
+                                    class="btn btn-sm btn-light rounded-circle"
+                                    href="{{ url_for('hospitality.assessment_detail', assessment_id=item.id) }}"
+                                    title="Buka Detail"
+                                >
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                                <form
+                                    method="post"
+                                    action="{{ url_for('hospitality.admin_delete_assessment', assessment_id=item.id) }}"
+                                    onsubmit="return confirm('Hapus penilaian hospitality ini? Tindakan ini tidak dapat dibatalkan.');"
+                                    class="d-inline"
+                                >
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button
+                                        type="submit"
+                                        class="btn btn-sm btn-outline-danger rounded-circle"
+                                        title="Hapus Penilaian"
+                                    >
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% else %}

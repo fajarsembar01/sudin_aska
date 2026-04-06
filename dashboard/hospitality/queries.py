@@ -23,10 +23,329 @@ HOSPITALITY_SCORE_MAX = 5
 HOSPITALITY_STATUSES = ("draft", "submitted", "verified", "reopened")
 REOPEN_STATUSES = ("pending", "approved", "rejected")
 GUESTBOOK_REVIEW_STATUSES = ("pending", "completed")
+_SOFT_DELETE_SCHEMA_READY = False
+_PREVIEW_ACCESS_SCHEMA_READY = False
 
 
 def _today_jakarta() -> date:
     return datetime.now(_JAKARTA_TZ).date()
+
+
+def _ensure_soft_delete_schema() -> None:
+    global _SOFT_DELETE_SCHEMA_READY
+    if _SOFT_DELETE_SCHEMA_READY:
+        return
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS daftar_tamu_general_transactions (
+                id SERIAL PRIMARY KEY,
+                school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+                visit_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                purpose TEXT,
+                notes TEXT,
+                status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+                reviewed_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                reviewed_at TIMESTAMPTZ,
+                reviewer_notes TEXT,
+                metadata JSONB,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transactions_school
+            ON daftar_tamu_general_transactions (school_id)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transactions_status
+            ON daftar_tamu_general_transactions (status)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transactions_visit_at
+            ON daftar_tamu_general_transactions (visit_at DESC)
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS daftar_tamu_general_transaction_guests (
+                id SERIAL PRIMARY KEY,
+                transaction_id INTEGER NOT NULL REFERENCES daftar_tamu_general_transactions(id) ON DELETE CASCADE,
+                general_guest_id INTEGER REFERENCES daftar_tamu_general_guests(id) ON DELETE SET NULL,
+                full_name TEXT NOT NULL,
+                phone TEXT,
+                instansi TEXT,
+                jabatan TEXT,
+                email TEXT,
+                student_class TEXT,
+                student_name TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transaction_guests_tx
+            ON daftar_tamu_general_transaction_guests (transaction_id)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transaction_guests_guest
+            ON daftar_tamu_general_transaction_guests (general_guest_id)
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS hospitality_guestbook_reviews (
+                id SERIAL PRIMARY KEY,
+                transaction_id INTEGER NOT NULL REFERENCES daftar_tamu_general_transactions(id) ON DELETE CASCADE,
+                school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+                review_token TEXT NOT NULL UNIQUE,
+                status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed')),
+                rating SMALLINT,
+                comment TEXT,
+                completed_at TIMESTAMPTZ,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                CONSTRAINT hospitality_guestbook_reviews_rating_check CHECK (rating IS NULL OR rating BETWEEN 1 AND 5)
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_hosp_guestbook_reviews_transaction
+            ON hospitality_guestbook_reviews (transaction_id)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_school
+            ON hospitality_guestbook_reviews (school_id)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_status
+            ON hospitality_guestbook_reviews (status)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_completed_at
+            ON hospitality_guestbook_reviews (completed_at DESC)
+            """
+        )
+        cur.execute(
+            """
+            ALTER TABLE hospitality_assessments
+            ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT FALSE
+            """
+        )
+        cur.execute(
+            """
+            ALTER TABLE hospitality_assessments
+            ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ
+            """
+        )
+        cur.execute(
+            """
+            ALTER TABLE hospitality_assessments
+            ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES dashboard_users(id)
+            """
+        )
+        cur.execute(
+            """
+            ALTER TABLE hospitality_guestbook_reviews
+            ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT FALSE
+            """
+        )
+        cur.execute(
+            """
+            ALTER TABLE hospitality_guestbook_reviews
+            ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ
+            """
+        )
+        cur.execute(
+            """
+            ALTER TABLE hospitality_guestbook_reviews
+            ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES dashboard_users(id)
+            """
+        )
+    _SOFT_DELETE_SCHEMA_READY = True
+
+
+def _ensure_preview_access_schema() -> None:
+    global _PREVIEW_ACCESS_SCHEMA_READY
+    if _PREVIEW_ACCESS_SCHEMA_READY:
+        return
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS hospitality_preview_access (
+                user_id INTEGER PRIMARY KEY REFERENCES dashboard_users(id) ON DELETE CASCADE,
+                granted_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                granted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_hospitality_preview_access_granted_by
+            ON hospitality_preview_access (granted_by)
+            """
+        )
+    _PREVIEW_ACCESS_SCHEMA_READY = True
+
+
+def has_hospitality_preview_access(*, user_id: int) -> bool:
+    _ensure_preview_access_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT 1
+            FROM hospitality_preview_access
+            WHERE user_id = %s
+            LIMIT 1
+            """,
+            (user_id,),
+        )
+        return cur.fetchone() is not None
+
+
+def list_hospitality_preview_access_users(*, search: str | None = None, limit: int = 200) -> List[Dict[str, Any]]:
+    _ensure_preview_access_schema()
+    clauses = ["TRUE"]
+    params: List[Any] = []
+    if search:
+        like = f"%{search.strip()}%"
+        clauses.append("(u.full_name ILIKE %s OR u.email ILIKE %s)")
+        params.extend([like, like])
+    params.append(max(1, min(int(limit or 200), 1000)))
+    where = " AND ".join(clauses)
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT
+                p.user_id,
+                p.granted_by,
+                p.granted_at,
+                u.full_name,
+                u.email,
+                u.role,
+                u.account_status,
+                g.full_name AS granted_by_name
+            FROM hospitality_preview_access p
+            JOIN dashboard_users u ON u.id = p.user_id
+            LEFT JOIN dashboard_users g ON g.id = p.granted_by
+            WHERE {where}
+            ORDER BY p.granted_at DESC, p.user_id DESC
+            LIMIT %s
+            """,
+            params,
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def list_hospitality_preview_candidates(*, search: str | None = None, limit: int = 100) -> List[Dict[str, Any]]:
+    _ensure_preview_access_schema()
+    clauses = [
+        "u.account_status = 'approved'",
+        "NOT EXISTS (SELECT 1 FROM hospitality_preview_access p WHERE p.user_id = u.id)",
+    ]
+    params: List[Any] = []
+    if search:
+        like = f"%{search.strip()}%"
+        clauses.append("(u.full_name ILIKE %s OR u.email ILIKE %s)")
+        params.extend([like, like])
+    params.append(max(1, min(int(limit or 100), 500)))
+    where = " AND ".join(clauses)
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT u.id, u.full_name, u.email, u.role, u.account_status
+            FROM dashboard_users u
+            WHERE {where}
+            ORDER BY u.role ASC, COALESCE(u.full_name, u.email) ASC
+            LIMIT %s
+            """,
+            params,
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def grant_hospitality_preview_access(*, user_id: int, granted_by: int | None = None) -> None:
+    _ensure_preview_access_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO hospitality_preview_access (user_id, granted_by)
+            VALUES (%s, %s)
+            ON CONFLICT (user_id) DO UPDATE
+            SET granted_by = EXCLUDED.granted_by,
+                granted_at = NOW()
+            """,
+            (user_id, granted_by),
+        )
+
+
+def revoke_hospitality_preview_access(*, user_id: int) -> bool:
+    _ensure_preview_access_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM hospitality_preview_access WHERE user_id = %s", (user_id,))
+        return cur.rowcount > 0
+
+
+def list_assessments_for_preview(
+    *,
+    status: str | None = None,
+    search: str | None = None,
+    limit: int = 200,
+) -> List[Dict[str, Any]]:
+    _ensure_soft_delete_schema()
+    clauses = ["COALESCE(a.is_deleted, FALSE) = FALSE"]
+    params: List[Any] = []
+    clean_status = (status or "").strip().lower()
+    if clean_status:
+        clauses.append("LOWER(a.status) = %s")
+        params.append(clean_status)
+    if search:
+        like = f"%{search.strip()}%"
+        clauses.append("(s.name ILIKE %s OR s.npsn ILIKE %s OR u.full_name ILIKE %s)")
+        params.extend([like, like, like])
+    params.append(max(1, min(int(limit or 200), 1000)))
+    where = " AND ".join(clauses)
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT
+                a.id,
+                a.status,
+                a.created_at,
+                a.submitted_at,
+                a.verified_at,
+                a.score_scale_max,
+                s.id AS school_id,
+                s.name AS school_name,
+                s.npsn,
+                s.jenjang,
+                u.full_name AS staff_name
+            FROM hospitality_assessments a
+            JOIN portal_schools s ON s.id = a.school_id
+            LEFT JOIN dashboard_users u ON u.id = a.staff_id
+            WHERE {where}
+            ORDER BY a.created_at DESC
+            LIMIT %s
+            """,
+            params,
+        )
+        return [dict(row) for row in cur.fetchall()]
 
 
 def list_components_with_aspects(*, active_only: bool = True) -> List[Dict[str, Any]]:
@@ -93,12 +412,14 @@ def list_components_with_aspects(*, active_only: bool = True) -> List[Dict[str, 
 
 def ensure_daily_limit(*, school_id: int, staff_id: int, max_per_day: int = 1) -> None:
     """Raise ValueError if staff already submitted max assessments for school today."""
+    _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
             """
             SELECT COUNT(*) AS cnt
             FROM hospitality_assessments
             WHERE school_id = %s AND staff_id = %s
+              AND COALESCE(is_deleted, FALSE) = FALSE
               AND (created_at AT TIME ZONE 'Asia/Jakarta')::date = %s::date
             """,
             (school_id, staff_id, _today_jakarta()),
@@ -129,6 +450,7 @@ def create_assessment(
 
 
 def get_draft_assessment(*, school_id: int, staff_id: int) -> Optional[Dict[str, Any]]:
+    _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
             """
@@ -138,6 +460,7 @@ def get_draft_assessment(*, school_id: int, staff_id: int) -> Optional[Dict[str,
             JOIN portal_schools s ON s.id = a.school_id
             LEFT JOIN dashboard_users u ON u.id = a.staff_id
             WHERE a.school_id = %s AND a.staff_id = %s AND a.status = 'draft'
+              AND COALESCE(a.is_deleted, FALSE) = FALSE
             ORDER BY a.updated_at DESC, a.created_at DESC
             LIMIT 1
             """,
@@ -148,6 +471,7 @@ def get_draft_assessment(*, school_id: int, staff_id: int) -> Optional[Dict[str,
 
 
 def get_latest_draft_assessment_for_staff(*, staff_id: int) -> Optional[Dict[str, Any]]:
+    _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
             """
@@ -157,6 +481,7 @@ def get_latest_draft_assessment_for_staff(*, staff_id: int) -> Optional[Dict[str
             JOIN portal_schools s ON s.id = a.school_id
             LEFT JOIN dashboard_users u ON u.id = a.staff_id
             WHERE a.staff_id = %s AND a.status = 'draft'
+              AND COALESCE(a.is_deleted, FALSE) = FALSE
             ORDER BY a.updated_at DESC, a.created_at DESC
             LIMIT 1
             """,
@@ -167,6 +492,7 @@ def get_latest_draft_assessment_for_staff(*, staff_id: int) -> Optional[Dict[str
 
 
 def get_latest_assessment_for_staff_school(*, school_id: int, staff_id: int) -> Optional[Dict[str, Any]]:
+    _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
             """
@@ -176,6 +502,7 @@ def get_latest_assessment_for_staff_school(*, school_id: int, staff_id: int) -> 
             JOIN portal_schools s ON s.id = a.school_id
             LEFT JOIN dashboard_users u ON u.id = a.staff_id
             WHERE a.school_id = %s AND a.staff_id = %s
+              AND COALESCE(a.is_deleted, FALSE) = FALSE
             ORDER BY a.updated_at DESC, a.created_at DESC
             LIMIT 1
             """,
@@ -276,6 +603,44 @@ def delete_draft_assessment(*, assessment_id: int) -> None:
         )
 
 
+def delete_assessment(*, assessment_id: int, deleted_by: Optional[int] = None) -> bool:
+    """Soft-delete hospitality assessment regardless of status (admin action)."""
+    _ensure_soft_delete_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE hospitality_assessments
+            SET is_deleted = TRUE,
+                deleted_at = NOW(),
+                deleted_by = %s,
+                updated_at = NOW()
+            WHERE id = %s
+              AND COALESCE(is_deleted, FALSE) = FALSE
+            """,
+            (deleted_by, assessment_id),
+        )
+        return cur.rowcount > 0
+
+
+def delete_guestbook_review(*, review_id: int, deleted_by: Optional[int] = None) -> bool:
+    """Soft-delete hospitality guestbook review (admin action)."""
+    _ensure_soft_delete_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE hospitality_guestbook_reviews
+            SET is_deleted = TRUE,
+                deleted_at = NOW(),
+                deleted_by = %s,
+                updated_at = NOW()
+            WHERE id = %s
+              AND COALESCE(is_deleted, FALSE) = FALSE
+            """,
+            (deleted_by, review_id),
+        )
+        return cur.rowcount > 0
+
+
 def list_assessments_for_staff(
     *,
     staff_id: int,
@@ -283,7 +648,8 @@ def list_assessments_for_staff(
     search: str | None = None,
     limit: int = 100,
 ) -> List[Dict[str, Any]]:
-    clauses = ["a.staff_id = %s"]
+    _ensure_soft_delete_schema()
+    clauses = ["a.staff_id = %s", "COALESCE(a.is_deleted, FALSE) = FALSE"]
     params: List[Any] = [staff_id]
     if status:
         clauses.append("LOWER(a.status) = %s")
@@ -316,6 +682,7 @@ def list_assessments_for_school(
     school_id: int,
     limit: int = 100,
 ) -> List[Dict[str, Any]]:
+    _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
             """
@@ -325,6 +692,7 @@ def list_assessments_for_school(
             LEFT JOIN dashboard_users u ON u.id = a.staff_id
             LEFT JOIN hospitality_assessment_guestbook_links g ON g.assessment_id = a.id
             WHERE a.school_id = %s
+              AND COALESCE(a.is_deleted, FALSE) = FALSE
             ORDER BY a.created_at DESC
             LIMIT %s
             """,
@@ -335,6 +703,7 @@ def list_assessments_for_school(
 
 def fetch_stats() -> Dict[str, Any]:
     """Return aggregate hospitality stats."""
+    _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
             """
@@ -347,6 +716,7 @@ def fetch_stats() -> Dict[str, Any]:
                     WHERE (created_at AT TIME ZONE 'Asia/Jakarta')::date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
                 ) AS today_assessments
             FROM hospitality_assessments
+            WHERE COALESCE(is_deleted, FALSE) = FALSE
             """
         )
         row = cur.fetchone() or {}
@@ -361,6 +731,7 @@ def fetch_stats() -> Dict[str, Any]:
                 FROM hospitality_assessments a
                 JOIN hospitality_assessment_scores s ON s.assessment_id = a.id
                 WHERE a.status IN ('submitted', 'verified')
+                  AND COALESCE(a.is_deleted, FALSE) = FALSE
                 GROUP BY a.id
             )
             SELECT AVG(
@@ -383,6 +754,7 @@ def fetch_stats() -> Dict[str, Any]:
 
 def fetch_daily_trend(*, days: int = 30) -> List[Dict[str, Any]]:
     """Daily count of hospitality assessments (submitted/verified)."""
+    _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
             """
@@ -392,6 +764,7 @@ def fetch_daily_trend(*, days: int = 30) -> List[Dict[str, Any]]:
                 COUNT(*) FILTER (WHERE status = 'verified') AS verified
             FROM hospitality_assessments
             WHERE created_at >= (NOW() AT TIME ZONE 'Asia/Jakarta') - INTERVAL '%s days'
+              AND COALESCE(is_deleted, FALSE) = FALSE
             GROUP BY day
             ORDER BY day ASC
             """,
@@ -402,6 +775,7 @@ def fetch_daily_trend(*, days: int = 30) -> List[Dict[str, Any]]:
 
 def fetch_top_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
     """Top schools by average score percentage."""
+    _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
             """
@@ -414,6 +788,7 @@ def fetch_top_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
                 FROM hospitality_assessments a
                 JOIN hospitality_assessment_scores s ON s.assessment_id = a.id
                 WHERE a.status IN ('submitted','verified')
+                  AND COALESCE(a.is_deleted, FALSE) = FALSE
                 GROUP BY a.id, a.school_id
             )
             SELECT
@@ -439,6 +814,7 @@ def fetch_top_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
 
 def fetch_bottom_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
     """Bottom schools by average score percentage (lowest first)."""
+    _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
             """
@@ -451,6 +827,7 @@ def fetch_bottom_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
                 FROM hospitality_assessments a
                 JOIN hospitality_assessment_scores s ON s.assessment_id = a.id
                 WHERE a.status IN ('submitted','verified')
+                  AND COALESCE(a.is_deleted, FALSE) = FALSE
                 GROUP BY a.id, a.school_id
             )
             SELECT
@@ -476,6 +853,7 @@ def fetch_bottom_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
 
 def fetch_recent_assessments(*, limit: int = 20) -> List[Dict[str, Any]]:
     """Recent assessments with link info."""
+    _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
             """
@@ -493,6 +871,7 @@ def fetch_recent_assessments(*, limit: int = 20) -> List[Dict[str, Any]]:
             JOIN portal_schools s ON s.id = a.school_id
             LEFT JOIN dashboard_users u ON u.id = a.staff_id
             LEFT JOIN hospitality_assessment_guestbook_links g ON g.assessment_id = a.id
+            WHERE COALESCE(a.is_deleted, FALSE) = FALSE
             ORDER BY a.created_at DESC
             LIMIT %s
             """,
@@ -536,7 +915,8 @@ def _build_guestbook_review_filters(
     start_date: date | None = None,
     end_date: date | None = None,
 ) -> tuple[str, list[Any]]:
-    clauses = ["TRUE"]
+    _ensure_soft_delete_schema()
+    clauses = ["TRUE", "COALESCE(r.is_deleted, FALSE) = FALSE"]
     params: list[Any] = []
 
     if school_id:
@@ -745,6 +1125,7 @@ def fetch_guestbook_review_rating_distribution(
 
 def fetch_guestbook_review_top_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
     safe_limit = max(1, min(int(limit or 10), 100))
+    _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
             """
@@ -756,6 +1137,7 @@ def fetch_guestbook_review_top_schools(*, limit: int = 10) -> List[Dict[str, Any
                 FROM hospitality_guestbook_reviews r
                 WHERE r.status = 'completed'
                   AND r.rating IS NOT NULL
+                  AND COALESCE(r.is_deleted, FALSE) = FALSE
             )
             SELECT
                 s.id AS school_id,
@@ -779,6 +1161,7 @@ def fetch_guestbook_review_top_schools(*, limit: int = 10) -> List[Dict[str, Any
 
 def fetch_guestbook_review_bottom_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
     safe_limit = max(1, min(int(limit or 10), 100))
+    _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
             """
@@ -790,6 +1173,7 @@ def fetch_guestbook_review_bottom_schools(*, limit: int = 10) -> List[Dict[str, 
                 FROM hospitality_guestbook_reviews r
                 WHERE r.status = 'completed'
                   AND r.rating IS NOT NULL
+                  AND COALESCE(r.is_deleted, FALSE) = FALSE
             )
             SELECT
                 s.id AS school_id,
@@ -823,6 +1207,7 @@ def list_guestbook_reviews(
     page: int = 1,
     per_page: int = 25,
 ) -> Tuple[List[Dict[str, Any]], int]:
+    _ensure_soft_delete_schema()
     safe_page = max(1, int(page or 1))
     safe_per_page = max(1, min(int(per_page or 25), 200))
     offset = (safe_page - 1) * safe_per_page
@@ -884,7 +1269,7 @@ def list_guestbook_reviews(
         JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
         JOIN portal_schools s ON s.id = r.school_id
         LEFT JOIN hospitality_assessment_guestbook_links gl ON gl.transaction_id = t.id
-        LEFT JOIN hospitality_assessments ha ON ha.id = gl.assessment_id
+        LEFT JOIN hospitality_assessments ha ON ha.id = gl.assessment_id AND COALESCE(ha.is_deleted, FALSE) = FALSE
         LEFT JOIN dashboard_users hu ON hu.id = ha.staff_id
         WHERE {where_sql}
         ORDER BY COALESCE(r.completed_at, r.created_at) DESC NULLS LAST, r.id DESC
@@ -932,6 +1317,7 @@ def fetch_guestbook_reviews_export(
     start_date: date | None = None,
     end_date: date | None = None,
 ) -> List[Dict[str, Any]]:
+    _ensure_soft_delete_schema()
     where_sql, params = _build_guestbook_review_filters(
         school_id=school_id,
         review_status=review_status,
@@ -982,7 +1368,7 @@ def fetch_guestbook_reviews_export(
         JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
         JOIN portal_schools s ON s.id = r.school_id
         LEFT JOIN hospitality_assessment_guestbook_links gl ON gl.transaction_id = t.id
-        LEFT JOIN hospitality_assessments ha ON ha.id = gl.assessment_id
+        LEFT JOIN hospitality_assessments ha ON ha.id = gl.assessment_id AND COALESCE(ha.is_deleted, FALSE) = FALSE
         LEFT JOIN dashboard_users hu ON hu.id = ha.staff_id
         WHERE {where_sql}
         ORDER BY COALESCE(r.completed_at, r.created_at) DESC NULLS LAST, r.id DESC
@@ -1019,6 +1405,7 @@ def fetch_guestbook_reviews_export(
 def get_guestbook_review_detail(review_id: int) -> Dict[str, Any] | None:
     if not review_id:
         return None
+    _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
             """
@@ -1062,9 +1449,10 @@ def get_guestbook_review_detail(review_id: int) -> Dict[str, Any] | None:
             JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
             JOIN portal_schools s ON s.id = r.school_id
             LEFT JOIN hospitality_assessment_guestbook_links gl ON gl.transaction_id = t.id
-            LEFT JOIN hospitality_assessments ha ON ha.id = gl.assessment_id
+            LEFT JOIN hospitality_assessments ha ON ha.id = gl.assessment_id AND COALESCE(ha.is_deleted, FALSE) = FALSE
             LEFT JOIN dashboard_users hu ON hu.id = ha.staff_id
             WHERE r.id = %s
+              AND COALESCE(r.is_deleted, FALSE) = FALSE
             LIMIT 1
             """,
             (review_id,),
@@ -1327,6 +1715,7 @@ def reorder_hosp_aspects(order_ids: list[int]) -> None:
             )
 
 def get_assessment(assessment_id: int) -> Optional[Dict[str, Any]]:
+    _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
             """
@@ -1343,6 +1732,7 @@ def get_assessment(assessment_id: int) -> Optional[Dict[str, Any]]:
             LEFT JOIN hospitality_assessment_guestbook_links g ON g.assessment_id = a.id
             LEFT JOIN daftar_tamu_transactions t ON t.id = g.transaction_id
             WHERE a.id = %s
+              AND COALESCE(a.is_deleted, FALSE) = FALSE
             """,
             (assessment_id,),
         )
@@ -1447,6 +1837,7 @@ def link_guestbook_transaction(
     transaction_id: int,
     linked_by: Optional[int] = None,
 ) -> Dict[str, Any]:
+    _ensure_soft_delete_schema()
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
@@ -1495,6 +1886,7 @@ def link_guestbook_transaction(
                 SELECT *
                 FROM hospitality_assessments
                 WHERE id = %s
+                  AND COALESCE(is_deleted, FALSE) = FALSE
                 """,
                 (assessment_id,),
             )
@@ -1524,6 +1916,7 @@ def link_guestbook_transaction(
             UPDATE hospitality_assessments
             SET status = 'verified', verified_at = NOW(), updated_at = NOW()
             WHERE id = %s
+              AND COALESCE(is_deleted, FALSE) = FALSE
             RETURNING *
             """,
             (assessment_id,),
@@ -1574,26 +1967,36 @@ def list_comments(assessment_id: int) -> List[Dict[str, Any]]:
 def create_reopen_request(
     *, assessment_id: int, staff_id: int, reason: Optional[str]
 ) -> Dict[str, Any]:
+    _ensure_soft_delete_schema()
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
             INSERT INTO hospitality_reopen_requests (
                 assessment_id, staff_id, reason, status
-            ) VALUES (%s, %s, %s, 'pending')
+            )
+            SELECT %s, %s, %s, 'pending'
+            WHERE EXISTS (
+                SELECT 1
+                FROM hospitality_assessments
+                WHERE id = %s
+                  AND COALESCE(is_deleted, FALSE) = FALSE
+            )
             RETURNING *
             """,
-            (assessment_id, staff_id, reason),
+            (assessment_id, staff_id, reason, assessment_id),
         )
         row = cur.fetchone()
     return dict(row) if row else {}
 
 
 def list_reopen_requests(*, status: Optional[str] = None, limit: int = 200) -> List[Dict[str, Any]]:
+    _ensure_soft_delete_schema()
     conditions = []
     params: List[Any] = []
     if status:
         conditions.append("status = %s")
         params.append(status)
+    conditions.append("COALESCE(a.is_deleted, FALSE) = FALSE")
     where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
     with get_cursor() as cur:
         cur.execute(
@@ -1614,13 +2017,16 @@ def list_reopen_requests(*, status: Optional[str] = None, limit: int = 200) -> L
 
 
 def get_latest_reopen_request(assessment_id: int) -> Optional[Dict[str, Any]]:
+    _ensure_soft_delete_schema()
     query = """
         SELECT r.*, u.full_name AS staff_name, u.email AS staff_email,
                reviewer.full_name AS reviewer_name, reviewer.email AS reviewer_email
         FROM hospitality_reopen_requests r
+        JOIN hospitality_assessments a ON a.id = r.assessment_id
         JOIN dashboard_users u ON u.id = r.staff_id
         LEFT JOIN dashboard_users reviewer ON reviewer.id = r.reviewer_id
         WHERE r.assessment_id = %s
+          AND COALESCE(a.is_deleted, FALSE) = FALSE
         ORDER BY r.created_at DESC
         LIMIT 1
     """
@@ -1631,12 +2037,15 @@ def get_latest_reopen_request(assessment_id: int) -> Optional[Dict[str, Any]]:
 
 
 def get_latest_reopen_request_id(assessment_id: int) -> Optional[int]:
+    _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT id
-            FROM hospitality_reopen_requests
-            WHERE assessment_id = %s
+            SELECT r.id
+            FROM hospitality_reopen_requests r
+            JOIN hospitality_assessments a ON a.id = r.assessment_id
+            WHERE r.assessment_id = %s
+              AND COALESCE(a.is_deleted, FALSE) = FALSE
             ORDER BY created_at DESC
             LIMIT 1
             """,
@@ -1653,6 +2062,7 @@ def update_reopen_request_status(
     reviewer_id: int,
     reviewer_note: Optional[str] = None,
 ) -> Dict[str, Any]:
+    _ensure_soft_delete_schema()
     safe_status = (status or "").strip().lower()
     if safe_status not in REOPEN_STATUSES:
         raise ValueError("Status reopen tidak valid")
@@ -1665,6 +2075,12 @@ def update_reopen_request_status(
                 reviewer_note = %s,
                 reviewed_at = NOW()
             WHERE id = %s
+              AND EXISTS (
+                  SELECT 1
+                  FROM hospitality_assessments a
+                  WHERE a.id = hospitality_reopen_requests.assessment_id
+                    AND COALESCE(a.is_deleted, FALSE) = FALSE
+              )
             RETURNING *
             """,
             (safe_status, reviewer_id, reviewer_note, request_id),

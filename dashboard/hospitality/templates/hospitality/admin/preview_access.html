@@ -1,0 +1,90 @@
+{% extends "hospitality/base_hospitality.html" %}
+{% set page_title = "Pengaturan Akses Preview Hospitality" %}
+
+{% block portal_content %}
+<section class="mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+    <div>
+      <h1 class="h5 fw-bold mb-1">Akses Preview Hospitality</h1>
+      <p class="text-muted small mb-0">Berikan akses read-only hospitality ke user dengan role apa pun.</p>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+      <form method="post" action="{{ url_for('hospitality.admin_preview_access') }}" class="row g-2 align-items-end">
+        <div class="col-lg-8">
+          <label class="form-label small fw-semibold">Pilih User</label>
+          <select name="user_id" class="form-select" required>
+            <option value="">-- Pilih user --</option>
+            {% for user in candidates %}
+            <option value="{{ user.id }}">
+              {{ user.full_name or '-' }} ({{ user.email or '-' }}) • {{ (user.role or '-')|upper }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-lg-4 d-grid">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Tambah Akses
+          </button>
+        </div>
+      </form>
+      {% if not candidates %}
+      <div class="small text-muted mt-2">Tidak ada kandidat user (semua sudah punya akses atau belum approved).</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <form method="get" class="row g-2 mb-3">
+        <div class="col-lg-8">
+          <input type="text" class="form-control" name="q" value="{{ search_query }}" placeholder="Cari nama atau email user">
+        </div>
+        <div class="col-lg-4 d-grid">
+          <button type="submit" class="btn btn-outline-secondary">Cari</button>
+        </div>
+      </form>
+
+      {% if granted_users %}
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>User</th>
+              <th>Role</th>
+              <th>Diberikan Oleh</th>
+              <th>Diberikan Pada</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in granted_users %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ item.full_name or '-' }}</div>
+                <div class="small text-muted">{{ item.email or '-' }}</div>
+              </td>
+              <td><span class="badge text-bg-secondary">{{ (item.role or '-')|upper }}</span></td>
+              <td>{{ item.granted_by_name or '-' }}</td>
+              <td class="small text-muted">{{ item.granted_at|jakarta }}</td>
+              <td class="text-end">
+                <form method="post" action="{{ url_for('hospitality.admin_preview_access_delete', user_id=item.user_id) }}" onsubmit="return confirm('Cabut akses preview user ini?');">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash me-1"></i>Cabut
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="alert alert-info mb-0">Belum ada user dengan akses preview hospitality.</div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

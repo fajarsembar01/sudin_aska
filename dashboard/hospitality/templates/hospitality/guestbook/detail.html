@@ -1,5 +1,6 @@
 {% extends "hospitality/base_hospitality.html" %}
 {% set page_title = "Detail Review Pelayanan" %}
+{% set dashboard_ep = dashboard_endpoint if dashboard_endpoint is defined else 'hospitality.guestbook_review_dashboard' %}
 
 {% block head_extra %}
 <style>
@@ -151,7 +152,7 @@
             <span>Buka Hospitality</span>
           </a>
           {% endif %}
-          <a href="{{ url_for('hospitality.guestbook_review_dashboard') }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
+          <a href="{{ url_for(dashboard_ep) }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
             <i class="bi bi-list-ul"></i>
             <span>Daftar Review</span>
           </a>

@@ -1761,9 +1761,9 @@ def home() -> Response:
             },
             {
                 "title": "Hospitality",
-                "description": "Pantau penilaian hospitality lintas sekolah.",
+                "description": "Lakukan penilaian hospitality seperti staff.",
                 "icon": "bi-house-heart",
-                "href": url_for("hospitality.admin_home"),
+                "href": url_for("hospitality.staff_home"),
                 "col_class": "col-md-6 col-12",
             },
             {
