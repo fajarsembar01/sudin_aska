@@ -1762,9 +1762,9 @@ def home() -> Response:
             },
             {
                 "title": "Hospitality",
-                "description": "Pantau penilaian hospitality lintas sekolah.",
+                "description": "Lakukan penilaian hospitality seperti staff.",
                 "icon": "bi-house-heart",
-                "href": url_for("hospitality.admin_home"),
+                "href": url_for("hospitality.staff_home"),
                 "col_class": "col-md-6 col-12",
             },
             {
@@ -3042,10 +3042,6 @@ def submit(school_id: int) -> Response:
             return redirect(url_for("portal.staff_assignments"))
 
     try:
-        score_config = _build_assessment_score_config(assessment)
-        baseline = score_config["baseline"]
-        default_score = score_config["default"]
-
         all_rooms = list_school_rooms(school_id)
         school = get_school_by_id(school_id)
         rooms = _filter_assessment_rooms(all_rooms, school.get("jenjang") if school else None)
@@ -3087,16 +3083,12 @@ def submit(school_id: int) -> Response:
             aspects = room.get("aspects") or []
             if not room_id or not aspects:
                 continue
-            has_meaningful_score = False
             for aspect in aspects:
                 score_val = scores_map.get((room_id, aspect.get("id")))
                 if score_val is None:
-                    score_val = default_score
-                if int(score_val) > baseline:
-                    has_meaningful_score = True
+                    missing_messages.append("Terdapat aspek yang masih belum dinilai.")
                     break
-            if not has_meaningful_score:
-                missing_messages.append("Terdapat ruangan yang masih belum dinilai.")
+            if missing_messages:
                 break
 
         if missing_messages:

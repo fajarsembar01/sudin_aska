@@ -1,5 +1,18 @@
 {% extends "hospitality/base_hospitality.html" %}
 {% set page_title = "Review Pelayanan Hospitality" %}
+{% set dashboard_ep = dashboard_endpoint if dashboard_endpoint is defined else 'hospitality.guestbook_review_dashboard' %}
+{% set detail_ep = detail_endpoint if detail_endpoint is defined else 'hospitality.guestbook_review_detail' %}
+{% set assessment_ep = assessment_endpoint if assessment_endpoint is defined else 'hospitality.assessment_detail' %}
+{% set can_delete = can_delete_reviews if can_delete_reviews is defined else is_admin %}
+{% set can_export_data = can_export if can_export is defined else true %}
+{% set can_filter_school = allow_school_filter if allow_school_filter is defined else is_admin %}
+{% set show_rank = show_rankings if show_rankings is defined else (is_admin and not school_scope) %}
+{% set back_to_url = back_url if back_url is defined else (url_for('hospitality.admin_home') if is_admin else url_for('hospitality.school_home')) %}
+{% set preview_mode = current_preview_mode if current_preview_mode is defined else 'all' %}
+{% set per_school_ep = per_school_endpoint if per_school_endpoint is defined else dashboard_ep %}
+{% set all_school_link = all_schools_url if all_schools_url is defined else url_for(dashboard_ep) %}
+{% set per_school_link = per_school_url if per_school_url is defined else url_for(per_school_ep) %}
+{% set need_school_pick = require_school_pick if require_school_pick is defined else false %}
 
 {% block head_extra %}
 <style>
@@ -175,19 +188,27 @@
               {% endif %}
             </div>
             <p class="page-subtitle mb-0">
+              {% if is_preview_mode %}
+              Mode preview read-only untuk memantau kualitas pelayanan sekolah.
+              {% else %}
               Review wajib dari buku tamu umum sebelum chat ASKA aktif. Admin bisa analisis seluruh sekolah, sekolah hanya melihat datanya sendiri.
+              {% endif %}
             </p>
           </div>
         </div>
         <div class="d-flex flex-wrap gap-2">
+          {% if can_export_data and export_url %}
           <a href="{{ export_url }}" class="btn btn-outline-success d-inline-flex align-items-center gap-2">
             <i class="bi bi-download"></i>
             <span>Export CSV</span>
           </a>
-          <a href="{{ url_for('hospitality.admin_home') if is_admin else url_for('hospitality.school_home') }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
+          {% endif %}
+          {% if is_preview_mode and preview_mode == 'school' %}
+          <a href="{{ all_school_link }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
             <i class="bi bi-arrow-left"></i>
             <span>Kembali</span>
           </a>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -197,7 +218,10 @@
 <section class="review-filter card border-0 shadow-sm mb-4">
   <div class="card-body">
     <form method="get" class="row g-3 align-items-end">
-      {% if is_admin %}
+      {% if not is_preview_mode %}
+      <input type="hidden" name="view" value="{{ preview_mode }}">
+      {% endif %}
+      {% if can_filter_school %}
       <div class="col-lg-3 col-md-6">
         <label class="form-label small fw-semibold">Sekolah</label>
         <select class="form-select" name="school_id">
@@ -262,7 +286,7 @@
         </button>
       </div>
       <div class="col-lg-2 col-md-6 d-grid">
-        <a href="{{ url_for('hospitality.guestbook_review_dashboard') }}" class="btn btn-outline-secondary">
+        <a href="{{ all_school_link if (not is_preview_mode and preview_mode == 'all') else per_school_link if (not is_preview_mode and preview_mode == 'school') else url_for(dashboard_ep) }}" class="btn btn-outline-secondary">
           Reset
         </a>
       </div>
@@ -270,6 +294,15 @@
   </div>
 </section>
 
+{% if need_school_pick %}
+<section class="mb-4">
+  <div class="alert alert-info mb-0">
+    Mode per sekolah aktif. Pilih sekolah pada field <strong>Sekolah</strong>, lalu klik <strong>Filter</strong>.
+  </div>
+</section>
+{% endif %}
+
+{% if not need_school_pick %}
 <section class="row g-3 mb-4">
   <div class="col-xl-3 col-lg-6">
     <div class="guestbook-stat card border-0">
@@ -336,7 +369,9 @@
     </div>
   </div>
 </section>
+{% endif %}
 
+{% if not need_school_pick %}
 <section class="row g-3 mb-4">
   <div class="col-lg-8">
     <div class="guestbook-chart-card card border-0 h-100">
@@ -371,7 +406,7 @@
   </div>
 </section>
 
-{% if is_admin and not school_scope %}
+{% if show_rank %}
 <section class="row g-3 mb-4">
   <div class="col-lg-6">
     <div class="guestbook-rank-card card border-0 h-100">
@@ -386,7 +421,11 @@
           <div class="list-group-item px-0 py-3">
             <div class="d-flex justify-content-between align-items-start gap-3">
               <div>
-                <div class="fw-semibold">{{ loop.index }}. {{ school.school_name }}</div>
+                <div class="fw-semibold">
+                  <a href="{{ url_for(per_school_ep, school_id=school.school_id) if is_preview_mode else url_for(per_school_ep, school_id=school.school_id, view='school') }}" class="text-decoration-none">
+                    {{ loop.index }}. {{ school.school_name }}
+                  </a>
+                </div>
                 <div class="small text-muted">{{ school.npsn }} • {{ school.jenjang }} • {{ school.review_count }} review</div>
                 {% if school.last_completed_at %}
                 <div class="small-note mt-1">Terakhir selesai {{ school.last_completed_at|jakarta }}</div>
@@ -420,7 +459,11 @@
           <div class="list-group-item px-0 py-3">
             <div class="d-flex justify-content-between align-items-start gap-3">
               <div>
-                <div class="fw-semibold">{{ loop.index }}. {{ school.school_name }}</div>
+                <div class="fw-semibold">
+                  <a href="{{ url_for(per_school_ep, school_id=school.school_id) if is_preview_mode else url_for(per_school_ep, school_id=school.school_id, view='school') }}" class="text-decoration-none">
+                    {{ loop.index }}. {{ school.school_name }}
+                  </a>
+                </div>
                 <div class="small text-muted">{{ school.npsn }} • {{ school.jenjang }} • {{ school.review_count }} review</div>
                 {% if school.last_completed_at %}
                 <div class="small-note mt-1">Terakhir selesai {{ school.last_completed_at|jakarta }}</div>
@@ -443,7 +486,9 @@
   </div>
 </section>
 {% endif %}
+{% endif %}
 
+{% if not need_school_pick %}
 <section class="guestbook-table-card card border-0 mb-4">
   <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
@@ -526,7 +571,7 @@
             </td>
             <td>
               {% if item.linked_assessment_id %}
-              <a href="{{ url_for('hospitality.assessment_detail', assessment_id=item.linked_assessment_id) }}" class="text-decoration-none">
+              <a href="{{ url_for(assessment_ep, assessment_id=item.linked_assessment_id) }}" class="text-decoration-none">
                 <span class="status-pill info">#{{ item.linked_assessment_id }}</span>
               </a>
               {% if item.linked_assessment_status %}
@@ -537,9 +582,24 @@
               {% endif %}
             </td>
             <td class="text-end pe-4">
-              <a href="{{ url_for('hospitality.guestbook_review_detail', review_id=item.review_id) }}" class="btn btn-sm btn-outline-primary">
-                Detail
-              </a>
+              <div class="d-inline-flex align-items-center gap-1">
+                <a href="{{ url_for(detail_ep, review_id=item.review_id) }}" class="btn btn-sm btn-outline-primary">
+                  Detail
+                </a>
+                {% if can_delete %}
+                <form
+                  method="post"
+                  action="{{ url_for('hospitality.admin_delete_guestbook_review', review_id=item.review_id) }}"
+                  onsubmit="return confirm('Hapus review pelayanan ini? Tindakan ini tidak dapat dibatalkan.');"
+                  class="d-inline"
+                >
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus Review">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
             </td>
           </tr>
           {% else %}
@@ -570,6 +630,7 @@
     </div>
   </div>
 </section>
+{% endif %}
 {% endblock %}
 
 {% block portal_scripts %}

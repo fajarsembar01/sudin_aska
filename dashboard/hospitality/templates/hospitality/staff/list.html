@@ -44,12 +44,6 @@
     border: 1px solid var(--border-soft);
   }
   #schoolSearchResults .list-group-item { border: 0; padding: 0.65rem 1rem; font-size: 0.88rem; }
-  .hosp-search-bar .btn-new {
-    border-radius: 0.75rem;
-    white-space: nowrap;
-    font-weight: 600;
-  }
-
   /* Filter pills */
   .hosp-filters {
     display: flex;
@@ -298,9 +292,6 @@
     <input type="text" class="form-control" id="schoolSearch" placeholder="Cari sekolah untuk mulai penilaian baru..." autocomplete="off">
     <div class="list-group position-absolute w-100 shadow-sm d-none" id="schoolSearchResults" style="z-index:1030; max-height:260px; overflow:auto;"></div>
   </div>
-  <button class="btn btn-primary btn-new" type="button" onclick="startAssessFromInput()">
-    <i class="bi bi-plus-lg me-1"></i>Mulai Penilaian
-  </button>
 </div>
 
 <!-- Filter pills -->
@@ -334,6 +325,13 @@
         <div>
           <div class="fw-semibold">{{ item.school_name }}</div>
           <small class="text-muted">{{ item.npsn }} • {{ item.jenjang }}</small>
+          {% if can_preview_hospitality %}
+          <div class="mt-1">
+            <a class="small text-decoration-none" href="{{ url_for('hospitality.preview_guestbook_dashboard_by_school', school_id=item.school_id) }}">
+              <i class="bi bi-star-half me-1"></i>Preview pelayanan sekolah ini
+            </a>
+          </div>
+          {% endif %}
         </div>
       </div>
       <div class="small text-muted mt-1">
