@@ -363,7 +363,7 @@
           </div>
         </div>
         <div class="metric-subtitle mt-3">
-          {{ stats.linked_reviews }} review sudah terhubung ke hospitality
+          Dari {{ stats.total_reviews }} review total
         </div>
       </div>
     </div>
@@ -523,7 +523,7 @@
             <th>Rating</th>
             <th>Review</th>
             <th>Transaksi</th>
-            <th>Terkait</th>
+
             <th class="text-end pe-4">Aksi</th>
           </tr>
         </thead>
@@ -569,18 +569,7 @@
               <div class="review-meta mt-1">{{ item.visit_at|jakarta }}</div>
               {% endif %}
             </td>
-            <td>
-              {% if item.linked_assessment_id %}
-              <a href="{{ url_for(assessment_ep, assessment_id=item.linked_assessment_id) }}" class="text-decoration-none">
-                <span class="status-pill info">#{{ item.linked_assessment_id }}</span>
-              </a>
-              {% if item.linked_assessment_status %}
-              <div class="review-meta mt-1">{{ item.linked_assessment_status }}</div>
-              {% endif %}
-              {% else %}
-              <span class="status-pill pending">Belum</span>
-              {% endif %}
-            </td>
+
             <td class="text-end pe-4">
               <div class="d-inline-flex align-items-center gap-1">
                 <a href="{{ url_for(detail_ep, review_id=item.review_id) }}" class="btn btn-sm btn-outline-primary">
@@ -604,7 +593,7 @@
           </tr>
           {% else %}
           <tr>
-            <td colspan="8" class="text-center py-5 text-muted">
+            <td colspan="7" class="text-center py-5 text-muted">
               <i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>
               Belum ada review pelayanan yang cocok dengan filter ini.
             </td>
