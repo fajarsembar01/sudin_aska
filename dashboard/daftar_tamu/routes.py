@@ -4518,6 +4518,59 @@ def sekolah_bulk_approve_public_transactions() -> Response:
     return redirect(url_for("daftar_tamu.sekolah_public_web"))
 
 
+@daftar_tamu_bp.route("/sekolah/umum-transactions/bulk-reject", methods=["POST"])
+@role_required("sekolah")
+def sekolah_bulk_reject_public_transactions() -> Response:
+    user = current_user()
+    school = _fetch_school_for_user(user.get("id"))
+    if not school:
+        flash("Akun sekolah belum terhubung dengan data sekolah.", "warning")
+        return redirect(url_for("daftar_tamu.sekolah_public_web"))
+
+    raw_ids = request.form.getlist("transaction_ids")
+    ids: list[int] = []
+    for raw in raw_ids:
+        try:
+            ids.append(int(raw))
+        except (TypeError, ValueError):
+            continue
+    if not ids:
+        flash("Pilih transaksi yang ingin ditolak.", "warning")
+        return redirect(url_for("daftar_tamu.sekolah_public_web"))
+
+    reviewer_notes = (request.form.get("reviewer_notes") or "").strip()
+    success_count = 0
+    for tx_id in ids:
+        try:
+            ok = update_public_transaction_status(
+                transaction_id=tx_id,
+                status="rejected",
+                reviewer_id=user.get("id"),
+                reviewer_notes=reviewer_notes or None,
+                school_id=school.get("id"),
+            )
+        except Exception:
+            ok = False
+        if ok:
+            success_count += 1
+            try:
+                _notify_guestbook_status_change(
+                    transaction_id=tx_id,
+                    status="rejected",
+                    actor=user,
+                    is_public=True,
+                )
+            except Exception:
+                current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu umum.")
+
+    if success_count:
+        flash(f"{success_count} pengajuan berhasil ditolak.", "success")
+    else:
+        flash("Tidak ada pengajuan yang berhasil ditolak.", "warning")
+
+    return redirect(url_for("daftar_tamu.sekolah_public_web"))
+
+
 @daftar_tamu_bp.route("/sekolah/qr")
 @role_required("sekolah")
 def sekolah_guestbook_qr() -> Response:
