@@ -2090,7 +2090,7 @@ def update_reopen_request_status(
             cur.execute(
                 """
                 UPDATE hospitality_assessments
-                SET status = 'reopened', reopened_at = NOW(), reopened_by = %s, updated_at = NOW()
+                SET status = 'draft', reopened_at = NOW(), reopened_by = %s, updated_at = NOW()
                 WHERE id = %s
                 RETURNING *
                 """,
