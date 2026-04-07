@@ -129,6 +129,13 @@
             line-height: 1.35;
         }
 
+        @media (min-width: 992px) {
+            .role-selection-row.odd-center-enabled .odd-card-center {
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+
         @media (max-width: 576px) {
             body {
                 padding: 12px;
@@ -236,9 +243,10 @@
                 <p>{{ header_subtitle or 'Silakan n ASKA Portal' }}</p>
             </div>
             <div class="login-body">
-                <div class="row g-3">
+                {% set is_odd_count = (cards|length) is odd %}
+                <div class="row g-3 role-selection-row{% if enable_odd_center %} odd-center-enabled{% endif %}">
                     {% for card in cards %}
-                    <div class="{{ card.col_class or default_col_class }}">
+                    <div class="{{ card.col_class or default_col_class }}{% if enable_odd_center and is_odd_count and loop.last %} odd-card-center{% endif %}">
                         <a href="{{ card.href }}" class="selection-card">
                             <div class="icon-wrapper">
                                 <i class="bi {{ card.icon }}"></i>
