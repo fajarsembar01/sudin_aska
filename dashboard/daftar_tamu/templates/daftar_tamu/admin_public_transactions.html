@@ -120,9 +120,30 @@
                         </td>
                         <td class="text-end">
                             {% if row.status == 'pending' %}
-                            <div class="small text-muted">Verifikasi oleh sekolah</div>
+                            <input type="text" class="form-control form-control-sm mb-2" id="adminPublicNote{{ row.id }}"
+                                placeholder="Catatan verifikasi (opsional)">
+                            <div class="d-flex justify-content-end gap-2">
+                                <form method="post"
+                                    action="{{ url_for('daftar_tamu.admin_public_transaction_approve', transaction_id=row.id) }}"
+                                    onsubmit="document.getElementById('adminPublicApproveNote{{ row.id }}').value = document.getElementById('adminPublicNote{{ row.id }}').value;">
+                                    <input type="hidden" name="reviewer_notes"
+                                        id="adminPublicApproveNote{{ row.id }}">
+                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                </form>
+                                <form method="post"
+                                    action="{{ url_for('daftar_tamu.admin_public_transaction_reject', transaction_id=row.id) }}"
+                                    onsubmit="document.getElementById('adminPublicRejectNote{{ row.id }}').value = document.getElementById('adminPublicNote{{ row.id }}').value;">
+                                    <input type="hidden" name="reviewer_notes"
+                                        id="adminPublicRejectNote{{ row.id }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                                </form>
+                            </div>
                             {% else %}
-                            <div class="small text-muted">Diverifikasi</div>
+                            <form method="post"
+                                action="{{ url_for('daftar_tamu.admin_public_transaction_reopen', transaction_id=row.id) }}"
+                                onsubmit="return confirm('Buka kembali transaksi ini agar bisa diverifikasi ulang?');">
+                                <button type="submit" class="btn btn-sm btn-outline-warning">Reopen</button>
+                            </form>
                             {% endif %}
                         </td>
                     </tr>
