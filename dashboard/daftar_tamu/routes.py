@@ -2975,34 +2975,102 @@ def admin_contact_priority() -> Response:
     )
 
 
-def _admin_public_verification_locked_response() -> Response:
-    message = "Verifikasi transaksi tamu umum hanya bisa dilakukan oleh sekolah."
-    accept_header = (request.headers.get("Accept") or "").lower()
-    content_type = (request.content_type or "").lower()
-    wants_json = (
-        request.is_json
-        or request.headers.get("X-Requested-With") == "XMLHttpRequest"
-        or "application/json" in accept_header
-        or "application/json" in content_type
-    )
-    if wants_json:
-        return jsonify({"success": False, "message": message}), 403
-    flash(message, "warning")
-    return redirect(url_for("daftar_tamu.admin_public_transactions"))
-
-
 @daftar_tamu_bp.route("/admin/umum-transactions/<int:transaction_id>/approve", methods=["POST"])
 @role_required("admin")
 def admin_public_transaction_approve(transaction_id: int) -> Response:
-    _ = transaction_id
-    return _admin_public_verification_locked_response()
+    user = current_user()
+    reviewer_notes = (request.form.get("reviewer_notes") or "").strip()
+    try:
+        ok = update_public_transaction_status(
+            transaction_id=transaction_id,
+            status="approved",
+            reviewer_id=user["id"],
+            reviewer_notes=reviewer_notes or None,
+        )
+    except ValueError:
+        ok = False
+    if not ok:
+        flash("Transaksi tidak ditemukan.", "danger")
+        return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="daftar_tamu",
+            action="PUBLIC_VERIFY_APPROVE",
+            target_type="PUBLIC_GUESTBOOK_TRANSACTION",
+            target_id=transaction_id,
+            target_name=f"Transaksi Umum #{transaction_id}",
+            metadata={"status": "approved", "reviewer_notes": reviewer_notes or None},
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mencatat action admin transaksi tamu umum.")
+    flash("Transaksi tamu umum disetujui.", "success")
+    return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
 
 
 @daftar_tamu_bp.route("/admin/umum-transactions/<int:transaction_id>/reject", methods=["POST"])
 @role_required("admin")
 def admin_public_transaction_reject(transaction_id: int) -> Response:
-    _ = transaction_id
-    return _admin_public_verification_locked_response()
+    user = current_user()
+    reviewer_notes = (request.form.get("reviewer_notes") or "").strip()
+    try:
+        ok = update_public_transaction_status(
+            transaction_id=transaction_id,
+            status="rejected",
+            reviewer_id=user["id"],
+            reviewer_notes=reviewer_notes or None,
+        )
+    except ValueError:
+        ok = False
+    if not ok:
+        flash("Transaksi tidak ditemukan.", "danger")
+        return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="daftar_tamu",
+            action="PUBLIC_VERIFY_REJECT",
+            target_type="PUBLIC_GUESTBOOK_TRANSACTION",
+            target_id=transaction_id,
+            target_name=f"Transaksi Umum #{transaction_id}",
+            metadata={"status": "rejected", "reviewer_notes": reviewer_notes or None},
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mencatat action admin transaksi tamu umum.")
+    flash("Transaksi tamu umum ditolak.", "success")
+    return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
+
+
+@daftar_tamu_bp.route("/admin/umum-transactions/<int:transaction_id>/reopen", methods=["POST"])
+@role_required("admin")
+def admin_public_transaction_reopen(transaction_id: int) -> Response:
+    user = current_user()
+    try:
+        ok = update_public_transaction_status(
+            transaction_id=transaction_id,
+            status="pending",
+            reviewer_id=user["id"],
+            reviewer_notes=None,
+        )
+    except ValueError:
+        ok = False
+    if not ok:
+        flash("Transaksi tidak ditemukan.", "danger")
+        return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="daftar_tamu",
+            action="PUBLIC_VERIFY_REOPEN",
+            target_type="PUBLIC_GUESTBOOK_TRANSACTION",
+            target_id=transaction_id,
+            target_name=f"Transaksi Umum #{transaction_id}",
+            metadata={"status": "pending"},
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mencatat action reopen transaksi tamu umum.")
+    flash("Transaksi dibuka kembali untuk diverifikasi.", "success")
+    return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
 
 
 @daftar_tamu_bp.route("/admin/umum/<int:guest_id>/verify", methods=["POST"])
