@@ -1038,12 +1038,31 @@
 </section>
 
 <script>
+    function setRoomAspectsCollapse(roomId, shouldShow) {
+        if (!roomId) return;
+        const collapseEl = document.getElementById(`aspects-${roomId}`);
+        if (!collapseEl) return;
+
+        if (window.bootstrap && window.bootstrap.Collapse) {
+            const instance = window.bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
+            if (shouldShow) {
+                instance.show();
+            } else {
+                instance.hide();
+            }
+            return;
+        }
+
+        collapseEl.classList.toggle('show', Boolean(shouldShow));
+    }
+
     function toggleAll(checked, containerId) {
         var container = containerId ? document.getElementById(containerId) : document;
         // Ruangan
         container.querySelectorAll('input[name="room_ids"]').forEach(input => {
             if (input.disabled) return; // wajib: jangan diubah
             input.checked = checked;
+            setRoomAspectsCollapse(input.value, checked);
         });
         // Aspek pada ruangan yang terlihat di container
         container.querySelectorAll('input[type="checkbox"][name^="aspects_"]').forEach(input => {
@@ -1125,6 +1144,25 @@
             });
         }
 
+        // Tombol "Aspek" hanya untuk buka/tutup collapse, jangan ikut toggle checkbox ruangan.
+        document.querySelectorAll('button[data-bs-target^="#aspects-"]').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const targetSelector = btn.getAttribute('data-bs-target');
+                const targetEl = targetSelector ? document.querySelector(targetSelector) : null;
+                if (!targetEl) return;
+
+                if (window.bootstrap && window.bootstrap.Collapse) {
+                    window.bootstrap.Collapse.getOrCreateInstance(targetEl, { toggle: false }).toggle();
+                    return;
+                }
+
+                targetEl.classList.toggle('show');
+            });
+        });
+
         // Jangan toggle checkbox ruangan ketika klik area aspek (inside collapse)
         document.querySelectorAll('.room-aspects').forEach(el => {
             el.addEventListener('click', function (e) {
@@ -1159,7 +1197,10 @@
                 const roomId = e.target.value;
                 const checked = e.target.checked;
                 toggleRoomAspects(roomId, checked);
+                setRoomAspectsCollapse(roomId, checked);
             });
+
+            setRoomAspectsCollapse(input.value, input.checked);
         });
 
         // ===== Room Search (filters active tab only) =====
