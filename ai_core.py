@@ -22,6 +22,9 @@ except Exception:  # pragma: no cover - optional dependency
 
 load_dotenv()
 
+def _is_truthy(value: str | None) -> bool:
+    return (value or "").strip().lower() in {"1", "true", "yes", "on"}
+
 
 def _load_cached_vectorstore(
     *,
@@ -171,6 +174,16 @@ def build_qa_chain():
         embedding=embedding,
     )
     if vectorstore is None:
+        # Safety guard: cegah re-embed remote yang tidak disengaja (biaya API).
+        # Ini biasa kejadian setelah git pull saat konten knowledge berubah
+        # sehingga doc_hash berbeda dan cache lama invalid.
+        if embedding_signature.get("provider") == "openai" and not _is_truthy(
+            os.getenv("ASKA_ALLOW_REMOTE_EMBEDDING_REINDEX")
+        ):
+            raise RuntimeError(
+                "Cache embedding tidak cocok dan re-index remote diblokir untuk mencegah biaya tak sengaja. "
+                "Set ASKA_ALLOW_REMOTE_EMBEDDING_REINDEX=1 bila memang ingin re-embed via API."
+            )
         docs = text_splitter.create_documents([content])
         vectorstore = FAISS.from_documents(docs, embedding)
         _save_vectorstore_cache(
