@@ -86,6 +86,41 @@
         <div class="small text-muted">Belum ada permintaan reopen.</div>
       {% endif %}
     {% endif %}
+    <script>
+    (function() {
+      var card = document.currentScript.closest('.card');
+      if (!card) return;
+      card.querySelectorAll('form').forEach(function(form) {
+        form.addEventListener('submit', function() {
+          var clicked = document.activeElement;
+          if (!clicked || clicked.tagName !== 'BUTTON') {
+            clicked = form.querySelector('button[type="submit"]');
+          }
+          if (clicked && clicked.closest('form') === form) {
+            var icon = clicked.querySelector('i.bi');
+            if (icon) {
+              icon.className = 'spinner-border spinner-border-sm';
+              icon.setAttribute('role', 'status');
+            }
+            var textParts = clicked.childNodes;
+            for (var i = 0; i < textParts.length; i++) {
+              if (textParts[i].nodeType === 3 && textParts[i].textContent.trim()) {
+                textParts[i].textContent = ' Memproses...';
+                break;
+              }
+            }
+          }
+          card.querySelectorAll('button').forEach(function(btn) {
+            btn.disabled = true;
+            btn.style.pointerEvents = 'none';
+          });
+          card.querySelectorAll('textarea').forEach(function(ta) {
+            ta.readOnly = true;
+          });
+        });
+      });
+    })();
+    </script>
   </div>
 </div>
 {% endif %}
