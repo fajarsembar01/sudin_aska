@@ -126,23 +126,39 @@ def _maybe_reload_qa_chain() -> None:
 
 
 def reload_qa_chain() -> None:
-    """Reload QA chain after knowledge updates."""
+    """Reload QA chain after knowledge updates.
+
+    Jika build gagal, qa_chain lama tetap dipertahankan (kalau ada).
+    """
     global qa_chain, _last_kb_mtime
     with _qa_chain_lock:
-        qa_chain = build_qa_chain()
-        _last_kb_mtime = _get_kb_mtime()
+        try:
+            new_chain = build_qa_chain()
+            qa_chain = new_chain
+            _last_kb_mtime = _get_kb_mtime()
+        except Exception as exc:
+            print(f"[ASKA] ⚠️ Gagal reload QA chain: {exc}")
+            # Pertahankan qa_chain lama jika ada, biarkan None jika memang belum ada
 
 
 def _ensure_qa_chain() -> None:
-    """Lazy-init QA chain supaya startup web tidak langsung trigger indexing."""
+    """Lazy-init QA chain supaya startup web tidak langsung trigger indexing.
+
+    Jika build gagal (misal API key hilang, embedding error), qa_chain tetap
+    None dan request akan dijawab dengan pesan "gangguan teknis".
+    """
     global qa_chain, _last_kb_mtime
     if qa_chain is not None:
         return
     with _qa_chain_lock:
         if qa_chain is not None:
             return
-        qa_chain = build_qa_chain()
-        _last_kb_mtime = _get_kb_mtime()
+        try:
+            qa_chain = build_qa_chain()
+            _last_kb_mtime = _get_kb_mtime()
+        except Exception as exc:
+            print(f"[ASKA] ⚠️ Gagal build QA chain (embedding error): {exc}")
+            qa_chain = None
 
 TEACHER_CONVERSATION_LIMIT = 10
 TEACHER_TIMEOUT_SECONDS = 600
@@ -181,6 +197,14 @@ async def process_channel_request(
     session_data = web_sessions.setdefault(session_key, {})
     _ensure_qa_chain()
     _maybe_reload_qa_chain()
+
+    # Jika QA chain gagal di-init (misal embedding error), langsung jawab gangguan teknis
+    if qa_chain is None:
+        print(f"[{now_str()}] ⚠️ QA chain tidak tersedia — menjawab gangguan teknis")
+        fallback_msg = "Maaf ya, ASKA lagi gangguan teknis nih 😔🔧 Coba lagi nanti ya!"
+        save_chat(user_id, username, (user_input or "").strip(), role="user", topic=normalized_topic)
+        save_chat(user_id, "ASKA", fallback_msg, role="aska", topic=normalized_topic)
+        return fallback_msg, None
 
     user = MockUser(user_id, first_name=username)
     message = MockMessage(user, user_input)
@@ -345,6 +369,10 @@ async def process_channel_request(
         chat_history = format_history_for_chain(history_from_db)
 
         start_time = time.perf_counter()
+
+        if qa_chain is None:
+            # QA chain bisa jadi None kalau reload gagal di tengah jalan
+            raise RuntimeError("QA chain tidak tersedia (embedding error)")
 
         result = await asyncio.to_thread(qa_chain.invoke, {"input": normalized_input, "chat_history": chat_history})
 
