@@ -83,7 +83,7 @@ class MockContext:
 web_sessions = {}
 
 load_dotenv()
-qa_chain = build_qa_chain()
+qa_chain = None
 _qa_chain_lock = Lock()
 _last_kb_mtime: Optional[float] = None
 _last_kb_check_ts: float = 0.0
@@ -108,6 +108,8 @@ def _get_kb_mtime() -> float:
 
 def _maybe_reload_qa_chain() -> None:
     global _last_kb_mtime, _last_kb_check_ts
+    if qa_chain is None:
+        return
     if _KB_CHECK_INTERVAL <= 0:
         return
     now_ts = time.time()
@@ -127,6 +129,18 @@ def reload_qa_chain() -> None:
     """Reload QA chain after knowledge updates."""
     global qa_chain, _last_kb_mtime
     with _qa_chain_lock:
+        qa_chain = build_qa_chain()
+        _last_kb_mtime = _get_kb_mtime()
+
+
+def _ensure_qa_chain() -> None:
+    """Lazy-init QA chain supaya startup web tidak langsung trigger indexing."""
+    global qa_chain, _last_kb_mtime
+    if qa_chain is not None:
+        return
+    with _qa_chain_lock:
+        if qa_chain is not None:
+            return
         qa_chain = build_qa_chain()
         _last_kb_mtime = _get_kb_mtime()
 
@@ -165,6 +179,7 @@ async def process_channel_request(
 
     session_key = f"{normalized_topic}:{user_id}"
     session_data = web_sessions.setdefault(session_key, {})
+    _ensure_qa_chain()
     _maybe_reload_qa_chain()
 
     user = MockUser(user_id, first_name=username)
