@@ -178,6 +178,18 @@ def _ensure_soft_delete_schema() -> None:
             ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES dashboard_users(id)
             """
         )
+        cur.execute(
+            """
+            DROP INDEX IF EXISTS uq_hosp_assessment_daily
+            """
+        )
+        cur.execute(
+            """
+            CREATE UNIQUE INDEX uq_hosp_assessment_daily
+            ON hospitality_assessments (school_id, staff_id, ((created_at AT TIME ZONE 'Asia/Jakarta')::date))
+            WHERE COALESCE(is_deleted, FALSE) = FALSE
+            """
+        )
     _SOFT_DELETE_SCHEMA_READY = True
 
 
