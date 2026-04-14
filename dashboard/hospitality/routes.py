@@ -80,6 +80,8 @@ from .queries import (
     update_hosp_aspect,
     update_reopen_request_status,
     upsert_scores,
+    log_activity,
+    fetch_activity_logs,
 )
 
 hospitality_bp = Blueprint(
@@ -363,9 +365,19 @@ def staff_delete_draft(assessment_id: int) -> Response:
 @role_required("admin")
 def admin_delete_assessment(assessment_id: int) -> Response:
     user = current_user()
+    assessment = get_assessment(assessment_id)
+    school_name = (assessment or {}).get("school_name", f"ID {assessment_id}")
     try:
         deleted = delete_assessment(assessment_id=assessment_id, deleted_by=int(user.get("id")))
         if deleted:
+            log_activity(
+                user_id=int(user.get("id")),
+                action="delete",
+                target_type="HOSPITALITY_ASSESSMENT",
+                target_id=assessment_id,
+                target_name=school_name,
+                details={"description": f"Menghapus penilaian hospitality sekolah {school_name}", "assessment_id": assessment_id, "status": (assessment or {}).get('status')},
+            )
             flash("Penilaian hospitality berhasil dihapus.", "success")
         else:
             flash("Penilaian hospitality tidak ditemukan.", "warning")
@@ -546,6 +558,14 @@ def link_guestbook(assessment_id: int) -> Response:
             metadata={"transaction_id": transaction_id},
         )
         flash("Berhasil menghubungkan buku tamu dan memverifikasi penilaian.", "success")
+        log_activity(
+            user_id=int(user.get("id")),
+            action="verify_with_guestbook",
+            target_type="HOSPITALITY_ASSESSMENT",
+            target_id=assessment_id,
+            target_name=(assessment or {}).get("school_name", f"ID {assessment_id}"),
+            details={"description": f"Memverifikasi penilaian dengan buku tamu (ID transaksi: {transaction_id})", "transaction_id": transaction_id},
+        )
     except Exception as exc:  # pragma: no cover
         flash(str(exc), "danger")
     return redirect(url_for("hospitality.assessment_detail", assessment_id=assessment_id))
@@ -700,6 +720,14 @@ def _update_reopen_status(*, request_id: int, status: str, reviewer_note: Option
                 actor_name=user.get("full_name"),
                 actor_username=user.get("email"),
                 reviewer_note=reviewer_note,
+            )
+            log_activity(
+                user_id=int(user.get("id")),
+                action=f"reopen_{status}",
+                target_type="HOSPITALITY_REOPEN_REQUEST",
+                target_id=req.get("id"),
+                target_name=(assessment or {}).get("school_name", f"ID {req.get('assessment_id')}"),
+                details={"description": f"{'Menyetujui' if status == 'approved' else 'Menolak'} permintaan reopen penilaian {(assessment or {}).get('school_name', '')}", "reviewer_note": reviewer_note, "assessment_id": req.get("assessment_id")},
             )
             flash("Status reopen diperbarui.", "success")
             if wants_json:
@@ -1200,6 +1228,14 @@ def admin_delete_guestbook_review(review_id: int) -> Response:
     try:
         deleted = delete_guestbook_review(review_id=review_id, deleted_by=int(user.get("id")))
         if deleted:
+            log_activity(
+                user_id=int(user.get("id")),
+                action="delete",
+                target_type="GUESTBOOK_REVIEW",
+                target_id=review_id,
+                target_name=f"Review Pelayanan #{review_id}",
+                details={"description": f"Menghapus review pelayanan (ID: {review_id})"},
+            )
             flash("Review pelayanan berhasil dihapus.", "success")
         else:
             flash("Review pelayanan tidak ditemukan.", "warning")
@@ -1229,6 +1265,7 @@ def admin_home() -> Response:
     bottom_schools = fetch_bottom_schools(limit=10)
     recent = fetch_recent_assessments(limit=20)
     linked_photos = fetch_linked_photos(limit=12)
+    activity_logs = fetch_activity_logs(limit=20)
     return render_template(
         "hospitality/admin/list.html",
         reopen_requests=reopen_requests,
@@ -1239,6 +1276,21 @@ def admin_home() -> Response:
         bottom_schools=bottom_schools,
         recent_assessments=recent,
         linked_photos=linked_photos,
+        activity_logs=activity_logs,
+    )
+
+
+@hospitality_bp.route("/admin/activity-logs")
+@role_required("admin")
+def admin_activity_logs() -> Response:
+    page = request.args.get("page", 1, type=int)
+    per_page = 50
+    activity_logs = fetch_activity_logs(limit=per_page, offset=(page - 1) * per_page)
+    return render_template(
+        "hospitality/admin/activity_logs.html",
+        activity_logs=activity_logs,
+        page=page,
+        per_page=per_page,
     )
 
 
@@ -1333,9 +1385,14 @@ def admin_export_csv() -> Response:
 @role_required("admin")
 def admin_setup() -> Response:
     components = list_components_with_aspects(active_only=False)
+    activity_logs = fetch_activity_logs(
+        limit=50,
+        target_types=["HOSPITALITY_COMPONENT", "HOSPITALITY_ASPECT"]
+    )
     return render_template(
         "hospitality/admin/setup.html",
         components=components,
+        activity_logs=activity_logs,
     )
 
 
@@ -1350,6 +1407,14 @@ def admin_preview_access() -> Response:
             return redirect(url_for("hospitality.admin_preview_access"))
         try:
             grant_hospitality_preview_access(user_id=target_user_id, granted_by=int(user.get("id")))
+            log_activity(
+                user_id=int(user.get("id")),
+                action="grant_preview_access",
+                target_type="HOSPITALITY_PREVIEW",
+                target_id=target_user_id,
+                target_name=f"User ID {target_user_id}",
+                details={"description": f"Memberikan akses preview hospitality ke User ID {target_user_id}"},
+            )
             flash("Akses preview hospitality diberikan.", "success")
         except Exception as exc:  # pragma: no cover
             flash(str(exc), "danger")
@@ -1372,6 +1437,14 @@ def admin_preview_access_delete(user_id: int) -> Response:
     try:
         revoked = revoke_hospitality_preview_access(user_id=user_id)
         if revoked:
+            log_activity(
+                user_id=int(current_user().get("id")),
+                action="revoke_preview_access",
+                target_type="HOSPITALITY_PREVIEW",
+                target_id=user_id,
+                target_name=f"User ID {user_id}",
+                details={"description": f"Mencabut akses preview hospitality dari User ID {user_id}"},
+            )
             flash("Akses preview hospitality dicabut.", "success")
         else:
             flash("Akses preview tidak ditemukan.", "warning")
@@ -1389,7 +1462,15 @@ def admin_create_component() -> Response:
         flash("Nama komponen wajib diisi.", "warning")
         return redirect(url_for("hospitality.admin_setup"))
     try:
-        create_component(name=name, description=description, sort_order=0, is_required=True, active=True)
+        comp = create_component(name=name, description=description, sort_order=0, is_required=True, active=True)
+        log_activity(
+            user_id=int(current_user().get("id")),
+            action="create",
+            target_type="HOSPITALITY_COMPONENT",
+            target_id=comp.get("id"),
+            target_name=name,
+            details={"description": f"Membuat komponen baru: {name}", "comp_description": description},
+        )
         flash("Komponen ditambahkan.", "success")
     except Exception as exc:
         flash(str(exc), "danger")
@@ -1417,6 +1498,14 @@ def admin_update_component(component_id: int) -> Response:
             is_required=is_required,
             active=active,
         )
+        log_activity(
+            user_id=int(current_user().get("id")),
+            action="update",
+            target_type="HOSPITALITY_COMPONENT",
+            target_id=component_id,
+            target_name=name,
+            details={"description": f"Memperbarui komponen: {name} (Aktif: {'Ya' if active else 'Tidak'}, Wajib: {'Ya' if is_required else 'Tidak'})", "active": active, "is_required": is_required},
+        )
         flash("Komponen diperbarui.", "success")
     except Exception as exc:
         flash(str(exc), "danger")
@@ -1427,7 +1516,17 @@ def admin_update_component(component_id: int) -> Response:
 @role_required("admin")
 def admin_delete_component(component_id: int) -> Response:
     try:
+        comp = get_component(component_id)
         if delete_component(component_id):
+            comp_name = comp.get("name") if comp else f"ID {component_id}"
+            log_activity(
+                user_id=int(current_user().get("id")),
+                action="delete",
+                target_type="HOSPITALITY_COMPONENT",
+                target_id=component_id,
+                target_name=comp_name,
+                details={"description": f"Menghapus komponen: {comp_name}"},
+            )
             flash("Komponen dihapus/nonaktif.", "success")
         else:
             flash("Komponen tidak ditemukan.", "warning")
@@ -1440,6 +1539,17 @@ def admin_delete_component(component_id: int) -> Response:
 @role_required("admin")
 def admin_toggle_component_active(component_id: int) -> Response:
     if toggle_component_active(component_id):
+        comp = get_component(component_id)
+        comp_name = comp.get("name") if comp else f"ID {component_id}"
+        new_active = comp.get("active") if comp else None
+        log_activity(
+            user_id=int(current_user().get("id")),
+            action="toggle_active",
+            target_type="HOSPITALITY_COMPONENT",
+            target_id=component_id,
+            target_name=comp_name,
+            details={"description": f"Mengubah status komponen {comp_name} menjadi {'Aktif' if new_active else 'Nonaktif'}", "active": new_active},
+        )
         flash("Status komponen diperbarui.", "success")
     else:
         flash("Komponen tidak ditemukan.", "warning")
@@ -1450,6 +1560,17 @@ def admin_toggle_component_active(component_id: int) -> Response:
 @role_required("admin")
 def admin_toggle_component_required(component_id: int) -> Response:
     if toggle_component_required(component_id):
+        comp = get_component(component_id)
+        comp_name = comp.get("name") if comp else f"ID {component_id}"
+        new_required = comp.get("is_required") if comp else None
+        log_activity(
+            user_id=int(current_user().get("id")),
+            action="toggle_required",
+            target_type="HOSPITALITY_COMPONENT",
+            target_id=component_id,
+            target_name=comp_name,
+            details={"description": f"Mengubah status wajib komponen {comp_name} menjadi {'Wajib' if new_required else 'Opsional'}", "is_required": new_required},
+        )
         flash("Status wajib komponen diperbarui.", "success")
     else:
         flash("Komponen tidak ditemukan.", "warning")
@@ -1464,6 +1585,14 @@ def admin_reorder_components() -> Response:
     try:
         ids = [int(i) for i in order_ids]
         reorder_components(ids)
+        log_activity(
+            user_id=int(current_user().get("id")),
+            action="reorder",
+            target_type="HOSPITALITY_COMPONENT",
+            target_id=None,
+            target_name="Komponen",
+            details={"description": f"Mengubah urutan {len(ids)} komponen", "component_ids": ids},
+        )
         return jsonify({"success": True})
     except Exception as exc:
         return jsonify({"success": False, "message": str(exc)}), 400
@@ -1481,13 +1610,23 @@ def admin_create_aspect() -> Response:
         flash("Komponen dan nama aspek wajib diisi.", "warning")
         return redirect(url_for("hospitality.admin_setup"))
     try:
-        create_hosp_aspect(
+        asp = create_hosp_aspect(
             component_id=component_id,
             name=name,
             description=description,
             sort_order=sort_order,
             is_required=is_required,
             active=True,
+        )
+        comp_obj = get_component(component_id)
+        comp_label = comp_obj.get("name") if comp_obj else f"ID {component_id}"
+        log_activity(
+            user_id=int(current_user().get("id")),
+            action="create",
+            target_type="HOSPITALITY_ASPECT",
+            target_id=asp.get("id") if asp else None,
+            target_name=name,
+            details={"description": f"Membuat aspek baru: {name} pada komponen {comp_label}", "component_id": component_id, "component_name": comp_label},
         )
         flash("Aspek ditambahkan.", "success")
         if request.is_json:
@@ -1543,6 +1682,16 @@ def admin_create_aspects_batch() -> Response:
         except Exception as exc:
             errors.append(f"Error creating '{name}': {exc}")
 
+    if created_count > 0:
+        log_activity(
+            user_id=int(current_user().get("id")),
+            action="batch_create",
+            target_type="HOSPITALITY_ASPECT",
+            target_id=None,
+            target_name=f"{created_count} Aspek Baru",
+            details={"description": f"Membuat {created_count} aspek sekaligus", "components": list(touched_components)},
+        )
+
     if request.is_json:
         return jsonify({
             "success": created_count > 0,
@@ -1580,6 +1729,14 @@ def admin_update_aspect(aspect_id: int) -> Response:
             is_required=is_required,
             active=active,
         )
+        log_activity(
+            user_id=int(current_user().get("id")),
+            action="update",
+            target_type="HOSPITALITY_ASPECT",
+            target_id=aspect_id,
+            target_name=name,
+            details={"description": f"Memperbarui aspek: {name} (Aktif: {'Ya' if active else 'Tidak'}, Wajib: {'Ya' if is_required else 'Tidak'})", "active": active, "is_required": is_required},
+        )
         flash("Aspek diperbarui.", "success")
     except Exception as exc:
         flash(str(exc), "danger")
@@ -1590,7 +1747,17 @@ def admin_update_aspect(aspect_id: int) -> Response:
 @role_required("admin")
 def admin_delete_aspect_route(aspect_id: int) -> Response:
     try:
+        aspect = get_hosp_aspect(aspect_id)
         if delete_hosp_aspect(aspect_id):
+            asp_name = aspect.get("name") if aspect else f"ID {aspect_id}"
+            log_activity(
+                user_id=int(current_user().get("id")),
+                action="delete",
+                target_type="HOSPITALITY_ASPECT",
+                target_id=aspect_id,
+                target_name=asp_name,
+                details={"description": f"Menghapus aspek: {asp_name}"},
+            )
             flash("Aspek dihapus/nonaktif.", "success")
         else:
             flash("Aspek tidak ditemukan.", "warning")

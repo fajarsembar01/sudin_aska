@@ -1,0 +1,96 @@
+{% set empty_text = empty_text|default('Belum ada aktivitas tercatat') %}
+{% set include_no_results_row = include_no_results_row|default(false) %}
+
+{% for log in activity_logs %}
+{% set user_label = log.user_name|default('', true) or log.user_email|default('', true) or 'System' %}
+{% set log_payload = {
+    "time": log.created_at|jakarta if log.created_at|default(none) else '-',
+    "user_name": log.user_name|default(none),
+    "user_email": log.user_email|default(none),
+    "action": log.action|default(''),
+    "target_type": log.target_type|default(''),
+    "target_id": log.target_id|default(none),
+    "target_name": log.target_name|default(''),
+    "details": log.details|default(none)
+} %}
+<tr data-search="{{ (log.user_name|default('', true)) ~ ' ' ~ (log.action|default('', true)) ~ ' ' ~ (log.target_type|default('', true)) ~ ' ' ~ (log.target_name|default('', true)) }}"
+    data-user="{{ user_label }}" data-action="{{ log.action|default('', true) }}"
+    data-target="{{ log.target_type|default('', true) }}" data-name="{{ log.target_name|default('', true) }}">
+    <td class="text-muted small">
+        {% if log.created_at %}
+            {{ log.created_at|jakarta }}
+        {% else %}
+            -
+        {% endif %}
+    </td>
+    <td>
+        <div class="d-flex align-items-center gap-2">
+            <div class="avatar avatar-xs bg-primary-subtle text-primary rounded-circle"
+                style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">
+                {{ (log.user_name or 'S')[0]|upper }}
+            </div>
+            <span class="text-truncate small" style="max-width: 120px;">
+                {{ log.user_name or 'System' }}
+            </span>
+        </div>
+    </td>
+    <td>
+        {% if log.action in ['create', 'batch_create'] %}
+        <span class="badge bg-success-subtle text-success border border-success-subtle small">CREATE</span>
+        {% elif log.action == 'update' %}
+        <span class="badge bg-warning-subtle text-warning border border-warning-subtle small">UPDATE</span>
+        {% elif log.action == 'delete' %}
+        <span class="badge bg-danger-subtle text-danger border border-danger-subtle small">DELETE</span>
+        {% elif 'reopen' in log.action %}
+        <span class="badge bg-info-subtle text-info border border-info-subtle small">{{ log.action|upper }}</span>
+        {% else %}
+        <span class="badge bg-secondary small">{{ log.action|upper }}</span>
+        {% endif %}
+    </td>
+    <td class="text-muted small" style="font-size: 0.75rem;">
+        {{ log.target_type|replace('HOSPITALITY_', '')|replace('_', ' ') }}
+    </td>
+    <td class="fw-semibold text-dark small">{{ log.target_name or '-' }}</td>
+    <td>
+        {% if log.details %}
+            <div class="text-muted small" style="font-size: 0.75rem;">
+                {% if log.details.description %}
+                    <div>{{ log.details.description|truncate(50) }}</div>
+                {% endif %}
+                {% if log.details.reviewer_note %}
+                    <div class="text-info italic">"{{ log.details.reviewer_note }}"</div>
+                {% endif %}
+                {% if log.details.active is defined %}
+                    <div><strong>Aktif:</strong> {{ 'Ya' if log.details.active else 'Tidak' }}</div>
+                {% endif %}
+                {% if log.details.is_required is defined %}
+                    <div><strong>Wajib:</strong> {{ 'Ya' if log.details.is_required else 'Tidak' }}</div>
+                {% endif %}
+                {% if log.details.transaction_id %}
+                    <div><strong>Guestbook:</strong> {{ log.details.transaction_id }}</div>
+                {% endif %}
+            </div>
+        {% else %}
+            <span class="text-muted small">-</span>
+        {% endif %}
+    </td>
+    <td class="text-end">
+        <button type="button" class="btn btn-sm btn-link p-0 js-log-detail"
+            data-log='{{ log_payload|tojson }}' title="Detail">
+            <i class="bi bi-info-circle"></i>
+        </button>
+    </td>
+</tr>
+{% else %}
+<tr>
+    <td colspan="7" class="text-center py-4 text-muted">
+        <i class="bi bi-clock-history fs-4 d-block mb-2"></i>
+        {{ empty_text }}
+    </td>
+</tr>
+{% endfor %}
+{% if include_no_results_row %}
+<tr id="noLogResults" style="display:none;">
+    <td colspan="7" class="text-center py-4 text-muted">Tidak ada log sesuai pencarian.</td>
+</tr>
+{% endif %}
