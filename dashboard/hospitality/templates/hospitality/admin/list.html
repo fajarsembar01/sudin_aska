@@ -396,29 +396,8 @@ portal_content %} {# ===== HERO SECTION ===== #}
     </div>
 </section>
 
-{# ===== ACTIVITY LOG SECTION ===== #}
-<section class="mb-4">
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 pb-0">
-            <div class="d-flex align-items-center gap-2">
-                <span class="icon-badge section-icon text-dark">
-                    <i class="bi bi-clock-history"></i>
-                </span>
-                <div>
-                    <h2 class="h6 fw-bold mb-0">Log Aktivitas Hospitality</h2>
-                    <p class="text-muted mb-0 small">Aktivitas admin terbaru di modul hospitality</p>
-                </div>
-            </div>
-            <a href="{{ url_for('hospitality.admin_activity_logs') }}"
-                class="btn btn-sm btn-link text-decoration-none small">
-                Lihat Semua <i class="bi bi-arrow-right"></i>
-            </a>
-        </div>
-        <div class="card-body">
-            {% include 'hospitality/admin/_activity_log_table.html' %}
-        </div>
-    </div>
-</section>
+
+
 
 
 {# ===== REOPEN REQUESTS ===== #} {{ reopen_requests_panel( title='Permintaan
