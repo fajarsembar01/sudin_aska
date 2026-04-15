@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Sequence
 
 from dashboard.db_access import get_cursor
+from psycopg2.extras import Json
 
 try:
     from zoneinfo import ZoneInfo
@@ -2097,3 +2098,75 @@ def update_reopen_request_status(
                 (reviewer_id, req["assessment_id"]),
             )
     return dict(req) if req else {}
+
+
+def log_activity(
+    *,
+    user_id: Optional[int],
+    action: str,
+    target_type: str,
+    target_id: Optional[int] = None,
+    target_name: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+) -> None:
+    """Log an admin action in the hospitality module."""
+    if not action or not target_type:
+        return
+    try:
+        with get_cursor(commit=True) as cur:
+            cur.execute(
+                """
+                INSERT INTO hospitality_activity_logs (
+                    user_id, action, target_type, target_id, target_name, details, created_at
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, NOW())
+                """,
+                (
+                    user_id,
+                    action,
+                    target_type,
+                    target_id,
+                    target_name,
+                    Json(details) if details else None,
+                ),
+            )
+    except Exception as exc:  # pragma: no cover
+        import logging
+        logging.error(f"Failed to log hospitality activity: {exc}")
+
+
+def fetch_activity_logs(
+    *, limit: int = 100, offset: int = 0, target_types: Optional[List[str]] = None
+) -> List[Dict[str, Any]]:
+    """Fetch recent activity logs, joining with dashboard_users for the actor's name."""
+    safe_limit = max(1, min(int(limit or 100), 500))
+    safe_offset = max(0, int(offset or 0))
+    conditions = []
+    params: List[Any] = []
+    if target_types:
+        conditions.append("L.target_type = ANY(%s)")
+        params.append(target_types)
+    where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+    query = f"""
+        SELECT 
+            L.id, 
+            L.user_id, 
+            L.action, 
+            L.target_type, 
+            L.target_id, 
+            L.target_name, 
+            L.details, 
+            L.created_at,
+            U.full_name AS user_name,
+            U.role AS user_role
+        FROM hospitality_activity_logs L
+        LEFT JOIN dashboard_users U ON L.user_id = U.id
+        {where_clause}
+        ORDER BY L.created_at DESC
+        LIMIT %s OFFSET %s
+    """
+    params.append(safe_limit)
+    params.append(safe_offset)
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
