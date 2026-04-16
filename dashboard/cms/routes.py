@@ -233,40 +233,211 @@ def informasi_publik():
     return render_template("cms/informasi_publik.html", info=info_data or {})
 
 
+# ---- Layanan Publik CRUD ----
+
+UPLOAD_LAYANAN = CMS_UPLOAD_ROOT / "layanan_publik"
+UPLOAD_LAYANAN.mkdir(parents=True, exist_ok=True)
+ALLOWED_DOC_EXTENSIONS = {'pdf', 'doc', 'docx'}
+
+
+def _allowed_doc(filename):
+    """Check if file extension is allowed for documents."""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_DOC_EXTENSIONS
+
+
+def _list_layanan_publik(limit=None, offset=None):
+    """Ambil data layanan publik dengan pagination."""
+    with get_cursor() as cur:
+        sql = "SELECT * FROM cms_layanan_publik ORDER BY id ASC"
+        params = []
+        if limit is not None:
+            sql += " LIMIT %s"
+            params.append(limit)
+        if offset is not None:
+            sql += " OFFSET %s"
+            params.append(offset)
+        cur.execute(sql, tuple(params))
+        rows = cur.fetchall()
+    return [dict(r) for r in rows]
+
+
+def _count_layanan_publik():
+    """Hitung total data layanan publik."""
+    with get_cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM cms_layanan_publik")
+        res = cur.fetchone()
+    return res[0] if res else 0
+
+
+def _get_layanan_by_id(layanan_id):
+    """Ambil satu layanan publik by ID."""
+    with get_cursor() as cur:
+        cur.execute("SELECT * FROM cms_layanan_publik WHERE id = %s", (layanan_id,))
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def _save_uploaded_files(files):
+    """Save uploaded files and return metadata list."""
+    import uuid
+    file_entries = []
+    for f in files:
+        if f and f.filename and _allowed_doc(f.filename):
+            file_id = uuid.uuid4().hex[:12]
+            safe_name = secure_filename(f.filename)
+            stored_name = f"{file_id}_{safe_name}"
+            filepath = UPLOAD_LAYANAN / stored_name
+            f.save(filepath)
+            file_entries.append({
+                'id': file_id,
+                'name': safe_name,
+                'path': f"uploads/portal/cms/layanan_publik/{stored_name}",
+                'size': os.path.getsize(filepath),
+            })
+    return file_entries
+
+
 @cms_bp.route("/layanan-publik")
 @role_required("admin")
 def layanan_publik():
     """Halaman untuk mengelola layanan publik."""
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    offset = (page - 1) * per_page
     
-    # Dummy data
-    dummy_layanan = [
-        {
-            'id': 1,
-            'nama': 'Pelayanan KJP Plus',
-            'deskripsi': 'Informasi dan pendaftaran Kartu Jakarta Pintar (KJP) Plus untuk siswa.',
-            'icon': 'bi-card-heading',
-            'status': 'Aktif',
-            'files': ['Syarat_KJP.pdf', 'Panduan_KJP.pdf']
-        },
-        {
-            'id': 2,
-            'nama': 'Mutasi Siswa',
-            'deskripsi': 'Prosedur dan persyaratan untuk pindah sekolah/mutasi siswa antar wilayah.',
-            'icon': 'bi-arrow-left-right',
-            'status': 'Aktif',
-            'files': ['Formulir_Mutasi.pdf']
-        },
-        {
-            'id': 3,
-            'nama': 'Legalisir Ijazah',
-            'deskripsi': 'Pelayanan legalisir ijazah dan dokumen pendidikan lainnya.',
-            'icon': 'bi-patch-check',
-            'status': 'Tidak Aktif',
-            'files': []
-        }
-    ]
+    total_items = _count_layanan_publik()
+    data = _list_layanan_publik(limit=per_page, offset=offset)
     
-    return render_template("cms/layanan_publik.html", layanan=dummy_layanan)
+    total_pages = (total_items + per_page - 1) // per_page
+    
+    # Parse cms_files JSON if it's a string
+    for item in data:
+        if isinstance(item.get('cms_files'), str):
+            item['cms_files'] = json.loads(item['cms_files'])
+            
+    pagination = {
+        'current_page': page,
+        'total_pages': total_pages,
+        'total_items': total_items,
+        'per_page': per_page,
+        'start_index': offset + 1 if total_items > 0 else 0,
+        'end_index': min(offset + per_page, total_items)
+    }
+    
+    return render_template("cms/layanan_publik.html", layanan=data, pagination=pagination)
+
+
+@cms_bp.route("/layanan-publik/tambah", methods=['POST'])
+@role_required("admin")
+def layanan_publik_tambah():
+    """Tambah layanan publik baru."""
+    try:
+        nama = request.form.get('cms_nama_layanan', '').strip()
+        deskripsi = request.form.get('cms_deskripsi', '').strip()
+        icon = request.form.get('cms_icon', 'bi-star').strip()
+        status = request.form.get('cms_status', 'Aktif').strip()
+        if not nama:
+            return jsonify({'success': False, 'error': 'Nama layanan wajib diisi'}), 400
+
+        # Handle file uploads
+        uploaded = request.files.getlist('cms_files')
+        file_entries = _save_uploaded_files(uploaded)
+
+        with get_cursor(commit=True) as cur:
+            cur.execute(
+                """
+                INSERT INTO cms_layanan_publik
+                (cms_nama_layanan, cms_deskripsi, cms_icon, cms_status, cms_files, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s::jsonb, NOW(), NOW())
+                """,
+                (nama, deskripsi, icon, status, json.dumps(file_entries))
+            )
+        return jsonify({'success': True, 'message': 'Layanan publik berhasil ditambahkan'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@cms_bp.route("/layanan-publik/<int:layanan_id>/edit", methods=['POST'])
+@role_required("admin")
+def layanan_publik_edit(layanan_id):
+    """Update layanan publik."""
+    try:
+        existing = _get_layanan_by_id(layanan_id)
+        if not existing:
+            return jsonify({'success': False, 'error': 'Layanan tidak ditemukan'}), 404
+
+        nama = request.form.get('cms_nama_layanan', '').strip()
+        deskripsi = request.form.get('cms_deskripsi', '').strip()
+        icon = request.form.get('cms_icon', 'bi-star').strip()
+        status = request.form.get('cms_status', 'Aktif').strip()
+        if not nama:
+            return jsonify({'success': False, 'error': 'Nama layanan wajib diisi'}), 400
+
+        # Existing files — remove deleted ones
+        existing_files = existing.get('cms_files', [])
+        if isinstance(existing_files, str):
+            existing_files = json.loads(existing_files)
+
+        deleted_ids = request.form.getlist('deleted_file_ids')
+        kept_files = []
+        for f in existing_files:
+            if f.get('id') in deleted_ids:
+                # Delete physical file
+                try:
+                    phys = Path(__file__).parent.parent.parent / f.get('path', '')
+                    if phys.exists():
+                        phys.unlink()
+                except Exception:
+                    pass
+            else:
+                kept_files.append(f)
+
+        # Handle new file uploads
+        uploaded = request.files.getlist('cms_files')
+        new_entries = _save_uploaded_files(uploaded)
+        all_files = kept_files + new_entries
+
+        with get_cursor(commit=True) as cur:
+            cur.execute(
+                """
+                UPDATE cms_layanan_publik
+                SET cms_nama_layanan = %s, cms_deskripsi = %s, cms_icon = %s,
+                    cms_status = %s, cms_files = %s::jsonb, updated_at = NOW()
+                WHERE id = %s
+                """,
+                (nama, deskripsi, icon, status, json.dumps(all_files), layanan_id)
+            )
+        return jsonify({'success': True, 'message': 'Layanan publik berhasil diperbarui'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@cms_bp.route("/layanan-publik/<int:layanan_id>/hapus", methods=['POST'])
+@role_required("admin")
+def layanan_publik_hapus(layanan_id):
+    """Hapus layanan publik."""
+    try:
+        existing = _get_layanan_by_id(layanan_id)
+        if not existing:
+            return jsonify({'success': False, 'error': 'Layanan tidak ditemukan'}), 404
+
+        # Delete physical files
+        files = existing.get('cms_files', [])
+        if isinstance(files, str):
+            files = json.loads(files)
+        for f in files:
+            try:
+                phys = Path(__file__).parent.parent.parent / f.get('path', '')
+                if phys.exists():
+                    phys.unlink()
+            except Exception:
+                pass
+
+        with get_cursor(commit=True) as cur:
+            cur.execute("DELETE FROM cms_layanan_publik WHERE id = %s", (layanan_id,))
+        return jsonify({'success': True, 'message': 'Layanan publik berhasil dihapus'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @cms_bp.route("/artikel")

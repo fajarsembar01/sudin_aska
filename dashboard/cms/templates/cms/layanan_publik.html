@@ -16,6 +16,9 @@
         </div>
     </div>
 
+    <!-- Alert placeholder -->
+    <div id="alertPlaceholder"></div>
+
     <!-- Data Table -->
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body p-0">
@@ -37,15 +40,14 @@
                                 <td class="px-4 text-muted">{{ loop.index }}</td>
                                 <td class="px-4">
                                     <div class="bg-primary bg-opacity-10 text-primary rounded d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                        <i class="bi {{ item.icon }} fs-5"></i>
+                                        <i class="bi {{ item.cms_icon }} fs-5"></i>
                                     </div>
                                 </td>
                                 <td class="px-4">
-                                    <div class="fw-semibold text-dark">{{ item.nama_layanan }}</div>
-                                    <small class="text-muted text-truncate d-inline-block" style="max-width: 300px;">{{ item.deskripsi }}</small>
+                                    <div class="fw-semibold text-dark">{{ item.cms_nama_layanan }}</div>
                                 </td>
                                 <td class="px-4">
-                                    {% if item.status == 'Aktif' %}
+                                    {% if item.cms_status == 'Aktif' %}
                                         <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 fw-medium border border-success border-opacity-25">Aktif</span>
                                     {% else %}
                                         <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-2 fw-medium border border-secondary border-opacity-25">Tidak Aktif</span>
@@ -59,7 +61,7 @@
                                         <button type="button" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#editModal{{ item.id }}">
                                             <i class="bi bi-pencil-square"></i> <span class="d-none d-md-inline">Edit</span>
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">
+                                        <button type="button" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1" onclick="hapusLayanan({{ item.id }}, '{{ item.cms_nama_layanan | e }}')">
                                             <i class="bi bi-trash"></i> <span class="d-none d-md-inline">Hapus</span>
                                         </button>
                                     </div>
@@ -78,22 +80,31 @@
                 </table>
             </div>
         </div>
-        <!-- Pagination Placeholder -->
         <div class="card-footer bg-white border-top p-3 d-flex justify-content-between align-items-center">
-            <span class="text-muted small">Menampilkan 1-3 dari 3 data</span>
+            <span class="text-muted small">Menampilkan {{ pagination.start_index }}-{{ pagination.end_index }} dari {{ pagination.total_items }} data</span>
+            {% if pagination.total_pages > 1 %}
             <nav aria-label="Page navigation">
                 <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item disabled"><a class="page-link" href="#">Sebelumnya</a></li>
-                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item disabled"><a class="page-link" href="#">Selanjutnya</a></li>
+                    <li class="page-item {{ 'disabled' if pagination.current_page == 1 }}">
+                        <a class="page-link" href="{{ url_for('cms.layanan_publik', page=pagination.current_page - 1) }}">Sebelumnya</a>
+                    </li>
+                    {% for p in range(1, pagination.total_pages + 1) %}
+                    <li class="page-item {{ 'active' if p == pagination.current_page }}">
+                        <a class="page-link" href="{{ url_for('cms.layanan_publik', page=p) }}">{{ p }}</a>
+                    </li>
+                    {% endfor %}
+                    <li class="page-item {{ 'disabled' if pagination.current_page == pagination.total_pages }}">
+                        <a class="page-link" href="{{ url_for('cms.layanan_publik', page=pagination.current_page + 1) }}">Selanjutnya</a>
+                    </li>
                 </ul>
             </nav>
+            {% endif %}
         </div>
     </div>
 </div>
 
 <!-- Modal Tambah Layanan -->
-<div class="modal fade" id="tambahModal" tabindex="-1" aria-labelledby="tambahModalLabel" aria-hidden="true">
+<div class="modal fade" id="tambahModal" aria-labelledby="tambahModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header border-bottom-0 bg-light pb-3 pt-4 px-4">
@@ -101,10 +112,11 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body px-4 py-4">
-                <form id="formTambah">
+                <form id="formTambah" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Nama Layanan <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control form-control-lg fs-6" placeholder="Masukkan nama layanan..." required>
+                        <input type="text" class="form-control form-control-lg fs-6" name="cms_nama_layanan" placeholder="Masukkan nama layanan..." required>
                     </div>
                     
                     <div class="mb-4">
@@ -113,30 +125,28 @@
                             <div class="bg-white border rounded p-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 64px; height: 64px;">
                                 <i class="bi bi-star fs-3 text-primary" id="iconPreviewTambah"></i>
                             </div>
-                            <button type="button" class="btn btn-outline-primary fw-medium px-4 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#iconPickerModal" onclick="setIconTarget('tambah')">
+                            <button type="button" class="btn btn-outline-primary fw-medium px-4 py-2 rounded-3" onclick="openIconPicker('tambah')">
                                 <i class="bi bi-grid-3x3-gap me-2"></i>Pilih Icon
                             </button>
-                            <input type="hidden" id="inputIconTambah" name="icon" value="bi-star" required>
+                            <input type="hidden" id="inputIconTambah" name="cms_icon" value="bi-star" required>
                         </div>
                         <div class="form-text mt-2"><i class="bi bi-info-circle me-1"></i>Icon akan ditampilkan pada halaman publik untuk merepresentasikan layanan ini.</div>
                     </div>
                     
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Deskripsi Layanan <span class="text-danger">*</span></label>
-                        <textarea class="form-control" rows="4" placeholder="Penjelasan detail mengenai layanan ini..." required></textarea>
+                        <textarea id="deskripsiTambah" class="tinymce-editor" name="cms_deskripsi" placeholder="Penjelasan detail mengenai layanan ini..."></textarea>
                     </div>
 
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Upload Berkas Persyaratan (bisa lebih dari satu)</label>
-                        <div class="file-upload-wrapper p-4 text-center border rounded-3 bg-light" style="border-style: dashed !important; border-width: 2px !important;">
+                        <div class="file-upload-wrapper p-4 text-center border rounded-3 bg-light" style="border-style: dashed !important; border-width: 2px !important;" onclick="document.getElementById('fileUploadTambah').click()">
                             <i class="bi bi-cloud-arrow-up fs-1 text-primary mb-2 d-block"></i>
                             <p class="mb-2 fw-medium">Drag & drop file di sini atau klik untuk memilih file</p>
-                            <input type="file" class="form-control d-none" id="fileUpload" multiple>
-                            <label for="fileUpload" class="btn btn-outline-primary btn-sm px-3 rounded-pill mt-2">Pilih File</label>
+                            <input type="file" class="form-control d-none" id="fileUploadTambah" name="cms_files" multiple accept=".pdf,.doc,.docx">
                             <div class="small text-muted mt-2">Format yang didukung: PDF, DOC, DOCX. Maks: 5MB/file</div>
                         </div>
-                        <!-- Preview selected files placeholder -->
-                        <ul class="list-group mt-3 d-none" id="filePreviewList"></ul>
+                        <ul class="list-group mt-3 d-none" id="filePreviewListTambah"></ul>
                     </div>
                     
                     <div class="mb-3">
@@ -147,7 +157,8 @@
                                 <div class="text-muted fs-7" id="statusDescTambah">Ditampilkan di portal publik</div>
                             </div>
                             <div class="form-check form-switch fs-4 mb-0">
-                                <input class="form-check-input mt-0" type="checkbox" role="switch" id="statusLayananTambah" name="statusLayanan" value="Aktif" checked onchange="toggleStatus(this, 'statusLabelTambah', 'statusDescTambah')">
+                                <input class="form-check-input mt-0" type="checkbox" role="switch" id="statusLayananTambah" checked onchange="toggleStatus(this, 'statusLabelTambah', 'statusDescTambah')">
+                                <input type="hidden" name="cms_status" id="statusValueTambah" value="Aktif">
                             </div>
                         </div>
                     </div>
@@ -155,13 +166,13 @@
             </div>
             <div class="modal-footer border-top-0 bg-light px-4 py-3">
                 <button type="button" class="btn btn-secondary px-4 fw-medium" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary px-4 fw-medium shadow-sm"><i class="bi bi-save me-2"></i>Simpan</button>
+                <button type="button" class="btn btn-primary px-4 fw-medium shadow-sm" onclick="submitTambah()"><i class="bi bi-save me-2"></i>Simpan</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal Detail & Edit (Iterating over dummy data) -->
+<!-- Modal Detail & Edit (Iterating over data) -->
 {% for item in layanan %}
 <!-- Modal Detail -->
 <div class="modal fade" id="detailModal{{ item.id }}" tabindex="-1" aria-hidden="true">
@@ -169,18 +180,18 @@
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header border-bottom-0 bg-primary text-white pb-4 pt-4 px-4 position-relative" style="overflow: hidden;">
                 <div class="position-absolute top-0 end-0 p-3 opacity-25">
-                    <i class="bi {{ item.icon }}" style="font-size: 8rem; margin-top: -30px; margin-right: -20px;"></i>
+                    <i class="bi {{ item.cms_icon }}" style="font-size: 8rem; margin-top: -30px; margin-right: -20px;"></i>
                 </div>
                 <div class="position-relative z-1 w-100">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div class="bg-white bg-opacity-25 rounded p-2 d-inline-block">
-                            <i class="bi {{ item.icon }} fs-3"></i>
+                            <i class="bi {{ item.cms_icon }} fs-3"></i>
                         </div>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <h4 class="modal-title fw-bold text-white lh-base mt-2 pe-4">{{ item.nama_layanan }}</h4>
+                    <h4 class="modal-title fw-bold text-white lh-base mt-2 pe-4">{{ item.cms_nama_layanan }}</h4>
                     <div class="mt-2">
-                        {% if item.status == 'Aktif' %}
+                        {% if item.cms_status == 'Aktif' %}
                             <span class="badge bg-success border border-white border-opacity-50 px-3 py-2 rounded-pill">Status: Aktif</span>
                         {% else %}
                             <span class="badge bg-secondary border border-white border-opacity-50 px-3 py-2 rounded-pill">Status: Tidak Aktif</span>
@@ -191,18 +202,18 @@
             <div class="modal-body px-4 py-4 bg-light">
                 <div class="mb-4">
                     <h6 class="text-uppercase fw-bold text-muted mb-2 fs-7 tracking-wide">Deskripsi Layanan</h6>
-                    <p class="fs-6 text-dark lh-lg bg-white p-3 rounded shadow-sm">{{ item.deskripsi }}</p>
+                    <div class="fs-6 text-dark lh-lg bg-white p-3 rounded shadow-sm">{{ item.cms_deskripsi | safe }}</div>
                 </div>
                 
-                {% if item.files %}
+                {% if item.cms_files %}
                 <div>
-                    <h6 class="text-uppercase fw-bold text-muted mb-2 fs-7 tracking-wide">Berkas Persyaratan ({{ item.files|length }})</h6>
+                    <h6 class="text-uppercase fw-bold text-muted mb-2 fs-7 tracking-wide">Berkas Persyaratan ({{ item.cms_files|length }})</h6>
                     <div class="list-group shadow-sm">
-                        {% for file in item.files %}
-                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3 border-0 mb-1 rounded bg-white">
+                        {% for file in item.cms_files %}
+                        <a href="{{ url_for('portal.uploaded_file', filename=file.path.replace('uploads/portal/', '')) }}" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3 border-0 mb-1 rounded bg-white">
                             <div class="d-flex align-items-center text-truncate pe-3">
                                 <i class="bi bi-file-earmark-pdf fs-4 text-danger me-3"></i>
-                                <span class="text-truncate fw-medium">{{ file }}</span>
+                                <span class="text-truncate fw-medium">{{ file.name }}</span>
                             </div>
                             <span class="badge bg-light text-dark border px-2 py-1 flex-shrink-0"><i class="bi bi-download me-1"></i>Unduh</span>
                         </a>
@@ -219,7 +230,7 @@
 </div>
 
 <!-- Modal Edit Layanan -->
-<div class="modal fade" id="editModal{{ item.id }}" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="editModal{{ item.id }}" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header border-bottom-0 bg-light pb-3 pt-4 px-4">
@@ -227,40 +238,41 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body px-4 py-4">
-                <form id="formEdit{{ item.id }}">
+                <form id="formEdit{{ item.id }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Nama Layanan <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control form-control-lg fs-6" value="{{ item.nama_layanan }}" required>
+                        <input type="text" class="form-control form-control-lg fs-6" name="cms_nama_layanan" value="{{ item.cms_nama_layanan }}" required>
                     </div>
                     
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Icon Layanan <span class="text-danger">*</span></label>
                         <div class="d-flex align-items-center gap-3">
                             <div class="bg-white border rounded p-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 64px; height: 64px;">
-                                <i class="bi {{ item.icon }} fs-3 text-primary" id="iconPreviewEdit{{ item.id }}"></i>
+                                <i class="bi {{ item.cms_icon }} fs-3 text-primary" id="iconPreviewEdit{{ item.id }}"></i>
                             </div>
-                            <button type="button" class="btn btn-outline-primary fw-medium px-4 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#iconPickerModal" onclick="setIconTarget('edit{{ item.id }}')">
+                            <button type="button" class="btn btn-outline-primary fw-medium px-4 py-2 rounded-3" onclick="openIconPicker('edit{{ item.id }}')">
                                 <i class="bi bi-grid-3x3-gap me-2"></i>Pilih Icon
                             </button>
-                            <input type="hidden" id="inputIconEdit{{ item.id }}" name="icon" value="{{ item.icon }}" required>
+                            <input type="hidden" id="inputIconEdit{{ item.id }}" name="cms_icon" value="{{ item.cms_icon }}" required>
                         </div>
                     </div>
                     
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Deskripsi Layanan <span class="text-danger">*</span></label>
-                        <textarea class="form-control" rows="4" required>{{ item.deskripsi }}</textarea>
+                        <textarea id="deskripsiEdit{{ item.id }}" class="tinymce-editor" name="cms_deskripsi">{{ item.cms_deskripsi | safe }}</textarea>
                     </div>
 
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Berkas Tersimpan</label>
-                        {% if item.files %}
-                        <ul class="list-group mb-3">
-                            {% for file in item.files %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                        {% if item.cms_files %}
+                        <ul class="list-group mb-3" id="existingFiles{{ item.id }}">
+                            {% for file in item.cms_files %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center bg-light" id="fileItem-{{ item.id }}-{{ file.id }}">
                                 <div class="d-flex align-items-center text-truncate">
-                                    <i class="bi bi-file-earmark-text text-secondary me-2"></i> {{ file }}
+                                    <i class="bi bi-file-earmark-text text-secondary me-2"></i> {{ file.name }}
                                 </div>
-                                <button type="button" class="btn btn-sm btn-outline-danger border-0"><i class="bi bi-trash"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="markFileDeleted('{{ item.id }}', '{{ file.id }}')"><i class="bi bi-trash"></i></button>
                             </li>
                             {% endfor %}
                         </ul>
@@ -269,7 +281,7 @@
                         {% endif %}
 
                         <label class="form-label fw-semibold mt-3">Upload Tambahan Berkas (opsional)</label>
-                        <input type="file" class="form-control" multiple>
+                        <input type="file" class="form-control" name="cms_files" multiple accept=".pdf,.doc,.docx">
                         <div class="form-text mt-1 text-muted fs-7">Format didukung: PDF, DOC, DOCX. Maks: 5MB/file</div>
                     </div>
                     
@@ -277,35 +289,61 @@
                         <label class="form-label fw-semibold">Status Layanan</label>
                         <div class="p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between shadow-sm">
                             <div>
-                                <div class="fw-medium text-{% if item.status == 'Aktif' %}success{% else %}secondary{% endif %} mb-1" id="statusLabelEdit{{ item.id }}">{{ item.status }}</div>
-                                <div class="text-muted fs-7" id="statusDescEdit{{ item.id }}">{% if item.status == 'Aktif' %}Ditampilkan di portal publik{% else %}Disembunyikan{% endif %}</div>
+                                <div class="fw-medium text-{% if item.cms_status == 'Aktif' %}success{% else %}secondary{% endif %} mb-1" id="statusLabelEdit{{ item.id }}">{{ item.cms_status }}</div>
+                                <div class="text-muted fs-7" id="statusDescEdit{{ item.id }}">{% if item.cms_status == 'Aktif' %}Ditampilkan di portal publik{% else %}Disembunyikan{% endif %}</div>
                             </div>
                             <div class="form-check form-switch fs-4 mb-0">
-                                <input class="form-check-input mt-0" type="checkbox" role="switch" id="statusLayananEdit{{ item.id }}" name="statusLayanan" value="Aktif" {% if item.status == 'Aktif' %}checked{% endif %} onchange="toggleStatus(this, 'statusLabelEdit{{ item.id }}', 'statusDescEdit{{ item.id }}')">
+                                <input class="form-check-input mt-0" type="checkbox" role="switch" id="statusLayananEdit{{ item.id }}" {% if item.cms_status == 'Aktif' %}checked{% endif %} onchange="toggleStatus(this, 'statusLabelEdit{{ item.id }}', 'statusDescEdit{{ item.id }}'); document.getElementById('statusValueEdit{{ item.id }}').value = this.checked ? 'Aktif' : 'Tidak Aktif';">
+                                <input type="hidden" name="cms_status" id="statusValueEdit{{ item.id }}" value="{{ item.cms_status }}">
                             </div>
                         </div>
                     </div>
+                    <!-- Hidden inputs for deleted file IDs -->
+                    <div id="deletedFilesContainer{{ item.id }}"></div>
                 </form>
             </div>
             <div class="modal-footer border-top-0 bg-light px-4 py-3">
                 <button type="button" class="btn btn-secondary px-4 fw-medium" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary px-4 fw-medium shadow-sm"><i class="bi bi-save me-2"></i>Simpan Perubahan</button>
+                <button type="button" class="btn btn-primary px-4 fw-medium shadow-sm" onclick="submitEdit({{ item.id }})"><i class="bi bi-save me-2"></i>Simpan Perubahan</button>
             </div>
         </div>
     </div>
 </div>
 {% endfor %}
 
+<!-- Modal Konfirmasi Hapus -->
+<div class="modal fade" id="hapusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-bottom-0 bg-danger text-white pt-4 px-4 pb-3">
+                <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle me-2"></i>Konfirmasi Hapus</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 py-4 text-center">
+                <p class="mb-0">Yakin ingin menghapus layanan <strong id="hapusNamaLayanan"></strong>?</p>
+            </div>
+            <div class="modal-footer border-top-0 px-4 py-3">
+                <form id="formHapus">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                </form>
+                <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-danger px-3 fw-medium" id="btnKonfirmasiHapus"><i class="bi bi-trash me-1"></i>Hapus</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Pilih Icon -->
-<div class="modal fade" id="iconPickerModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+<div class="modal fade" id="iconPickerModal" aria-hidden="true" style="z-index: 1070; background: rgba(0,0,0,0.3);" data-bs-backdrop="false">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header border-bottom-0 bg-light pb-3 pt-4 px-4 sticky-top">
                 <h5 class="modal-title fw-bold"><i class="bi bi-stars text-primary me-2"></i>Pilih Icon Layanan</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body px-4 py-4 bg-light">
-                <div class="row g-3" id="iconGrid">
+            <div class="modal-body px-4 py-4 bg-light" style="max-height: 60vh;">
+                <input type="text" class="form-control form-control-sm mb-3" id="iconSearch" placeholder="Cari icon..." oninput="renderIconGrid()">
+                <div class="row g-2" id="iconGrid">
                     <!-- Icons will be injected here via JS -->
                 </div>
             </div>
@@ -329,7 +367,6 @@
         border-color: var(--bs-primary) !important;
     }
     
-    /* Make table rows clickable visually */
     .table-hover tbody tr {
         transition: background-color 0.15s ease-in-out;
     }
@@ -338,7 +375,17 @@
         border-radius: 1rem;
     }
 
-    /* Icon Picker Hover */
+    /* Styling for the rich text editor */
+    .tox-tinymce {
+        border-radius: 0.5rem !important;
+        border: 1px solid var(--border-soft, #dee2e6) !important;
+        box-shadow: none !important;
+    }
+    
+    html[data-theme="dark"] .tox-tinymce {
+        border-color: #495057 !important;
+    }
+
     .icon-choice-btn {
         transition: all 0.2s ease-in-out;
         cursor: pointer;
@@ -349,65 +396,198 @@
         transform: scale(1.05);
     }
 </style>
+{% endblock %}
 
+{% block scripts %}
+<!-- TinyMCE Script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const getTinyMceTheme = () => document.documentElement.getAttribute('data-theme') === 'dark' ? 'oxide-dark' : 'oxide';
+        const getTinyMceContentCss = () => document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default';
+
+        tinymce.init({
+            selector: '.tinymce-editor',
+            height: 350,
+            menubar: true,
+            skin: getTinyMceTheme(),
+            content_css: getTinyMceContentCss(),
+            plugins: [
+                'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                'insertdatetime', 'media', 'table', 'help', 'wordcount'
+            ],
+            toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | removeformat fullscreen',
+            content_style: 'body { font-family: "Plus Jakarta Sans", Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.6; }',
+            promotion: false,
+            branding: false,
+            setup: function (editor) {
+                editor.on('change', function () {
+                    editor.save();
+                });
+            }
+        });
+
+        // Re-focus TinyMCE bug fix in Bootstrap Modals
+        document.addEventListener('focusin', (e) => {
+            if (e.target.closest(".tox-tinymce, .tox-tinymce-aux, .moxman-window, .tam-assetmanager-root") !== null) {
+                e.stopImmediatePropagation();
+            }
+        });
+    });
+
     // Icon Picker Data
     const availableIcons = [
         // Document & Office
-        'bi-file-earmark-text', 'bi-file-earmark-pdf', 'bi-file-earmark-word', 'bi-file-earmark-excel', 
-        'bi-journal-bookmark', 'bi-book', 'bi-clipboard-check', 'bi-journal-text', 'bi-briefcase',
-        'bi-folder', 'bi-folder-check', 'bi-envelope-paper', 'bi-mailbox', 'bi-inbox',
-
-        // People & Badges
-        'bi-person', 'bi-person-badge', 'bi-people', 'bi-person-vcard', 'bi-person-workspace',
-        'bi-patch-check', 'bi-award', 'bi-star', 'bi-shield-check', 'bi-shield-lock',
-
+        'bi-file-earmark-text', 'bi-file-earmark-pdf', 'bi-file-earmark-word', 'bi-file-earmark-excel',
+        'bi-file-earmark-ppt', 'bi-file-earmark-zip', 'bi-file-earmark-code', 'bi-file-earmark-image',
+        'bi-file-earmark-music', 'bi-file-earmark-play', 'bi-file-earmark-richtext', 'bi-file-earmark-spreadsheet',
+        'bi-file-earmark-check', 'bi-file-earmark-plus', 'bi-file-earmark-minus', 'bi-file-earmark-lock',
+        'bi-file-earmark-medical', 'bi-file-earmark-arrow-up', 'bi-file-earmark-arrow-down',
+        'bi-file-text', 'bi-file-binary', 'bi-file-break', 'bi-file-diff', 'bi-file-ruled',
+        'bi-journal-bookmark', 'bi-journal-text', 'bi-journal-check', 'bi-journal-code', 'bi-journal-richtext',
+        'bi-book', 'bi-book-half', 'bi-bookmarks', 'bi-bookmark-star', 'bi-bookmark-check', 'bi-bookmark-heart',
+        'bi-clipboard', 'bi-clipboard-check', 'bi-clipboard-data', 'bi-clipboard-plus', 'bi-clipboard-heart',
+        'bi-briefcase', 'bi-briefcase-fill', 'bi-folder', 'bi-folder-check', 'bi-folder-plus',
+        'bi-folder-symlink', 'bi-folder2-open', 'bi-archive', 'bi-box-seam', 'bi-box2',
+        'bi-envelope', 'bi-envelope-open', 'bi-envelope-paper', 'bi-envelope-check', 'bi-envelope-heart',
+        'bi-envelope-exclamation', 'bi-envelope-slash', 'bi-envelope-plus',
+        'bi-mailbox', 'bi-mailbox2', 'bi-inbox', 'bi-send', 'bi-send-check', 'bi-reply',
+        // People & Social
+        'bi-person', 'bi-person-badge', 'bi-person-check', 'bi-person-plus', 'bi-person-dash',
+        'bi-person-gear', 'bi-person-workspace', 'bi-person-vcard', 'bi-person-lines-fill',
+        'bi-person-raised-hand', 'bi-person-arms-up', 'bi-person-heart', 'bi-person-lock',
+        'bi-person-fill-add', 'bi-person-fill-check', 'bi-person-fill-dash', 'bi-person-fill-gear',
+        'bi-people', 'bi-people-fill', 'bi-person-video', 'bi-person-walking',
+        'bi-person-standing', 'bi-person-wheelchair', 'bi-person-bounding-box',
+        // Badges & Awards
+        'bi-patch-check', 'bi-patch-plus', 'bi-patch-question', 'bi-patch-exclamation',
+        'bi-award', 'bi-award-fill', 'bi-trophy', 'bi-trophy-fill',
+        'bi-star', 'bi-star-half', 'bi-star-fill', 'bi-stars',
+        'bi-shield-check', 'bi-shield-lock', 'bi-shield-plus', 'bi-shield-exclamation',
+        'bi-shield-fill-check', 'bi-shield-fill-exclamation',
         // Building & Places
-        'bi-building', 'bi-house', 'bi-bank', 'bi-shop', 'bi-hospital',
-        'bi-geo-alt', 'bi-map', 'bi-pin-map', 'bi-globe', 'bi-signpost',
-
+        'bi-building', 'bi-buildings', 'bi-building-check', 'bi-building-gear', 'bi-building-add',
+        'bi-house', 'bi-house-door', 'bi-house-heart', 'bi-house-check', 'bi-house-gear',
+        'bi-bank', 'bi-bank2', 'bi-shop', 'bi-shop-window', 'bi-hospital',
+        'bi-geo-alt', 'bi-geo', 'bi-geo-fill', 'bi-map', 'bi-pin-map', 'bi-pin-map-fill',
+        'bi-globe', 'bi-globe2', 'bi-globe-americas', 'bi-globe-europe-africa', 'bi-globe-asia-australia',
+        'bi-signpost', 'bi-signpost-split', 'bi-flag', 'bi-flag-fill', 'bi-compass',
         // Tech & Devices
-        'bi-pc-display', 'bi-laptop', 'bi-phone', 'bi-tablet', 'bi-printer',
-        'bi-calculator', 'bi-hdd', 'bi-router', 'bi-mouse', 'bi-keyboard',
-
-        // Communication & Chat
-        'bi-chat-dots', 'bi-whatsapp', 'bi-telephone', 'bi-send', 'bi-broadcast',
-        'bi-headset', 'bi-megaphone', 'bi-rss', 'bi-envelope-open', 'bi-bell',
-
-        // Money & Finance
-        'bi-cash-coin', 'bi-credit-card', 'bi-wallet', 'bi-piggy-bank', 'bi-coin',
-        'bi-receipt', 'bi-cart', 'bi-bag', 'bi-tag', 'bi-currency-dollar',
-
-        // Vehicles & Transport
-        'bi-car-front', 'bi-truck', 'bi-bus-front', 'bi-airplane', 'bi-bicycle',
-
-        // Tools & Utilities
-        'bi-wrench', 'bi-gear', 'bi-hammer', 'bi-screwdriver', 'bi-box-seam',
-        'bi-calendar-event', 'bi-clock', 'bi-hourglass', 'bi-bar-chart', 'bi-graph-up',
-
-        // Health & Medical
-        'bi-heart-pulse', 'bi-file-earmark-medical', 'bi-bandaid', 'bi-prescription', 'bi-thermometer'
+        'bi-pc-display', 'bi-pc-display-horizontal', 'bi-laptop', 'bi-phone', 'bi-phone-vibrate',
+        'bi-tablet', 'bi-tablet-landscape', 'bi-printer', 'bi-printer-fill',
+        'bi-calculator', 'bi-hdd', 'bi-hdd-network', 'bi-hdd-rack', 'bi-hdd-stack',
+        'bi-router', 'bi-mouse', 'bi-mouse2', 'bi-keyboard', 'bi-keyboard-fill',
+        'bi-cpu', 'bi-cpu-fill', 'bi-gpu-card', 'bi-memory', 'bi-usb-drive',
+        'bi-disc', 'bi-disc-fill', 'bi-webcam', 'bi-smartwatch', 'bi-headphones',
+        'bi-speaker', 'bi-display', 'bi-display-fill', 'bi-tv', 'bi-cast',
+        'bi-wifi', 'bi-bluetooth', 'bi-usb-symbol', 'bi-ethernet', 'bi-modem',
+        // Communication
+        'bi-chat-dots', 'bi-chat-left-text', 'bi-chat-right', 'bi-chat-square-text',
+        'bi-chat-left-dots', 'bi-chat-right-dots', 'bi-chat-square-dots', 'bi-chat-text',
+        'bi-whatsapp', 'bi-telephone', 'bi-telephone-inbound', 'bi-telephone-outbound',
+        'bi-telephone-forward', 'bi-telephone-plus', 'bi-telephone-x',
+        'bi-broadcast', 'bi-broadcast-pin', 'bi-headset', 'bi-megaphone', 'bi-megaphone-fill',
+        'bi-rss', 'bi-bell', 'bi-bell-fill', 'bi-bell-slash', 'bi-volume-up', 'bi-mic', 'bi-mic-mute',
+        // Money & Commerce
+        'bi-cash-coin', 'bi-cash-stack', 'bi-cash', 'bi-credit-card', 'bi-credit-card-2-front',
+        'bi-wallet', 'bi-wallet2', 'bi-piggy-bank', 'bi-coin', 'bi-currency-dollar',
+        'bi-currency-euro', 'bi-currency-yen', 'bi-currency-bitcoin', 'bi-currency-exchange',
+        'bi-receipt', 'bi-receipt-cutoff', 'bi-cart', 'bi-cart-check', 'bi-cart-plus', 'bi-cart-dash',
+        'bi-bag', 'bi-bag-check', 'bi-bag-plus', 'bi-bag-heart',
+        'bi-tag', 'bi-tags', 'bi-gift', 'bi-gift-fill', 'bi-percent', 'bi-basket',
+        // Transport
+        'bi-car-front', 'bi-car-front-fill', 'bi-truck', 'bi-truck-front', 'bi-bus-front',
+        'bi-airplane', 'bi-airplane-fill', 'bi-bicycle', 'bi-scooter', 'bi-train-front',
+        'bi-fuel-pump', 'bi-fuel-pump-fill', 'bi-ev-station', 'bi-taxi-front',
+        // Tools & Settings
+        'bi-wrench', 'bi-wrench-adjustable', 'bi-gear', 'bi-gear-fill', 'bi-gear-wide-connected',
+        'bi-hammer', 'bi-screwdriver', 'bi-tools', 'bi-sliders', 'bi-sliders2',
+        'bi-toggles', 'bi-toggles2', 'bi-nut', 'bi-nut-fill', 'bi-funnel', 'bi-funnel-fill',
+        'bi-filter', 'bi-filter-circle', 'bi-search', 'bi-search-heart', 'bi-zoom-in', 'bi-zoom-out',
+        // Time & Calendar
+        'bi-calendar-event', 'bi-calendar-check', 'bi-calendar-plus', 'bi-calendar-date',
+        'bi-calendar-heart', 'bi-calendar-range', 'bi-calendar-week', 'bi-calendar-month',
+        'bi-clock', 'bi-clock-fill', 'bi-clock-history', 'bi-hourglass', 'bi-hourglass-split',
+        'bi-stopwatch', 'bi-stopwatch-fill', 'bi-alarm', 'bi-alarm-fill',
+        'bi-calendar2-week', 'bi-calendar3', 'bi-calendar3-event',
+        // Data & Charts
+        'bi-bar-chart', 'bi-bar-chart-line', 'bi-bar-chart-steps', 'bi-bar-chart-fill',
+        'bi-graph-up', 'bi-graph-up-arrow', 'bi-graph-down', 'bi-graph-down-arrow',
+        'bi-pie-chart', 'bi-pie-chart-fill', 'bi-activity', 'bi-speedometer2',
+        'bi-kanban', 'bi-kanban-fill', 'bi-diagram-3', 'bi-diagram-2',
+        'bi-table', 'bi-grid', 'bi-grid-3x3-gap', 'bi-grid-1x2', 'bi-layout-text-sidebar',
+        // Health & Nature
+        'bi-heart', 'bi-heart-fill', 'bi-heart-pulse', 'bi-heart-pulse-fill',
+        'bi-bandaid', 'bi-bandaid-fill', 'bi-prescription', 'bi-prescription2',
+        'bi-thermometer', 'bi-thermometer-half', 'bi-lungs', 'bi-virus', 'bi-capsule',
+        'bi-tree', 'bi-tree-fill', 'bi-flower1', 'bi-flower2', 'bi-flower3',
+        'bi-sun', 'bi-sun-fill', 'bi-moon', 'bi-moon-fill', 'bi-moon-stars',
+        'bi-cloud', 'bi-cloud-fill', 'bi-cloud-sun', 'bi-cloud-rain', 'bi-cloud-snow',
+        'bi-droplet', 'bi-droplet-fill', 'bi-water', 'bi-tsunami', 'bi-wind',
+        // Media & Creative
+        'bi-camera', 'bi-camera-fill', 'bi-camera-video', 'bi-camera-video-fill',
+        'bi-image', 'bi-image-fill', 'bi-images', 'bi-film', 'bi-aspect-ratio',
+        'bi-music-note', 'bi-music-note-list', 'bi-music-note-beamed',
+        'bi-palette', 'bi-palette-fill', 'bi-brush', 'bi-brush-fill',
+        'bi-easel', 'bi-easel-fill', 'bi-vector-pen', 'bi-scissors', 'bi-crop',
+        // Education & Science
+        'bi-mortarboard', 'bi-mortarboard-fill', 'bi-backpack', 'bi-backpack-fill',
+        'bi-pencil', 'bi-pencil-fill', 'bi-pen', 'bi-pen-fill',
+        'bi-journal-album', 'bi-rulers', 'bi-globe-central-south-asia',
+        // Sports & Leisure
+        'bi-controller', 'bi-joystick', 'bi-dice-5', 'bi-puzzle',
+        'bi-cup-hot', 'bi-cup-straw', 'bi-cake', 'bi-cake2',
+        // Navigation & Actions
+        'bi-arrow-left-right', 'bi-arrows-move', 'bi-arrow-repeat', 'bi-arrow-clockwise',
+        'bi-check-circle', 'bi-check-circle-fill', 'bi-x-circle', 'bi-x-circle-fill',
+        'bi-plus-circle', 'bi-plus-circle-fill', 'bi-dash-circle', 'bi-dash-circle-fill',
+        'bi-exclamation-circle', 'bi-exclamation-triangle', 'bi-question-circle', 'bi-info-circle',
+        'bi-lightning', 'bi-lightning-fill', 'bi-lightning-charge', 'bi-lightning-charge-fill',
+        'bi-rocket-takeoff', 'bi-rocket-takeoff-fill', 'bi-magic',
+        'bi-hand-thumbs-up', 'bi-hand-thumbs-down', 'bi-emoji-smile', 'bi-emoji-heart-eyes',
+        'bi-eye', 'bi-eye-fill', 'bi-eye-slash', 'bi-binoculars',
+        'bi-link-45deg', 'bi-link', 'bi-qr-code', 'bi-qr-code-scan',
+        'bi-card-heading', 'bi-newspaper', 'bi-card-checklist', 'bi-card-list',
+        'bi-key', 'bi-key-fill', 'bi-lock', 'bi-lock-fill', 'bi-unlock', 'bi-unlock-fill',
+        'bi-door-open', 'bi-door-open-fill', 'bi-door-closed', 'bi-door-closed-fill',
+        'bi-trash', 'bi-trash-fill', 'bi-pencil-square', 'bi-download', 'bi-upload', 'bi-share',
+        'bi-pin-angle', 'bi-pin-angle-fill', 'bi-bookmark', 'bi-bookmark-fill',
+        'bi-cursor', 'bi-cursor-fill', 'bi-hand-index', 'bi-hand-index-fill'
     ];
     let currentIconTarget = '';
 
-    function setIconTarget(target) {
+    function openIconPicker(target) {
         currentIconTarget = target;
         renderIconGrid();
+        const iconModalElement = document.getElementById('iconPickerModal');
+        let iconModal = bootstrap.Modal.getInstance(iconModalElement);
+        if (!iconModal) {
+            iconModal = new bootstrap.Modal(iconModalElement);
+        }
+        iconModal.show();
     }
 
     function renderIconGrid() {
         const grid = document.getElementById('iconGrid');
+        const searchInput = document.getElementById('iconSearch');
+        const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
         grid.innerHTML = '';
-        availableIcons.forEach(icon => {
+        const filtered = query ? availableIcons.filter(i => i.includes(query)) : availableIcons;
+        filtered.forEach(icon => {
             const col = document.createElement('div');
-            col.className = 'col-3 col-sm-2 text-center';
+            col.className = 'text-center';
+            col.style.width = '48px';
             col.innerHTML = `
-                <div class="icon-choice-btn p-3 bg-white border rounded shadow-sm d-flex flex-column align-items-center justify-content-center h-100" onclick="selectIcon('${icon}')">
-                    <i class="bi ${icon} fs-3 text-primary"></i>
+                <div class="icon-choice-btn p-2 bg-white border rounded shadow-sm d-flex align-items-center justify-content-center" style="width:44px;height:44px;cursor:pointer;" onclick="selectIcon('${icon}')" title="${icon.replace('bi-','')}">
+                    <i class="bi ${icon} fs-5 text-primary"></i>
                 </div>
             `;
             grid.appendChild(col);
         });
+        if (filtered.length === 0) {
+            grid.innerHTML = '<div class="text-muted text-center w-100 py-3">Tidak ditemukan</div>';
+        }
     }
 
     function selectIcon(iconClass) {
@@ -430,22 +610,158 @@
         const desc = document.getElementById(descId);
         
         if (checkbox.checked) {
-            checkbox.value = 'Aktif';
             label.textContent = 'Aktif';
             label.className = 'fw-medium text-success mb-1';
             desc.textContent = 'Ditampilkan di portal publik';
         } else {
-            checkbox.value = 'Tidak Aktif';
             label.textContent = 'Tidak Aktif';
             label.className = 'fw-medium text-secondary mb-1';
             desc.textContent = 'Disembunyikan';
         }
+
+        // Update hidden status for Tambah modal
+        const statusHidden = document.getElementById('statusValueTambah');
+        if (statusHidden && labelId === 'statusLabelTambah') {
+            statusHidden.value = checkbox.checked ? 'Aktif' : 'Tidak Aktif';
+        }
     }
 
-    // Script for dummy file upload preview
+    // Show alert
+    function showAlert(success, message) {
+        const alertHtml = `
+            <div class="alert alert-${success ? 'success' : 'danger'} alert-dismissible fade show shadow-sm border-0 d-flex align-items-center mb-4" role="alert" style="border-radius: 0.75rem;">
+                <i class="bi bi-${success ? 'check-circle-fill' : 'exclamation-triangle-fill'} fs-3 me-3 text-${success ? 'success' : 'danger'}"></i>
+                <div>
+                    <strong class="d-block text-${success ? 'success' : 'danger'} mb-1">${success ? 'Berhasil!' : 'Gagal!'}</strong>
+                    <div class="text-secondary" style="font-size: 0.95rem;">${message}</div>
+                </div>
+                <button type="button" class="btn-close ms-auto my-auto me-1" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        document.getElementById('alertPlaceholder').innerHTML = alertHtml;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Submit Tambah
+    async function submitTambah() {
+        tinymce.triggerSave();
+        const form = document.getElementById('formTambah');
+        const formData = new FormData(form);
+        
+        try {
+            const response = await fetch('{{ url_for("cms.layanan_publik_tambah") }}', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('tambahModal'));
+            if (modal) modal.hide();
+            
+            if (result.success) {
+                showAlert(true, result.message);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert(false, result.error || 'Terjadi kesalahan');
+            }
+        } catch (error) {
+            showAlert(false, 'Tidak dapat terhubung ke server');
+        }
+    }
+
+    // Submit Edit
+    async function submitEdit(id) {
+        tinymce.triggerSave();
+        const form = document.getElementById('formEdit' + id);
+        const formData = new FormData(form);
+        
+        try {
+            const response = await fetch(`/cms/layanan-publik/${id}/edit`, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editModal' + id));
+            if (modal) modal.hide();
+            
+            if (result.success) {
+                showAlert(true, result.message);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert(false, result.error || 'Terjadi kesalahan');
+            }
+        } catch (error) {
+            showAlert(false, 'Tidak dapat terhubung ke server');
+        }
+    }
+
+    // Mark file as deleted (edit modal)
+    function markFileDeleted(layananId, fileId) {
+        const fileItem = document.getElementById(`fileItem-${layananId}-${fileId}`);
+        if (fileItem) {
+            fileItem.style.opacity = '0.4';
+            fileItem.style.textDecoration = 'line-through';
+        }
+        const container = document.getElementById('deletedFilesContainer' + layananId);
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'deleted_file_ids';
+        input.value = fileId;
+        container.appendChild(input);
+    }
+
+    // Hapus Layanan
+    let hapusTargetId = null;
+    function hapusLayanan(id, nama) {
+        hapusTargetId = id;
+        document.getElementById('hapusNamaLayanan').textContent = nama;
+        const modal = new bootstrap.Modal(document.getElementById('hapusModal'));
+        modal.show();
+    }
+
+    document.getElementById('btnKonfirmasiHapus').addEventListener('click', async function() {
+        if (!hapusTargetId) return;
+        
+        const csrfToken = document.querySelector('#formHapus input[name="csrf_token"]').value;
+        const formData = new FormData();
+        formData.append('csrf_token', csrfToken);
+        
+        try {
+            const response = await fetch(`/cms/layanan-publik/${hapusTargetId}/hapus`, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('hapusModal'));
+            if (modal) modal.hide();
+            
+            if (result.success) {
+                showAlert(true, result.message);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert(false, result.error || 'Terjadi kesalahan');
+            }
+        } catch (error) {
+            showAlert(false, 'Tidak dapat terhubung ke server');
+        }
+    });
+
+    // File upload preview for Tambah modal
     document.addEventListener('DOMContentLoaded', function() {
-        const fileInput = document.getElementById('fileUpload');
-        const filePreviewList = document.getElementById('filePreviewList');
+        // Fix for nested modals scroll issue
+        const iconPickerModal = document.getElementById('iconPickerModal');
+        if (iconPickerModal) {
+            iconPickerModal.addEventListener('hidden.bs.modal', function() {
+                if (document.querySelector('.modal.show')) {
+                    document.body.classList.add('modal-open');
+                }
+            });
+        }
+
+        const fileInput = document.getElementById('fileUploadTambah');
+        const filePreviewList = document.getElementById('filePreviewListTambah');
         
         if(fileInput && filePreviewList) {
             fileInput.addEventListener('change', function() {
@@ -454,7 +770,7 @@
                 if(this.files && this.files.length > 0) {
                     filePreviewList.classList.remove('d-none');
                     
-                    Array.from(this.files).forEach((file, index) => {
+                    Array.from(this.files).forEach((file) => {
                         const li = document.createElement('li');
                         li.className = 'list-group-item d-flex justify-content-between align-items-center text-truncate bg-white mb-1 rounded border overflow-hidden shadow-sm';
                         
@@ -474,12 +790,6 @@
                 } else {
                     filePreviewList.classList.add('d-none');
                 }
-            });
-            
-            // Make dropzone clickable
-            const dropzone = document.querySelector('.file-upload-wrapper');
-            dropzone.addEventListener('click', () => {
-                fileInput.click();
             });
         }
     });
