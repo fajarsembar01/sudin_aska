@@ -1155,6 +1155,8 @@
             const password = newPasswordInput ? newPasswordInput.value : '';
             const confirm = confirmPasswordInput ? confirmPasswordInput.value : '';
             const minLen = getPasswordMinLength();
+            const formActionInput = document.getElementById('formAction');
+            const isCreate = !formActionInput || formActionInput.value === 'create';
 
             // If unregistered, don't validate password
             if (isUnregistered) {
@@ -1162,8 +1164,15 @@
                 return;
             }
 
-            // Password hanya perlu minimal X karakter (6 untuk sekolah, 8 untuk lain) dan cocok
-            const isValid = password.length >= minLen && password === confirm;
+            // Create tetap wajib password; update boleh kosong, tapi jika diisi harus valid.
+            let isValid = false;
+            if (isCreate) {
+                isValid = password.length >= minLen && password === confirm;
+            } else if (!password && !confirm) {
+                isValid = true;
+            } else {
+                isValid = password.length >= minLen && password === confirm;
+            }
 
             submitBtn.disabled = !isValid;
         }
