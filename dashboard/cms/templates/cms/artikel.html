@@ -3,6 +3,9 @@
 
 {% block cms_content %}
 <div class="container-lg px-lg-4 py-4">
+    <input type="hidden" id="cmsArtikelCsrfToken" value="{{ csrf_token() }}">
+    <div id="alertPlaceholder"></div>
+
     <!-- Page Header -->
     <div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
         <div>
@@ -38,17 +41,20 @@
                                 <td class="px-4 text-muted">{{ loop.index }}</td>
                                 <td class="px-4">
                                     <div class="bg-light rounded d-flex align-items-center justify-content-center overflow-hidden border shadow-sm" style="width: 80px; height: 60px;">
-                                        <!-- Dummy image placeholder if thumbnail not found -->
-                                        <div class="text-muted small fw-medium d-flex flex-column align-items-center">
-                                            <i class="bi bi-image text-secondary fs-5 mb-1"></i>
-                                        </div>
+                                        {% if item.thumbnail_url %}
+                                            <img src="{{ item.thumbnail_url }}" alt="{{ item.judul }}" class="w-100 h-100 object-fit-cover">
+                                        {% else %}
+                                            <div class="text-muted small fw-medium d-flex flex-column align-items-center">
+                                                <i class="bi bi-image text-secondary fs-5 mb-1"></i>
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </td>
                                 <td class="px-4">
                                     <div class="fw-semibold text-dark mb-1 d-block text-truncate" style="max-width: 300px;">{{ item.judul }}</div>
                                     <div class="d-flex align-items-center text-muted fs-7 gap-3">
                                         <span title="Penulis"><i class="bi bi-person me-1"></i>{{ item.penulis }}</span>
-                                        <span title="Tanggal Dibuat"><i class="bi bi-calendar3 me-1"></i>{{ item.tanggal }}</span>
+                                        <span title="Tanggal Publikasi"><i class="bi bi-calendar3 me-1"></i>{{ item.tanggal_display }}</span>
                                     </div>
                                 </td>
                                 <td class="px-4">
@@ -77,7 +83,7 @@
                                         <button type="button" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#editModal{{ item.id }}" title="Edit">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1" title="Hapus">
+                                        <button type="button" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1 btn-delete-artikel" data-url="{{ url_for('cms.delete_artikel', artikel_id=item.id) }}" data-title="{{ item.judul }}" title="Hapus">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
@@ -98,14 +104,14 @@
         </div>
         <!-- Pagination Placeholder -->
         <div class="card-footer bg-white border-top p-3 d-flex justify-content-between align-items-center">
-            <span class="text-muted small">Menampilkan 1-3 dari 3 data</span>
-            <nav aria-label="Page navigation">
-                <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item disabled"><a class="page-link" href="#">Sebelumnya</a></li>
-                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item disabled"><a class="page-link" href="#">Selanjutnya</a></li>
-                </ul>
-            </nav>
+            <span class="text-muted small">
+                {% if artikel %}
+                    Menampilkan 1-{{ artikel|length }} dari {{ artikel|length }} data
+                {% else %}
+                    Belum ada data artikel
+                {% endif %}
+            </span>
+
         </div>
     </div>
 </div>
@@ -119,18 +125,21 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body px-4 py-4">
-                <form id="formTambah">
+                <form id="formTambah" class="artikel-form" data-url="{{ url_for('cms.artikel') }}" enctype="multipart/form-data" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="row g-4">
                         <!-- Kolom Kiri: Info Dasar & Editor -->
                         <div class="col-lg-8">
-                            <div class="mb-4">
+                            <div class="mb-4 artikel-required-group" data-field="judul">
                                 <label class="form-label fw-semibold">Judul Artikel <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-lg fs-6" placeholder="Masukkan judul artikel yang menarik..." required>
+                                <input type="text" id="judulTambah" name="judul" class="form-control form-control-lg fs-6" placeholder="Masukkan judul artikel yang menarik..." required>
+                                <div class="artikel-field-bubble" data-error-for="judul">Kolom ini harus diisi</div>
                             </div>
                             
-                            <div class="mb-4">
+                            <div class="mb-4 artikel-required-group" data-field="deskripsi">
                                 <label class="form-label fw-semibold">Isi Artikel / Deskripsi <span class="text-danger">*</span></label>
                                 <textarea id="deskripsiTambah" name="deskripsi" class="tinymce-editor"></textarea>
+                                <div class="artikel-field-bubble" data-error-for="deskripsi">Kolom ini harus diisi</div>
                             </div>
                         </div>
                         
@@ -141,26 +150,27 @@
                                     <h6 class="fw-bold mb-0">Meta Data</h6>
                                 </div>
                                 <div class="card-body">
-                                    <div class="mb-3">
+                                    <div class="mb-3 artikel-required-group" data-field="kategori">
                                         <label class="form-label fw-semibold fs-7 text-muted">Kategori <span class="text-danger">*</span></label>
-                                        <select class="form-select" required>
+                                        <select class="form-select" id="kategoriTambah" name="kategori" required>
                                             <option value="" selected disabled>Pilih Kategori...</option>
-                                            <option value="Berita Utama">Berita Utama</option>
-                                            <option value="Pendidikan">Pendidikan</option>
-                                            <option value="Kegiatan">Kegiatan</option>
-                                            <option value="Pengumuman">Pengumuman</option>
-                                            <option value="Opini">Opini</option>
+                                            {% for kategori in kategori_options %}
+                                            <option value="{{ kategori }}">{{ kategori }}</option>
+                                            {% endfor %}
                                         </select>
+                                        <div class="artikel-field-bubble" data-error-for="kategori">Kolom ini harus diisi</div>
                                     </div>
 
-                                    <div class="mb-3">
+                                    <div class="mb-3 artikel-required-group" data-field="tanggal">
                                         <label class="form-label fw-semibold fs-7 text-muted">Tanggal Publikasi <span class="text-danger">*</span></label>
-                                        <input type="date" class="form-control" required>
+                                        <input type="date" id="tanggalTambah" name="tanggal" class="form-control" required>
+                                        <div class="artikel-field-bubble" data-error-for="tanggal">Kolom ini harus diisi</div>
                                     </div>
                                     
-                                    <div class="mb-3">
+                                    <div class="mb-3 artikel-required-group" data-field="penulis">
                                         <label class="form-label fw-semibold fs-7 text-muted">Penulis <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" placeholder="Nama penulis..." required>
+                                        <input type="text" id="penulisTambah" name="penulis" class="form-control" value="{{ default_penulis }}" placeholder="Nama penulis..." required>
+                                        <div class="artikel-field-bubble" data-error-for="penulis">Kolom ini harus diisi</div>
                                     </div>
                                     
                                     <div class="mb-3">
@@ -195,22 +205,23 @@
                                 </div>
                                 <div class="card-body">
                                     <!-- Thumbnail Upload -->
-                                    <div class="mb-4">
+                                    <div class="mb-4 artikel-required-group" data-field="thumbnail">
                                         <label class="form-label fw-semibold fs-7 text-muted">Gambar Utama (Thumbnail) <span class="text-danger">*</span></label>
                                         <div class="text-center p-3 border rounded bg-light mb-2">
                                             <img id="previewThumbnailTambah" src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20150%22%3E%3Crect%20fill%3D%22%23f8f9fa%22%20width%3D%22200%22%20height%3D%22150%22%2F%3E%3Ctext%20fill%3D%22%23adb5bd%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3EBelum%20ada%20gambar%3C%2Ftext%3E%3C%2Fsvg%3E" alt="Preview" class="img-fluid rounded" style="max-height: 150px; object-fit: cover;">
                                         </div>
-                                        <input type="file" class="form-control form-control-sm" accept="image/*" required onchange="previewImage(this, 'previewThumbnailTambah')">
+                                        <input type="file" id="thumbnailTambah" name="thumbnail" class="form-control form-control-sm" accept="image/*" required onchange="previewImage(this, 'previewThumbnailTambah')">
+                                        <div class="artikel-field-bubble" data-error-for="thumbnail">Kolom ini harus diisi</div>
                                         <div class="form-text fs-8 mt-1">Format: JPG, PNG. Maks: 2MB</div>
                                     </div>
 
                                     <!-- Multiple Files -->
                                     <div class="mb-1">
                                         <label class="form-label fw-semibold fs-7 text-muted">File Pendukung (Lampiran)</label>
-                                        <div class="file-upload-wrapper p-3 text-center border rounded-3 bg-light" style="border-style: dashed !important;">
+                                        <div class="file-upload-wrapper p-3 text-center border rounded-3 bg-light" style="border-style: dashed !important;" data-input-id="fileUploadTambah" data-list-id="filePreviewListTambah">
                                             <i class="bi bi-cloud-upload text-primary mb-1 d-block fs-4"></i>
                                             <p class="mb-0 fs-7 text-muted">Klik untuk upload file pendukung</p>
-                                            <input type="file" class="form-control d-none" id="fileUploadTambah" multiple>
+                                            <input type="file" class="form-control d-none" id="fileUploadTambah" name="lampiran" multiple>
                                         </div>
                                         <ul class="list-group mt-2 d-none" id="filePreviewListTambah"></ul>
                                     </div>
@@ -222,7 +233,7 @@
             </div>
             <div class="modal-footer border-top-0 bg-light px-4 py-3">
                 <button type="button" class="btn btn-secondary px-4 fw-medium" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary px-4 fw-medium shadow-sm" onclick="tinymce.triggerSave()"><i class="bi bi-save me-2"></i>Simpan Artikel</button>
+                <button type="submit" form="formTambah" class="btn btn-primary px-4 fw-medium shadow-sm"><i class="bi bi-save me-2"></i>Simpan Artikel</button>
             </div>
         </div>
     </div>
@@ -253,17 +264,20 @@
                     <h4 class="modal-title fw-bold lh-base mb-2">{{ item.judul }}</h4>
                     <div class="d-flex flex-wrap gap-3 text-muted fs-7">
                         <span><i class="bi bi-person me-1"></i>{{ item.penulis }}</span>
-                        <span><i class="bi bi-calendar3 me-1"></i>{{ item.tanggal }}</span>
+                        <span><i class="bi bi-calendar3 me-1"></i>{{ item.tanggal_display }}</span>
                     </div>
                 </div>
                 <button type="button" class="btn-close position-absolute top-0 end-0 mt-3 me-3" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body px-4 py-4">
                 <div class="text-center mb-4 bg-light rounded border p-2">
-                    <!-- Dummy Image Display Placeholder -->
-                    <div class="d-flex align-items-center justify-content-center text-muted gap-2" style="height: 250px; background: #e9ecef border-radius: 6px;">
-                        <i class="bi bi-image fs-1"></i> <span class="fw-medium">Gambar Thumbnail ({{ item.thumbnail }})</span>
+                    {% if item.thumbnail_url %}
+                    <img src="{{ item.thumbnail_url }}" alt="{{ item.judul }}" class="img-fluid rounded" style="max-height: 280px; object-fit: cover;">
+                    {% else %}
+                    <div class="d-flex align-items-center justify-content-center text-muted gap-2" style="height: 250px; background: #e9ecef; border-radius: 6px;">
+                        <i class="bi bi-image fs-1"></i> <span class="fw-medium">Thumbnail belum tersedia</span>
                     </div>
+                    {% endif %}
                 </div>
                 
                 <div class="article-content bg-white p-4 rounded border shadow-sm mb-4">
@@ -279,9 +293,11 @@
                             <div class="p-3 border rounded bg-light d-flex align-items-center justify-content-between">
                                 <div class="d-flex align-items-center text-truncate pe-2">
                                     <i class="bi bi-file-earmark-pdf fs-4 text-danger me-3"></i>
-                                    <span class="text-truncate fw-medium fs-7">{{ file }}</span>
+                                    <span class="text-truncate fw-medium fs-7">{{ file.name }}</span>
                                 </div>
-                                <a href="#" class="btn btn-sm btn-outline-primary shadow-sm flex-shrink-0"><i class="bi bi-download"></i></a>
+                                {% if file.url %}
+                                <a href="{{ file.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary shadow-sm flex-shrink-0"><i class="bi bi-download"></i></a>
+                                {% endif %}
                             </div>
                         </div>
                         {% endfor %}
@@ -305,12 +321,13 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body px-4 py-4">
-                <form id="formEdit{{ item.id }}">
+                <form id="formEdit{{ item.id }}" class="artikel-form" data-url="{{ url_for('cms.update_artikel', artikel_id=item.id) }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="row g-4">
                         <div class="col-lg-8">
                             <div class="mb-4">
                                 <label class="form-label fw-semibold">Judul Artikel <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-lg fs-6" value="{{ item.judul }}" required>
+                                <input type="text" name="judul" class="form-control form-control-lg fs-6" value="{{ item.judul }}" required>
                             </div>
                             
                             <div class="mb-4">
@@ -327,23 +344,21 @@
                                 <div class="card-body">
                                     <div class="mb-3">
                                         <label class="form-label fw-semibold fs-7 text-muted">Kategori <span class="text-danger">*</span></label>
-                                        <select class="form-select" required>
-                                            <option value="Berita Utama" {% if item.kategori == 'Berita Utama' %}selected{% endif %}>Berita Utama</option>
-                                            <option value="Pendidikan" {% if item.kategori == 'Pendidikan' %}selected{% endif %}>Pendidikan</option>
-                                            <option value="Kegiatan" {% if item.kategori == 'Kegiatan' %}selected{% endif %}>Kegiatan</option>
-                                            <option value="Pengumuman" {% if item.kategori == 'Pengumuman' %}selected{% endif %}>Pengumuman</option>
-                                            <option value="Opini" {% if item.kategori == 'Opini' %}selected{% endif %}>Opini</option>
+                                        <select class="form-select" name="kategori" required>
+                                            {% for kategori in kategori_options %}
+                                            <option value="{{ kategori }}" {% if item.kategori == kategori %}selected{% endif %}>{{ kategori }}</option>
+                                            {% endfor %}
                                         </select>
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="form-label fw-semibold fs-7 text-muted">Tanggal Publikasi <span class="text-danger">*</span></label>
-                                        <input type="date" class="form-control" value="{{ item.tanggal }}" required>
+                                        <input type="date" name="tanggal" class="form-control" value="{{ item.tanggal_input }}" required>
                                     </div>
                                     
                                     <div class="mb-3">
                                         <label class="form-label fw-semibold fs-7 text-muted">Penulis <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" value="{{ item.penulis }}" required>
+                                        <input type="text" name="penulis" class="form-control" value="{{ item.penulis }}" required>
                                     </div>
                                     
                                     <div class="mb-3">
@@ -380,14 +395,18 @@
                                     <div class="mb-4">
                                         <label class="form-label fw-semibold fs-7 text-muted">Thumbnail Saat Ini</label>
                                         <div class="text-center p-3 border rounded bg-light mb-2">
+                                            {% if item.thumbnail_url %}
+                                            <img id="previewThumbnailEdit{{ item.id }}" src="{{ item.thumbnail_url }}" alt="{{ item.judul }}" class="img-fluid rounded" style="max-height: 150px; object-fit: cover;">
+                                            {% else %}
                                             <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4 mb-2 bg-white rounded border">
                                                 <i class="bi bi-image fs-3 mb-1"></i>
-                                                <span class="fs-8">{{ item.thumbnail }}</span>
+                                                <span class="fs-8">Belum ada thumbnail</span>
                                             </div>
                                             <img id="previewThumbnailEdit{{ item.id }}" src="" alt="" class="img-fluid rounded d-none" style="max-height: 150px; object-fit: cover;">
+                                            {% endif %}
                                         </div>
                                         <label class="form-label fw-semibold fs-7 text-muted">Ganti Thumbnail (opsional)</label>
-                                        <input type="file" class="form-control form-control-sm" accept="image/*" onchange="previewImage(this, 'previewThumbnailEdit{{ item.id }}')">
+                                        <input type="file" name="thumbnail" class="form-control form-control-sm" accept="image/*" onchange="previewImage(this, 'previewThumbnailEdit{{ item.id }}')">
                                     </div>
 
                                     <div class="mb-1">
@@ -395,11 +414,22 @@
                                         {% if item.files %}
                                         <ul class="list-group mb-3">
                                             {% for file in item.files %}
-                                            <li class="list-group-item d-flex justify-content-between align-items-center bg-light px-2 py-1">
-                                                <div class="d-flex align-items-center text-truncate fs-7">
-                                                    <i class="bi bi-paperclip text-secondary me-2"></i> {{ file }}
+                                            <li class="list-group-item d-flex justify-content-between align-items-center bg-light px-2 py-1 artikel-existing-file">
+                                                <div class="d-flex align-items-center text-truncate fs-7 pe-2">
+                                                    <i class="bi bi-paperclip text-secondary me-2"></i>
+                                                    {% if file.url %}
+                                                    <a href="{{ file.url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-reset text-truncate">{{ file.name }}</a>
+                                                    {% else %}
+                                                    <span class="text-truncate">{{ file.name }}</span>
+                                                    {% endif %}
                                                 </div>
-                                                <button type="button" class="btn btn-sm text-danger border-0 p-1"><i class="bi bi-x-circle-fill"></i></button>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 d-none artikel-delete-badge">Akan dihapus</span>
+                                                    <input type="checkbox" class="d-none artikel-delete-file-input" id="hapusFile{{ item.id }}_{{ file.id }}" name="hapus_file_ids" value="{{ file.id }}">
+                                                    <button type="button" class="btn btn-sm btn-outline-danger artikel-toggle-file-delete" data-target-id="hapusFile{{ item.id }}_{{ file.id }}" title="Tandai hapus">
+                                                        <i class="bi bi-x-circle"></i>
+                                                    </button>
+                                                </div>
                                             </li>
                                             {% endfor %}
                                         </ul>
@@ -408,7 +438,8 @@
                                         {% endif %}
 
                                         <label class="form-label fw-semibold fs-7 text-muted mt-2">Upload File Baru</label>
-                                        <input type="file" class="form-control form-control-sm" multiple>
+                                        <input type="file" class="form-control form-control-sm" id="fileUploadEdit{{ item.id }}" name="lampiran" multiple data-list-id="filePreviewListEdit{{ item.id }}">
+                                        <ul class="list-group mt-2 d-none" id="filePreviewListEdit{{ item.id }}"></ul>
                                     </div>
                                 </div>
                             </div>
@@ -418,7 +449,7 @@
             </div>
             <div class="modal-footer border-top-0 bg-light px-4 py-3">
                 <button type="button" class="btn btn-secondary px-4 fw-medium" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary px-4 fw-medium shadow-sm" onclick="tinymce.triggerSave()"><i class="bi bi-save me-2"></i>Simpan Perubahan</button>
+                <button type="submit" form="formEdit{{ item.id }}" class="btn btn-primary px-4 fw-medium shadow-sm"><i class="bi bi-save me-2"></i>Simpan Perubahan</button>
             </div>
         </div>
     </div>
@@ -460,15 +491,91 @@
     .article-content p {
         margin-bottom: 1rem;
     }
+
+    .artikel-existing-file.marked-for-delete {
+        border-color: rgba(220, 53, 69, 0.35) !important;
+        background-color: rgba(220, 53, 69, 0.06) !important;
+    }
+
+    .artikel-field-bubble {
+        display: none;
+        position: relative;
+        margin-top: 0.5rem;
+        width: fit-content;
+        max-width: 100%;
+        padding: 0.4rem 0.75rem;
+        border-radius: 999px;
+        background: #dc3545;
+        color: #fff;
+        font-size: 0.75rem;
+        font-weight: 600;
+        line-height: 1.2;
+        box-shadow: 0 0.35rem 1rem rgba(220, 53, 69, 0.2);
+    }
+
+    .artikel-field-bubble::before {
+        content: "";
+        position: absolute;
+        top: -0.35rem;
+        left: 1rem;
+        width: 0.7rem;
+        height: 0.7rem;
+        background: #dc3545;
+        transform: rotate(45deg);
+        border-radius: 0.15rem;
+    }
+
+    .artikel-field-bubble.is-visible {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .artikel-required-group .is-invalid,
+    .artikel-required-group .tox-tinymce.artikel-editor-invalid {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.12) !important;
+    }
 </style>
 
 <!-- TinyMCE Script -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize TinyMCE for descriptive editors
         const getTinyMceTheme = () => document.documentElement.getAttribute('data-theme') === 'dark' ? 'oxide-dark' : 'oxide';
         const getTinyMceContentCss = () => document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default';
+        const THUMBNAIL_MAX_SIZE = 2 * 1024 * 1024;
+        const alertPlaceholder = document.getElementById('alertPlaceholder');
+        const csrfToken = document.getElementById('cmsArtikelCsrfToken')?.value || '';
+
+        function renderAlert(type, title, message) {
+            alertPlaceholder.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show shadow-sm border-0 d-flex align-items-start mb-4" role="alert" style="border-radius: 0.75rem;">
+                    <i class="bi bi-${type === 'success' ? 'check-circle-fill text-success' : 'exclamation-triangle-fill text-danger'} fs-4 me-3"></i>
+                    <div>
+                        <strong class="d-block mb-1">${title}</strong>
+                        <div class="text-secondary">${message}</div>
+                    </div>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function persistAlertAndReload(type, title, message) {
+            sessionStorage.setItem('cmsArtikelAlert', JSON.stringify({ type, title, message }));
+            window.location.reload();
+        }
+
+        const storedAlert = sessionStorage.getItem('cmsArtikelAlert');
+        if (storedAlert) {
+            sessionStorage.removeItem('cmsArtikelAlert');
+            try {
+                const payload = JSON.parse(storedAlert);
+                renderAlert(payload.type || 'success', payload.title || 'Berhasil', payload.message || '');
+            } catch (error) {
+                sessionStorage.removeItem('cmsArtikelAlert');
+            }
+        }
 
         tinymce.init({
             selector: '.tinymce-editor',
@@ -484,45 +591,343 @@
             toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | removeformat fullscreen',
             content_style: 'body { font-family: "Plus Jakarta Sans", Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.6; }',
             promotion: false,
-            branding: false
+            branding: false,
+            setup: function(editor) {
+                editor.on('init change input keyup undo redo', function() {
+                    if (editor.id === 'deskripsiTambah') {
+                        clearTambahFieldError('deskripsi');
+                    }
+                });
+            }
         });
 
-        // Setup File Upload Wrapper Handlers (Tambah Modal) 
-        const fileInput = document.getElementById('fileUploadTambah');
-        const filePreviewList = document.getElementById('filePreviewListTambah');
-        const dropzone = document.querySelector('.file-upload-wrapper');
-        
-        if (fileInput && filePreviewList && dropzone) {
-            fileInput.addEventListener('change', function() {
-                filePreviewList.innerHTML = '';
-                if(this.files && this.files.length > 0) {
-                    filePreviewList.classList.remove('d-none');
-                    Array.from(this.files).forEach(file => {
-                        const li = document.createElement('li');
-                        li.className = 'list-group-item d-flex justify-content-between align-items-center text-truncate bg-white mb-1 rounded border shadow-sm px-2 py-1';
-                        
-                        let iconClass = 'bi-file-earmark-text';
-                        if(file.type.includes('pdf')) iconClass = 'bi-file-earmark-pdf text-danger';
-                        else if(file.type.includes('word')) iconClass = 'bi-file-earmark-word text-primary';
-                        
-                        li.innerHTML = `
-                            <div class="d-flex align-items-center text-truncate">
-                                <i class="bi ${iconClass} fs-5 me-2"></i>
-                                <span class="text-truncate fw-medium fs-7">${file.name}</span>
-                            </div>
-                            <span class="badge bg-light text-secondary border px-2 py-1 flex-shrink-0">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
-                        `;
-                        filePreviewList.appendChild(li);
-                    });
-                } else {
-                    filePreviewList.classList.add('d-none');
-                }
-            });
-            
-            dropzone.addEventListener('click', () => fileInput.click());
+        const formTambah = document.getElementById('formTambah');
+
+        function getTambahFieldGroup(fieldName) {
+            return formTambah ? formTambah.querySelector(`.artikel-required-group[data-field="${fieldName}"]`) : null;
         }
 
-        // Re-focus TinyMCE bug fix in Bootstrap Modals
+        function showTambahFieldError(fieldName, message = 'Kolom ini harus diisi') {
+            const group = getTambahFieldGroup(fieldName);
+            if (!group) {
+                return;
+            }
+
+            const bubble = group.querySelector('.artikel-field-bubble');
+            if (bubble) {
+                bubble.textContent = message;
+                bubble.classList.add('is-visible');
+            }
+
+            if (fieldName === 'deskripsi') {
+                const editorFrame = group.querySelector('.tox-tinymce');
+                if (editorFrame) {
+                    editorFrame.classList.add('artikel-editor-invalid');
+                }
+                return;
+            }
+
+            const control = group.querySelector('input, select, textarea');
+            if (control) {
+                control.classList.add('is-invalid');
+            }
+        }
+
+        function clearTambahFieldError(fieldName) {
+            const group = getTambahFieldGroup(fieldName);
+            if (!group) {
+                return;
+            }
+
+            const bubble = group.querySelector('.artikel-field-bubble');
+            if (bubble) {
+                bubble.textContent = 'Kolom ini harus diisi';
+                bubble.classList.remove('is-visible');
+            }
+
+            if (fieldName === 'deskripsi') {
+                const editorFrame = group.querySelector('.tox-tinymce');
+                if (editorFrame) {
+                    editorFrame.classList.remove('artikel-editor-invalid');
+                }
+                return;
+            }
+
+            const control = group.querySelector('input, select, textarea');
+            if (control) {
+                control.classList.remove('is-invalid');
+            }
+        }
+
+        function validateThumbnailSize(showError = true) {
+            const thumbnailInput = document.getElementById('thumbnailTambah');
+            const selectedFile = thumbnailInput?.files?.[0];
+
+            if (!selectedFile) {
+                return true;
+            }
+
+            if (selectedFile.size <= THUMBNAIL_MAX_SIZE) {
+                return true;
+            }
+
+            if (showError) {
+                showTambahFieldError('thumbnail', 'Ukuran file melebihi ketentuan');
+            }
+            return false;
+        }
+
+        function validateThumbnailFormat(showError = true) {
+            const thumbnailInput = document.getElementById('thumbnailTambah');
+            const selectedFile = thumbnailInput?.files?.[0];
+
+            if (!selectedFile) {
+                return true;
+            }
+
+            const allowedExtensions = ['jpg', 'jpeg', 'png'];
+            const ext = selectedFile.name.split('.').pop().toLowerCase();
+
+            if (allowedExtensions.includes(ext)) {
+                return true;
+            }
+
+            if (showError) {
+                showTambahFieldError('thumbnail', 'Format file tidak sesuai');
+            }
+            return false;
+        }
+
+        function validateTambahForm() {
+            if (!formTambah) {
+                return true;
+            }
+
+            tinymce.triggerSave();
+
+            const judulInput = document.getElementById('judulTambah');
+            const kategoriInput = document.getElementById('kategoriTambah');
+            const tanggalInput = document.getElementById('tanggalTambah');
+            const penulisInput = document.getElementById('penulisTambah');
+            const thumbnailInput = document.getElementById('thumbnailTambah');
+            const deskripsiEditor = tinymce.get('deskripsiTambah');
+            const deskripsiText = deskripsiEditor
+                ? deskripsiEditor.getContent({ format: 'text' }).replace(/\u00a0/g, ' ').trim()
+                : (formTambah.querySelector('#deskripsiTambah')?.value || '').trim();
+
+            const validations = [
+                { field: 'judul', valid: Boolean(judulInput?.value.trim()), focus: () => judulInput?.focus() },
+                { field: 'deskripsi', valid: Boolean(deskripsiText), focus: () => deskripsiEditor?.focus() },
+                { field: 'penulis', valid: Boolean(penulisInput?.value.trim()), focus: () => penulisInput?.focus() },
+                { field: 'kategori', valid: Boolean(kategoriInput?.value), focus: () => kategoriInput?.focus() },
+                { field: 'tanggal', valid: Boolean(tanggalInput?.value), focus: () => tanggalInput?.focus() },
+                { field: 'thumbnail', valid: Boolean(thumbnailInput?.files?.length), focus: () => thumbnailInput?.focus() },
+            ];
+
+            let firstInvalid = null;
+            validations.forEach((entry) => {
+                if (entry.valid) {
+                    clearTambahFieldError(entry.field);
+                    return;
+                }
+
+                showTambahFieldError(entry.field);
+                if (!firstInvalid) {
+                    firstInvalid = entry;
+                }
+            });
+
+            if (firstInvalid) {
+                firstInvalid.focus();
+                return false;
+            }
+
+            if (!validateThumbnailFormat(true)) {
+                thumbnailInput?.focus();
+                return false;
+            }
+
+            if (!validateThumbnailSize(true)) {
+                thumbnailInput?.focus();
+                return false;
+            }
+
+            return true;
+        }
+
+        [
+            ['judulTambah', 'judul', 'input'],
+            ['penulisTambah', 'penulis', 'input'],
+            ['kategoriTambah', 'kategori', 'change'],
+            ['tanggalTambah', 'tanggal', 'change'],
+            ['thumbnailTambah', 'thumbnail', 'change'],
+        ].forEach(([id, fieldName, eventName]) => {
+            const element = document.getElementById(id);
+            if (!element) {
+                return;
+            }
+            element.addEventListener(eventName, () => {
+                clearTambahFieldError(fieldName);
+                if (fieldName === 'thumbnail') {
+                    if (!validateThumbnailFormat(true)) {
+                        return;
+                    }
+                    validateThumbnailSize(true);
+                }
+            });
+        });
+
+        function renderSelectedFiles(input, list) {
+            if (!input || !list) {
+                return;
+            }
+
+            list.innerHTML = '';
+            const files = Array.from(input.files || []);
+            if (!files.length) {
+                list.classList.add('d-none');
+                return;
+            }
+
+            list.classList.remove('d-none');
+            files.forEach((file) => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center text-truncate bg-white mb-1 rounded border shadow-sm px-2 py-1';
+
+                let iconClass = 'bi-file-earmark-text';
+                if ((file.type || '').includes('pdf')) iconClass = 'bi-file-earmark-pdf text-danger';
+                else if ((file.type || '').includes('word')) iconClass = 'bi-file-earmark-word text-primary';
+
+                li.innerHTML = `
+                    <div class="d-flex align-items-center text-truncate">
+                        <i class="bi ${iconClass} fs-5 me-2"></i>
+                        <span class="text-truncate fw-medium fs-7">${file.name}</span>
+                    </div>
+                    <span class="badge bg-light text-secondary border px-2 py-1 flex-shrink-0">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        document.querySelectorAll('.file-upload-wrapper').forEach((wrapper) => {
+            const input = document.getElementById(wrapper.dataset.inputId);
+            const list = document.getElementById(wrapper.dataset.listId);
+            if (!input || !list) {
+                return;
+            }
+
+            wrapper.addEventListener('click', () => input.click());
+            input.addEventListener('change', () => renderSelectedFiles(input, list));
+        });
+
+        document.querySelectorAll('input[type="file"][data-list-id]').forEach((input) => {
+            const list = document.getElementById(input.dataset.listId);
+            input.addEventListener('change', () => renderSelectedFiles(input, list));
+        });
+
+        document.querySelectorAll('.artikel-toggle-file-delete').forEach((button) => {
+            button.addEventListener('click', function() {
+                const checkbox = document.getElementById(this.dataset.targetId);
+                if (!checkbox) {
+                    return;
+                }
+
+                checkbox.checked = !checkbox.checked;
+                const row = this.closest('.artikel-existing-file');
+                const badge = row ? row.querySelector('.artikel-delete-badge') : null;
+
+                if (row) {
+                    row.classList.toggle('marked-for-delete', checkbox.checked);
+                }
+                if (badge) {
+                    badge.classList.toggle('d-none', !checkbox.checked);
+                }
+                this.classList.toggle('btn-danger', checkbox.checked);
+                this.classList.toggle('btn-outline-danger', !checkbox.checked);
+            });
+        });
+
+        async function sendForm(form) {
+            if (form.id === 'formTambah' && !validateTambahForm()) {
+                return;
+            }
+
+            tinymce.triggerSave();
+
+            const submitButtons = document.querySelectorAll(`[form="${form.id}"]`);
+            const originalHtml = Array.from(submitButtons).map((button) => button.innerHTML);
+            submitButtons.forEach((button) => {
+                button.disabled = true;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Menyimpan...';
+            });
+
+            try {
+                const response = await fetch(form.dataset.url, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const contentType = response.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    throw new Error('Respons server tidak valid. Coba muat ulang halaman.');
+                }
+
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Terjadi kesalahan saat menyimpan artikel.');
+                }
+
+                persistAlertAndReload('success', 'Berhasil', result.message || 'Perubahan berhasil disimpan.');
+            } catch (error) {
+                renderAlert('danger', 'Gagal Menyimpan', error.message || 'Terjadi kesalahan pada server.');
+            } finally {
+                submitButtons.forEach((button, index) => {
+                    button.disabled = false;
+                    button.innerHTML = originalHtml[index];
+                });
+            }
+        }
+
+        document.querySelectorAll('.artikel-form').forEach((form) => {
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                sendForm(form);
+            });
+        });
+
+        document.querySelectorAll('.btn-delete-artikel').forEach((button) => {
+            button.addEventListener('click', async function() {
+                const title = this.dataset.title || 'artikel ini';
+                if (!window.confirm(`Hapus "${title}"? Tindakan ini tidak bisa dibatalkan.`)) {
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('csrf_token', csrfToken);
+
+                try {
+                    const response = await fetch(this.dataset.url, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    const contentType = response.headers.get('content-type') || '';
+                    if (!contentType.includes('application/json')) {
+                        throw new Error('Respons server tidak valid. Coba muat ulang halaman.');
+                    }
+
+                    const result = await response.json();
+                    if (!response.ok || !result.success) {
+                        throw new Error(result.error || 'Artikel gagal dihapus.');
+                    }
+
+                    persistAlertAndReload('success', 'Berhasil', result.message || 'Artikel berhasil dihapus.');
+                } catch (error) {
+                    renderAlert('danger', 'Gagal Menghapus', error.message || 'Terjadi kesalahan pada server.');
+                }
+            });
+        });
+
         document.addEventListener('focusin', (e) => {
             if (e.target.closest(".tox-tinymce, .tox-tinymce-aux, .moxman-window, .tam-assetmanager-root") !== null) {
                 e.stopImmediatePropagation();
@@ -568,7 +973,6 @@
                 img.src = e.target.result;
                 img.classList.remove('d-none');
                 
-                // Hide generic placeholder if present in same parent
                 const placeholder = img.parentElement.querySelector('div.d-flex');
                 if (placeholder) placeholder.classList.add('d-none');
             }

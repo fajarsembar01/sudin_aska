@@ -1,26 +1,330 @@
 """Routes untuk Content Management System (CMS)."""
 
-import json
+from __future__ import annotations
+
 import os
-from pathlib import Path
+from datetime import datetime
+from pathlib import Path, PurePosixPath
+from typing import Iterable
+
+from flask import Blueprint, jsonify, render_template, request, url_for
 from werkzeug.utils import secure_filename
-from flask import Blueprint, render_template, request, jsonify
-from dashboard.auth import role_required
+
+from dashboard.auth import current_user, role_required
 from dashboard.db_access import get_cursor
+from dashboard.schema import ensure_cms_artikel_schema
 
 cms_bp = Blueprint("cms", __name__, url_prefix="/cms", template_folder="templates")
 
 # Configuration
-CMS_UPLOAD_ROOT = Path(__file__).parent.parent.parent / "uploads" / "portal" / "cms"
+UPLOADS_ROOT = Path(__file__).resolve().parent.parent.parent / "uploads"
+PORTAL_UPLOAD_ROOT = UPLOADS_ROOT / "portal"
+CMS_UPLOAD_ROOT = PORTAL_UPLOAD_ROOT / "cms"
 UPLOAD_PROFIL = CMS_UPLOAD_ROOT / "profil_instansi"
-UPLOAD_PROFIL.mkdir(parents=True, exist_ok=True)
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+UPLOAD_ARTIKEL_ROOT = CMS_UPLOAD_ROOT / "artikel"
+UPLOAD_ARTIKEL_THUMBNAILS = UPLOAD_ARTIKEL_ROOT / "thumbnails"
+UPLOAD_ARTIKEL_ATTACHMENTS = UPLOAD_ARTIKEL_ROOT / "attachments"
+for _path in (UPLOAD_PROFIL, UPLOAD_ARTIKEL_THUMBNAILS, UPLOAD_ARTIKEL_ATTACHMENTS):
+    _path.mkdir(parents=True, exist_ok=True)
+
+ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+ALLOWED_ATTACHMENT_EXTENSIONS = {
+    "pdf",
+    "doc",
+    "docx",
+    "xls",
+    "xlsx",
+    "ppt",
+    "pptx",
+    "txt",
+    "csv",
+    "zip",
+    "rar",
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+}
+MAX_IMAGE_SIZE = 5 * 1024 * 1024
+MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024
+ARTICLE_CATEGORIES = (
+    "Berita Utama",
+    "Pendidikan",
+    "Kegiatan",
+    "Pengumuman",
+    "Opini",
+    "Informasi",
+)
+_CMS_ARTIKEL_SCHEMA_READY = False
 
 
 def allowed_file(filename):
     """Check if file extension is allowed."""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
+
+
+def _allowed_attachment_file(filename: str) -> bool:
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_ATTACHMENT_EXTENSIONS
+
+
+def _safe_client_filename(raw_name: str | None) -> str:
+    return Path((raw_name or "").strip()).name
+
+
+def _get_file_size(file_storage) -> int:
+    if getattr(file_storage, "content_length", None):
+        return int(file_storage.content_length)
+
+    stream = getattr(file_storage, "stream", None)
+    if stream is None:
+        return 0
+
+    try:
+        current_position = stream.tell()
+        stream.seek(0, os.SEEK_END)
+        size = stream.tell()
+        stream.seek(current_position)
+        return int(size)
+    except Exception:
+        return 0
+
+
+def _build_db_upload_path(uploaded_path: Path) -> str:
+    relative_path = uploaded_path.resolve().relative_to(UPLOADS_ROOT.resolve())
+    return (PurePosixPath("uploads") / PurePosixPath(relative_path.as_posix())).as_posix()
+
+
+def _resolve_stored_upload_path(stored_path: str | None) -> Path | None:
+    normalized = str(stored_path or "").replace("\\", "/").strip()
+    if not normalized.startswith("uploads/"):
+        return None
+
+    relative = PurePosixPath(normalized[len("uploads/") :].lstrip("/"))
+    if relative.is_absolute() or ".." in relative.parts:
+        return None
+
+    target_path = (UPLOADS_ROOT / relative.as_posix()).resolve()
+    try:
+        target_path.relative_to(UPLOADS_ROOT.resolve())
+    except ValueError:
+        return None
+    return target_path
+
+
+def _delete_stored_file(stored_path: str | None) -> None:
+    target_path = _resolve_stored_upload_path(stored_path)
+    if target_path and target_path.is_file():
+        try:
+            target_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+def _build_upload_url(stored_path: str | None) -> str | None:
+    normalized = str(stored_path or "").replace("\\", "/").strip()
+    if not normalized.startswith("uploads/portal/"):
+        return None
+
+    relative = normalized[len("uploads/portal/") :].lstrip("/")
+    if not relative:
+        return None
+    return url_for("portal.uploaded_file", filename=relative)
+
+
+def _save_uploaded_asset(
+    file_storage,
+    *,
+    upload_dir: Path,
+    prefix: str,
+    max_size: int,
+    validator,
+    label: str,
+) -> tuple[str, str]:
+    original_name = _safe_client_filename(getattr(file_storage, "filename", ""))
+    if not original_name:
+        raise ValueError(f"{label} tidak valid.")
+    if not validator(original_name):
+        raise ValueError(f"Format {label.lower()} tidak didukung.")
+
+    file_size = _get_file_size(file_storage)
+    if max_size and file_size > max_size:
+        raise ValueError(f"{label} terlalu besar.")
+
+    safe_name = secure_filename(original_name)
+    if not safe_name:
+        safe_name = f"{prefix}{Path(original_name).suffix.lower()}"
+    stored_name = secure_filename(f"{prefix}_{os.urandom(8).hex()}_{safe_name}")
+    destination = upload_dir / stored_name
+    file_storage.save(destination)
+    return original_name, _build_db_upload_path(destination)
+
+
+def _current_author_name() -> str:
+    user = current_user() or {}
+    return (user.get("full_name") or user.get("email") or "Admin").strip() or "Admin"
+
+
+def _ensure_artikel_schema() -> None:
+    global _CMS_ARTIKEL_SCHEMA_READY
+    if _CMS_ARTIKEL_SCHEMA_READY:
+        return
+
+    try:
+        ensure_cms_artikel_schema()
+    except Exception as exc:
+        message = str(exc)
+        if "pg_type_typname_nsp_index" not in message or "cms_artikel" not in message:
+            raise
+    _CMS_ARTIKEL_SCHEMA_READY = True
+
+
+def _parse_int_list(values: Iterable[str]) -> list[int]:
+    parsed: list[int] = []
+    for value in values:
+        try:
+            parsed.append(int(value))
+        except (TypeError, ValueError):
+            continue
+    return parsed
+
+
+def _parse_artikel_payload(*, require_thumbnail: bool) -> dict:
+    judul = (request.form.get("judul") or "").strip()
+    kategori = (request.form.get("kategori") or "").strip()
+    deskripsi = request.form.get("deskripsi") or ""
+    tanggal_raw = (request.form.get("tanggal") or "").strip()
+    penulis = (request.form.get("penulis") or "").strip() or _current_author_name()
+    status = "Aktif" if request.form.get("statusAktif") == "Aktif" else "Tidak Aktif"
+    status_publikasi = "Published" if request.form.get("statusPublikasi") == "Published" else "Draft"
+    thumbnail = request.files.get("thumbnail")
+    lampiran = [file for file in request.files.getlist("lampiran") if _safe_client_filename(file.filename)]
+
+    if not judul:
+        raise ValueError("Judul artikel wajib diisi.")
+    if kategori not in ARTICLE_CATEGORIES:
+        raise ValueError("Kategori artikel tidak valid.")
+    if not deskripsi.strip():
+        raise ValueError("Isi artikel wajib diisi.")
+    if not tanggal_raw:
+        raise ValueError("Tanggal publikasi wajib diisi.")
+
+    try:
+        tanggal_publikasi = datetime.strptime(tanggal_raw, "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise ValueError("Format tanggal publikasi tidak valid.") from exc
+
+    has_thumbnail = thumbnail and _safe_client_filename(thumbnail.filename)
+    if require_thumbnail and not has_thumbnail:
+        raise ValueError("Thumbnail wajib diunggah.")
+
+    return {
+        "judul": judul,
+        "kategori": kategori,
+        "deskripsi": deskripsi,
+        "tanggal_publikasi": tanggal_publikasi,
+        "penulis": penulis,
+        "status": status,
+        "status_publikasi": status_publikasi,
+        "thumbnail": thumbnail if has_thumbnail else None,
+        "lampiran": lampiran,
+        "hapus_file_ids": _parse_int_list(request.form.getlist("hapus_file_ids")),
+    }
+
+
+def _serialize_artikel_file(row: dict) -> dict:
+    file_path = row.get("file_path")
+    return {
+        "id": row.get("id"),
+        "name": row.get("file_name"),
+        "path": file_path,
+        "url": _build_upload_url(file_path),
+    }
+
+
+def _serialize_artikel_row(row: dict, attachments: list[dict]) -> dict:
+    tanggal_obj = row.get("tanggal_publikasi")
+    tanggal_input = tanggal_obj.isoformat() if tanggal_obj else ""
+    tanggal_display = tanggal_obj.strftime("%d %b %Y") if tanggal_obj else "-"
+    thumbnail_path = row.get("thumbnail_path")
+
+    return {
+        "id": row.get("id"),
+        "judul": row.get("judul"),
+        "kategori": row.get("kategori"),
+        "tanggal": tanggal_input,
+        "tanggal_input": tanggal_input,
+        "tanggal_display": tanggal_display,
+        "deskripsi": row.get("deskripsi") or "",
+        "thumbnail": Path(thumbnail_path).name if thumbnail_path else "",
+        "thumbnail_path": thumbnail_path,
+        "thumbnail_url": _build_upload_url(thumbnail_path),
+        "penulis": row.get("penulis") or "-",
+        "status": row.get("status") or "Tidak Aktif",
+        "status_publikasi": row.get("status_publikasi") or "Draft",
+        "files": attachments,
+        "created_at": row.get("created_at"),
+        "updated_at": row.get("updated_at"),
+    }
+
+
+def _fetch_artikel_files(cur, artikel_ids: list[int]) -> dict[int, list[dict]]:
+    if not artikel_ids:
+        return {}
+
+    cur.execute(
+        """
+        SELECT id, artikel_id, file_name, file_path, created_at
+        FROM cms_artikel_files
+        WHERE artikel_id = ANY(%s)
+        ORDER BY id ASC
+        """,
+        (artikel_ids,),
+    )
+
+    grouped: dict[int, list[dict]] = {}
+    for row in cur.fetchall():
+        record = dict(row)
+        grouped.setdefault(record["artikel_id"], []).append(_serialize_artikel_file(record))
+    return grouped
+
+
+def _fetch_all_artikel() -> list[dict]:
+    _ensure_artikel_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, judul, kategori, tanggal_publikasi, deskripsi, thumbnail_path,
+                   penulis, status, status_publikasi, created_at, updated_at
+            FROM cms_artikel
+            ORDER BY tanggal_publikasi DESC, created_at DESC, id DESC
+            """
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+        attachments = _fetch_artikel_files(cur, [row["id"] for row in rows])
+
+    return [_serialize_artikel_row(row, attachments.get(row["id"], [])) for row in rows]
+
+
+def _fetch_artikel_by_id(artikel_id: int) -> dict | None:
+    _ensure_artikel_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, judul, kategori, tanggal_publikasi, deskripsi, thumbnail_path,
+                   penulis, status, status_publikasi, created_at, updated_at
+            FROM cms_artikel
+            WHERE id = %s
+            LIMIT 1
+            """,
+            (artikel_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+        article = dict(row)
+        attachments = _fetch_artikel_files(cur, [artikel_id])
+
+    return _serialize_artikel_row(article, attachments.get(artikel_id, []))
 
 
 def _get_profil_instansi():
@@ -128,7 +432,7 @@ def profil():
             if 'cms_struktur_organisasi' in request.files:
                 file = request.files['cms_struktur_organisasi']
                 if file and file.filename and allowed_file(file.filename):
-                    if file.content_length > MAX_FILE_SIZE:
+                    if _get_file_size(file) > MAX_IMAGE_SIZE:
                         return jsonify({'success': False, 'error': 'File struktur organisasi terlalu besar'}), 400
                     
                     filename = secure_filename(f"struktur_organisasi_{os.urandom(8).hex()}_{file.filename}")
@@ -440,52 +744,251 @@ def layanan_publik_hapus(layanan_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@cms_bp.route("/artikel")
+@cms_bp.route("/artikel", methods=["GET", "POST"])
 @role_required("admin")
 def artikel():
     """Halaman untuk mengelola artikel (media & publikasi)."""
-    
-    # Dummy data
-    dummy_artikel = [
-        {
-            'id': 1,
-            'judul': 'Sosialisasi Program Merdeka Belajar di Jakarta Utara',
-            'kategori': 'Pendidikan',
-            'tanggal': '2024-05-12',
-            'deskripsi': '<p>Suku Dinas Pendidikan Jakarta Utara Wilayah II mengadakan sosialisasi terkait penerapan kurikulum Merdeka Belajar...</p>',
-            'thumbnail': 'sosialisasi_merdeka.jpg',
-            'penulis': 'Admin Sudin JU2',
-            'status': 'Aktif',
-            'status_publikasi': 'Published',
-            'files': ['Materi_Sosialisasi.pdf']
-        },
-        {
-            'id': 2,
-            'judul': 'Prestasi Siswa SMAN 1 Jakarta di Kancah Internasional',
-            'kategori': 'Berita Utama',
-            'tanggal': '2024-05-10',
-            'deskripsi': '<p>Siswa dari SMAN 1 Jakarta kembali mengharumkan nama bangsa dengan memenangkan medali emas...</p>',
-            'thumbnail': 'prestasi_siswa.png',
-            'penulis': 'Humas Sudin RU2',
-            'status': 'Aktif',
-            'status_publikasi': 'Published',
-            'files': ['Daftar_Pemenang.pdf', 'Sertifikat_Juara.pdf']
-        },
-        {
-            'id': 3,
-            'judul': 'Panduan Penerimaan Peserta Didik Baru (PPDB) 2024',
-            'kategori': 'Informasi',
-            'tanggal': '2024-05-08',
-            'deskripsi': '<p>Berikut ini adalah panduan lengkap mengenai tata cara pendaftaran PPDB tahun ajaran 2024/2025...</p>',
-            'thumbnail': 'ppdb_2024.jpg',
-            'penulis': 'Panitia PPDB',
-            'status': 'Tidak Aktif',
-            'status_publikasi': 'Draft',
-            'files': []
-        }
-    ]
-    
-    return render_template("cms/artikel.html", artikel=dummy_artikel)
+
+    if request.method == "POST":
+        _ensure_artikel_schema()
+        try:
+            payload = _parse_artikel_payload(require_thumbnail=True)
+        except ValueError as exc:
+            return jsonify({"success": False, "error": str(exc)}), 400
+
+        actor = current_user() or {}
+        actor_id = actor.get("id")
+        saved_paths: list[str] = []
+
+        try:
+            thumbnail_path = None
+            if payload["thumbnail"] is not None:
+                _, thumbnail_path = _save_uploaded_asset(
+                    payload["thumbnail"],
+                    upload_dir=UPLOAD_ARTIKEL_THUMBNAILS,
+                    prefix="artikel_thumb",
+                    max_size=MAX_IMAGE_SIZE,
+                    validator=allowed_file,
+                    label="Thumbnail",
+                )
+                saved_paths.append(thumbnail_path)
+
+            with get_cursor(commit=True) as cur:
+                cur.execute(
+                    """
+                    INSERT INTO cms_artikel
+                    (judul, kategori, tanggal_publikasi, deskripsi, thumbnail_path, penulis, status, status_publikasi, created_by, updated_by, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                    RETURNING id
+                    """,
+                    (
+                        payload["judul"],
+                        payload["kategori"],
+                        payload["tanggal_publikasi"],
+                        payload["deskripsi"],
+                        thumbnail_path,
+                        payload["penulis"],
+                        payload["status"],
+                        payload["status_publikasi"],
+                        actor_id,
+                        actor_id,
+                    ),
+                )
+                artikel_id = int(cur.fetchone()["id"])
+
+                for attachment in payload["lampiran"]:
+                    original_name, stored_path = _save_uploaded_asset(
+                        attachment,
+                        upload_dir=UPLOAD_ARTIKEL_ATTACHMENTS,
+                        prefix=f"artikel_file_{artikel_id}",
+                        max_size=MAX_ATTACHMENT_SIZE,
+                        validator=_allowed_attachment_file,
+                        label="Lampiran",
+                    )
+                    saved_paths.append(stored_path)
+                    cur.execute(
+                        """
+                        INSERT INTO cms_artikel_files (artikel_id, file_name, file_path, created_at)
+                        VALUES (%s, %s, %s, NOW())
+                        """,
+                        (artikel_id, original_name, stored_path),
+                    )
+
+            return jsonify({
+                "success": True,
+                "message": "Artikel berhasil ditambahkan.",
+                "artikel_id": artikel_id,
+            })
+
+        except ValueError as exc:
+            for stored_path in saved_paths:
+                _delete_stored_file(stored_path)
+            return jsonify({"success": False, "error": str(exc)}), 400
+        except Exception as exc:
+            for stored_path in saved_paths:
+                _delete_stored_file(stored_path)
+            return jsonify({"success": False, "error": str(exc)}), 500
+
+    artikel_list = _fetch_all_artikel()
+    return render_template(
+        "cms/artikel.html",
+        artikel=artikel_list,
+        kategori_options=ARTICLE_CATEGORIES,
+        default_penulis=_current_author_name(),
+    )
+
+
+@cms_bp.route("/artikel/<int:artikel_id>/update", methods=["POST"])
+@role_required("admin")
+def update_artikel(artikel_id: int):
+    """Update artikel yang sudah ada."""
+
+    existing = _fetch_artikel_by_id(artikel_id)
+    if not existing:
+        return jsonify({"success": False, "error": "Artikel tidak ditemukan."}), 404
+    _ensure_artikel_schema()
+
+    try:
+        payload = _parse_artikel_payload(require_thumbnail=False)
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+
+    actor = current_user() or {}
+    actor_id = actor.get("id")
+    saved_paths: list[str] = []
+    cleanup_paths: list[str] = []
+
+    try:
+        thumbnail_path = existing.get("thumbnail_path")
+        if payload["thumbnail"] is not None:
+            _, thumbnail_path = _save_uploaded_asset(
+                payload["thumbnail"],
+                upload_dir=UPLOAD_ARTIKEL_THUMBNAILS,
+                prefix=f"artikel_thumb_{artikel_id}",
+                max_size=MAX_IMAGE_SIZE,
+                validator=allowed_file,
+                label="Thumbnail",
+            )
+            saved_paths.append(thumbnail_path)
+            if existing.get("thumbnail_path"):
+                cleanup_paths.append(existing["thumbnail_path"])
+
+        with get_cursor(commit=True) as cur:
+            cur.execute(
+                """
+                UPDATE cms_artikel
+                SET judul = %s,
+                    kategori = %s,
+                    tanggal_publikasi = %s,
+                    deskripsi = %s,
+                    thumbnail_path = %s,
+                    penulis = %s,
+                    status = %s,
+                    status_publikasi = %s,
+                    updated_by = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+                """,
+                (
+                    payload["judul"],
+                    payload["kategori"],
+                    payload["tanggal_publikasi"],
+                    payload["deskripsi"],
+                    thumbnail_path,
+                    payload["penulis"],
+                    payload["status"],
+                    payload["status_publikasi"],
+                    actor_id,
+                    artikel_id,
+                ),
+            )
+
+            if payload["hapus_file_ids"]:
+                cur.execute(
+                    """
+                    SELECT id, file_path
+                    FROM cms_artikel_files
+                    WHERE artikel_id = %s AND id = ANY(%s)
+                    """,
+                    (artikel_id, payload["hapus_file_ids"]),
+                )
+                removable_files = [dict(row) for row in cur.fetchall()]
+                if removable_files:
+                    cleanup_paths.extend(row["file_path"] for row in removable_files if row.get("file_path"))
+                    cur.execute(
+                        """
+                        DELETE FROM cms_artikel_files
+                        WHERE artikel_id = %s AND id = ANY(%s)
+                        """,
+                        (artikel_id, [row["id"] for row in removable_files]),
+                    )
+
+            for attachment in payload["lampiran"]:
+                original_name, stored_path = _save_uploaded_asset(
+                    attachment,
+                    upload_dir=UPLOAD_ARTIKEL_ATTACHMENTS,
+                    prefix=f"artikel_file_{artikel_id}",
+                    max_size=MAX_ATTACHMENT_SIZE,
+                    validator=_allowed_attachment_file,
+                    label="Lampiran",
+                )
+                saved_paths.append(stored_path)
+                cur.execute(
+                    """
+                    INSERT INTO cms_artikel_files (artikel_id, file_name, file_path, created_at)
+                    VALUES (%s, %s, %s, NOW())
+                    """,
+                    (artikel_id, original_name, stored_path),
+                )
+
+        for stored_path in cleanup_paths:
+            _delete_stored_file(stored_path)
+
+        return jsonify({
+            "success": True,
+            "message": "Artikel berhasil diperbarui.",
+            "artikel_id": artikel_id,
+        })
+
+    except ValueError as exc:
+        for stored_path in saved_paths:
+            _delete_stored_file(stored_path)
+        return jsonify({"success": False, "error": str(exc)}), 400
+    except Exception as exc:
+        for stored_path in saved_paths:
+            _delete_stored_file(stored_path)
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@cms_bp.route("/artikel/<int:artikel_id>/delete", methods=["POST"])
+@role_required("admin")
+def delete_artikel(artikel_id: int):
+    """Hapus artikel beserta seluruh lampirannya."""
+
+    existing = _fetch_artikel_by_id(artikel_id)
+    if not existing:
+        return jsonify({"success": False, "error": "Artikel tidak ditemukan."}), 404
+    _ensure_artikel_schema()
+
+    cleanup_paths = []
+    if existing.get("thumbnail_path"):
+        cleanup_paths.append(existing["thumbnail_path"])
+    cleanup_paths.extend(file["path"] for file in existing.get("files", []) if file.get("path"))
+
+    try:
+        with get_cursor(commit=True) as cur:
+            cur.execute("DELETE FROM cms_artikel WHERE id = %s", (artikel_id,))
+
+        for stored_path in cleanup_paths:
+            _delete_stored_file(stored_path)
+
+        return jsonify({
+            "success": True,
+            "message": "Artikel berhasil dihapus.",
+            "artikel_id": artikel_id,
+        })
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 @cms_bp.route("/pengumuman")
