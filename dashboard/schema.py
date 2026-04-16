@@ -975,6 +975,19 @@ CREATE TABLE IF NOT EXISTS cms_informasi_publik (
 );
 """
 
+_CMS_LAYANAN_PUBLIK_SQL = """
+CREATE TABLE IF NOT EXISTS cms_layanan_publik (
+    id SERIAL PRIMARY KEY,
+    cms_nama_layanan TEXT NOT NULL,
+    cms_deskripsi TEXT,
+    cms_icon TEXT NOT NULL DEFAULT 'bi-star',
+    cms_status TEXT NOT NULL DEFAULT 'Aktif' CHECK (cms_status IN ('Aktif', 'Tidak Aktif')),
+    cms_files JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
 # ===== Call Center Schema =====
 
 _CC_CONVERSATIONS_SQL = """
@@ -1300,6 +1313,7 @@ def ensure_dashboard_schema() -> None:
         # ===== CMS tables =====
         _CMS_PROFIL_INSTANSI_SQL,
         _CMS_INFORMASI_PUBLIK_SQL,
+        _CMS_LAYANAN_PUBLIK_SQL,
         # ===== Call Center tables =====
         _CC_CONVERSATIONS_SQL,
         _CC_CONVERSATIONS_INDEX_SQL,
