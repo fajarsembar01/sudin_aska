@@ -121,6 +121,20 @@
     border-radius: 14px;
     background: var(--bg-surface);
   }
+
+  .extra-rating-item {
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 0.8rem 0.9rem;
+    background: var(--bg-subtle);
+  }
+
+  .extra-stars {
+    display: inline-flex;
+    gap: 0.2rem;
+    color: #f4b400;
+    font-size: 1rem;
+  }
 </style>
 {% endblock %}
 
@@ -256,6 +270,29 @@
         </div>
       </div>
     </div>
+
+    {% if review.extra_ratings %}
+    <div class="detail-card card border-0 mb-3">
+      <div class="card-body p-4">
+        <div class="detail-label mb-2">Penilaian Tambahan</div>
+        <div class="vstack gap-2">
+          {% for item in review.extra_ratings %}
+          <div class="extra-rating-item d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="fw-semibold">{{ loop.index }}. {{ item.question_text }}</div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="small text-muted">{{ item.rating }}/5</span>
+              <span class="extra-stars" aria-label="{{ item.rating }} dari 5">
+                {% for star in range(1, 6) %}
+                <i class="bi {% if star <= item.rating %}bi-star-fill{% else %}bi-star{% endif %}"></i>
+                {% endfor %}
+              </span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
 
     <div class="detail-card card border-0 mb-3">
       <div class="card-body p-4">

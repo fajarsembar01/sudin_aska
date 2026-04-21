@@ -47,12 +47,25 @@
         .rating-star { border:0; background:transparent; color:#d8dde6; font-size:2rem; line-height:1; padding:.2rem .15rem; transition: transform .18s ease, color .18s ease, filter .18s ease; }
         .rating-star:hover, .rating-star.active { color:#f4b400; transform: translateY(-2px) scale(1.05); filter: drop-shadow(0 6px 12px rgba(244,180,0,.18)); }
         .rating-scale { display:flex; justify-content:space-between; gap:12px; font-size:.78rem; color:var(--muted); margin-top:2px; }
+        .extra-rating-card { background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+        .extra-rating-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .extra-rating-question { font-size: 1rem; font-weight: 600; margin: 0; flex: 1 1 auto; min-width: 0; }
+        .extra-rating-star { border:0; background:transparent; color:#c6cdd9; font-size:1.35rem; line-height:1; padding:.12rem .1rem; transition: transform .18s ease, color .18s ease; }
+        .extra-rating-star:hover, .extra-rating-star.active { color:#f4b400; transform: translateY(-1px); }
+        .extra-rating-picker { flex: 0 0 auto; }
+        @media (max-width: 768px) {
+            .extra-rating-card { padding: 10px 12px; }
+            .extra-rating-question { font-size: .95rem; }
+            .extra-rating-star { font-size: 1.15rem; padding: .08rem .05rem; }
+            .extra-rating-row { gap: 8px; }
+        }
         .note-text { font-size:.85rem; color:var(--muted); }
         .form-control, .form-select { background-color: var(--input-bg); color: var(--input-text); border-color: var(--input-border); }
         .form-control:focus, .form-select:focus { border-color:#4c89ff; box-shadow:0 0 0 .2rem rgba(76,137,255,.2); }
     </style>
 </head>
 {% set current_rating = review.rating if review and review.rating else 0 %}
+{% set current_extra = review.extra_ratings if review and review.extra_ratings else {} %}
 <body>
     <div class="container py-4">
         <div class="card shadow-sm border-0 hero-card">
@@ -110,6 +123,30 @@
                         }}</textarea>
                     </div>
 
+                    {% if extra_questions %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold mb-2">Penilaian tambahan <span class="text-muted fw-normal">(wajib)</span></label>
+                        <div class="vstack gap-2">
+                            {% for q in extra_questions %}
+                            {% set initial = current_extra.get(q.id, 0) %}
+                            <div class="extra-rating-card">
+                                <div class="extra-rating-row">
+                                <p class="extra-rating-question">{{ loop.index }}. {{ q.question_text }}</p>
+                                <input type="hidden" name="extra_rating_{{ q.id }}" id="extraRatingInput{{ q.id }}" value="{{ initial if initial else 0 }}">
+                                <div class="d-flex align-items-center gap-1 flex-wrap extra-rating-picker" data-question-id="{{ q.id }}" role="radiogroup" aria-label="Penilaian tambahan {{ q.question_text }}">
+                                    {% for value in range(1, 6) %}
+                                    <button type="button" class="extra-rating-star{% if initial >= value %} active{% endif %}" data-question-id="{{ q.id }}" data-rating="{{ value }}" aria-label="{{ value }} bintang untuk pertanyaan {{ loop.index }}" {% if review_completed %}disabled{% endif %}>
+                                        <i class="bi bi-star-fill"></i>
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <div class="d-grid">
                         <button type="submit" class="btn btn-success btn-lg fw-semibold">Simpan</button>
                     </div>
@@ -128,6 +165,7 @@
             var ratingInput = document.getElementById('ratingInput');
             var ratingHint = document.getElementById('ratingHint');
             var stars = Array.prototype.slice.call(document.querySelectorAll('.rating-star'));
+            var extraStars = Array.prototype.slice.call(document.querySelectorAll('.extra-rating-star'));
 
             function applyTheme(theme, animate) {
                 if (animate && themeToggle) {
@@ -181,6 +219,33 @@
                 });
             });
             setRating(ratingInput ? ratingInput.value : '0');
+
+            function setExtraRating(questionId, value) {
+                var rating = Number(value || 0);
+                var input = document.getElementById('extraRatingInput' + questionId);
+                var groupStars = extraStars.filter(function (btn) {
+                    return String(btn.getAttribute('data-question-id')) === String(questionId);
+                });
+                if (input) input.value = rating > 0 ? String(rating) : '0';
+                groupStars.forEach(function (button) {
+                    var buttonRating = Number(button.getAttribute('data-rating') || 0);
+                    button.classList.toggle('active', buttonRating <= rating);
+                });
+            }
+
+            extraStars.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    if (button.disabled) return;
+                    var questionId = button.getAttribute('data-question-id');
+                    setExtraRating(questionId, button.getAttribute('data-rating'));
+                });
+            });
+
+            var extraInputs = Array.prototype.slice.call(document.querySelectorAll('input[id^=\"extraRatingInput\"]'));
+            extraInputs.forEach(function (input) {
+                var questionId = String(input.id).replace('extraRatingInput', '');
+                setExtraRating(questionId, input.value || '0');
+            });
         })();
     </script>
 </body>

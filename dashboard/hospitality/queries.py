@@ -26,6 +26,8 @@ REOPEN_STATUSES = ("pending", "approved", "rejected")
 GUESTBOOK_REVIEW_STATUSES = ("pending", "completed")
 _SOFT_DELETE_SCHEMA_READY = False
 _PREVIEW_ACCESS_SCHEMA_READY = False
+_ACTIVITY_LOGS_SCHEMA_READY = False
+_GUESTBOOK_EXTRA_SCHEMA_READY = False
 
 
 def _today_jakarta() -> date:
@@ -215,6 +217,93 @@ def _ensure_preview_access_schema() -> None:
             """
         )
     _PREVIEW_ACCESS_SCHEMA_READY = True
+
+
+def _ensure_activity_logs_schema() -> None:
+    global _ACTIVITY_LOGS_SCHEMA_READY
+    if _ACTIVITY_LOGS_SCHEMA_READY:
+        return
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS hospitality_activity_logs (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                action TEXT NOT NULL,
+                target_type TEXT NOT NULL,
+                target_id INTEGER,
+                target_name TEXT,
+                details JSONB,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_hospitality_activity_logs_created
+            ON hospitality_activity_logs (created_at DESC)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_hospitality_activity_logs_target
+            ON hospitality_activity_logs (target_type, target_id)
+            """
+        )
+    _ACTIVITY_LOGS_SCHEMA_READY = True
+
+
+def _ensure_guestbook_extra_schema() -> None:
+    global _GUESTBOOK_EXTRA_SCHEMA_READY
+    if _GUESTBOOK_EXTRA_SCHEMA_READY:
+        return
+    _ensure_soft_delete_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS hospitality_guestbook_extra_questions (
+                id SERIAL PRIMARY KEY,
+                question_text TEXT NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_hosp_extra_questions_active_order
+            ON hospitality_guestbook_extra_questions (active, sort_order, id)
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS hospitality_guestbook_extra_answers (
+                id SERIAL PRIMARY KEY,
+                review_id INTEGER NOT NULL REFERENCES hospitality_guestbook_reviews(id) ON DELETE CASCADE,
+                question_id INTEGER NOT NULL REFERENCES hospitality_guestbook_extra_questions(id) ON DELETE CASCADE,
+                rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (review_id, question_id)
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_hosp_extra_answers_review
+            ON hospitality_guestbook_extra_answers (review_id)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_hosp_extra_answers_question
+            ON hospitality_guestbook_extra_answers (question_id)
+            """
+        )
+    _GUESTBOOK_EXTRA_SCHEMA_READY = True
 
 
 def has_hospitality_preview_access(*, user_id: int) -> bool:
@@ -1420,6 +1509,7 @@ def get_guestbook_review_detail(review_id: int) -> Dict[str, Any] | None:
     if not review_id:
         return None
     _ensure_soft_delete_schema()
+    _ensure_guestbook_extra_schema()
     with get_cursor() as cur:
         cur.execute(
             """
@@ -1472,6 +1562,25 @@ def get_guestbook_review_detail(review_id: int) -> Dict[str, Any] | None:
             (review_id,),
         )
         row = cur.fetchone()
+        if row:
+            cur.execute(
+                """
+                SELECT
+                    q.id AS question_id,
+                    q.question_text,
+                    q.sort_order,
+                    q.active AS question_active,
+                    a.rating
+                FROM hospitality_guestbook_extra_answers a
+                JOIN hospitality_guestbook_extra_questions q ON q.id = a.question_id
+                WHERE a.review_id = %s
+                ORDER BY q.sort_order ASC, q.id ASC
+                """,
+                (review_id,),
+            )
+            extra_rows = [dict(item) for item in (cur.fetchall() or [])]
+        else:
+            extra_rows = []
 
     if not row:
         return None
@@ -1494,6 +1603,10 @@ def get_guestbook_review_detail(review_id: int) -> Dict[str, Any] | None:
     detail["linked_assessment_id"] = int(detail.get("linked_assessment_id")) if detail.get("linked_assessment_id") is not None else None
     rating_val = detail.get("rating")
     detail["rating"] = int(rating_val) if rating_val is not None else None
+    for item in extra_rows:
+        item["rating"] = int(item.get("rating") or 0)
+        item["question_active"] = bool(item.get("question_active"))
+    detail["extra_ratings"] = extra_rows
     return detail
 
 
@@ -1727,6 +1840,165 @@ def reorder_hosp_aspects(order_ids: list[int]) -> None:
                 "UPDATE hospitality_aspects SET sort_order = %s WHERE id = %s",
                 (idx, aid),
             )
+
+
+def list_guestbook_extra_questions(*, active_only: Optional[bool] = None) -> List[Dict[str, Any]]:
+    _ensure_guestbook_extra_schema()
+    clauses: List[str] = []
+    params: List[Any] = []
+    if active_only is True:
+        clauses.append("q.active = TRUE")
+    elif active_only is False:
+        clauses.append("q.active = FALSE")
+    where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT
+                q.id,
+                q.question_text,
+                q.sort_order,
+                q.active,
+                q.created_by,
+                q.created_at,
+                q.updated_at,
+                COALESCE(COUNT(a.id), 0)::INTEGER AS answer_count
+            FROM hospitality_guestbook_extra_questions q
+            LEFT JOIN hospitality_guestbook_extra_answers a ON a.question_id = q.id
+            {where_sql}
+            GROUP BY q.id
+            ORDER BY q.sort_order ASC, q.id ASC
+            """,
+            params,
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_guestbook_extra_question(question_id: int) -> Optional[Dict[str, Any]]:
+    _ensure_guestbook_extra_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT *
+            FROM hospitality_guestbook_extra_questions
+            WHERE id = %s
+            LIMIT 1
+            """,
+            (question_id,),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def create_guestbook_extra_question(
+    *,
+    question_text: str,
+    sort_order: int = 0,
+    active: bool = True,
+    created_by: Optional[int] = None,
+) -> Dict[str, Any]:
+    _ensure_guestbook_extra_schema()
+    text = (question_text or "").strip()
+    if not text:
+        raise ValueError("Pertanyaan wajib diisi.")
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO hospitality_guestbook_extra_questions (
+                question_text, sort_order, active, created_by, created_at, updated_at
+            )
+            VALUES (%s, %s, %s, %s, NOW(), NOW())
+            RETURNING *
+            """,
+            (text, int(sort_order or 0), bool(active), created_by),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else {}
+
+
+def update_guestbook_extra_question(
+    *,
+    question_id: int,
+    question_text: str,
+    sort_order: int,
+    active: bool,
+) -> Optional[Dict[str, Any]]:
+    _ensure_guestbook_extra_schema()
+    text = (question_text or "").strip()
+    if not text:
+        raise ValueError("Pertanyaan wajib diisi.")
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE hospitality_guestbook_extra_questions
+            SET question_text = %s,
+                sort_order = %s,
+                active = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            RETURNING *
+            """,
+            (text, int(sort_order or 0), bool(active), question_id),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def delete_guestbook_extra_question(question_id: int) -> bool:
+    _ensure_guestbook_extra_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT COUNT(*) AS cnt
+            FROM hospitality_guestbook_extra_answers
+            WHERE question_id = %s
+            """,
+            (question_id,),
+        )
+        cnt = int(cur.fetchone()["cnt"] or 0)
+        if cnt > 0:
+            cur.execute(
+                """
+                UPDATE hospitality_guestbook_extra_questions
+                SET active = FALSE, updated_at = NOW()
+                WHERE id = %s
+                RETURNING id
+                """,
+                (question_id,),
+            )
+            return cur.fetchone() is not None
+        cur.execute(
+            "DELETE FROM hospitality_guestbook_extra_questions WHERE id = %s RETURNING id",
+            (question_id,),
+        )
+        return cur.fetchone() is not None
+
+
+def toggle_guestbook_extra_question_active(question_id: int) -> Optional[Dict[str, Any]]:
+    question = get_guestbook_extra_question(question_id)
+    if not question:
+        return None
+    return update_guestbook_extra_question(
+        question_id=question_id,
+        question_text=question.get("question_text") or "",
+        sort_order=int(question.get("sort_order") or 0),
+        active=not bool(question.get("active")),
+    )
+
+
+def reorder_guestbook_extra_questions(order_ids: List[int]) -> None:
+    _ensure_guestbook_extra_schema()
+    with get_cursor(commit=True) as cur:
+        for idx, qid in enumerate(order_ids):
+            cur.execute(
+                """
+                UPDATE hospitality_guestbook_extra_questions
+                SET sort_order = %s, updated_at = NOW()
+                WHERE id = %s
+                """,
+                (idx, qid),
+            )
+
 
 def get_assessment(assessment_id: int) -> Optional[Dict[str, Any]]:
     _ensure_soft_delete_schema()
@@ -2125,6 +2397,7 @@ def log_activity(
     """Log an admin action in the hospitality module."""
     if not action or not target_type:
         return
+    _ensure_activity_logs_schema()
     try:
         with get_cursor(commit=True) as cur:
             cur.execute(
@@ -2152,6 +2425,7 @@ def fetch_activity_logs(
     *, limit: int = 100, offset: int = 0, target_types: Optional[List[str]] = None
 ) -> List[Dict[str, Any]]:
     """Fetch recent activity logs, joining with dashboard_users for the actor's name."""
+    _ensure_activity_logs_schema()
     safe_limit = max(1, min(int(limit or 100), 500))
     safe_offset = max(0, int(offset or 0))
     conditions = []

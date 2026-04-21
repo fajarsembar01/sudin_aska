@@ -27,6 +27,7 @@ from db import (
     get_portal_school_by_npsn,
     create_public_guestbook_transaction,
     get_public_guestbook_review_by_token,
+    list_public_guestbook_extra_questions,
     submit_public_guestbook_review,
     find_general_guest_by_phone,
     list_guestbook_purpose_keywords,
@@ -679,6 +680,7 @@ def create_app() -> Flask:
     def buku_tamu_review(npsn: str, review_token: str):
         school = get_portal_school_by_npsn(npsn)
         review = get_public_guestbook_review_by_token(review_token)
+        extra_questions = list_public_guestbook_extra_questions(active_only=True)
         error = None
 
         if not school or not school.get("active"):
@@ -693,6 +695,7 @@ def create_app() -> Flask:
                 "buku_tamu_review.html",
                 school=school,
                 review=None,
+                extra_questions=[],
                 summary={"names": [], "count": 0},
                 review_url=None,
                 review_completed=False,
@@ -713,6 +716,13 @@ def create_app() -> Flask:
                 rating = int(rating_raw)
             except (TypeError, ValueError):
                 rating = 0
+            extra_ratings = {}
+            for question in extra_questions:
+                qid = int(question.get("id") or 0)
+                if qid <= 0:
+                    continue
+                value = (request.form.get(f"extra_rating_{qid}") or "").strip()
+                extra_ratings[qid] = value
             if rating < 1 or rating > 5:
                 error = "Pilih rating bintang 1 sampai 5 dulu."
             else:
@@ -721,6 +731,7 @@ def create_app() -> Flask:
                         review_token=review_token,
                         rating=rating,
                         comment=comment or None,
+                        extra_ratings=extra_ratings,
                     )
                 except Exception as exc:
                     error = f"Gagal menyimpan review: {exc}"
@@ -740,6 +751,7 @@ def create_app() -> Flask:
             "buku_tamu_review.html",
             school=school,
             review=review,
+            extra_questions=extra_questions,
             summary=summary,
             review_url=review_url,
             review_completed=completed,

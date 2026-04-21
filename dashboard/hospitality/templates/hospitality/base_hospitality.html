@@ -59,7 +59,7 @@
         </li>
         <li class="nav-item dropdown">
           <a
-            class="nav-link dropdown-toggle {% if request.endpoint in ['hospitality.guestbook_review_dashboard', 'hospitality.guestbook_review_detail', 'hospitality.guestbook_review_export'] %}active{% endif %}"
+            class="nav-link dropdown-toggle {% if request.endpoint in ['hospitality.guestbook_review_dashboard', 'hospitality.guestbook_review_detail', 'hospitality.guestbook_review_export', 'hospitality.admin_review_extra_questions'] %}active{% endif %}"
             href="#"
             role="button"
             data-bs-toggle="dropdown"
@@ -76,6 +76,12 @@
             <li>
               <a class="dropdown-item {% if request.endpoint == 'hospitality.guestbook_review_dashboard' and request.args.get('view') == 'school' %}active{% endif %}" href="{{ url_for('hospitality.guestbook_review_dashboard', view='school') }}">
                 <i class="bi bi-building me-2"></i>Per Sekolah
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint == 'hospitality.admin_review_extra_questions' %}active{% endif %}" href="{{ url_for('hospitality.admin_review_extra_questions') }}">
+                <i class="bi bi-list-check me-2"></i>Aspek Tambahan
               </a>
             </li>
           </ul>

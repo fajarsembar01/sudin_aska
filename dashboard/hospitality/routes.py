@@ -82,6 +82,13 @@ from .queries import (
     upsert_scores,
     log_activity,
     fetch_activity_logs,
+    list_guestbook_extra_questions,
+    create_guestbook_extra_question,
+    get_guestbook_extra_question,
+    update_guestbook_extra_question,
+    delete_guestbook_extra_question,
+    toggle_guestbook_extra_question_active,
+    reorder_guestbook_extra_questions,
 )
 
 hospitality_bp = Blueprint(
@@ -1794,6 +1801,141 @@ def admin_reorder_aspects() -> Response:
     try:
         ids = [int(i) for i in order_ids]
         reorder_hosp_aspects(ids)
+        return jsonify({"success": True})
+    except Exception as exc:
+        return jsonify({"success": False, "message": str(exc)}), 400
+
+
+@hospitality_bp.route("/admin/review-extra-questions", methods=["GET"])
+@role_required("admin")
+def admin_review_extra_questions() -> Response:
+    questions = list_guestbook_extra_questions(active_only=None)
+    activity_logs = fetch_activity_logs(
+        limit=50,
+        target_types=["HOSPITALITY_REVIEW_EXTRA_QUESTION"],
+    )
+    return render_template(
+        "hospitality/admin/review_extra_questions.html",
+        questions=questions,
+        activity_logs=activity_logs,
+    )
+
+
+@hospitality_bp.route("/admin/review-extra-questions", methods=["POST"])
+@role_required("admin")
+def admin_create_review_extra_question() -> Response:
+    text = (request.form.get("question_text") or "").strip()
+    sort_order = request.form.get("sort_order", type=int) or 0
+    if not text:
+        flash("Pertanyaan wajib diisi.", "warning")
+        return redirect(url_for("hospitality.admin_review_extra_questions"))
+    try:
+        row = create_guestbook_extra_question(
+            question_text=text,
+            sort_order=sort_order,
+            active=True,
+            created_by=int(current_user().get("id")),
+        )
+        log_activity(
+            user_id=int(current_user().get("id")),
+            action="create",
+            target_type="HOSPITALITY_REVIEW_EXTRA_QUESTION",
+            target_id=row.get("id"),
+            target_name=text,
+            details={"description": f"Membuat pertanyaan tambahan review: {text}"},
+        )
+        flash("Pertanyaan tambahan berhasil dibuat.", "success")
+    except Exception as exc:
+        flash(str(exc), "danger")
+    return redirect(url_for("hospitality.admin_review_extra_questions"))
+
+
+@hospitality_bp.route("/admin/review-extra-questions/<int:question_id>", methods=["POST"])
+@role_required("admin")
+def admin_update_review_extra_question(question_id: int) -> Response:
+    existing = get_guestbook_extra_question(question_id)
+    if not existing:
+        flash("Pertanyaan tidak ditemukan.", "warning")
+        return redirect(url_for("hospitality.admin_review_extra_questions"))
+    text = (request.form.get("question_text") or existing.get("question_text") or "").strip()
+    sort_order = request.form.get("sort_order", type=int)
+    if sort_order is None:
+        sort_order = int(existing.get("sort_order") or 0)
+    active = request.form.get("active") == "on"
+    try:
+        update_guestbook_extra_question(
+            question_id=question_id,
+            question_text=text,
+            sort_order=sort_order,
+            active=active,
+        )
+        log_activity(
+            user_id=int(current_user().get("id")),
+            action="update",
+            target_type="HOSPITALITY_REVIEW_EXTRA_QUESTION",
+            target_id=question_id,
+            target_name=text,
+            details={"description": f"Memperbarui pertanyaan tambahan review: {text}", "active": active},
+        )
+        flash("Pertanyaan tambahan diperbarui.", "success")
+    except Exception as exc:
+        flash(str(exc), "danger")
+    return redirect(url_for("hospitality.admin_review_extra_questions"))
+
+
+@hospitality_bp.route("/admin/review-extra-questions/<int:question_id>/delete", methods=["POST"])
+@role_required("admin")
+def admin_delete_review_extra_question(question_id: int) -> Response:
+    existing = get_guestbook_extra_question(question_id)
+    if not existing:
+        flash("Pertanyaan tidak ditemukan.", "warning")
+        return redirect(url_for("hospitality.admin_review_extra_questions"))
+    try:
+        ok = delete_guestbook_extra_question(question_id)
+        if ok:
+            log_activity(
+                user_id=int(current_user().get("id")),
+                action="delete",
+                target_type="HOSPITALITY_REVIEW_EXTRA_QUESTION",
+                target_id=question_id,
+                target_name=existing.get("question_text"),
+                details={"description": f"Menghapus/nonaktifkan pertanyaan tambahan review: {existing.get('question_text')}"},
+            )
+            flash("Pertanyaan tambahan dihapus/nonaktif.", "success")
+        else:
+            flash("Pertanyaan tidak ditemukan.", "warning")
+    except Exception as exc:
+        flash(str(exc), "danger")
+    return redirect(url_for("hospitality.admin_review_extra_questions"))
+
+
+@hospitality_bp.route("/admin/review-extra-questions/<int:question_id>/toggle-active", methods=["POST"])
+@role_required("admin")
+def admin_toggle_review_extra_question_active(question_id: int) -> Response:
+    row = toggle_guestbook_extra_question_active(question_id)
+    if row:
+        log_activity(
+            user_id=int(current_user().get("id")),
+            action="toggle_active",
+            target_type="HOSPITALITY_REVIEW_EXTRA_QUESTION",
+            target_id=question_id,
+            target_name=row.get("question_text"),
+            details={"description": f"Mengubah status pertanyaan tambahan review: {row.get('question_text')}", "active": row.get("active")},
+        )
+        flash("Status pertanyaan diperbarui.", "success")
+    else:
+        flash("Pertanyaan tidak ditemukan.", "warning")
+    return redirect(url_for("hospitality.admin_review_extra_questions"))
+
+
+@hospitality_bp.route("/admin/review-extra-questions/reorder", methods=["POST"])
+@role_required("admin")
+def admin_reorder_review_extra_questions() -> Response:
+    data = request.get_json(silent=True) or {}
+    order_ids = data.get("question_ids") or []
+    try:
+        ids = [int(i) for i in order_ids]
+        reorder_guestbook_extra_questions(ids)
         return jsonify({"success": True})
     except Exception as exc:
         return jsonify({"success": False, "message": str(exc)}), 400

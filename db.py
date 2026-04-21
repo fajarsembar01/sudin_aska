@@ -881,6 +881,50 @@ def _ensure_guestbook_hospitality_schema() -> None:
             ON hospitality_guestbook_reviews (completed_at DESC);
             """
         )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS hospitality_guestbook_extra_questions (
+                id SERIAL PRIMARY KEY,
+                question_text TEXT NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_hosp_extra_questions_active_order
+            ON hospitality_guestbook_extra_questions (active, sort_order, id);
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS hospitality_guestbook_extra_answers (
+                id SERIAL PRIMARY KEY,
+                review_id INTEGER NOT NULL REFERENCES hospitality_guestbook_reviews(id) ON DELETE CASCADE,
+                question_id INTEGER NOT NULL REFERENCES hospitality_guestbook_extra_questions(id) ON DELETE CASCADE,
+                rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (review_id, question_id)
+            );
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_hosp_extra_answers_review
+            ON hospitality_guestbook_extra_answers (review_id);
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_hosp_extra_answers_question
+            ON hospitality_guestbook_extra_answers (question_id);
+            """
+        )
     conn.commit()
 
 
@@ -1722,7 +1766,50 @@ def _fetch_public_guestbook_review_detail(where_sql: str, params: tuple[Any, ...
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(query, params)
         row = cur.fetchone()
-    return dict(row) if row else None
+        if not row:
+            return None
+        detail = dict(row)
+        cur.execute(
+            """
+            SELECT
+                q.id,
+                q.question_text,
+                q.sort_order,
+                q.active,
+                a.rating
+            FROM hospitality_guestbook_extra_questions q
+            LEFT JOIN hospitality_guestbook_extra_answers a
+                ON a.question_id = q.id
+               AND a.review_id = %s
+            WHERE q.active = TRUE
+            ORDER BY q.sort_order ASC, q.id ASC
+            """,
+            (detail.get("review_id"),),
+        )
+        questions = [dict(item) for item in (cur.fetchall() or [])]
+    detail["extra_questions"] = questions
+    detail["extra_ratings"] = {
+        int(item["id"]): int(item["rating"])
+        for item in questions
+        if item.get("rating") is not None
+    }
+    return detail
+
+
+def list_public_guestbook_extra_questions(*, active_only: bool = True) -> List[Dict[str, Any]]:
+    _ensure_guestbook_hospitality_schema()
+    where_sql = "WHERE active = TRUE" if active_only else ""
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            f"""
+            SELECT id, question_text, sort_order, active
+            FROM hospitality_guestbook_extra_questions
+            {where_sql}
+            ORDER BY sort_order ASC, id ASC
+            """
+        )
+        rows = cur.fetchall() or []
+    return [dict(row) for row in rows]
 
 
 def get_public_guestbook_review_by_token(review_token: str) -> Optional[Dict[str, Any]]:
@@ -1743,6 +1830,7 @@ def submit_public_guestbook_review(
     review_token: str,
     rating: int,
     comment: Optional[str] = None,
+    extra_ratings: Optional[Dict[Any, Any]] = None,
 ) -> Dict[str, Any]:
     _ensure_guestbook_hospitality_schema()
     clean_token = (review_token or "").strip()
@@ -1755,9 +1843,32 @@ def submit_public_guestbook_review(
     if clean_rating < 1 or clean_rating > 5:
         raise ValueError("Rating harus antara 1 sampai 5")
     clean_comment = (comment or "").strip() or None
+    raw_extra = extra_ratings or {}
 
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT id
+                FROM hospitality_guestbook_extra_questions
+                WHERE active = TRUE
+                ORDER BY sort_order ASC, id ASC
+                """
+            )
+            active_questions = [int(item["id"]) for item in (cur.fetchall() or [])]
+            normalized_extra: Dict[int, int] = {}
+            for qid in active_questions:
+                value = raw_extra.get(qid)
+                if value is None:
+                    value = raw_extra.get(str(qid))
+                try:
+                    rating_value = int(value)
+                except (TypeError, ValueError):
+                    rating_value = 0
+                if rating_value < 1 or rating_value > 5:
+                    raise ValueError("Semua aspek tambahan wajib diisi bintang 1 sampai 5.")
+                normalized_extra[qid] = rating_value
+
             cur.execute(
                 """
                 SELECT id, transaction_id, school_id, review_token, status, rating, comment, completed_at, created_at, updated_at
@@ -1787,6 +1898,20 @@ def submit_public_guestbook_review(
                 (clean_rating, clean_comment, clean_token),
             )
             updated = cur.fetchone()
+            if updated and normalized_extra:
+                review_id = int(updated["id"])
+                for qid, extra_rating in normalized_extra.items():
+                    cur.execute(
+                        """
+                        INSERT INTO hospitality_guestbook_extra_answers (
+                            review_id, question_id, rating, created_at, updated_at
+                        )
+                        VALUES (%s, %s, %s, NOW(), NOW())
+                        ON CONFLICT (review_id, question_id)
+                        DO UPDATE SET rating = EXCLUDED.rating, updated_at = NOW()
+                        """,
+                        (review_id, qid, extra_rating),
+                    )
 
         conn.commit()
     except Exception:
