@@ -507,7 +507,16 @@ def _store_guestbook_qr_payload(school_id: int, payload: dict) -> None:
         cur.execute(
             """
             UPDATE portal_schools
-            SET metadata = jsonb_set(COALESCE(metadata, '{}'::jsonb), '{guestbook_qr}', %s::jsonb, true),
+            SET metadata = jsonb_set(
+                    CASE
+                        WHEN jsonb_typeof(COALESCE(metadata, '{}'::jsonb)) = 'object'
+                            THEN COALESCE(metadata, '{}'::jsonb)
+                        ELSE '{}'::jsonb
+                    END,
+                    '{guestbook_qr}',
+                    %s::jsonb,
+                    true
+                ),
                 updated_at = NOW()
             WHERE id = %s
             """,
