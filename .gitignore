@@ -1,5 +1,8 @@
 # Virtual environment
 venv/
+venv311/
+venv*/
+.venv/
 venv_py39/
 .env
 
