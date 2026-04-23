@@ -614,6 +614,8 @@ def create_app() -> Flask:
                     pass
                 elif not cleaned_guests:
                     error = "Minimal isi satu tamu."
+                elif len(cleaned_guests) > 1:
+                    error = "Maksimal satu tamu untuk sekali pengisian."
                 elif duplicate_found:
                     error = "Ada nomor telepon yang sama. Mohon periksa kembali."
                 else:
