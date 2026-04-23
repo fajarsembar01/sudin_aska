@@ -82,6 +82,7 @@ from .queries import (
     upsert_scores,
     log_activity,
     fetch_activity_logs,
+    fetch_all_assessed_schools,
     list_guestbook_extra_questions,
     create_guestbook_extra_question,
     get_guestbook_extra_question,
@@ -1284,6 +1285,47 @@ def admin_home() -> Response:
         recent_assessments=recent,
         linked_photos=linked_photos,
         activity_logs=activity_logs,
+    )
+
+
+@hospitality_bp.route("/admin/all-assessments")
+@role_required("admin")
+def admin_all_assessments() -> Response:
+    """Full paginated list of all hospitality assessments."""
+    search = (request.args.get("q") or "").strip() or None
+    status = (request.args.get("status") or "").strip().lower() or None
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 50, type=int)
+    per_page = max(10, min(per_page, 100))
+
+    assessments, total = fetch_all_assessed_schools(
+        search=search,
+        status=status,
+        page=page,
+        per_page=per_page,
+    )
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    start_item = ((page - 1) * per_page + 1) if total else 0
+    end_item = min(page * per_page, total) if total else 0
+
+    filter_params = {key: value for key, value in request.args.items() if value not in ("", None)}
+    filter_params.pop("page", None)
+    prev_url = url_for("hospitality.admin_all_assessments", **filter_params, page=page - 1) if page > 1 else None
+    next_url = url_for("hospitality.admin_all_assessments", **filter_params, page=page + 1) if page < total_pages else None
+
+    return render_template(
+        "hospitality/admin/all_assessments.html",
+        assessments=assessments,
+        total=total,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+        start_item=start_item,
+        end_item=end_item,
+        prev_url=prev_url,
+        next_url=next_url,
+        search_query=search or "",
+        status_filter=status or "",
     )
 
 

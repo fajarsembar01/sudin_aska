@@ -88,7 +88,7 @@
         </li>
         <li class="nav-item dropdown">
           <a
-            class="nav-link dropdown-toggle {% if request.endpoint in ['hospitality.admin_activity_logs'] %}active{% endif %}"
+            class="nav-link dropdown-toggle {% if request.endpoint in ['hospitality.admin_activity_logs', 'hospitality.admin_all_assessments'] %}active{% endif %}"
             href="#"
             role="button"
             data-bs-toggle="dropdown"
@@ -97,6 +97,11 @@
             <i class="bi bi-shield-lock nav-icon"></i>Admin
           </a>
           <ul class="dropdown-menu">
+            <li>
+              <a class="dropdown-item {% if request.endpoint == 'hospitality.admin_all_assessments' %}active{% endif %}" href="{{ url_for('hospitality.admin_all_assessments') }}">
+                <i class="bi bi-clipboard-data me-2"></i>Semua Penilaian
+              </a>
+            </li>
             <li>
               <a class="dropdown-item {% if request.endpoint == 'hospitality.admin_activity_logs' %}active{% endif %}" href="{{ url_for('hospitality.admin_activity_logs') }}">
                 <i class="bi bi-clock-history me-2"></i>Log Aktivitas

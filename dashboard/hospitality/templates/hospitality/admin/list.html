@@ -298,6 +298,7 @@ portal_content %} {# ===== HERO SECTION ===== #}
                         <th class="border-0">Staff Penilai</th>
                         <th class="border-0">Status</th>
                         <th class="border-0">Dibuat</th>
+                        <th class="border-0">Nilai</th>
                         <th class="border-0 text-end pe-3">Aksi</th>
                     </tr>
                 </thead>
@@ -342,6 +343,18 @@ portal_content %} {# ===== HERO SECTION ===== #}
                             </span>
                             {% endif %}
                         </td>
+                        <td class="small">
+                            {% if item.avg_score is not none and item.avg_score %}
+                            <span class="fw-semibold">{{ "%.1f"|format(item.avg_score) }} / {{ item.score_scale_max }}</span>
+                            <div class="text-muted" style="font-size: 0.75rem">
+                                {% if item.score_pct is not none %}
+                                <span class="{% if item.score_pct >= 80 %}text-success{% elif item.score_pct >= 60 %}text-warning{% else %}text-danger{% endif %}">{{ "%.1f"|format(item.score_pct) }}%</span>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
                         <td class="text-end pe-3">
                             <div class="d-inline-flex align-items-center gap-1">
                                 <a class="btn btn-sm btn-light rounded-circle"
@@ -364,7 +377,7 @@ portal_content %} {# ===== HERO SECTION ===== #}
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="text-center py-4 text-muted">
+                        <td colspan="6" class="text-center py-4 text-muted">
                             <i class="bi bi-inbox fs-4 d-block mb-2 opacity-50"></i>
                             Belum ada penilaian.
                         </td>
@@ -372,6 +385,11 @@ portal_content %} {# ===== HERO SECTION ===== #}
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+        <div class="text-center py-3 border-top">
+            <a href="{{ url_for('hospitality.admin_all_assessments') }}" class="text-decoration-none small">
+                Lihat Semua Penilaian <i class="bi bi-arrow-right ms-1"></i>
+            </a>
         </div>
         {% endcall %}
     </div>

@@ -967,14 +967,25 @@ def fetch_recent_assessments(*, limit: int = 20) -> List[Dict[str, Any]]:
                 a.status,
                 a.created_at,
                 a.verified_at,
+                a.score_scale_max,
                 u.full_name AS staff_name,
                 g.transaction_id AS guestbook_transaction_id,
-                t.visit_at AS guestbook_visit_at
+                t.visit_at AS guestbook_visit_at,
+                sc.avg_score,
+                CASE WHEN a.score_scale_max > 0 AND sc.avg_score IS NOT NULL
+                     THEN (sc.avg_score / a.score_scale_max * 100)::DECIMAL(5,2)
+                     ELSE NULL
+                END AS score_pct
             FROM hospitality_assessments a
             JOIN portal_schools s ON s.id = a.school_id
             LEFT JOIN dashboard_users u ON u.id = a.staff_id
             LEFT JOIN hospitality_assessment_guestbook_links g ON g.assessment_id = a.id
             LEFT JOIN daftar_tamu_transactions t ON t.id = g.transaction_id
+            LEFT JOIN LATERAL (
+                SELECT AVG(sc2.score)::DECIMAL(10,2) AS avg_score
+                FROM hospitality_assessment_scores sc2
+                WHERE sc2.assessment_id = a.id
+            ) sc ON TRUE
             WHERE COALESCE(a.is_deleted, FALSE) = FALSE
             ORDER BY a.created_at DESC
             LIMIT %s
@@ -982,6 +993,81 @@ def fetch_recent_assessments(*, limit: int = 20) -> List[Dict[str, Any]]:
             (limit,),
         )
         return [dict(row) for row in cur.fetchall()]
+
+
+
+def fetch_all_assessed_schools(
+    *,
+    search: str | None = None,
+    status: str | None = None,
+    page: int = 1,
+    per_page: int = 50,
+) -> tuple[List[Dict[str, Any]], int]:
+    """List all assessments with scores for the admin 'all schools' page."""
+    _ensure_soft_delete_schema()
+    clauses = ["COALESCE(a.is_deleted, FALSE) = FALSE"]
+    params: List[Any] = []
+    clean_status = (status or "").strip().lower()
+    if clean_status:
+        clauses.append("LOWER(a.status) = %s")
+        params.append(clean_status)
+    if search:
+        like = f"%{search.strip()}%"
+        clauses.append("(s.name ILIKE %s OR s.npsn ILIKE %s OR u.full_name ILIKE %s)")
+        params.extend([like, like, like])
+    where = " AND ".join(clauses)
+
+    with get_cursor() as cur:
+        cur.execute(
+            f"SELECT COUNT(*) AS cnt FROM hospitality_assessments a "
+            f"JOIN portal_schools s ON s.id = a.school_id "
+            f"LEFT JOIN dashboard_users u ON u.id = a.staff_id "
+            f"WHERE {where}",
+            params,
+        )
+        total = int((cur.fetchone() or {}).get("cnt", 0))
+
+        offset = (max(1, page) - 1) * per_page
+        data_params = list(params) + [per_page, offset]
+        cur.execute(
+            f"""
+            SELECT
+                a.id,
+                a.school_id,
+                s.name AS school_name,
+                s.npsn,
+                s.jenjang,
+                a.status,
+                a.created_at,
+                a.submitted_at,
+                a.verified_at,
+                a.score_scale_max,
+                u.full_name AS staff_name,
+                g.transaction_id AS guestbook_transaction_id,
+                t.visit_at AS guestbook_visit_at,
+                sc.avg_score,
+                CASE WHEN a.score_scale_max > 0 AND sc.avg_score IS NOT NULL
+                     THEN (sc.avg_score / a.score_scale_max * 100)::DECIMAL(5,2)
+                     ELSE NULL
+                END AS score_pct
+            FROM hospitality_assessments a
+            JOIN portal_schools s ON s.id = a.school_id
+            LEFT JOIN dashboard_users u ON u.id = a.staff_id
+            LEFT JOIN hospitality_assessment_guestbook_links g ON g.assessment_id = a.id
+            LEFT JOIN daftar_tamu_transactions t ON t.id = g.transaction_id
+            LEFT JOIN LATERAL (
+                SELECT AVG(sc2.score)::DECIMAL(10,2) AS avg_score
+                FROM hospitality_assessment_scores sc2
+                WHERE sc2.assessment_id = a.id
+            ) sc ON TRUE
+            WHERE {where}
+            ORDER BY a.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            data_params,
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+    return rows, total
 
 
 def fetch_linked_photos(*, limit: int = 12) -> List[Dict[str, Any]]:
