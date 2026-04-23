@@ -360,6 +360,26 @@
             padding: 10px;
             background: rgba(255, 255, 255, 0.45);
         }
+
+        .register-toggle-btn {
+            width: 100%;
+            min-height: 44px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        @media (min-width: 768px) {
+            .register-toggle-btn {
+                width: auto;
+                min-height: 40px;
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 
@@ -423,7 +443,10 @@
                         <div id="searchResult" class="border rounded-3 p-3 bg-light d-none"></div>
 
                         <div class="mt-2">
-                            <button type="button" class="btn btn-link p-0" id="showRegisterBtn">Belum pernah daftar?</button>
+                            <button type="button" class="btn btn-outline-primary register-toggle-btn" id="showRegisterBtn">
+                                <i class="bi bi-person-plus" aria-hidden="true"></i>
+                                <span>Nomor belum terdaftar? Daftar Tamu Baru</span>
+                            </button>
                         </div>
 
                         <div id="registerForm" class="register-card border rounded-3 p-3 bg-light mt-3 d-none">
@@ -740,13 +763,20 @@
                 }
             }
 
+            function updateRegisterToggleLabel(isFormOpen) {
+                if (!showRegisterBtn) return;
+                if (isFormOpen) {
+                    showRegisterBtn.innerHTML = '<i class="bi bi-chevron-up" aria-hidden="true"></i><span>Sembunyikan Form Daftar</span>';
+                } else {
+                    showRegisterBtn.innerHTML = '<i class="bi bi-person-plus" aria-hidden="true"></i><span>Nomor belum terdaftar? Daftar Tamu Baru</span>';
+                }
+            }
+
             function setRegisterFormVisible(shouldShow) {
                 if (!registerForm) return;
                 registerForm.classList.toggle('d-none', !shouldShow);
                 setRegisterFormActive(shouldShow);
-                if (showRegisterBtn) {
-                    showRegisterBtn.textContent = shouldShow ? 'Sembunyikan form pendaftaran' : 'Belum pernah daftar?';
-                }
+                updateRegisterToggleLabel(shouldShow);
                 if (shouldShow && regPhone && phoneInput) {
                     regPhone.value = normalizePhone(phoneInput.value || regPhone.value || '');
                 }
