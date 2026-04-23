@@ -251,6 +251,44 @@
             opacity: 0.65;
         }
 
+        .visitor-type-card {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px;
+            background: var(--bg-subtle);
+        }
+
+        .visitor-type-switch {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .visitor-type-btn {
+            min-height: 46px;
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            background: var(--input-bg);
+            color: var(--input-text);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .visitor-type-btn.is-active {
+            border-color: #0d6efd;
+            background: rgba(13, 110, 253, 0.12);
+            color: #0b5ed7;
+            box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.16);
+        }
+
+        html[data-theme="dark"] .visitor-type-btn.is-active {
+            color: #8ab4ff;
+        }
+
         .step-badge {
             width: 26px;
             height: 26px;
@@ -418,8 +456,25 @@
                 <div class="alert alert-warning">Sekolah tidak ditemukan atau belum aktif.</div>
                 {% else %}
                 <form method="post" id="guestbookForm">
-                    <input type="hidden" name="guest_type" value="umum">
+                    <input type="hidden" name="guest_type" value="umum" id="guestTypeInput">
                     <input type="hidden" name="guests_payload" id="guestPayloadInput">
+
+                    <div class="visitor-type-card mb-4">
+                        <label class="form-label fw-semibold mb-2">Pilih jenis pengunjung</label>
+                        <div class="visitor-type-switch" role="group" aria-label="Pilih jenis pengunjung">
+                            <button type="button" class="visitor-type-btn is-active" id="tabUmum" aria-pressed="true">
+                                <i class="bi bi-people"></i>
+                                <span>Umum</span>
+                            </button>
+                            <button type="button" class="visitor-type-btn" id="tabSudin" aria-pressed="false">
+                                <i class="bi bi-building"></i>
+                                <span>Sudin</span>
+                            </button>
+                        </div>
+                        <div class="note-text mt-2" id="guestTypeHint">
+                            Pengunjung umum dapat diisi dari form ini.
+                        </div>
+                    </div>
 
                     <div class="step-section mb-4" id="guestStepSection">
                         <div class="d-flex align-items-center gap-2 mb-2">
@@ -587,6 +642,23 @@
     {% endif %}
     <div class="text-center text-muted small mt-3">© 2026 Suku DInas Pendidikan Jakarta Utara 2</div>
 
+    <div class="modal fade" id="sudinModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Kunjungan Sudin</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Pengisian buku tamu untuk pengunjung Sudin dilakukan oleh pihak sekolah melalui dashboard sekolah.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Mengerti</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
@@ -594,6 +666,12 @@
         (function () {
             var guestForm = document.getElementById('guestbookForm');
             var themeToggle = document.getElementById('themeToggle');
+            var tabUmum = document.getElementById('tabUmum');
+            var tabSudin = document.getElementById('tabSudin');
+            var guestTypeInput = document.getElementById('guestTypeInput');
+            var guestTypeHint = document.getElementById('guestTypeHint');
+            var sudinModalEl = document.getElementById('sudinModal');
+            var sudinModal = sudinModalEl ? new bootstrap.Modal(sudinModalEl) : null;
             var phoneInput = document.getElementById('phoneSearchInput');
             var phoneSearchBtn = document.getElementById('phoneSearchBtn');
             var searchResult = document.getElementById('searchResult');
@@ -691,6 +769,21 @@
                 if (!digits) return '';
                 if (digits.startsWith('0')) return '62' + digits.slice(1);
                 return digits;
+            }
+
+            function setGuestType(type) {
+                if (!guestTypeInput || !tabUmum || !tabSudin) return;
+                var isUmum = type !== 'sudin';
+                guestTypeInput.value = isUmum ? 'umum' : 'sudin';
+                tabUmum.classList.toggle('is-active', isUmum);
+                tabSudin.classList.toggle('is-active', !isUmum);
+                tabUmum.setAttribute('aria-pressed', isUmum ? 'true' : 'false');
+                tabSudin.setAttribute('aria-pressed', !isUmum ? 'true' : 'false');
+                if (guestTypeHint) {
+                    guestTypeHint.textContent = isUmum
+                        ? 'Pengunjung umum dapat diisi dari form ini.'
+                        : 'Kunjungan Sudin diinput oleh pihak sekolah melalui dashboard.';
+                }
             }
 
             function buildStudentClass() {
@@ -1013,6 +1106,25 @@
                 setRegisterFormVisible(false);
             });
 
+            if (tabSudin) {
+                tabSudin.addEventListener('click', function () {
+                    setGuestType('sudin');
+                    if (sudinModal) sudinModal.show();
+                });
+            }
+
+            if (tabUmum) {
+                tabUmum.addEventListener('click', function () {
+                    setGuestType('umum');
+                });
+            }
+
+            if (sudinModalEl && tabUmum) {
+                sudinModalEl.addEventListener('hidden.bs.modal', function () {
+                    setGuestType('umum');
+                });
+            }
+
             if (regParentYes) {
                 regParentYes.addEventListener('change', function () {
                     if (regParentYes.checked) {
@@ -1049,6 +1161,11 @@
 
             guestForm.addEventListener('submit', function (e) {
                 hasSubmitted = true;
+                if (guestTypeInput && guestTypeInput.value !== 'umum') {
+                    e.preventDefault();
+                    if (sudinModal) sudinModal.show();
+                    return;
+                }
                 var hasGuests = selectedGuests.size > 0;
                 var hasPurpose = purposeInput ? purposeInput.value.trim().length > 0 : false;
                 if (!hasGuests || !hasPurpose) {
@@ -1069,6 +1186,7 @@
             });
 
             setRegisterFormVisible(!registerForm.classList.contains('d-none'));
+            setGuestType('umum');
             syncSubmitState();
         })();
     </script>
