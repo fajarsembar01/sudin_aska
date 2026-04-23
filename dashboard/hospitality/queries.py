@@ -968,11 +968,13 @@ def fetch_recent_assessments(*, limit: int = 20) -> List[Dict[str, Any]]:
                 a.created_at,
                 a.verified_at,
                 u.full_name AS staff_name,
-                g.transaction_id AS guestbook_transaction_id
+                g.transaction_id AS guestbook_transaction_id,
+                t.visit_at AS guestbook_visit_at
             FROM hospitality_assessments a
             JOIN portal_schools s ON s.id = a.school_id
             LEFT JOIN dashboard_users u ON u.id = a.staff_id
             LEFT JOIN hospitality_assessment_guestbook_links g ON g.assessment_id = a.id
+            LEFT JOIN daftar_tamu_transactions t ON t.id = g.transaction_id
             WHERE COALESCE(a.is_deleted, FALSE) = FALSE
             ORDER BY a.created_at DESC
             LIMIT %s

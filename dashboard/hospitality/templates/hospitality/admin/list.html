@@ -332,7 +332,15 @@ portal_content %} {# ===== HERO SECTION ===== #}
                             {% endif %}
                         </td>
                         <td class="text-muted small">
-                            {{ item.created_at|jakarta }}
+                            {% if item.guestbook_visit_at %}
+                            <span title="Tanggal kunjungan buku tamu">
+                                <i class="bi bi-book me-1 text-success"></i>{{ item.guestbook_visit_at|jakarta }}
+                            </span>
+                            {% else %}
+                            <span title="Tanggal pembuatan penilaian">
+                                {{ item.created_at|jakarta }}
+                            </span>
+                            {% endif %}
                         </td>
                         <td class="text-end pe-3">
                             <div class="d-inline-flex align-items-center gap-1">
