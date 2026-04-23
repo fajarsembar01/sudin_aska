@@ -619,42 +619,45 @@ def create_app() -> Flask:
                 else:
                     guests = cleaned_guests
                     purpose = (request.form.get("purpose") or "").strip()
-                    notes = (request.form.get("notes") or "").strip()
-                    metadata = {
-                        "user_agent": request.headers.get("User-Agent"),
-                        "ip": request.headers.get("X-Forwarded-For", request.remote_addr),
-                        "source": "web_aska",
-                    }
-                    try:
-                        transaction_result = create_public_guestbook_transaction(
-                            school_id=school["id"],
-                            purpose=purpose or None,
-                            notes=notes or None,
-                            guests=guests,
-                            metadata=metadata,
-                        )
-                    except Exception as exc:
-                        error = f"Gagal mengirim buku tamu: {exc}"
+                    if not purpose:
+                        error = "Tujuan kunjungan wajib diisi."
                     else:
-                        guest_names = [g.get("full_name") for g in guests if g.get("full_name")]
-                        transaction_id = transaction_result.get("transaction_id")
-                        review_token = transaction_result.get("review_token")
-                        session.pop("guest_chat_tx_id", None)
-                        session.pop("guest_chat_remaining", None)
-                        session.pop("guest_chat_npsn", None)
-                        session.pop("guest_chat_summary", None)
-                        session.pop("guest_chat_name", None)
-                        session.pop("guest_chat_user_id", None)
-                        session["guest_review_tx_id"] = transaction_id
-                        session["guest_review_token"] = review_token
-                        session["guest_review_npsn"] = school.get("npsn")
-                        session["guest_review_school_name"] = school.get("name")
-                        session["guest_review_summary"] = {
-                            "names": guest_names,
-                            "count": len(guest_names),
+                        notes = (request.form.get("notes") or "").strip()
+                        metadata = {
+                            "user_agent": request.headers.get("User-Agent"),
+                            "ip": request.headers.get("X-Forwarded-For", request.remote_addr),
+                            "source": "web_aska",
                         }
-                        session.modified = True
-                        return redirect(url_for("buku_tamu_review", npsn=school.get("npsn"), review_token=review_token))
+                        try:
+                            transaction_result = create_public_guestbook_transaction(
+                                school_id=school["id"],
+                                purpose=purpose or None,
+                                notes=notes or None,
+                                guests=guests,
+                                metadata=metadata,
+                            )
+                        except Exception as exc:
+                            error = f"Gagal mengirim buku tamu: {exc}"
+                        else:
+                            guest_names = [g.get("full_name") for g in guests if g.get("full_name")]
+                            transaction_id = transaction_result.get("transaction_id")
+                            review_token = transaction_result.get("review_token")
+                            session.pop("guest_chat_tx_id", None)
+                            session.pop("guest_chat_remaining", None)
+                            session.pop("guest_chat_npsn", None)
+                            session.pop("guest_chat_summary", None)
+                            session.pop("guest_chat_name", None)
+                            session.pop("guest_chat_user_id", None)
+                            session["guest_review_tx_id"] = transaction_id
+                            session["guest_review_token"] = review_token
+                            session["guest_review_npsn"] = school.get("npsn")
+                            session["guest_review_school_name"] = school.get("name")
+                            session["guest_review_summary"] = {
+                                "names": guest_names,
+                                "count": len(guest_names),
+                            }
+                            session.modified = True
+                            return redirect(url_for("buku_tamu_review", npsn=school.get("npsn"), review_token=review_token))
 
         return render_template(
             "buku_tamu.html",
