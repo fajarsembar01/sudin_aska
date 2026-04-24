@@ -4,10 +4,19 @@ from __future__ import annotations
 
 import json
 import os
-import fcntl
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any, Optional
+
+try:
+    import fcntl  # type: ignore[attr-defined]
+except ImportError:
+    fcntl = None  # type: ignore[assignment]
+
+try:
+    import msvcrt  # type: ignore[attr-defined]
+except ImportError:
+    msvcrt = None  # type: ignore[assignment]
 
 BASE_DIR = Path(__file__).resolve().parent
 RUNTIME_DIR = BASE_DIR / "runtime"
@@ -15,6 +24,24 @@ RAG_LOG_FILE = RUNTIME_DIR / "rag_debug.jsonl"
 MAX_LINES = 10_000
 
 _WIB = timezone(timedelta(hours=7))
+
+
+def _lock_file(file_obj: Any) -> None:
+    if fcntl is not None:
+        fcntl.flock(file_obj, fcntl.LOCK_EX)
+        return
+    if msvcrt is not None:
+        file_obj.seek(0, os.SEEK_END)
+        msvcrt.locking(file_obj.fileno(), msvcrt.LK_LOCK, 1)
+
+
+def _unlock_file(file_obj: Any) -> None:
+    if fcntl is not None:
+        fcntl.flock(file_obj, fcntl.LOCK_UN)
+        return
+    if msvcrt is not None:
+        file_obj.seek(0, os.SEEK_END)
+        msvcrt.locking(file_obj.fileno(), msvcrt.LK_UNLCK, 1)
 
 
 def save_rag_log(
@@ -42,9 +69,9 @@ def save_rag_log(
     }
     try:
         with open(RAG_LOG_FILE, "a", encoding="utf-8") as f:
-            fcntl.flock(f, fcntl.LOCK_EX)
+            _lock_file(f)
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
-            fcntl.flock(f, fcntl.LOCK_UN)
+            _unlock_file(f)
     except Exception as exc:
         print(f"[RAG_LOGGER] Failed to write: {exc}")
 

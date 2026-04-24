@@ -1532,6 +1532,7 @@ def find_general_guest_by_phone(phone: str) -> Optional[Dict[str, Any]]:
 def create_public_guestbook_transaction(
     *,
     school_id: int,
+    visit_at: Optional[datetime] = None,
     purpose: Optional[str],
     notes: Optional[str],
     guests: List[Dict[str, Any]],
@@ -1560,11 +1561,12 @@ def create_public_guestbook_transaction(
                     reviewer_notes,
                     metadata
                 )
-                VALUES (%s, NOW(), %s, %s, 'pending', NULL, NULL, NULL, %s)
+                VALUES (%s, %s, %s, %s, 'pending', NULL, NULL, NULL, %s)
                 RETURNING id
                 """,
                 (
                     school_id,
+                    (visit_at or datetime.now(timezone.utc)),
                     (purpose or None),
                     (notes or None),
                     Json(metadata) if metadata else None,
