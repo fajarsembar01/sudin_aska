@@ -183,6 +183,12 @@ def _ensure_soft_delete_schema() -> None:
         )
         cur.execute(
             """
+            ALTER TABLE hospitality_guestbook_reviews
+            ADD COLUMN IF NOT EXISTS tanggal_edit TIMESTAMPTZ
+            """
+        )
+        cur.execute(
+            """
             DROP INDEX IF EXISTS uq_hosp_assessment_daily
             """
         )
@@ -1134,10 +1140,10 @@ def _build_guestbook_review_filters(
             params.append(clean_rating)
 
     if start_date:
-        clauses.append("COALESCE(r.completed_at, r.created_at)::date >= %s::date")
+        clauses.append("COALESCE(r.tanggal_edit, r.completed_at, r.created_at)::date >= %s::date")
         params.append(start_date)
     if end_date:
-        clauses.append("COALESCE(r.completed_at, r.created_at)::date <= %s::date")
+        clauses.append("COALESCE(r.tanggal_edit, r.completed_at, r.created_at)::date <= %s::date")
         params.append(end_date)
 
     clean_search = (search or "").strip()
@@ -1191,10 +1197,10 @@ def fetch_guestbook_review_stats(
                 COUNT(*) FILTER (WHERE gl.assessment_id IS NULL) AS unlinked_reviews,
                 COUNT(*) FILTER (
                     WHERE r.status = 'completed'
-                      AND (r.completed_at AT TIME ZONE 'Asia/Jakarta')::date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
+                      AND (COALESCE(r.tanggal_edit, r.completed_at) AT TIME ZONE 'Asia/Jakarta')::date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
                 ) AS completed_today,
                 COUNT(*) FILTER (
-                    WHERE (r.created_at AT TIME ZONE 'Asia/Jakarta')::date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
+                    WHERE (COALESCE(r.tanggal_edit, r.created_at) AT TIME ZONE 'Asia/Jakarta')::date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
                 ) AS created_today,
                 COALESCE(AVG(r.rating) FILTER (WHERE r.status = 'completed'), 0) AS avg_rating,
                 COALESCE(AVG(r.rating) FILTER (WHERE r.status = 'completed' AND r.rating IS NOT NULL), 0) AS avg_rating_completed
@@ -1247,7 +1253,7 @@ def fetch_guestbook_review_trend(
         cur.execute(
             f"""
             SELECT
-                (COALESCE(r.completed_at, r.created_at) AT TIME ZONE 'Asia/Jakarta')::date AS day,
+                (COALESCE(r.tanggal_edit, r.completed_at, r.created_at) AT TIME ZONE 'Asia/Jakarta')::date AS day,
                 COUNT(*) AS total_reviews,
                 COUNT(*) FILTER (WHERE r.status = 'completed') AS completed_reviews,
                 COUNT(*) FILTER (WHERE r.status = 'pending') AS pending_reviews,
@@ -1455,7 +1461,7 @@ def list_guestbook_reviews(
                 FROM daftar_tamu_general_transaction_guests g
                 WHERE g.transaction_id = t.id
             ) AS guest_count,
-            COALESCE(r.completed_at, r.created_at) AS activity_at
+            COALESCE(r.tanggal_edit, r.completed_at, r.created_at) AS activity_at
         FROM hospitality_guestbook_reviews r
         JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
         JOIN portal_schools s ON s.id = r.school_id
@@ -1463,7 +1469,7 @@ def list_guestbook_reviews(
         LEFT JOIN hospitality_assessments ha ON ha.id = gl.assessment_id AND COALESCE(ha.is_deleted, FALSE) = FALSE
         LEFT JOIN dashboard_users hu ON hu.id = ha.staff_id
         WHERE {where_sql}
-        ORDER BY COALESCE(r.completed_at, r.created_at) DESC NULLS LAST, r.id DESC
+        ORDER BY COALESCE(r.tanggal_edit, r.completed_at, r.created_at) DESC NULLS LAST, r.id DESC
         LIMIT %s OFFSET %s
     """
 
@@ -1554,7 +1560,7 @@ def fetch_guestbook_reviews_export(
                 FROM daftar_tamu_general_transaction_guests g
                 WHERE g.transaction_id = t.id
             ) AS guest_count,
-            COALESCE(r.completed_at, r.created_at) AS activity_at
+            COALESCE(r.tanggal_edit, r.completed_at, r.created_at) AS activity_at
         FROM hospitality_guestbook_reviews r
         JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
         JOIN portal_schools s ON s.id = r.school_id
@@ -1562,7 +1568,7 @@ def fetch_guestbook_reviews_export(
         LEFT JOIN hospitality_assessments ha ON ha.id = gl.assessment_id AND COALESCE(ha.is_deleted, FALSE) = FALSE
         LEFT JOIN dashboard_users hu ON hu.id = ha.staff_id
         WHERE {where_sql}
-        ORDER BY COALESCE(r.completed_at, r.created_at) DESC NULLS LAST, r.id DESC
+        ORDER BY COALESCE(r.tanggal_edit, r.completed_at, r.created_at) DESC NULLS LAST, r.id DESC
     """
     with get_cursor() as cur:
         cur.execute(query, params)
@@ -1636,7 +1642,7 @@ def get_guestbook_review_detail(review_id: int) -> Dict[str, Any] | None:
                     FROM daftar_tamu_general_transaction_guests g
                     WHERE g.transaction_id = t.id
                 ) AS guest_count,
-                COALESCE(r.completed_at, r.created_at) AS activity_at
+                COALESCE(r.tanggal_edit, r.completed_at, r.created_at) AS activity_at
             FROM hospitality_guestbook_reviews r
             JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
             JOIN portal_schools s ON s.id = r.school_id
