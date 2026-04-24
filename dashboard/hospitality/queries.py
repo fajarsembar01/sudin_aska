@@ -987,7 +987,7 @@ def fetch_recent_assessments(*, limit: int = 20) -> List[Dict[str, Any]]:
                 WHERE sc2.assessment_id = a.id
             ) sc ON TRUE
             WHERE COALESCE(a.is_deleted, FALSE) = FALSE
-            ORDER BY a.created_at DESC
+            ORDER BY (g.transaction_id IS NOT NULL) DESC, a.created_at DESC
             LIMIT %s
             """,
             (limit,),
