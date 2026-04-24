@@ -854,23 +854,33 @@ def fetch_stats() -> Dict[str, Any]:
     }
 
 
-def fetch_daily_trend(*, days: int = 30) -> List[Dict[str, Any]]:
+def fetch_daily_trend(*, days: int | None = 30) -> List[Dict[str, Any]]:
     """Daily count of hospitality assessments (submitted/verified)."""
     _ensure_soft_delete_schema()
+    safe_days = None if days is None else max(1, int(days or 30))
     with get_cursor() as cur:
-        cur.execute(
+        date_filter_sql = ""
+        params: List[Any] = []
+        if safe_days is not None:
+            date_filter_sql = """
+              AND COALESCE(t.visit_at, a.created_at) >= (NOW() AT TIME ZONE 'Asia/Jakarta') - (%s * INTERVAL '1 day')
             """
+            params.append(safe_days)
+        cur.execute(
+            f"""
             SELECT
-                (created_at AT TIME ZONE 'Asia/Jakarta')::date AS day,
+                (COALESCE(t.visit_at, a.created_at) AT TIME ZONE 'Asia/Jakarta')::date AS day,
                 COUNT(*) AS total,
-                COUNT(*) FILTER (WHERE status = 'verified') AS verified
-            FROM hospitality_assessments
-            WHERE created_at >= (NOW() AT TIME ZONE 'Asia/Jakarta') - INTERVAL '%s days'
-              AND COALESCE(is_deleted, FALSE) = FALSE
+                COUNT(*) FILTER (WHERE a.status = 'verified') AS verified
+            FROM hospitality_assessments a
+            LEFT JOIN hospitality_assessment_guestbook_links g ON g.assessment_id = a.id
+            LEFT JOIN daftar_tamu_transactions t ON t.id = g.transaction_id
+            WHERE COALESCE(a.is_deleted, FALSE) = FALSE
+            {date_filter_sql}
             GROUP BY day
             ORDER BY day ASC
             """,
-            (days,),
+            params,
         )
         return [dict(row) for row in cur.fetchall()]
 
@@ -987,7 +997,7 @@ def fetch_recent_assessments(*, limit: int = 20) -> List[Dict[str, Any]]:
                 WHERE sc2.assessment_id = a.id
             ) sc ON TRUE
             WHERE COALESCE(a.is_deleted, FALSE) = FALSE
-            ORDER BY (g.transaction_id IS NOT NULL) DESC, a.created_at DESC
+            ORDER BY COALESCE(t.visit_at, a.created_at) DESC, a.id DESC
             LIMIT %s
             """,
             (limit,),
@@ -1061,7 +1071,7 @@ def fetch_all_assessed_schools(
                 WHERE sc2.assessment_id = a.id
             ) sc ON TRUE
             WHERE {where}
-            ORDER BY a.created_at DESC
+            ORDER BY COALESCE(t.visit_at, a.created_at) DESC, a.id DESC
             LIMIT %s OFFSET %s
             """,
             data_params,
