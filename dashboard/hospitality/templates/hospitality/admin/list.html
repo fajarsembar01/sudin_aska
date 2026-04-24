@@ -140,13 +140,22 @@ portal_content %} {# ===== HERO SECTION ===== #}
                         <i class="bi bi-graph-up-arrow"></i>
                     </span>
                     <div>
-                        <h2 class="h6 fw-bold mb-0">Tren Penilaian 30 Hari</h2>
+                        <h2 class="h6 fw-bold mb-0">Tren Penilaian</h2>
                         <p class="text-muted mb-0 small">
                             Total penilaian dibanding yang terverifikasi
                         </p>
                     </div>
                 </div>
-                <span class="badge rounded-pill text-bg-primary" style="font-size: 0.7rem">30 hari terakhir</span>
+                <div class="btn-group btn-group-sm" role="group" aria-label="Filter rentang tren">
+                    <a href="{{ url_for('hospitality.admin_home', status=status_filter, trend_range='30d') }}"
+                        class="btn {% if trend_range == '30d' %}btn-primary{% else %}btn-outline-primary{% endif %}">30 Hari</a>
+                    <a href="{{ url_for('hospitality.admin_home', status=status_filter, trend_range='60d') }}"
+                        class="btn {% if trend_range == '60d' %}btn-primary{% else %}btn-outline-primary{% endif %}">60 Hari</a>
+                    <a href="{{ url_for('hospitality.admin_home', status=status_filter, trend_range='1y') }}"
+                        class="btn {% if trend_range == '1y' %}btn-primary{% else %}btn-outline-primary{% endif %}">1 Tahun</a>
+                    <a href="{{ url_for('hospitality.admin_home', status=status_filter, trend_range='all') }}"
+                        class="btn {% if trend_range == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">Semua</a>
+                </div>
             </div>
             <div class="card-body pt-3">
                 <div style="height: 280px; position: relative">
@@ -297,7 +306,7 @@ portal_content %} {# ===== HERO SECTION ===== #}
                         <th class="border-0 ps-3">Sekolah</th>
                         <th class="border-0">Staff Penilai</th>
                         <th class="border-0">Status</th>
-                        <th class="border-0">Dibuat</th>
+                        <th class="border-0">Tanggal</th>
                         <th class="border-0">Nilai</th>
                         <th class="border-0 text-end pe-3">Aksi</th>
                     </tr>
