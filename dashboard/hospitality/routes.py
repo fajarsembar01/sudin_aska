@@ -1258,6 +1258,15 @@ def admin_delete_guestbook_review(review_id: int) -> Response:
 @role_required("admin")
 def admin_home() -> Response:
     status = (request.args.get("status") or "").strip().lower() or None
+    trend_range = (request.args.get("trend_range") or "30d").strip().lower()
+    trend_days_map = {
+        "30d": 30,
+        "60d": 60,
+        "1y": 365,
+        "all": None,
+    }
+    if trend_range not in trend_days_map:
+        trend_range = "30d"
     reopen_requests = list_reopen_requests(status=status, limit=200)
     from .queries import (
         fetch_stats,
@@ -1268,7 +1277,7 @@ def admin_home() -> Response:
         fetch_linked_photos,
     )
     stats = fetch_stats()
-    trend = fetch_daily_trend(days=30)
+    trend = fetch_daily_trend(days=trend_days_map[trend_range])
     top_schools = fetch_top_schools(limit=10)
     bottom_schools = fetch_bottom_schools(limit=10)
     recent = fetch_recent_assessments(limit=20)
@@ -1280,6 +1289,7 @@ def admin_home() -> Response:
         status_filter=status or "",
         stats=stats,
         trend=trend,
+        trend_range=trend_range,
         top_schools=top_schools,
         bottom_schools=bottom_schools,
         recent_assessments=recent,
