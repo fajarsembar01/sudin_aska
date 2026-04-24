@@ -46,6 +46,17 @@
         </option>
         {% endfor %}
       </select>
+      <select
+        name="order"
+        class="form-select form-select-sm"
+        onchange="this.form.submit()"
+        style="min-width: 180px"
+      >
+        <option value="default" {% if order == 'default' %}selected{% endif %}>A - Z</option>
+        <option value="lowest" {% if order == 'lowest' %}selected{% endif %}>Penilaian Terendah</option>
+        <option value="newest" {% if order == 'newest' %}selected{% endif %}>Terbaru</option>
+        <option value="random" {% if order == 'random' %}selected{% endif %}>Acak</option>
+      </select>
     </form>
   </div>
 </section>

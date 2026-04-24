@@ -4523,6 +4523,7 @@ def admin_gallery() -> Response:
 
     period_id = request.args.get("period_id", type=int)
     team_id = request.args.get("team_id", type=int)
+    order = request.args.get("order", "default")
 
     staff_ids: list[int] | None = None
     selected_team = None
@@ -4552,6 +4553,27 @@ def admin_gallery() -> Response:
         album["photos"].append(p)
 
     total_photos = sum(len(a.get("photos") or []) for a in albums)
+
+    import random
+    if order == "lowest":
+        for album in albums:
+            total_score = sum(float(p.get("room_score") or 0) for p in album["photos"])
+            count = len(album["photos"])
+            album["_sort_score"] = (total_score / count) if count > 0 else 0
+        albums.sort(key=lambda a: a["_sort_score"])
+    elif order == "newest":
+        for album in albums:
+            max_dt = None
+            for p in album["photos"]:
+                dt = p.get("captured_at")
+                if dt:
+                    if not max_dt or dt > max_dt:
+                        max_dt = dt
+            album["_sort_date"] = max_dt
+        albums.sort(key=lambda a: a["_sort_date"] if a["_sort_date"] else datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+    elif order == "random":
+        random.shuffle(albums)
+
     periods = list_periods()
     if latest_at:
         latest_date = latest_at.date() if hasattr(latest_at, "date") else latest_at
@@ -4574,6 +4596,7 @@ def admin_gallery() -> Response:
         selected_team_id=team_id,
         selected_team=selected_team,
         monev_teams=monev_teams,
+        order=order,
     )
 
 
@@ -4583,6 +4606,7 @@ def coordinator_gallery() -> Response:
     """Coordinator gallery view grouped by school."""
     user = current_user()
     period_id = request.args.get("period_id", type=int)
+    order = request.args.get("order", "default")
     my_team, _, staff_ids = _get_coordinator_team_context(user.get("id"))
 
     if not my_team or not staff_ids:
@@ -4597,6 +4621,7 @@ def coordinator_gallery() -> Response:
             current_period_id=period_id,
             selected_team_id=None,
             selected_team=my_team,
+            order=order,
         )
 
     photos = fetch_gallery_photos(
@@ -4628,6 +4653,27 @@ def coordinator_gallery() -> Response:
         album["photos"].append(p)
 
     total_photos = sum(len(a.get("photos") or []) for a in albums)
+
+    import random
+    if order == "lowest":
+        for album in albums:
+            total_score = sum(float(p.get("room_score") or 0) for p in album["photos"])
+            count = len(album["photos"])
+            album["_sort_score"] = (total_score / count) if count > 0 else 0
+        albums.sort(key=lambda a: a["_sort_score"])
+    elif order == "newest":
+        for album in albums:
+            max_dt = None
+            for p in album["photos"]:
+                dt = p.get("captured_at")
+                if dt:
+                    if not max_dt or dt > max_dt:
+                        max_dt = dt
+            album["_sort_date"] = max_dt
+        albums.sort(key=lambda a: a["_sort_date"] if a["_sort_date"] else datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+    elif order == "random":
+        random.shuffle(albums)
+
     periods = list_periods()
     if latest_at:
         latest_date = latest_at.date() if hasattr(latest_at, "date") else latest_at
@@ -4648,6 +4694,7 @@ def coordinator_gallery() -> Response:
         current_period_id=period_id,
         selected_team_id=my_team.get("id"),
         selected_team=my_team,
+        order=order,
     )
 
 
