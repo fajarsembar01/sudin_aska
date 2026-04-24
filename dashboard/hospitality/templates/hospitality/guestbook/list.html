@@ -378,10 +378,14 @@
       <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
           <div>
-            <h2 class="h6 fw-bold mb-1">Tren Review 30 Hari</h2>
+            <h2 class="h6 fw-bold mb-1">Tren Review</h2>
             <p class="small text-muted mb-0">Pergerakan review yang selesai dibanding total review harian.</p>
           </div>
-          <span class="badge text-bg-primary-subtle text-primary border">30 hari terakhir</span>
+          <select id="trendPeriodSelect" class="form-select form-select-sm" style="width: auto; min-width: 160px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; padding: 0.4rem 2rem 0.4rem 0.85rem; border-color: rgba(13,110,253,0.3); color: #0d6efd; background-color: rgba(13,110,253,0.06); cursor: pointer;">
+            <option value="30" selected>1 bulan terakhir</option>
+            <option value="90">3 bulan terakhir</option>
+            <option value="365">1 tahun terakhir</option>
+          </select>
         </div>
       </div>
       <div class="card-body p-4">
@@ -626,42 +630,85 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   (function () {
-    const trend = {{ trend | tojson }};
+    const trendData = {
+      30: {{ trend | tojson }},
+      90: {{ trend_90 | tojson }},
+      365: {{ trend_365 | tojson }}
+    };
     const ratingDistribution = {{ rating_distribution | tojson }};
 
+    let trendChart = null;
     const trendCanvas = document.getElementById('reviewTrendChart');
-    if (trendCanvas && trend.length) {
+    const periodSelect = document.getElementById('trendPeriodSelect');
+
+    function renderTrendChart(days) {
+      const trend = trendData[days] || trendData[30];
+      if (!trendCanvas || !trend.length) return;
+
       const labels = trend.map(function (item) {
         const d = new Date(item.day);
-        return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        if (days <= 30) {
+          return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        } else if (days <= 90) {
+          return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        } else {
+          return d.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' });
+        }
       });
       const totalData = trend.map(function (item) { return Number(item.total_reviews || 0); });
       const completedData = trend.map(function (item) { return Number(item.completed_reviews || 0); });
 
-      new Chart(trendCanvas, {
+      // For 365-day view, aggregate by week to avoid overcrowded chart
+      let finalLabels = labels;
+      let finalTotal = totalData;
+      let finalCompleted = completedData;
+
+      if (days >= 365 && trend.length > 52) {
+        const weekLabels = [];
+        const weekTotal = [];
+        const weekCompleted = [];
+        const chunkSize = 7;
+        for (let i = 0; i < trend.length; i += chunkSize) {
+          const slice = trend.slice(i, i + chunkSize);
+          const lastItem = slice[slice.length - 1];
+          const d = new Date(lastItem.day);
+          weekLabels.push(d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
+          weekTotal.push(slice.reduce(function(s, x) { return s + Number(x.total_reviews || 0); }, 0));
+          weekCompleted.push(slice.reduce(function(s, x) { return s + Number(x.completed_reviews || 0); }, 0));
+        }
+        finalLabels = weekLabels;
+        finalTotal = weekTotal;
+        finalCompleted = weekCompleted;
+      }
+
+      if (trendChart) {
+        trendChart.destroy();
+      }
+
+      trendChart = new Chart(trendCanvas, {
         type: 'line',
         data: {
-          labels: labels,
+          labels: finalLabels,
           datasets: [
             {
               label: 'Total review',
-              data: totalData,
+              data: finalTotal,
               borderColor: '#0d6efd',
               backgroundColor: 'rgba(13, 110, 253, 0.12)',
               borderWidth: 2,
               tension: 0.35,
               fill: true,
-              pointRadius: 3,
+              pointRadius: days >= 365 ? 2 : 3,
             },
             {
               label: 'Completed',
-              data: completedData,
+              data: finalCompleted,
               borderColor: '#198754',
               backgroundColor: 'rgba(25, 135, 84, 0.12)',
               borderWidth: 2,
               tension: 0.35,
               fill: true,
-              pointRadius: 3,
+              pointRadius: days >= 365 ? 2 : 3,
             }
           ]
         },
@@ -682,10 +729,25 @@
               grid: { borderDash: [4, 4], color: 'rgba(0,0,0,0.06)' }
             },
             x: {
-              grid: { display: false }
+              grid: { display: false },
+              ticks: {
+                maxTicksLimit: days >= 365 ? 12 : (days >= 90 ? 15 : 30),
+                maxRotation: 45
+              }
             }
           }
         }
+      });
+    }
+
+    // Initial render
+    renderTrendChart(30);
+
+    // Listen for dropdown change
+    if (periodSelect) {
+      periodSelect.addEventListener('change', function () {
+        var days = parseInt(this.value, 10);
+        renderTrendChart(days);
       });
     }
 

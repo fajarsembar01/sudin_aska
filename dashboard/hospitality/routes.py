@@ -868,6 +868,8 @@ def _render_preview_guestbook_dashboard(*, mode: str) -> Response:
         end_date=end_date,
     )
     trend = fetch_guestbook_review_trend(days=30, school_id=scope_school_id)
+    trend_90 = fetch_guestbook_review_trend(days=90, school_id=scope_school_id)
+    trend_365 = fetch_guestbook_review_trend(days=365, school_id=scope_school_id)
     rating_distribution = fetch_guestbook_review_rating_distribution(school_id=scope_school_id)
     top_schools = []
     bottom_schools = []
@@ -901,6 +903,8 @@ def _render_preview_guestbook_dashboard(*, mode: str) -> Response:
         reviews=reviews,
         stats=stats,
         trend=trend,
+        trend_90=trend_90,
+        trend_365=trend_365,
         rating_distribution=rating_distribution,
         top_schools=top_schools,
         bottom_schools=bottom_schools,
@@ -1020,6 +1024,8 @@ def guestbook_review_dashboard() -> Response:
             "linked_rate": 0.0,
         }
         trend = []
+        trend_90 = []
+        trend_365 = []
         rating_distribution = []
     else:
         reviews, total_rows = list_guestbook_reviews(
@@ -1039,6 +1045,8 @@ def guestbook_review_dashboard() -> Response:
             end_date=end_date,
         )
         trend = fetch_guestbook_review_trend(days=30, school_id=scope_school_id)
+        trend_90 = fetch_guestbook_review_trend(days=90, school_id=scope_school_id)
+        trend_365 = fetch_guestbook_review_trend(days=365, school_id=scope_school_id)
         rating_distribution = fetch_guestbook_review_rating_distribution(school_id=scope_school_id)
     top_schools = []
     bottom_schools = []
@@ -1067,6 +1075,8 @@ def guestbook_review_dashboard() -> Response:
         reviews=reviews,
         stats=stats,
         trend=trend,
+        trend_90=trend_90,
+        trend_365=trend_365,
         rating_distribution=rating_distribution,
         top_schools=top_schools,
         bottom_schools=bottom_schools,
