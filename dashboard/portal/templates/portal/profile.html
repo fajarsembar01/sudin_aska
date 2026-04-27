@@ -177,6 +177,49 @@
             </div>
         </div>
     </div>
+
+    {% if current_user and current_user.role == 'admin' %}
+    <div class="row g-3 mt-1">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="fw-semibold mb-1">
+                        <i class="bi bi-calendar2-range me-2 text-primary"></i>Data Tanggal Hospitality
+                    </h6>
+                    <p class="text-muted small mb-3">
+                        Pilih tampilan tanggal pada seluruh halaman Hospitality (Review Pelayanan, Tren, dsb.)
+                    </p>
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <span class="text-muted small fw-semibold">Mode:</span>
+                        <div class="d-flex align-items-center gap-2 border rounded-pill px-3 py-2 bg-light"
+                             id="dateModeSwitchWrapper">
+                            <span id="dateModeOriginalLabel"
+                                  class="small fw-semibold {% if hospitality_date_mode == 'original' %}text-primary{% else %}text-muted{% endif %}">
+                                Original
+                            </span>
+                            <div class="form-check form-switch mb-0 mx-1">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="hospitality_date_toggle"
+                                       {% if hospitality_date_mode == 'edit' %}checked{% endif %}
+                                       style="cursor:pointer; width:2.5rem; height:1.25rem;">
+                            </div>
+                            <span id="dateModeEditLabel"
+                                  class="small fw-semibold {% if hospitality_date_mode == 'edit' %}text-primary{% else %}text-muted{% endif %}">
+                                Edit
+                            </span>
+                        </div>
+                        <span id="dateModeBadge"
+                              class="badge rounded-pill {% if hospitality_date_mode == 'edit' %}text-bg-primary{% else %}text-bg-secondary{% endif %}">
+                            {% if hospitality_date_mode == 'edit' %}Tanggal Edit Aktif{% else %}Tanggal Original Aktif{% endif %}
+                        </span>
+                        <span id="dateModeSpinner" class="spinner-border spinner-border-sm text-primary d-none"
+                              role="status" aria-label="Menyimpan..."></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </section>
 {% endblock %}
 
@@ -442,4 +485,60 @@
     window.addEventListener('beforeunload', stopDirectCamera);
     });
 </script>
+
+{% if current_user and current_user.role == 'admin' %}
+<script>
+(function () {
+    var toggle = document.getElementById('hospitality_date_toggle');
+    if (!toggle) return;
+
+    var badge       = document.getElementById('dateModeBadge');
+    var spinner     = document.getElementById('dateModeSpinner');
+    var labelOrig   = document.getElementById('dateModeOriginalLabel');
+    var labelEdit   = document.getElementById('dateModeEditLabel');
+    var apiUrl      = {{ url_for('portal.set_hospitality_date_mode') | tojson }};
+
+    function applyMode(mode) {
+        var isEdit = (mode === 'edit');
+        // Badge
+        badge.textContent = isEdit ? 'Tanggal Edit Aktif' : 'Tanggal Original Aktif';
+        badge.className = 'badge rounded-pill ' + (isEdit ? 'text-bg-primary' : 'text-bg-secondary');
+        // Labels
+        labelOrig.className = 'small fw-semibold ' + (isEdit ? 'text-muted' : 'text-primary');
+        labelEdit.className = 'small fw-semibold ' + (isEdit ? 'text-primary' : 'text-muted');
+    }
+
+    toggle.addEventListener('change', function () {
+        var mode = this.checked ? 'edit' : 'original';
+        spinner.classList.remove('d-none');
+        toggle.disabled = true;
+
+        var formData = new FormData();
+        formData.append('mode', mode);
+
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData,
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            if (data && data.success) {
+                applyMode(data.mode);
+            } else {
+                // Revert toggle on failure
+                toggle.checked = !toggle.checked;
+            }
+        })
+        .catch(function () {
+            toggle.checked = !toggle.checked;
+        })
+        .finally(function () {
+            spinner.classList.add('d-none');
+            toggle.disabled = false;
+        });
+    });
+})();
+</script>
+{% endif %}
 {% endblock %}

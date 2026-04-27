@@ -211,7 +211,13 @@
         <ul class="timeline">
           <li class="timeline-item">
             <div class="fw-semibold">Review dibuat</div>
-            <div class="small text-muted">{{ review.review_created_at|jakarta }}</div>
+            <div class="small text-muted">
+              {% if use_tanggal_edit and review.tanggal_edit %}
+                {{ review.tanggal_edit|jakarta }}
+              {% else %}
+                {{ review.review_created_at|jakarta }}
+              {% endif %}
+            </div>
           </li>
           <li class="timeline-item">
             <div class="fw-semibold">Kunjungan / transaksi</div>
@@ -219,7 +225,15 @@
           </li>
           <li class="timeline-item">
             <div class="fw-semibold">Review selesai</div>
-            <div class="small text-muted">{{ review.completed_at|jakarta if review.completed_at else 'Belum selesai' }}</div>
+            <div class="small text-muted">
+              {% if use_tanggal_edit and review.tanggal_edit %}
+                {{ review.tanggal_edit|jakarta }}
+              {% elif review.completed_at %}
+                {{ review.completed_at|jakarta }}
+              {% else %}
+                Belum selesai
+              {% endif %}
+            </div>
           </li>
           {% if review.linked_at %}
           <li class="timeline-item">

@@ -1112,6 +1112,13 @@ def fetch_linked_photos(*, limit: int = 12) -> List[Dict[str, Any]]:
         return [dict(row) for row in cur.fetchall()]
 
 
+def _date_expr(use_tanggal_edit: bool) -> str:
+    """Return the SQL date expression based on date mode preference."""
+    if use_tanggal_edit:
+        return "COALESCE(r.tanggal_edit, r.completed_at, r.created_at)"
+    return "COALESCE(r.completed_at, r.created_at)"
+
+
 def _build_guestbook_review_filters(
     *,
     school_id: int | None = None,
@@ -1121,6 +1128,7 @@ def _build_guestbook_review_filters(
     search: str | None = None,
     start_date: date | None = None,
     end_date: date | None = None,
+    use_tanggal_edit: bool = True,
 ) -> tuple[str, list[Any]]:
     _ensure_soft_delete_schema()
     clauses = ["TRUE", "COALESCE(r.is_deleted, FALSE) = FALSE"]
@@ -1149,11 +1157,12 @@ def _build_guestbook_review_filters(
             clauses.append("r.rating = %s")
             params.append(clean_rating)
 
+    _dexpr = _date_expr(use_tanggal_edit)
     if start_date:
-        clauses.append("COALESCE(r.tanggal_edit, r.completed_at, r.created_at)::date >= %s::date")
+        clauses.append(f"{_dexpr}::date >= %s::date")
         params.append(start_date)
     if end_date:
-        clauses.append("COALESCE(r.tanggal_edit, r.completed_at, r.created_at)::date <= %s::date")
+        clauses.append(f"{_dexpr}::date <= %s::date")
         params.append(end_date)
 
     clean_search = (search or "").strip()
@@ -1190,11 +1199,15 @@ def fetch_guestbook_review_stats(
     school_id: int | None = None,
     start_date: date | None = None,
     end_date: date | None = None,
+    use_tanggal_edit: bool = True,
 ) -> Dict[str, Any]:
+    _dexpr_completed = "COALESCE(r.tanggal_edit, r.completed_at)" if use_tanggal_edit else "r.completed_at"
+    _dexpr_created = "COALESCE(r.tanggal_edit, r.created_at)" if use_tanggal_edit else "r.created_at"
     where_sql, params = _build_guestbook_review_filters(
         school_id=school_id,
         start_date=start_date,
         end_date=end_date,
+        use_tanggal_edit=use_tanggal_edit,
     )
     with get_cursor() as cur:
         cur.execute(
@@ -1207,10 +1220,10 @@ def fetch_guestbook_review_stats(
                 COUNT(*) FILTER (WHERE gl.assessment_id IS NULL) AS unlinked_reviews,
                 COUNT(*) FILTER (
                     WHERE r.status = 'completed'
-                      AND (COALESCE(r.tanggal_edit, r.completed_at) AT TIME ZONE 'Asia/Jakarta')::date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
+                      AND ({_dexpr_completed} AT TIME ZONE 'Asia/Jakarta')::date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
                 ) AS completed_today,
                 COUNT(*) FILTER (
-                    WHERE (COALESCE(r.tanggal_edit, r.created_at) AT TIME ZONE 'Asia/Jakarta')::date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
+                    WHERE ({_dexpr_created} AT TIME ZONE 'Asia/Jakarta')::date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
                 ) AS created_today,
                 COALESCE(AVG(r.rating) FILTER (WHERE r.status = 'completed'), 0) AS avg_rating,
                 COALESCE(AVG(r.rating) FILTER (WHERE r.status = 'completed' AND r.rating IS NOT NULL), 0) AS avg_rating_completed
@@ -1251,19 +1264,22 @@ def fetch_guestbook_review_trend(
     *,
     days: int = 30,
     school_id: int | None = None,
+    use_tanggal_edit: bool = True,
 ) -> List[Dict[str, Any]]:
     safe_days = max(1, int(days or 30))
     today = _today_jakarta()
     start = today - timedelta(days=safe_days - 1)
+    _dexpr = _date_expr(use_tanggal_edit)
     where_sql, params = _build_guestbook_review_filters(
         school_id=school_id,
         start_date=start,
+        use_tanggal_edit=use_tanggal_edit,
     )
     with get_cursor() as cur:
         cur.execute(
             f"""
             SELECT
-                (COALESCE(r.tanggal_edit, r.completed_at, r.created_at) AT TIME ZONE 'Asia/Jakarta')::date AS day,
+                ({_dexpr} AT TIME ZONE 'Asia/Jakarta')::date AS day,
                 COUNT(*) AS total_reviews,
                 COUNT(*) FILTER (WHERE r.status = 'completed') AS completed_reviews,
                 COUNT(*) FILTER (WHERE r.status = 'pending') AS pending_reviews,
@@ -1413,11 +1429,13 @@ def list_guestbook_reviews(
     end_date: date | None = None,
     page: int = 1,
     per_page: int = 25,
+    use_tanggal_edit: bool = True,
 ) -> Tuple[List[Dict[str, Any]], int]:
     _ensure_soft_delete_schema()
     safe_page = max(1, int(page or 1))
     safe_per_page = max(1, min(int(per_page or 25), 200))
     offset = (safe_page - 1) * safe_per_page
+    _dexpr = _date_expr(use_tanggal_edit)
     where_sql, params = _build_guestbook_review_filters(
         school_id=school_id,
         review_status=review_status,
@@ -1426,6 +1444,7 @@ def list_guestbook_reviews(
         search=search,
         start_date=start_date,
         end_date=end_date,
+        use_tanggal_edit=use_tanggal_edit,
     )
 
     count_query = f"""
@@ -1450,6 +1469,7 @@ def list_guestbook_reviews(
             r.completed_at,
             r.created_at AS review_created_at,
             r.updated_at AS review_updated_at,
+            r.tanggal_edit,
             t.visit_at,
             t.status AS transaction_status,
             t.purpose,
@@ -1471,7 +1491,7 @@ def list_guestbook_reviews(
                 FROM daftar_tamu_general_transaction_guests g
                 WHERE g.transaction_id = t.id
             ) AS guest_count,
-            COALESCE(r.tanggal_edit, r.completed_at, r.created_at) AS activity_at
+            {_dexpr} AS activity_at
         FROM hospitality_guestbook_reviews r
         JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
         JOIN portal_schools s ON s.id = r.school_id
@@ -1479,7 +1499,7 @@ def list_guestbook_reviews(
         LEFT JOIN hospitality_assessments ha ON ha.id = gl.assessment_id AND COALESCE(ha.is_deleted, FALSE) = FALSE
         LEFT JOIN dashboard_users hu ON hu.id = ha.staff_id
         WHERE {where_sql}
-        ORDER BY COALESCE(r.tanggal_edit, r.completed_at, r.created_at) DESC NULLS LAST, r.id DESC
+        ORDER BY {_dexpr} DESC NULLS LAST, r.id DESC
         LIMIT %s OFFSET %s
     """
 
@@ -1523,8 +1543,10 @@ def fetch_guestbook_reviews_export(
     search: str | None = None,
     start_date: date | None = None,
     end_date: date | None = None,
+    use_tanggal_edit: bool = True,
 ) -> List[Dict[str, Any]]:
     _ensure_soft_delete_schema()
+    _dexpr = _date_expr(use_tanggal_edit)
     where_sql, params = _build_guestbook_review_filters(
         school_id=school_id,
         review_status=review_status,
@@ -1533,6 +1555,7 @@ def fetch_guestbook_reviews_export(
         search=search,
         start_date=start_date,
         end_date=end_date,
+        use_tanggal_edit=use_tanggal_edit,
     )
     query = f"""
         SELECT
@@ -1570,7 +1593,7 @@ def fetch_guestbook_reviews_export(
                 FROM daftar_tamu_general_transaction_guests g
                 WHERE g.transaction_id = t.id
             ) AS guest_count,
-            COALESCE(r.tanggal_edit, r.completed_at, r.created_at) AS activity_at
+            {_dexpr} AS activity_at
         FROM hospitality_guestbook_reviews r
         JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
         JOIN portal_schools s ON s.id = r.school_id
@@ -1578,7 +1601,7 @@ def fetch_guestbook_reviews_export(
         LEFT JOIN hospitality_assessments ha ON ha.id = gl.assessment_id AND COALESCE(ha.is_deleted, FALSE) = FALSE
         LEFT JOIN dashboard_users hu ON hu.id = ha.staff_id
         WHERE {where_sql}
-        ORDER BY COALESCE(r.tanggal_edit, r.completed_at, r.created_at) DESC NULLS LAST, r.id DESC
+        ORDER BY {_dexpr} DESC NULLS LAST, r.id DESC
     """
     with get_cursor() as cur:
         cur.execute(query, params)
@@ -1652,7 +1675,8 @@ def get_guestbook_review_detail(review_id: int) -> Dict[str, Any] | None:
                     FROM daftar_tamu_general_transaction_guests g
                     WHERE g.transaction_id = t.id
                 ) AS guest_count,
-                COALESCE(r.tanggal_edit, r.completed_at, r.created_at) AS activity_at
+                COALESCE(r.tanggal_edit, r.completed_at, r.created_at) AS activity_at,
+                r.tanggal_edit
             FROM hospitality_guestbook_reviews r
             JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
             JOIN portal_schools s ON s.id = r.school_id

@@ -493,7 +493,7 @@
 {% endif %}
 
 {% if not need_school_pick %}
-<section class="guestbook-table-card card border-0 mb-4">
+<section id="daftar-review" class="guestbook-table-card card border-0 mb-4">
   <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
       <div>
@@ -504,12 +504,12 @@
       </div>
       <div class="d-flex flex-wrap gap-2">
         {% if prev_url %}
-        <a href="{{ prev_url }}" class="btn btn-outline-secondary btn-sm">
+        <a href="{{ prev_url }}#daftar-review" class="btn btn-outline-secondary btn-sm">
           <i class="bi bi-chevron-left"></i>
         </a>
         {% endif %}
         {% if next_url %}
-        <a href="{{ next_url }}" class="btn btn-outline-secondary btn-sm">
+        <a href="{{ next_url }}#daftar-review" class="btn btn-outline-secondary btn-sm">
           <i class="bi bi-chevron-right"></i>
         </a>
         {% endif %}
@@ -563,15 +563,9 @@
             </td>
             <td>
               <span class="status-pill {{ item.review_status }}">{{ item.review_status }}</span>
-              {% if item.review_status == 'completed' and item.completed_at %}
-              <div class="review-meta mt-1">{{ item.completed_at|jakarta }}</div>
-              {% endif %}
             </td>
             <td>
               <span class="status-pill {{ item.transaction_status }}">{{ item.transaction_status }}</span>
-              {% if item.visit_at %}
-              <div class="review-meta mt-1">{{ item.visit_at|jakarta }}</div>
-              {% endif %}
             </td>
 
             <td class="text-end pe-4">
@@ -614,10 +608,10 @@
       </div>
       <div class="d-flex flex-wrap gap-2">
         {% if prev_url %}
-        <a href="{{ prev_url }}" class="btn btn-outline-secondary btn-sm">Sebelumnya</a>
+        <a href="{{ prev_url }}#daftar-review" class="btn btn-outline-secondary btn-sm">Sebelumnya</a>
         {% endif %}
         {% if next_url %}
-        <a href="{{ next_url }}" class="btn btn-outline-secondary btn-sm">Berikutnya</a>
+        <a href="{{ next_url }}#daftar-review" class="btn btn-outline-secondary btn-sm">Berikutnya</a>
         {% endif %}
       </div>
     </div>

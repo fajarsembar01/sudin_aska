@@ -7901,6 +7901,32 @@ def upload_profile_photo() -> Response:
     flash(success_message, "success")
     return redirect(success_redirect_url)
 
+
+_HOSPITALITY_DATE_MODE_KEY = "hospitality_date_mode"
+
+
+@portal_bp.route("/settings/hospitality-date-mode", methods=["POST"])
+@role_required("admin")
+def set_hospitality_date_mode() -> Response:
+    """Toggle the hospitality date display mode (original vs edit) stored in session (admin only)."""
+    wants_json = (
+        request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or request.is_json
+    )
+    raw_mode = (request.get_json(silent=True) or {}).get("mode") if request.is_json else request.form.get("mode")
+    mode = str(raw_mode or "edit").strip().lower()
+    if mode not in {"original", "edit"}:
+        mode = "edit"
+    session[_HOSPITALITY_DATE_MODE_KEY] = mode
+    if wants_json:
+        return jsonify({"success": True, "mode": mode})
+    flash(
+        "Mode tanggal Hospitality: " + ("Tanggal Edit" if mode == "edit" else "Tanggal Original"),
+        "success",
+    )
+    return redirect(url_for("portal.user_profile_settings"))
+
+
 @portal_bp.route("/profile", methods=["GET", "POST"])
 @role_required("admin", "coordinator", "staff")
 def user_profile_settings() -> Response:
@@ -7990,7 +8016,12 @@ def user_profile_settings() -> Response:
                 current_app.logger.error(f"Gagal memperbarui profil: {exc}")
                 flash("Gagal memperbarui profil.", "danger")
 
-    return render_template("portal/profile.html", profile=profile_view)
+    hospitality_date_mode = session.get(_HOSPITALITY_DATE_MODE_KEY, "edit")
+    return render_template(
+        "portal/profile.html",
+        profile=profile_view,
+        hospitality_date_mode=hospitality_date_mode,
+    )
 
 
 # =====================================================
