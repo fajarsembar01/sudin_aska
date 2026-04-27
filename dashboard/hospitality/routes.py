@@ -13,6 +13,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    session,
     url_for,
 )
 
@@ -115,6 +116,16 @@ def inject_portal_context():
 
 
 # ===== Helper =====
+
+_HOSPITALITY_DATE_MODE_KEY = "hospitality_date_mode"
+
+
+def _use_tanggal_edit() -> bool:
+    """Return True if the current session uses `tanggal_edit` for date display (default: True)."""
+    mode = session.get(_HOSPITALITY_DATE_MODE_KEY, "edit")
+    return str(mode).lower() != "original"
+
+
 
 def _school_user_ids(school_id: int) -> List[int]:
     if not school_id:
@@ -851,6 +862,7 @@ def _render_preview_guestbook_dashboard(*, mode: str) -> Response:
     per_page = request.args.get("per_page", type=int) or 25
     per_page = max(5, min(int(per_page or 25), 100))
 
+    use_te = _use_tanggal_edit()
     reviews, total_rows = list_guestbook_reviews(
         school_id=scope_school_id,
         review_status=review_status,
@@ -861,15 +873,17 @@ def _render_preview_guestbook_dashboard(*, mode: str) -> Response:
         end_date=end_date,
         page=page,
         per_page=per_page,
+        use_tanggal_edit=use_te,
     )
     stats = fetch_guestbook_review_stats(
         school_id=scope_school_id,
         start_date=start_date,
         end_date=end_date,
+        use_tanggal_edit=use_te,
     )
-    trend = fetch_guestbook_review_trend(days=30, school_id=scope_school_id)
-    trend_90 = fetch_guestbook_review_trend(days=90, school_id=scope_school_id)
-    trend_365 = fetch_guestbook_review_trend(days=365, school_id=scope_school_id)
+    trend = fetch_guestbook_review_trend(days=30, school_id=scope_school_id, use_tanggal_edit=use_te)
+    trend_90 = fetch_guestbook_review_trend(days=90, school_id=scope_school_id, use_tanggal_edit=use_te)
+    trend_365 = fetch_guestbook_review_trend(days=365, school_id=scope_school_id, use_tanggal_edit=use_te)
     rating_distribution = fetch_guestbook_review_rating_distribution(school_id=scope_school_id)
     top_schools = []
     bottom_schools = []
@@ -939,6 +953,7 @@ def _render_preview_guestbook_dashboard(*, mode: str) -> Response:
         all_schools_url=url_for("hospitality.preview_guestbook_dashboard"),
         per_school_endpoint="hospitality.preview_guestbook_dashboard_by_school",
         per_school_url=url_for("hospitality.preview_guestbook_dashboard_by_school"),
+        use_tanggal_edit=use_te,
     )
 
 
@@ -969,6 +984,7 @@ def preview_guestbook_review_detail(review_id: int) -> Response:
         back_url=back_url,
         is_admin=False,
         dashboard_endpoint=dashboard_endpoint,
+        use_tanggal_edit=_use_tanggal_edit(),
     )
 
 
@@ -1028,6 +1044,7 @@ def guestbook_review_dashboard() -> Response:
         trend_365 = []
         rating_distribution = []
     else:
+        use_te = _use_tanggal_edit()
         reviews, total_rows = list_guestbook_reviews(
             school_id=scope_school_id,
             review_status=review_status,
@@ -1038,15 +1055,17 @@ def guestbook_review_dashboard() -> Response:
             end_date=end_date,
             page=page,
             per_page=per_page,
+            use_tanggal_edit=use_te,
         )
         stats = fetch_guestbook_review_stats(
             school_id=scope_school_id,
             start_date=start_date,
             end_date=end_date,
+            use_tanggal_edit=use_te,
         )
-        trend = fetch_guestbook_review_trend(days=30, school_id=scope_school_id)
-        trend_90 = fetch_guestbook_review_trend(days=90, school_id=scope_school_id)
-        trend_365 = fetch_guestbook_review_trend(days=365, school_id=scope_school_id)
+        trend = fetch_guestbook_review_trend(days=30, school_id=scope_school_id, use_tanggal_edit=use_te)
+        trend_90 = fetch_guestbook_review_trend(days=90, school_id=scope_school_id, use_tanggal_edit=use_te)
+        trend_365 = fetch_guestbook_review_trend(days=365, school_id=scope_school_id, use_tanggal_edit=use_te)
         rating_distribution = fetch_guestbook_review_rating_distribution(school_id=scope_school_id)
     top_schools = []
     bottom_schools = []
@@ -1112,6 +1131,7 @@ def guestbook_review_dashboard() -> Response:
         per_school_url=url_for("hospitality.guestbook_review_dashboard", view="school"),
         per_school_endpoint="hospitality.guestbook_review_dashboard",
         require_school_pick=should_require_school_pick,
+        use_tanggal_edit=_use_tanggal_edit(),
     )
 
 
@@ -1145,6 +1165,7 @@ def guestbook_review_detail(review_id: int) -> Response:
         back_url=back_url,
         is_admin=role == "admin",
         dashboard_endpoint="hospitality.guestbook_review_dashboard",
+        use_tanggal_edit=_use_tanggal_edit(),
     )
 
 
@@ -1182,6 +1203,7 @@ def guestbook_review_export() -> Response:
         search=search,
         start_date=start_date,
         end_date=end_date,
+        use_tanggal_edit=_use_tanggal_edit(),
     )
 
     import csv
