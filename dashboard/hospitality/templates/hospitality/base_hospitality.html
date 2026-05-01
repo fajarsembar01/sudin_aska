@@ -25,7 +25,7 @@
         </li>
         <li class="nav-item dropdown">
           <a
-            class="nav-link dropdown-toggle {% if request.endpoint in ['hospitality.admin_reopen_requests', 'hospitality.admin_setup', 'hospitality.admin_export_csv', 'hospitality.admin_preview_access'] %}active{% endif %}"
+            class="nav-link dropdown-toggle {% if request.endpoint in ['hospitality.admin_reopen_requests', 'hospitality.admin_setup', 'hospitality.admin_export_csv', 'hospitality.admin_preview_access', 'hospitality.admin_assess_home', 'hospitality.admin_assess'] %}active{% endif %}"
             href="#"
             role="button"
             data-bs-toggle="dropdown"
@@ -47,6 +47,11 @@
             <li>
               <a class="dropdown-item {% if request.endpoint == 'hospitality.admin_preview_access' %}active{% endif %}" href="{{ url_for('hospitality.admin_preview_access') }}">
                 <i class="bi bi-eye me-2"></i>Akses Preview
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint in ['hospitality.admin_assess_home', 'hospitality.admin_assess'] %}active{% endif %}" href="{{ url_for('hospitality.admin_assess_home') }}">
+                <i class="bi bi-clipboard-check me-2"></i>Menilai Hospitality
               </a>
             </li>
             <li><hr class="dropdown-divider"></li>

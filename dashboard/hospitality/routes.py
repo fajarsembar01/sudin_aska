@@ -102,7 +102,7 @@ hospitality_bp = Blueprint(
 )
 
 # Roles that are allowed to perform hospitality assessments (staff-like flow).
-ASSESSOR_ROLES = ("staff", "coordinator")
+ASSESSOR_ROLES = ("staff", "coordinator", "admin")
 
 # Reuse portal context (permissions, badges, etc.) so base_portal works on hospitality pages.
 @hospitality_bp.context_processor
@@ -240,6 +240,8 @@ def landing() -> Response:
     if not user:
         return redirect(url_for("auth.login"))
     role = (user.get("role") or "").lower()
+    if role == "admin":
+        return redirect(url_for("hospitality.admin_home"))
     if role in ASSESSOR_ROLES:
         return redirect(url_for("hospitality.staff_home"))
     if role == "sekolah":
@@ -508,7 +510,7 @@ def assessment_detail(assessment_id: int) -> Response:
     if not assessment:
         abort(404)
     user = current_user()
-    if user.get("role") in ASSESSOR_ROLES and int(user.get("id")) != int(assessment.get("staff_id")):
+    if user.get("role") in ("staff", "coordinator") and int(user.get("id")) != int(assessment.get("staff_id")):
         abort(403)
     if user.get("role") == "sekolah":
         school = _fetch_user_school(user.get("id"))
@@ -1379,10 +1381,240 @@ def admin_activity_logs() -> Response:
     activity_logs = fetch_activity_logs(limit=per_page, offset=(page - 1) * per_page)
     return render_template(
         "hospitality/admin/activity_logs.html",
+
         activity_logs=activity_logs,
         page=page,
         per_page=per_page,
     )
+
+
+@hospitality_bp.route("/admin/menilai")
+@role_required("admin")
+def admin_assess_home() -> Response:
+    """Admin assessment list – same UX as staff_home but for admin."""
+    user = current_user()
+    status_filter = (request.args.get("status") or "").strip().lower() or None
+    search = (request.args.get("q") or "").strip() or None
+    assessments = list_assessments_for_staff(
+        staff_id=int(user.get("id")),
+        status=status_filter,
+        search=search,
+    )
+    draft_assessment = get_latest_draft_assessment_for_staff(staff_id=int(user.get("id")))
+    if draft_assessment and (not status_filter or status_filter == "draft"):
+        draft_id = draft_assessment.get("id")
+        assessments = [item for item in assessments if item.get("id") != draft_id]
+        assessments = [draft_assessment] + assessments
+    return render_template(
+        "hospitality/staff/list.html",
+        assessments=assessments,
+        draft_assessment=draft_assessment,
+        score_max=HOSPITALITY_SCORE_MAX,
+        status_filter=status_filter or "",
+        search_query=search or "",
+        admin_assess_mode=True,
+    )
+
+
+@hospitality_bp.route("/admin/menilai/assess/<int:school_id>", methods=["GET", "POST"])
+@role_required("admin")
+def admin_assess(school_id: int) -> Response:
+    """Admin assess a school – same UX as staff_assess."""
+    user = current_user()
+    components = list_components_with_aspects(active_only=True)
+    school = None
+    with get_cursor() as cur:
+        cur.execute(
+            "SELECT id, name, npsn, jenjang FROM portal_schools WHERE id = %s",
+            (school_id,),
+        )
+        school = cur.fetchone()
+    if not school:
+        abort(404)
+
+    assessment = get_draft_assessment(school_id=school_id, staff_id=int(user.get("id")))
+    if not assessment:
+        assessment = get_latest_assessment_for_staff_school(school_id=school_id, staff_id=int(user.get("id")))
+    if not assessment:
+        assessment = create_assessment(
+            school_id=school_id,
+            staff_id=int(user.get("id")),
+            score_scale_max=HOSPITALITY_SCORE_MAX,
+            note_text=None,
+        )
+
+    if request.method == "POST":
+        note_text = (request.form.get("note") or "").strip() or None
+        status_action = (request.form.get("action") or "draft").strip().lower()
+        try:
+            scores_payload: List[Dict[str, Any]] = []
+            for comp in components:
+                for aspect in comp.get("aspects") or []:
+                    field = f"score_{aspect['id']}"
+                    raw = request.form.get(field)
+                    if raw is None:
+                        continue
+                    try:
+                        score_val = int(raw)
+                    except (TypeError, ValueError):
+                        continue
+                    scores_payload.append(
+                        {
+                            "component_id": comp["id"],
+                            "aspect_id": aspect["id"],
+                            "score": score_val,
+                            "note": None,
+                        }
+                    )
+            upsert_scores(assessment_id=int(assessment["id"]), scores=scores_payload)
+            if status_action == "submit":
+                submit_assessment(
+                    assessment_id=int(assessment["id"]),
+                    note_text=note_text,
+                    score_scale_max=HOSPITALITY_SCORE_MAX,
+                )
+                flash("Penilaian tersimpan dan dikirim.", "success")
+                return redirect(url_for("hospitality.assessment_detail", assessment_id=assessment["id"]))
+            with get_cursor(commit=True) as cur:
+                cur.execute(
+                    """
+                    UPDATE hospitality_assessments
+                    SET note_text = %s,
+                        updated_at = NOW()
+                    WHERE id = %s
+                    """,
+                    (note_text, int(assessment["id"])),
+                )
+            flash("Draft penilaian disimpan.", "success")
+            return redirect(url_for("hospitality.admin_assess", school_id=school_id))
+        except Exception as exc:  # pragma: no cover
+            flash(str(exc), "danger")
+
+    assessment_scores = get_assessment_scores(int(assessment["id"])) if assessment else []
+    scores_map = {s.get("aspect_id"): s.get("score") for s in assessment_scores}
+    notes_by_component = {s.get("component_id"): s.get("note") for s in assessment_scores if s.get("note")}
+
+    return render_template(
+        "hospitality/staff/assess.html",
+        school=school,
+        components=components,
+        assessment=assessment,
+        assessment_status=assessment.get("status") if assessment else "draft",
+        scores_map=scores_map,
+        notes_by_component=notes_by_component,
+        score_scale=list(range(1, HOSPITALITY_SCORE_MAX + 1)),
+        admin_assess_mode=True,
+    )
+
+
+@hospitality_bp.route("/admin/menilai/assess/<int:school_id>/score", methods=["POST"])
+@role_required("admin")
+def admin_assess_save_score(school_id: int) -> Response:
+    data = request.get_json(silent=True) or {}
+    try:
+        assessment_id = int(data.get("assessment_id"))
+        aspect_id = int(data.get("aspect_id"))
+        component_id = int(data.get("component_id"))
+        score = int(data.get("score"))
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "message": "Data tidak valid"}), 400
+    assessment = get_assessment(assessment_id)
+    if not assessment or int(assessment.get("school_id")) != school_id:
+        return jsonify({"success": False, "message": "Assessment tidak ditemukan"}), 404
+    if assessment.get("status") != "draft":
+        return jsonify({"success": False, "message": "Penilaian sudah dikirim."}), 400
+    try:
+        upsert_scores(
+            assessment_id=assessment_id,
+            scores=[{"component_id": component_id, "aspect_id": aspect_id, "score": score, "note": None}],
+        )
+        return jsonify({"success": True})
+    except Exception as exc:
+        return jsonify({"success": False, "message": str(exc)}), 500
+
+
+@hospitality_bp.route("/admin/menilai/assess/<int:school_id>/note", methods=["POST"])
+@role_required("admin")
+def admin_assess_save_note(school_id: int) -> Response:
+    data = request.get_json(silent=True) or {}
+    try:
+        assessment_id = int(data.get("assessment_id"))
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "message": "Data tidak valid"}), 400
+    note = (data.get("note") or "").strip() or None
+    assessment = get_assessment(assessment_id)
+    if not assessment or int(assessment.get("school_id")) != school_id:
+        return jsonify({"success": False, "message": "Assessment tidak ditemukan"}), 404
+    if assessment.get("status") != "draft":
+        return jsonify({"success": False, "message": "Penilaian sudah dikirim."}), 400
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            "UPDATE hospitality_assessments SET note_text = %s, updated_at = NOW() WHERE id = %s",
+            (note, assessment_id),
+        )
+    return jsonify({"success": True})
+
+
+@hospitality_bp.route("/admin/menilai/assess/<int:school_id>/draft", methods=["POST"])
+@role_required("admin")
+def admin_assess_save_draft(school_id: int) -> Response:
+    assessment_id = request.form.get("assessment_id", type=int)
+    if not assessment_id:
+        flash("Assessment ID tidak valid.", "danger")
+        return redirect(url_for("hospitality.admin_assess", school_id=school_id))
+    assessment = get_assessment(assessment_id)
+    if not assessment or int(assessment.get("school_id")) != school_id:
+        flash("Assessment tidak ditemukan.", "danger")
+        return redirect(url_for("hospitality.admin_assess", school_id=school_id))
+    if assessment.get("status") != "draft":
+        flash("Penilaian sudah dikirim.", "warning")
+        return redirect(url_for("hospitality.assessment_detail", assessment_id=assessment_id))
+    flash("Draft penilaian disimpan.", "success")
+    return redirect(url_for("hospitality.admin_assess", school_id=school_id))
+
+
+@hospitality_bp.route("/admin/menilai/assess/<int:school_id>/submit", methods=["POST"])
+@role_required("admin")
+def admin_assess_submit(school_id: int) -> Response:
+    assessment_id = request.form.get("assessment_id", type=int)
+    if not assessment_id:
+        flash("Assessment ID tidak valid.", "danger")
+        return redirect(url_for("hospitality.admin_assess", school_id=school_id))
+    assessment = get_assessment(assessment_id)
+    if not assessment or int(assessment.get("school_id")) != school_id:
+        flash("Assessment tidak ditemukan.", "danger")
+        return redirect(url_for("hospitality.admin_assess", school_id=school_id))
+    if assessment.get("status") != "draft":
+        flash("Penilaian sudah dikirim.", "warning")
+        return redirect(url_for("hospitality.assessment_detail", assessment_id=assessment_id))
+    required_aspects = _hospitality_required_aspect_count()
+    scored_aspects = _hospitality_scored_aspect_count(assessment_id)
+    if required_aspects > 0 and scored_aspects < required_aspects:
+        flash("Semua aspek harus dinilai sebelum submit.", "warning")
+        return redirect(url_for("hospitality.admin_assess", school_id=school_id))
+    submit_assessment(
+        assessment_id=assessment_id,
+        note_text=assessment.get("note_text"),
+        score_scale_max=HOSPITALITY_SCORE_MAX,
+    )
+    flash("Penilaian tersimpan dan dikirim.", "success")
+    return redirect(url_for("hospitality.assessment_detail", assessment_id=assessment_id))
+
+
+@hospitality_bp.route("/admin/menilai/draft/<int:assessment_id>/delete", methods=["POST"])
+@role_required("admin")
+def admin_assess_delete_draft(assessment_id: int) -> Response:
+    user = current_user()
+    assessment = get_assessment(assessment_id)
+    if not assessment or int(assessment.get("staff_id") or 0) != int(user.get("id")):
+        return jsonify({"success": False, "message": "Penilaian tidak ditemukan."}), 404
+    if (assessment.get("status") or "").lower() != "draft":
+        return jsonify({"success": False, "message": "Hanya draft yang dapat dihapus."}), 400
+    try:
+        delete_draft_assessment(assessment_id=assessment_id)
+    except ValueError as exc:  # pragma: no cover
+        return jsonify({"success": False, "message": str(exc)}), 400
+    return jsonify({"success": True})
 
 
 @hospitality_bp.route("/admin/reopen-requests")
