@@ -54,6 +54,7 @@ conn_args = dict(
     password=DB_PASS,
     host=_normalize_db_host(DB_HOST),
     port=DB_PORT,
+    options="-c timezone=Asia/Jakarta",
 )
 
 # Tambahkan sslmode jika diset di .env

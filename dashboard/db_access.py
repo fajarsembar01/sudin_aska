@@ -43,6 +43,7 @@ conn_kwargs = dict(
     password=_DB_CONFIG["DB_PASS"],
     host=_normalize_db_host(_DB_CONFIG["DB_HOST"]),
     port=_DB_CONFIG["DB_PORT"],
+    options="-c timezone=Asia/Jakarta",
 )
 if optional_sslmode:
     conn_kwargs["sslmode"] = optional_sslmode
