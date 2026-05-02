@@ -36,7 +36,7 @@ from db import (
 from account_status import BLOCKING_STATUSES, build_status_notice, ACCOUNT_STATUS_ACTIVE
 from responses import detect_bullying_category, is_corruption_report_intent
 from reporting_flags import reporting_enabled
-from utils import normalize_input, replace_bot_mentions, to_jakarta
+from utils import current_jakarta_time, normalize_input, replace_bot_mentions, to_jakarta
 
 LIMIT_BLOCK_MESSAGE = (
     f"Ups! Kuota {DEFAULT_LIMITED_QUOTA} chat untuk akses Gmail sudah habis. "
@@ -620,15 +620,7 @@ def create_app() -> Flask:
                     error = "Ada nomor telepon yang sama. Mohon periksa kembali."
                 else:
                     guests = cleaned_guests
-                    visit_date_raw = (request.form.get("visit_date") or "").strip()
-                    visit_at = None
-                    if not visit_date_raw:
-                        error = "Tanggal kunjungan wajib diisi."
-                    else:
-                        try:
-                            visit_at = datetime.strptime(visit_date_raw, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-                        except ValueError:
-                            error = "Format tanggal kunjungan tidak valid."
+                    visit_at = current_jakarta_time()
 
                     purpose = (request.form.get("purpose") or "").strip()
                     if not error and not purpose:
@@ -639,7 +631,7 @@ def create_app() -> Flask:
                             "user_agent": request.headers.get("User-Agent"),
                             "ip": request.headers.get("X-Forwarded-For", request.remote_addr),
                             "source": "web_aska",
-                            "visit_date_input": visit_date_raw or None,
+                            "visit_date_input": None,
                         }
                         if not error:
                             try:

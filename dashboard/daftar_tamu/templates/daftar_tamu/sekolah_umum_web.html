@@ -154,8 +154,8 @@
                                     {% endif %}
                                 </td>
                                     <td>
-                                        <div class="fw-semibold">{{ row.visit_at|jakarta('%d %b %Y') }}</div>
-                                        <div class="small text-muted">{{ row.visit_at|jakarta('%H:%M') }} WIB</div>
+                                        <div class="fw-semibold">{{ row.visit_at.strftime('%d %b %Y') if row.visit_at else '-' }}</div>
+                                        <div class="small text-muted">{{ row.visit_at.strftime('%H:%M') if row.visit_at else '-' }} WIB</div>
                                     </td>
                                     <td>
                                         <div class="fw-semibold">{{ row.guest_display or '-' }}</div>

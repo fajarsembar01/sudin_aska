@@ -599,16 +599,6 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Tanggal Kunjungan</label>
-                            <input type="date" name="visit_date" id="visitDateInput" class="form-control"
-                                value="{{ request.form.get('visit_date', '') }}">
-                            <div id="visitDateError" class="invalid-feedback">Tanggal kunjungan wajib diisi.</div>
-                            <div class="note-text mt-2">
-                                Gunakan tanggal kunjungan sebenarnya. Field ini dipakai untuk input data kunjungan bulan-bulan sebelumnya.
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
                             <label class="form-label fw-semibold">Tujuan Kunjungan</label>
                             <input type="text" name="purpose" id="purposeInput" class="form-control"
                                 placeholder="Contoh: Bertemu kepala sekolah" list="purposeKeywordList">
@@ -695,8 +685,6 @@
             var guestPayloadInput = document.getElementById('guestPayloadInput');
             var submitBtn = guestForm ? guestForm.querySelector('button[type="submit"]') : null;
             var registerInputs = registerForm ? registerForm.querySelectorAll('input, select, textarea, button') : [];
-            var visitDateInput = document.getElementById('visitDateInput');
-            var visitDateError = document.getElementById('visitDateError');
             var purposeInput = document.getElementById('purposeInput');
             var notesInput = document.getElementById('notesInput');
             var purposeError = document.getElementById('purposeError');
@@ -752,15 +740,6 @@
                 }
                 return 'light';
             }
-
-            function todayIsoDate() {
-                var now = new Date();
-                var year = now.getFullYear();
-                var month = String(now.getMonth() + 1).padStart(2, '0');
-                var day = String(now.getDate()).padStart(2, '0');
-                return year + '-' + month + '-' + day;
-            }
-
             function updateThemeToggle() {
                 if (!themeToggle) return;
                 var current = document.documentElement.getAttribute('data-theme') || detectPreferredTheme();
@@ -899,7 +878,6 @@
                 if (!visitStepSection) return;
                 visitStepSection.classList.toggle('step-inactive', !isActive);
                 visitStepSection.setAttribute('aria-disabled', isActive ? 'false' : 'true');
-                if (visitDateInput) visitDateInput.disabled = !isActive;
                 if (purposeInput) purposeInput.disabled = !isActive;
                 if (notesInput) notesInput.disabled = !isActive;
                 if (visitStepHint) {
@@ -910,13 +888,9 @@
             }
 
             function focusVisitStep() {
-                if (!visitStepSection || !visitDateInput || visitDateInput.disabled) return;
+                if (!visitStepSection) return;
                 visitStepSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 setTimeout(function () {
-                    if (visitDateInput && !visitDateInput.value) {
-                        visitDateInput.focus();
-                        return;
-                    }
                     if (purposeInput) purposeInput.focus();
                 }, 180);
             }
@@ -924,17 +898,14 @@
             function syncSubmitState() {
                 if (!submitBtn) return;
                 var hasGuests = selectedGuests.size > 0;
-                var hasVisitDate = visitDateInput ? visitDateInput.value.trim().length > 0 : false;
                 var hasPurpose = purposeInput ? purposeInput.value.trim().length > 0 : false;
                 var showErrors = hasSubmitted;
                 setVisitStepActive(hasGuests);
                 if (selectedGuestsField) selectedGuestsField.classList.toggle('is-invalid', showErrors && !hasGuests);
                 if (selectedGuestsError) selectedGuestsError.classList.toggle('d-none', !(showErrors && !hasGuests));
-                if (visitDateInput) visitDateInput.classList.toggle('is-invalid', showErrors && hasGuests && !hasVisitDate);
-                if (visitDateError) visitDateError.style.display = showErrors && hasGuests && !hasVisitDate ? 'block' : 'none';
                 if (purposeInput) purposeInput.classList.toggle('is-invalid', showErrors && !hasPurpose);
                 if (purposeError) purposeError.style.display = showErrors && !hasPurpose ? 'block' : 'none';
-                submitBtn.disabled = !(hasGuests && hasVisitDate && hasPurpose);
+                submitBtn.disabled = !(hasGuests && hasPurpose);
             }
 
             function renderSelectedGuests(options) {
@@ -979,15 +950,6 @@
                 if (shouldMoveToVisit) {
                     focusVisitStep();
                 }
-            }
-
-            if (visitDateInput) {
-                if (!visitDateInput.value) {
-                    visitDateInput.value = todayIsoDate();
-                }
-                visitDateInput.addEventListener('input', function () {
-                    syncSubmitState();
-                });
             }
 
             if (purposeInput) {
@@ -1204,14 +1166,13 @@
                     return;
                 }
                 var hasGuests = selectedGuests.size > 0;
-                var hasVisitDate = visitDateInput ? visitDateInput.value.trim().length > 0 : false;
                 var hasPurpose = purposeInput ? purposeInput.value.trim().length > 0 : false;
-                if (!hasGuests || !hasVisitDate || !hasPurpose) {
+                if (!hasGuests || !hasPurpose) {
                     e.preventDefault();
                     syncSubmitState();
                     if (!hasGuests && selectedGuestsField) {
                         selectedGuestsField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    } else if (!hasVisitDate || !hasPurpose) {
+                    } else if (!hasPurpose) {
                         focusVisitStep();
                     }
                     return;
