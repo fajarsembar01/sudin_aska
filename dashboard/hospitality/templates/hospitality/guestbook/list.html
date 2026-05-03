@@ -350,7 +350,7 @@
           {% if stats.extra_stats %}
           <div class="d-flex justify-content-between align-items-end">
             {% for e in stats.extra_stats[:3] %}
-            {% set badge_class = 'text-bg-success-subtle text-success border' if e.avg_score >= 4 else ('text-bg-warning-subtle text-warning-emphasis border' if e.avg_score >= 3 else 'text-bg-danger-subtle text-danger border') %}
+            {% set badge_class = 'bg-success text-white' if e.avg_score >= 4 else ('bg-warning text-dark' if e.avg_score >= 3 else 'bg-danger text-white') %}
             <div class="text-center flex-fill" style="min-width: 0;">
               <span class="badge {{ badge_class }} rounded-pill mb-1" style="font-size: 1rem">
                 {{ "%.1f"|format(e.avg_score)|replace('.', ',') }}
