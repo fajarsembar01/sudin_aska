@@ -1143,6 +1143,8 @@ def admin_dashboard() -> Response:
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
     school_status = _parse_school_status(request.args.get("school_status"), default="all")
+    school_status = _parse_school_status(request.args.get("school_status"), default="all")
+    school_status = _parse_school_status(request.args.get("school_status"), default="all")
     show_user_rankings = guest_scope != "umum"
     user_rank_guest_scope = "sudin" if guest_scope == "all" else guest_scope
     user_rank_scope_label = "SUDIN" if user_rank_guest_scope == "sudin" else "Umum"
@@ -1770,6 +1772,7 @@ def admin_visit_bucket_detail() -> Response:
         date_from, date_to = date_to, date_from
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    school_status = _parse_school_status(request.args.get("school_status"), default="all")
 
     source = (request.args.get("source") or "distribution").strip().lower()
     if source not in {"distribution", "frequency"}:
