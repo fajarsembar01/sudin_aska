@@ -22,7 +22,6 @@
         <th>Tanggal</th>
         <th>Petugas</th>
         <th>Status</th>
-        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -31,7 +30,6 @@
         <td class="text-muted small">{{ item.created_at|jakarta }}</td>
         <td>{{ item.staff_name or '-' }}</td>
         <td><span class="badge text-bg-secondary text-uppercase">{{ item.status }}</span></td>
-        <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('hospitality.assessment_detail', assessment_id=item.id) }}">Detail</a></td>
       </tr>
       {% endfor %}
     </tbody>

@@ -504,7 +504,7 @@ def staff_submit_assessment(school_id: int) -> Response:
 
 
 @hospitality_bp.route("/assessment/<int:assessment_id>")
-@role_required("staff", "sekolah", "admin", "coordinator")
+@role_required("staff", "admin", "coordinator")
 def assessment_detail(assessment_id: int) -> Response:
     assessment = get_assessment(assessment_id)
     if not assessment:
@@ -512,11 +512,6 @@ def assessment_detail(assessment_id: int) -> Response:
     user = current_user()
     if user.get("role") in ("staff", "coordinator") and int(user.get("id")) != int(assessment.get("staff_id")):
         abort(403)
-    if user.get("role") == "sekolah":
-        school = _fetch_user_school(user.get("id"))
-        if not school or int(school.get("id")) != int(assessment.get("school_id")):
-            abort(403)
-
     scores = get_assessment_scores(assessment_id)
     components = list_components_with_aspects(active_only=False)
     scores_map = {s.get("aspect_id"): s for s in scores}
