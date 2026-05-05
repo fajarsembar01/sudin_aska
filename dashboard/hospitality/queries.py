@@ -2245,6 +2245,46 @@ def list_guestbook_candidates(
     return rows
 
 
+def reverify_assessment(*, assessment_id: int) -> Dict[str, Any]:
+    """Re-verify an assessment that is 'submitted' but already has a guestbook link.
+
+    This handles the edge case where a previously-verified assessment was
+    reopened, edited, and re-submitted but the old guestbook link was not
+    cleaned up, leaving the assessment stuck in 'submitted' with no way to
+    re-verify through the normal flow.
+    """
+    _ensure_soft_delete_schema()
+    with get_cursor(commit=True) as cur:
+        # Only allow if the assessment is submitted AND already has a link
+        cur.execute(
+            """
+            SELECT a.id, a.status, g.transaction_id
+            FROM hospitality_assessments a
+            JOIN hospitality_assessment_guestbook_links g ON g.assessment_id = a.id
+            WHERE a.id = %s
+              AND a.status = 'submitted'
+              AND COALESCE(a.is_deleted, FALSE) = FALSE
+            """,
+            (assessment_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            raise ValueError("Penilaian tidak memenuhi syarat untuk verifikasi ulang.")
+
+        cur.execute(
+            """
+            UPDATE hospitality_assessments
+            SET status = 'verified',
+                verified_at = NOW(),
+                updated_at = NOW()
+            WHERE id = %s
+            RETURNING *
+            """,
+            (assessment_id,),
+        )
+        return dict(cur.fetchone())
+
+
 def link_guestbook_transaction(
     *,
     assessment_id: int,
@@ -2501,10 +2541,22 @@ def update_reopen_request_status(
         )
         req = cur.fetchone()
         if req and safe_status == "approved":
+            # Remove the existing guestbook link so staff can re-verify
+            cur.execute(
+                """
+                DELETE FROM hospitality_assessment_guestbook_links
+                WHERE assessment_id = %s
+                """,
+                (req["assessment_id"],),
+            )
             cur.execute(
                 """
                 UPDATE hospitality_assessments
-                SET status = 'draft', reopened_at = NOW(), reopened_by = %s, updated_at = NOW()
+                SET status = 'draft',
+                    verified_at = NULL,
+                    reopened_at = NOW(),
+                    reopened_by = %s,
+                    updated_at = NOW()
                 WHERE id = %s
                 RETURNING *
                 """,

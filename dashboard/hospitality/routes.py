@@ -61,6 +61,7 @@ from .queries import (
     list_comments,
     list_reopen_requests,
     link_guestbook_transaction,
+    reverify_assessment,
     reorder_components,
     reorder_hosp_aspects,
     submit_assessment,
@@ -583,6 +584,44 @@ def link_guestbook(assessment_id: int) -> Response:
             details={"description": f"Memverifikasi penilaian dengan buku tamu (ID transaksi: {transaction_id})", "transaction_id": transaction_id},
         )
     except Exception as exc:  # pragma: no cover
+        flash(str(exc), "danger")
+    return redirect(url_for("hospitality.assessment_detail", assessment_id=assessment_id))
+
+
+@hospitality_bp.route("/assessment/<int:assessment_id>/reverify", methods=["POST"])
+@role_required(*ASSESSOR_ROLES)
+def reverify(assessment_id: int) -> Response:
+    """Re-verify an assessment that is 'submitted' but already has a guestbook link."""
+    user = current_user()
+    assessment = get_assessment(assessment_id)
+    if not assessment:
+        abort(404)
+    if user.get("role") in ("staff", "coordinator") and int(user.get("id")) != int(assessment.get("staff_id")):
+        abort(403)
+
+    try:
+        reverify_assessment(assessment_id=assessment_id)
+        recipients = set(_school_user_ids(assessment.get("school_id")))
+        recipients.add(int(user.get("id")))
+        create_user_notifications(
+            recipient_ids=list(recipients),
+            category=HOSPITALITY_NOTIFICATION_CATEGORY,
+            title="Hospitality terverifikasi ulang",
+            message="Penilaian telah diverifikasi ulang dengan buku tamu yang sebelumnya terhubung.",
+            reference_table="hospitality_assessments",
+            reference_id=assessment_id,
+            link=url_for("hospitality.assessment_detail", assessment_id=assessment_id),
+        )
+        log_activity(
+            user_id=int(user.get("id")),
+            action="reverify",
+            target_type="HOSPITALITY_ASSESSMENT",
+            target_id=assessment_id,
+            target_name=assessment.get("school_name", f"ID {assessment_id}"),
+            details={"description": f"Verifikasi ulang penilaian {assessment.get('school_name', '')}", "transaction_id": assessment.get("guestbook_transaction_id")},
+        )
+        flash("Penilaian berhasil diverifikasi ulang.", "success")
+    except Exception as exc:
         flash(str(exc), "danger")
     return redirect(url_for("hospitality.assessment_detail", assessment_id=assessment_id))
 
