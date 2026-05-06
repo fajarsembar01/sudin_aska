@@ -1245,6 +1245,37 @@ def fetch_guestbook_review_stats(
     completion_rate = (completed_reviews / total_reviews * 100) if total_reviews else 0.0
     linked_rate = (linked_reviews / total_reviews * 100) if total_reviews else 0.0
     avg_rating = float(row.get("avg_rating") or 0)
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT
+                q.question_text AS name,
+                AVG(a.rating) AS avg_score
+            FROM hospitality_guestbook_extra_answers a
+            JOIN hospitality_guestbook_extra_questions q ON a.question_id = q.id
+            JOIN hospitality_guestbook_reviews r ON r.id = a.review_id
+            JOIN daftar_tamu_general_transactions t ON t.id = r.transaction_id
+            JOIN portal_schools s ON s.id = r.school_id
+            WHERE r.status = 'completed' AND {where_sql}
+              AND LOWER(q.question_text) IN ('pelayanan ramah', 'sekolah bersih', 'respon cepat')
+            GROUP BY q.question_text
+            """,
+            params,
+        )
+        extra_stats_rows = cur.fetchall() or []
+
+    extra_stats = []
+    total_extra = 0.0
+    for row in extra_stats_rows:
+        score = float(row["avg_score"] or 0)
+        extra_stats.append({
+            "name": row["name"],
+            "avg_score": score
+        })
+        total_extra += score
+    
+    avg_extra_rating = (total_extra / len(extra_stats_rows)) if extra_stats_rows else 0.0
+
     return {
         "total_reviews": total_reviews,
         "completed_reviews": completed_reviews,
@@ -1257,6 +1288,8 @@ def fetch_guestbook_review_stats(
         "avg_rating_completed": float(row.get("avg_rating_completed") or 0),
         "completion_rate": round(completion_rate, 2),
         "linked_rate": round(linked_rate, 2),
+        "extra_stats": extra_stats,
+        "avg_extra_rating": avg_extra_rating,
     }
 
 
