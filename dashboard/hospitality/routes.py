@@ -1343,6 +1343,7 @@ def admin_home() -> Response:
         fetch_bottom_schools,
         fetch_recent_assessments,
         fetch_linked_photos,
+        fetch_component_averages,
     )
     stats = fetch_stats()
     trend = fetch_daily_trend(days=trend_days_map[trend_range])
@@ -1363,6 +1364,7 @@ def admin_home() -> Response:
         recent_assessments=recent,
         linked_photos=linked_photos,
         activity_logs=activity_logs,
+        component_averages=fetch_component_averages(),
     )
 
 
