@@ -112,17 +112,15 @@ portal_content %} {# ===== HERO SECTION ===== #}
             <div class="card-body">
                 <div class="d-flex align-items-center gap-2 mb-3">
                     <span class="icon-badge stat-icon text-info">
-                        <i class="bi bi-building"></i>
+                        <i class="bi bi-star-half"></i>
                     </span>
-                    <span class="text-secondary text-uppercase small fw-semibold">Sekolah Unik</span>
+                    <span class="text-secondary text-uppercase small fw-semibold">Rata - Rata Penilaian</span>
                 </div>
                 <h2 class="display-6 fw-bold mb-1">
-                    {{ stats.unique_schools }}
+                    {% if stats.avg_score_pct %}{{ "%.1f"|format(stats.avg_score_pct) }}%{% else %}-{% endif %}
                 </h2>
                 <p class="text-muted small mb-0">
-                    {% if stats.avg_score_pct %} Rata-rata
-                    <span class="fw-semibold text-primary">{{ "%.1f"|format(stats.avg_score_pct) }}%</span>
-                    {% else %} Pernah dinilai {% endif %}
+                    Dari <span class="fw-semibold text-primary">{{ stats.unique_schools }}</span> Sekolah Unik
                 </p>
             </div>
         </div>
