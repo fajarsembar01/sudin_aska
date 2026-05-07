@@ -204,6 +204,7 @@ school_rollup AS (
         s.name AS school_name,
         s.jenjang,
         s.status,
+        l.kecamatan_id AS kecamatan_id,
         k.name AS kecamatan,
         l.name AS kelurahan,
         s.alamat,
@@ -235,12 +236,14 @@ school_rollup AS (
     LIMIT 1
     ) latest ON TRUE
     WHERE s.active = TRUE
+      AND (%s::int[] IS NULL OR l.kecamatan_id = ANY(%s::int[]))
     GROUP BY
         s.id,
         s.npsn,
         s.name,
         s.jenjang,
         s.status,
+        l.kecamatan_id,
         k.name,
         l.name,
         s.alamat,
@@ -400,6 +403,23 @@ def _normalize_school_status(status: Optional[str]) -> str:
     return ""
 
 
+def _normalize_kecamatan_ids(kecamatan_ids: Optional[List[int]]) -> Optional[List[int]]:
+    if not kecamatan_ids:
+        return None
+    normalized: List[int] = []
+    seen: set[int] = set()
+    for raw_id in kecamatan_ids:
+        try:
+            kec_id = int(raw_id)
+        except (TypeError, ValueError):
+            continue
+        if kec_id <= 0 or kec_id in seen:
+            continue
+        seen.add(kec_id)
+        normalized.append(kec_id)
+    return normalized or None
+
+
 def ensure_daftar_tamu_seed_data() -> None:
     """No-op: daftar tamu now uses portal_schools and real transactions."""
     return
@@ -410,12 +430,13 @@ def fetch_dashboard_summary(
     date_to: Optional[date] = None,
     guest_scope: Optional[str] = None,
     school_status: Optional[str] = None,
+    kecamatan_ids: Optional[List[int]] = None,
 ) -> Dict[str, Any]:
     """Fetch top-level summary stats for admin dashboard."""
     scope = _normalize_guest_scope(guest_scope)
     status_filter = _normalize_school_status(school_status)
+    area_filter = _normalize_kecamatan_ids(kecamatan_ids)
     cutoff = _today_jakarta() - timedelta(days=30)
-    status_params = [status_filter, status_filter]
     params: List[Any] = [
         date_from,
         date_from,
@@ -424,19 +445,29 @@ def fetch_dashboard_summary(
         scope,
         scope,
         scope,
-        *status_params,
-        *status_params,
-        *status_params,
-        *status_params,
+        area_filter,
+        area_filter,
+        status_filter,
+        status_filter,
+        status_filter,
+        status_filter,
+        status_filter,
+        status_filter,
+        status_filter,
+        status_filter,
         cutoff,
-        *status_params,
-        *status_params,
-        *status_params,
+        status_filter,
+        status_filter,
+        status_filter,
+        status_filter,
+        status_filter,
+        status_filter,
         date_from,
         date_from,
         date_to,
         date_to,
-        *status_params,
+        status_filter,
+        status_filter,
         scope,
         scope,
         scope,
@@ -444,7 +475,8 @@ def fetch_dashboard_summary(
         date_from,
         date_to,
         date_to,
-        *status_params,
+        status_filter,
+        status_filter,
         scope,
         scope,
         scope,
@@ -454,9 +486,8 @@ def fetch_dashboard_summary(
         + """
     SELECT
         (SELECT COUNT(*)
-            FROM portal_schools
-            WHERE active = TRUE
-              AND (%s = '' OR status = %s)) AS total_schools,
+            FROM school_rollup
+            WHERE (%s = '' OR status = %s)) AS total_schools,
         (SELECT COALESCE(SUM(visit_count), 0)
             FROM school_rollup
             WHERE (%s = '' OR status = %s)) AS total_visits,
@@ -477,24 +508,24 @@ def fetch_dashboard_summary(
             WHERE (%s = '' OR status = %s)) AS latest_visit_date,
         (SELECT COUNT(*)
             FROM filtered_transactions ft
-            JOIN portal_schools s ON s.id = ft.school_id
+            JOIN school_rollup sr ON sr.school_id = ft.school_id
             WHERE ft.visit_at >= date_trunc('month', CURRENT_DATE)
-              AND (%s = '' OR s.status = %s)) AS visits_this_month,
+              AND (%s = '' OR sr.status = %s)) AS visits_this_month,
         (SELECT COUNT(*) FROM daftar_tamu_transactions t
-            JOIN portal_schools s ON s.id = t.school_id
+            JOIN school_rollup sr ON sr.school_id = t.school_id
             WHERE t.status = 'pending'
               AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
               AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
-              AND (%s = '' OR s.status = %s)
+              AND (%s = '' OR sr.status = %s)
               """
         + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
         + """) AS pending_visits,
         (SELECT COUNT(*) FROM daftar_tamu_transactions t
-            JOIN portal_schools s ON s.id = t.school_id
+            JOIN school_rollup sr ON sr.school_id = t.school_id
             WHERE t.status = 'rejected'
               AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
               AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
-              AND (%s = '' OR s.status = %s)
+              AND (%s = '' OR sr.status = %s)
               """
         + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
         + """) AS rejected_visits
@@ -528,10 +559,12 @@ def fetch_school_rankings(
     date_to: Optional[date] = None,
     guest_scope: Optional[str] = None,
     school_status: Optional[str] = None,
+    kecamatan_ids: Optional[List[int]] = None,
 ) -> Tuple[List[Dict[str, Any]], int]:
     """Fetch school rankings with search, sorting, and pagination."""
     scope = _normalize_guest_scope(guest_scope)
     status_filter = _normalize_school_status(school_status)
+    area_filter = _normalize_kecamatan_ids(kecamatan_ids)
     safe_page = max(1, page)
     safe_per_page = max(1, min(per_page, 500))
     offset = (safe_page - 1) * safe_per_page
@@ -540,7 +573,17 @@ def fetch_school_rankings(
     order_sql = SORT_OPTIONS[safe_sort]
     query_text, like_query = _build_search(search_query)
 
-    base_params: List[Any] = [date_from, date_from, date_to, date_to, scope, scope, scope]
+    base_params: List[Any] = [
+        date_from,
+        date_from,
+        date_to,
+        date_to,
+        scope,
+        scope,
+        scope,
+        area_filter,
+        area_filter,
+    ]
     search_params: List[Any] = [query_text, like_query, like_query, like_query, like_query]
     status_params: List[Any] = [status_filter, status_filter]
 
@@ -639,10 +682,12 @@ def fetch_school_visit_histogram(
     date_to: Optional[date] = None,
     guest_scope: Optional[str] = None,
     school_status: Optional[str] = None,
+    kecamatan_ids: Optional[List[int]] = None,
 ) -> Dict[int, int]:
     """Return histogram of school visit counts for filtered schools."""
     scope = _normalize_guest_scope(guest_scope)
     status_filter = _normalize_school_status(school_status)
+    area_filter = _normalize_kecamatan_ids(kecamatan_ids)
     query = (
         _ROLLUP_CTE
         + """
@@ -664,6 +709,8 @@ def fetch_school_visit_histogram(
         scope,
         scope,
         scope,
+        area_filter,
+        area_filter,
         status_filter,
         status_filter,
     ]
@@ -689,10 +736,12 @@ def fetch_school_visit_bucket_rows(
     date_to: Optional[date] = None,
     guest_scope: Optional[str] = None,
     school_status: Optional[str] = None,
+    kecamatan_ids: Optional[List[int]] = None,
 ) -> Tuple[List[Dict[str, Any]], int]:
     """Fetch schools within a visit-count bucket for dashboard drill-down."""
     scope = _normalize_guest_scope(guest_scope)
     status_filter = _normalize_school_status(school_status)
+    area_filter = _normalize_kecamatan_ids(kecamatan_ids)
     safe_page = max(1, page)
     safe_per_page = max(5, min(per_page, 200))
     offset = (safe_page - 1) * safe_per_page
@@ -766,6 +815,8 @@ def fetch_school_visit_bucket_rows(
         scope,
         scope,
         scope,
+        area_filter,
+        area_filter,
         status_filter,
         status_filter,
     ]
@@ -1610,10 +1661,12 @@ def fetch_map_data(
     date_to: Optional[date] = None,
     guest_scope: Optional[str] = None,
     school_status: Optional[str] = None,
+    kecamatan_ids: Optional[List[int]] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch map points for visit distribution."""
     scope = _normalize_guest_scope(guest_scope)
     status_filter = _normalize_school_status(school_status)
+    area_filter = _normalize_kecamatan_ids(kecamatan_ids)
     query = (
         _ROLLUP_CTE
         + f"""
@@ -1647,6 +1700,8 @@ def fetch_map_data(
                 scope,
                 scope,
                 scope,
+                area_filter,
+                area_filter,
                 status_filter,
                 status_filter,
             ],
@@ -1697,10 +1752,12 @@ def fetch_unvisited_schools(
     date_to: Optional[date] = None,
     guest_scope: Optional[str] = None,
     school_status: Optional[str] = None,
+    kecamatan_ids: Optional[List[int]] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch schools with zero approved visits in the selected period."""
     scope = _normalize_guest_scope(guest_scope)
     status_filter = _normalize_school_status(school_status)
+    area_filter = _normalize_kecamatan_ids(kecamatan_ids)
     safe_limit = max(1, min(limit, 100))
     query = (
         _ROLLUP_CTE
@@ -1730,6 +1787,8 @@ def fetch_unvisited_schools(
                 scope,
                 scope,
                 scope,
+                area_filter,
+                area_filter,
                 status_filter,
                 status_filter,
                 safe_limit,
@@ -1745,10 +1804,12 @@ def fetch_recent_visits(
     date_to: Optional[date] = None,
     guest_scope: Optional[str] = None,
     school_status: Optional[str] = None,
+    kecamatan_ids: Optional[List[int]] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch latest approved visit records for side panel."""
     scope = _normalize_guest_scope(guest_scope)
     status_filter = _normalize_school_status(school_status)
+    area_filter = _normalize_kecamatan_ids(kecamatan_ids)
     safe_limit = max(1, min(limit, 100))
     query = """
     SELECT
@@ -1773,6 +1834,7 @@ def fetch_recent_visits(
     LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
     WHERE s.active = TRUE
       AND (%s = '' OR s.status = %s)
+      AND (%s::int[] IS NULL OR l.kecamatan_id = ANY(%s::int[]))
       AND t.status = 'approved'
       AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
       AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
@@ -1792,6 +1854,8 @@ def fetch_recent_visits(
             [
                 status_filter,
                 status_filter,
+                area_filter,
+                area_filter,
                 date_from,
                 date_from,
                 date_to,

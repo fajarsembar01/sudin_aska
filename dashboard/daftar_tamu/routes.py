@@ -666,6 +666,7 @@ def _fetch_school_profile(school_id: int) -> Optional[dict]:
                    s.npsn,
                    s.name,
                    s.jenjang,
+                   l.kecamatan_id AS kecamatan_id,
                    k.name AS kecamatan_name
             FROM portal_schools s
             LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
@@ -699,6 +700,64 @@ def _fetch_dashboard_user(user_id: int) -> Optional[dict]:
         )
         row = cur.fetchone()
     return dict(row) if row else None
+
+
+def _resolve_dashboard_kecamatan_ids(user: Optional[dict]) -> Optional[list[int]]:
+    if not isinstance(user, dict):
+        return None
+    role_value = (user.get("role") or "").strip().lower()
+    if role_value != "coordinator":
+        return None
+
+    user_id = int(user.get("id") or 0)
+    resolved_ids: list[int] = []
+    seen_ids: set[int] = set()
+
+    def _append_id(raw_value: object) -> None:
+        try:
+            kecamatan_id = int(raw_value or 0)
+        except (TypeError, ValueError):
+            return
+        if kecamatan_id <= 0 or kecamatan_id in seen_ids:
+            return
+        seen_ids.add(kecamatan_id)
+        resolved_ids.append(kecamatan_id)
+
+    _append_id(user.get("requested_kecamatan"))
+    if user_id > 0:
+        db_profile = _fetch_dashboard_user(user_id) or {}
+        _append_id(db_profile.get("requested_kecamatan"))
+        try:
+            for kec_id in get_user_kecamatan_ids(user_id):
+                _append_id(kec_id)
+        except Exception:
+            pass
+
+    return resolved_ids or None
+
+
+def _can_access_school_for_dashboard(
+    *,
+    user: Optional[dict],
+    school: Optional[dict],
+    kecamatan_ids: Optional[list[int]] = None,
+) -> bool:
+    if not isinstance(user, dict) or not isinstance(school, dict):
+        return False
+    role_value = (user.get("role") or "").strip().lower()
+    if role_value != "coordinator":
+        return True
+
+    allowed_ids = kecamatan_ids or _resolve_dashboard_kecamatan_ids(user)
+    if not allowed_ids:
+        return True
+    try:
+        school_kecamatan_id = int(school.get("kecamatan_id") or 0)
+    except (TypeError, ValueError):
+        school_kecamatan_id = 0
+    if school_kecamatan_id <= 0:
+        return False
+    return school_kecamatan_id in set(allowed_ids)
 
 
 def _list_unvisited_schools_for_user(
@@ -1120,10 +1179,14 @@ def inject_daftar_tamu_context() -> dict:
 # ===============================
 
 @daftar_tamu_bp.route("/admin/dashboard")
-@role_required("admin")
+@role_required("admin", "coordinator")
 def admin_dashboard() -> Response:
     """Render admin monitoring dashboard for school guest visits."""
     ensure_daftar_tamu_seed_data()
+    user = current_user() or {}
+    role_value = (user.get("role") or "").strip().lower()
+    is_coordinator_dashboard = role_value == "coordinator"
+    dashboard_kecamatan_ids = _resolve_dashboard_kecamatan_ids(user) if is_coordinator_dashboard else None
 
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
@@ -1143,9 +1206,7 @@ def admin_dashboard() -> Response:
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
     school_status = _parse_school_status(request.args.get("school_status"), default="all")
-    school_status = _parse_school_status(request.args.get("school_status"), default="all")
-    school_status = _parse_school_status(request.args.get("school_status"), default="all")
-    show_user_rankings = guest_scope != "umum"
+    show_user_rankings = (guest_scope != "umum") and not is_coordinator_dashboard
     user_rank_guest_scope = "sudin" if guest_scope == "all" else guest_scope
     user_rank_scope_label = "SUDIN" if user_rank_guest_scope == "sudin" else "Umum"
     summary = fetch_dashboard_summary(
@@ -1153,12 +1214,14 @@ def admin_dashboard() -> Response:
         date_to=date_to,
         guest_scope=guest_scope,
         school_status=school_status,
+        kecamatan_ids=dashboard_kecamatan_ids,
     )
     visit_histogram = fetch_school_visit_histogram(
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
         school_status=school_status,
+        kecamatan_ids=dashboard_kecamatan_ids,
     )
 
     def _count_histogram_bucket(min_visits: int, max_visits: Optional[int]) -> int:
@@ -1200,6 +1263,7 @@ def admin_dashboard() -> Response:
         date_to=date_to,
         guest_scope=guest_scope,
         school_status=school_status,
+        kecamatan_ids=dashboard_kecamatan_ids,
     )
     bottom_visit_rankings, _ = fetch_school_rankings(
         page=1,
@@ -1210,6 +1274,7 @@ def admin_dashboard() -> Response:
         date_to=date_to,
         guest_scope=guest_scope,
         school_status=school_status,
+        kecamatan_ids=dashboard_kecamatan_ids,
     )
 
     rankings, total_rows = fetch_school_rankings(
@@ -1221,6 +1286,7 @@ def admin_dashboard() -> Response:
         date_to=date_to,
         guest_scope=guest_scope,
         school_status=school_status,
+        kecamatan_ids=dashboard_kecamatan_ids,
     )
     user_search_query = (request.args.get("user_q") or "").strip()
     user_sort = (request.args.get("user_sort") or "").strip().lower() or "visits_desc"
@@ -1269,6 +1335,7 @@ def admin_dashboard() -> Response:
             date_to=date_to,
             guest_scope=guest_scope,
             school_status=school_status,
+            kecamatan_ids=dashboard_kecamatan_ids,
         )
 
     unvisited_schools = fetch_unvisited_schools(
@@ -1277,6 +1344,7 @@ def admin_dashboard() -> Response:
         date_to=date_to,
         guest_scope=guest_scope,
         school_status=school_status,
+        kecamatan_ids=dashboard_kecamatan_ids,
     )
     recent_visits = fetch_recent_visits(
         limit=8,
@@ -1284,6 +1352,7 @@ def admin_dashboard() -> Response:
         date_to=date_to,
         guest_scope=guest_scope,
         school_status=school_status,
+        kecamatan_ids=dashboard_kecamatan_ids,
     )
 
     date_from_str = date_from.isoformat() if date_from else ""
@@ -1321,6 +1390,7 @@ def admin_dashboard() -> Response:
         today_str=_today_jakarta().isoformat(),
         guest_scope=guest_scope,
         school_status=school_status,
+        dashboard_scope_role="coordinator" if is_coordinator_dashboard else "admin",
     )
 
 
@@ -1477,12 +1547,20 @@ def admin_user_visits(user_id: int) -> Response:
 
 
 @daftar_tamu_bp.route("/admin/sekolah/<int:school_id>/visits")
-@role_required("admin")
+@role_required("admin", "coordinator")
 def admin_school_visits(school_id: int) -> Response:
     """Return visit history rows for school modal on admin dashboard."""
+    user = current_user() or {}
+    dashboard_kecamatan_ids = _resolve_dashboard_kecamatan_ids(user)
     school = _fetch_school_profile(school_id)
     if not school:
         return jsonify({"success": False, "message": "Sekolah tidak ditemukan."}), 404
+    if not _can_access_school_for_dashboard(
+        user=user,
+        school=school,
+        kecamatan_ids=dashboard_kecamatan_ids,
+    ):
+        return jsonify({"success": False, "message": "Sekolah di luar lokasi unit kerja."}), 403
 
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
@@ -1618,12 +1696,20 @@ def admin_user_visits_export(user_id: int) -> Response:
 
 
 @daftar_tamu_bp.route("/admin/sekolah/<int:school_id>/visits/export")
-@role_required("admin")
+@role_required("admin", "coordinator")
 def admin_school_visits_export(school_id: int) -> Response:
     """Export school visit history (Excel-friendly CSV)."""
+    user = current_user() or {}
+    dashboard_kecamatan_ids = _resolve_dashboard_kecamatan_ids(user)
     school = _fetch_school_profile(school_id)
     if not school:
         return Response("Sekolah tidak ditemukan.", status=404)
+    if not _can_access_school_for_dashboard(
+        user=user,
+        school=school,
+        kecamatan_ids=dashboard_kecamatan_ids,
+    ):
+        return Response("Sekolah di luar lokasi unit kerja.", status=403)
 
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
@@ -1711,10 +1797,12 @@ def admin_map_data() -> Response:
 
 
 @daftar_tamu_bp.route("/admin/rankings/more")
-@role_required("admin")
+@role_required("admin", "coordinator")
 def admin_rankings_more() -> Response:
     """Load more school rankings for dashboard card."""
     ensure_daftar_tamu_seed_data()
+    user = current_user() or {}
+    dashboard_kecamatan_ids = _resolve_dashboard_kecamatan_ids(user)
 
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
@@ -1742,6 +1830,7 @@ def admin_rankings_more() -> Response:
         date_to=date_to,
         guest_scope=guest_scope,
         school_status=school_status,
+        kecamatan_ids=dashboard_kecamatan_ids,
     )
     if skip:
         rows = rows[skip:]
@@ -1761,10 +1850,12 @@ def admin_rankings_more() -> Response:
 
 
 @daftar_tamu_bp.route("/admin/stats/visit-buckets")
-@role_required("admin")
+@role_required("admin", "coordinator")
 def admin_visit_bucket_detail() -> Response:
     """Detailed school list for selected visit-count bucket."""
     ensure_daftar_tamu_seed_data()
+    user = current_user() or {}
+    dashboard_kecamatan_ids = _resolve_dashboard_kecamatan_ids(user)
 
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
@@ -1808,6 +1899,7 @@ def admin_visit_bucket_detail() -> Response:
         date_to=date_to,
         guest_scope=guest_scope,
         school_status=school_status,
+        kecamatan_ids=dashboard_kecamatan_ids,
     )
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
     if page > total_pages:
@@ -1822,6 +1914,7 @@ def admin_visit_bucket_detail() -> Response:
             date_to=date_to,
             guest_scope=guest_scope,
             school_status=school_status,
+            kecamatan_ids=dashboard_kecamatan_ids,
         )
 
     date_from_str = date_from.isoformat() if date_from else ""
@@ -1847,10 +1940,12 @@ def admin_visit_bucket_detail() -> Response:
 
 
 @daftar_tamu_bp.route("/admin/export")
-@role_required("admin")
+@role_required("admin", "coordinator")
 def export_rankings() -> Response:
     """Export school rankings in CSV/Excel."""
     ensure_daftar_tamu_seed_data()
+    user = current_user() or {}
+    dashboard_kecamatan_ids = _resolve_dashboard_kecamatan_ids(user)
 
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
@@ -1874,6 +1969,7 @@ def export_rankings() -> Response:
         date_to=date_to,
         guest_scope=guest_scope,
         school_status=school_status,
+        kecamatan_ids=dashboard_kecamatan_ids,
     )
 
     csv_headers = [

@@ -5,6 +5,7 @@
 {% set sort_name = "name_desc" if sort == "name_asc" else "name_asc" %}
 {% set user_sort_visits = "visits_asc" if user_sort == "visits_desc" else "visits_desc" %}
 {% set user_sort_last_visit = "last_visit_asc" if user_sort == "last_visit_desc" else "last_visit_desc" %}
+{% set is_coordinator_dashboard = dashboard_scope_role == "coordinator" %}
 {% if date_from_str and date_to_str %}
 {% set user_rank_filter_label = date_from_str ~ " s/d " ~ date_to_str %}
 {% elif date_from_str %}
@@ -16,9 +17,12 @@
 {% endif %}
 
 {% block head_extra %}
+{% if not is_coordinator_dashboard %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+{% endif %}
 <style>
+    {% if not is_coordinator_dashboard %}
     #guestMap {
         height: 420px;
         border-radius: 14px;
@@ -42,6 +46,7 @@
         border-radius: 50%;
         display: inline-block;
     }
+    {% endif %}
 
     .table thead a {
         color: inherit;
@@ -78,9 +83,11 @@
     }
 
     @media (max-width: 768px) {
+        {% if not is_coordinator_dashboard %}
         #guestMap {
             height: 320px;
         }
+        {% endif %}
     }
 
     @media print {
@@ -88,9 +95,11 @@
             display: none !important;
         }
 
+        {% if not is_coordinator_dashboard %}
         #guestMap {
             height: 340px;
         }
+        {% endif %}
 
         .card {
             break-inside: avoid;
@@ -113,6 +122,7 @@
                         <p class="page-subtitle mb-0">Monitoring kunjungan tamu sudin/lembaga ke sekolah.</p>
                     </div>
                 </div>
+                {% if not is_coordinator_dashboard %}
                 <div class="d-flex flex-wrap gap-2 no-print">
                     <a href="{{ url_for('daftar_tamu.admin_validation') }}" class="btn btn-outline-success">
                         <i class="bi bi-clipboard-check me-1"></i>Validasi Tamu
@@ -136,6 +146,7 @@
                         <i class="bi bi-filetype-pdf me-1"></i>PDF
                     </button>
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -182,6 +193,7 @@
     </div>
 </section>
 
+{% if not is_coordinator_dashboard %}
 <section class="mb-4">
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-transparent border-0 pb-0">
@@ -253,6 +265,7 @@
         </div>
     </div>
 </section>
+{% endif %}
 
 <section class="row g-3 mb-4">
     <div class="col-lg-4">
@@ -536,7 +549,7 @@
             </div>
         </div>
 
-        {% if show_user_rankings %}
+        {% if show_user_rankings and not is_coordinator_dashboard %}
         <div class="card border-0 shadow-sm mt-3">
             <div class="card-header bg-transparent border-0">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -934,8 +947,10 @@
 {% endblock %}
 
 {% block portal_scripts %}
+{% if not is_coordinator_dashboard %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+{% endif %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
     (function () {
@@ -1140,6 +1155,7 @@
         }
     })();
 </script>
+{% if not is_coordinator_dashboard %}
 <script>
     (function () {
         const map = L.map('guestMap').setView([-6.151, 106.897], 11);
@@ -1233,6 +1249,7 @@
             });
     })();
 </script>
+{% endif %}
 <script>
     (function () {
         const modalEl = document.getElementById('schoolVisitModal');
