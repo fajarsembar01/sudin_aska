@@ -4,7 +4,9 @@ venv311/
 venv*/
 .venv/
 venv_py39/
+.venv/
 .env
+.env.*
 
 # Cache & pyc
 __pycache__/
