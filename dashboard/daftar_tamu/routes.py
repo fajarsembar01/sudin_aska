@@ -252,6 +252,30 @@ def _parse_school_status(value: Optional[str], default: Optional[str] = None) ->
     return default or "all"
 
 
+def _is_coordinator_dashboard_user(user: Optional[dict]) -> bool:
+    if not isinstance(user, dict):
+        return False
+    return (user.get("role") or "").strip().lower() == "coordinator"
+
+
+def _resolve_dashboard_owner_user_id(user: Optional[dict]) -> Optional[int]:
+    if not _is_coordinator_dashboard_user(user):
+        return None
+    try:
+        user_id = int((user or {}).get("id") or 0)
+    except (TypeError, ValueError):
+        return None
+    return user_id if user_id > 0 else None
+
+
+def _resolve_dashboard_school_status(user: Optional[dict], raw_value: Optional[str]) -> str:
+    default_status = "negeri" if _is_coordinator_dashboard_user(user) else "all"
+    status = _parse_school_status(raw_value, default=default_status)
+    if _is_coordinator_dashboard_user(user):
+        return "negeri"
+    return status
+
+
 def _normalize_staff_note_level(value: Optional[str], default: str = "") -> str:
     level = (value or "").strip().lower()
     if level in {"mendesak", "urgent", "critical", "sangat_mendesak", "sangat mendesak"}:
@@ -668,6 +692,7 @@ def _fetch_school_profile(school_id: int) -> Optional[dict]:
                    s.npsn,
                    s.name,
                    s.jenjang,
+                   s.status,
                    l.kecamatan_id AS kecamatan_id,
                    k.name AS kecamatan_name
             FROM portal_schools s
@@ -749,6 +774,10 @@ def _can_access_school_for_dashboard(
     role_value = (user.get("role") or "").strip().lower()
     if role_value != "coordinator":
         return True
+
+    school_status = (school.get("status") or "").strip().lower()
+    if school_status not in {"negeri", "state"}:
+        return False
 
     allowed_ids = kecamatan_ids or _resolve_dashboard_kecamatan_ids(user)
     if not allowed_ids:
@@ -1191,6 +1220,13 @@ def inject_daftar_tamu_context() -> dict:
 # Admin Dashboard
 # ===============================
 
+@daftar_tamu_bp.route("/coordinator/dashboard")
+@role_required("coordinator")
+def coordinator_dashboard() -> Response:
+    """Render coordinator dashboard with self-owned guestbook scope."""
+    return admin_dashboard()
+
+
 @daftar_tamu_bp.route("/admin/dashboard")
 @role_required("admin", "coordinator")
 def admin_dashboard() -> Response:
@@ -1200,6 +1236,7 @@ def admin_dashboard() -> Response:
     role_value = (user.get("role") or "").strip().lower()
     is_coordinator_dashboard = role_value == "coordinator"
     dashboard_kecamatan_ids = _resolve_dashboard_kecamatan_ids(user) if is_coordinator_dashboard else None
+    dashboard_owner_user_id = _resolve_dashboard_owner_user_id(user)
 
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
@@ -1218,7 +1255,7 @@ def admin_dashboard() -> Response:
     page = max(1, page)
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
-    school_status = _parse_school_status(request.args.get("school_status"), default="all")
+    school_status = _resolve_dashboard_school_status(user, request.args.get("school_status"))
     show_user_rankings = (guest_scope != "umum") and not is_coordinator_dashboard
     user_rank_guest_scope = "sudin" if guest_scope == "all" else guest_scope
     user_rank_scope_label = "SUDIN" if user_rank_guest_scope == "sudin" else "Umum"
@@ -1228,6 +1265,7 @@ def admin_dashboard() -> Response:
         guest_scope=guest_scope,
         school_status=school_status,
         kecamatan_ids=dashboard_kecamatan_ids,
+        owner_user_id=dashboard_owner_user_id,
     )
     visit_histogram = fetch_school_visit_histogram(
         date_from=date_from,
@@ -1235,6 +1273,7 @@ def admin_dashboard() -> Response:
         guest_scope=guest_scope,
         school_status=school_status,
         kecamatan_ids=dashboard_kecamatan_ids,
+        owner_user_id=dashboard_owner_user_id,
     )
 
     def _count_histogram_bucket(min_visits: int, max_visits: Optional[int]) -> int:
@@ -1277,6 +1316,7 @@ def admin_dashboard() -> Response:
         guest_scope=guest_scope,
         school_status=school_status,
         kecamatan_ids=dashboard_kecamatan_ids,
+        owner_user_id=dashboard_owner_user_id,
     )
     bottom_visit_rankings, _ = fetch_school_rankings(
         page=1,
@@ -1288,6 +1328,7 @@ def admin_dashboard() -> Response:
         guest_scope=guest_scope,
         school_status=school_status,
         kecamatan_ids=dashboard_kecamatan_ids,
+        owner_user_id=dashboard_owner_user_id,
     )
 
     rankings, total_rows = fetch_school_rankings(
@@ -1300,6 +1341,7 @@ def admin_dashboard() -> Response:
         guest_scope=guest_scope,
         school_status=school_status,
         kecamatan_ids=dashboard_kecamatan_ids,
+        owner_user_id=dashboard_owner_user_id,
     )
     user_search_query = (request.args.get("user_q") or "").strip()
     user_sort = (request.args.get("user_sort") or "").strip().lower() or "visits_desc"
@@ -1349,6 +1391,7 @@ def admin_dashboard() -> Response:
             guest_scope=guest_scope,
             school_status=school_status,
             kecamatan_ids=dashboard_kecamatan_ids,
+            owner_user_id=dashboard_owner_user_id,
         )
 
     unvisited_schools = fetch_unvisited_schools(
@@ -1358,6 +1401,7 @@ def admin_dashboard() -> Response:
         guest_scope=guest_scope,
         school_status=school_status,
         kecamatan_ids=dashboard_kecamatan_ids,
+        owner_user_id=dashboard_owner_user_id,
     )
     recent_visits = fetch_recent_visits(
         limit=8,
@@ -1366,6 +1410,7 @@ def admin_dashboard() -> Response:
         guest_scope=guest_scope,
         school_status=school_status,
         kecamatan_ids=dashboard_kecamatan_ids,
+        owner_user_id=dashboard_owner_user_id,
     )
 
     date_from_str = date_from.isoformat() if date_from else ""
@@ -1404,6 +1449,31 @@ def admin_dashboard() -> Response:
         guest_scope=guest_scope,
         school_status=school_status,
         dashboard_scope_role="coordinator" if is_coordinator_dashboard else "admin",
+        dashboard_home_endpoint="daftar_tamu.coordinator_dashboard"
+        if is_coordinator_dashboard
+        else "daftar_tamu.admin_dashboard",
+        visit_bucket_detail_endpoint="daftar_tamu.coordinator_visit_bucket_detail"
+        if is_coordinator_dashboard
+        else "daftar_tamu.admin_visit_bucket_detail",
+        rankings_more_endpoint="daftar_tamu.coordinator_rankings_more"
+        if is_coordinator_dashboard
+        else "daftar_tamu.admin_rankings_more",
+        export_rankings_endpoint="daftar_tamu.coordinator_export_rankings"
+        if is_coordinator_dashboard
+        else "daftar_tamu.export_rankings",
+        school_visits_endpoint="daftar_tamu.coordinator_school_visits"
+        if is_coordinator_dashboard
+        else "daftar_tamu.admin_school_visits",
+        school_visits_export_endpoint="daftar_tamu.coordinator_school_visits_export"
+        if is_coordinator_dashboard
+        else "daftar_tamu.admin_school_visits_export",
+        school_visit_days_endpoint="daftar_tamu.coordinator_school_visit_days"
+        if is_coordinator_dashboard
+        else "daftar_tamu.admin_school_visit_days",
+        school_visit_day_guests_endpoint="daftar_tamu.coordinator_school_visit_day_guests"
+        if is_coordinator_dashboard
+        else "daftar_tamu.admin_school_visit_day_guests",
+        map_data_endpoint="daftar_tamu.admin_map_data",
     )
 
 
@@ -1560,11 +1630,13 @@ def admin_user_visits(user_id: int) -> Response:
 
 
 @daftar_tamu_bp.route("/admin/sekolah/<int:school_id>/visits")
+@daftar_tamu_bp.route("/coordinator/sekolah/<int:school_id>/visits", endpoint="coordinator_school_visits")
 @role_required("admin", "coordinator")
 def admin_school_visits(school_id: int) -> Response:
     """Return visit history rows for school modal on admin dashboard."""
     user = current_user() or {}
     dashboard_kecamatan_ids = _resolve_dashboard_kecamatan_ids(user)
+    dashboard_owner_user_id = _resolve_dashboard_owner_user_id(user)
     school = _fetch_school_profile(school_id)
     if not school:
         return jsonify({"success": False, "message": "Sekolah tidak ditemukan."}), 404
@@ -1599,6 +1671,7 @@ def admin_school_visits(school_id: int) -> Response:
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        owner_user_id=dashboard_owner_user_id,
     )
 
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
@@ -1613,6 +1686,7 @@ def admin_school_visits(school_id: int) -> Response:
             date_from=date_from,
             date_to=date_to,
             guest_scope=guest_scope,
+            owner_user_id=dashboard_owner_user_id,
         )
 
     for row in rows:
@@ -1634,12 +1708,22 @@ def admin_school_visits(school_id: int) -> Response:
 
 
 @daftar_tamu_bp.route("/admin/sekolah/<int:school_id>/visit-days")
-@role_required("admin")
+@daftar_tamu_bp.route("/coordinator/sekolah/<int:school_id>/visit-days", endpoint="coordinator_school_visit_days")
+@role_required("admin", "coordinator")
 def admin_school_visit_days(school_id: int) -> Response:
     """Return distinct visit dates for the school day drill-down modal."""
+    user = current_user() or {}
+    dashboard_kecamatan_ids = _resolve_dashboard_kecamatan_ids(user)
+    dashboard_owner_user_id = _resolve_dashboard_owner_user_id(user)
     school = _fetch_school_profile(school_id)
     if not school:
         return jsonify({"success": False, "message": "Sekolah tidak ditemukan."}), 404
+    if not _can_access_school_for_dashboard(
+        user=user,
+        school=school,
+        kecamatan_ids=dashboard_kecamatan_ids,
+    ):
+        return jsonify({"success": False, "message": "Sekolah di luar lokasi unit kerja."}), 403
 
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
@@ -1661,6 +1745,7 @@ def admin_school_visit_days(school_id: int) -> Response:
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        owner_user_id=dashboard_owner_user_id,
     )
 
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
@@ -1674,6 +1759,7 @@ def admin_school_visit_days(school_id: int) -> Response:
             date_from=date_from,
             date_to=date_to,
             guest_scope=guest_scope,
+            owner_user_id=dashboard_owner_user_id,
         )
 
     for row in rows:
@@ -1693,12 +1779,25 @@ def admin_school_visit_days(school_id: int) -> Response:
 
 
 @daftar_tamu_bp.route("/admin/sekolah/<int:school_id>/visit-days/<visit_date>/guests")
-@role_required("admin")
+@daftar_tamu_bp.route(
+    "/coordinator/sekolah/<int:school_id>/visit-days/<visit_date>/guests",
+    endpoint="coordinator_school_visit_day_guests",
+)
+@role_required("admin", "coordinator")
 def admin_school_visit_day_guests(school_id: int, visit_date: str) -> Response:
     """Return guest names for a selected school visit date."""
+    user = current_user() or {}
+    dashboard_kecamatan_ids = _resolve_dashboard_kecamatan_ids(user)
+    dashboard_owner_user_id = _resolve_dashboard_owner_user_id(user)
     school = _fetch_school_profile(school_id)
     if not school:
         return jsonify({"success": False, "message": "Sekolah tidak ditemukan."}), 404
+    if not _can_access_school_for_dashboard(
+        user=user,
+        school=school,
+        kecamatan_ids=dashboard_kecamatan_ids,
+    ):
+        return jsonify({"success": False, "message": "Sekolah di luar lokasi unit kerja."}), 403
 
     parsed_visit_date = _parse_iso_date(visit_date)
     if not parsed_visit_date:
@@ -1718,6 +1817,7 @@ def admin_school_visit_day_guests(school_id: int, visit_date: str) -> Response:
         per_page=per_page,
         search_query=search_query,
         guest_scope=guest_scope,
+        owner_user_id=dashboard_owner_user_id,
     )
 
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
@@ -1730,6 +1830,7 @@ def admin_school_visit_day_guests(school_id: int, visit_date: str) -> Response:
             per_page=per_page,
             search_query=search_query,
             guest_scope=guest_scope,
+            owner_user_id=dashboard_owner_user_id,
         )
 
     for row in rows:
@@ -1825,11 +1926,16 @@ def admin_user_visits_export(user_id: int) -> Response:
 
 
 @daftar_tamu_bp.route("/admin/sekolah/<int:school_id>/visits/export")
+@daftar_tamu_bp.route(
+    "/coordinator/sekolah/<int:school_id>/visits/export",
+    endpoint="coordinator_school_visits_export",
+)
 @role_required("admin", "coordinator")
 def admin_school_visits_export(school_id: int) -> Response:
     """Export school visit history (Excel-friendly CSV)."""
     user = current_user() or {}
     dashboard_kecamatan_ids = _resolve_dashboard_kecamatan_ids(user)
+    dashboard_owner_user_id = _resolve_dashboard_owner_user_id(user)
     school = _fetch_school_profile(school_id)
     if not school:
         return Response("Sekolah tidak ditemukan.", status=404)
@@ -1861,6 +1967,7 @@ def admin_school_visits_export(school_id: int) -> Response:
         date_from=date_from,
         date_to=date_to,
         guest_scope=guest_scope,
+        owner_user_id=dashboard_owner_user_id,
     )
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
     if total_pages > 1:
@@ -1874,6 +1981,7 @@ def admin_school_visits_export(school_id: int) -> Response:
                 date_from=date_from,
                 date_to=date_to,
                 guest_scope=guest_scope,
+                owner_user_id=dashboard_owner_user_id,
             )
             rows.extend(page_rows)
 
@@ -1926,12 +2034,14 @@ def admin_map_data() -> Response:
 
 
 @daftar_tamu_bp.route("/admin/rankings/more")
+@daftar_tamu_bp.route("/coordinator/rankings/more", endpoint="coordinator_rankings_more")
 @role_required("admin", "coordinator")
 def admin_rankings_more() -> Response:
     """Load more school rankings for dashboard card."""
     ensure_daftar_tamu_seed_data()
     user = current_user() or {}
     dashboard_kecamatan_ids = _resolve_dashboard_kecamatan_ids(user)
+    dashboard_owner_user_id = _resolve_dashboard_owner_user_id(user)
 
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
@@ -1939,7 +2049,7 @@ def admin_rankings_more() -> Response:
         date_from, date_to = date_to, date_from
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
-    school_status = _parse_school_status(request.args.get("school_status"), default="all")
+    school_status = _resolve_dashboard_school_status(user, request.args.get("school_status"))
     ranking_type = (request.args.get("type") or "best").strip().lower()
     if ranking_type not in {"best", "worst"}:
         ranking_type = "best"
@@ -1960,6 +2070,7 @@ def admin_rankings_more() -> Response:
         guest_scope=guest_scope,
         school_status=school_status,
         kecamatan_ids=dashboard_kecamatan_ids,
+        owner_user_id=dashboard_owner_user_id,
     )
     if skip:
         rows = rows[skip:]
@@ -1981,12 +2092,14 @@ def admin_rankings_more() -> Response:
 
 
 @daftar_tamu_bp.route("/admin/stats/visit-buckets")
+@daftar_tamu_bp.route("/coordinator/stats/visit-buckets", endpoint="coordinator_visit_bucket_detail")
 @role_required("admin", "coordinator")
 def admin_visit_bucket_detail() -> Response:
     """Detailed school list for selected visit-count bucket."""
     ensure_daftar_tamu_seed_data()
     user = current_user() or {}
     dashboard_kecamatan_ids = _resolve_dashboard_kecamatan_ids(user)
+    dashboard_owner_user_id = _resolve_dashboard_owner_user_id(user)
 
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
@@ -1994,7 +2107,7 @@ def admin_visit_bucket_detail() -> Response:
         date_from, date_to = date_to, date_from
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
-    school_status = _parse_school_status(request.args.get("school_status"), default="all")
+    school_status = _resolve_dashboard_school_status(user, request.args.get("school_status"))
 
     source = (request.args.get("source") or "distribution").strip().lower()
     if source not in {"distribution", "frequency"}:
@@ -2031,6 +2144,7 @@ def admin_visit_bucket_detail() -> Response:
         guest_scope=guest_scope,
         school_status=school_status,
         kecamatan_ids=dashboard_kecamatan_ids,
+        owner_user_id=dashboard_owner_user_id,
     )
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
     if page > total_pages:
@@ -2046,6 +2160,7 @@ def admin_visit_bucket_detail() -> Response:
             guest_scope=guest_scope,
             school_status=school_status,
             kecamatan_ids=dashboard_kecamatan_ids,
+            owner_user_id=dashboard_owner_user_id,
         )
 
     date_from_str = date_from.isoformat() if date_from else ""
@@ -2067,16 +2182,24 @@ def admin_visit_bucket_detail() -> Response:
         guest_scope=guest_scope,
         school_status=school_status,
         today_str=_today_jakarta().isoformat(),
+        dashboard_home_endpoint="daftar_tamu.coordinator_dashboard"
+        if _is_coordinator_dashboard_user(user)
+        else "daftar_tamu.admin_dashboard",
+        visit_bucket_detail_endpoint="daftar_tamu.coordinator_visit_bucket_detail"
+        if _is_coordinator_dashboard_user(user)
+        else "daftar_tamu.admin_visit_bucket_detail",
     )
 
 
 @daftar_tamu_bp.route("/admin/export")
+@daftar_tamu_bp.route("/coordinator/export", endpoint="coordinator_export_rankings")
 @role_required("admin", "coordinator")
 def export_rankings() -> Response:
     """Export school rankings in CSV/Excel."""
     ensure_daftar_tamu_seed_data()
     user = current_user() or {}
     dashboard_kecamatan_ids = _resolve_dashboard_kecamatan_ids(user)
+    dashboard_owner_user_id = _resolve_dashboard_owner_user_id(user)
 
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
@@ -2089,7 +2212,7 @@ def export_rankings() -> Response:
         sort = DEFAULT_SORT
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
-    school_status = _parse_school_status(request.args.get("school_status"), default="all")
+    school_status = _resolve_dashboard_school_status(user, request.args.get("school_status"))
 
     rows, _ = fetch_school_rankings(
         page=1,
@@ -2101,6 +2224,7 @@ def export_rankings() -> Response:
         guest_scope=guest_scope,
         school_status=school_status,
         kecamatan_ids=dashboard_kecamatan_ids,
+        owner_user_id=dashboard_owner_user_id,
     )
 
     csv_headers = [

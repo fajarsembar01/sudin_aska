@@ -5,7 +5,7 @@
 <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container-fluid px-lg-4">
         <a class="navbar-brand"
-            href="{% if current_user and current_user.role == 'admin' %}{{ url_for('daftar_tamu.admin_dashboard') }}{% elif current_user and current_user.role == 'sekolah' %}{{ url_for('daftar_tamu.sekolah_guestbook') }}{% elif current_user and current_user.role == 'coordinator' %}{{ url_for('daftar_tamu.admin_dashboard') }}{% elif current_user and current_user.role == 'staff' %}{{ url_for('daftar_tamu.user_guestbook_history') }}{% else %}{{ url_for('portal.home') }}{% endif %}">
+            href="{% if current_user and current_user.role == 'admin' %}{{ url_for('daftar_tamu.admin_dashboard') }}{% elif current_user and current_user.role == 'sekolah' %}{{ url_for('daftar_tamu.sekolah_guestbook') }}{% elif current_user and current_user.role == 'coordinator' %}{{ url_for('daftar_tamu.coordinator_dashboard') }}{% elif current_user and current_user.role == 'staff' %}{{ url_for('daftar_tamu.user_guestbook_history') }}{% else %}{{ url_for('portal.home') }}{% endif %}">
             <span class="icon-badge brand-icon text-primary">
                 <i class="bi bi-person-vcard"></i>
             </span>
@@ -30,7 +30,7 @@
                 ] %}
                 {% set pending_guestbook = admin_pending.pending_guestbook if admin_pending else 0 %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'daftar_tamu.admin_dashboard' %}active{% endif %}"
+                    <a class="nav-link {% if request.endpoint in ['daftar_tamu.admin_dashboard', 'daftar_tamu.coordinator_dashboard'] %}active{% endif %}"
                         href="{{ url_for('daftar_tamu.admin_dashboard') }}">
                         <i class="bi bi-speedometer2 nav-icon"></i>Dashboard
                     </a>
@@ -156,8 +156,8 @@
                 {% elif current_user and current_user.role in ['staff', 'coordinator'] %}
                 {% if current_user.role == 'coordinator' %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'daftar_tamu.admin_dashboard' %}active{% endif %}"
-                        href="{{ url_for('daftar_tamu.admin_dashboard') }}">
+                    <a class="nav-link {% if request.endpoint in ['daftar_tamu.coordinator_dashboard', 'daftar_tamu.admin_dashboard'] %}active{% endif %}"
+                        href="{{ url_for('daftar_tamu.coordinator_dashboard') }}">
                         <i class="bi bi-speedometer2 nav-icon"></i>Dashboard
                     </a>
                 </li>

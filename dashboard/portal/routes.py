@@ -1769,9 +1769,9 @@ def home() -> Response:
             },
             {
                 "title": "Buku Tamu",
-                "description": "Lihat riwayat buku tamu yang pernah melibatkan Anda.",
+                "description": "Pantau dashboard buku tamu pribadi untuk sekolah negeri.",
                 "icon": "bi-person-vcard",
-                "href": url_for("daftar_tamu.user_guestbook_history"),
+                "href": url_for("daftar_tamu.coordinator_dashboard"),
                 "col_class": "col-md-6 col-12",
             },
         ]
@@ -8119,7 +8119,7 @@ def _build_preview_entry_url(*, role: str, app: str) -> str:
         if role_value == "sekolah":
             return url_for("daftar_tamu.sekolah_guestbook")
         if role_value == "coordinator":
-            return url_for("daftar_tamu.admin_dashboard")
+            return url_for("daftar_tamu.coordinator_dashboard")
         return url_for("daftar_tamu.user_guestbook_history")
     if role_value == "sekolah":
         return url_for("portal.sekolah_home")

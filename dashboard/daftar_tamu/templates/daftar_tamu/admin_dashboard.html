@@ -237,7 +237,7 @@
                         <button type="submit" class="btn btn-sm btn-primary">Terapkan</button>
                     </div>
                     <div class="col-auto">
-                        <a href="{{ url_for('daftar_tamu.admin_dashboard') }}" class="btn btn-sm btn-light">Reset</a>
+                        <a href="{{ url_for(dashboard_home_endpoint) }}" class="btn btn-sm btn-light">Reset</a>
                     </div>
                 </form>
             </div>
@@ -392,11 +392,11 @@
                         <small class="text-muted">Urutkan berdasarkan total orang atau kunjungan terakhir.</small>
                     </div>
                     <div class="d-flex flex-wrap gap-2 no-print">
-                        <a href="{{ url_for('daftar_tamu.export_rankings', format='csv', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}"
+                        <a href="{{ url_for(export_rankings_endpoint, format='csv', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}"
                             class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-filetype-csv me-1"></i>CSV
                         </a>
-                        <a href="{{ url_for('daftar_tamu.export_rankings', format='excel', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}"
+                        <a href="{{ url_for(export_rankings_endpoint, format='excel', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}"
                             class="btn btn-sm btn-outline-success">
                             <i class="bi bi-file-earmark-excel me-1"></i>Excel
                         </a>
@@ -444,25 +444,25 @@
                                 <th class="ps-3">#</th>
                                 <th>
                                     <a class="text-decoration-none"
-                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_name, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
+                                        href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort_name, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
                                         Sekolah
                                     </a>
                                 </th>
                                 <th class="text-end">
                                     <a class="text-decoration-none"
-                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_visits, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
+                                        href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort_visits, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
                                         Orang
                                     </a>
                                 </th>
                                 <th class="text-end">
                                     <a class="text-decoration-none"
-                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_days, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
+                                        href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort_days, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
                                         Hari
                                     </a>
                                 </th>
                                 <th>
                                     <a class="text-decoration-none"
-                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_last_visit, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
+                                        href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort_last_visit, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
                                         Kunjungan Terakhir
                                     </a>
                                 </th>
@@ -487,8 +487,8 @@
                                         data-school-name="{{ row.school_name }}"
                                         data-school-npsn="{{ row.npsn }}"
                                         data-school-kecamatan="{{ row.kecamatan }}"
-                                        data-visits-url="{{ url_for('daftar_tamu.admin_school_visits', school_id=row.school_id) }}"
-                                        data-export-url="{{ url_for('daftar_tamu.admin_school_visits_export', school_id=row.school_id) }}">
+                                        data-visits-url="{{ url_for(school_visits_endpoint, school_id=row.school_id) }}"
+                                        data-export-url="{{ url_for(school_visits_export_endpoint, school_id=row.school_id) }}">
                                         {{ row.people_count }}
                                     </button>
                                     {% else %}
@@ -503,8 +503,8 @@
                                         data-school-name="{{ row.school_name }}"
                                         data-school-npsn="{{ row.npsn }}"
                                         data-school-kecamatan="{{ row.kecamatan }}"
-                                        data-days-url="{{ url_for('daftar_tamu.admin_school_visit_days', school_id=row.school_id) }}"
-                                        data-guests-url-template="{{ url_for('daftar_tamu.admin_school_visit_day_guests', school_id=row.school_id, visit_date='__DATE__') }}">
+                                        data-days-url="{{ url_for(school_visit_days_endpoint, school_id=row.school_id) }}"
+                                        data-guests-url-template="{{ url_for(school_visit_day_guests_endpoint, school_id=row.school_id, visit_date='__DATE__') }}">
                                         {{ row.visit_day_count }}
                                     </button>
                                     {% else %}
@@ -555,19 +555,19 @@
                     <ul class="pagination pagination-sm mb-0">
                         <li class="page-item {% if page <= 1 %}disabled{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort, per_page=per_page, page=page-1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">Prev</a>
+                                href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort, per_page=per_page, page=page-1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">Prev</a>
                         </li>
                         {% set start_page = 1 if page - 2 < 1 else page - 2 %}
                         {% set end_page = total_pages if page + 2 > total_pages else page + 2 %}
                         {% for p in range(start_page, end_page + 1) %}
                         <li class="page-item {% if p == page %}active{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort, per_page=per_page, page=p, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">{{ p }}</a>
+                                href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort, per_page=per_page, page=p, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">{{ p }}</a>
                         </li>
                         {% endfor %}
                         <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort, per_page=per_page, page=page+1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">Next</a>
+                                href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort, per_page=per_page, page=page+1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">Next</a>
                         </li>
                     </ul>
                 </div>
@@ -627,7 +627,7 @@
                                 <th>Akun</th>
                                 <th class="text-end">
                                     <a class="text-decoration-none"
-                                        href="{{ url_for('daftar_tamu.admin_dashboard',
+                                        href="{{ url_for(dashboard_home_endpoint,
                                             q=search_query, sort=sort, per_page=per_page, page=page,
                                             date_from=date_from_str, date_to=date_to_str, guest_scope=user_rank_guest_scope,
                                             school_status=school_status,
@@ -638,7 +638,7 @@
                                 </th>
                                 <th>
                                     <a class="text-decoration-none"
-                                        href="{{ url_for('daftar_tamu.admin_dashboard',
+                                        href="{{ url_for(dashboard_home_endpoint,
                                             q=search_query, sort=sort, per_page=per_page, page=page,
                                             date_from=date_from_str, date_to=date_to_str, guest_scope=user_rank_guest_scope,
                                             school_status=school_status,
@@ -720,7 +720,7 @@
                     <ul class="pagination pagination-sm mb-0">
                         <li class="page-item {% if user_page <= 1 %}disabled{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_dashboard',
+                                href="{{ url_for(dashboard_home_endpoint,
                                     q=search_query, sort=sort, per_page=per_page, page=page,
                                     date_from=date_from_str, date_to=date_to_str, guest_scope=user_rank_guest_scope, school_status=school_status,
                                     user_q=user_search_query, user_sort=user_sort, user_per_page=user_per_page, user_page=user_page-1) }}">Prev</a>
@@ -730,7 +730,7 @@
                         {% for p in range(user_start_page, user_end_page + 1) %}
                         <li class="page-item {% if p == user_page %}active{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_dashboard',
+                                href="{{ url_for(dashboard_home_endpoint,
                                     q=search_query, sort=sort, per_page=per_page, page=page,
                                     date_from=date_from_str, date_to=date_to_str, guest_scope=user_rank_guest_scope, school_status=school_status,
                                     user_q=user_search_query, user_sort=user_sort, user_per_page=user_per_page, user_page=p) }}">{{ p }}</a>
@@ -738,7 +738,7 @@
                         {% endfor %}
                         <li class="page-item {% if user_page >= user_total_pages %}disabled{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_dashboard',
+                                href="{{ url_for(dashboard_home_endpoint,
                                     q=search_query, sort=sort, per_page=per_page, page=page,
                                     date_from=date_from_str, date_to=date_to_str, guest_scope=user_rank_guest_scope, school_status=school_status,
                                     user_q=user_search_query, user_sort=user_sort, user_per_page=user_per_page, user_page=user_page+1) }}">Next</a>
@@ -1043,8 +1043,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
     (function () {
-        const detailBaseUrl = "{{ url_for('daftar_tamu.admin_visit_bucket_detail') }}";
-        const rankingEndpoint = "{{ url_for('daftar_tamu.admin_rankings_more') }}";
+        const detailBaseUrl = "{{ url_for(visit_bucket_detail_endpoint) }}";
+        const rankingEndpoint = "{{ url_for(rankings_more_endpoint) }}";
         const dateFrom = "{{ date_from_str }}";
         const dateTo = "{{ date_to_str }}";
         const guestScope = "{{ guest_scope }}";
@@ -1253,7 +1253,7 @@
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        const mapUrl = "{{ url_for('daftar_tamu.admin_map_data') }}";
+        const mapUrl = "{{ url_for(map_data_endpoint) }}";
         const params = new URLSearchParams();
         const dateFrom = "{{ date_from_str }}";
         const dateTo = "{{ date_to_str }}";
@@ -2120,3 +2120,4 @@
     })();
 </script>
 {% endblock %}
+

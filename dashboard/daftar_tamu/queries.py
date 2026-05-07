@@ -99,6 +99,19 @@ _GUEST_SCOPE_WHERE = """
       )
 """
 
+_TRANSACTION_USER_SCOPE_WHERE = """
+      AND (
+        %s::int IS NULL
+        OR {tx_alias}.created_by = %s::int
+        OR EXISTS (
+            SELECT 1
+            FROM daftar_tamu_transaction_guests g_owner
+            WHERE g_owner.transaction_id = {tx_ref}
+              AND g_owner.user_id = %s::int
+        )
+      )
+"""
+
 _GUEST_NAMES_SUBQUERY = """
     SELECT STRING_AGG(guest_name, ', ' ORDER BY guest_name)
     FROM (
@@ -197,6 +210,7 @@ WITH filtered_transactions AS (
       AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
 """
     + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+    + _TRANSACTION_USER_SCOPE_WHERE.format(tx_alias="t", tx_ref="t.id")
     + """
 ),
 school_rollup AS (
@@ -427,6 +441,16 @@ def _normalize_kecamatan_ids(kecamatan_ids: Optional[List[int]]) -> Optional[Lis
     return normalized or None
 
 
+def _normalize_owner_user_id(owner_user_id: Optional[int]) -> Optional[int]:
+    if owner_user_id is None:
+        return None
+    try:
+        parsed = int(owner_user_id)
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed > 0 else None
+
+
 def ensure_daftar_tamu_seed_data() -> None:
     """No-op: daftar tamu now uses portal_schools and real transactions."""
     return
@@ -438,11 +462,13 @@ def fetch_dashboard_summary(
     guest_scope: Optional[str] = None,
     school_status: Optional[str] = None,
     kecamatan_ids: Optional[List[int]] = None,
+    owner_user_id: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Fetch top-level summary stats for admin dashboard."""
     scope = _normalize_guest_scope(guest_scope)
     status_filter = _normalize_school_status(school_status)
     area_filter = _normalize_kecamatan_ids(kecamatan_ids)
+    owner_filter = _normalize_owner_user_id(owner_user_id)
     cutoff = _today_jakarta() - timedelta(days=30)
     params: List[Any] = [
         date_from,
@@ -452,6 +478,9 @@ def fetch_dashboard_summary(
         scope,
         scope,
         scope,
+        owner_filter,
+        owner_filter,
+        owner_filter,
         area_filter,
         area_filter,
         status_filter,
@@ -478,6 +507,9 @@ def fetch_dashboard_summary(
         scope,
         scope,
         scope,
+        owner_filter,
+        owner_filter,
+        owner_filter,
         date_from,
         date_from,
         date_to,
@@ -487,6 +519,9 @@ def fetch_dashboard_summary(
         scope,
         scope,
         scope,
+        owner_filter,
+        owner_filter,
+        owner_filter,
     ]
     query = (
         _ROLLUP_CTE
@@ -526,6 +561,7 @@ def fetch_dashboard_summary(
               AND (%s = '' OR sr.status = %s)
               """
         + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+        + _TRANSACTION_USER_SCOPE_WHERE.format(tx_alias="t", tx_ref="t.id")
         + """) AS pending_visits,
         (SELECT COUNT(*) FROM daftar_tamu_transactions t
             JOIN school_rollup sr ON sr.school_id = t.school_id
@@ -535,6 +571,7 @@ def fetch_dashboard_summary(
               AND (%s = '' OR sr.status = %s)
               """
         + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+        + _TRANSACTION_USER_SCOPE_WHERE.format(tx_alias="t", tx_ref="t.id")
         + """) AS rejected_visits
     """
     )
@@ -567,11 +604,13 @@ def fetch_school_rankings(
     guest_scope: Optional[str] = None,
     school_status: Optional[str] = None,
     kecamatan_ids: Optional[List[int]] = None,
+    owner_user_id: Optional[int] = None,
 ) -> Tuple[List[Dict[str, Any]], int]:
     """Fetch school rankings with search, sorting, and pagination."""
     scope = _normalize_guest_scope(guest_scope)
     status_filter = _normalize_school_status(school_status)
     area_filter = _normalize_kecamatan_ids(kecamatan_ids)
+    owner_filter = _normalize_owner_user_id(owner_user_id)
     safe_page = max(1, page)
     safe_per_page = max(1, min(per_page, 500))
     offset = (safe_page - 1) * safe_per_page
@@ -588,6 +627,9 @@ def fetch_school_rankings(
         scope,
         scope,
         scope,
+        owner_filter,
+        owner_filter,
+        owner_filter,
         area_filter,
         area_filter,
     ]
@@ -694,11 +736,13 @@ def fetch_school_visit_histogram(
     guest_scope: Optional[str] = None,
     school_status: Optional[str] = None,
     kecamatan_ids: Optional[List[int]] = None,
+    owner_user_id: Optional[int] = None,
 ) -> Dict[int, int]:
     """Return histogram of school visit counts for filtered schools."""
     scope = _normalize_guest_scope(guest_scope)
     status_filter = _normalize_school_status(school_status)
     area_filter = _normalize_kecamatan_ids(kecamatan_ids)
+    owner_filter = _normalize_owner_user_id(owner_user_id)
     query = (
         _ROLLUP_CTE
         + """
@@ -720,6 +764,9 @@ def fetch_school_visit_histogram(
         scope,
         scope,
         scope,
+        owner_filter,
+        owner_filter,
+        owner_filter,
         area_filter,
         area_filter,
         status_filter,
@@ -748,11 +795,13 @@ def fetch_school_visit_bucket_rows(
     guest_scope: Optional[str] = None,
     school_status: Optional[str] = None,
     kecamatan_ids: Optional[List[int]] = None,
+    owner_user_id: Optional[int] = None,
 ) -> Tuple[List[Dict[str, Any]], int]:
     """Fetch schools within a visit-count bucket for dashboard drill-down."""
     scope = _normalize_guest_scope(guest_scope)
     status_filter = _normalize_school_status(school_status)
     area_filter = _normalize_kecamatan_ids(kecamatan_ids)
+    owner_filter = _normalize_owner_user_id(owner_user_id)
     safe_page = max(1, page)
     safe_per_page = max(5, min(per_page, 200))
     offset = (safe_page - 1) * safe_per_page
@@ -829,6 +878,9 @@ def fetch_school_visit_bucket_rows(
         scope,
         scope,
         scope,
+        owner_filter,
+        owner_filter,
+        owner_filter,
         area_filter,
         area_filter,
         status_filter,
@@ -1504,9 +1556,11 @@ def fetch_school_visit_history(
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
     guest_scope: Optional[str] = None,
+    owner_user_id: Optional[int] = None,
 ) -> Tuple[List[Dict[str, Any]], int]:
     """Fetch visit history rows for a school."""
     scope = _normalize_guest_scope(guest_scope)
+    owner_filter = _normalize_owner_user_id(owner_user_id)
     safe_page = max(1, page)
     safe_per_page = max(5, min(per_page, 100))
     offset = (safe_page - 1) * safe_per_page
@@ -1526,6 +1580,7 @@ def fetch_school_visit_history(
           AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
         """
         + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+        + _TRANSACTION_USER_SCOPE_WHERE.format(tx_alias="t", tx_ref="t.id")
         + """
     )
     """
@@ -1599,6 +1654,9 @@ def fetch_school_visit_history(
         scope,
         scope,
         scope,
+        owner_filter,
+        owner_filter,
+        owner_filter,
         query_text,
         like_query,
         like_query,
@@ -1644,9 +1702,11 @@ def fetch_school_visit_days(
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
     guest_scope: Optional[str] = None,
+    owner_user_id: Optional[int] = None,
 ) -> Tuple[List[Dict[str, Any]], int]:
     """Fetch distinct visit dates for a school, optionally filtered by guest name."""
     scope = _normalize_guest_scope(guest_scope)
+    owner_filter = _normalize_owner_user_id(owner_user_id)
     safe_page = max(1, page)
     safe_per_page = max(5, min(per_page, 100))
     offset = (safe_page - 1) * safe_per_page
@@ -1663,6 +1723,7 @@ def fetch_school_visit_days(
           AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
         """
         + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+        + _TRANSACTION_USER_SCOPE_WHERE.format(tx_alias="t", tx_ref="t.id")
         + """
     ),
     visit_days AS (
@@ -1708,6 +1769,9 @@ def fetch_school_visit_days(
         scope,
         scope,
         scope,
+        owner_filter,
+        owner_filter,
+        owner_filter,
         scope,
         scope,
         query_text,
@@ -1747,9 +1811,11 @@ def fetch_school_visit_day_guests(
     per_page: int = 10,
     search_query: Optional[str] = None,
     guest_scope: Optional[str] = None,
+    owner_user_id: Optional[int] = None,
 ) -> Tuple[List[Dict[str, Any]], int]:
     """Fetch guest names for one school's selected visit date."""
     scope = _normalize_guest_scope(guest_scope)
+    owner_filter = _normalize_owner_user_id(owner_user_id)
     safe_page = max(1, page)
     safe_per_page = max(5, min(per_page, 100))
     offset = (safe_page - 1) * safe_per_page
@@ -1770,6 +1836,12 @@ def fetch_school_visit_day_guests(
         WHERE t.status = 'approved'
           AND t.school_id = %s
           AND t.visit_at::date = %s::date
+          AND (%s::int IS NULL OR t.created_by = %s::int OR EXISTS (
+                SELECT 1
+                FROM daftar_tamu_transaction_guests g_owner
+                WHERE g_owner.transaction_id = t.id
+                  AND g_owner.user_id = %s::int
+          ))
           AND (g.guest_type = 'sudin' OR g.guest_type IS NULL)
           AND (%s IN ('all', 'sudin'))
         UNION ALL
@@ -1786,6 +1858,12 @@ def fetch_school_visit_day_guests(
         WHERE t.status = 'approved'
           AND t.school_id = %s
           AND t.visit_at::date = %s::date
+          AND (%s::int IS NULL OR t.created_by = %s::int OR EXISTS (
+                SELECT 1
+                FROM daftar_tamu_transaction_guests g_owner
+                WHERE g_owner.transaction_id = t.id
+                  AND g_owner.user_id = %s::int
+          ))
           AND g.guest_type = 'umum'
           AND (%s IN ('all', 'umum'))
     )
@@ -1801,9 +1879,15 @@ def fetch_school_visit_day_guests(
     params: List[Any] = [
         school_id,
         visit_date,
+        owner_filter,
+        owner_filter,
+        owner_filter,
         scope,
         school_id,
         visit_date,
+        owner_filter,
+        owner_filter,
+        owner_filter,
         scope,
         query_text,
         like_query,
@@ -1874,9 +1958,11 @@ def fetch_map_data(
     guest_scope: Optional[str] = None,
     school_status: Optional[str] = None,
     kecamatan_ids: Optional[List[int]] = None,
+    owner_user_id: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch map points for visit distribution."""
     scope = _normalize_guest_scope(guest_scope)
+    owner_filter = _normalize_owner_user_id(owner_user_id)
     status_filter = _normalize_school_status(school_status)
     area_filter = _normalize_kecamatan_ids(kecamatan_ids)
     query = (
@@ -1912,6 +1998,9 @@ def fetch_map_data(
                 scope,
                 scope,
                 scope,
+                owner_filter,
+                owner_filter,
+                owner_filter,
                 area_filter,
                 area_filter,
                 status_filter,
@@ -1965,11 +2054,13 @@ def fetch_unvisited_schools(
     guest_scope: Optional[str] = None,
     school_status: Optional[str] = None,
     kecamatan_ids: Optional[List[int]] = None,
+    owner_user_id: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch schools with zero approved visits in the selected period."""
     scope = _normalize_guest_scope(guest_scope)
     status_filter = _normalize_school_status(school_status)
     area_filter = _normalize_kecamatan_ids(kecamatan_ids)
+    owner_filter = _normalize_owner_user_id(owner_user_id)
     safe_limit = max(1, min(limit, 100))
     query = (
         _ROLLUP_CTE
@@ -1999,6 +2090,9 @@ def fetch_unvisited_schools(
                 scope,
                 scope,
                 scope,
+                owner_filter,
+                owner_filter,
+                owner_filter,
                 area_filter,
                 area_filter,
                 status_filter,
@@ -2017,11 +2111,13 @@ def fetch_recent_visits(
     guest_scope: Optional[str] = None,
     school_status: Optional[str] = None,
     kecamatan_ids: Optional[List[int]] = None,
+    owner_user_id: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch latest approved visit records for side panel."""
     scope = _normalize_guest_scope(guest_scope)
     status_filter = _normalize_school_status(school_status)
     area_filter = _normalize_kecamatan_ids(kecamatan_ids)
+    owner_filter = _normalize_owner_user_id(owner_user_id)
     safe_limit = max(1, min(limit, 100))
     query = """
     SELECT
@@ -2056,6 +2152,7 @@ def fetch_recent_visits(
         guest_count=_GUEST_COUNT_SUBQUERY.format(tx_ref="t.id"),
     )
     query += _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+    query += _TRANSACTION_USER_SCOPE_WHERE.format(tx_alias="t", tx_ref="t.id")
     query += """
     ORDER BY t.visit_at DESC, t.id DESC
     LIMIT %s
@@ -2075,6 +2172,9 @@ def fetch_recent_visits(
                 scope,
                 scope,
                 scope,
+                owner_filter,
+                owner_filter,
+                owner_filter,
                 safe_limit,
             ],
         )
