@@ -113,7 +113,7 @@
                     </div>
                 </div>
                 <form method="post" action="{{ url_for('daftar_tamu.sekolah_bulk_approve_public_transactions') }}"
-                    id="bulkApproveForm">
+                    id="bulkPublicForm">
                     <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="selectAllPublic">
@@ -122,35 +122,40 @@
                         <input type="text" name="reviewer_notes" class="form-control form-control-sm"
                             style="max-width: 240px;" placeholder="Catatan verifikasi (opsional)">
                         <button type="submit" class="btn btn-sm btn-success" id="bulkApproveBtn" disabled>
-                            Setujui Terpilih
+                            <i class="bi bi-check2-circle me-1"></i>Setujui Terpilih
+                        </button>
+                        <button type="submit" class="btn btn-sm btn-outline-danger" id="bulkRejectBtn"
+                            formaction="{{ url_for('daftar_tamu.sekolah_bulk_reject_public_transactions') }}" disabled>
+                            <i class="bi bi-x-circle me-1"></i>Tolak Terpilih
                         </button>
                     </div>
+                </form>
 
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th style="width: 36px;"></th>
-                                    <th>Waktu</th>
-                                    <th>Tamu</th>
-                                    <th>Status</th>
-                                    <th>Catatan</th>
-                                    <th class="text-end">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if public_rows %}
-                                {% for row in public_rows %}
-                                <tr>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th style="width: 36px;"></th>
+                                <th>Waktu</th>
+                                <th>Tamu</th>
+                                <th>Status</th>
+                                <th>Catatan</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if public_rows %}
+                            {% for row in public_rows %}
+                            <tr>
+                                <td>
+                                    {% if row.status == 'pending' %}
+                                    <input class="form-check-input public-select" type="checkbox"
+                                        name="transaction_ids" value="{{ row.id }}" form="bulkPublicForm">
+                                    {% endif %}
+                                </td>
                                     <td>
-                                        {% if row.status == 'pending' %}
-                                        <input class="form-check-input public-select" type="checkbox"
-                                            name="transaction_ids" value="{{ row.id }}">
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="fw-semibold">{{ row.visit_at|jakarta('%d %b %Y') }}</div>
-                                        <div class="small text-muted">{{ row.visit_at|jakarta('%H:%M') }} WIB</div>
+                                        <div class="fw-semibold">{{ row.visit_at.strftime('%d %b %Y') if row.visit_at else '-' }}</div>
+                                        <div class="small text-muted">{{ row.visit_at.strftime('%H:%M') if row.visit_at else '-' }} WIB</div>
                                     </td>
                                     <td>
                                         <div class="fw-semibold">{{ row.guest_display or '-' }}</div>
@@ -202,18 +207,17 @@
                                         <div class="small text-muted">Diverifikasi</div>
                                         {% endif %}
                                     </td>
-                                </tr>
-                                {% endfor %}
-                                {% else %}
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted py-3">Belum ada pengajuan tamu umum.
-                                    </td>
-                                </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </form>
+                            </tr>
+                            {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-3">Belum ada pengajuan tamu umum.
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
 
                 {% if public_total_pages and public_total_pages > 1 %}
                 <nav class="mt-3">
@@ -277,17 +281,23 @@
     (function () {
         var selectAll = document.getElementById('selectAllPublic');
         var approveBtn = document.getElementById('bulkApproveBtn');
-        var form = document.getElementById('bulkApproveForm');
+        var rejectBtn = document.getElementById('bulkRejectBtn');
+        var form = document.getElementById('bulkPublicForm');
         if (!form) return;
 
         function getChecks() {
             return Array.prototype.slice.call(document.querySelectorAll('.public-select'));
         }
 
+        function getSelectedCount() {
+            return getChecks().filter(function (el) { return el.checked; }).length;
+        }
+
         function updateButtonState() {
             var checks = getChecks();
             var hasSelected = checks.some(function (el) { return el.checked; });
             if (approveBtn) approveBtn.disabled = !hasSelected;
+            if (rejectBtn) rejectBtn.disabled = !hasSelected;
             if (selectAll) {
                 var allChecked = checks.length > 0 && checks.every(function (el) { return el.checked; });
                 selectAll.checked = allChecked;
@@ -309,7 +319,16 @@
         });
 
         form.addEventListener('submit', function (event) {
-            if (approveBtn && approveBtn.disabled) {
+            var selectedCount = getSelectedCount();
+            if (!selectedCount) {
+                event.preventDefault();
+                return;
+            }
+            var submitter = event.submitter;
+            var isReject = submitter && submitter.id === 'bulkRejectBtn';
+            var actionLabel = isReject ? 'menolak' : 'menyetujui';
+            var confirmText = 'Yakin ingin ' + actionLabel + ' ' + selectedCount + ' pengajuan terpilih?';
+            if (!window.confirm(confirmText)) {
                 event.preventDefault();
                 return;
             }

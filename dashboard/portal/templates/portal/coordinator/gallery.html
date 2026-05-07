@@ -33,6 +33,17 @@
         </option>
         {% endfor %}
       </select>
+      <select
+        name="order"
+        class="form-select form-select-sm"
+        onchange="this.form.submit()"
+        style="min-width: 180px"
+      >
+        <option value="default" {% if order == 'default' %}selected{% endif %}>A - Z</option>
+        <option value="lowest" {% if order == 'lowest' %}selected{% endif %}>Penilaian Terendah</option>
+        <option value="newest" {% if order == 'newest' %}selected{% endif %}>Terbaru</option>
+        <option value="random" {% if order == 'random' %}selected{% endif %}>Acak</option>
+      </select>
     </form>
   </div>
 </section>
@@ -78,8 +89,15 @@
         {% else %}
           {% set photo_url = url_for('portal.uploaded_file', filename=filename) if filename else 'https://placehold.co/300x300?text=No+Image' %}
         {% endif %}
-        {% set score_base = p.room_score or 0 %}
-        {% set score_pct = (score_base / 3 * 100) if score_base is not none else 0 %}
+        {% set score_scale_max = p.get('score_scale_max') if p.get('score_scale_max') in [3, 5] else 3 %}
+        {% set score_base = p.get('room_score') or 0 %}
+        {% if p.get('room_score_pct') is not none %}
+          {% set score_pct = p.get('room_score_pct') %}
+        {% elif p.get('score_pct') is not none %}
+          {% set score_pct = p.get('score_pct') %}
+        {% else %}
+          {% set score_pct = (score_base / score_scale_max * 100) if score_base is not none else 0 %}
+        {% endif %}
         {% set score_class = get_score_badge_class(score_pct) %}
         <div class="col-6 col-md-4 col-lg-3 col-xl-2">
           <div class="ratio ratio-1x1 rounded overflow-hidden shadow-sm position-relative gallery-thumb">

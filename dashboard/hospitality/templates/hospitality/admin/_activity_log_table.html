@@ -1,0 +1,115 @@
+{% set empty_text = empty_text|default('Belum ada aktivitas tercatat') %}
+{% set include_no_results_row = include_no_results_row|default(true) %}
+{% set table_id = table_id|default('hospitalityActivityLogTable') %}
+
+<div class="table-responsive">
+    <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;" id="{{ table_id }}">
+        <thead class="table-light">
+            <tr>
+                <th style="width: 15%;">Waktu</th>
+                <th style="width: 15%;">Admin</th>
+                <th style="width: 12%;">Aksi</th>
+                <th style="width: 15%;">Target</th>
+                <th style="width: 18%;">Nama</th>
+                <th style="width: 20%;">Detail</th>
+                <th style="width: 5%;"></th>
+            </tr>
+        </thead>
+        <tbody id="hospitalityActivityLogBody">
+            {% include 'hospitality/admin/_activity_log_rows.html' %}
+        </tbody>
+    </table>
+</div>
+
+{# Detail Modal #}
+<div class="modal fade" id="hospitalityLogDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title">Detail Aktivitas</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="hospitalityLogQuickLinks" class="mb-3" style="display:none;">
+                    <div class="small fw-bold text-muted mb-2">Link Cepat:</div>
+                    <div id="hospitalityLogQuickLinksBody" class="d-flex flex-wrap gap-2"></div>
+                </div>
+                <div class="bg-light p-3 rounded">
+                    <pre id="hospitalityLogDetailBody" class="mb-0" style="font-size: 0.75rem; white-space: pre-wrap; word-break: break-all;"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const modalEl = document.getElementById('hospitalityLogDetailModal');
+    const modalBody = document.getElementById('hospitalityLogDetailBody');
+    const quickLinksWrap = document.getElementById('hospitalityLogQuickLinks');
+    const quickLinksBody = document.getElementById('hospitalityLogQuickLinksBody');
+    
+    if (!modalEl || !modalBody) return;
+    
+    let modal = null;
+    const ensureModal = () => {
+        if (!modal && window.bootstrap) modal = new bootstrap.Modal(modalEl);
+        return modal;
+    };
+
+    const getQuickLinks = (payload) => {
+        const links = [];
+        const type = payload.target_type || '';
+        const id = payload.target_id;
+        const details = payload.details || {};
+
+        if (type === 'HOSPITALITY_COMPONENT' || type === 'HOSPITALITY_ASPECT') {
+            links.push({ label: 'Buka Setup', url: '{{ url_for("hospitality.admin_setup") }}' });
+        } else if (type === 'HOSPITALITY_REOPEN_REQUEST') {
+            links.push({ label: 'Daftar Reopen', url: '{{ url_for("hospitality.admin_reopen_requests") }}' });
+        } else if (type === 'GUESTBOOK_REVIEW') {
+            links.push({ label: 'Dashboard Review', url: '{{ url_for("hospitality.guestbook_review_dashboard") }}' });
+        } else if (type === 'HOSPITALITY_PREVIEW') {
+            links.push({ label: 'Akses Preview', url: '{{ url_for("hospitality.admin_preview_access") }}' });
+        }
+
+        if (details.assessment_id || (type === 'HOSPITALITY_ASSESSMENT' && id)) {
+            const aid = details.assessment_id || id;
+            links.push({ label: 'Detail Penilaian', url: '/hospitality/assessment/' + aid });
+        }
+        
+        return links;
+    };
+
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.js-log-detail');
+        if (!btn) return;
+
+        const raw = btn.getAttribute('data-log') || '{}';
+        let payload = {};
+        try { payload = JSON.parse(raw); } catch(ex) { payload = {error: 'Invalid data'}; }
+
+        modalBody.textContent = JSON.stringify(payload, null, 2);
+        
+        // Quick links
+        quickLinksBody.innerHTML = '';
+        const links = getQuickLinks(payload);
+        if (links.length > 0) {
+            links.forEach(link => {
+                const a = document.createElement('a');
+                a.href = link.url;
+                a.className = 'btn btn-xs btn-outline-primary py-1 px-2';
+                a.style.fontSize = '0.7rem';
+                a.textContent = link.label;
+                quickLinksBody.appendChild(a);
+            });
+            quickLinksWrap.style.display = 'block';
+        } else {
+            quickLinksWrap.style.display = 'none';
+        }
+
+        const m = ensureModal();
+        if (m) m.show();
+    });
+})();
+</script>

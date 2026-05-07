@@ -4,7 +4,7 @@
 <nav class="navbar navbar-expand-lg sticky-top">
   <div class="container-fluid px-lg-4">
 
-    <a class="navbar-brand" href="{{ url_for('hospitality.admin_home') if current_user and current_user.role in ['admin','coordinator'] else (url_for('hospitality.staff_home') if current_user and current_user.role == 'staff' else (url_for('hospitality.school_home') if current_user and current_user.role == 'sekolah' else url_for('portal.home'))) }}">
+    <a class="navbar-brand" href="{{ url_for('hospitality.admin_home') if current_user and current_user.role == 'admin' else (url_for('hospitality.staff_home') if current_user and current_user.role in ['staff', 'coordinator'] else (url_for('hospitality.school_home') if current_user and current_user.role == 'sekolah' else (url_for('hospitality.preview_home') if can_preview_hospitality else url_for('portal.home')))) }}">
       <span class="icon-badge brand-icon text-primary"><i class="bi bi-house-heart"></i></span>
       <span class="fw-bold">Hospitality</span>
     </a>
@@ -17,38 +17,139 @@
 
       <!-- ── Left nav items ── -->
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        {% if current_user and current_user.role in ['admin', 'coordinator'] %}
+        {% if current_user and current_user.role == 'admin' %}
         <li class="nav-item">
           <a class="nav-link {% if request.endpoint == 'hospitality.admin_home' %}active{% endif %}" href="{{ url_for('hospitality.admin_home') }}">
             <i class="bi bi-bar-chart nav-icon"></i>Dashboard
           </a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.endpoint == 'hospitality.admin_reopen_requests' %}active{% endif %}" href="{{ url_for('hospitality.admin_reopen_requests') }}">
-            <i class="bi bi-arrow-counterclockwise nav-icon"></i>Reopen
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle {% if request.endpoint in ['hospitality.admin_reopen_requests', 'hospitality.admin_setup', 'hospitality.admin_export_csv', 'hospitality.admin_preview_access', 'hospitality.admin_assess_home', 'hospitality.admin_assess'] %}active{% endif %}"
+            href="#"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            <i class="bi bi-gear nav-icon"></i>Pengaturan
           </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a class="dropdown-item {% if request.endpoint == 'hospitality.admin_setup' %}active{% endif %}" href="{{ url_for('hospitality.admin_setup') }}">
+                <i class="bi bi-sliders me-2"></i>Setup
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint == 'hospitality.admin_reopen_requests' %}active{% endif %}" href="{{ url_for('hospitality.admin_reopen_requests') }}">
+                <i class="bi bi-arrow-counterclockwise me-2"></i>Reopen
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint == 'hospitality.admin_preview_access' %}active{% endif %}" href="{{ url_for('hospitality.admin_preview_access') }}">
+                <i class="bi bi-eye me-2"></i>Akses Preview
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint in ['hospitality.admin_assess_home', 'hospitality.admin_assess'] %}active{% endif %}" href="{{ url_for('hospitality.admin_assess_home') }}">
+                <i class="bi bi-clipboard-check me-2"></i>Menilai Hospitality
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint == 'hospitality.admin_export_csv' %}active{% endif %}" href="{{ url_for('hospitality.admin_export_csv') }}">
+                <i class="bi bi-download me-2"></i>Export
+              </a>
+            </li>
+          </ul>
         </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.endpoint == 'hospitality.admin_setup' %}active{% endif %}" href="{{ url_for('hospitality.admin_setup') }}">
-            <i class="bi bi-sliders nav-icon"></i>Setup
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.endpoint == 'hospitality.admin_export_csv' %}active{% endif %}" href="{{ url_for('hospitality.admin_export_csv') }}">
-            <i class="bi bi-download nav-icon"></i>Export
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.endpoint in ['hospitality.guestbook_review_dashboard', 'hospitality.guestbook_review_detail', 'hospitality.guestbook_review_export'] %}active{% endif %}" href="{{ url_for('hospitality.guestbook_review_dashboard') }}">
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle {% if request.endpoint in ['hospitality.guestbook_review_dashboard', 'hospitality.guestbook_review_detail', 'hospitality.guestbook_review_export', 'hospitality.admin_review_extra_questions'] %}active{% endif %}"
+            href="#"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
             <i class="bi bi-star-half nav-icon"></i>Review Pelayanan
           </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a class="dropdown-item {% if request.endpoint == 'hospitality.guestbook_review_dashboard' and request.args.get('view', 'all') == 'all' %}active{% endif %}" href="{{ url_for('hospitality.guestbook_review_dashboard', view='all') }}">
+                <i class="bi bi-globe2 me-2"></i>Keseluruhan Sekolah
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint == 'hospitality.guestbook_review_dashboard' and request.args.get('view') == 'school' %}active{% endif %}" href="{{ url_for('hospitality.guestbook_review_dashboard', view='school') }}">
+                <i class="bi bi-building me-2"></i>Per Sekolah
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint == 'hospitality.admin_review_extra_questions' %}active{% endif %}" href="{{ url_for('hospitality.admin_review_extra_questions') }}">
+                <i class="bi bi-list-check me-2"></i>Aspek Tambahan
+              </a>
+            </li>
+          </ul>
+        </li>
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle {% if request.endpoint in ['hospitality.admin_activity_logs', 'hospitality.admin_all_assessments'] %}active{% endif %}"
+            href="#"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            <i class="bi bi-shield-lock nav-icon"></i>Admin
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a class="dropdown-item {% if request.endpoint == 'hospitality.admin_all_assessments' %}active{% endif %}" href="{{ url_for('hospitality.admin_all_assessments') }}">
+                <i class="bi bi-clipboard-data me-2"></i>Semua Penilaian
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint == 'hospitality.admin_activity_logs' %}active{% endif %}" href="{{ url_for('hospitality.admin_activity_logs') }}">
+                <i class="bi bi-clock-history me-2"></i>Log Aktivitas
+              </a>
+            </li>
+          </ul>
         </li>
         {% endif %}
-        {% if current_user and current_user.role == 'staff' %}
+        {% if current_user and current_user.role in ['staff', 'coordinator'] %}
         <li class="nav-item">
           <a class="nav-link {% if request.endpoint == 'hospitality.staff_home' %}active{% endif %}" href="{{ url_for('hospitality.staff_home') }}">
             <i class="bi bi-clipboard-check nav-icon"></i>Penilaian Saya
           </a>
+        </li>
+        {% endif %}
+        {% if can_preview_hospitality %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ['hospitality.preview_home', 'hospitality.preview_detail'] %}active{% endif %}" href="{{ url_for('hospitality.preview_home') }}">
+            <i class="bi bi-clipboard-check nav-icon"></i>Preview Penilaian Staff
+          </a>
+        </li>
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle {% if request.endpoint in ['hospitality.preview_guestbook_dashboard', 'hospitality.preview_guestbook_dashboard_by_school', 'hospitality.preview_guestbook_review_detail'] %}active{% endif %}"
+            href="#"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            <i class="bi bi-star-half nav-icon"></i>Preview Pelayanan
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a class="dropdown-item {% if request.endpoint == 'hospitality.preview_guestbook_dashboard' %}active{% endif %}" href="{{ url_for('hospitality.preview_guestbook_dashboard') }}">
+                <i class="bi bi-globe2 me-2"></i>Keseluruhan Sekolah
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint == 'hospitality.preview_guestbook_dashboard_by_school' %}active{% endif %}" href="{{ url_for('hospitality.preview_guestbook_dashboard_by_school') }}">
+                <i class="bi bi-building me-2"></i>Per Sekolah
+              </a>
+            </li>
+          </ul>
         </li>
         {% endif %}
         {% if current_user and current_user.role == 'sekolah' %}

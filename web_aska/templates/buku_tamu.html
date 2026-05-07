@@ -239,6 +239,185 @@
         .selected-guests-field.is-invalid {
             border-color: #dc3545;
         }
+
+        .step-section {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px;
+            background: var(--bg-subtle);
+        }
+
+        .step-section.step-inactive {
+            opacity: 0.65;
+        }
+
+        .visitor-type-card {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px;
+            background: var(--bg-subtle);
+        }
+
+        .visitor-type-switch {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .visitor-type-btn {
+            min-height: 46px;
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            background: var(--input-bg);
+            color: var(--input-text);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .visitor-type-btn.is-active {
+            border-color: #0d6efd;
+            background: rgba(13, 110, 253, 0.12);
+            color: #0b5ed7;
+            box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.16);
+        }
+
+        html[data-theme="dark"] .visitor-type-btn.is-active {
+            color: #8ab4ff;
+        }
+
+        .step-badge {
+            width: 26px;
+            height: 26px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.78rem;
+            font-weight: 700;
+            background: #0d6efd;
+            color: #fff;
+        }
+
+        .step-title {
+            font-size: 0.98rem;
+            font-weight: 700;
+        }
+
+        .register-card {
+            border-color: #bfd7ff !important;
+            background: linear-gradient(180deg, rgba(13, 110, 253, 0.08) 0%, rgba(13, 110, 253, 0.03) 100%) !important;
+        }
+
+        .register-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .register-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(13, 110, 253, 0.12);
+            color: #0d6efd;
+            flex: 0 0 auto;
+        }
+
+        .register-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .register-subtitle {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .register-mode-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .register-mode-btn {
+            border: 1px solid var(--input-border);
+            background: var(--input-bg);
+            color: var(--input-text);
+            border-radius: 12px;
+            text-align: left;
+            padding: 10px 12px;
+            transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .register-mode-btn.is-active {
+            border-color: #0d6efd;
+            background: rgba(13, 110, 253, 0.12);
+            box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.18);
+        }
+
+        .register-mode-title {
+            display: block;
+            font-size: 0.84rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .register-mode-desc {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 2px;
+            line-height: 1.3;
+        }
+
+        .register-hidden-radio {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            border: 0;
+            padding: 0;
+            white-space: nowrap;
+            clip-path: inset(50%);
+            clip: rect(0 0 0 0);
+            overflow: hidden;
+        }
+
+        .register-group {
+            border: 1px dashed var(--input-border);
+            border-radius: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.45);
+        }
+
+        .register-toggle-btn {
+            width: 100%;
+            min-height: 44px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        @media (min-width: 768px) {
+            .register-toggle-btn {
+                width: auto;
+                min-height: 40px;
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 
@@ -276,122 +455,175 @@
                 {% if not school %}
                 <div class="alert alert-warning">Sekolah tidak ditemukan atau belum aktif.</div>
                 {% else %}
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Pilih jenis pengunjung</label>
-                    <div class="pill-toggle btn-group w-100" role="group">
-                        <button type="button" class="btn btn-primary" id="tabUmum">Umum</button>
-                        <button type="button" class="btn btn-outline-primary" id="tabSudin">Sudin</button>
-                    </div>
-                    <div class="note-text mt-2">Sudin diinput oleh pihak sekolah melalui dashboard.</div>
-                </div>
-
                 <form method="post" id="guestbookForm">
                     <input type="hidden" name="guest_type" value="umum" id="guestTypeInput">
                     <input type="hidden" name="guests_payload" id="guestPayloadInput">
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Cari nomor telepon tamu</label>
-                        <div class="input-group">
-                            <input type="text" id="phoneSearchInput" class="form-control"
-                                placeholder="Contoh: 08123456789">
-                            <button type="button" class="btn btn-outline-primary" id="phoneSearchBtn">Cari</button>
+                    <div class="visitor-type-card mb-4">
+                        <label class="form-label fw-semibold mb-2">Pilih jenis pengunjung</label>
+                        <div class="visitor-type-switch" role="group" aria-label="Pilih jenis pengunjung">
+                            <button type="button" class="visitor-type-btn is-active" id="tabUmum" aria-pressed="true">
+                                <i class="bi bi-people"></i>
+                                <span>Umum</span>
+                            </button>
+                            <button type="button" class="visitor-type-btn" id="tabSudin" aria-pressed="false">
+                                <i class="bi bi-building"></i>
+                                <span>Sudin</span>
+                            </button>
                         </div>
-                        <div class="note-text mt-2">Nomor telepon jadi identitas unik tamu umum.</div>
+                        <div class="note-text mt-2" id="guestTypeHint">
+                            Pengunjung umum dapat diisi dari form ini.
+                        </div>
                     </div>
 
-                    <div id="searchResult" class="border rounded-3 p-3 bg-light d-none"></div>
+                    <div class="step-section mb-4" id="guestStepSection">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="step-badge">1</span>
+                            <div class="step-title">Cari atau Input Data Tamu</div>
+                        </div>
+                        <div class="note-text mb-3">
+                            Mulai dari nomor telepon dulu. Jika tidak ditemukan, tambahkan tamu baru.
+                        </div>
 
-                    <div class="mt-2">
-                        <button type="button" class="btn btn-link p-0" id="showRegisterBtn">Belum pernah daftar?</button>
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Cari nomor telepon tamu</label>
+                            <div class="input-group">
+                                <input type="text" id="phoneSearchInput" class="form-control"
+                                    placeholder="Contoh: 08123456789">
+                                <button type="button" class="btn btn-outline-primary" id="phoneSearchBtn">Cari</button>
+                            </div>
+                            <div class="note-text mt-2">Nomor telepon jadi identitas unik tamu umum.</div>
+                        </div>
 
-                    <div id="registerForm" class="border rounded-3 p-3 bg-light mt-3 d-none">
-                        <div class="fw-semibold mb-2">Daftar Tamu Baru</div>
-                        <div class="row g-2">
-                            <div class="col-12">
-                                <label class="form-label">Nama *</label>
-                                <input type="text" id="regName" class="form-control" placeholder="Nama lengkap">
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label">Telepon *</label>
-                                <input type="text" id="regPhone" class="form-control" placeholder="08xxxxxxxxxx">
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label">Email</label>
-                                <input type="email" id="regEmail" class="form-control" placeholder="email@domain.com">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label">Wali Murid?</label>
-                                <div class="d-flex gap-3">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="regParent" id="regParentYes"
-                                            value="yes" checked>
-                                        <label class="form-check-label" for="regParentYes">Wali Murid</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="regParent" id="regParentNo"
-                                            value="no">
-                                        <label class="form-check-label" for="regParentNo">Tidak</label>
-                                    </div>
+                        <div id="searchResult" class="border rounded-3 p-3 bg-light d-none"></div>
+
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-outline-primary register-toggle-btn" id="showRegisterBtn">
+                                <i class="bi bi-person-plus" aria-hidden="true"></i>
+                                <span>Nomor belum terdaftar? Daftar Tamu Baru</span>
+                            </button>
+                        </div>
+
+                        <div id="registerForm" class="register-card border rounded-3 p-3 bg-light mt-3 d-none">
+                            <div class="register-header mb-3">
+                                <span class="register-icon"><i class="bi bi-person-vcard"></i></span>
+                                <div>
+                                    <div class="register-title">Daftar Tamu Baru</div>
+                                    <div class="register-subtitle">Isi data singkat di bawah, lalu klik Tambah ke Buku Tamu.</div>
                                 </div>
                             </div>
-                            <div class="col-12" data-parent-field>
-                                <label class="form-label">Kelas Siswa *</label>
-                                <input type="text" id="regStudentClass" class="form-control" placeholder="Contoh: 3C, Kelompok Matahari">
-                                <div class="form-text">Contoh: 3C, Kelompok Matahari</div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Nama Lengkap *</label>
+                                    <input type="text" id="regName" class="form-control" placeholder="Contoh: Budi Santoso">
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold">Nomor Telepon / WhatsApp *</label>
+                                    <input type="text" id="regPhone" class="form-control" placeholder="08xxxxxxxxxx">
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold">Email (opsional)</label>
+                                    <input type="email" id="regEmail" class="form-control" placeholder="email@domain.com">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Tipe Tamu</label>
+                                    <div class="register-mode-grid" role="group" aria-label="Tipe tamu">
+                                        <button type="button" class="register-mode-btn is-active" id="regModeParentBtn">
+                                            <span class="register-mode-title">Orang Tua / Wali</span>
+                                            <span class="register-mode-desc">Isi kelas dan nama siswa.</span>
+                                        </button>
+                                        <button type="button" class="register-mode-btn" id="regModeGeneralBtn">
+                                            <span class="register-mode-title">Instansi / Umum</span>
+                                            <span class="register-mode-desc">Isi instansi dan jabatan.</span>
+                                        </button>
+                                    </div>
+                                    <input class="register-hidden-radio" type="radio" name="regParent" id="regParentYes"
+                                        value="yes" checked>
+                                    <input class="register-hidden-radio" type="radio" name="regParent" id="regParentNo"
+                                        value="no">
+                                    <div class="form-text" id="regModeHelpText">Untuk orang tua, isi kelas dan nama siswa.</div>
+                                </div>
+                                <div class="col-12 register-group" data-parent-field>
+                                    <div class="small fw-semibold mb-2">Data Siswa</div>
+                                    <div class="row g-2">
+                                        <div class="col-12 col-md-5">
+                                            <label class="form-label">Kelas Siswa *</label>
+                                            <input type="text" id="regStudentClass" class="form-control" placeholder="Contoh: 3C">
+                                        </div>
+                                        <div class="col-12 col-md-7">
+                                            <label class="form-label">Nama Siswa *</label>
+                                            <input type="text" id="regStudentName" class="form-control" placeholder="Nama siswa">
+                                        </div>
+                                    </div>
+                                    <div class="form-text mt-2">Jika TK/PAUD, isi kelompok kelas (contoh: Kelompok A).</div>
+                                </div>
+                                <div class="col-12 register-group" data-work-field>
+                                    <div class="small fw-semibold mb-2">Data Instansi</div>
+                                    <div class="row g-2">
+                                        <div class="col-12 col-md-7">
+                                            <label class="form-label">Instansi</label>
+                                            <input type="text" id="regInstansi" class="form-control" placeholder="Contoh: Dinas Kesehatan">
+                                        </div>
+                                        <div class="col-12 col-md-5">
+                                            <label class="form-label">Jabatan</label>
+                                            <input type="text" id="regJabatan" class="form-control" placeholder="Contoh: Staf">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 d-grid">
+                                    <button type="button" class="btn btn-primary" id="addNewGuestBtn">
+                                        <i class="bi bi-person-plus me-1"></i>Tambah ke Buku Tamu
+                                    </button>
+                                    <div class="form-text text-center mt-2">Pastikan data sudah benar sebelum ditambahkan.</div>
+                                </div>
                             </div>
-                            <div class="col-12" data-parent-field>
-                                <label class="form-label">Nama Siswa *</label>
-                                <input type="text" id="regStudentName" class="form-control" placeholder="Nama siswa">
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="form-label fw-semibold">Tamu Terpilih</label>
+                            <div id="selectedGuestsField" class="selected-guests-field">
+                                <div id="selectedGuests" class="d-flex flex-wrap gap-2"></div>
+                                <div id="selectedGuestsEmpty" class="text-muted small">Belum ada tamu dipilih.</div>
                             </div>
-                            <div class="col-12" data-work-field>
-                                <label class="form-label">Instansi</label>
-                                <input type="text" id="regInstansi" class="form-control" placeholder="Instansi">
-                            </div>
-                            <div class="col-12" data-work-field>
-                                <label class="form-label">Jabatan</label>
-                                <input type="text" id="regJabatan" class="form-control" placeholder="Jabatan">
-                            </div>
-                            <div class="col-12 d-grid">
-                                <button type="button" class="btn btn-outline-primary" id="addNewGuestBtn">Tambah ke Buku Tamu</button>
-                            </div>
+                            <div id="selectedGuestsError" class="text-danger small d-none">Nama tamu wajib dipilih.</div>
                         </div>
                     </div>
 
-                    <div class="mb-3 mt-4">
-                        <label class="form-label fw-semibold">Tamu Terpilih</label>
-                        <div id="selectedGuestsField" class="selected-guests-field">
-                            <div id="selectedGuests" class="d-flex flex-wrap gap-2"></div>
-                            <div id="selectedGuestsEmpty" class="text-muted small">Belum ada tamu dipilih.</div>
+                    <div class="step-section step-inactive" id="visitStepSection" aria-disabled="true">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="step-badge">2</span>
+                            <div class="step-title">Isi Tujuan Kunjungan & Catatan</div>
                         </div>
-                        <div id="selectedGuestsError" class="text-danger small d-none">Nama tamu wajib dipilih.</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Tujuan Kunjungan</label>
-                        <input type="text" name="purpose" id="purposeInput" class="form-control"
-                            placeholder="Contoh: Bertemu kepala sekolah" list="purposeKeywordList">
-                        <div id="purposeError" class="invalid-feedback">Tujuan kunjungan wajib diisi.</div>
-                        <datalist id="purposeKeywordList">
-                            {% for kw in purpose_keywords|default([]) %}
-                            <option value="{{ kw }}"></option>
-                            {% endfor %}
-                        </datalist>
-                        <div class="note-text mt-2">
-                            Kalau tidak ada di saran, tulis saja tujuan apa adanya (tidak harus sesuai saran).
+                        <div class="note-text mb-3" id="visitStepHint">
+                            Selesaikan Langkah 1 dulu dengan memilih minimal satu tamu.
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Catatan untuk Sekolah</label>
-                        <textarea name="notes" class="form-control" rows="3"
-                            placeholder="Catatan tambahan dari tamu"></textarea>
-                    </div>
 
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-success">Kirim &amp; Lanjut Review</button>
-                    </div>
-                    <div class="note-text mt-2 text-center">
-                        Setelah buku tamu tersimpan, kamu akan diminta kasih review 1-5 bintang dulu sebelum chat ASKA aktif.
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tujuan Kunjungan</label>
+                            <input type="text" name="purpose" id="purposeInput" class="form-control"
+                                placeholder="Contoh: Bertemu kepala sekolah" list="purposeKeywordList">
+                            <div id="purposeError" class="invalid-feedback">Tujuan kunjungan wajib diisi.</div>
+                            <datalist id="purposeKeywordList">
+                                {% for kw in purpose_keywords|default([]) %}
+                                <option value="{{ kw }}"></option>
+                                {% endfor %}
+                            </datalist>
+                            <div class="note-text mt-2">
+                                Kalau tidak ada di saran, tulis saja tujuan apa adanya (tidak harus sesuai saran).
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Catatan untuk Sekolah</label>
+                            <textarea id="notesInput" name="notes" class="form-control" rows="3"
+                                placeholder="Catatan tambahan dari tamu"></textarea>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">Kirim &amp; Lanjut Review</button>
+                        </div>
+                        <div class="note-text mt-2 text-center">
+                            Setelah buku tamu tersimpan, kamu akan diminta kasih review 1-5 bintang dulu sebelum chat ASKA aktif.
+                        </div>
                     </div>
                 </form>
                 {% endif %}
@@ -418,7 +650,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    Pengisian buku tamu untuk tamu Sudin dilakukan oleh pihak sekolah melalui dashboard sekolah.
+                    Pengisian buku tamu untuk pengunjung Sudin dilakukan oleh pihak sekolah melalui dashboard sekolah.
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Mengerti</button>
@@ -437,6 +669,7 @@
             var tabUmum = document.getElementById('tabUmum');
             var tabSudin = document.getElementById('tabSudin');
             var guestTypeInput = document.getElementById('guestTypeInput');
+            var guestTypeHint = document.getElementById('guestTypeHint');
             var sudinModalEl = document.getElementById('sudinModal');
             var sudinModal = sudinModalEl ? new bootstrap.Modal(sudinModalEl) : null;
             var phoneInput = document.getElementById('phoneSearchInput');
@@ -453,7 +686,10 @@
             var submitBtn = guestForm ? guestForm.querySelector('button[type="submit"]') : null;
             var registerInputs = registerForm ? registerForm.querySelectorAll('input, select, textarea, button') : [];
             var purposeInput = document.getElementById('purposeInput');
+            var notesInput = document.getElementById('notesInput');
             var purposeError = document.getElementById('purposeError');
+            var visitStepSection = document.getElementById('visitStepSection');
+            var visitStepHint = document.getElementById('visitStepHint');
             var hasSubmitted = false;
 
             var regName = document.getElementById('regName');
@@ -463,6 +699,9 @@
             var regJabatan = document.getElementById('regJabatan');
             var regParentYes = document.getElementById('regParentYes');
             var regParentNo = document.getElementById('regParentNo');
+            var regModeParentBtn = document.getElementById('regModeParentBtn');
+            var regModeGeneralBtn = document.getElementById('regModeGeneralBtn');
+            var regModeHelpText = document.getElementById('regModeHelpText');
             var workFields = document.querySelectorAll('[data-work-field]');
             var parentFields = document.querySelectorAll('[data-parent-field]');
             var regStudentClass = document.getElementById('regStudentClass');
@@ -501,7 +740,6 @@
                 }
                 return 'light';
             }
-
             function updateThemeToggle() {
                 if (!themeToggle) return;
                 var current = document.documentElement.getAttribute('data-theme') || detectPreferredTheme();
@@ -532,6 +770,21 @@
                 return digits;
             }
 
+            function setGuestType(type) {
+                if (!guestTypeInput || !tabUmum || !tabSudin) return;
+                var isUmum = type !== 'sudin';
+                guestTypeInput.value = isUmum ? 'umum' : 'sudin';
+                tabUmum.classList.toggle('is-active', isUmum);
+                tabSudin.classList.toggle('is-active', !isUmum);
+                tabUmum.setAttribute('aria-pressed', isUmum ? 'true' : 'false');
+                tabSudin.setAttribute('aria-pressed', !isUmum ? 'true' : 'false');
+                if (guestTypeHint) {
+                    guestTypeHint.textContent = isUmum
+                        ? 'Pengunjung umum dapat diisi dari form ini.'
+                        : 'Kunjungan Sudin diinput oleh pihak sekolah melalui dashboard.';
+                }
+            }
+
             function buildStudentClass() {
                 return regStudentClass ? (regStudentClass.value || '').trim() : '';
             }
@@ -540,7 +793,24 @@
                 if (regStudentClass) regStudentClass.value = '';
             }
 
+            function syncRegisterModeButtons(isParent) {
+                if (regModeParentBtn) {
+                    regModeParentBtn.classList.toggle('is-active', isParent);
+                    regModeParentBtn.setAttribute('aria-pressed', isParent ? 'true' : 'false');
+                }
+                if (regModeGeneralBtn) {
+                    regModeGeneralBtn.classList.toggle('is-active', !isParent);
+                    regModeGeneralBtn.setAttribute('aria-pressed', !isParent ? 'true' : 'false');
+                }
+                if (regModeHelpText) {
+                    regModeHelpText.textContent = isParent
+                        ? 'Untuk orang tua, isi kelas dan nama siswa.'
+                        : 'Untuk tamu instansi, isi nama instansi dan jabatan.';
+                }
+            }
+
             function setParentMode(isParent) {
+                syncRegisterModeButtons(isParent);
                 if (workFields && workFields.length) {
                     workFields.forEach(function (field) {
                         field.classList.toggle('d-none', isParent);
@@ -585,11 +855,52 @@
                 }
             }
 
+            function updateRegisterToggleLabel(isFormOpen) {
+                if (!showRegisterBtn) return;
+                if (isFormOpen) {
+                    showRegisterBtn.innerHTML = '<i class="bi bi-chevron-up" aria-hidden="true"></i><span>Sembunyikan Form Daftar</span>';
+                } else {
+                    showRegisterBtn.innerHTML = '<i class="bi bi-person-plus" aria-hidden="true"></i><span>Nomor belum terdaftar? Daftar Tamu Baru</span>';
+                }
+            }
+
+            function setRegisterFormVisible(shouldShow) {
+                if (!registerForm) return;
+                registerForm.classList.toggle('d-none', !shouldShow);
+                setRegisterFormActive(shouldShow);
+                updateRegisterToggleLabel(shouldShow);
+                if (shouldShow && regPhone && phoneInput) {
+                    regPhone.value = normalizePhone(phoneInput.value || regPhone.value || '');
+                }
+            }
+
+            function setVisitStepActive(isActive) {
+                if (!visitStepSection) return;
+                visitStepSection.classList.toggle('step-inactive', !isActive);
+                visitStepSection.setAttribute('aria-disabled', isActive ? 'false' : 'true');
+                if (purposeInput) purposeInput.disabled = !isActive;
+                if (notesInput) notesInput.disabled = !isActive;
+                if (visitStepHint) {
+                    visitStepHint.textContent = isActive
+                        ? 'Data tamu sudah dipilih. Lanjut isi tujuan kunjungan dan catatan.'
+                        : 'Selesaikan Langkah 1 dulu dengan memilih minimal satu tamu.';
+                }
+            }
+
+            function focusVisitStep() {
+                if (!visitStepSection) return;
+                visitStepSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setTimeout(function () {
+                    if (purposeInput) purposeInput.focus();
+                }, 180);
+            }
+
             function syncSubmitState() {
                 if (!submitBtn) return;
                 var hasGuests = selectedGuests.size > 0;
                 var hasPurpose = purposeInput ? purposeInput.value.trim().length > 0 : false;
                 var showErrors = hasSubmitted;
+                setVisitStepActive(hasGuests);
                 if (selectedGuestsField) selectedGuestsField.classList.toggle('is-invalid', showErrors && !hasGuests);
                 if (selectedGuestsError) selectedGuestsError.classList.toggle('d-none', !(showErrors && !hasGuests));
                 if (purposeInput) purposeInput.classList.toggle('is-invalid', showErrors && !hasPurpose);
@@ -597,7 +908,8 @@
                 submitBtn.disabled = !(hasGuests && hasPurpose);
             }
 
-            function renderSelectedGuests() {
+            function renderSelectedGuests(options) {
+                var shouldMoveToVisit = options && options.moveToVisit;
                 selectedGuestsWrap.innerHTML = '';
                 if (selectedGuests.size === 0) {
                     selectedGuestsEmpty.classList.remove('d-none');
@@ -635,6 +947,9 @@
                     selectedGuestsWrap.appendChild(chip);
                 });
                 syncSubmitState();
+                if (shouldMoveToVisit) {
+                    focusVisitStep();
+                }
             }
 
             if (purposeInput) {
@@ -655,14 +970,10 @@
 
             function addGuest(guest) {
                 if (!guest) return;
-                if (tabUmum) tabUmum.click();
                 var phoneValue = guest.phone || (phoneInput ? phoneInput.value : '') || (regPhone ? regPhone.value : '');
                 var phoneKey = normalizePhone(phoneValue);
                 if (!phoneKey) return;
-                if (selectedGuests.has(phoneKey)) {
-                    alert('Nomor telepon ini sudah ada di daftar.');
-                    return;
-                }
+                selectedGuests.clear();
                 selectedGuests.set(phoneKey, {
                     full_name: guest.full_name,
                     phone: phoneKey,
@@ -673,8 +984,9 @@
                     student_class: guest.student_class || '',
                     student_name: guest.student_name || ''
                 });
-                renderSelectedGuests();
+                renderSelectedGuests({ moveToVisit: true });
                 hideSearchResult();
+                setRegisterFormVisible(false);
             }
 
             async function lookupPhone() {
@@ -734,7 +1046,9 @@
                             });
                         }
                     } else {
-                        showSearchResult('<div class="text-muted">Nomor belum terdaftar. Klik "Belum pernah daftar?" untuk mendaftar.</div>');
+                        showSearchResult('<div class="text-muted">Nomor belum terdaftar. Silakan lanjut isi form pendaftaran tamu baru di bawah.</div>');
+                        setRegisterFormVisible(true);
+                        if (regName) regName.focus();
                     }
                 } catch (err) {
                     showSearchResult('<div class="text-danger small">Gagal terhubung ke server.</div>');
@@ -751,9 +1065,7 @@
 
             showRegisterBtn.addEventListener('click', function () {
                 var willShow = registerForm.classList.contains('d-none');
-                registerForm.classList.toggle('d-none');
-                setRegisterFormActive(willShow);
-                regPhone.value = normalizePhone(phoneInput.value || regPhone.value || '');
+                setRegisterFormVisible(willShow);
             });
 
             addNewGuestBtn.addEventListener('click', function () {
@@ -790,30 +1102,25 @@
                     student_class: isParent ? studentClass : '',
                     student_name: isParent ? studentName : ''
                 });
-                registerForm.classList.add('d-none');
-                setRegisterFormActive(false);
+                setRegisterFormVisible(false);
             });
 
-            tabSudin.addEventListener('click', function () {
-                tabSudin.classList.add('btn-primary');
-                tabSudin.classList.remove('btn-outline-primary');
-                tabUmum.classList.remove('btn-primary');
-                tabUmum.classList.add('btn-outline-primary');
-                guestTypeInput.value = 'sudin';
-                if (sudinModal) sudinModal.show();
-            });
+            if (tabSudin) {
+                tabSudin.addEventListener('click', function () {
+                    setGuestType('sudin');
+                    if (sudinModal) sudinModal.show();
+                });
+            }
 
-            tabUmum.addEventListener('click', function () {
-                tabUmum.classList.add('btn-primary');
-                tabUmum.classList.remove('btn-outline-primary');
-                tabSudin.classList.remove('btn-primary');
-                tabSudin.classList.add('btn-outline-primary');
-                guestTypeInput.value = 'umum';
-            });
+            if (tabUmum) {
+                tabUmum.addEventListener('click', function () {
+                    setGuestType('umum');
+                });
+            }
 
-            if (sudinModalEl) {
+            if (sudinModalEl && tabUmum) {
                 sudinModalEl.addEventListener('hidden.bs.modal', function () {
-                    tabUmum.click();
+                    setGuestType('umum');
                 });
             }
 
@@ -832,6 +1139,19 @@
                 });
             }
 
+            if (regModeParentBtn) {
+                regModeParentBtn.addEventListener('click', function () {
+                    if (regParentYes) regParentYes.checked = true;
+                    setParentMode(true);
+                });
+            }
+            if (regModeGeneralBtn) {
+                regModeGeneralBtn.addEventListener('click', function () {
+                    if (regParentNo) regParentNo.checked = true;
+                    setParentMode(false);
+                });
+            }
+
             if (regParentYes && regParentYes.checked) {
                 setParentMode(true);
             } else {
@@ -840,7 +1160,7 @@
 
             guestForm.addEventListener('submit', function (e) {
                 hasSubmitted = true;
-                if (guestTypeInput.value !== 'umum') {
+                if (guestTypeInput && guestTypeInput.value !== 'umum') {
                     e.preventDefault();
                     if (sudinModal) sudinModal.show();
                     return;
@@ -850,6 +1170,11 @@
                 if (!hasGuests || !hasPurpose) {
                     e.preventDefault();
                     syncSubmitState();
+                    if (!hasGuests && selectedGuestsField) {
+                        selectedGuestsField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else if (!hasPurpose) {
+                        focusVisitStep();
+                    }
                     return;
                 }
                 var payload = [];
@@ -859,7 +1184,8 @@
                 guestPayloadInput.value = JSON.stringify(payload);
             });
 
-            setRegisterFormActive(!registerForm.classList.contains('d-none'));
+            setRegisterFormVisible(!registerForm.classList.contains('d-none'));
+            setGuestType('umum');
             syncSubmitState();
         })();
     </script>

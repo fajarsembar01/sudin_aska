@@ -1,0 +1,268 @@
+{% extends "daftar_tamu/base_daftar_tamu.html" %}
+{% set page_title = "Data Harian Tamu Kedinasan" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="icon-badge feature-icon text-primary">
+                        <i class="bi bi-calendar-date"></i>
+                    </span>
+                    <div>
+                        <h1 class="h3 fw-bold page-title mb-1">Data Harian Tamu Kedinasan</h1>
+                        {% if school %}
+                        <p class="page-subtitle mb-0">
+                            {{ school.name }} &bull; NPSN {{ school.npsn }}
+                            {% if school.kecamatan_name %}&bull; {{ school.kecamatan_name }}{% endif %}
+                        </p>
+                        {% else %}
+                        <p class="page-subtitle mb-0">Akun belum terhubung dengan sekolah.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <a class="btn btn-outline-secondary btn-sm"
+                    href="{{ url_for('daftar_tamu.sekolah_riwayat') }}">
+                    <i class="bi bi-table me-1"></i>Semua Data
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if error_message %}
+<div class="alert alert-warning">{{ error_message }}</div>
+{% else %}
+<section class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <h2 class="h6 fw-bold mb-0">Tabel Kunjungan Harian</h2>
+                <small class="text-muted">Rekap hari kunjungan untuk sekolah yang sedang login.</small>
+            </div>
+            <form method="get" class="d-flex flex-wrap gap-2">
+                <input type="text" name="q" class="form-control form-control-sm" value="{{ search_query }}"
+                    placeholder="Cari nama / tanggal">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">Dari</span>
+                    <input type="date" class="form-control" name="date_from" value="{{ date_from_str }}">
+                </div>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">Sampai</span>
+                    <input type="date" class="form-control" name="date_to" value="{{ date_to_str }}">
+                </div>
+                <select name="guest_scope" class="form-select form-select-sm">
+                    <option value="sudin" {% if guest_scope=='sudin' %}selected{% endif %}>Sudindik JU 2</option>
+                    <option value="umum" {% if guest_scope=='umum' %}selected{% endif %}>Instansi Pemerintah Lainnya</option>
+                    <option value="all" {% if guest_scope=='all' %}selected{% endif %}>Semua tipe tamu</option>
+                </select>
+                <select name="per_page" class="form-select form-select-sm">
+                    {% for size in [10, 20, 50, 100] %}
+                    <option value="{{ size }}" {% if per_page==size %}selected{% endif %}>{{ size }} / halaman</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-sm btn-outline-primary">Terapkan</button>
+                <a class="btn btn-sm btn-outline-secondary"
+                    href="{{ url_for('daftar_tamu.sekolah_riwayat_harian') }}">Reset</a>
+                <a class="btn btn-sm btn-outline-success"
+                    href="{{ url_for('daftar_tamu.sekolah_riwayat_harian_export', format='excel', q=search_query, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}">
+                    <i class="bi bi-file-earmark-excel me-1"></i>File Excel
+                </a>
+                <a class="btn btn-sm btn-outline-secondary"
+                    href="{{ url_for('daftar_tamu.sekolah_riwayat_harian_export', format='csv', q=search_query, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope) }}">
+                    <i class="bi bi-filetype-csv me-1"></i>File CSV
+                </a>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Hari</th>
+                        <th class="text-end">Kunjungan</th>
+                        <th class="text-end">Orang</th>
+                        <th>Pengunjung Terakhir</th>
+                        <th class="text-end">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="schoolDailyRows">
+                    {% for row in rows %}
+                    {% set detail_id = "schoolDailyDetail-" ~ row.visit_date.isoformat().replace('-', '') %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ row.visit_date.strftime('%d %b %Y') if row.visit_date else '-' }}</div>
+                            <div class="small text-muted" data-format-weekday="{{ row.visit_date.isoformat() if row.visit_date else '' }}">-</div>
+                        </td>
+                        <td class="text-end">{{ row.visit_count or 0 }}</td>
+                        <td class="text-end">{{ row.people_count or 0 }}</td>
+                        <td>{{ row.last_guest_name or '-' }}</td>
+                        <td class="text-end">
+                            <button type="button" class="btn btn-sm btn-outline-primary school-daily-detail-btn"
+                                data-bs-toggle="collapse" data-bs-target="#{{ detail_id }}"
+                                data-detail-id="{{ detail_id }}"
+                                data-visit-date="{{ row.visit_date.isoformat() if row.visit_date else '' }}">
+                                <i class="bi bi-chevron-down"></i> Detail
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="collapse school-daily-detail-row" id="{{ detail_id }}">
+                        <td colspan="5" class="p-0">
+                            <div class="p-3" style="background: var(--bg-subtle);">
+                                <div class="small fw-semibold mb-2">
+                                    Pengunjung tanggal {{ row.visit_date.strftime('%d %b %Y') if row.visit_date else '-' }}
+                                </div>
+                                <div class="school-daily-guest-list" data-loaded="0"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">Belum ada data harian.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% set start_row = ((page - 1) * per_page) + 1 if total_rows else 0 %}
+        {% set end_row = ((page - 1) * per_page) + (rows|length) if total_rows else 0 %}
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+            <small class="text-muted">Menampilkan {{ start_row }}-{{ end_row }} dari {{ total_rows }} hari</small>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.sekolah_riwayat_harian', q=search_query, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, per_page=per_page, page=page-1) }}">Prev</a>
+                </li>
+                {% set start_page = 1 if page - 2 < 1 else page - 2 %}
+                {% set end_page = total_pages if page + 2 > total_pages else page + 2 %}
+                {% for p in range(start_page, end_page + 1) %}
+                <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.sekolah_riwayat_harian', q=search_query, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, per_page=per_page, page=p) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.sekolah_riwayat_harian', q=search_query, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, per_page=per_page, page=page+1) }}">Next</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+    (function () {
+        const rowsEl = document.getElementById('schoolDailyRows');
+        if (!rowsEl) return;
+
+        const guestsUrlTemplate = "{{ url_for('daftar_tamu.sekolah_riwayat_harian_guests', visit_date='__DATE__') }}";
+        const guestScope = "{{ guest_scope | default('sudin') }}";
+        const searchQuery = "{{ search_query | default('') }}";
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function formatTime(value) {
+            const date = value ? new Date(value) : null;
+            return date ? date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }) : '-';
+        }
+
+        document.querySelectorAll('[data-format-weekday]').forEach(function (el) {
+            const value = el.getAttribute('data-format-weekday') || '';
+            if (!value) return;
+            const date = new Date(value + 'T00:00:00+07:00');
+            el.textContent = date.toLocaleDateString('id-ID', { weekday: 'long', timeZone: 'Asia/Jakarta' });
+        });
+
+        function renderGuestRows(targetEl, rows) {
+            targetEl.innerHTML = '';
+            if (!Array.isArray(rows) || rows.length === 0) {
+                targetEl.innerHTML = '<div class="text-muted small">Tidak ada nama pada tanggal ini.</div>';
+                return;
+            }
+
+            const list = document.createElement('div');
+            list.className = 'list-group list-group-flush';
+            rows.forEach(function (row) {
+                const typeLabel = row.guest_type === 'umum' ? 'Instansi Pemerintah Lainnya' : 'Sudindik JU 2';
+                const item = document.createElement('div');
+                item.className = 'list-group-item px-0 py-2';
+                item.innerHTML = '<div class="d-flex flex-wrap justify-content-between gap-2">'
+                    + '<div><div class="fw-semibold">' + escapeHtml(row.guest_name || '-') + '</div>'
+                    + '<div class="small text-muted">' + escapeHtml(typeLabel) + ' &bull; ' + escapeHtml(row.purpose || '-') + '</div></div>'
+                    + '<div class="small text-muted">' + escapeHtml(formatTime(row.visit_at)) + '</div>'
+                    + '</div>';
+                list.appendChild(item);
+            });
+            targetEl.appendChild(list);
+        }
+
+        function loadGuests(visitDate, targetEl, buttonEl) {
+            if (!visitDate || !targetEl) return;
+            targetEl.innerHTML = '<div class="text-muted small">Memuat...</div>';
+
+            const params = new URLSearchParams();
+            params.set('page', '1');
+            params.set('per_page', '100');
+            if (searchQuery) params.set('q', searchQuery);
+            if (guestScope) params.set('guest_scope', guestScope);
+
+            const url = guestsUrlTemplate.replace('__DATE__', encodeURIComponent(visitDate));
+            fetch(url + '?' + params.toString())
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.success) throw new Error(data.message || 'Gagal memuat daftar nama.');
+                    renderGuestRows(targetEl, data.rows || []);
+                    targetEl.dataset.loaded = '1';
+                    if (buttonEl) {
+                        buttonEl.disabled = false;
+                        buttonEl.innerHTML = '<i class="bi bi-chevron-up"></i> Detail';
+                    }
+                })
+                .catch(function (err) {
+                    targetEl.innerHTML = '<div class="text-danger small">' + escapeHtml(err.message || 'Gagal memuat daftar nama.') + '</div>';
+                    if (buttonEl) {
+                        buttonEl.disabled = false;
+                        buttonEl.innerHTML = '<i class="bi bi-chevron-down"></i> Detail';
+                    }
+                });
+        }
+
+        rowsEl.addEventListener('click', function (event) {
+            const btn = event.target.closest('.school-daily-detail-btn');
+            if (!btn) return;
+
+            const detailId = btn.getAttribute('data-detail-id') || '';
+            const detailRow = detailId ? document.getElementById(detailId) : null;
+            const listEl = detailRow ? detailRow.querySelector('.school-daily-guest-list') : null;
+            if (!listEl || listEl.dataset.loaded === '1') return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Detail';
+            loadGuests(btn.getAttribute('data-visit-date') || '', listEl, btn);
+        });
+
+        rowsEl.addEventListener('shown.bs.collapse', function (event) {
+            const row = event.target;
+            if (!row.classList.contains('school-daily-detail-row')) return;
+            const btn = rowsEl.querySelector('[data-detail-id="' + row.id + '"]');
+            if (btn && !btn.disabled) btn.innerHTML = '<i class="bi bi-chevron-up"></i> Detail';
+        });
+
+        rowsEl.addEventListener('hidden.bs.collapse', function (event) {
+            const row = event.target;
+            if (!row.classList.contains('school-daily-detail-row')) return;
+            const btn = rowsEl.querySelector('[data-detail-id="' + row.id + '"]');
+            if (btn && !btn.disabled) btn.innerHTML = '<i class="bi bi-chevron-down"></i> Detail';
+        });
+    })();
+</script>
+{% endblock %}

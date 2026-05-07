@@ -429,6 +429,63 @@ CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_completed_at
 ON hospitality_guestbook_reviews (completed_at DESC);
 """
 
+_HOSPITALITY_ACTIVITY_LOGS_SQL = """
+CREATE TABLE IF NOT EXISTS hospitality_activity_logs (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    action TEXT NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id INTEGER,
+    target_name TEXT,
+    details JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_HOSPITALITY_ACTIVITY_LOGS_INDEX_CREATED = """
+CREATE INDEX IF NOT EXISTS idx_hospitality_activity_logs_created ON hospitality_activity_logs (created_at DESC);
+"""
+
+_HOSPITALITY_ACTIVITY_LOGS_INDEX_TARGET = """
+CREATE INDEX IF NOT EXISTS idx_hospitality_activity_logs_target ON hospitality_activity_logs (target_type, target_id);
+"""
+
+_HOSPITALITY_GUESTBOOK_EXTRA_QUESTIONS_SQL = """
+CREATE TABLE IF NOT EXISTS hospitality_guestbook_extra_questions (
+    id SERIAL PRIMARY KEY,
+    question_text TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_HOSPITALITY_GUESTBOOK_EXTRA_QUESTIONS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_hosp_extra_questions_active_order
+ON hospitality_guestbook_extra_questions (active, sort_order, id);
+"""
+
+_HOSPITALITY_GUESTBOOK_EXTRA_ANSWERS_SQL = """
+CREATE TABLE IF NOT EXISTS hospitality_guestbook_extra_answers (
+    id SERIAL PRIMARY KEY,
+    review_id INTEGER NOT NULL REFERENCES hospitality_guestbook_reviews(id) ON DELETE CASCADE,
+    question_id INTEGER NOT NULL REFERENCES hospitality_guestbook_extra_questions(id) ON DELETE CASCADE,
+    rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (review_id, question_id)
+);
+"""
+
+_HOSPITALITY_GUESTBOOK_EXTRA_ANSWERS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_hosp_extra_answers_review
+ON hospitality_guestbook_extra_answers (review_id);
+CREATE INDEX IF NOT EXISTS idx_hosp_extra_answers_question
+ON hospitality_guestbook_extra_answers (question_id);
+"""
+
 _PORTAL_SCHOOLS_SQL = """
 CREATE TABLE IF NOT EXISTS portal_schools (
     id SERIAL PRIMARY KEY,
@@ -954,6 +1011,61 @@ CREATE TABLE IF NOT EXISTS cms_informasi_publik (
 );
 """
 
+_CMS_LAYANAN_PUBLIK_SQL = """
+CREATE TABLE IF NOT EXISTS cms_layanan_publik (
+    id SERIAL PRIMARY KEY,
+    cms_nama_layanan TEXT NOT NULL,
+    cms_deskripsi TEXT,
+    cms_icon TEXT NOT NULL DEFAULT 'bi-star',
+    cms_status TEXT NOT NULL DEFAULT 'Aktif' CHECK (cms_status IN ('Aktif', 'Tidak Aktif')),
+    cms_files JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_CMS_ARTIKEL_SQL = """
+CREATE TABLE IF NOT EXISTS cms_artikel (
+    id SERIAL PRIMARY KEY,
+    judul TEXT NOT NULL,
+    kategori TEXT NOT NULL,
+    tanggal_publikasi DATE NOT NULL,
+    deskripsi TEXT NOT NULL,
+    thumbnail_path TEXT,
+    penulis TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Aktif',
+    status_publikasi TEXT NOT NULL DEFAULT 'Draft',
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT cms_artikel_status_check CHECK (status IN ('Aktif', 'Tidak Aktif')),
+    CONSTRAINT cms_artikel_status_publikasi_check CHECK (status_publikasi IN ('Draft', 'Published'))
+);
+"""
+
+_CMS_ARTIKEL_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_cms_artikel_tanggal_publikasi
+ON cms_artikel (tanggal_publikasi DESC, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cms_artikel_status_publikasi
+ON cms_artikel (status_publikasi, status);
+"""
+
+_CMS_ARTIKEL_FILES_SQL = """
+CREATE TABLE IF NOT EXISTS cms_artikel_files (
+    id SERIAL PRIMARY KEY,
+    artikel_id INTEGER NOT NULL REFERENCES cms_artikel(id) ON DELETE CASCADE,
+    file_name TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_CMS_ARTIKEL_FILES_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_cms_artikel_files_artikel_id
+ON cms_artikel_files (artikel_id, created_at);
+"""
+
 # ===== Call Center Schema =====
 
 _CC_CONVERSATIONS_SQL = """
@@ -1104,6 +1216,13 @@ def ensure_dashboard_schema() -> None:
         _PORTAL_PREVIEW_PINS_INDEX_SQL,
         _HOSPITALITY_GUESTBOOK_REVIEWS_SQL,
         _HOSPITALITY_GUESTBOOK_REVIEWS_INDEX_SQL,
+        _HOSPITALITY_ACTIVITY_LOGS_SQL,
+        _HOSPITALITY_ACTIVITY_LOGS_INDEX_CREATED,
+        _HOSPITALITY_ACTIVITY_LOGS_INDEX_TARGET,
+        _HOSPITALITY_GUESTBOOK_EXTRA_QUESTIONS_SQL,
+        _HOSPITALITY_GUESTBOOK_EXTRA_QUESTIONS_INDEX_SQL,
+        _HOSPITALITY_GUESTBOOK_EXTRA_ANSWERS_SQL,
+        _HOSPITALITY_GUESTBOOK_EXTRA_ANSWERS_INDEX_SQL,
         _PORTAL_SCHOOLS_SQL,
         _PORTAL_SCHOOLS_INDEX_SQL,
         _PORTAL_ROOMS_SQL,
@@ -1279,6 +1398,11 @@ def ensure_dashboard_schema() -> None:
         # ===== CMS tables =====
         _CMS_PROFIL_INSTANSI_SQL,
         _CMS_INFORMASI_PUBLIK_SQL,
+        _CMS_LAYANAN_PUBLIK_SQL,
+        _CMS_ARTIKEL_SQL,
+        _CMS_ARTIKEL_INDEX_SQL,
+        _CMS_ARTIKEL_FILES_SQL,
+        _CMS_ARTIKEL_FILES_INDEX_SQL,
         # ===== Call Center tables =====
         _CC_CONVERSATIONS_SQL,
         _CC_CONVERSATIONS_INDEX_SQL,
@@ -1302,4 +1426,26 @@ def ensure_dashboard_schema() -> None:
             print(f"Statement: {statement[:100]}...")
 
 
-__all__ = ["ensure_dashboard_schema"]
+def ensure_cms_artikel_schema() -> None:
+    """Create CMS artikel tables without touching unrelated dashboard schema."""
+    statements: Iterable[str] = (
+        _CMS_ARTIKEL_SQL,
+        _CMS_ARTIKEL_INDEX_SQL,
+        _CMS_ARTIKEL_FILES_SQL,
+        _CMS_ARTIKEL_FILES_INDEX_SQL,
+    )
+
+    for i, statement in enumerate(statements):
+        try:
+            with get_cursor(commit=True) as cur:
+                cur.execute(statement)
+        except Exception as e:
+            message = str(e)
+            if "pg_type_typname_nsp_index" in message and "cms_artikel" in message:
+                continue
+            print(f"Error executing CMS artikel schema statement #{i+1}: {e}")
+            print(f"Statement: {statement[:100]}...")
+            raise
+
+
+__all__ = ["ensure_dashboard_schema", "ensure_cms_artikel_schema"]

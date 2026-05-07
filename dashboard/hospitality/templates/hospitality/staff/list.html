@@ -294,19 +294,22 @@
   </div>
 </div>
 
+{% set _list_endpoint = 'hospitality.admin_assess_home' if admin_assess_mode else 'hospitality.staff_home' %}
+{% set _assess_endpoint = 'hospitality.admin_assess' if admin_assess_mode else 'hospitality.staff_assess' %}
+{% set _delete_draft_endpoint = 'hospitality.admin_assess_delete_draft' if admin_assess_mode else 'hospitality.staff_delete_draft' %}
 <!-- Filter pills -->
 <div class="hosp-filters">
-  <a href="{{ url_for('hospitality.staff_home') }}" class="filter-pill {% if not status_filter %}active{% endif %}">Semua</a>
-  <a href="{{ url_for('hospitality.staff_home', status='draft') }}" class="filter-pill {% if status_filter == 'draft' %}active{% endif %}">
+  <a href="{{ url_for(_list_endpoint) }}" class="filter-pill {% if not status_filter %}active{% endif %}">Semua</a>
+  <a href="{{ url_for(_list_endpoint, status='draft') }}" class="filter-pill {% if status_filter == 'draft' %}active{% endif %}">
     <i class="bi bi-pencil me-1"></i>Draft
   </a>
-  <a href="{{ url_for('hospitality.staff_home', status='submitted') }}" class="filter-pill {% if status_filter == 'submitted' %}active{% endif %}">
+  <a href="{{ url_for(_list_endpoint, status='submitted') }}" class="filter-pill {% if status_filter == 'submitted' %}active{% endif %}">
     <i class="bi bi-send me-1"></i>Submitted
   </a>
-  <a href="{{ url_for('hospitality.staff_home', status='verified') }}" class="filter-pill {% if status_filter == 'verified' %}active{% endif %}">
+  <a href="{{ url_for(_list_endpoint, status='verified') }}" class="filter-pill {% if status_filter == 'verified' %}active{% endif %}">
     <i class="bi bi-patch-check me-1"></i>Verified
   </a>
-  <a href="{{ url_for('hospitality.staff_home', status='reopened') }}" class="filter-pill {% if status_filter == 'reopened' %}active{% endif %}">
+  <a href="{{ url_for(_list_endpoint, status='reopened') }}" class="filter-pill {% if status_filter == 'reopened' %}active{% endif %}">
     <i class="bi bi-arrow-repeat me-1"></i>Reopened
   </a>
 </div>
@@ -314,7 +317,7 @@
 {% if assessments %}
 <div class="list-group shadow-sm">
   {% for item in assessments %}
-  <a href="{% if item.status == 'draft' %}{{ url_for('hospitality.staff_assess', school_id=item.school_id) }}{% else %}{{ url_for('hospitality.assessment_detail', assessment_id=item.id) }}{% endif %}"
+  <a href="{% if item.status == 'draft' %}{{ url_for(_assess_endpoint, school_id=item.school_id) }}{% else %}{{ url_for('hospitality.assessment_detail', assessment_id=item.id) }}{% endif %}"
      class="list-group-item list-group-item-action assessment-item d-flex align-items-center gap-3 px-3 py-3"
      data-search="{{ ((item.school_name or '') ~ ' ' ~ (item.npsn or '') ~ ' ' ~ (item.jenjang or '') ~ ' ' ~ (item.status or ''))|lower }}">
     <span class="icon-badge timeline-icon text-primary">
@@ -325,6 +328,13 @@
         <div>
           <div class="fw-semibold">{{ item.school_name }}</div>
           <small class="text-muted">{{ item.npsn }} • {{ item.jenjang }}</small>
+          {% if can_preview_hospitality %}
+          <div class="mt-1">
+            <a class="small text-decoration-none" href="{{ url_for('hospitality.preview_guestbook_dashboard_by_school', school_id=item.school_id) }}">
+              <i class="bi bi-star-half me-1"></i>Preview pelayanan sekolah ini
+            </a>
+          </div>
+          {% endif %}
         </div>
       </div>
       <div class="small text-muted mt-1">
@@ -344,7 +354,7 @@
       <button type="button"
               class="btn-draft-delete"
               data-draft-delete
-              data-draft-delete-url="{{ url_for('hospitality.staff_delete_draft', assessment_id=item.id) }}"
+              data-draft-delete-url="{{ url_for(_delete_draft_endpoint, assessment_id=item.id) }}"
               data-draft-school="{{ item.school_name|e }}"
               title="Hapus draft"
               aria-label="Hapus draft {{ item.school_name|e }}">
@@ -364,6 +374,11 @@
   <i class="bi bi-clipboard-x"></i>
   <h5>Belum ada penilaian{% if status_filter %} dengan status "{{ status_filter }}"{% endif %}</h5>
   <p class="text-muted small mb-3">Cari sekolah di kolom pencarian di atas untuk memulai penilaian baru.</p>
+  {% if status_filter %}
+  <a href="{{ url_for(_list_endpoint) }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-x-circle me-1"></i>Hapus filter
+  </a>
+  {% endif %}
 </div>
 
 {% endif %}
@@ -429,7 +444,7 @@ function startAssessFromInput() {
     if (!isNaN(maybeId)) selectedSchoolId = maybeId;
   }
   if (!selectedSchoolId) return;
-  window.location.href = `/hospitality/staff/assess/${selectedSchoolId}`;
+  window.location.href = `{{ '/hospitality/admin/menilai/assess/' if admin_assess_mode else '/hospitality/staff/assess/' }}${selectedSchoolId}`;
 }
 </script>
 

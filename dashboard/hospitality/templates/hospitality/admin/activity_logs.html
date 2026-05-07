@@ -1,0 +1,69 @@
+{% extends "hospitality/base_hospitality.html" %}
+{% set page_title = "Log Aktivitas Admin — Hospitality" %}
+
+{% block portal_content %}
+<section class="mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+      <a href="{{ url_for('hospitality.admin_home') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div>
+        <h1 class="h4 fw-bold mb-0">
+          <i class="bi bi-clock-history text-primary me-2"></i>Log Aktivitas Admin
+        </h1>
+        <p class="text-muted mb-0 small">Riwayat lengkap semua aktivitas admin di modul Hospitality</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3">
+      <div class="d-flex align-items-center gap-2">
+        <span class="icon-badge section-icon text-dark" style="width:28px;height:28px;font-size:0.85rem;">
+          <i class="bi bi-journal-text"></i>
+        </span>
+        <span class="fw-semibold small">Semua Aktivitas</span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <input type="text" id="logSearchInput" class="form-control form-control-sm" placeholder="Cari log..." style="max-width:220px;">
+      </div>
+    </div>
+    <div class="card-body p-0">
+      {% include 'hospitality/admin/_activity_log_table.html' %}
+    </div>
+    {% if activity_logs|length >= per_page %}
+    <div class="card-footer bg-transparent text-center py-3">
+      <div class="d-flex justify-content-center gap-2">
+        {% if page > 1 %}
+        <a href="{{ url_for('hospitality.admin_activity_logs', page=page - 1) }}" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-chevron-left me-1"></i>Sebelumnya
+        </a>
+        {% endif %}
+        <span class="btn btn-sm btn-light disabled">Halaman {{ page }}</span>
+        <a href="{{ url_for('hospitality.admin_activity_logs', page=page + 1) }}" class="btn btn-sm btn-outline-primary">
+          Selanjutnya<i class="bi bi-chevron-right ms-1"></i>
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<script>
+(function() {
+  const input = document.getElementById('logSearchInput');
+  const tbody = document.getElementById('hospitalityActivityLogBody');
+  if (!input || !tbody) return;
+
+  input.addEventListener('input', function() {
+    const q = this.value.trim().toLowerCase();
+    const rows = tbody.querySelectorAll('tr[data-search]');
+    rows.forEach(function(row) {
+      const text = (row.getAttribute('data-search') || '').toLowerCase();
+      row.style.display = (!q || text.includes(q)) ? '' : 'none';
+    });
+  });
+})();
+</script>
+{% endblock %}

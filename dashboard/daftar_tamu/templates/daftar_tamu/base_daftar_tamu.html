@@ -126,14 +126,32 @@
                         {% endif %}
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'daftar_tamu.sekolah_riwayat' %}active{% endif %}"
-                        href="{{ url_for('daftar_tamu.sekolah_riwayat') }}">
+                {% set sekolah_riwayat_endpoints = [
+                'daftar_tamu.sekolah_riwayat',
+                'daftar_tamu.sekolah_riwayat_harian'
+                ] %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {% if request.endpoint in sekolah_riwayat_endpoints %}active{% endif %}"
+                        href="#" data-bs-toggle="dropdown">
                         <i class="bi bi-clock-history nav-icon"></i>Riwayat Tamu Kedinasan
                         {% if pending_sudin %}
                         <span class="badge rounded-pill text-bg-danger ms-2">{{ pending_sudin }}</span>
                         {% endif %}
                     </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.sekolah_riwayat' %}active{% endif %}"
+                                href="{{ url_for('daftar_tamu.sekolah_riwayat') }}">
+                                <i class="bi bi-table me-2"></i>Semua Data
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.sekolah_riwayat_harian' %}active{% endif %}"
+                                href="{{ url_for('daftar_tamu.sekolah_riwayat_harian') }}">
+                                <i class="bi bi-calendar-date me-2"></i>Data Harian
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 {% elif current_user and current_user.role in ['staff', 'coordinator'] %}
                 <li class="nav-item">

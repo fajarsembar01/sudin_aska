@@ -13,7 +13,12 @@ def run_migrations():
         "dashboard/migrations/021_add_reopen_requests.sql",
         "dashboard/migrations/026_add_hospitality.sql",
         "dashboard/migrations/027_seed_hospitality_proses_pelayanan.sql",
-        "dashboard/migrations/028_add_hospitality_guestbook_reviews.sql"
+        "dashboard/migrations/028_add_hospitality_guestbook_reviews.sql",
+        "dashboard/migrations/029_add_hospitality_soft_delete.sql",
+        "dashboard/migrations/030_add_hospitality_preview_access.sql",
+        "dashboard/migrations/031_add_hospitality_activity_logs.sql",
+        "dashboard/migrations/032_add_cms_artikel.sql",
+        "dashboard/migrations/033_add_hospitality_guestbook_extra_questions.sql",
     ]
     
     print("Mengeksekusi migrasi modul tambahan (Hospitality & Reopen)...")

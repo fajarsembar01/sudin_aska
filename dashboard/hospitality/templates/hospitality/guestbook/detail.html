@@ -1,5 +1,6 @@
 {% extends "hospitality/base_hospitality.html" %}
 {% set page_title = "Detail Review Pelayanan" %}
+{% set dashboard_ep = dashboard_endpoint if dashboard_endpoint is defined else 'hospitality.guestbook_review_dashboard' %}
 
 {% block head_extra %}
 <style>
@@ -120,6 +121,20 @@
     border-radius: 14px;
     background: var(--bg-surface);
   }
+
+  .extra-rating-item {
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 0.8rem 0.9rem;
+    background: var(--bg-subtle);
+  }
+
+  .extra-stars {
+    display: inline-flex;
+    gap: 0.2rem;
+    color: #f4b400;
+    font-size: 1rem;
+  }
 </style>
 {% endblock %}
 
@@ -151,7 +166,7 @@
             <span>Buka Hospitality</span>
           </a>
           {% endif %}
-          <a href="{{ url_for('hospitality.guestbook_review_dashboard') }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
+          <a href="{{ url_for(dashboard_ep) }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
             <i class="bi bi-list-ul"></i>
             <span>Daftar Review</span>
           </a>
@@ -196,7 +211,13 @@
         <ul class="timeline">
           <li class="timeline-item">
             <div class="fw-semibold">Review dibuat</div>
-            <div class="small text-muted">{{ review.review_created_at|jakarta }}</div>
+            <div class="small text-muted">
+              {% if use_tanggal_edit and review.tanggal_edit %}
+                {{ review.tanggal_edit|jakarta }}
+              {% else %}
+                {{ review.review_created_at|jakarta }}
+              {% endif %}
+            </div>
           </li>
           <li class="timeline-item">
             <div class="fw-semibold">Kunjungan / transaksi</div>
@@ -204,7 +225,15 @@
           </li>
           <li class="timeline-item">
             <div class="fw-semibold">Review selesai</div>
-            <div class="small text-muted">{{ review.completed_at|jakarta if review.completed_at else 'Belum selesai' }}</div>
+            <div class="small text-muted">
+              {% if use_tanggal_edit and review.tanggal_edit %}
+                {{ review.tanggal_edit|jakarta }}
+              {% elif review.completed_at %}
+                {{ review.completed_at|jakarta }}
+              {% else %}
+                Belum selesai
+              {% endif %}
+            </div>
           </li>
           {% if review.linked_at %}
           <li class="timeline-item">
@@ -255,6 +284,29 @@
         </div>
       </div>
     </div>
+
+    {% if review.extra_ratings %}
+    <div class="detail-card card border-0 mb-3">
+      <div class="card-body p-4">
+        <div class="detail-label mb-2">Penilaian Tambahan</div>
+        <div class="vstack gap-2">
+          {% for item in review.extra_ratings %}
+          <div class="extra-rating-item d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="fw-semibold">{{ loop.index }}. {{ item.question_text }}</div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="small text-muted">{{ item.rating }}/5</span>
+              <span class="extra-stars" aria-label="{{ item.rating }} dari 5">
+                {% for star in range(1, 6) %}
+                <i class="bi {% if star <= item.rating %}bi-star-fill{% else %}bi-star{% endif %}"></i>
+                {% endfor %}
+              </span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
 
     <div class="detail-card card border-0 mb-3">
       <div class="card-body p-4">

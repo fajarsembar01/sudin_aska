@@ -1,6 +1,7 @@
 {% extends "daftar_tamu/base_daftar_tamu.html" %}
 {% set page_title = "Dashboard Tamu Kedinasan" %}
 {% set sort_visits = "visits_asc" if sort == "visits_desc" else "visits_desc" %}
+{% set sort_days = "days_asc" if sort == "days_desc" else "days_desc" %}
 {% set sort_last_visit = "last_visit_asc" if sort == "last_visit_desc" else "last_visit_desc" %}
 {% set sort_name = "name_desc" if sort == "name_asc" else "name_asc" %}
 {% set user_sort_visits = "visits_asc" if user_sort == "visits_desc" else "visits_desc" %}
@@ -321,7 +322,7 @@
                                         <div class="text-muted" style="font-size: 0.7rem">{{ row.jenjang or '-' }}</div>
                                     </div>
                                 </div>
-                                <span class="badge bg-primary text-white rounded-pill">{{ row.visit_count or 0 }}</span>
+                                <span class="badge bg-primary text-white rounded-pill">{{ row.people_count or 0 }}</span>
                             </div>
                             {% endfor %}
                         </div>
@@ -348,7 +349,7 @@
                                         <div class="text-muted" style="font-size: 0.7rem">{{ row.jenjang or '-' }}</div>
                                     </div>
                                 </div>
-                                <span class="badge bg-danger text-white rounded-pill">{{ row.visit_count or 0 }}</span>
+                                <span class="badge bg-danger text-white rounded-pill">{{ row.people_count or 0 }}</span>
                             </div>
                             {% endfor %}
                         </div>
@@ -375,7 +376,7 @@
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
                         <h2 class="h6 fw-bold mb-0">Ranking Sekolah Berdasarkan Kunjungan</h2>
-                        <small class="text-muted">Urutkan berdasarkan total kunjungan atau kunjungan terakhir.</small>
+                        <small class="text-muted">Urutkan berdasarkan total orang atau kunjungan terakhir.</small>
                     </div>
                     <div class="d-flex flex-wrap gap-2 no-print">
                         <a href="{{ url_for('daftar_tamu.export_rankings', format='csv', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}"
@@ -397,8 +398,10 @@
                     </div>
                     <div class="col-md-3">
                         <select name="sort" class="form-select">
-                            <option value="visits_desc" {% if sort=='visits_desc' %}selected{% endif %}>Kunjungan terbanyak</option>
-                            <option value="visits_asc" {% if sort=='visits_asc' %}selected{% endif %}>Kunjungan tersedikit</option>
+                            <option value="visits_desc" {% if sort=='visits_desc' %}selected{% endif %}>Orang terbanyak</option>
+                            <option value="visits_asc" {% if sort=='visits_asc' %}selected{% endif %}>Orang tersedikit</option>
+                            <option value="days_desc" {% if sort=='days_desc' %}selected{% endif %}>Hari terbanyak</option>
+                            <option value="days_asc" {% if sort=='days_asc' %}selected{% endif %}>Hari tersedikit</option>
                             <option value="last_visit_desc" {% if sort=='last_visit_desc' %}selected{% endif %}>Kunjungan terbaru</option>
                             <option value="last_visit_asc" {% if sort=='last_visit_asc' %}selected{% endif %}>Kunjungan terlama</option>
                             <option value="name_asc" {% if sort=='name_asc' %}selected{% endif %}>Nama A-Z</option>
@@ -435,7 +438,13 @@
                                 <th class="text-end">
                                     <a class="text-decoration-none"
                                         href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_visits, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
-                                        Kunjungan
+                                        Orang
+                                    </a>
+                                </th>
+                                <th class="text-end">
+                                    <a class="text-decoration-none"
+                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_days, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
+                                        Hari
                                     </a>
                                 </th>
                                 <th>
@@ -458,7 +467,7 @@
                                     </div>
                                 </td>
                                 <td class="text-end">
-                                    {% if row.visit_count > 0 %}
+                                    {% if row.people_count > 0 %}
                                     <button type="button"
                                         class="btn btn-sm btn-outline-primary school-visit-btn"
                                         data-school-id="{{ row.school_id }}"
@@ -467,7 +476,23 @@
                                         data-school-kecamatan="{{ row.kecamatan }}"
                                         data-visits-url="{{ url_for('daftar_tamu.admin_school_visits', school_id=row.school_id) }}"
                                         data-export-url="{{ url_for('daftar_tamu.admin_school_visits_export', school_id=row.school_id) }}">
-                                        {{ row.visit_count }}
+                                        {{ row.people_count }}
+                                    </button>
+                                    {% else %}
+                                    <span class="badge bg-secondary rounded-pill">0</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if row.visit_day_count > 0 %}
+                                    <button type="button"
+                                        class="btn btn-sm btn-outline-secondary school-day-btn"
+                                        data-school-id="{{ row.school_id }}"
+                                        data-school-name="{{ row.school_name }}"
+                                        data-school-npsn="{{ row.npsn }}"
+                                        data-school-kecamatan="{{ row.kecamatan }}"
+                                        data-days-url="{{ url_for('daftar_tamu.admin_school_visit_days', school_id=row.school_id) }}"
+                                        data-guests-url-template="{{ url_for('daftar_tamu.admin_school_visit_day_guests', school_id=row.school_id, visit_date='__DATE__') }}">
+                                        {{ row.visit_day_count }}
                                     </button>
                                     {% else %}
                                     <span class="badge bg-secondary rounded-pill">0</span>
@@ -503,7 +528,7 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">Belum ada data untuk filter yang dipilih.</td>
+                                <td colspan="6" class="text-center py-4 text-muted">Belum ada data untuk filter yang dipilih.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -845,6 +870,70 @@
     </div>
 </div>
 
+<div class="modal fade" id="schoolDayModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title mb-0">Tanggal Kunjungan Sekolah</h5>
+                    <div class="small text-muted" id="schoolDayModalMeta">-</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-2">
+                    <div class="fw-semibold" id="schoolDayModalName">-</div>
+                </div>
+                <div class="d-flex flex-wrap justify-content-start align-items-center gap-2 mb-3">
+                    <form id="schoolDaySearchForm" class="d-flex flex-wrap gap-2 align-items-center">
+                        <input type="text" class="form-control form-control-sm" id="schoolDaySearchInput"
+                            placeholder="Cari Nama">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">Dari</span>
+                            <input type="date" class="form-control" id="schoolDayDateFrom" aria-label="Dari tanggal">
+                        </div>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">Sampai</span>
+                            <input type="date" class="form-control" id="schoolDayDateTo" aria-label="Sampai tanggal">
+                        </div>
+                        <select class="form-select form-select-sm" id="schoolDayPerPage">
+                            {% for option in [10, 20, 50, 100] %}
+                            <option value="{{ option }}">{{ option }} / halaman</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary">Terapkan</button>
+                    </form>
+                </div>
+
+                <div class="table-responsive table-scroll">
+                    <table class="table table-hover table-striped table-sm align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Tanggal</th>
+                                <th class="text-end">Kunjungan</th>
+                                <th>Nama</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="schoolDayRows">
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">Pilih sekolah untuk melihat tanggal kunjungan.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+                    <small class="text-muted" id="schoolDaySummary">-</small>
+                    <ul class="pagination pagination-sm mb-0" id="schoolDayPagination"></ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="userVisitModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -1080,7 +1169,7 @@
                     + '<div class="text-muted" style="font-size: 0.7rem">' + escapeHtml(row.jenjang || '-') + '</div>'
                     + '</div>'
                     + '</div>'
-                    + '<span class="badge ' + badgeClass + ' text-white rounded-pill">' + Number(row.visit_count || 0) + '</span>'
+                    + '<span class="badge ' + badgeClass + ' text-white rounded-pill">' + Number(row.people_count || 0) + '</span>'
                     + '</div>';
                 listEl.insertAdjacentHTML('beforeend', html);
             });
@@ -1465,6 +1554,291 @@
                 window.location = currentExportUrl + '?' + params.toString();
             });
         }
+    })();
+</script>
+<script>
+    (function () {
+        const modalEl = document.getElementById('schoolDayModal');
+        if (!modalEl || !window.bootstrap) return;
+
+        const modal = new bootstrap.Modal(modalEl);
+        const rowsEl = document.getElementById('schoolDayRows');
+        const summaryEl = document.getElementById('schoolDaySummary');
+        const paginationEl = document.getElementById('schoolDayPagination');
+        const searchForm = document.getElementById('schoolDaySearchForm');
+        const searchInput = document.getElementById('schoolDaySearchInput');
+        const dateFromInput = document.getElementById('schoolDayDateFrom');
+        const dateToInput = document.getElementById('schoolDayDateTo');
+        const perPageSelect = document.getElementById('schoolDayPerPage');
+        const nameEl = document.getElementById('schoolDayModalName');
+        const metaEl = document.getElementById('schoolDayModalMeta');
+        const guestScope = "{{ guest_scope }}";
+        const defaultDateFrom = "{{ date_from_str }}";
+        const defaultDateTo = "{{ date_to_str }}";
+
+        let currentDaysUrl = '';
+        let currentGuestsUrlTemplate = '';
+        const state = {
+            page: 1,
+            per_page: Number(perPageSelect.value || 10),
+            q: '',
+            date_from: '',
+            date_to: ''
+        };
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function formatDate(value) {
+            const date = value ? new Date(value + 'T00:00:00+07:00') : null;
+            return date ? date.toLocaleDateString('id-ID', { dateStyle: 'medium', timeZone: 'Asia/Jakarta' }) : '-';
+        }
+
+        function formatTime(value) {
+            const date = value ? new Date(value) : null;
+            return date ? date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }) : '-';
+        }
+
+        function renderPager(targetEl, page, totalPages, onSelect) {
+            targetEl.innerHTML = '';
+            if (!totalPages || totalPages <= 1) return;
+
+            function add(label, targetPage, disabled, active) {
+                const li = document.createElement('li');
+                li.className = 'page-item';
+                if (disabled) li.classList.add('disabled');
+                if (active) li.classList.add('active');
+                const a = document.createElement('a');
+                a.className = 'page-link';
+                a.href = '#';
+                a.textContent = label;
+                if (!disabled && !active) {
+                    a.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        onSelect(targetPage);
+                    });
+                }
+                li.appendChild(a);
+                targetEl.appendChild(li);
+            }
+
+            add('Prev', page - 1, page <= 1, false);
+            const startPage = Math.max(1, page - 2);
+            const endPage = Math.min(totalPages, page + 2);
+            for (let p = startPage; p <= endPage; p += 1) {
+                add(String(p), p, false, p === page);
+            }
+            add('Next', page + 1, page >= totalPages, false);
+        }
+
+        function renderSummary(targetEl, page, perPage, totalRows, shownRows, label) {
+            if (!totalRows) {
+                targetEl.textContent = 'Menampilkan 0 dari 0 ' + label;
+                return;
+            }
+            const startRow = ((page - 1) * perPage) + 1;
+            const endRow = ((page - 1) * perPage) + shownRows;
+            targetEl.textContent = 'Menampilkan ' + startRow + '-' + endRow + ' dari ' + totalRows + ' ' + label;
+        }
+
+        function renderGuestRows(targetEl, rows) {
+            targetEl.innerHTML = '';
+            if (!Array.isArray(rows) || rows.length === 0) {
+                targetEl.innerHTML = '<div class="text-muted small">Tidak ada nama pada tanggal ini.</div>';
+                return;
+            }
+            const list = document.createElement('div');
+            list.className = 'list-group list-group-flush';
+            rows.forEach(function (row) {
+                const typeLabel = row.guest_type === 'umum' ? 'Umum' : 'SUDIN';
+                const item = document.createElement('div');
+                item.className = 'list-group-item px-0 py-2';
+                item.innerHTML = '<div class="d-flex flex-wrap justify-content-between gap-2">'
+                    + '<div><div class="fw-semibold">' + escapeHtml(row.guest_name || '-') + '</div>'
+                    + '<div class="small text-muted">' + escapeHtml(typeLabel) + ' &bull; ' + escapeHtml(row.purpose || '-') + '</div></div>'
+                    + '<div class="small text-muted">' + escapeHtml(formatTime(row.visit_at)) + '</div>'
+                    + '</div>';
+                list.appendChild(item);
+            });
+            targetEl.appendChild(list);
+        }
+
+        function loadGuests(visitDate, targetEl, buttonEl) {
+            if (!currentGuestsUrlTemplate || !visitDate || !targetEl) return;
+            targetEl.innerHTML = '<div class="text-muted small">Memuat...</div>';
+
+            const params = new URLSearchParams();
+            params.set('page', '1');
+            params.set('per_page', '100');
+            if (state.q) params.set('q', state.q);
+            if (guestScope) params.set('guest_scope', guestScope);
+
+            const url = currentGuestsUrlTemplate.replace('__DATE__', encodeURIComponent(visitDate));
+            fetch(url + '?' + params.toString())
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.success) throw new Error(data.message || 'Gagal memuat daftar nama.');
+                    renderGuestRows(targetEl, data.rows || []);
+                    targetEl.dataset.loaded = '1';
+                    if (buttonEl) {
+                        buttonEl.disabled = false;
+                        buttonEl.innerHTML = '<i class="bi bi-chevron-up"></i> Detail';
+                    }
+                })
+                .catch(function (err) {
+                    targetEl.innerHTML = '<div class="text-danger small">' + escapeHtml(err.message || 'Gagal memuat daftar nama.') + '</div>';
+                    if (buttonEl) {
+                        buttonEl.disabled = false;
+                        buttonEl.innerHTML = '<i class="bi bi-chevron-down"></i> Detail';
+                    }
+                });
+        }
+
+        function renderDayRows(rows) {
+            rowsEl.innerHTML = '';
+            if (!Array.isArray(rows) || rows.length === 0) {
+                rowsEl.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Belum ada tanggal kunjungan.</td></tr>';
+                return;
+            }
+            rows.forEach(function (row) {
+                const tr = document.createElement('tr');
+                const visitDate = row.visit_date || '';
+                const detailId = 'schoolDayDetail-' + visitDate.replace(/[^0-9a-z]/gi, '');
+                tr.innerHTML = '<td class="fw-semibold">' + escapeHtml(formatDate(visitDate)) + '</td>'
+                    + '<td class="text-end">' + Number(row.visit_count || 0) + '</td>'
+                    + '<td>' + escapeHtml(row.last_guest_name || '-') + '</td>'
+                    + '<td class="text-end">'
+                    + '<button type="button" class="btn btn-sm btn-outline-primary school-day-detail-btn"'
+                    + ' data-bs-toggle="collapse" data-bs-target="#' + detailId + '"'
+                    + ' data-detail-id="' + detailId + '" data-visit-date="' + escapeHtml(visitDate) + '">'
+                    + '<i class="bi bi-chevron-down"></i> Detail</button>'
+                    + '</td>';
+                rowsEl.appendChild(tr);
+
+                const detailTr = document.createElement('tr');
+                detailTr.className = 'collapse school-day-detail-row';
+                detailTr.id = detailId;
+                detailTr.innerHTML = '<td colspan="4" class="p-0">'
+                    + '<div class="p-3" style="background: var(--bg-subtle);">'
+                    + '<div class="small fw-semibold mb-2">Pengunjung tanggal ' + escapeHtml(formatDate(visitDate)) + '</div>'
+                    + '<div class="school-day-guest-list" data-loaded="0"></div>'
+                    + '</div>'
+                    + '</td>';
+                rowsEl.appendChild(detailTr);
+            });
+        }
+
+        function loadDays() {
+            if (!currentDaysUrl) return;
+            rowsEl.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Memuat...</td></tr>';
+            summaryEl.textContent = 'Memuat...';
+            paginationEl.innerHTML = '';
+
+            const params = new URLSearchParams();
+            params.set('page', String(state.page));
+            params.set('per_page', String(state.per_page));
+            if (state.q) params.set('q', state.q);
+            if (guestScope) params.set('guest_scope', guestScope);
+            if (state.date_from) params.set('date_from', state.date_from);
+            if (state.date_to) params.set('date_to', state.date_to);
+
+            fetch(currentDaysUrl + '?' + params.toString())
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.success) throw new Error(data.message || 'Gagal memuat tanggal kunjungan.');
+                    renderDayRows(data.rows || []);
+                    renderSummary(summaryEl, data.page || state.page, data.per_page || state.per_page, data.total_rows || 0, (data.rows || []).length, 'tanggal');
+                    renderPager(paginationEl, data.page || state.page, data.total_pages || 1, function (page) {
+                        state.page = page;
+                        loadDays();
+                    });
+                })
+                .catch(function (err) {
+                    rowsEl.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4">'
+                        + escapeHtml(err.message || 'Gagal memuat tanggal kunjungan.') + '</td></tr>';
+                    summaryEl.textContent = '-';
+                });
+        }
+
+        function openModalFromButton(btn) {
+            currentDaysUrl = btn.getAttribute('data-days-url') || '';
+            currentGuestsUrlTemplate = btn.getAttribute('data-guests-url-template') || '';
+            const name = btn.getAttribute('data-school-name') || 'Sekolah';
+            const npsn = btn.getAttribute('data-school-npsn') || '';
+            const kecamatan = btn.getAttribute('data-school-kecamatan') || '';
+            nameEl.textContent = name;
+            metaEl.textContent = [npsn, kecamatan].filter(Boolean).join(' - ') || '-';
+            state.page = 1;
+            state.q = '';
+            state.date_from = defaultDateFrom;
+            state.date_to = defaultDateTo;
+            state.per_page = 10;
+            if (searchInput) searchInput.value = '';
+            if (dateFromInput) dateFromInput.value = defaultDateFrom;
+            if (dateToInput) dateToInput.value = defaultDateTo;
+            if (perPageSelect) perPageSelect.value = '10';
+            loadDays();
+            modal.show();
+        }
+
+        document.addEventListener('click', function (event) {
+            const btn = event.target.closest('.school-day-btn');
+            if (btn) {
+                event.preventDefault();
+                openModalFromButton(btn);
+                return;
+            }
+
+            const detailBtn = event.target.closest('.school-day-detail-btn');
+            if (!detailBtn) return;
+            const detailId = detailBtn.getAttribute('data-detail-id') || '';
+            const detailRow = detailId ? document.getElementById(detailId) : null;
+            const listEl = detailRow ? detailRow.querySelector('.school-day-guest-list') : null;
+            if (!listEl || listEl.dataset.loaded === '1') return;
+            detailBtn.disabled = true;
+            detailBtn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Detail';
+            loadGuests(detailBtn.getAttribute('data-visit-date') || '', listEl, detailBtn);
+        });
+
+        if (searchForm) {
+            searchForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                state.q = (searchInput.value || '').trim();
+                state.date_from = dateFromInput ? (dateFromInput.value || '').trim() : '';
+                state.date_to = dateToInput ? (dateToInput.value || '').trim() : '';
+                state.page = 1;
+                loadDays();
+            });
+        }
+
+        if (perPageSelect) {
+            perPageSelect.addEventListener('change', function () {
+                const value = Number(perPageSelect.value || 10);
+                state.per_page = value;
+                state.page = 1;
+                loadDays();
+            });
+        }
+
+        modalEl.addEventListener('shown.bs.collapse', function (event) {
+            const row = event.target;
+            if (!row.classList.contains('school-day-detail-row')) return;
+            const btn = rowsEl.querySelector('[data-detail-id="' + row.id + '"]');
+            if (btn && !btn.disabled) btn.innerHTML = '<i class="bi bi-chevron-up"></i> Detail';
+        });
+
+        modalEl.addEventListener('hidden.bs.collapse', function (event) {
+            const row = event.target;
+            if (!row.classList.contains('school-day-detail-row')) return;
+            const btn = rowsEl.querySelector('[data-detail-id="' + row.id + '"]');
+            if (btn && !btn.disabled) btn.innerHTML = '<i class="bi bi-chevron-down"></i> Detail';
+        });
     })();
 </script>
 <script>

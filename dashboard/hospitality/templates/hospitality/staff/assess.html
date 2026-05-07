@@ -105,7 +105,7 @@
 <section class="mb-4 assessment-page">
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div class="d-flex align-items-center gap-3">
-      <a href="{{ url_for('hospitality.staff_home') }}" class="btn btn-outline-secondary">
+      <a href="{{ url_for('hospitality.admin_assess_home') if admin_assess_mode else url_for('hospitality.staff_home') }}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i>
       </a>
       <div>
@@ -225,7 +225,7 @@
             <div class="progress-bar bg-primary" id="scoreProgressBar" style="width: {{ (scored_count.count / total_aspects.count * 100) if total_aspects.count else 0 }}%"></div>
           </div>
           <p class="text-muted small mb-3">Pastikan semua aspek sudah dinilai sebelum submit.</p>
-          <form action="{{ url_for('hospitality.staff_save_draft', school_id=school.id) }}" method="POST" class="mb-2" id="saveDraftForm">
+          <form action="{{ url_for('hospitality.admin_assess_save_draft', school_id=school.id) if admin_assess_mode else url_for('hospitality.staff_save_draft', school_id=school.id) }}" method="POST" class="mb-2" id="saveDraftForm">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="assessment_id" value="{{ assessment.id }}">
             <button type="submit" class="btn btn-outline-secondary w-100 d-inline-flex align-items-center justify-content-center gap-2">
@@ -233,7 +233,7 @@
               <span>Simpan Draft</span>
             </button>
           </form>
-          <form action="{{ url_for('hospitality.staff_submit_assessment', school_id=school.id) }}" method="POST" id="submitAssessmentForm">
+          <form action="{{ url_for('hospitality.admin_assess_submit', school_id=school.id) if admin_assess_mode else url_for('hospitality.staff_submit_assessment', school_id=school.id) }}" method="POST" id="submitAssessmentForm">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="assessment_id" value="{{ assessment.id }}">
             <input type="hidden" name="note" id="noteInputHidden" value="{{ assessment.note_text or '' }}">
@@ -276,8 +276,8 @@
     window.initAssessmentUI({
       assessmentId: document.getElementById('assessmentId').value,
       schoolId: document.getElementById('schoolId').value,
-      scoreEndpoint: '/hospitality/staff/assess/' + document.getElementById('schoolId').value + '/score',
-      noteEndpoint: '/hospitality/staff/assess/' + document.getElementById('schoolId').value + '/note',
+      scoreEndpoint: '{{ '/hospitality/admin/menilai/assess/' if admin_assess_mode else '/hospitality/staff/assess/' }}' + document.getElementById('schoolId').value + '/score',
+      noteEndpoint: '{{ '/hospitality/admin/menilai/assess/' if admin_assess_mode else '/hospitality/staff/assess/' }}' + document.getElementById('schoolId').value + '/note',
       scaleMax: 5,
       scoreProgressBarId: 'scoreProgressBar',
       aspectCountFilledId: 'aspectFilledCount',

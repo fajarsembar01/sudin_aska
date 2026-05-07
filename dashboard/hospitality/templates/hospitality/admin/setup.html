@@ -108,6 +108,11 @@
                 <span class="badge bg-success ms-1">{{ components|length }}</span>
               </button>
             </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="activityLogTab" data-bs-toggle="tab" data-bs-target="#activityLogPane" type="button" role="tab">
+                <i class="bi bi-clock-history me-1"></i>Log Aktivitas
+              </button>
+            </li>
           </ul>
         </div>
         <div class="card-body" style="max-height: 65vh; overflow-y: auto;">
@@ -295,6 +300,14 @@
               {% else %}
               <div class="alert alert-info">Belum ada komponen. Tambah komponen di panel kiri.</div>
               {% endif %}
+            </div>
+            
+            <div class="tab-pane fade" id="activityLogPane" role="tabpanel">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0">Riwayat Perubahan Setup</h6>
+                <div class="small text-muted">Aktivitas terkait komponen dan aspek</div>
+              </div>
+              {% include 'hospitality/admin/_activity_log_table.html' %}
             </div>
           </div>
         </div>

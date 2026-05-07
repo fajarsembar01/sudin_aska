@@ -148,7 +148,7 @@
         .separator::after {
             content: '';
             flex: 1;
-            border-bottom: 1px solid var(--border-soft);
+            border-bottom: 1px solid #d2d2d2;
         }
 
         .separator:not(:empty)::before {
@@ -208,7 +208,7 @@
                     </div>
                     <div class="header-text">
                         <h1>ASKA Portal</h1>
-                        <p>Portal resmi untuk admin, staff, dan sekolah</p>
+                        <p>Portal resmi untuk monitoring sekolah</p>
                     </div>
                     <div class="theme-toggle">
                         <button type="button" class="theme-toggle-btn" id="themeToggleBtn" title="Mode Gelap"
@@ -269,7 +269,7 @@
                     </a>
                     <a class="btn btn-sm btn-link text-decoration-none w-100 mt-2"
                         href="{{ url_for('auth.register') }}">
-                        <i class="bi bi-person-plus me-1"></i>Daftar Akun Baru (Staff/Admin)
+                        <i class="bi bi-person-plus me-1"></i>Daftar Akun untuk Tim Monev
                     </a>
                     <div class="separator">atau</div>
                     <div class="d-grid gap-2">

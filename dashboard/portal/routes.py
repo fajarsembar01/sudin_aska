@@ -1748,6 +1748,7 @@ def home() -> Response:
             header_subtitle="Silakan pilih layanan ASKA Portal",
             cards=cards,
             default_col_class="col-md-6 col-12",
+            enable_odd_center=True,
             show_logout=True,
         )
     if role == "coordinator":
@@ -1761,9 +1762,9 @@ def home() -> Response:
             },
             {
                 "title": "Hospitality",
-                "description": "Pantau penilaian hospitality lintas sekolah.",
+                "description": "Lakukan penilaian hospitality seperti staff.",
                 "icon": "bi-house-heart",
-                "href": url_for("hospitality.admin_home"),
+                "href": url_for("hospitality.staff_home"),
                 "col_class": "col-md-6 col-12",
             },
             {
@@ -1782,6 +1783,7 @@ def home() -> Response:
             header_subtitle="Silakan pilih layanan ASKA Portal",
             cards=cards,
             default_col_class="col-md-6 col-12",
+            enable_odd_center=True,
             show_logout=True,
         )
 
@@ -1882,6 +1884,7 @@ def sekolah_home() -> Response:
         header_subtitle=subtitle,
         cards=cards,
         default_col_class="col-md-6 col-12",
+        enable_odd_center=True,
         show_logout=True,
     )
 
@@ -3039,10 +3042,6 @@ def submit(school_id: int) -> Response:
             return redirect(url_for("portal.staff_assignments"))
 
     try:
-        score_config = _build_assessment_score_config(assessment)
-        baseline = score_config["baseline"]
-        default_score = score_config["default"]
-
         all_rooms = list_school_rooms(school_id)
         school = get_school_by_id(school_id)
         rooms = _filter_assessment_rooms(all_rooms, school.get("jenjang") if school else None)
@@ -3084,16 +3083,12 @@ def submit(school_id: int) -> Response:
             aspects = room.get("aspects") or []
             if not room_id or not aspects:
                 continue
-            has_meaningful_score = False
             for aspect in aspects:
                 score_val = scores_map.get((room_id, aspect.get("id")))
                 if score_val is None:
-                    score_val = default_score
-                if int(score_val) > baseline:
-                    has_meaningful_score = True
+                    missing_messages.append("Terdapat aspek yang masih belum dinilai.")
                     break
-            if not has_meaningful_score:
-                missing_messages.append("Terdapat ruangan yang masih belum dinilai.")
+            if missing_messages:
                 break
 
         if missing_messages:
@@ -4528,6 +4523,7 @@ def admin_gallery() -> Response:
 
     period_id = request.args.get("period_id", type=int)
     team_id = request.args.get("team_id", type=int)
+    order = request.args.get("order", "default")
 
     staff_ids: list[int] | None = None
     selected_team = None
@@ -4557,6 +4553,37 @@ def admin_gallery() -> Response:
         album["photos"].append(p)
 
     total_photos = sum(len(a.get("photos") or []) for a in albums)
+
+    import random
+    if order == "lowest":
+        for album in albums:
+            total_score = sum(
+                float(
+                    p.get("room_score_pct")
+                    if p.get("room_score_pct") is not None
+                    else _score_pct_from_raw(
+                        float(p.get("room_score") or 0),
+                        _normalize_assessment_scale_max(p.get("score_scale_max")),
+                    )
+                )
+                for p in album["photos"]
+            )
+            count = len(album["photos"])
+            album["_sort_score"] = (total_score / count) if count > 0 else 0
+        albums.sort(key=lambda a: a["_sort_score"])
+    elif order == "newest":
+        for album in albums:
+            max_dt = None
+            for p in album["photos"]:
+                dt = p.get("captured_at")
+                if dt:
+                    if not max_dt or dt > max_dt:
+                        max_dt = dt
+            album["_sort_date"] = max_dt
+        albums.sort(key=lambda a: a["_sort_date"] if a["_sort_date"] else datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+    elif order == "random":
+        random.shuffle(albums)
+
     periods = list_periods()
     if latest_at:
         latest_date = latest_at.date() if hasattr(latest_at, "date") else latest_at
@@ -4579,6 +4606,7 @@ def admin_gallery() -> Response:
         selected_team_id=team_id,
         selected_team=selected_team,
         monev_teams=monev_teams,
+        order=order,
     )
 
 
@@ -4588,6 +4616,7 @@ def coordinator_gallery() -> Response:
     """Coordinator gallery view grouped by school."""
     user = current_user()
     period_id = request.args.get("period_id", type=int)
+    order = request.args.get("order", "default")
     my_team, _, staff_ids = _get_coordinator_team_context(user.get("id"))
 
     if not my_team or not staff_ids:
@@ -4602,6 +4631,7 @@ def coordinator_gallery() -> Response:
             current_period_id=period_id,
             selected_team_id=None,
             selected_team=my_team,
+            order=order,
         )
 
     photos = fetch_gallery_photos(
@@ -4633,6 +4663,37 @@ def coordinator_gallery() -> Response:
         album["photos"].append(p)
 
     total_photos = sum(len(a.get("photos") or []) for a in albums)
+
+    import random
+    if order == "lowest":
+        for album in albums:
+            total_score = sum(
+                float(
+                    p.get("room_score_pct")
+                    if p.get("room_score_pct") is not None
+                    else _score_pct_from_raw(
+                        float(p.get("room_score") or 0),
+                        _normalize_assessment_scale_max(p.get("score_scale_max")),
+                    )
+                )
+                for p in album["photos"]
+            )
+            count = len(album["photos"])
+            album["_sort_score"] = (total_score / count) if count > 0 else 0
+        albums.sort(key=lambda a: a["_sort_score"])
+    elif order == "newest":
+        for album in albums:
+            max_dt = None
+            for p in album["photos"]:
+                dt = p.get("captured_at")
+                if dt:
+                    if not max_dt or dt > max_dt:
+                        max_dt = dt
+            album["_sort_date"] = max_dt
+        albums.sort(key=lambda a: a["_sort_date"] if a["_sort_date"] else datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+    elif order == "random":
+        random.shuffle(albums)
+
     periods = list_periods()
     if latest_at:
         latest_date = latest_at.date() if hasattr(latest_at, "date") else latest_at
@@ -4653,6 +4714,7 @@ def coordinator_gallery() -> Response:
         current_period_id=period_id,
         selected_team_id=my_team.get("id"),
         selected_team=my_team,
+        order=order,
     )
 
 
@@ -7859,6 +7921,32 @@ def upload_profile_photo() -> Response:
     flash(success_message, "success")
     return redirect(success_redirect_url)
 
+
+_HOSPITALITY_DATE_MODE_KEY = "hospitality_date_mode"
+
+
+@portal_bp.route("/settings/hospitality-date-mode", methods=["POST"])
+@role_required("admin")
+def set_hospitality_date_mode() -> Response:
+    """Toggle the hospitality date display mode (original vs edit) stored in session (admin only)."""
+    wants_json = (
+        request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or request.is_json
+    )
+    raw_mode = (request.get_json(silent=True) or {}).get("mode") if request.is_json else request.form.get("mode")
+    mode = str(raw_mode or "edit").strip().lower()
+    if mode not in {"original", "edit"}:
+        mode = "edit"
+    session[_HOSPITALITY_DATE_MODE_KEY] = mode
+    if wants_json:
+        return jsonify({"success": True, "mode": mode})
+    flash(
+        "Mode tanggal Hospitality: " + ("Tanggal Edit" if mode == "edit" else "Tanggal Original"),
+        "success",
+    )
+    return redirect(url_for("portal.user_profile_settings"))
+
+
 @portal_bp.route("/profile", methods=["GET", "POST"])
 @role_required("admin", "coordinator", "staff")
 def user_profile_settings() -> Response:
@@ -7948,7 +8036,12 @@ def user_profile_settings() -> Response:
                 current_app.logger.error(f"Gagal memperbarui profil: {exc}")
                 flash("Gagal memperbarui profil.", "danger")
 
-    return render_template("portal/profile.html", profile=profile_view)
+    hospitality_date_mode = session.get(_HOSPITALITY_DATE_MODE_KEY, "edit")
+    return render_template(
+        "portal/profile.html",
+        profile=profile_view,
+        hospitality_date_mode=hospitality_date_mode,
+    )
 
 
 # =====================================================

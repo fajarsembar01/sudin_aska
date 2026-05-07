@@ -65,6 +65,8 @@ from .queries import (
     fetch_recent_visits,
     fetch_school_rankings,
     fetch_school_visit_bucket_rows,
+    fetch_school_visit_day_guests,
+    fetch_school_visit_days,
     fetch_school_visit_histogram,
     fetch_school_visit_history,
     fetch_user_guestbook_history,
@@ -507,7 +509,16 @@ def _store_guestbook_qr_payload(school_id: int, payload: dict) -> None:
         cur.execute(
             """
             UPDATE portal_schools
-            SET metadata = jsonb_set(COALESCE(metadata, '{}'::jsonb), '{guestbook_qr}', %s::jsonb, true),
+            SET metadata = jsonb_set(
+                    CASE
+                        WHEN jsonb_typeof(COALESCE(metadata, '{}'::jsonb)) = 'object'
+                            THEN COALESCE(metadata, '{}'::jsonb)
+                        ELSE '{}'::jsonb
+                    END,
+                    '{guestbook_qr}',
+                    %s::jsonb,
+                    true
+                ),
                 updated_at = NOW()
             WHERE id = %s
             """,
@@ -929,9 +940,15 @@ def _build_csv_response(headers: list[str], rows: list[list[object]], filename: 
     return response
 
 
-def _build_xlsx_response(headers: list[str], rows: list[list[object]], filename: str) -> Response:
+def _build_xlsx_response(
+    headers: list[str],
+    rows: list[list[object]],
+    filename: str,
+    fill_ranges: Optional[list[tuple[int, int, int, str]]] = None,
+) -> Response:
     try:
         from openpyxl import Workbook
+        from openpyxl.styles import PatternFill
     except ImportError as exc:
         return Response("Library openpyxl belum terinstall.", status=500)
 
@@ -942,6 +959,11 @@ def _build_xlsx_response(headers: list[str], rows: list[list[object]], filename:
     ws.append(headers)
     for row in rows:
         ws.append(list(row))
+    if fill_ranges:
+        for row_index, start_col, end_col, fill_color in fill_ranges:
+            fill = PatternFill(fill_type="solid", fgColor=fill_color)
+            for col_index in range(start_col, end_col + 1):
+                ws.cell(row=row_index, column=col_index).fill = fill
     wb.save(output)
     output.seek(0)
     return send_file(
@@ -1133,6 +1155,8 @@ def admin_dashboard() -> Response:
     page = max(1, page)
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    school_status = _parse_school_status(request.args.get("school_status"), default="all")
+    school_status = _parse_school_status(request.args.get("school_status"), default="all")
     school_status = _parse_school_status(request.args.get("school_status"), default="all")
     show_user_rankings = guest_scope != "umum"
     user_rank_guest_scope = "sudin" if guest_scope == "all" else guest_scope
@@ -1531,6 +1555,122 @@ def admin_school_visits(school_id: int) -> Response:
     )
 
 
+@daftar_tamu_bp.route("/admin/sekolah/<int:school_id>/visit-days")
+@role_required("admin")
+def admin_school_visit_days(school_id: int) -> Response:
+    """Return distinct visit dates for the school day drill-down modal."""
+    school = _fetch_school_profile(school_id)
+    if not school:
+        return jsonify({"success": False, "message": "Sekolah tidak ditemukan."}), 404
+
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    page = _to_int(request.args.get("page"), 1)
+    page = max(1, page)
+    per_page = _to_int(request.args.get("per_page"), 10)
+    per_page = max(5, min(per_page, 100))
+    search_query = (request.args.get("q") or "").strip()
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+
+    rows, total_rows = fetch_school_visit_days(
+        school_id=school_id,
+        page=page,
+        per_page=per_page,
+        search_query=search_query,
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if page > total_pages:
+        page = total_pages
+        rows, total_rows = fetch_school_visit_days(
+            school_id=school_id,
+            page=page,
+            per_page=per_page,
+            search_query=search_query,
+            date_from=date_from,
+            date_to=date_to,
+            guest_scope=guest_scope,
+        )
+
+    for row in rows:
+        visit_date = row.get("visit_date")
+        row["visit_date"] = visit_date.isoformat() if visit_date else None
+
+    return jsonify(
+        {
+            "success": True,
+            "rows": rows,
+            "total_rows": total_rows,
+            "total_pages": total_pages,
+            "page": page,
+            "per_page": per_page,
+        }
+    )
+
+
+@daftar_tamu_bp.route("/admin/sekolah/<int:school_id>/visit-days/<visit_date>/guests")
+@role_required("admin")
+def admin_school_visit_day_guests(school_id: int, visit_date: str) -> Response:
+    """Return guest names for a selected school visit date."""
+    school = _fetch_school_profile(school_id)
+    if not school:
+        return jsonify({"success": False, "message": "Sekolah tidak ditemukan."}), 404
+
+    parsed_visit_date = _parse_iso_date(visit_date)
+    if not parsed_visit_date:
+        return jsonify({"success": False, "message": "Tanggal kunjungan tidak valid."}), 400
+
+    page = _to_int(request.args.get("page"), 1)
+    page = max(1, page)
+    per_page = _to_int(request.args.get("per_page"), 10)
+    per_page = max(5, min(per_page, 100))
+    search_query = (request.args.get("q") or "").strip()
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+
+    rows, total_rows = fetch_school_visit_day_guests(
+        school_id=school_id,
+        visit_date=parsed_visit_date,
+        page=page,
+        per_page=per_page,
+        search_query=search_query,
+        guest_scope=guest_scope,
+    )
+
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if page > total_pages:
+        page = total_pages
+        rows, total_rows = fetch_school_visit_day_guests(
+            school_id=school_id,
+            visit_date=parsed_visit_date,
+            page=page,
+            per_page=per_page,
+            search_query=search_query,
+            guest_scope=guest_scope,
+        )
+
+    for row in rows:
+        visit_at = row.get("visit_at")
+        row["visit_at"] = visit_at.isoformat() if visit_at else None
+
+    return jsonify(
+        {
+            "success": True,
+            "rows": rows,
+            "total_rows": total_rows,
+            "total_pages": total_pages,
+            "page": page,
+            "per_page": per_page,
+            "visit_date": parsed_visit_date.isoformat(),
+        }
+    )
+
+
 @daftar_tamu_bp.route("/admin/user/<int:user_id>/visits/export")
 @role_required("admin")
 def admin_user_visits_export(user_id: int) -> Response:
@@ -1743,6 +1883,8 @@ def admin_rankings_more() -> Response:
             "jenjang": row.get("jenjang") or "",
             "npsn": row.get("npsn") or "",
             "visit_count": int(row.get("visit_count") or 0),
+            "people_count": int(row.get("people_count") or 0),
+            "visit_day_count": int(row.get("visit_day_count") or 0),
         }
         for row in rows
     ]
@@ -1761,6 +1903,7 @@ def admin_visit_bucket_detail() -> Response:
         date_from, date_to = date_to, date_from
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    school_status = _parse_school_status(request.args.get("school_status"), default="all")
 
     source = (request.args.get("source") or "distribution").strip().lower()
     if source not in {"distribution", "frequency"}:
@@ -1773,8 +1916,8 @@ def admin_visit_bucket_detail() -> Response:
         selected_bucket = bucket_options[0]
 
     sort = (request.args.get("sort") or "visits_desc").strip().lower()
-    if sort not in {"visits_desc", "visits_asc", "name_asc", "name_desc", "last_visit_desc", "last_visit_asc"}:
-        sort = "visits_desc"
+    if sort not in {"visits_desc", "visits_asc", "days_desc", "days_asc", "name_asc", "name_desc", "last_visit_desc", "last_visit_asc"}:
+        sort = DEFAULT_SORT
 
     per_page = _to_int(request.args.get("per_page"), 25)
     per_page = max(10, min(per_page, 100))
@@ -1871,7 +2014,8 @@ def export_rankings() -> Response:
         "Jenjang",
         "Kecamatan",
         "Kelurahan",
-        "Jumlah Kunjungan",
+        "Orang",
+        "Hari",
         "Kunjungan Terakhir",
         "Tamu Terakhir",
     ]
@@ -1885,7 +2029,8 @@ def export_rankings() -> Response:
                 row.get("jenjang"),
                 row.get("kecamatan"),
                 row.get("kelurahan"),
-                row.get("visit_count"),
+                row.get("people_count"),
+                row.get("visit_day_count"),
                 _format_date_dmy(row.get("last_visit_date")),
                 row.get("last_guest_display") or "",
             ]
@@ -2975,34 +3120,102 @@ def admin_contact_priority() -> Response:
     )
 
 
-def _admin_public_verification_locked_response() -> Response:
-    message = "Verifikasi transaksi tamu umum hanya bisa dilakukan oleh sekolah."
-    accept_header = (request.headers.get("Accept") or "").lower()
-    content_type = (request.content_type or "").lower()
-    wants_json = (
-        request.is_json
-        or request.headers.get("X-Requested-With") == "XMLHttpRequest"
-        or "application/json" in accept_header
-        or "application/json" in content_type
-    )
-    if wants_json:
-        return jsonify({"success": False, "message": message}), 403
-    flash(message, "warning")
-    return redirect(url_for("daftar_tamu.admin_public_transactions"))
-
-
 @daftar_tamu_bp.route("/admin/umum-transactions/<int:transaction_id>/approve", methods=["POST"])
 @role_required("admin")
 def admin_public_transaction_approve(transaction_id: int) -> Response:
-    _ = transaction_id
-    return _admin_public_verification_locked_response()
+    user = current_user()
+    reviewer_notes = (request.form.get("reviewer_notes") or "").strip()
+    try:
+        ok = update_public_transaction_status(
+            transaction_id=transaction_id,
+            status="approved",
+            reviewer_id=user["id"],
+            reviewer_notes=reviewer_notes or None,
+        )
+    except ValueError:
+        ok = False
+    if not ok:
+        flash("Transaksi tidak ditemukan.", "danger")
+        return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="daftar_tamu",
+            action="PUBLIC_VERIFY_APPROVE",
+            target_type="PUBLIC_GUESTBOOK_TRANSACTION",
+            target_id=transaction_id,
+            target_name=f"Transaksi Umum #{transaction_id}",
+            metadata={"status": "approved", "reviewer_notes": reviewer_notes or None},
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mencatat action admin transaksi tamu umum.")
+    flash("Transaksi tamu umum disetujui.", "success")
+    return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
 
 
 @daftar_tamu_bp.route("/admin/umum-transactions/<int:transaction_id>/reject", methods=["POST"])
 @role_required("admin")
 def admin_public_transaction_reject(transaction_id: int) -> Response:
-    _ = transaction_id
-    return _admin_public_verification_locked_response()
+    user = current_user()
+    reviewer_notes = (request.form.get("reviewer_notes") or "").strip()
+    try:
+        ok = update_public_transaction_status(
+            transaction_id=transaction_id,
+            status="rejected",
+            reviewer_id=user["id"],
+            reviewer_notes=reviewer_notes or None,
+        )
+    except ValueError:
+        ok = False
+    if not ok:
+        flash("Transaksi tidak ditemukan.", "danger")
+        return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="daftar_tamu",
+            action="PUBLIC_VERIFY_REJECT",
+            target_type="PUBLIC_GUESTBOOK_TRANSACTION",
+            target_id=transaction_id,
+            target_name=f"Transaksi Umum #{transaction_id}",
+            metadata={"status": "rejected", "reviewer_notes": reviewer_notes or None},
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mencatat action admin transaksi tamu umum.")
+    flash("Transaksi tamu umum ditolak.", "success")
+    return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
+
+
+@daftar_tamu_bp.route("/admin/umum-transactions/<int:transaction_id>/reopen", methods=["POST"])
+@role_required("admin")
+def admin_public_transaction_reopen(transaction_id: int) -> Response:
+    user = current_user()
+    try:
+        ok = update_public_transaction_status(
+            transaction_id=transaction_id,
+            status="pending",
+            reviewer_id=user["id"],
+            reviewer_notes=None,
+        )
+    except ValueError:
+        ok = False
+    if not ok:
+        flash("Transaksi tidak ditemukan.", "danger")
+        return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="daftar_tamu",
+            action="PUBLIC_VERIFY_REOPEN",
+            target_type="PUBLIC_GUESTBOOK_TRANSACTION",
+            target_id=transaction_id,
+            target_name=f"Transaksi Umum #{transaction_id}",
+            metadata={"status": "pending"},
+        )
+    except Exception:
+        current_app.logger.exception("Gagal mencatat action reopen transaksi tamu umum.")
+    flash("Transaksi dibuka kembali untuk diverifikasi.", "success")
+    return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
 
 
 @daftar_tamu_bp.route("/admin/umum/<int:guest_id>/verify", methods=["POST"])
@@ -3280,6 +3493,238 @@ def sekolah_riwayat() -> Response:
         total_pages=total_pages,
         error_message=None,
     )
+
+
+@daftar_tamu_bp.route("/sekolah/riwayat/harian")
+@role_required("sekolah")
+def sekolah_riwayat_harian() -> Response:
+    user = current_user()
+    school = _fetch_school_for_user(user["id"])
+    if not school:
+        return render_template(
+            "daftar_tamu/sekolah_riwayat_harian.html",
+            school=None,
+            error_message="Akun sekolah belum terhubung dengan data sekolah. Hubungi admin.",
+        )
+
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    search_query = (request.args.get("q") or "").strip()
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"), default="sudin")
+    per_page = _to_int(request.args.get("per_page"), 10)
+    per_page = max(5, min(per_page, 100))
+    page = _to_int(request.args.get("page"), 1)
+    page = max(1, page)
+
+    rows, total_rows = fetch_school_visit_days(
+        school_id=school["id"],
+        page=page,
+        per_page=per_page,
+        search_query=search_query,
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+    )
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if page > total_pages:
+        page = total_pages
+        rows, total_rows = fetch_school_visit_days(
+            school_id=school["id"],
+            page=page,
+            per_page=per_page,
+            search_query=search_query,
+            date_from=date_from,
+            date_to=date_to,
+            guest_scope=guest_scope,
+        )
+
+    return render_template(
+        "daftar_tamu/sekolah_riwayat_harian.html",
+        school=school,
+        user_school=school,
+        rows=rows,
+        search_query=search_query,
+        date_from_str=date_from.isoformat() if date_from else "",
+        date_to_str=date_to.isoformat() if date_to else "",
+        guest_scope=guest_scope,
+        page=page,
+        per_page=per_page,
+        total_rows=total_rows,
+        total_pages=total_pages,
+        error_message=None,
+    )
+
+
+@daftar_tamu_bp.route("/sekolah/riwayat/harian/<visit_date>/guests")
+@role_required("sekolah")
+def sekolah_riwayat_harian_guests(visit_date: str) -> Response:
+    user = current_user()
+    school = _fetch_school_for_user(user["id"])
+    if not school:
+        return jsonify({"success": False, "message": "Akun sekolah belum terhubung."}), 400
+
+    parsed_visit_date = _parse_iso_date(visit_date)
+    if not parsed_visit_date:
+        return jsonify({"success": False, "message": "Tanggal kunjungan tidak valid."}), 400
+
+    page = _to_int(request.args.get("page"), 1)
+    page = max(1, page)
+    per_page = _to_int(request.args.get("per_page"), 100)
+    per_page = max(5, min(per_page, 100))
+    search_query = (request.args.get("q") or "").strip()
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"), default="sudin")
+
+    rows, total_rows = fetch_school_visit_day_guests(
+        school_id=school["id"],
+        visit_date=parsed_visit_date,
+        page=page,
+        per_page=per_page,
+        search_query=search_query,
+        guest_scope=guest_scope,
+    )
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if page > total_pages:
+        page = total_pages
+        rows, total_rows = fetch_school_visit_day_guests(
+            school_id=school["id"],
+            visit_date=parsed_visit_date,
+            page=page,
+            per_page=per_page,
+            search_query=search_query,
+            guest_scope=guest_scope,
+        )
+
+    for row in rows:
+        visit_at = row.get("visit_at")
+        row["visit_at"] = visit_at.isoformat() if visit_at else None
+
+    return jsonify(
+        {
+            "success": True,
+            "rows": rows,
+            "total_rows": total_rows,
+            "total_pages": total_pages,
+            "page": page,
+            "per_page": per_page,
+            "visit_date": parsed_visit_date.isoformat(),
+        }
+    )
+
+
+@daftar_tamu_bp.route("/sekolah/riwayat/harian/export")
+@role_required("sekolah")
+def sekolah_riwayat_harian_export() -> Response:
+    """Export school daily kedinasan history with active filters."""
+    user = current_user()
+    school = _fetch_school_for_user(user["id"])
+    if not school:
+        return Response("Akun sekolah belum terhubung dengan data sekolah.", status=400)
+
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    search_query = (request.args.get("q") or "").strip()
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"), default="sudin")
+    export_format = (request.args.get("format") or "csv").strip().lower()
+
+    rows: list[dict] = []
+    export_page = 1
+    export_per_page = 100
+    while True:
+        page_rows, total_rows = fetch_school_visit_days(
+            school_id=school["id"],
+            page=export_page,
+            per_page=export_per_page,
+            search_query=search_query,
+            date_from=date_from,
+            date_to=date_to,
+            guest_scope=guest_scope,
+        )
+        rows.extend(page_rows)
+        if len(rows) >= total_rows or not page_rows:
+            break
+        export_page += 1
+
+    headers = ["Hari", "Tanggal", "Jumlah Kunjungan", "Jumlah Orang", "Nama Pengunjung", "Instansi", "Tujuan"]
+    weekday_labels = {
+        0: "Senin",
+        1: "Selasa",
+        2: "Rabu",
+        3: "Kamis",
+        4: "Jumat",
+        5: "Sabtu",
+        6: "Minggu",
+    }
+    data_rows: list[list[object]] = []
+    summary_fill_ranges: list[tuple[int, int, int, str]] = []
+    for day_row in rows:
+        visit_date = day_row.get("visit_date")
+        weekday = ""
+        date_label = ""
+        if visit_date:
+            weekday = weekday_labels.get(visit_date.weekday(), "")
+            date_label = _format_date_dmy(visit_date)
+
+        guest_rows: list[dict] = []
+        guest_page = 1
+        guest_per_page = 100
+        while visit_date:
+            page_guest_rows, guest_total_rows = fetch_school_visit_day_guests(
+                school_id=school["id"],
+                visit_date=visit_date,
+                page=guest_page,
+                per_page=guest_per_page,
+                search_query=search_query,
+                guest_scope=guest_scope,
+            )
+            guest_rows.extend(page_guest_rows)
+            if len(guest_rows) >= guest_total_rows or not page_guest_rows:
+                break
+            guest_page += 1
+
+        first_excel_row_for_date = len(data_rows) + 2
+        summary_fill_ranges.append((first_excel_row_for_date, 1, 4, "D9EAF7"))
+        if not guest_rows:
+            data_rows.append(
+                [
+                    weekday,
+                    date_label,
+                    day_row.get("visit_count") or 0,
+                    day_row.get("people_count") or 0,
+                    "",
+                    "",
+                    "",
+                ]
+            )
+            continue
+
+        for guest_index, guest_row in enumerate(guest_rows):
+            show_summary = guest_index == 0
+            data_rows.append(
+                [
+                    weekday if show_summary else "",
+                    date_label if show_summary else "",
+                    (day_row.get("visit_count") or 0) if show_summary else "",
+                    (day_row.get("people_count") or 0) if show_summary else "",
+                    guest_row.get("guest_name") or "",
+                    guest_row.get("instansi") or "",
+                    guest_row.get("purpose") or "",
+                ]
+            )
+
+    school_npsn = school.get("npsn") or school.get("id") or "sekolah"
+    today_label = _today_jakarta().isoformat()
+    if export_format == "excel":
+        filename = f"data_harian_tamu_kedinasan_{school_npsn}_{today_label}.xlsx"
+        return _build_xlsx_response(headers, data_rows, filename, fill_ranges=summary_fill_ranges)
+
+    filename = f"data_harian_tamu_kedinasan_{school_npsn}_{today_label}.csv"
+    return _build_csv_response(headers, data_rows, filename)
 
 
 @daftar_tamu_bp.route("/sekolah/riwayat/export")
@@ -4514,6 +4959,59 @@ def sekolah_bulk_approve_public_transactions() -> Response:
         flash(f"{success_count} pengajuan berhasil disetujui.", "success")
     else:
         flash("Tidak ada pengajuan yang berhasil disetujui.", "warning")
+
+    return redirect(url_for("daftar_tamu.sekolah_public_web"))
+
+
+@daftar_tamu_bp.route("/sekolah/umum-transactions/bulk-reject", methods=["POST"])
+@role_required("sekolah")
+def sekolah_bulk_reject_public_transactions() -> Response:
+    user = current_user()
+    school = _fetch_school_for_user(user.get("id"))
+    if not school:
+        flash("Akun sekolah belum terhubung dengan data sekolah.", "warning")
+        return redirect(url_for("daftar_tamu.sekolah_public_web"))
+
+    raw_ids = request.form.getlist("transaction_ids")
+    ids: list[int] = []
+    for raw in raw_ids:
+        try:
+            ids.append(int(raw))
+        except (TypeError, ValueError):
+            continue
+    if not ids:
+        flash("Pilih transaksi yang ingin ditolak.", "warning")
+        return redirect(url_for("daftar_tamu.sekolah_public_web"))
+
+    reviewer_notes = (request.form.get("reviewer_notes") or "").strip()
+    success_count = 0
+    for tx_id in ids:
+        try:
+            ok = update_public_transaction_status(
+                transaction_id=tx_id,
+                status="rejected",
+                reviewer_id=user.get("id"),
+                reviewer_notes=reviewer_notes or None,
+                school_id=school.get("id"),
+            )
+        except Exception:
+            ok = False
+        if ok:
+            success_count += 1
+            try:
+                _notify_guestbook_status_change(
+                    transaction_id=tx_id,
+                    status="rejected",
+                    actor=user,
+                    is_public=True,
+                )
+            except Exception:
+                current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu umum.")
+
+    if success_count:
+        flash(f"{success_count} pengajuan berhasil ditolak.", "success")
+    else:
+        flash("Tidak ada pengajuan yang berhasil ditolak.", "warning")
 
     return redirect(url_for("daftar_tamu.sekolah_public_web"))
 

@@ -27,15 +27,17 @@ def _today_jakarta() -> date:
 
 
 SORT_OPTIONS = {
-    "visits_desc": "visit_count DESC, last_visit_date DESC NULLS LAST, school_name ASC",
-    "visits_asc": "visit_count ASC, last_visit_date DESC NULLS LAST, school_name ASC",
-    "last_visit_desc": "last_visit_date DESC NULLS LAST, visit_count DESC, school_name ASC",
-    "last_visit_asc": "last_visit_date ASC NULLS FIRST, visit_count DESC, school_name ASC",
+    "visits_desc": "people_count DESC, visit_day_count DESC, last_visit_date DESC NULLS LAST, school_name ASC",
+    "visits_asc": "people_count ASC, visit_day_count ASC, last_visit_date DESC NULLS LAST, school_name ASC",
+    "days_desc": "visit_day_count DESC, people_count DESC, last_visit_date DESC NULLS LAST, school_name ASC",
+    "days_asc": "visit_day_count ASC, people_count ASC, last_visit_date DESC NULLS LAST, school_name ASC",
+    "last_visit_desc": "last_visit_date DESC NULLS LAST, people_count DESC, school_name ASC",
+    "last_visit_asc": "last_visit_date ASC NULLS FIRST, people_count DESC, school_name ASC",
     "name_asc": "school_name ASC",
     "name_desc": "school_name DESC",
 }
 
-DEFAULT_SORT = "visits_desc"
+DEFAULT_SORT = "days_desc"
 TRANSACTION_STATUSES = {"pending", "approved", "rejected"}
 
 USER_SORT_OPTIONS = {
@@ -185,6 +187,10 @@ school_rollup AS (
         l.name AS kelurahan,
         s.alamat,
         COUNT(ft.id) AS visit_count,
+        COALESCE(SUM((
+            {_guest_count}
+        )), 0) AS people_count,
+        COUNT(DISTINCT ft.visit_at::date) AS visit_day_count,
         MAX(ft.visit_at) AS last_visit_date,
         latest.guest_names AS last_guest_names,
         latest.guest_count AS last_guest_count,
@@ -229,6 +235,7 @@ school_rollup AS (
 )
 """
 ).format(
+    _guest_count=_GUEST_COUNT_SUBQUERY.format(tx_ref="ft.id"),
     guest_names=_GUEST_NAMES_SUBQUERY.format(tx_ref="t2.id"),
     guest_count=_GUEST_COUNT_SUBQUERY.format(tx_ref="t2.id"),
 )
@@ -552,6 +559,8 @@ def fetch_school_rankings(
         latitude,
         longitude,
         visit_count,
+        people_count,
+        visit_day_count,
         last_visit_date,
         last_guest_names,
         last_guest_count,
@@ -583,6 +592,8 @@ def fetch_school_rankings(
     for index, row in enumerate(rows, start=offset + 1):
         row["rank"] = index
         row["visit_count"] = int(row.get("visit_count") or 0)
+        row["people_count"] = int(row.get("people_count") or 0)
+        row["visit_day_count"] = int(row.get("visit_day_count") or 0)
         if row.get("latitude") is not None:
             row["latitude"] = float(row["latitude"])
         if row.get("longitude") is not None:
@@ -687,6 +698,8 @@ def fetch_school_visit_bucket_rows(
     bucket_sort_options = {
         "visits_desc": "visit_count DESC, school_name ASC",
         "visits_asc": "visit_count ASC, school_name ASC",
+        "days_desc": "visit_day_count DESC, school_name ASC",
+        "days_asc": "visit_day_count ASC, school_name ASC",
         "name_asc": "school_name ASC",
         "name_desc": "school_name DESC",
         "last_visit_desc": "last_visit_date DESC NULLS LAST, school_name ASC",
@@ -723,6 +736,7 @@ def fetch_school_visit_bucket_rows(
         kecamatan,
         kelurahan,
         visit_count,
+        visit_day_count,
         last_visit_date,
         last_guest_names,
         last_guest_count
@@ -1544,6 +1558,204 @@ def fetch_school_visit_history(
         row["guest_display"] = display
         row["guest_count"] = guest_count
 
+    return rows, total_rows
+
+
+def fetch_school_visit_days(
+    *,
+    school_id: int,
+    page: int = 1,
+    per_page: int = 10,
+    search_query: Optional[str] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
+) -> Tuple[List[Dict[str, Any]], int]:
+    """Fetch distinct visit dates for a school, optionally filtered by guest name."""
+    scope = _normalize_guest_scope(guest_scope)
+    safe_page = max(1, page)
+    safe_per_page = max(5, min(per_page, 100))
+    offset = (safe_page - 1) * safe_per_page
+    query_text, like_query = _build_search(search_query)
+
+    base_cte = (
+        """
+    WITH filtered_transactions AS (
+        SELECT t.*
+        FROM daftar_tamu_transactions t
+        WHERE t.status = 'approved'
+          AND t.school_id = %s
+          AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
+          AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
+        """
+        + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+        + """
+    ),
+    visit_days AS (
+        SELECT
+            ft.visit_at::date AS visit_date,
+            COUNT(DISTINCT ft.id)::int AS visit_count,
+            COUNT(guests.guest_name)::int AS people_count,
+            (ARRAY_AGG(guests.guest_name ORDER BY ft.visit_at DESC, ft.id DESC, guests.guest_name ASC)
+                FILTER (WHERE guests.guest_name IS NOT NULL))[1] AS last_guest_name
+        FROM filtered_transactions ft
+        LEFT JOIN LATERAL (
+            SELECT u.full_name AS guest_name
+            FROM daftar_tamu_transaction_guests g
+            JOIN dashboard_users u ON u.id = g.user_id
+            WHERE g.transaction_id = ft.id
+              AND (g.guest_type = 'sudin' OR g.guest_type IS NULL)
+              AND (%s IN ('all', 'sudin'))
+            UNION ALL
+            SELECT gg.full_name AS guest_name
+            FROM daftar_tamu_transaction_guests g
+            JOIN daftar_tamu_general_guests gg ON gg.id = g.general_guest_id
+            WHERE g.transaction_id = ft.id
+              AND g.guest_type = 'umum'
+              AND (%s IN ('all', 'umum'))
+        ) guests ON TRUE
+        WHERE (
+            %s = ''
+            OR COALESCE(guests.guest_name, '') ILIKE %s
+            OR to_char(ft.visit_at::date, 'YYYY-MM-DD') ILIKE %s
+            OR to_char(ft.visit_at::date, 'DD Mon YYYY') ILIKE %s
+        )
+        GROUP BY ft.visit_at::date
+    )
+    """
+    )
+
+    params: List[Any] = [
+        school_id,
+        date_from,
+        date_from,
+        date_to,
+        date_to,
+        scope,
+        scope,
+        scope,
+        scope,
+        scope,
+        query_text,
+        like_query,
+        like_query,
+        like_query,
+    ]
+
+    count_query = base_cte + "SELECT COUNT(*) AS total FROM visit_days"
+    data_query = (
+        base_cte
+        + """
+    SELECT visit_date, visit_count, people_count, last_guest_name
+    FROM visit_days
+    ORDER BY visit_date DESC
+    LIMIT %s OFFSET %s
+    """
+    )
+
+    with get_cursor() as cur:
+        cur.execute(count_query, params)
+        total_rows = int((cur.fetchone() or {}).get("total") or 0)
+        cur.execute(data_query, params + [safe_per_page, offset])
+        rows = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        row["visit_count"] = int(row.get("visit_count") or 0)
+        row["people_count"] = int(row.get("people_count") or 0)
+    return rows, total_rows
+
+
+def fetch_school_visit_day_guests(
+    *,
+    school_id: int,
+    visit_date: date,
+    page: int = 1,
+    per_page: int = 10,
+    search_query: Optional[str] = None,
+    guest_scope: Optional[str] = None,
+) -> Tuple[List[Dict[str, Any]], int]:
+    """Fetch guest names for one school's selected visit date."""
+    scope = _normalize_guest_scope(guest_scope)
+    safe_page = max(1, page)
+    safe_per_page = max(5, min(per_page, 100))
+    offset = (safe_page - 1) * safe_per_page
+    query_text, like_query = _build_search(search_query)
+
+    base_cte = """
+    WITH day_guests AS (
+        SELECT
+            t.id AS transaction_id,
+            t.visit_at,
+            t.purpose,
+            u.full_name AS guest_name,
+            'Sudindik JU 2'::TEXT AS instansi,
+            COALESCE(g.guest_type, 'sudin') AS guest_type
+        FROM daftar_tamu_transactions t
+        JOIN daftar_tamu_transaction_guests g ON g.transaction_id = t.id
+        JOIN dashboard_users u ON u.id = g.user_id
+        WHERE t.status = 'approved'
+          AND t.school_id = %s
+          AND t.visit_at::date = %s::date
+          AND (g.guest_type = 'sudin' OR g.guest_type IS NULL)
+          AND (%s IN ('all', 'sudin'))
+        UNION ALL
+        SELECT
+            t.id AS transaction_id,
+            t.visit_at,
+            t.purpose,
+            gg.full_name AS guest_name,
+            gg.instansi AS instansi,
+            'umum' AS guest_type
+        FROM daftar_tamu_transactions t
+        JOIN daftar_tamu_transaction_guests g ON g.transaction_id = t.id
+        JOIN daftar_tamu_general_guests gg ON gg.id = g.general_guest_id
+        WHERE t.status = 'approved'
+          AND t.school_id = %s
+          AND t.visit_at::date = %s::date
+          AND g.guest_type = 'umum'
+          AND (%s IN ('all', 'umum'))
+    )
+    """
+    search_clause = """
+    WHERE (
+        %s = ''
+        OR COALESCE(guest_name, '') ILIKE %s
+        OR COALESCE(instansi, '') ILIKE %s
+        OR COALESCE(purpose, '') ILIKE %s
+    )
+    """
+    params: List[Any] = [
+        school_id,
+        visit_date,
+        scope,
+        school_id,
+        visit_date,
+        scope,
+        query_text,
+        like_query,
+        like_query,
+        like_query,
+    ]
+
+    count_query = base_cte + "SELECT COUNT(*) AS total FROM day_guests " + search_clause
+    data_query = (
+        base_cte
+        + """
+    SELECT transaction_id, visit_at, purpose, guest_name, instansi, guest_type
+    FROM day_guests
+    """
+        + search_clause
+        + """
+    ORDER BY visit_at ASC, transaction_id ASC, guest_name ASC
+    LIMIT %s OFFSET %s
+    """
+    )
+
+    with get_cursor() as cur:
+        cur.execute(count_query, params)
+        total_rows = int((cur.fetchone() or {}).get("total") or 0)
+        cur.execute(data_query, params + [safe_per_page, offset])
+        rows = [dict(row) for row in cur.fetchall()]
     return rows, total_rows
 
 

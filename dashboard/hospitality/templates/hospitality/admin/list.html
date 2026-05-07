@@ -6,9 +6,7 @@ portal_content %} {# ===== HERO SECTION ===== #}
 <section class="mb-4">
     <div class="card portal-hero border-0 shadow-sm">
         <div class="card-body">
-            <div
-                class="d-flex flex-wrap justify-content-between align-items-start gap-3"
-            >
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
                 <div class="d-flex align-items-start gap-3 flex-wrap">
                     <span class="icon-badge feature-icon text-primary">
                         <i class="bi bi-house-heart"></i>
@@ -24,24 +22,18 @@ portal_content %} {# ===== HERO SECTION ===== #}
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <a
-                        href="{{ url_for('hospitality.admin_reopen_requests') }}"
-                        class="btn btn-outline-warning d-inline-flex align-items-center gap-2"
-                    >
+                    <a href="{{ url_for('hospitality.admin_reopen_requests') }}"
+                        class="btn btn-outline-warning d-inline-flex align-items-center gap-2">
                         <i class="bi bi-arrow-counterclockwise"></i>
                         <span>Reopen Request</span>
                     </a>
-                    <a
-                        href="{{ url_for('hospitality.guestbook_review_dashboard') }}"
-                        class="btn btn-outline-primary d-inline-flex align-items-center gap-2"
-                    >
+                    <a href="{{ url_for('hospitality.guestbook_review_dashboard') }}"
+                        class="btn btn-outline-primary d-inline-flex align-items-center gap-2">
                         <i class="bi bi-star-half"></i>
                         <span>Review Pelayanan</span>
                     </a>
-                    <a
-                        href="{{ url_for('hospitality.admin_export_csv') }}"
-                        class="btn btn-outline-success d-inline-flex align-items-center gap-2"
-                    >
+                    <a href="{{ url_for('hospitality.admin_export_csv') }}"
+                        class="btn btn-outline-success d-inline-flex align-items-center gap-2">
                         <i class="bi bi-file-earmark-excel"></i>
                         <span>Export CSV</span>
                     </a>
@@ -60,19 +52,14 @@ portal_content %} {# ===== HERO SECTION ===== #}
                     <span class="icon-badge stat-icon text-primary">
                         <i class="bi bi-clipboard-check"></i>
                     </span>
-                    <span
-                        class="text-secondary text-uppercase small fw-semibold"
-                        >Total Penilaian</span
-                    >
+                    <span class="text-secondary text-uppercase small fw-semibold">Total Penilaian</span>
                 </div>
                 <h2 class="display-6 fw-bold mb-1">
                     {{ stats.total_assessments }}
                 </h2>
                 <p class="text-muted small mb-0">
                     {% if stats.today_assessments > 0 %}
-                    <span class="text-success fw-semibold"
-                        >+{{ stats.today_assessments }}</span
-                    >
+                    <span class="text-success fw-semibold">+{{ stats.today_assessments }}</span>
                     hari ini {% else %} 0 tambahan hari ini {% endif %}
                 </p>
             </div>
@@ -86,10 +73,7 @@ portal_content %} {# ===== HERO SECTION ===== #}
                     <span class="icon-badge stat-icon text-success">
                         <i class="bi bi-patch-check"></i>
                     </span>
-                    <span
-                        class="text-secondary text-uppercase small fw-semibold"
-                        >Terverifikasi</span
-                    >
+                    <span class="text-secondary text-uppercase small fw-semibold">Terverifikasi</span>
                 </div>
                 <h2 class="display-6 fw-bold mb-1">
                     {{ stats.verified_assessments }}
@@ -111,10 +95,7 @@ portal_content %} {# ===== HERO SECTION ===== #}
                     <span class="icon-badge stat-icon text-warning">
                         <i class="bi bi-hourglass-split"></i>
                     </span>
-                    <span
-                        class="text-secondary text-uppercase small fw-semibold"
-                        >Menunggu Verifikasi</span
-                    >
+                    <span class="text-secondary text-uppercase small fw-semibold">Menunggu Verifikasi</span>
                 </div>
                 <h2 class="display-6 fw-bold mb-1">
                     {{ stats.pending_assessments }}
@@ -131,22 +112,15 @@ portal_content %} {# ===== HERO SECTION ===== #}
             <div class="card-body">
                 <div class="d-flex align-items-center gap-2 mb-3">
                     <span class="icon-badge stat-icon text-info">
-                        <i class="bi bi-building"></i>
+                        <i class="bi bi-star-half"></i>
                     </span>
-                    <span
-                        class="text-secondary text-uppercase small fw-semibold"
-                        >Sekolah Unik</span
-                    >
+                    <span class="text-secondary text-uppercase small fw-semibold">Rata - Rata Penilaian</span>
                 </div>
                 <h2 class="display-6 fw-bold mb-1">
-                    {{ stats.unique_schools }}
+                    {% if stats.avg_score_pct %}{{ "%.1f"|format(stats.avg_score_pct) }}%{% else %}-{% endif %}
                 </h2>
                 <p class="text-muted small mb-0">
-                    {% if stats.avg_score_pct %} Rata-rata
-                    <span class="fw-semibold text-primary"
-                        >{{ "%.1f"|format(stats.avg_score_pct) }}%</span
-                    >
-                    {% else %} Pernah dinilai {% endif %}
+                    Dari <span class="fw-semibold text-primary">{{ stats.unique_schools }}</span> Sekolah Unik
                 </p>
             </div>
         </div>
@@ -158,24 +132,28 @@ portal_content %} {# ===== HERO SECTION ===== #}
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm h-100">
             <div
-                class="card-header bg-transparent border-0 pt-3 pb-0 d-flex justify-content-between align-items-center"
-            >
+                class="card-header bg-transparent border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-2">
                     <span class="icon-badge section-icon text-primary">
                         <i class="bi bi-graph-up-arrow"></i>
                     </span>
                     <div>
-                        <h2 class="h6 fw-bold mb-0">Tren Penilaian 30 Hari</h2>
+                        <h2 class="h6 fw-bold mb-0">Tren Penilaian</h2>
                         <p class="text-muted mb-0 small">
-                            Total penilaian dibanding yang terverifikasi
+                            Tren penilaian yang terverifikasi
                         </p>
                     </div>
                 </div>
-                <span
-                    class="badge rounded-pill text-bg-primary"
-                    style="font-size: 0.7rem"
-                    >30 hari terakhir</span
-                >
+                <div class="btn-group btn-group-sm" role="group" aria-label="Filter rentang tren">
+                    <a href="{{ url_for('hospitality.admin_home', status=status_filter, trend_range='30d') }}"
+                        class="btn {% if trend_range == '30d' %}btn-primary{% else %}btn-outline-primary{% endif %}">30 Hari</a>
+                    <a href="{{ url_for('hospitality.admin_home', status=status_filter, trend_range='60d') }}"
+                        class="btn {% if trend_range == '60d' %}btn-primary{% else %}btn-outline-primary{% endif %}">60 Hari</a>
+                    <a href="{{ url_for('hospitality.admin_home', status=status_filter, trend_range='1y') }}"
+                        class="btn {% if trend_range == '1y' %}btn-primary{% else %}btn-outline-primary{% endif %}">1 Tahun</a>
+                    <a href="{{ url_for('hospitality.admin_home', status=status_filter, trend_range='all') }}"
+                        class="btn {% if trend_range == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">Semua</a>
+                </div>
             </div>
             <div class="card-body pt-3">
                 <div style="height: 280px; position: relative">
@@ -194,79 +172,41 @@ portal_content %} {# ===== HERO SECTION ===== #}
                     </span>
                     <h6 class="fw-bold mb-0">Perankingan Sekolah</h6>
                 </div>
-                <ul
-                    class="nav nav-pills nav-fill mb-3"
-                    id="rankTabs"
-                    role="tablist"
-                >
+                <ul class="nav nav-pills nav-fill mb-3" id="rankTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button
-                            class="nav-link active"
-                            id="best-tab"
-                            data-bs-toggle="pill"
-                            data-bs-target="#best-pane"
-                            type="button"
-                            role="tab"
-                            aria-controls="best-pane"
-                            aria-selected="true"
-                        >
+                        <button class="nav-link active" id="best-tab" data-bs-toggle="pill" data-bs-target="#best-pane"
+                            type="button" role="tab" aria-controls="best-pane" aria-selected="true">
                             Terbaik
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button
-                            class="nav-link"
-                            id="worst-tab"
-                            data-bs-toggle="pill"
-                            data-bs-target="#worst-pane"
-                            type="button"
-                            role="tab"
-                            aria-controls="worst-pane"
-                            aria-selected="false"
-                        >
+                        <button class="nav-link" id="worst-tab" data-bs-toggle="pill" data-bs-target="#worst-pane"
+                            type="button" role="tab" aria-controls="worst-pane" aria-selected="false">
                             Terendah
                         </button>
                     </li>
                 </ul>
-                <div
-                    class="tab-content"
-                    style="max-height: 240px; overflow-y: auto"
-                >
-                    <div
-                        class="tab-pane fade show active"
-                        id="best-pane"
-                        role="tabpanel"
-                        aria-labelledby="best-tab"
-                    >
+                <div class="tab-content" style="max-height: 240px; overflow-y: auto">
+                    <div class="tab-pane fade show active" id="best-pane" role="tabpanel" aria-labelledby="best-tab">
                         {% if top_schools %}
                         <div class="list-group list-group-flush">
                             {% for s in top_schools %}
                             <div
-                                class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-bottom-0"
-                            >
+                                class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-bottom-0">
                                 <div class="d-flex align-items-center gap-2">
-                                    <span
-                                        class="fw-bold text-muted small"
-                                        style="width: 20px"
-                                        >{{ loop.index }}</span
-                                    >
+                                    <span class="fw-bold text-muted small" style="width: 20px">{{ loop.index }}</span>
                                     <div>
                                         <div class="fw-semibold small">
                                             {{ s.school_name }}
                                         </div>
-                                        <div
-                                            class="text-muted"
-                                            style="font-size: 0.7rem"
-                                        >
+                                        <div class="text-muted" style="font-size: 0.7rem">
                                             {{ s.jenjang }} &bull; {{
                                             s.assessment_count }} penilaian
                                         </div>
                                     </div>
                                 </div>
-                                <span
-                                    class="badge bg-success text-white rounded-pill"
-                                    >{{ "%.1f"|format(s.avg_pct or 0) }}%</span
-                                >
+                                <span class="badge bg-success text-white rounded-pill">{{ "%.1f"|format(s.avg_pct or 0)
+                                    }}%</span>
                             </div>
                             {% endfor %}
                         </div>
@@ -276,41 +216,26 @@ portal_content %} {# ===== HERO SECTION ===== #}
                         </p>
                         {% endif %}
                     </div>
-                    <div
-                        class="tab-pane fade"
-                        id="worst-pane"
-                        role="tabpanel"
-                        aria-labelledby="worst-tab"
-                    >
+                    <div class="tab-pane fade" id="worst-pane" role="tabpanel" aria-labelledby="worst-tab">
                         {% if bottom_schools %}
                         <div class="list-group list-group-flush">
                             {% for s in bottom_schools %}
                             <div
-                                class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-bottom-0"
-                            >
+                                class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-bottom-0">
                                 <div class="d-flex align-items-center gap-2">
-                                    <span
-                                        class="fw-bold text-muted small"
-                                        style="width: 20px"
-                                        >{{ loop.index }}</span
-                                    >
+                                    <span class="fw-bold text-muted small" style="width: 20px">{{ loop.index }}</span>
                                     <div>
                                         <div class="fw-semibold small">
                                             {{ s.school_name }}
                                         </div>
-                                        <div
-                                            class="text-muted"
-                                            style="font-size: 0.7rem"
-                                        >
+                                        <div class="text-muted" style="font-size: 0.7rem">
                                             {{ s.jenjang }} &bull; {{
                                             s.assessment_count }} penilaian
                                         </div>
                                     </div>
                                 </div>
-                                <span
-                                    class="badge bg-danger text-white rounded-pill"
-                                    >{{ "%.1f"|format(s.avg_pct or 0) }}%</span
-                                >
+                                <span class="badge bg-danger text-white rounded-pill">{{ "%.1f"|format(s.avg_pct or 0)
+                                    }}%</span>
                             </div>
                             {% endfor %}
                         </div>
@@ -326,17 +251,46 @@ portal_content %} {# ===== HERO SECTION ===== #}
     </div>
 </section>
 
+{# ===== COMPONENT AVERAGES ===== #}
+<section class="mb-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-0 pt-3 pb-0 d-flex align-items-center gap-2">
+            <span class="icon-badge section-icon text-primary">
+                <i class="bi bi-bar-chart-steps"></i>
+            </span>
+            <h2 class="h6 fw-bold mb-0">Rata - Rata Penilaian Komponen</h2>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-nowrap gap-3 pb-2" style="overflow-x: auto;">
+                {% if component_averages %}
+                    {% for comp in component_averages %}
+                    <div style="min-width: 160px; flex: 1;">
+                        <div class="p-3 bg-light rounded h-100 border">
+                            <div class="text-muted small fw-semibold mb-2" style="font-size: 0.75rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;" title="{{ comp.component_name }}">
+                                {{ comp.component_name }}
+                            </div>
+                            <div class="d-flex align-items-end gap-2">
+                                <h3 class="h4 fw-bold mb-0 {% if comp.avg_pct is not none %}{% if comp.avg_pct >= 80 %}text-success{% elif comp.avg_pct >= 60 %}text-warning{% else %}text-danger{% endif %}{% endif %}">
+                                    {% if comp.avg_pct is not none %}{{ "%.1f"|format(comp.avg_pct) }}%{% else %}-{% endif %}
+                                </h3>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="w-100 text-center text-muted py-3">Belum ada data komponen.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
 {# ===== GALLERY SECTION ===== #} {% if linked_photos %}
 <section class="mb-4">
     <div class="card border-0 shadow-sm">
-        <div
-            class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 pb-0"
-        >
+        <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 pb-0">
             <div class="d-flex align-items-center gap-2">
-                <span
-                    class="icon-badge section-icon text-info"
-                    style="width: 32px; height: 32px; font-size: 0.9rem"
-                >
+                <span class="icon-badge section-icon text-info" style="width: 32px; height: 32px; font-size: 0.9rem">
                     <i class="bi bi-images"></i>
                 </span>
                 <div>
@@ -351,28 +305,17 @@ portal_content %} {# ===== HERO SECTION ===== #}
             <div class="row g-2">
                 {% for p in linked_photos %}
                 <div class="col-6 col-md-3 col-lg-2">
-                    <div
-                        class="ratio ratio-4x3 rounded overflow-hidden bg-light border"
-                    >
+                    <div class="ratio ratio-4x3 rounded overflow-hidden bg-light border">
                         {% if p.photo_path %}
-                        <img
-                            src="{{ url_for('portal.uploaded_file', filename=p.photo_path.replace('uploads/portal/', '')) }}"
-                            class="w-100 h-100 object-fit-cover"
-                            alt="Foto {{ p.school_name }}"
-                            loading="lazy"
-                        />
+                        <img src="{{ url_for('portal.uploaded_file', filename=p.photo_path.replace('uploads/portal/', '')) }}"
+                            class="w-100 h-100 object-fit-cover" alt="Foto {{ p.school_name }}" loading="lazy" />
                         {% else %}
-                        <div
-                            class="d-flex align-items-center justify-content-center text-muted small"
-                        >
+                        <div class="d-flex align-items-center justify-content-center text-muted small">
                             <i class="bi bi-image fs-4"></i>
                         </div>
                         {% endif %}
                     </div>
-                    <div
-                        class="small mt-1 fw-semibold text-truncate"
-                        title="{{ p.school_name }}"
-                    >
+                    <div class="small mt-1 fw-semibold text-truncate" title="{{ p.school_name }}">
                         {{ p.school_name }}
                     </div>
                     <div class="text-muted small">{{ p.visit_at|jakarta }}</div>
@@ -395,7 +338,8 @@ portal_content %} {# ===== HERO SECTION ===== #}
                         <th class="border-0 ps-3">Sekolah</th>
                         <th class="border-0">Staff Penilai</th>
                         <th class="border-0">Status</th>
-                        <th class="border-0">Dibuat</th>
+                        <th class="border-0">Tanggal</th>
+                        <th class="border-0">Nilai</th>
                         <th class="border-0 text-end pe-3">Aksi</th>
                     </tr>
                 </thead>
@@ -403,63 +347,90 @@ portal_content %} {# ===== HERO SECTION ===== #}
                     {% for item in recent_assessments %}
                     <tr>
                         <td class="ps-3">
-                            <a
-                                href="{{ url_for('hospitality.assessment_detail', assessment_id=item.id) }}"
-                                class="fw-semibold text-decoration-none"
-                            >
+                            <a href="{{ url_for('hospitality.assessment_detail', assessment_id=item.id) }}"
+                                class="fw-semibold text-decoration-none">
                                 {{ item.school_name }}
                             </a>
                             <div class="small text-muted">
                                 NPSN {{ item.npsn }}
                             </div>
+                            <a href="{{ url_for('hospitality.guestbook_review_dashboard', school_id=item.school_id) }}"
+                                class="small text-decoration-none">
+                                <i class="bi bi-star-half me-1"></i>Review Pelayanan Sekolah
+                            </a>
                         </td>
                         <td class="small text-muted">
                             {{ item.staff_name or '—' }}
                         </td>
                         <td>
                             {% if item.status == 'verified' %}
-                            <span class="badge text-bg-success text-uppercase"
-                                >{{ item.status }}</span
-                            >
+                            <span class="badge text-bg-success text-uppercase">{{ item.status }}</span>
                             {% elif item.status == 'submitted' %}
-                            <span class="badge text-bg-warning text-uppercase"
-                                >{{ item.status }}</span
-                            >
+                            <span class="badge text-bg-warning text-uppercase">{{ item.status }}</span>
                             {% elif item.status == 'reopened' %}
-                            <span class="badge text-bg-info text-uppercase"
-                                >{{ item.status }}</span
-                            >
+                            <span class="badge text-bg-info text-uppercase">{{ item.status }}</span>
                             {% else %}
-                            <span class="badge text-bg-secondary text-uppercase"
-                                >{{ item.status }}</span
-                            >
+                            <span class="badge text-bg-secondary text-uppercase">{{ item.status }}</span>
                             {% endif %}
                         </td>
                         <td class="text-muted small">
-                            {{ item.created_at|jakarta }}
+                            {% if item.guestbook_visit_at %}
+                            <span title="Tanggal kunjungan buku tamu">
+                                <i class="bi bi-book me-1 text-success"></i>{{ item.guestbook_visit_at|jakarta }}
+                            </span>
+                            {% else %}
+                            <span title="Tanggal pembuatan penilaian">
+                                {{ item.created_at|jakarta }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="small">
+                            {% if item.avg_score is not none and item.avg_score %}
+                            <span class="fw-semibold">{{ "%.1f"|format(item.avg_score) }} / {{ item.score_scale_max }}</span>
+                            <div class="text-muted" style="font-size: 0.75rem">
+                                {% if item.score_pct is not none %}
+                                <span class="{% if item.score_pct >= 80 %}text-success{% elif item.score_pct >= 60 %}text-warning{% else %}text-danger{% endif %}">{{ "%.1f"|format(item.score_pct) }}%</span>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
                         </td>
                         <td class="text-end pe-3">
-                            <a
-                                class="btn btn-sm btn-light rounded-circle"
-                                href="{{ url_for('hospitality.assessment_detail', assessment_id=item.id) }}"
-                                title="Buka Detail"
-                            >
-                                <i class="bi bi-chevron-right"></i>
-                            </a>
+                            <div class="d-inline-flex align-items-center gap-1">
+                                <a class="btn btn-sm btn-light rounded-circle"
+                                    href="{{ url_for('hospitality.assessment_detail', assessment_id=item.id) }}"
+                                    title="Buka Detail">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                                <form method="post"
+                                    action="{{ url_for('hospitality.admin_delete_assessment', assessment_id=item.id) }}"
+                                    onsubmit="return confirm('Hapus penilaian hospitality ini? Tindakan ini tidak dapat dibatalkan.');"
+                                    class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle"
+                                        title="Hapus Penilaian">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="text-center py-4 text-muted">
-                            <i
-                                class="bi bi-inbox fs-4 d-block mb-2 opacity-50"
-                            ></i>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox fs-4 d-block mb-2 opacity-50"></i>
                             Belum ada penilaian.
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+        <div class="text-center py-3 border-top">
+            <a href="{{ url_for('hospitality.admin_all_assessments') }}" class="text-decoration-none small">
+                Lihat Semua Penilaian <i class="bi bi-arrow-right ms-1"></i>
+            </a>
         </div>
         {% endcall %}
     </div>
@@ -492,6 +463,10 @@ portal_content %} {# ===== HERO SECTION ===== #}
     </div>
 </section>
 
+
+
+
+
 {# ===== REOPEN REQUESTS ===== #} {{ reopen_requests_panel( title='Permintaan
 Reopen Hospitality', subtitle='Pantau permintaan terbaru. Klik Reopen untuk
 daftar lengkap.', requests=reopen_requests, status_filter=status_filter,
@@ -504,122 +479,113 @@ SCRIPTS ===== #}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     (function () {
-      // ── Trend Chart ────────────────────────────────────────────────
-      const trendData = {{ trend | tojson }};
-      const trendCtx = document.getElementById('trendChart');
-      if (trendCtx && trendData && trendData.length) {
+        // ── Trend Chart ────────────────────────────────────────────────
+        const trendData = {{ trend | tojson
+    }};
+    const trendCtx = document.getElementById('trendChart');
+    if (trendCtx && trendData && trendData.length) {
         const labels = trendData.map(function (r) {
-          const d = new Date(r.day);
-          return d.toLocaleDateString('id-ID', { month: 'short', day: 'numeric' });
+            const d = new Date(r.day);
+            return d.toLocaleDateString('id-ID', { month: 'short', day: 'numeric' });
         });
-        const total    = trendData.map(function (r) { return r.total; });
+        const total = trendData.map(function (r) { return r.total; });
         const verified = trendData.map(function (r) { return r.verified; });
 
         new Chart(trendCtx, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                label: 'Total',
-                data: total,
-                borderColor: '#0d6efd',
-                backgroundColor: 'rgba(13, 110, 253, 0.08)',
-                borderWidth: 2,
-                tension: 0.35,
-                fill: true,
-                pointRadius: 3,
-                pointHoverRadius: 5,
-              },
-              {
-                label: 'Verified',
-                data: verified,
-                borderColor: '#198754',
-                backgroundColor: 'rgba(25, 135, 84, 0.08)',
-                borderWidth: 2,
-                tension: 0.35,
-                fill: true,
-                pointRadius: 3,
-                pointHoverRadius: 5,
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-              mode: 'index',
-              intersect: false,
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Verified',
+                        data: verified,
+                        borderColor: '#198754',
+                        backgroundColor: 'rgba(25, 135, 84, 0.08)',
+                        borderWidth: 2,
+                        tension: 0.35,
+                        fill: true,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                    }
+                ]
             },
-            plugins: {
-              legend: {
-                display: true,
-                position: 'top',
-                labels: { usePointStyle: true, padding: 16, font: { size: 12 } }
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: { precision: 0, font: { size: 11 } },
-                grid: { borderDash: [4, 4], color: 'rgba(0,0,0,0.06)' }
-              },
-              x: {
-                grid: { display: false },
-                ticks: { font: { size: 11 }, maxTicksLimit: 10 }
-              }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: { usePointStyle: true, padding: 16, font: { size: 12 } }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0, font: { size: 11 } },
+                        grid: { borderDash: [4, 4], color: 'rgba(0,0,0,0.06)' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 }, maxTicksLimit: 10 }
+                    }
+                }
             }
-          }
         });
-      }
+    }
 
-      // ── Status Pie Chart ───────────────────────────────────────────
-      const pieCtx = document.getElementById('statusPieChart');
-      if (pieCtx) {
-        const totalAss    = {{ stats.total_assessments | int }};
-        const verifiedAss = {{ stats.verified_assessments | int }};
-        const pendingAss  = {{ stats.pending_assessments | int }};
-        const draftAss    = Math.max(0, totalAss - verifiedAss - pendingAss);
+    // ── Status Pie Chart ───────────────────────────────────────────
+    const pieCtx = document.getElementById('statusPieChart');
+    if (pieCtx) {
+        const totalAss = {{ stats.total_assessments | int
+    }};
+    const verifiedAss = {{ stats.verified_assessments | int }};
+    const pendingAss = {{ stats.pending_assessments | int }};
+    const draftAss = Math.max(0, totalAss - verifiedAss - pendingAss);
 
-        new Chart(pieCtx, {
-          type: 'doughnut',
-          data: {
+    new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
             labels: ['Verified', 'Submitted', 'Draft'],
             datasets: [{
-              data: [verifiedAss, pendingAss, draftAss],
-              backgroundColor: ['#198754', '#ffc107', '#6c757d'],
-              borderWidth: 0,
-              hoverOffset: 5,
+                data: [verifiedAss, pendingAss, draftAss],
+                backgroundColor: ['#198754', '#ffc107', '#6c757d'],
+                borderWidth: 0,
+                hoverOffset: 5,
             }]
-          },
-          options: {
+        },
+        options: {
             responsive: true,
             maintainAspectRatio: false,
             cutout: '60%',
             plugins: {
-              legend: {
-                position: 'bottom',
-                labels: {
-                  usePointStyle: true,
-                  padding: 14,
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 14,
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (ctx) {
+                            const val = Number(ctx.raw || 0);
+                            const dataArr = ctx.dataset && Array.isArray(ctx.dataset.data) ? ctx.dataset.data : [];
+                            const total = dataArr.reduce(function (acc, n) { return acc + (Number(n) || 0); }, 0);
+                            const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+                            return ctx.label + ': ' + val + ' penilaian (' + pct + '%)';
+                        }
+                    }
                 }
-              },
-              tooltip: {
-                callbacks: {
-                  label: function (ctx) {
-                    const val = Number(ctx.raw || 0);
-                    const dataArr = ctx.dataset && Array.isArray(ctx.dataset.data) ? ctx.dataset.data : [];
-                    const total = dataArr.reduce(function (acc, n) { return acc + (Number(n) || 0); }, 0);
-                    const pct = total > 0 ? Math.round((val / total) * 100) : 0;
-                    return ctx.label + ': ' + val + ' penilaian (' + pct + '%)';
-                  }
-                }
-              }
             }
-          }
-        });
+        }
+    });
       }
-    })();
+    }) ();
 </script>
 
 {% endblock %}
