@@ -4557,7 +4557,17 @@ def admin_gallery() -> Response:
     import random
     if order == "lowest":
         for album in albums:
-            total_score = sum(float(p.get("room_score") or 0) for p in album["photos"])
+            total_score = sum(
+                float(
+                    p.get("room_score_pct")
+                    if p.get("room_score_pct") is not None
+                    else _score_pct_from_raw(
+                        float(p.get("room_score") or 0),
+                        _normalize_assessment_scale_max(p.get("score_scale_max")),
+                    )
+                )
+                for p in album["photos"]
+            )
             count = len(album["photos"])
             album["_sort_score"] = (total_score / count) if count > 0 else 0
         albums.sort(key=lambda a: a["_sort_score"])
@@ -4657,7 +4667,17 @@ def coordinator_gallery() -> Response:
     import random
     if order == "lowest":
         for album in albums:
-            total_score = sum(float(p.get("room_score") or 0) for p in album["photos"])
+            total_score = sum(
+                float(
+                    p.get("room_score_pct")
+                    if p.get("room_score_pct") is not None
+                    else _score_pct_from_raw(
+                        float(p.get("room_score") or 0),
+                        _normalize_assessment_scale_max(p.get("score_scale_max")),
+                    )
+                )
+                for p in album["photos"]
+            )
             count = len(album["photos"])
             album["_sort_score"] = (total_score / count) if count > 0 else 0
         albums.sort(key=lambda a: a["_sort_score"])

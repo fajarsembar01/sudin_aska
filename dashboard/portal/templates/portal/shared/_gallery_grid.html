@@ -7,12 +7,12 @@
 {% set photo_url = url_for('portal.uploaded_file', filename=filename) if filename else
 'https://placehold.co/200x200?text=No+Image' %}
 {% endif %}
-{% set score_scale_max = p.score_scale_max if p.score_scale_max in [3, 5] else 3 %}
-{% set score_base = p.room_score or 0 %}
-{% if p.room_score_pct is not none %}
-{% set score_pct = p.room_score_pct %}
-{% elif p.score_pct is not none %}
-{% set score_pct = p.score_pct %}
+{% set score_scale_max = p.get('score_scale_max') if p.get('score_scale_max') in [3, 5] else 3 %}
+{% set score_base = p.get('room_score') or 0 %}
+{% if p.get('room_score_pct') is not none %}
+{% set score_pct = p.get('room_score_pct') %}
+{% elif p.get('score_pct') is not none %}
+{% set score_pct = p.get('score_pct') %}
 {% else %}
 {% set score_pct = (score_base / score_scale_max * 100) %}
 {% endif %}
