@@ -860,6 +860,38 @@ def fetch_stats() -> Dict[str, Any]:
     }
 
 
+def fetch_component_averages() -> List[Dict[str, Any]]:
+    """Return average score percentage for each component."""
+    _ensure_soft_delete_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH scored AS (
+                SELECT
+                    a.id,
+                    s.component_id,
+                    AVG(s.score)::DECIMAL(10,2) AS avg_score,
+                    MAX(a.score_scale_max) AS scale_max
+                FROM hospitality_assessments a
+                JOIN hospitality_assessment_scores s ON s.assessment_id = a.id
+                WHERE a.status IN ('submitted', 'verified')
+                  AND COALESCE(a.is_deleted, FALSE) = FALSE
+                GROUP BY a.id, s.component_id
+            )
+            SELECT
+                c.name AS component_name,
+                AVG(
+                    CASE WHEN sc.scale_max > 0 THEN (sc.avg_score / sc.scale_max) * 100 ELSE NULL END
+                )::DECIMAL(5,2) AS avg_pct
+            FROM scored sc
+            JOIN hospitality_components c ON c.id = sc.component_id
+            GROUP BY c.id, c.name, c.sort_order
+            ORDER BY c.sort_order, c.id
+            """
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
 def fetch_daily_trend(*, days: int | None = 30) -> List[Dict[str, Any]]:
     """Daily count of hospitality assessments (submitted/verified)."""
     _ensure_soft_delete_schema()

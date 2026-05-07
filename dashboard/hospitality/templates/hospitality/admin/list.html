@@ -112,17 +112,15 @@ portal_content %} {# ===== HERO SECTION ===== #}
             <div class="card-body">
                 <div class="d-flex align-items-center gap-2 mb-3">
                     <span class="icon-badge stat-icon text-info">
-                        <i class="bi bi-building"></i>
+                        <i class="bi bi-star-half"></i>
                     </span>
-                    <span class="text-secondary text-uppercase small fw-semibold">Sekolah Unik</span>
+                    <span class="text-secondary text-uppercase small fw-semibold">Rata - Rata Penilaian</span>
                 </div>
                 <h2 class="display-6 fw-bold mb-1">
-                    {{ stats.unique_schools }}
+                    {% if stats.avg_score_pct %}{{ "%.1f"|format(stats.avg_score_pct) }}%{% else %}-{% endif %}
                 </h2>
                 <p class="text-muted small mb-0">
-                    {% if stats.avg_score_pct %} Rata-rata
-                    <span class="fw-semibold text-primary">{{ "%.1f"|format(stats.avg_score_pct) }}%</span>
-                    {% else %} Pernah dinilai {% endif %}
+                    Dari <span class="fw-semibold text-primary">{{ stats.unique_schools }}</span> Sekolah Unik
                 </p>
             </div>
         </div>
@@ -248,6 +246,40 @@ portal_content %} {# ===== HERO SECTION ===== #}
                         {% endif %}
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# ===== COMPONENT AVERAGES ===== #}
+<section class="mb-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-0 pt-3 pb-0 d-flex align-items-center gap-2">
+            <span class="icon-badge section-icon text-primary">
+                <i class="bi bi-bar-chart-steps"></i>
+            </span>
+            <h2 class="h6 fw-bold mb-0">Rata - Rata Penilaian Komponen</h2>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-nowrap gap-3 pb-2" style="overflow-x: auto;">
+                {% if component_averages %}
+                    {% for comp in component_averages %}
+                    <div style="min-width: 160px; flex: 1;">
+                        <div class="p-3 bg-light rounded h-100 border">
+                            <div class="text-muted small fw-semibold mb-2" style="font-size: 0.75rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;" title="{{ comp.component_name }}">
+                                {{ comp.component_name }}
+                            </div>
+                            <div class="d-flex align-items-end gap-2">
+                                <h3 class="h4 fw-bold mb-0 {% if comp.avg_pct is not none %}{% if comp.avg_pct >= 80 %}text-success{% elif comp.avg_pct >= 60 %}text-warning{% else %}text-danger{% endif %}{% endif %}">
+                                    {% if comp.avg_pct is not none %}{{ "%.1f"|format(comp.avg_pct) }}%{% else %}-{% endif %}
+                                </h3>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="w-100 text-center text-muted py-3">Belum ada data komponen.</div>
+                {% endif %}
             </div>
         </div>
     </div>

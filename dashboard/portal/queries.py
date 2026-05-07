@@ -1258,6 +1258,7 @@ def fetch_gallery_photos(
                 s.name AS school_name,
                 s.jenjang AS school_jenjang,
                 a.id AS assessment_id,
+                a.score_scale_max,
                 r.id AS room_id,
                 r.name AS room_name,
                 p.captured_at,
@@ -1266,9 +1267,15 @@ def fetch_gallery_photos(
                 (
                     SELECT COALESCE(AVG(sc2.score), 0)::DECIMAL(5,2)
                     FROM portal_assessment_scores sc2
-                    JOIN portal_school_rooms sr2 ON sc2.school_room_id = sr2.id
-                    WHERE sr2.school_id = s.id AND sr2.room_id = r.id
-                ) AS room_score
+                    WHERE sc2.assessment_id = a.id
+                      AND sc2.school_room_id = p.school_room_id
+                ) AS room_score,
+                (
+                    SELECT COALESCE(AVG({_score_pct_sql("sc2.score", "a.score_scale_max")}), 0)::DECIMAL(5,2)
+                    FROM portal_assessment_scores sc2
+                    WHERE sc2.assessment_id = a.id
+                      AND sc2.school_room_id = p.school_room_id
+                ) AS room_score_pct
             FROM portal_assessment_photos p
             JOIN portal_assessments a ON p.assessment_id = a.id
             JOIN portal_schools s ON a.school_id = s.id
