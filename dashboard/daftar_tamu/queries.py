@@ -3943,12 +3943,121 @@ CREATE INDEX IF NOT EXISTS idx_daftar_tamu_ux_metrics_user_id
 ON daftar_tamu_ux_metrics (user_id);
 """
 
+_SCREEN_RECAPTURE_LOG_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS daftar_tamu_screen_recapture_logs (
+    id BIGSERIAL PRIMARY KEY,
+    school_id INTEGER REFERENCES portal_schools(id) ON DELETE SET NULL,
+    user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    risk_score DOUBLE PRECISION NOT NULL DEFAULT 0,
+    reason TEXT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_SCREEN_RECAPTURE_LOG_CREATED_IDX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_dt_screen_recapture_logs_created_at
+ON daftar_tamu_screen_recapture_logs (created_at DESC);
+"""
+
+_SCREEN_RECAPTURE_LOG_SCHOOL_IDX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_dt_screen_recapture_logs_school_id
+ON daftar_tamu_screen_recapture_logs (school_id);
+"""
+
 
 def _ensure_guestbook_ux_metrics_table() -> None:
     with get_cursor(commit=True) as cur:
         cur.execute(_UX_METRICS_TABLE_SQL)
         cur.execute(_UX_METRICS_UPDATED_INDEX_SQL)
         cur.execute(_UX_METRICS_USER_INDEX_SQL)
+
+
+def _ensure_screen_recapture_log_table() -> None:
+    with get_cursor(commit=True) as cur:
+        cur.execute(_SCREEN_RECAPTURE_LOG_TABLE_SQL)
+        cur.execute(_SCREEN_RECAPTURE_LOG_CREATED_IDX_SQL)
+        cur.execute(_SCREEN_RECAPTURE_LOG_SCHOOL_IDX_SQL)
+
+
+def create_screen_recapture_log(
+    *,
+    school_id: Optional[int],
+    user_id: Optional[int],
+    risk_score: float,
+    reason: str,
+    metadata: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    _ensure_screen_recapture_log_table()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO daftar_tamu_screen_recapture_logs (
+                school_id,
+                user_id,
+                risk_score,
+                reason,
+                metadata
+            )
+            VALUES (%s, %s, %s, %s, %s::jsonb)
+            RETURNING id, school_id, user_id, risk_score, reason, metadata, created_at
+            """,
+            [
+                int(school_id) if school_id else None,
+                int(user_id) if user_id else None,
+                float(risk_score or 0),
+                (reason or "").strip()[:200] or None,
+                json.dumps(metadata or {}),
+            ],
+        )
+        row = cur.fetchone()
+    return dict(row) if row else {}
+
+
+def list_screen_recapture_logs(
+    *,
+    days: int = 14,
+    page: int = 1,
+    per_page: int = 50,
+) -> Tuple[List[Dict[str, Any]], int]:
+    _ensure_screen_recapture_log_table()
+    safe_days = max(1, min(int(days or 14), 90))
+    safe_page = max(1, int(page or 1))
+    safe_per_page = max(10, min(int(per_page or 50), 200))
+    offset = (safe_page - 1) * safe_per_page
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM daftar_tamu_screen_recapture_logs l
+            WHERE l.created_at >= NOW() - (%s::text || ' days')::interval
+            """,
+            [safe_days],
+        )
+        total = int((cur.fetchone() or {}).get("total") or 0)
+        cur.execute(
+            """
+            SELECT
+                l.id,
+                l.school_id,
+                s.name AS school_name,
+                l.user_id,
+                u.full_name AS user_name,
+                l.risk_score,
+                l.reason,
+                l.metadata,
+                l.created_at
+            FROM daftar_tamu_screen_recapture_logs l
+            LEFT JOIN portal_schools s ON s.id = l.school_id
+            LEFT JOIN dashboard_users u ON u.id = l.user_id
+            WHERE l.created_at >= NOW() - (%s::text || ' days')::interval
+            ORDER BY l.created_at DESC, l.id DESC
+            LIMIT %s OFFSET %s
+            """,
+            [safe_days, safe_per_page, offset],
+        )
+        rows = [dict(r) for r in cur.fetchall()]
+    return rows, total
 
 
 def upsert_guestbook_ux_metrics(

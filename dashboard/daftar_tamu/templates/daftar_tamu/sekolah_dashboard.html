@@ -1697,6 +1697,79 @@
         compressAndStore(photoCanvas, 0.85);
     }
 
+    function detectLikelyScreenRecapture(canvas) {
+        try {
+            if (!canvas) return { isLikelyScreen: false, riskScore: 0 };
+            var sampleW = 220;
+            var sampleH = 220;
+            var tmp = document.createElement('canvas');
+            tmp.width = sampleW;
+            tmp.height = sampleH;
+            var tctx = tmp.getContext('2d', { willReadFrequently: true });
+            if (!tctx) return { isLikelyScreen: false, riskScore: 0 };
+            tctx.drawImage(canvas, 0, 0, sampleW, sampleH);
+            var img = tctx.getImageData(0, 0, sampleW, sampleH).data;
+
+            function grayAt(x, y) {
+                var i = (y * sampleW + x) * 4;
+                return (img[i] * 0.299) + (img[i + 1] * 0.587) + (img[i + 2] * 0.114);
+            }
+            var rowMeans = [];
+            var colMeans = [];
+            for (var y = 0; y < sampleH; y++) {
+                var sumRow = 0;
+                for (var x = 0; x < sampleW; x++) sumRow += grayAt(x, y);
+                rowMeans.push(sumRow / sampleW);
+            }
+            for (var cx = 0; cx < sampleW; cx++) {
+                var sumCol = 0;
+                for (var cy = 0; cy < sampleH; cy++) sumCol += grayAt(cx, cy);
+                colMeans.push(sumCol / sampleH);
+            }
+            function avgAbsDiff(series) {
+                if (!series || series.length < 2) return 0;
+                var total = 0;
+                for (var i = 1; i < series.length; i++) total += Math.abs(series[i] - series[i - 1]);
+                return total / (series.length - 1);
+            }
+            function periodicityScore(series, maxLag) {
+                var n = series.length;
+                if (n < 40) return 0;
+                var mean = 0;
+                for (var i = 0; i < n; i++) mean += series[i];
+                mean /= n;
+                var centered = [];
+                var denom = 0;
+                for (var j = 0; j < n; j++) {
+                    var c = series[j] - mean;
+                    centered.push(c);
+                    denom += c * c;
+                }
+                denom /= n;
+                if (denom <= 1e-8) return 0;
+                var best = 0;
+                for (var lag = 2; lag <= maxLag; lag++) {
+                    var count = n - lag;
+                    if (count < 20) break;
+                    var corr = 0;
+                    for (var k = 0; k < count; k++) corr += centered[k] * centered[k + lag];
+                    corr = (corr / count) / denom;
+                    if (corr > best) best = corr;
+                }
+                return Math.max(0, Math.min(1, best));
+            }
+            var rowDiff = avgAbsDiff(rowMeans);
+            var colDiff = avgAbsDiff(colMeans);
+            var periodicity = Math.max(periodicityScore(rowMeans, 12), periodicityScore(colMeans, 12));
+            var smoothness = Math.max(0, 1 - ((rowDiff + colDiff) / 12));
+            var riskScore = (periodicity * 0.8) + (smoothness * 0.2);
+            var isLikelyScreen = periodicity >= 0.78 && smoothness >= 0.58 && riskScore >= 0.72;
+            return { isLikelyScreen: isLikelyScreen, riskScore: riskScore };
+        } catch (err) {
+            return { isLikelyScreen: false, riskScore: 0 };
+        }
+    }
+
     if (retakePhotoBtn) {
         retakePhotoBtn.addEventListener('click', function () {
             photoRotationRequestToken += 1;
@@ -1752,6 +1825,11 @@
             updateSubmitState();
 
             if (!photoBlob) {
+                return;
+            }
+            var screenCheck = detectLikelyScreenRecapture(photoCanvas);
+            if (screenCheck.isLikelyScreen) {
+                alert('Foto terdeteksi kemungkinan diambil dari layar. Gunakan kamera untuk memotret objek asli, lalu coba lagi.');
                 return;
             }
             if (selectedGuests.size === 0) {

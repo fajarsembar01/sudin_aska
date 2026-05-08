@@ -92,6 +92,8 @@ from .queries import (
     update_contact_priority,
     set_purpose_keyword_active,
     fetch_guestbook_ux_metric_rows,
+    create_screen_recapture_log,
+    list_screen_recapture_logs,
     USER_APP_NOTIFICATION_CATEGORIES,
     fetch_user_notification_summary,
     upsert_guestbook_ux_metrics,
@@ -208,6 +210,67 @@ def _to_int(value: Optional[str], default: int) -> int:
 
 def _today_jakarta() -> date:
     return current_jakarta_time().date()
+
+
+def _detect_likely_screen_recapture(photo_file) -> tuple[bool, float]:
+    """Heuristic detector for photos that look like re-captured from a display."""
+    try:
+        photo_file.stream.seek(0)
+        with Image.open(photo_file.stream) as img:
+            gray = img.convert("L").resize((360, 360), Image.Resampling.BILINEAR)
+        photo_file.stream.seek(0)
+    except Exception:
+        try:
+            photo_file.stream.seek(0)
+        except Exception:
+            pass
+        return False, 0.0
+
+    w, h = gray.size
+    px = gray.load()
+
+    row_means = []
+    col_means = []
+    for y in range(h):
+        row_means.append(sum(px[x, y] for x in range(w)) / float(w))
+    for x in range(w):
+        col_means.append(sum(px[x, y] for y in range(h)) / float(h))
+
+    def _avg_abs_diff(series):
+        if len(series) < 2:
+            return 0.0
+        return sum(abs(series[i] - series[i - 1]) for i in range(1, len(series))) / float(len(series) - 1)
+
+    def _periodicity_score(series, max_lag=14):
+        n = len(series)
+        if n < 40:
+            return 0.0
+        mean = sum(series) / float(n)
+        centered = [v - mean for v in series]
+        denom = sum(v * v for v in centered) / float(n)
+        if denom <= 1e-8:
+            return 0.0
+        best = 0.0
+        for lag in range(2, max_lag + 1):
+            count = n - lag
+            if count < 20:
+                break
+            corr = sum(centered[i] * centered[i + lag] for i in range(count)) / float(count)
+            corr /= denom
+            if corr > best:
+                best = corr
+        return max(0.0, min(1.0, best))
+
+    row_diff = _avg_abs_diff(row_means)
+    col_diff = _avg_abs_diff(col_means)
+    row_period = _periodicity_score(row_means)
+    col_period = _periodicity_score(col_means)
+
+    periodicity = max(row_period, col_period)
+    smoothness = max(0.0, 1.0 - ((row_diff + col_diff) / 12.0))
+    risk_score = (periodicity * 0.8) + (smoothness * 0.2)
+    is_likely_screen = periodicity >= 0.78 and smoothness >= 0.58 and risk_score >= 0.72
+    return is_likely_screen, round(risk_score, 4)
 
 
 def _needs_profile_photo_completion(user: dict | None) -> bool:
@@ -4623,6 +4686,38 @@ def admin_guestbook_ux_metrics() -> Response:
     )
 
 
+@daftar_tamu_bp.route("/admin/screen-recapture-logs")
+@role_required("admin")
+def admin_screen_recapture_logs() -> Response:
+    days = max(1, min(_to_int(request.args.get("days"), 14), 90))
+    page = max(1, _to_int(request.args.get("page"), 1))
+    per_page = max(10, min(_to_int(request.args.get("per_page"), 50), 200))
+    rows, total_rows = list_screen_recapture_logs(days=days, page=page, per_page=per_page)
+    total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
+    if page > total_pages:
+        page = total_pages
+        rows, total_rows = list_screen_recapture_logs(days=days, page=page, per_page=per_page)
+
+    for row in rows:
+        created_at = row.get("created_at")
+        row["created_at_label"] = to_jakarta(created_at, "%d %b %Y, %H:%M WIB") if created_at else "-"
+        try:
+            row["risk_score_percent"] = round(float(row.get("risk_score") or 0) * 100, 1)
+        except Exception:
+            row["risk_score_percent"] = 0.0
+
+    return render_template(
+        "daftar_tamu/admin_screen_recapture_logs.html",
+        rows=rows,
+        days=days,
+        page=page,
+        per_page=per_page,
+        total_rows=total_rows,
+        total_pages=total_pages,
+        today_str=_today_jakarta().isoformat(),
+    )
+
+
 @daftar_tamu_bp.route("/saya/riwayat/<int:transaction_id>/catatan-staf", methods=["POST"])
 @role_required("staff", "coordinator")
 def user_guestbook_staff_note(transaction_id: int) -> Response:
@@ -5294,6 +5389,29 @@ def sekolah_create_transaction() -> Response:
     photo = request.files["photo"]
     if not photo or not photo.filename:
         return jsonify({"success": False, "message": "Foto wajib diunggah."}), 400
+    is_screen_photo, screen_risk_score = _detect_likely_screen_recapture(photo)
+    if is_screen_photo:
+        try:
+            create_screen_recapture_log(
+                school_id=int(school.get("id")) if school.get("id") else None,
+                user_id=int(user.get("id")) if user and user.get("id") else None,
+                risk_score=screen_risk_score,
+                reason="screen_recap_detected",
+                metadata={
+                    "ip": request.headers.get("X-Forwarded-For") or request.remote_addr,
+                    "user_agent": request.headers.get("User-Agent"),
+                },
+            )
+        except Exception:
+            current_app.logger.exception("Gagal menyimpan log screen recapture daftar tamu.")
+        return jsonify(
+            {
+                "success": False,
+                "message": "Foto terdeteksi kemungkinan diambil dari layar. Ambil foto langsung dari objek, lalu coba lagi.",
+                "code": "SCREEN_RECAPTURE_DETECTED",
+                "risk_score": screen_risk_score,
+            }
+        ), 422
 
     visit_at = current_jakarta_time()
     duplicate_rows = _find_sudin_same_day_approved_duplicates(

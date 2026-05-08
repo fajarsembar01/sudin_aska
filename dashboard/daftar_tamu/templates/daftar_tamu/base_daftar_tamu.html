@@ -22,7 +22,8 @@
                 'daftar_tamu.admin_public_transactions',
                 'daftar_tamu.admin_purpose_keywords',
                 'daftar_tamu.admin_contact_priority',
-                'daftar_tamu.admin_guestbook_ux_metrics'
+                'daftar_tamu.admin_guestbook_ux_metrics',
+                'daftar_tamu.admin_screen_recapture_logs'
                 ] %}
                 {% set admin_web_endpoints = [
                 'daftar_tamu.admin_public_summary',
@@ -84,6 +85,12 @@
                             <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_guestbook_ux_metrics' %}active{% endif %}"
                                 href="{{ url_for('daftar_tamu.admin_guestbook_ux_metrics') }}">
                                 <i class="bi bi-phone me-2"></i>Metrik UX Super App
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_screen_recapture_logs' %}active{% endif %}"
+                                href="{{ url_for('daftar_tamu.admin_screen_recapture_logs') }}">
+                                <i class="bi bi-camera-video-off me-2"></i>Log Foto dari Layar
                             </a>
                         </li>
                     </ul>

@@ -1,0 +1,84 @@
+{% extends "daftar_tamu/base_daftar_tamu.html" %}
+{% set page_title = "Log Foto dari Layar" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h1 class="h4 fw-bold mb-1">Log Deteksi Foto dari Layar</h1>
+                <p class="text-muted mb-0">Monitoring transaksi yang ditolak karena indikasi re-capture layar.</p>
+            </div>
+            <form method="get" class="d-flex align-items-center gap-2">
+                <label class="small text-muted mb-0">Periode</label>
+                <select class="form-select form-select-sm" name="days">
+                    {% for d in [7, 14, 30, 60, 90] %}
+                    <option value="{{ d }}" {% if days == d %}selected{% endif %}>{{ d }} hari</option>
+                    {% endfor %}
+                </select>
+                <select class="form-select form-select-sm" name="per_page">
+                    {% for size in [25, 50, 100, 200] %}
+                    <option value="{{ size }}" {% if per_page == size %}selected{% endif %}>{{ size }}/hal</option>
+                    {% endfor %}
+                </select>
+                <button class="btn btn-sm btn-primary" type="submit">Terapkan</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="small text-muted mb-2">Total log: {{ total_rows }}</div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Waktu</th>
+                        <th>Sekolah</th>
+                        <th>User</th>
+                        <th>Risk Score</th>
+                        <th>Alasan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if rows %}
+                    {% for row in rows %}
+                    <tr>
+                        <td>{{ row.created_at_label }}</td>
+                        <td>{{ row.school_name or ('#' ~ row.school_id if row.school_id else '-') }}</td>
+                        <td>{{ row.user_name or ('#' ~ row.user_id if row.user_id else '-') }}</td>
+                        <td><span class="badge text-bg-warning">{{ row.risk_score_percent }}%</span></td>
+                        <td><code>{{ row.reason or '-' }}</code></td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-3">Belum ada log pada periode ini.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        {% if total_pages > 1 %}
+        <nav class="mt-3">
+            <ul class="pagination pagination-sm justify-content-end mb-0">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_screen_recapture_logs', days=days, per_page=per_page, page=page-1) }}">Prev</a>
+                </li>
+                {% for p in range(1, total_pages + 1) %}
+                {% if p == page or p <= 2 or p > total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+                <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_screen_recapture_logs', days=days, per_page=per_page, page=p) }}">{{ p }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_screen_recapture_logs', days=days, per_page=per_page, page=page+1) }}">Next</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
