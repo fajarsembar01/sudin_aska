@@ -1827,11 +1827,7 @@
             if (!photoBlob) {
                 return;
             }
-            var screenCheck = detectLikelyScreenRecapture(photoCanvas);
-            if (screenCheck.isLikelyScreen) {
-                alert('Foto terdeteksi kemungkinan diambil dari layar. Gunakan kamera untuk memotret objek asli, lalu coba lagi.');
-                return;
-            }
+            // Screen-recapture check is currently disabled.
             if (selectedGuests.size === 0) {
                 updateSubmitState();
                 if (selectedField) selectedField.scrollIntoView({ behavior: 'smooth', block: 'center' });

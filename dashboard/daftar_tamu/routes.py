@@ -5389,29 +5389,7 @@ def sekolah_create_transaction() -> Response:
     photo = request.files["photo"]
     if not photo or not photo.filename:
         return jsonify({"success": False, "message": "Foto wajib diunggah."}), 400
-    is_screen_photo, screen_risk_score = _detect_likely_screen_recapture(photo)
-    if is_screen_photo:
-        try:
-            create_screen_recapture_log(
-                school_id=int(school.get("id")) if school.get("id") else None,
-                user_id=int(user.get("id")) if user and user.get("id") else None,
-                risk_score=screen_risk_score,
-                reason="screen_recap_detected",
-                metadata={
-                    "ip": request.headers.get("X-Forwarded-For") or request.remote_addr,
-                    "user_agent": request.headers.get("User-Agent"),
-                },
-            )
-        except Exception:
-            current_app.logger.exception("Gagal menyimpan log screen recapture daftar tamu.")
-        return jsonify(
-            {
-                "success": False,
-                "message": "Foto terdeteksi kemungkinan diambil dari layar. Ambil foto langsung dari objek, lalu coba lagi.",
-                "code": "SCREEN_RECAPTURE_DETECTED",
-                "risk_score": screen_risk_score,
-            }
-        ), 422
+    # Screen-recapture detection is currently disabled.
 
     visit_at = current_jakarta_time()
     duplicate_rows = _find_sudin_same_day_approved_duplicates(
