@@ -1483,6 +1483,98 @@ def fetch_guestbook_review_bottom_schools(*, limit: int = 10) -> List[Dict[str, 
         return [dict(row) for row in cur.fetchall()]
 
 
+def fetch_guestbook_review_school_rankings(
+    *,
+    search: str | None = None,
+    jenjang: str | None = None,
+    sort_by: str = "avg_rating",
+    sort_dir: str = "desc",
+    page: int = 1,
+    per_page: int = 50,
+) -> tuple[List[Dict[str, Any]], int]:
+    """Return all schools ranked by guestbook review metrics, with pagination."""
+    _ensure_soft_delete_schema()
+
+    # Validate sort options
+    allowed_sort = {"avg_rating", "review_count", "school_name"}
+    if sort_by not in allowed_sort:
+        sort_by = "avg_rating"
+    if sort_dir not in ("asc", "desc"):
+        sort_dir = "desc"
+
+    safe_page = max(1, int(page or 1))
+    safe_per_page = max(1, min(int(per_page or 50), 200))
+    offset = (safe_page - 1) * safe_per_page
+
+    # Build WHERE clauses for the outer query
+    outer_clauses: List[str] = []
+    params: List[Any] = []
+
+    if search:
+        like = f"%{search.strip()}%"
+        outer_clauses.append("(s.name ILIKE %s OR s.npsn ILIKE %s)")
+        params.extend([like, like])
+
+    if jenjang:
+        outer_clauses.append("s.jenjang = %s")
+        params.append(jenjang.strip())
+
+    outer_where = f"AND {' AND '.join(outer_clauses)}" if outer_clauses else ""
+
+    # Build ORDER BY
+    sort_map = {
+        "avg_rating": "avg_rating",
+        "review_count": "review_count",
+        "school_name": "s.name",
+    }
+    order_col = sort_map.get(sort_by, "avg_rating")
+    # For avg_rating desc, put NULLs last; for asc, put NULLs last too
+    nulls = "NULLS LAST"
+    order_clause = f"{order_col} {sort_dir.upper()} {nulls}"
+    # Secondary sort for ties
+    if sort_by != "school_name":
+        order_clause += ", s.name ASC"
+
+    base_query = f"""
+        WITH scored AS (
+            SELECT
+                r.school_id,
+                r.rating,
+                r.completed_at
+            FROM hospitality_guestbook_reviews r
+            WHERE r.status = 'completed'
+              AND r.rating IS NOT NULL
+              AND COALESCE(r.is_deleted, FALSE) = FALSE
+        )
+        SELECT
+            s.id AS school_id,
+            s.name AS school_name,
+            s.npsn,
+            s.jenjang,
+            COUNT(scored.school_id) AS review_count,
+            AVG(scored.rating)::DECIMAL(5,2) AS avg_rating,
+            MAX(scored.completed_at) AS last_completed_at
+        FROM portal_schools s
+        LEFT JOIN scored ON s.id = scored.school_id
+        WHERE s.active = TRUE {outer_where}
+        GROUP BY s.id, s.name, s.npsn, s.jenjang
+    """
+
+    with get_cursor() as cur:
+        # Count total
+        count_query = f"SELECT COUNT(*) AS cnt FROM ({base_query}) sub"
+        cur.execute(count_query, params)
+        total = int((cur.fetchone() or {}).get("cnt", 0))
+
+        # Fetch page
+        data_query = f"{base_query} ORDER BY {order_clause} LIMIT %s OFFSET %s"
+        data_params = list(params) + [safe_per_page, offset]
+        cur.execute(data_query, data_params)
+        rows = [dict(row) for row in cur.fetchall()]
+
+    return rows, total
+
+
 def list_guestbook_reviews(
     *,
     school_id: int | None = None,
