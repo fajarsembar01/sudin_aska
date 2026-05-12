@@ -17,7 +17,7 @@
                 <h1 class="h4 fw-bold mb-1">Detail Kelompok Kunjungan Sekolah</h1>
                 <p class="text-muted mb-0">Daftar sekolah untuk bucket kunjungan terpilih pada filter aktif.</p>
             </div>
-            <a href="{{ url_for('daftar_tamu.admin_dashboard', date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}"
+            <a href="{{ url_for(dashboard_home_endpoint, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}"
                 class="btn btn-outline-primary">
                 <i class="bi bi-arrow-left me-1"></i>Kembali ke Dashboard
             </a>
@@ -130,7 +130,7 @@
             <small class="text-muted">Menampilkan {{ start_row }}-{{ end_row }} dari {{ total_rows }} sekolah</small>
             <ul class="pagination pagination-sm mb-0">
                 <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_visit_bucket_detail',
+                    <a class="page-link" href="{{ url_for(visit_bucket_detail_endpoint,
                         source=source,
                         bucket=selected_bucket.key if selected_bucket else '',
                         sort=sort,
@@ -145,7 +145,7 @@
                 {% set end_page = total_pages if page + 2 > total_pages else page + 2 %}
                 {% for p in range(start_page, end_page + 1) %}
                 <li class="page-item {% if p == page %}active{% endif %}">
-                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_visit_bucket_detail',
+                    <a class="page-link" href="{{ url_for(visit_bucket_detail_endpoint,
                         source=source,
                         bucket=selected_bucket.key if selected_bucket else '',
                         sort=sort,
@@ -158,7 +158,7 @@
                 </li>
                 {% endfor %}
                 <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('daftar_tamu.admin_visit_bucket_detail',
+                    <a class="page-link" href="{{ url_for(visit_bucket_detail_endpoint,
                         source=source,
                         bucket=selected_bucket.key if selected_bucket else '',
                         sort=sort,
@@ -174,3 +174,4 @@
     </div>
 </section>
 {% endblock %}
+

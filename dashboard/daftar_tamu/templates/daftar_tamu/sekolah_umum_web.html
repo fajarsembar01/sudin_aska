@@ -159,7 +159,7 @@
                                     </td>
                                     <td>
                                         <div class="fw-semibold">{{ row.guest_display or '-' }}</div>
-                                        <div class="small text-muted">{{ row.guest_count or 0 }} tamu</div>
+                                        <div class="small text-muted">{{ row.guest_context or '-' }}</div>
                                         {% if row.purpose %}
                                         <div class="small text-muted">Tujuan: {{ row.purpose }}</div>
                                         {% endif %}
