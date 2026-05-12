@@ -439,9 +439,16 @@
 <section class="row g-3 mb-4">
   <div class="col-lg-6">
     <div class="guestbook-rank-card card border-0 h-100">
-      <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
-        <h2 class="h6 fw-bold mb-1">Sekolah Terbaik</h2>
-        <p class="small text-muted mb-0">Rata-rata rating tertinggi dari review selesai.</p>
+      <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="h6 fw-bold mb-1">Sekolah Terbaik</h2>
+          <p class="small text-muted mb-0">Rata-rata rating tertinggi dari review selesai.</p>
+        </div>
+        {% if rankings_url %}
+        <a href="{{ rankings_url }}?sort=avg_rating&dir=desc" class="btn btn-sm btn-link text-decoration-none">
+          Lihat Semua <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+        {% endif %}
       </div>
       <div class="card-body px-4 pb-4">
         {% if top_schools %}
@@ -477,9 +484,16 @@
   </div>
   <div class="col-lg-6">
     <div class="guestbook-rank-card card border-0 h-100">
-      <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
-        <h2 class="h6 fw-bold mb-1">Sekolah Terendah</h2>
-        <p class="small text-muted mb-0">Rata-rata rating terendah dari review selesai.</p>
+      <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="h6 fw-bold mb-1">Sekolah Terendah</h2>
+          <p class="small text-muted mb-0">Rata-rata rating terendah dari review selesai.</p>
+        </div>
+        {% if rankings_url %}
+        <a href="{{ rankings_url }}?sort=avg_rating&dir=asc" class="btn btn-sm btn-link text-decoration-none text-danger">
+          Lihat Semua <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+        {% endif %}
       </div>
       <div class="card-body px-4 pb-4">
         {% if bottom_schools %}

@@ -52,6 +52,7 @@ from .queries import (
     fetch_guestbook_review_stats,
     fetch_guestbook_review_top_schools,
     fetch_guestbook_review_trend,
+    fetch_guestbook_review_school_rankings,
     fetch_guestbook_reviews_export,
     list_guestbook_reviews,
     list_assessments_for_school,
@@ -990,6 +991,7 @@ def _render_preview_guestbook_dashboard(*, mode: str) -> Response:
         per_school_endpoint="hospitality.preview_guestbook_dashboard_by_school",
         per_school_url=url_for("hospitality.preview_guestbook_dashboard_by_school"),
         use_tanggal_edit=use_te,
+        rankings_url=url_for("hospitality.preview_guestbook_rankings"),
     )
 
 
@@ -1168,6 +1170,7 @@ def guestbook_review_dashboard() -> Response:
         per_school_endpoint="hospitality.guestbook_review_dashboard",
         require_school_pick=should_require_school_pick,
         use_tanggal_edit=_use_tanggal_edit(),
+        rankings_url=url_for("hospitality.guestbook_review_rankings"),
     )
 
 
@@ -1295,6 +1298,131 @@ def guestbook_review_export() -> Response:
     filename = f"hospitality_guestbook_reviews_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     response.headers.set("Content-Disposition", "attachment", filename=filename)
     return response
+
+
+def _list_jenjang_options() -> List[str]:
+    """Return distinct jenjang values from portal_schools."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT DISTINCT jenjang
+            FROM portal_schools
+            WHERE active = TRUE AND jenjang IS NOT NULL AND jenjang != ''
+            ORDER BY jenjang ASC
+            """
+        )
+        return [row["jenjang"] for row in cur.fetchall()]
+
+
+def _list_kecamatan_options() -> List[str]:
+    """Return distinct kecamatan values from portal_schools."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT DISTINCT kec.name
+            FROM portal_schools s
+            JOIN portal_kelurahan kel ON s.kelurahan_id = kel.id
+            JOIN portal_kecamatan kec ON kel.kecamatan_id = kec.id
+            WHERE s.active = TRUE AND kec.name IS NOT NULL AND kec.name != ''
+            ORDER BY kec.name ASC
+            """
+        )
+        return [row["name"] for row in cur.fetchall()]
+
+
+@hospitality_bp.route("/guestbook-reviews/rankings")
+@role_required("admin")
+def guestbook_review_rankings() -> Response:
+    return _render_guestbook_rankings(
+        is_preview=False,
+        back_url=url_for("hospitality.guestbook_review_dashboard", view="all"),
+        detail_endpoint="hospitality.guestbook_review_dashboard",
+    )
+
+
+@hospitality_bp.route("/preview/pelayanan/rankings")
+@_hospitality_preview_required
+def preview_guestbook_rankings() -> Response:
+    return _render_guestbook_rankings(
+        is_preview=True,
+        back_url=url_for("hospitality.preview_guestbook_dashboard"),
+        detail_endpoint="hospitality.preview_guestbook_dashboard_by_school",
+    )
+
+
+def _render_guestbook_rankings(
+    *,
+    is_preview: bool,
+    back_url: str,
+    detail_endpoint: str,
+) -> Response:
+    search = (request.args.get("q") or "").strip() or None
+    jenjang = (request.args.get("jenjang") or "").strip() or None
+    kecamatan = (request.args.get("kecamatan") or "").strip() or None
+    sort_by = (request.args.get("sort") or "avg_rating").strip().lower()
+    sort_dir = (request.args.get("dir") or "desc").strip().lower()
+    page = request.args.get("page", type=int) or 1
+    per_page = request.args.get("per_page", type=int) or 50
+    per_page = max(5, min(int(per_page or 50), 200))
+
+    schools, total = fetch_guestbook_review_school_rankings(
+        search=search,
+        jenjang=jenjang,
+        kecamatan=kecamatan,
+        sort_by=sort_by,
+        sort_dir=sort_dir,
+        page=page,
+        per_page=per_page,
+    )
+
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    start_item = ((page - 1) * per_page + 1) if total else 0
+    end_item = min(page * per_page, total) if total else 0
+
+    filter_params = {k: v for k, v in request.args.items() if v not in ("", None)}
+    filter_params.pop("page", None)
+    filter_params.pop("per_page", None)
+
+    rankings_endpoint = (
+        "hospitality.preview_guestbook_rankings" if is_preview
+        else "hospitality.guestbook_review_rankings"
+    )
+
+    prev_url = (
+        url_for(rankings_endpoint, **filter_params, page=page - 1, per_page=per_page)
+        if page > 1 else None
+    )
+    next_url = (
+        url_for(rankings_endpoint, **filter_params, page=page + 1, per_page=per_page)
+        if page < total_pages else None
+    )
+
+    jenjang_options = _list_jenjang_options()
+    kecamatan_options = _list_kecamatan_options()
+
+    return render_template(
+        "hospitality/guestbook/rankings.html",
+        schools=schools,
+        total=total,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+        start_item=start_item,
+        end_item=end_item,
+        prev_url=prev_url,
+        next_url=next_url,
+        search_query=search or "",
+        jenjang_filter=jenjang or "",
+        kecamatan_filter=kecamatan or "",
+        sort_by=sort_by,
+        sort_dir=sort_dir,
+        jenjang_options=jenjang_options,
+        kecamatan_options=kecamatan_options,
+        back_url=back_url,
+        is_preview=is_preview,
+        rankings_endpoint=rankings_endpoint,
+        detail_endpoint=detail_endpoint,
+    )
 
 
 @hospitality_bp.route("/admin/guestbook-reviews/<int:review_id>/delete", methods=["POST"])
