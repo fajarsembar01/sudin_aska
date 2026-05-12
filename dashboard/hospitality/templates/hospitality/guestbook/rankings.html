@@ -171,17 +171,26 @@
 {# ===== FILTERS ===== #}
 <section class="rankings-filter card border-0 shadow-sm mb-4">
   <div class="card-body">
-    <form method="get" class="row g-3 align-items-end">
-      <div class="col-lg-3 col-md-6">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-lg-3 col-md-4">
         <label class="form-label small fw-semibold">Cari Sekolah / NPSN</label>
-        <div class="input-group">
+        <div class="input-group input-group-sm">
           <span class="input-group-text"><i class="bi bi-search"></i></span>
           <input type="text" class="form-control" name="q" value="{{ search_query }}" placeholder="Ketik nama atau NPSN...">
         </div>
       </div>
       <div class="col-lg-2 col-md-4">
+        <label class="form-label small fw-semibold">Kecamatan</label>
+        <select class="form-select form-select-sm" name="kecamatan">
+          <option value="">Semua Kecamatan</option>
+          {% for k in kecamatan_options %}
+          <option value="{{ k }}" {% if kecamatan_filter == k %}selected{% endif %}>{{ k }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-lg-2 col-md-4">
         <label class="form-label small fw-semibold">Jenjang</label>
-        <select class="form-select" name="jenjang">
+        <select class="form-select form-select-sm" name="jenjang">
           <option value="">Semua Jenjang</option>
           {% for j in jenjang_options %}
           <option value="{{ j }}" {% if jenjang_filter == j %}selected{% endif %}>{{ j }}</option>
@@ -190,34 +199,34 @@
       </div>
       <div class="col-lg-2 col-md-4">
         <label class="form-label small fw-semibold">Urutkan</label>
-        <select class="form-select" name="sort">
+        <select class="form-select form-select-sm" name="sort">
           <option value="avg_rating" {% if sort_by == 'avg_rating' %}selected{% endif %}>Rating</option>
           <option value="review_count" {% if sort_by == 'review_count' %}selected{% endif %}>Jumlah Review</option>
           <option value="school_name" {% if sort_by == 'school_name' %}selected{% endif %}>Nama Sekolah</option>
         </select>
       </div>
-      <div class="col-lg-2 col-md-4">
+      <div class="col-lg-1 col-md-4">
         <label class="form-label small fw-semibold">Arah</label>
-        <select class="form-select" name="dir">
+        <select class="form-select form-select-sm" name="dir">
           <option value="desc" {% if sort_dir == 'desc' %}selected{% endif %}>Tertinggi ↓</option>
           <option value="asc" {% if sort_dir == 'asc' %}selected{% endif %}>Terendah ↑</option>
         </select>
       </div>
-      <div class="col-lg-1 col-md-4">
+      <div class="col-lg-1 col-md-2">
         <label class="form-label small fw-semibold">Tampil</label>
-        <select class="form-select" name="per_page">
+        <select class="form-select form-select-sm" name="per_page">
           {% for option in [25, 50, 100] %}
           <option value="{{ option }}" {% if per_page == option %}selected{% endif %}>{{ option }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-lg-1 col-md-3 d-grid">
-        <button type="submit" class="btn btn-primary">
-          <i class="bi bi-funnel me-1"></i>Filter
+      <div class="col-lg-1 col-md-2 d-flex gap-1">
+        <button type="submit" class="btn btn-primary btn-sm flex-fill" title="Filter">
+          <i class="bi bi-funnel"></i>
         </button>
-      </div>
-      <div class="col-lg-1 col-md-3 d-grid">
-        <a href="{{ url_for(rankings_ep) }}" class="btn btn-outline-secondary">Reset</a>
+        <a href="{{ url_for(rankings_ep) }}" class="btn btn-outline-secondary btn-sm flex-fill" title="Reset">
+          <i class="bi bi-x-circle"></i>
+        </a>
       </div>
     </form>
   </div>
@@ -231,7 +240,7 @@
         <thead>
           <tr>
             <th class="ps-4" style="width: 60px">#</th>
-            {% set sort_params = {'q': search_query, 'jenjang': jenjang_filter, 'per_page': per_page} %}
+            {% set sort_params = {'q': search_query, 'jenjang': jenjang_filter, 'kecamatan': kecamatan_filter, 'per_page': per_page} %}
             <th>
               <a href="{{ url_for(rankings_ep, sort='school_name', dir=('asc' if sort_by == 'school_name' and sort_dir == 'desc' else 'desc' if sort_by == 'school_name' else 'asc'), **sort_params) }}"
                  class="text-decoration-none {% if sort_by == 'school_name' %}sort-active{% endif %}"

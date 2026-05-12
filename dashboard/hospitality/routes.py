@@ -1314,6 +1314,22 @@ def _list_jenjang_options() -> List[str]:
         return [row["jenjang"] for row in cur.fetchall()]
 
 
+def _list_kecamatan_options() -> List[str]:
+    """Return distinct kecamatan values from portal_schools."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT DISTINCT kec.name
+            FROM portal_schools s
+            JOIN portal_kelurahan kel ON s.kelurahan_id = kel.id
+            JOIN portal_kecamatan kec ON kel.kecamatan_id = kec.id
+            WHERE s.active = TRUE AND kec.name IS NOT NULL AND kec.name != ''
+            ORDER BY kec.name ASC
+            """
+        )
+        return [row["name"] for row in cur.fetchall()]
+
+
 @hospitality_bp.route("/guestbook-reviews/rankings")
 @role_required("admin")
 def guestbook_review_rankings() -> Response:
@@ -1342,6 +1358,7 @@ def _render_guestbook_rankings(
 ) -> Response:
     search = (request.args.get("q") or "").strip() or None
     jenjang = (request.args.get("jenjang") or "").strip() or None
+    kecamatan = (request.args.get("kecamatan") or "").strip() or None
     sort_by = (request.args.get("sort") or "avg_rating").strip().lower()
     sort_dir = (request.args.get("dir") or "desc").strip().lower()
     page = request.args.get("page", type=int) or 1
@@ -1351,6 +1368,7 @@ def _render_guestbook_rankings(
     schools, total = fetch_guestbook_review_school_rankings(
         search=search,
         jenjang=jenjang,
+        kecamatan=kecamatan,
         sort_by=sort_by,
         sort_dir=sort_dir,
         page=page,
@@ -1380,6 +1398,7 @@ def _render_guestbook_rankings(
     )
 
     jenjang_options = _list_jenjang_options()
+    kecamatan_options = _list_kecamatan_options()
 
     return render_template(
         "hospitality/guestbook/rankings.html",
@@ -1394,9 +1413,11 @@ def _render_guestbook_rankings(
         next_url=next_url,
         search_query=search or "",
         jenjang_filter=jenjang or "",
+        kecamatan_filter=kecamatan or "",
         sort_by=sort_by,
         sort_dir=sort_dir,
         jenjang_options=jenjang_options,
+        kecamatan_options=kecamatan_options,
         back_url=back_url,
         is_preview=is_preview,
         rankings_endpoint=rankings_endpoint,

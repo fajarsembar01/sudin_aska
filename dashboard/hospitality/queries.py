@@ -1487,6 +1487,7 @@ def fetch_guestbook_review_school_rankings(
     *,
     search: str | None = None,
     jenjang: str | None = None,
+    kecamatan: str | None = None,
     sort_by: str = "avg_rating",
     sort_dir: str = "desc",
     page: int = 1,
@@ -1518,6 +1519,10 @@ def fetch_guestbook_review_school_rankings(
     if jenjang:
         outer_clauses.append("s.jenjang = %s")
         params.append(jenjang.strip())
+
+    if kecamatan:
+        outer_clauses.append("kec.name = %s")
+        params.append(kecamatan.strip())
 
     outer_where = f"AND {' AND '.join(outer_clauses)}" if outer_clauses else ""
 
@@ -1551,13 +1556,16 @@ def fetch_guestbook_review_school_rankings(
             s.name AS school_name,
             s.npsn,
             s.jenjang,
+            kec.name AS kecamatan,
             COUNT(scored.school_id) AS review_count,
             AVG(scored.rating)::DECIMAL(5,2) AS avg_rating,
             MAX(scored.completed_at) AS last_completed_at
         FROM portal_schools s
+        LEFT JOIN portal_kelurahan kel ON s.kelurahan_id = kel.id
+        LEFT JOIN portal_kecamatan kec ON kel.kecamatan_id = kec.id
         LEFT JOIN scored ON s.id = scored.school_id
         WHERE s.active = TRUE {outer_where}
-        GROUP BY s.id, s.name, s.npsn, s.jenjang
+        GROUP BY s.id, s.name, s.npsn, s.jenjang, kec.name
     """
 
     with get_cursor() as cur:
