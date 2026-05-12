@@ -22,6 +22,17 @@
         width: 100%;
     }
 
+    .assignment-school-badges {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.35rem;
+    }
+
+    .assignment-filter-select {
+        min-width: 160px;
+    }
+
     .assignment-period-card {
         border: 1px solid rgba(13, 110, 253, 0.15);
     }
@@ -117,6 +128,14 @@
                                 </button>
                             </div>
                         </div>
+                        <div class="col-12 col-md-auto">
+                            <select id="assignmentStatusFilter" class="form-select form-select-sm assignment-filter-select"
+                                aria-label="Filter status sekolah">
+                                <option value="all" selected>Semua</option>
+                                <option value="NEGERI">Negeri</option>
+                                <option value="SWASTA">Swasta</option>
+                            </select>
+                        </div>
                     </div>
                     <div id="assignmentEmptySearch" class="alert alert-warning d-none" role="alert">
                         <i class="bi bi-search me-2"></i>Tidak ada hasil yang cocok dengan pencarian.
@@ -128,7 +147,9 @@
                             {% set period_label = school.draft_period_name or school.last_period_name or 'Periode aktif'
                             %}
                             {% set search_blob = (school.school_name or '') ~ ' ' ~ (school.npsn or '') ~ ' ' ~ (school.jenjang or '') ~ ' ' ~ (school.kecamatan_name or '') ~ ' ' ~ (school.alamat or '') %}
-                            <div class="col-12 assignment-item" data-search="{{ search_blob|lower }}">
+                            {% set school_status = (school.school_status or 'NEGERI')|upper %}
+                            <div class="col-12 assignment-item" data-search="{{ search_blob|lower }}"
+                                data-school-status="{{ school_status }}">
                                 <div class="card shadow-sm assignment-card h-100">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-start gap-2">
@@ -138,8 +159,11 @@
                                                     {{ school.npsn }}{% if school.kecamatan_name %} • {{
                                                     school.kecamatan_name }}{% endif %}
                                                 </div>
+                                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                                    <span class="badge bg-info">{{ school.jenjang }}</span>
+                                                    <span class="badge {% if school_status == 'NEGERI' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ school_status|title }}</span>
+                                                </div>
                                             </div>
-                                            <span class="badge bg-info">{{ school.jenjang }}</span>
                                         </div>
                                         <div class="d-flex flex-wrap gap-2 mt-2 align-items-center">
                                             <span class="badge bg-secondary">{{ period_label }}</span>
@@ -229,12 +253,17 @@
                                 {% set period_label = school.draft_period_name or school.last_period_name or 'Periode
                                 aktif' %}
                                 {% set search_blob = (school.school_name or '') ~ ' ' ~ (school.npsn or '') ~ ' ' ~ (school.jenjang or '') ~ ' ' ~ (school.kecamatan_name or '') ~ ' ' ~ (school.alamat or '') %}
-                                <tr class="assignment-item" data-search="{{ search_blob|lower }}">
+                                {% set school_status = (school.school_status or 'NEGERI')|upper %}
+                                <tr class="assignment-item" data-search="{{ search_blob|lower }}"
+                                    data-school-status="{{ school_status }}">
                                     <td>{{ loop.index }}</td>
                                     <td>{{ school.npsn }}</td>
                                     <td>{{ school.school_name }}</td>
                                     <td>
-                                        <span class="badge bg-info">{{ school.jenjang }}</span>
+                                        <div class="assignment-school-badges">
+                                            <span class="badge bg-info">{{ school.jenjang }}</span>
+                                            <span class="badge {% if school_status == 'NEGERI' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ school_status|title }}</span>
+                                        </div>
                                     </td>
                                     <td>{{ school.alamat or '-' }}</td>
                                     <td>{{ school.kecamatan_name or '-' }}</td>
@@ -335,6 +364,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         const periodSelect = document.getElementById('periodSelect');
         const searchInput = document.getElementById('assignmentSearch');
+        const statusFilter = document.getElementById('assignmentStatusFilter');
         const clearBtn = document.getElementById('assignmentSearchClear');
         const emptyState = document.getElementById('assignmentEmptySearch');
         const assignmentItems = Array.from(document.querySelectorAll('.assignment-item'));
@@ -376,12 +406,15 @@
         });
 
         function applySearch() {
-            if (!searchInput) return;
-            const query = (searchInput.value || '').trim().toLowerCase();
+            const query = searchInput ? (searchInput.value || '').trim().toLowerCase() : '';
+            const status = statusFilter ? (statusFilter.value || 'all').trim().toUpperCase() : 'ALL';
             let visible = 0;
             assignmentItems.forEach(item => {
                 const hay = (item.dataset.search || '').toLowerCase();
-                const show = !query || hay.includes(query);
+                const itemStatus = (item.dataset.schoolStatus || '').toUpperCase();
+                const matchesQuery = !query || hay.includes(query);
+                const matchesStatus = status === 'ALL' || itemStatus === status;
+                const show = matchesQuery && matchesStatus;
                 item.classList.toggle('d-none', !show);
                 if (show) visible += 1;
             });
@@ -393,9 +426,15 @@
         if (searchInput) {
             searchInput.addEventListener('input', applySearch);
         }
+        if (statusFilter) {
+            statusFilter.addEventListener('change', applySearch);
+        }
         if (clearBtn && searchInput) {
             clearBtn.addEventListener('click', function () {
                 searchInput.value = '';
+                if (statusFilter) {
+                    statusFilter.value = 'all';
+                }
                 applySearch();
                 searchInput.focus();
             });
