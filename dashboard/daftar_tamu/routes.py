@@ -60,6 +60,7 @@ from .queries import (
     USER_SORT_OPTIONS,
     ensure_daftar_tamu_seed_data,
     fetch_dashboard_summary,
+    fetch_guestbook_gallery_photos,
     fetch_guest_history,
     fetch_map_data,
     fetch_recent_visits,
@@ -337,6 +338,15 @@ def _resolve_dashboard_school_status(user: Optional[dict], raw_value: Optional[s
     if _is_coordinator_dashboard_user(user):
         return "negeri"
     return status
+
+
+def _parse_gallery_photo_order(value: Optional[str], default: str = "random") -> str:
+    order = (value or "").strip().lower()
+    if order not in {"random", "newest", "oldest"}:
+        order = default
+    if order not in {"random", "newest", "oldest"}:
+        order = "random"
+    return order
 
 
 def _normalize_staff_note_level(value: Optional[str], default: str = "") -> str:
@@ -1319,6 +1329,7 @@ def admin_dashboard() -> Response:
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
     school_status = _resolve_dashboard_school_status(user, request.args.get("school_status"))
+    photo_order = _parse_gallery_photo_order(request.args.get("photo_order"), default="random")
     show_user_rankings = (guest_scope != "umum") and not is_coordinator_dashboard
     user_rank_guest_scope = "sudin" if guest_scope == "all" else guest_scope
     user_rank_scope_label = "SUDIN" if user_rank_guest_scope == "sudin" else "Umum"
@@ -1475,6 +1486,14 @@ def admin_dashboard() -> Response:
         kecamatan_ids=dashboard_kecamatan_ids,
         owner_user_id=dashboard_owner_user_id,
     )
+    gallery_photos = fetch_guestbook_gallery_photos(
+        limit=24,
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+        school_status=school_status,
+        order=photo_order,
+    )
 
     date_from_str = date_from.isoformat() if date_from else ""
     date_to_str = date_to.isoformat() if date_to else ""
@@ -1537,6 +1556,68 @@ def admin_dashboard() -> Response:
         if is_coordinator_dashboard
         else "daftar_tamu.admin_school_visit_day_guests",
         map_data_endpoint="daftar_tamu.admin_map_data",
+        gallery_photos=gallery_photos,
+        photo_order=photo_order,
+    )
+
+
+@daftar_tamu_bp.route("/admin/gallery")
+@role_required("admin")
+def admin_gallery() -> Response:
+    """Render full guestbook photo gallery for admin."""
+    ensure_daftar_tamu_seed_data()
+
+    date_from = _parse_iso_date(request.args.get("date_from"))
+    date_to = _parse_iso_date(request.args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
+    school_status = _parse_school_status(request.args.get("school_status"), default="all")
+    photo_order = _parse_gallery_photo_order(request.args.get("photo_order"), default="newest")
+
+    photos = fetch_guestbook_gallery_photos(
+        limit=None,
+        date_from=date_from,
+        date_to=date_to,
+        guest_scope=guest_scope,
+        school_status=school_status,
+        order=photo_order,
+    )
+
+    albums: list[dict] = []
+    album_map: dict[int, dict] = {}
+    for photo in photos:
+        school_id = photo.get("school_id")
+        if not school_id:
+            continue
+        album = album_map.get(school_id)
+        if not album:
+            album = {
+                "school_id": school_id,
+                "school_name": photo.get("school_name") or "Sekolah",
+                "school_jenjang": photo.get("school_jenjang"),
+                "photos": [],
+            }
+            album_map[school_id] = album
+            albums.append(album)
+        album["photos"].append(photo)
+
+    return render_template(
+        "daftar_tamu/admin_gallery.html",
+        albums=albums,
+        total_photos=len(photos),
+        total_schools=len(albums),
+        date_from_str=date_from.isoformat() if date_from else "",
+        date_to_str=date_to.isoformat() if date_to else "",
+        today_str=_today_jakarta().isoformat(),
+        guest_scope=guest_scope,
+        school_status=school_status,
+        photo_order=photo_order,
+        dashboard_q=(request.args.get("q") or "").strip(),
+        dashboard_sort=(request.args.get("sort") or "").strip(),
+        dashboard_per_page=_to_int(request.args.get("per_page"), 10),
+        dashboard_page=_to_int(request.args.get("page"), 1),
     )
 
 

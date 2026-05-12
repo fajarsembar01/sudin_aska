@@ -286,6 +286,25 @@ def _build_search(search_query: Optional[str]) -> tuple[str, str]:
     return query, f"%{query}%"
 
 
+def _apply_guest_display(row: Dict[str, Any]) -> None:
+    names_raw = row.get("guest_names") or ""
+    names = [n.strip() for n in names_raw.split(",") if n.strip()]
+    guest_count = int(row.get("guest_count") or 0)
+    if not guest_count:
+        guest_count = len(names)
+    if names:
+        if len(names) > 2:
+            display = f"{names[0]} +{len(names) - 1}"
+        elif len(names) == 2:
+            display = f"{names[0]} & {names[1]}"
+        else:
+            display = names[0]
+    else:
+        display = None
+    row["guest_display"] = display
+    row["guest_count"] = guest_count
+
+
 def _normalize_staff_note_level(level: Optional[str]) -> str:
     value = (level or "").strip().lower()
     if value in {"mendesak", "urgent", "critical", "sangat_mendesak", "sangat mendesak"}:
@@ -708,23 +727,11 @@ def fetch_school_rankings(
             row["longitude"] = float(row["longitude"])
         last_visit = row.get("last_visit_date")
         row["days_since_visit"] = (today - last_visit.date()).days if last_visit else None
-
-        names_raw = row.get("last_guest_names") or ""
-        names = [n.strip() for n in names_raw.split(",") if n.strip()]
-        guest_count = int(row.get("last_guest_count") or 0)
-        if not guest_count:
-            guest_count = len(names)
-        if names:
-            if len(names) > 2:
-                display = f"{names[0]} +{len(names) - 1}"
-            elif len(names) == 2:
-                display = f"{names[0]} & {names[1]}"
-            else:
-                display = names[0]
-        else:
-            display = None
-        row["last_guest_display"] = display
-        row["last_guest_count"] = guest_count
+        row["guest_names"] = row.get("last_guest_names")
+        row["guest_count"] = row.get("last_guest_count")
+        _apply_guest_display(row)
+        row["last_guest_display"] = row.get("guest_display")
+        row["last_guest_count"] = row.get("guest_count")
 
     return rows, total_rows
 
@@ -901,23 +908,11 @@ def fetch_school_visit_bucket_rows(
         row["visit_count"] = int(row.get("visit_count") or 0)
         last_visit = row.get("last_visit_date")
         row["days_since_visit"] = (today - last_visit.date()).days if last_visit else None
-
-        names_raw = row.get("last_guest_names") or ""
-        names = [n.strip() for n in names_raw.split(",") if n.strip()]
-        guest_count = int(row.get("last_guest_count") or 0)
-        if not guest_count:
-            guest_count = len(names)
-        if names:
-            if len(names) > 2:
-                display = f"{names[0]} +{len(names) - 1}"
-            elif len(names) == 2:
-                display = f"{names[0]} & {names[1]}"
-            else:
-                display = names[0]
-        else:
-            display = None
-        row["last_guest_display"] = display
-        row["last_guest_count"] = guest_count
+        row["guest_names"] = row.get("last_guest_names")
+        row["guest_count"] = row.get("last_guest_count")
+        _apply_guest_display(row)
+        row["last_guest_display"] = row.get("guest_display")
+        row["last_guest_count"] = row.get("guest_count")
 
     return rows, total_rows
 
@@ -2178,7 +2173,98 @@ def fetch_recent_visits(
                 safe_limit,
             ],
         )
-        return [dict(row) for row in cur.fetchall()]
+        rows = [dict(row) for row in cur.fetchall()]
+    for row in rows:
+        _apply_guest_display(row)
+    return rows
+
+
+def fetch_guestbook_gallery_photos(
+    *,
+    limit: Optional[int] = 24,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    guest_scope: Optional[str] = None,
+    school_status: Optional[str] = None,
+    order: str = "random",
+) -> List[Dict[str, Any]]:
+    """Fetch approved guestbook photos for admin dashboard gallery."""
+    scope = _normalize_guest_scope(guest_scope)
+    status_filter = _normalize_school_status(school_status)
+    safe_order = (order or "random").strip().lower()
+    if safe_order not in {"random", "newest", "oldest"}:
+        safe_order = "random"
+
+    order_sql = {
+        "random": "ORDER BY RANDOM()",
+        "newest": "ORDER BY t.visit_at DESC, t.id DESC",
+        "oldest": "ORDER BY t.visit_at ASC, t.id ASC",
+    }[safe_order]
+
+    query = (
+        """
+    SELECT
+        t.id AS transaction_id,
+        t.visit_at AS captured_at,
+        t.purpose,
+        t.photo_path,
+        t.latitude,
+        t.longitude,
+        s.id AS school_id,
+        s.name AS school_name,
+        s.jenjang AS school_jenjang,
+        (
+            {guest_names}
+        ) AS guest_names,
+        (
+            {guest_count}
+        ) AS guest_count
+    FROM daftar_tamu_transactions t
+    JOIN portal_schools s ON s.id = t.school_id
+    WHERE s.active = TRUE
+      AND t.status = 'approved'
+      AND COALESCE(t.photo_path, '') <> ''
+      AND (%s = '' OR s.status = %s)
+      AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
+      AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
+        """
+        + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
+        + f"""
+    {order_sql}
+    """
+    ).format(
+        guest_names=_GUEST_NAMES_SUBQUERY.format(tx_ref="t.id"),
+        guest_count=_GUEST_COUNT_SUBQUERY.format(tx_ref="t.id"),
+    )
+
+    params: List[Any] = [
+        status_filter,
+        status_filter,
+        date_from,
+        date_from,
+        date_to,
+        date_to,
+        scope,
+        scope,
+        scope,
+    ]
+    if limit is not None:
+        safe_limit = max(1, min(int(limit), 2000))
+        query += " LIMIT %s"
+        params.append(safe_limit)
+
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        rows = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        _apply_guest_display(row)
+        row["guest_count"] = int(row.get("guest_count") or 0)
+        if row.get("latitude") is not None:
+            row["latitude"] = float(row["latitude"])
+        if row.get("longitude") is not None:
+            row["longitude"] = float(row["longitude"])
+    return rows
 
 
 def list_guest_candidates(search_query: Optional[str], limit: int = 20) -> List[Dict[str, Any]]:
