@@ -197,6 +197,14 @@
           {% endfor %}
         </select>
       </div>
+      <div class="col-lg-1 col-md-4">
+        <label class="form-label small fw-semibold">Status</label>
+        <select class="form-select form-select-sm" name="school_status">
+          <option value="">Semua</option>
+          <option value="NEGERI" {% if school_status_filter == 'NEGERI' %}selected{% endif %}>Negeri</option>
+          <option value="SWASTA" {% if school_status_filter == 'SWASTA' %}selected{% endif %}>Swasta</option>
+        </select>
+      </div>
       <div class="col-lg-2 col-md-4">
         <label class="form-label small fw-semibold">Urutkan</label>
         <select class="form-select form-select-sm" name="sort">
@@ -240,7 +248,7 @@
         <thead>
           <tr>
             <th class="ps-4" style="width: 60px">#</th>
-            {% set sort_params = {'q': search_query, 'jenjang': jenjang_filter, 'kecamatan': kecamatan_filter, 'per_page': per_page} %}
+            {% set sort_params = {'q': search_query, 'jenjang': jenjang_filter, 'kecamatan': kecamatan_filter, 'school_status': school_status_filter, 'per_page': per_page} %}
             <th>
               <a href="{{ url_for(rankings_ep, sort='school_name', dir=('asc' if sort_by == 'school_name' and sort_dir == 'desc' else 'desc' if sort_by == 'school_name' else 'asc'), **sort_params) }}"
                  class="text-decoration-none {% if sort_by == 'school_name' %}sort-active{% endif %}"
