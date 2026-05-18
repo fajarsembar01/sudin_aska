@@ -171,6 +171,26 @@ _PUBLIC_GUEST_CONTEXT_SUBQUERY = """
     WHERE g.transaction_id = {tx_ref}
 """
 
+_PUBLIC_GUEST_EMAILS_SUBQUERY = """
+    SELECT STRING_AGG(contact_email, ', ' ORDER BY contact_email)
+    FROM (
+        SELECT DISTINCT NULLIF(TRIM(COALESCE(g.email, '')), '') AS contact_email
+        FROM daftar_tamu_general_transaction_guests g
+        WHERE g.transaction_id = {tx_ref}
+    ) emails
+    WHERE contact_email IS NOT NULL
+"""
+
+_PUBLIC_GUEST_PHONES_SUBQUERY = """
+    SELECT STRING_AGG(contact_phone, ', ' ORDER BY contact_phone)
+    FROM (
+        SELECT DISTINCT NULLIF(TRIM(COALESCE(g.phone, '')), '') AS contact_phone
+        FROM daftar_tamu_general_transaction_guests g
+        WHERE g.transaction_id = {tx_ref}
+    ) phones
+    WHERE contact_phone IS NOT NULL
+"""
+
 
 def _has_dashboard_user_profile_photo_path() -> bool:
     """Return True if dashboard_users.profile_photo_path exists in active schemas."""
@@ -2611,7 +2631,13 @@ def list_school_public_transactions(
             ) AS guest_count,
             (
                 {guest_context}
-            ) AS guest_context
+            ) AS guest_context,
+            (
+                {guest_emails}
+            ) AS guest_emails,
+            (
+                {guest_phones}
+            ) AS guest_phones
         FROM daftar_tamu_general_transactions t
         LEFT JOIN dashboard_users reviewer ON reviewer.id = t.reviewed_by
         WHERE t.school_id = %s
@@ -2622,6 +2648,8 @@ def list_school_public_transactions(
         guest_names=_PUBLIC_GUEST_NAMES_SUBQUERY.format(tx_ref="t.id"),
         guest_count=_PUBLIC_GUEST_COUNT_SUBQUERY.format(tx_ref="t.id"),
         guest_context=_PUBLIC_GUEST_CONTEXT_SUBQUERY.format(tx_ref="t.id"),
+        guest_emails=_PUBLIC_GUEST_EMAILS_SUBQUERY.format(tx_ref="t.id"),
+        guest_phones=_PUBLIC_GUEST_PHONES_SUBQUERY.format(tx_ref="t.id"),
     )
 
     with get_cursor() as cur:
@@ -2651,6 +2679,8 @@ def list_school_public_transactions(
         row["guest_display"] = display
         row["guest_count"] = guest_count
         row["guest_context"] = (row.get("guest_context") or "").strip()
+        row["guest_emails"] = (row.get("guest_emails") or "").strip()
+        row["guest_phones"] = (row.get("guest_phones") or "").strip()
 
     return rows, total_rows
 

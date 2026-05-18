@@ -182,29 +182,61 @@
                                         </div>
                                         {% endif %}
                                     </td>
+                                    {% set status_label = 'Disetujui' if row.status == 'approved' else 'Ditolak' if row.status == 'rejected' else 'Menunggu' %}
+                                    {% set detail_payload = {
+                                        "id": row.id,
+                                        "visit_date": row.visit_at.strftime('%d %b %Y') if row.visit_at else '-',
+                                        "visit_time": (row.visit_at.strftime('%H:%M') ~ ' WIB') if row.visit_at else '-',
+                                        "status": status_label,
+                                        "guest_names": row.guest_names or '-',
+                                        "guest_phones": row.guest_phones or '-',
+                                        "guest_emails": row.guest_emails or '-',
+                                        "guest_count": row.guest_count or 0,
+                                        "guest_context": row.guest_context or '-',
+                                        "purpose": row.purpose or '-',
+                                        "notes": row.notes or '-',
+                                        "reviewer_name": row.reviewer_name or '-',
+                                        "reviewed_at": row.reviewed_at.strftime('%d %b %Y, %H:%M WIB') if row.reviewed_at else '-',
+                                        "reviewer_notes": row.reviewer_notes or '-'
+                                    } %}
                                     <td class="text-end">
                                         {% if row.status == 'pending' %}
                                         <input type="text" class="form-control form-control-sm mb-2"
                                             id="publicNote{{ row.id }}" placeholder="Catatan verifikasi (opsional)">
                                         <div class="d-flex justify-content-end gap-2">
+                                            <button type="button"
+                                                class="btn btn-sm btn-outline-secondary js-public-detail-btn"
+                                                title="Cek detail" aria-label="Cek detail"
+                                                data-detail="{{ detail_payload|tojson|forceescape }}">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
                                             <form method="post"
                                                 action="{{ url_for('daftar_tamu.sekolah_approve_public_transaction', transaction_id=row.id) }}"
                                                 onsubmit="document.getElementById('publicApproveNote{{ row.id }}').value = document.getElementById('publicNote{{ row.id }}').value;">
                                                 <input type="hidden" name="reviewer_notes"
                                                     id="publicApproveNote{{ row.id }}">
-                                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                                <button type="submit" class="btn btn-sm btn-success" title="Setujui"
+                                                    aria-label="Setujui">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
                                             </form>
                                             <form method="post"
                                                 action="{{ url_for('daftar_tamu.sekolah_reject_public_transaction', transaction_id=row.id) }}"
                                                 onsubmit="document.getElementById('publicRejectNote{{ row.id }}').value = document.getElementById('publicNote{{ row.id }}').value;">
                                                 <input type="hidden" name="reviewer_notes"
                                                     id="publicRejectNote{{ row.id }}">
-                                                <button type="submit"
-                                                    class="btn btn-sm btn-outline-danger">Reject</button>
+                                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                    title="Tolak" aria-label="Tolak">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
                                             </form>
                                         </div>
                                         {% else %}
-                                        <div class="small text-muted">Diverifikasi</div>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary js-public-detail-btn"
+                                            title="Cek detail" aria-label="Cek detail"
+                                            data-detail="{{ detail_payload|tojson|forceescape }}">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
                                         {% endif %}
                                     </td>
                             </tr>
@@ -246,6 +278,48 @@
         </div>
     </div>
 </section>
+
+<div class="modal fade" id="publicDetailModal" tabindex="-1" aria-labelledby="publicDetailModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="publicDetailModalLabel">Detail Pengajuan Tamu Umum</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row mb-0 small">
+                    <dt class="col-5">ID Transaksi</dt>
+                    <dd class="col-7" id="publicDetailId">-</dd>
+                    <dt class="col-5">Waktu Kunjungan</dt>
+                    <dd class="col-7" id="publicDetailVisitAt">-</dd>
+                    <dt class="col-5">Status</dt>
+                    <dd class="col-7" id="publicDetailStatus">-</dd>
+                    <dt class="col-5">Daftar Nama Tamu</dt>
+                    <dd class="col-7" id="publicDetailGuestNames">-</dd>
+                    <dt class="col-5">Nomor HP Tamu</dt>
+                    <dd class="col-7" id="publicDetailGuestPhones">-</dd>
+                    <dt class="col-5">Email Tamu</dt>
+                    <dd class="col-7" id="publicDetailGuestEmails">-</dd>
+                    <dt class="col-5">Jumlah Tamu</dt>
+                    <dd class="col-7" id="publicDetailGuestCount">-</dd>
+                    <dt class="col-5">Konteks Tamu</dt>
+                    <dd class="col-7" id="publicDetailGuestContext">-</dd>
+                    <dt class="col-5">Tujuan</dt>
+                    <dd class="col-7" id="publicDetailPurpose">-</dd>
+                    <dt class="col-5">Catatan Tamu</dt>
+                    <dd class="col-7" id="publicDetailNotes">-</dd>
+                    <dt class="col-5">Verifikator</dt>
+                    <dd class="col-7" id="publicDetailReviewerName">-</dd>
+                    <dt class="col-5">Waktu Verifikasi</dt>
+                    <dd class="col-7" id="publicDetailReviewedAt">-</dd>
+                    <dt class="col-5">Catatan Verifikator</dt>
+                    <dd class="col-7" id="publicDetailReviewerNotes">-</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endif %}
 {% endblock %}
@@ -335,6 +409,58 @@
         });
 
         updateButtonState();
+    })();
+
+    (function () {
+        var modalEl = document.getElementById('publicDetailModal');
+        if (!modalEl || typeof window.bootstrap === 'undefined' || !window.bootstrap.Modal) return;
+        var detailModal = new window.bootstrap.Modal(modalEl);
+
+        function normalizeText(value) {
+            if (value === null || value === undefined || value === '') return '-';
+            return String(value);
+        }
+
+        function setText(id, value) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = normalizeText(value);
+        }
+
+        document.addEventListener('click', function (event) {
+            var trigger = event.target && event.target.closest ? event.target.closest('.js-public-detail-btn') : null;
+            if (!trigger) return;
+            var raw = trigger.getAttribute('data-detail') || '{}';
+            var detail = {};
+            try {
+                detail = JSON.parse(raw);
+            } catch (error) {
+                detail = {};
+            }
+
+            setText('publicDetailId', detail.id);
+            var visitDate = normalizeText(detail.visit_date);
+            var visitTime = normalizeText(detail.visit_time);
+            var visitAtLabel = '-';
+            if (visitDate !== '-' || visitTime !== '-') {
+                visitAtLabel = (visitDate === '-' ? '' : visitDate) + (visitTime === '-' ? '' : ' ' + visitTime);
+                visitAtLabel = visitAtLabel.trim() || '-';
+            }
+            setText('publicDetailVisitAt', visitAtLabel);
+            setText('publicDetailStatus', detail.status);
+            setText('publicDetailGuestNames', detail.guest_names);
+            setText('publicDetailGuestPhones', detail.guest_phones);
+            setText('publicDetailGuestEmails', detail.guest_emails);
+            setText('publicDetailGuestCount', detail.guest_count);
+            setText('publicDetailGuestContext', detail.guest_context);
+            setText('publicDetailPurpose', detail.purpose);
+            setText('publicDetailNotes', detail.notes);
+            setText('publicDetailReviewerName', detail.reviewer_name);
+            setText('publicDetailReviewedAt', detail.reviewed_at);
+            setText('publicDetailReviewerNotes', detail.reviewer_notes);
+
+            detailModal.show();
+        });
     })();
 </script>
 {% endblock %}
