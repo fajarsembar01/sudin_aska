@@ -481,7 +481,12 @@
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
-                <h2 class="h6 fw-bold mb-3">Sebaran Banyak Kunjungan</h2>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h6 fw-bold mb-0">Sebaran Banyak Kunjungan</h2>
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editDistGrafikModal">
+                        <i class="bi bi-pencil me-1"></i> Edit Grafik
+                    </button>
+                </div>
                 <div style="height: 300px">
                     <canvas id="visitDistChart"></canvas>
                 </div>
@@ -495,7 +500,12 @@
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
-                <h2 class="h6 fw-bold mb-1">Jumlah Kunjungan Sekolah</h2>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h2 class="h6 fw-bold mb-0">Jumlah Kunjungan Sekolah</h2>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editGrafikModal">
+                        <i class="bi bi-pencil me-1"></i> Edit Grafik
+                    </button>
+                </div>
                 <div style="height: 300px; position: relative">
                     <canvas id="visitFrequencyPieChart"></canvas>
                 </div>
@@ -736,28 +746,24 @@
                                 <th class="ps-3">#</th>
                                 <th>
                                     <a class="text-decoration-none"
-                                        href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort_name, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
                                         href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort_name, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status, photo_order=photo_order) }}">
                                         Sekolah
                                     </a>
                                 </th>
                                 <th class="text-end">
                                     <a class="text-decoration-none"
-                                        href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort_visits, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
                                         href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort_visits, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status, photo_order=photo_order) }}">
                                         Orang
                                     </a>
                                 </th>
                                 <th class="text-end">
                                     <a class="text-decoration-none"
-                                        href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort_days, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
                                         href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort_days, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status, photo_order=photo_order) }}">
                                         Hari
                                     </a>
                                 </th>
                                 <th>
                                     <a class="text-decoration-none"
-                                        href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort_last_visit, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
                                         href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort_last_visit, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status, photo_order=photo_order) }}">
                                         Kunjungan Terakhir
                                     </a>
@@ -851,7 +857,6 @@
                     <ul class="pagination pagination-sm mb-0">
                         <li class="page-item {% if page <= 1 %}disabled{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort, per_page=per_page, page=page-1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">Prev</a>
                                 href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort, per_page=per_page, page=page-1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status, photo_order=photo_order) }}">Prev</a>
                         </li>
                         {% set start_page = 1 if page - 2 < 1 else page - 2 %}
@@ -859,13 +864,11 @@
                         {% for p in range(start_page, end_page + 1) %}
                         <li class="page-item {% if p == page %}active{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort, per_page=per_page, page=p, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">{{ p }}</a>
                                 href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort, per_page=per_page, page=p, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status, photo_order=photo_order) }}">{{ p }}</a>
                         </li>
                         {% endfor %}
                         <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort, per_page=per_page, page=page+1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">Next</a>
                                 href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort, per_page=per_page, page=page+1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status, photo_order=photo_order) }}">Next</a>
                         </li>
                     </ul>
@@ -1413,6 +1416,72 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="editGrafikModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title mb-0">Edit Grafik Jumlah Kunjungan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger d-none" id="editGrafikError"></div>
+                <form id="formEditGrafik">
+                    <div class="mb-3 position-relative">
+                        <label class="form-label">Batas Bawah</label>
+                        <input type="text" class="form-control" name="batas_bawah" id="batasBawah" value="{{ pie_chart_batas.get('bawah', 0) }}" required data-bs-toggle="tooltip" data-bs-placement="right" title="Harus diisi angka">
+                        <small class="text-muted">Angka terendah grafik</small>
+                    </div>
+                    <div class="mb-3 position-relative">
+                        <label class="form-label">Batas Tengah</label>
+                        <input type="text" class="form-control" name="batas_tengah" id="batasTengah" value="{{ pie_chart_batas.get('tengah', 5) }}" required data-bs-toggle="tooltip" data-bs-placement="right" title="Harus diisi angka">
+                        <small class="text-muted">Batas tengah untuk range grafik</small>
+                    </div>
+                    <div class="mb-3 position-relative">
+                        <label class="form-label">Batas Atas</label>
+                        <input type="text" class="form-control" name="batas_atas" id="batasAtas" value="{{ pie_chart_batas.get('atas', 10) }}" required data-bs-toggle="tooltip" data-bs-placement="right" title="Harus diisi angka">
+                        <small class="text-muted">Angka tertinggi grafik</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnSaveGrafik">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit Grafik Distribusi -->
+<div class="modal fade" id="editDistGrafikModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Grafik Sebaran Banyak Kunjungan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="editDistGrafikError" class="alert alert-danger d-none small"></div>
+                <form id="editDistGrafikForm">
+                    <div class="mb-3 position-relative">
+                        <label class="form-label">Batas Bawah</label>
+                        <input type="text" class="form-control" name="dist_batas_bawah" id="distBatasBawah" value="{{ dist_chart_batas.get('bawah', 0) }}" required data-bs-toggle="tooltip" data-bs-placement="right" title="Harus diisi angka">
+                        <small class="text-muted">Angka terendah grafik</small>
+                    </div>
+                    <div class="mb-3 position-relative">
+                        <label class="form-label">Batas Atas</label>
+                        <input type="text" class="form-control" name="dist_batas_atas" id="distBatasAtas" value="{{ dist_chart_batas.get('atas', 8) }}" required data-bs-toggle="tooltip" data-bs-placement="right" title="Harus diisi angka">
+                        <small class="text-muted">Angka tertinggi grafik</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnSaveDistGrafik">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block portal_scripts %}
@@ -1432,7 +1501,7 @@
 
         const distLabels = {{ visit_dist_labels | default([]) | tojson }};
         const distValues = {{ visit_dist_values | default([]) | tojson }};
-        const distBucketKeys = ['d0', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8_plus'];
+        const distBucketKeys = {{ visit_dist_keys | default([]) | tojson }};
         const frequencyRows = {{ visit_frequency_groups | default([]) | tojson }};
 
         function buildSharedParams() {
@@ -1463,7 +1532,7 @@
                         datasets: [{
                             label: 'Jumlah Sekolah',
                             data: distValues,
-                            backgroundColor: ['#0d6efd', '#0dcaf0', '#20c997', '#198754', '#ffc107', '#fd7e14', '#dc3545', '#6f42c1', '#6c757d'],
+                            backgroundColor: ['#0d6efd', '#0dcaf0', '#20c997', '#198754', '#ffc107', '#fd7e14', '#dc3545', '#6f42c1', '#6c757d', '#343a40'],
                             borderRadius: 4,
                             barPercentage: 0.75
                         }]
@@ -2054,16 +2123,70 @@
             list.className = 'list-group list-group-flush';
             rows.forEach(function (row) {
                 const typeLabel = row.guest_type === 'umum' ? 'Umum' : 'SUDIN';
+                const transactionId = Number(row.transaction_id || 0);
                 const item = document.createElement('div');
                 item.className = 'list-group-item px-0 py-2';
-                item.innerHTML = '<div class="d-flex flex-wrap justify-content-between gap-2">'
-                    + '<div><div class="fw-semibold">' + escapeHtml(row.guest_name || '-') + '</div>'
-                    + '<div class="small text-muted">' + escapeHtml(typeLabel) + ' &bull; ' + escapeHtml(row.purpose || '-') + '</div></div>'
-                    + '<div class="small text-muted">' + escapeHtml(formatTime(row.visit_at)) + '</div>'
+                item.setAttribute('data-transaction-id', String(transactionId || ''));
+                item.innerHTML = '<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">'
+                    + '<div class="flex-grow-1"><div class="fw-semibold">' + escapeHtml(row.guest_name || '-') + '</div>'
+                    + '<div class="small text-muted">' + escapeHtml(typeLabel) + ' &bull; ' + escapeHtml(row.purpose || '-') + '</div>'
+                    + '<div class="small text-muted">' + escapeHtml(formatTime(row.visit_at)) + '</div></div>'
+                    + '<div class="d-flex align-items-center gap-2">'
+                    + '<span class="badge text-bg-danger d-none school-day-rejected-badge">Ditolak</span>'
+                    + '<div class="dropdown">'
+                    + '<button type="button" class="btn btn-sm btn-outline-secondary school-day-edit-btn"'
+                    + ' data-bs-toggle="dropdown" aria-expanded="false" aria-label="Opsi kunjungan"'
+                    + (transactionId ? '' : ' disabled') + '>'
+                    + '<i class="bi bi-pencil-square"></i>'
+                    + '</button>'
+                    + '<ul class="dropdown-menu dropdown-menu-end">'
+                    + '<li><button type="button" class="dropdown-item text-danger school-day-reject-btn"'
+                    + ' data-transaction-id="' + String(transactionId || '') + '">'
+                    + '<i class="bi bi-x-circle me-2"></i>Tolak Kunjungan</button></li>'
+                    + '</ul>'
+                    + '</div>'
+                    + '</div>'
                     + '</div>';
                 list.appendChild(item);
             });
             targetEl.appendChild(list);
+        }
+
+        function setRejectedState(transactionId) {
+            if (!transactionId) return;
+            document.querySelectorAll('.school-day-guest-list [data-transaction-id="' + String(transactionId) + '"]').forEach(function (item) {
+                item.classList.add('opacity-75');
+                const badge = item.querySelector('.school-day-rejected-badge');
+                const editBtn = item.querySelector('.school-day-edit-btn');
+                if (badge) badge.classList.remove('d-none');
+                if (editBtn) editBtn.disabled = true;
+            });
+        }
+
+        function rejectSchoolDayVisit(transactionId, triggerBtn) {
+            if (!transactionId || !triggerBtn || triggerBtn.disabled) return;
+            if (!window.confirm('Tolak kunjungan ini?')) return;
+
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfMeta ? (csrfMeta.getAttribute('content') || '') : '';
+            const formData = new FormData();
+            formData.append('reviewer_note', 'Ditolak dari detail kunjungan sekolah.');
+
+            triggerBtn.disabled = true;
+            fetch('/daftar-tamu/admin/transactions/' + encodeURIComponent(transactionId) + '/reject', {
+                method: 'POST',
+                headers: csrfToken ? { 'X-CSRFToken': csrfToken } : {},
+                body: formData
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.success) throw new Error(data.message || 'Gagal menolak kunjungan.');
+                    setRejectedState(transactionId);
+                })
+                .catch(function (err) {
+                    triggerBtn.disabled = false;
+                    alert(err.message || 'Gagal menolak kunjungan.');
+                });
         }
 
         function loadGuests(visitDate, targetEl, buttonEl) {
@@ -2193,7 +2316,13 @@
             }
 
             const detailBtn = event.target.closest('.school-day-detail-btn');
-            if (!detailBtn) return;
+            if (!detailBtn) {
+                const rejectBtn = event.target.closest('.school-day-reject-btn');
+                if (!rejectBtn) return;
+                event.preventDefault();
+                rejectSchoolDayVisit(rejectBtn.getAttribute('data-transaction-id') || '', rejectBtn);
+                return;
+            }
             const detailId = detailBtn.getAttribute('data-detail-id') || '';
             const detailRow = detailId ? document.getElementById(detailId) : null;
             const listEl = detailRow ? detailRow.querySelector('.school-day-guest-list') : null;
@@ -2977,6 +3106,160 @@
         modalEl.addEventListener('hidden.bs.modal', function () {
             if (imageEl) imageEl.src = '';
         });
+    })();
+
+    (function() {
+        const btnSave = document.getElementById('btnSaveGrafik');
+        if (!btnSave) return;
+        
+        const inputs = ['batasBawah', 'batasTengah', 'batasAtas'];
+        const tooltips = {};
+        
+        inputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                tooltips[id] = new bootstrap.Tooltip(el, { trigger: 'manual' });
+                el.addEventListener('input', function() {
+                    if (!/^\d*$/.test(this.value)) {
+                        this.value = this.value.replace(/[^\d]/g, '');
+                        tooltips[id].show();
+                        setTimeout(() => tooltips[id].hide(), 2000);
+                    }
+                });
+            }
+        });
+        
+        btnSave.addEventListener('click', function() {
+            const errorDiv = document.getElementById('editGrafikError');
+            errorDiv.classList.add('d-none');
+            
+            const bbInput = document.getElementById('batasBawah').value;
+            const btInput = document.getElementById('batasTengah').value;
+            const baInput = document.getElementById('batasAtas').value;
+            
+            if (!bbInput || !btInput || !baInput) {
+                errorDiv.textContent = 'Harap isi semua batas';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+            
+            const bb = parseInt(bbInput, 10);
+            const bt = parseInt(btInput, 10);
+            const ba = parseInt(baInput, 10);
+            
+            if (!(bb < bt && bt < ba)) {
+                errorDiv.textContent = 'Besaran angka harus Batas Bawah < Batas Tengah < Batas Atas';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+            
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+            
+            fetch("{{ url_for('daftar_tamu.save_dashboard_settings') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    batas_bawah: bb,
+                    batas_tengah: bt,
+                    batas_atas: ba
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    errorDiv.textContent = data.message || 'Gagal menyimpan';
+                    errorDiv.classList.remove('d-none');
+                    btnSave.disabled = false;
+                    btnSave.textContent = 'Simpan';
+                }
+            })
+            .catch(err => {
+                errorDiv.textContent = 'Terjadi kesalahan jaringan';
+                errorDiv.classList.remove('d-none');
+                btnSave.disabled = false;
+                btnSave.textContent = 'Simpan';
+            });
+        });
+        
+        const btnSaveDist = document.getElementById('btnSaveDistGrafik');
+        if (btnSaveDist) {
+            ['distBatasBawah', 'distBatasAtas'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const tooltip = new bootstrap.Tooltip(el, { trigger: 'manual' });
+                    el.addEventListener('input', function() {
+                        if (!/^\d*$/.test(this.value)) {
+                            this.value = this.value.replace(/[^\d]/g, '');
+                            tooltip.show();
+                            setTimeout(() => tooltip.hide(), 2000);
+                        }
+                    });
+                }
+            });
+
+            btnSaveDist.addEventListener('click', function() {
+                const errorDiv = document.getElementById('editDistGrafikError');
+                errorDiv.classList.add('d-none');
+                
+                const bbInput = document.getElementById('distBatasBawah').value;
+                const baInput = document.getElementById('distBatasAtas').value;
+                
+                if (!bbInput || !baInput) {
+                    errorDiv.textContent = 'Harap isi semua batas';
+                    errorDiv.classList.remove('d-none');
+                    return;
+                }
+                
+                const bb = parseInt(bbInput, 10);
+                const ba = parseInt(baInput, 10);
+                
+                if (!(bb < ba)) {
+                    errorDiv.textContent = 'Batas Bawah harus lebih kecil dari Batas Atas';
+                    errorDiv.classList.remove('d-none');
+                    return;
+                }
+                
+                btnSaveDist.disabled = true;
+                btnSaveDist.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+                
+                fetch("{{ url_for('daftar_tamu.save_dashboard_dist_settings') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        batas_bawah: bb,
+                        batas_atas: ba
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        errorDiv.textContent = data.message || 'Gagal menyimpan';
+                        errorDiv.classList.remove('d-none');
+                        btnSaveDist.disabled = false;
+                        btnSaveDist.textContent = 'Simpan';
+                    }
+                })
+                .catch(err => {
+                    errorDiv.textContent = 'Terjadi kesalahan jaringan';
+                    errorDiv.classList.remove('d-none');
+                    btnSaveDist.disabled = false;
+                    btnSaveDist.textContent = 'Simpan';
+                });
+            });
+        }
     })();
 </script>
 {% endblock %}
