@@ -6,6 +6,7 @@
 {% set sort_name = "name_desc" if sort == "name_asc" else "name_asc" %}
 {% set user_sort_visits = "visits_asc" if user_sort == "visits_desc" else "visits_desc" %}
 {% set user_sort_last_visit = "last_visit_asc" if user_sort == "last_visit_desc" else "last_visit_desc" %}
+{% set is_coordinator_dashboard = dashboard_scope_role == "coordinator" %}
 {% if date_from_str and date_to_str %}
 {% set user_rank_filter_label = date_from_str ~ " s/d " ~ date_to_str %}
 {% elif date_from_str %}
@@ -17,9 +18,12 @@
 {% endif %}
 
 {% block head_extra %}
+{% if not is_coordinator_dashboard %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+{% endif %}
 <style>
+    {% if not is_coordinator_dashboard %}
     #guestMap {
         height: 420px;
         border-radius: 14px;
@@ -43,6 +47,7 @@
         border-radius: 50%;
         display: inline-block;
     }
+    {% endif %}
 
     .table thead a {
         color: inherit;
@@ -78,10 +83,220 @@
         object-fit: contain;
     }
 
+    .gallery-badge-photo {
+        background: transparent;
+        color: #fff;
+        border: 0;
+        font-weight: 700;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+    }
+
+    .gallery-meta {
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+        pointer-events: none;
+        align-items: flex-end;
+    }
+
+    .gallery-chip {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 8px;
+        padding: 4px 8px;
+        height: auto;
+        max-width: 68%;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .gallery-row {
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .gallery-track {
+        display: flex;
+        gap: 0.5rem;
+        width: max-content;
+    }
+
+    .gallery-track.scroll-left {
+        animation: scroll-left 30s linear infinite;
+    }
+
+    .gallery-track.scroll-right {
+        animation: scroll-right 30s linear infinite;
+    }
+
+    .gallery-item {
+        flex-shrink: 0;
+        width: calc(100vw / 6 - 1rem);
+        max-width: 200px;
+        min-width: 140px;
+    }
+
+    @keyframes scroll-left {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(-50%);
+        }
+    }
+
+    @keyframes scroll-right {
+        0% {
+            transform: translateX(-50%);
+        }
+
+        100% {
+            transform: translateX(0);
+        }
+    }
+
+    .gallery-row:hover .gallery-track {
+        animation-play-state: paused;
+    }
+
+    .guestbook-photo-modal {
+        position: relative;
+    }
+
+    .guestbook-photo-modal-header {
+        --photo-modal-pad: 1rem;
+        position: relative;
+        padding: var(--photo-modal-pad);
+        padding-right: calc(var(--photo-modal-pad) + 2.5rem);
+    }
+
+    .guestbook-photo-modal-header .guestbook-photo-modal-close {
+        position: absolute;
+        top: var(--photo-modal-pad);
+        right: var(--photo-modal-pad);
+        margin: 0;
+        padding: 0.5rem;
+        z-index: 5;
+    }
+
+    html[data-theme="dark"] .guestbook-photo-modal-close {
+        filter: invert(1) grayscale(100%);
+        opacity: 0.9;
+    }
+
+    .guestbook-photo-viewport {
+        width: 100%;
+        height: 80vh;
+        max-height: 80vh;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-body);
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+    }
+
+    .guestbook-photo-viewport.is-grabbing {
+        cursor: grabbing;
+    }
+
+    .guestbook-photo-viewport.is-grabbing img {
+        transition: none;
+    }
+
+    .guestbook-photo-modal img {
+        display: block;
+        max-width: none;
+        max-height: none;
+        object-fit: contain;
+        transform-origin: center center;
+        transition: transform 0.15s ease;
+        will-change: transform;
+    }
+
+    .guestbook-photo-nav-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow-soft);
+        background: rgba(17, 24, 39, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.58);
+        color: #fff;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
+
+    .guestbook-photo-nav-btn:hover,
+    .guestbook-photo-nav-btn:focus-visible {
+        background: rgba(17, 24, 39, 0.75);
+        border-color: rgba(255, 255, 255, 0.82);
+        color: #fff;
+    }
+
+    .guestbook-photo-nav-btn:active {
+        background: rgba(17, 24, 39, 0.88) !important;
+        border-color: rgba(255, 255, 255, 0.9) !important;
+        color: #fff !important;
+    }
+
+    .guestbook-photo-nav-left {
+        left: 12px;
+    }
+
+    .guestbook-photo-nav-right {
+        right: 12px;
+    }
+
+    .guestbook-photo-zoom-input {
+        width: 72px;
+        min-width: 72px;
+        text-align: center;
+        padding-left: 0.35rem;
+        padding-right: 0.35rem;
+    }
+
+    .guestbook-photo-modal-tools {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        padding-right: 2.5rem;
+    }
+
+    .guestbook-photo-modal-tools .input-group {
+        width: 132px;
+        flex: 0 0 auto;
+    }
+
+    .guestbook-photo-modal-tools .badge {
+        max-width: 100%;
+        white-space: nowrap;
+    }
+
+    .guestbook-photo-nav-top {
+        display: inline-flex;
+    }
+
     @media (max-width: 768px) {
+        {% if not is_coordinator_dashboard %}
         #guestMap {
             height: 320px;
         }
+        {% endif %}
     }
 
     @media print {
@@ -89,9 +304,11 @@
             display: none !important;
         }
 
+        {% if not is_coordinator_dashboard %}
         #guestMap {
             height: 340px;
         }
+        {% endif %}
 
         .card {
             break-inside: avoid;
@@ -114,6 +331,7 @@
                         <p class="page-subtitle mb-0">Monitoring kunjungan tamu sudin/lembaga ke sekolah.</p>
                     </div>
                 </div>
+                {% if not is_coordinator_dashboard %}
                 <div class="d-flex flex-wrap gap-2 no-print">
                     <a href="{{ url_for('daftar_tamu.admin_validation') }}" class="btn btn-outline-success">
                         <i class="bi bi-clipboard-check me-1"></i>Validasi Tamu
@@ -137,6 +355,7 @@
                         <i class="bi bi-filetype-pdf me-1"></i>PDF
                     </button>
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -183,6 +402,7 @@
     </div>
 </section>
 
+{% if not is_coordinator_dashboard %}
 <section class="mb-4">
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-transparent border-0 pb-0">
@@ -195,6 +415,7 @@
                     <input type="hidden" name="sort" value="{{ sort }}">
                     <input type="hidden" name="q" value="{{ search_query }}">
                     <input type="hidden" name="per_page" value="{{ per_page }}">
+                    <input type="hidden" name="photo_order" value="{{ photo_order }}">
                     <div class="col-auto">
                         <label class="form-label small mb-1">Dari</label>
                         <input type="date" class="form-control form-control-sm" name="date_from" value="{{ date_from_str }}"
@@ -225,7 +446,7 @@
                         <button type="submit" class="btn btn-sm btn-primary">Terapkan</button>
                     </div>
                     <div class="col-auto">
-                        <a href="{{ url_for('daftar_tamu.admin_dashboard') }}" class="btn btn-sm btn-light">Reset</a>
+                        <a href="{{ url_for(dashboard_home_endpoint) }}" class="btn btn-sm btn-light">Reset</a>
                     </div>
                 </form>
             </div>
@@ -254,6 +475,7 @@
         </div>
     </div>
 </section>
+{% endif %}
 
 <section class="row g-3 mb-4">
     <div class="col-lg-4">
@@ -280,8 +502,8 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-1">
                     <h2 class="h6 fw-bold mb-0">Jumlah Kunjungan Sekolah</h2>
-                    <button type="button" class="btn btn-sm btn-outline-secondary py-0" style="font-size: 0.75rem" data-bs-toggle="modal" data-bs-target="#editGrafikModal">
-                        Edit Grafik
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editGrafikModal">
+                        <i class="bi bi-pencil me-1"></i> Edit Grafik
                     </button>
                 </div>
                 <div style="height: 300px; position: relative">
@@ -379,6 +601,88 @@
     </div>
 </section>
 
+<section class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 pb-0">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="icon-badge section-icon text-info" style="width: 32px; height: 32px; font-size: 0.9rem">
+                        <i class="bi bi-images"></i>
+                    </span>
+                    <h2 class="h6 fw-bold mb-0" id="galleryTitle">
+                        Galeri Foto {{ 'Acak' if photo_order=='random' else ('Terbaru' if photo_order=='newest' else 'Terlama') }}
+                    </h2>
+                </div>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <a href="{{ url_for('daftar_tamu.admin_gallery',
+                        q=search_query or None,
+                        sort=sort,
+                        per_page=per_page,
+                        page=page,
+                        date_from=date_from_str or None,
+                        date_to=date_to_str or None,
+                        guest_scope=guest_scope,
+                        school_status=school_status,
+                        photo_order=photo_order
+                    ) }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                        <span>Lihat Semua Foto</span>
+                    </a>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Urutkan galeri">
+                        <a class="btn btn-outline-primary {% if photo_order=='random' %}active{% endif %}"
+                            href="{{ url_for('daftar_tamu.admin_dashboard',
+                                q=search_query or None,
+                                sort=sort,
+                                per_page=per_page,
+                                page=page,
+                                date_from=date_from_str or None,
+                                date_to=date_to_str or None,
+                                guest_scope=guest_scope,
+                                school_status=school_status,
+                                photo_order='random'
+                            ) }}#galleryTitle">
+                            Random
+                        </a>
+                        <a class="btn btn-outline-primary {% if photo_order=='newest' %}active{% endif %}"
+                            href="{{ url_for('daftar_tamu.admin_dashboard',
+                                q=search_query or None,
+                                sort=sort,
+                                per_page=per_page,
+                                page=page,
+                                date_from=date_from_str or None,
+                                date_to=date_to_str or None,
+                                guest_scope=guest_scope,
+                                school_status=school_status,
+                                photo_order='newest'
+                            ) }}#galleryTitle">
+                            Terbaru
+                        </a>
+                        <a class="btn btn-outline-primary {% if photo_order=='oldest' %}active{% endif %}"
+                            href="{{ url_for('daftar_tamu.admin_dashboard',
+                                q=search_query or None,
+                                sort=sort,
+                                per_page=per_page,
+                                page=page,
+                                date_from=date_from_str or None,
+                                date_to=date_to_str or None,
+                                guest_scope=guest_scope,
+                                school_status=school_status,
+                                photo_order='oldest'
+                            ) }}#galleryTitle">
+                            Terlama
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row g-2" id="guestbookGalleryGrid">
+                    {% include 'daftar_tamu/partials/_admin_dashboard_gallery_grid.html' %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <section class="row g-3">
     <div class="col-xl-8">
         <div class="card border-0 shadow-sm">
@@ -389,11 +693,11 @@
                         <small class="text-muted">Urutkan berdasarkan total orang atau kunjungan terakhir.</small>
                     </div>
                     <div class="d-flex flex-wrap gap-2 no-print">
-                        <a href="{{ url_for('daftar_tamu.export_rankings', format='csv', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}"
+                        <a href="{{ url_for(export_rankings_endpoint, format='csv', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}"
                             class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-filetype-csv me-1"></i>CSV
                         </a>
-                        <a href="{{ url_for('daftar_tamu.export_rankings', format='excel', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}"
+                        <a href="{{ url_for(export_rankings_endpoint, format='excel', q=search_query, sort=sort, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}"
                             class="btn btn-sm btn-outline-success">
                             <i class="bi bi-file-earmark-excel me-1"></i>Excel
                         </a>
@@ -432,6 +736,7 @@
                     <input type="hidden" name="date_to" value="{{ date_to_str }}">
                     <input type="hidden" name="guest_scope" value="{{ guest_scope }}">
                     <input type="hidden" name="school_status" value="{{ school_status }}">
+                    <input type="hidden" name="photo_order" value="{{ photo_order }}">
                 </form>
 
                 <div class="table-responsive">
@@ -441,25 +746,25 @@
                                 <th class="ps-3">#</th>
                                 <th>
                                     <a class="text-decoration-none"
-                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_name, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
+                                        href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort_name, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status, photo_order=photo_order) }}">
                                         Sekolah
                                     </a>
                                 </th>
                                 <th class="text-end">
                                     <a class="text-decoration-none"
-                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_visits, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
+                                        href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort_visits, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status, photo_order=photo_order) }}">
                                         Orang
                                     </a>
                                 </th>
                                 <th class="text-end">
                                     <a class="text-decoration-none"
-                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_days, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
+                                        href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort_days, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status, photo_order=photo_order) }}">
                                         Hari
                                     </a>
                                 </th>
                                 <th>
                                     <a class="text-decoration-none"
-                                        href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort_last_visit, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">
+                                        href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort_last_visit, per_page=per_page, page=1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status, photo_order=photo_order) }}">
                                         Kunjungan Terakhir
                                     </a>
                                 </th>
@@ -484,8 +789,8 @@
                                         data-school-name="{{ row.school_name }}"
                                         data-school-npsn="{{ row.npsn }}"
                                         data-school-kecamatan="{{ row.kecamatan }}"
-                                        data-visits-url="{{ url_for('daftar_tamu.admin_school_visits', school_id=row.school_id) }}"
-                                        data-export-url="{{ url_for('daftar_tamu.admin_school_visits_export', school_id=row.school_id) }}">
+                                        data-visits-url="{{ url_for(school_visits_endpoint, school_id=row.school_id) }}"
+                                        data-export-url="{{ url_for(school_visits_export_endpoint, school_id=row.school_id) }}">
                                         {{ row.people_count }}
                                     </button>
                                     {% else %}
@@ -500,8 +805,8 @@
                                         data-school-name="{{ row.school_name }}"
                                         data-school-npsn="{{ row.npsn }}"
                                         data-school-kecamatan="{{ row.kecamatan }}"
-                                        data-days-url="{{ url_for('daftar_tamu.admin_school_visit_days', school_id=row.school_id) }}"
-                                        data-guests-url-template="{{ url_for('daftar_tamu.admin_school_visit_day_guests', school_id=row.school_id, visit_date='__DATE__') }}">
+                                        data-days-url="{{ url_for(school_visit_days_endpoint, school_id=row.school_id) }}"
+                                        data-guests-url-template="{{ url_for(school_visit_day_guests_endpoint, school_id=row.school_id, visit_date='__DATE__') }}">
                                         {{ row.visit_day_count }}
                                     </button>
                                     {% else %}
@@ -552,26 +857,26 @@
                     <ul class="pagination pagination-sm mb-0">
                         <li class="page-item {% if page <= 1 %}disabled{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort, per_page=per_page, page=page-1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">Prev</a>
+                                href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort, per_page=per_page, page=page-1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status, photo_order=photo_order) }}">Prev</a>
                         </li>
                         {% set start_page = 1 if page - 2 < 1 else page - 2 %}
                         {% set end_page = total_pages if page + 2 > total_pages else page + 2 %}
                         {% for p in range(start_page, end_page + 1) %}
                         <li class="page-item {% if p == page %}active{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort, per_page=per_page, page=p, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">{{ p }}</a>
+                                href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort, per_page=per_page, page=p, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status, photo_order=photo_order) }}">{{ p }}</a>
                         </li>
                         {% endfor %}
                         <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_dashboard', q=search_query, sort=sort, per_page=per_page, page=page+1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status) }}">Next</a>
+                                href="{{ url_for(dashboard_home_endpoint, q=search_query, sort=sort, per_page=per_page, page=page+1, date_from=date_from_str, date_to=date_to_str, guest_scope=guest_scope, school_status=school_status, photo_order=photo_order) }}">Next</a>
                         </li>
                     </ul>
                 </div>
             </div>
         </div>
 
-        {% if show_user_rankings %}
+        {% if show_user_rankings and not is_coordinator_dashboard %}
         <div class="card border-0 shadow-sm mt-3">
             <div class="card-header bg-transparent border-0">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -601,6 +906,7 @@
                     <input type="hidden" name="school_status" value="{{ school_status }}">
                     <input type="hidden" name="user_sort" value="{{ user_sort }}">
                     <input type="hidden" name="user_page" value="1">
+                    <input type="hidden" name="photo_order" value="{{ photo_order }}">
                     <div class="col-md-6">
                         <input type="text" name="user_q" class="form-control" value="{{ user_search_query }}"
                             placeholder="Cari nama, role, kecamatan, sekolah terakhir...">
@@ -624,23 +930,23 @@
                                 <th>Akun</th>
                                 <th class="text-end">
                                     <a class="text-decoration-none"
-                                        href="{{ url_for('daftar_tamu.admin_dashboard',
+                                        href="{{ url_for(dashboard_home_endpoint,
                                             q=search_query, sort=sort, per_page=per_page, page=page,
                                             date_from=date_from_str, date_to=date_to_str, guest_scope=user_rank_guest_scope,
                                             school_status=school_status,
                                             user_q=user_search_query, user_per_page=user_per_page, user_page=1,
-                                            user_sort=user_sort_visits) }}">
+                                            user_sort=user_sort_visits, photo_order=photo_order) }}">
                                         Kunjungan
                                     </a>
                                 </th>
                                 <th>
                                     <a class="text-decoration-none"
-                                        href="{{ url_for('daftar_tamu.admin_dashboard',
+                                        href="{{ url_for(dashboard_home_endpoint,
                                             q=search_query, sort=sort, per_page=per_page, page=page,
                                             date_from=date_from_str, date_to=date_to_str, guest_scope=user_rank_guest_scope,
                                             school_status=school_status,
                                             user_q=user_search_query, user_per_page=user_per_page, user_page=1,
-                                            user_sort=user_sort_last_visit) }}">
+                                            user_sort=user_sort_last_visit, photo_order=photo_order) }}">
                                         Kunjungan Terakhir
                                     </a>
                                 </th>
@@ -717,28 +1023,28 @@
                     <ul class="pagination pagination-sm mb-0">
                         <li class="page-item {% if user_page <= 1 %}disabled{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_dashboard',
+                                href="{{ url_for(dashboard_home_endpoint,
                                     q=search_query, sort=sort, per_page=per_page, page=page,
                                     date_from=date_from_str, date_to=date_to_str, guest_scope=user_rank_guest_scope, school_status=school_status,
-                                    user_q=user_search_query, user_sort=user_sort, user_per_page=user_per_page, user_page=user_page-1) }}">Prev</a>
+                                    user_q=user_search_query, user_sort=user_sort, user_per_page=user_per_page, user_page=user_page-1, photo_order=photo_order) }}">Prev</a>
                         </li>
                         {% set user_start_page = 1 if user_page - 2 < 1 else user_page - 2 %}
                         {% set user_end_page = user_total_pages if user_page + 2 > user_total_pages else user_page + 2 %}
                         {% for p in range(user_start_page, user_end_page + 1) %}
                         <li class="page-item {% if p == user_page %}active{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_dashboard',
+                                href="{{ url_for(dashboard_home_endpoint,
                                     q=search_query, sort=sort, per_page=per_page, page=page,
                                     date_from=date_from_str, date_to=date_to_str, guest_scope=user_rank_guest_scope, school_status=school_status,
-                                    user_q=user_search_query, user_sort=user_sort, user_per_page=user_per_page, user_page=p) }}">{{ p }}</a>
+                                    user_q=user_search_query, user_sort=user_sort, user_per_page=user_per_page, user_page=p, photo_order=photo_order) }}">{{ p }}</a>
                         </li>
                         {% endfor %}
                         <li class="page-item {% if user_page >= user_total_pages %}disabled{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('daftar_tamu.admin_dashboard',
+                                href="{{ url_for(dashboard_home_endpoint,
                                     q=search_query, sort=sort, per_page=per_page, page=page,
                                     date_from=date_from_str, date_to=date_to_str, guest_scope=user_rank_guest_scope, school_status=school_status,
-                                    user_q=user_search_query, user_sort=user_sort, user_per_page=user_per_page, user_page=user_page+1) }}">Next</a>
+                                    user_q=user_search_query, user_sort=user_sort, user_per_page=user_per_page, user_page=user_page+1, photo_order=photo_order) }}">Next</a>
                         </li>
                     </ul>
                 </div>
@@ -1015,6 +1321,86 @@
     </div>
 </div>
 
+<div class="modal fade" id="guestbookGalleryModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header guestbook-photo-modal-header d-flex flex-column align-items-start gap-2">
+                <div class="d-flex flex-column">
+                    <h5 class="modal-title" id="guestbookGalleryModalTitle">Foto</h5>
+                </div>
+                <div>
+                    <span id="guestbookGalleryModalSubtitle" class="text-primary">Sekolah</span>
+                </div>
+                <div class="guestbook-photo-modal-tools">
+                    <span class="badge bg-primary" id="guestbookGalleryModalCount">-</span>
+                    <span class="badge bg-secondary" id="guestbookGalleryModalMeta"></span>
+                    <div class="input-group input-group-sm" role="group" aria-label="Zoom foto">
+                        <button type="button" class="btn btn-outline-secondary" id="guestbookGalleryZoomOutBtn" title="Perkecil">
+                            <i class="bi bi-zoom-out"></i>
+                        </button>
+                        <input type="text" class="form-control guestbook-photo-zoom-input" id="guestbookGalleryZoomInput"
+                            value="100%" list="guestbookGalleryZoomOptions" inputmode="numeric" autocomplete="off"
+                            aria-label="Zoom (%)" title="Ketik zoom (%) lalu tekan Enter">
+                        <button type="button" class="btn btn-outline-secondary" id="guestbookGalleryZoomInBtn" title="Perbesar">
+                            <i class="bi bi-zoom-in"></i>
+                        </button>
+                    </div>
+                    <datalist id="guestbookGalleryZoomOptions">
+                        <option value="50%"></option>
+                        <option value="75%"></option>
+                        <option value="100%"></option>
+                        <option value="125%"></option>
+                        <option value="150%"></option>
+                        <option value="175%"></option>
+                        <option value="200%"></option>
+                        <option value="225%"></option>
+                        <option value="250%"></option>
+                        <option value="275%"></option>
+                        <option value="300%"></option>
+                    </datalist>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Rotasi foto">
+                        <button type="button" class="btn btn-outline-secondary" id="guestbookGalleryRotateLeftBtn" title="Putar ke kiri">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="guestbookGalleryRotateRightBtn" title="Putar ke kanan">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                    <div class="btn-group btn-group-sm guestbook-photo-nav-top" role="group" aria-label="Navigasi foto">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="guestbookGalleryPrevBtnTop" title="Foto Sebelumnya">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="guestbookGalleryNextBtnTop" title="Foto Selanjutnya">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="btn-close guestbook-photo-modal-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body guestbook-photo-modal p-0 d-flex align-items-center justify-content-center"
+                style="min-height: 60vh; background: var(--bg-body); position: relative">
+                <button type="button" class="btn btn-outline-secondary guestbook-photo-nav-btn guestbook-photo-nav-left"
+                    id="guestbookGalleryPrevBtn" aria-label="Foto sebelumnya">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <div class="guestbook-photo-viewport" id="guestbookGalleryViewport">
+                    <img src="" alt="Foto buku tamu" id="guestbookGalleryModalImg">
+                </div>
+                <button type="button" class="btn btn-outline-secondary guestbook-photo-nav-btn guestbook-photo-nav-right"
+                    id="guestbookGalleryNextBtn" aria-label="Foto selanjutnya">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-warning" id="guestbookCancelVerifyBtn" style="display:none;">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Batalkan Verifikasi
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="photoPreviewModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -1099,13 +1485,15 @@
 {% endblock %}
 
 {% block portal_scripts %}
+{% if not is_coordinator_dashboard %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+{% endif %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
     (function () {
-        const detailBaseUrl = "{{ url_for('daftar_tamu.admin_visit_bucket_detail') }}";
-        const rankingEndpoint = "{{ url_for('daftar_tamu.admin_rankings_more') }}";
+        const detailBaseUrl = "{{ url_for(visit_bucket_detail_endpoint) }}";
+        const rankingEndpoint = "{{ url_for(rankings_more_endpoint) }}";
         const dateFrom = "{{ date_from_str }}";
         const dateTo = "{{ date_to_str }}";
         const guestScope = "{{ guest_scope }}";
@@ -1305,6 +1693,7 @@
         }
     })();
 </script>
+{% if not is_coordinator_dashboard %}
 <script>
     (function () {
         const map = L.map('guestMap').setView([-6.151, 106.897], 11);
@@ -1313,7 +1702,7 @@
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        const mapUrl = "{{ url_for('daftar_tamu.admin_map_data') }}";
+        const mapUrl = "{{ url_for(map_data_endpoint) }}";
         const params = new URLSearchParams();
         const dateFrom = "{{ date_from_str }}";
         const dateTo = "{{ date_to_str }}";
@@ -1398,6 +1787,7 @@
             });
     })();
 </script>
+{% endif %}
 <script>
     (function () {
         const modalEl = document.getElementById('schoolVisitModal');
@@ -2209,6 +2599,486 @@
                 window.location = currentExportUrl + '?' + params.toString();
             });
         }
+    })();
+</script>
+<script>
+    (function () {
+        const validationBaseUrl = "{{ url_for('daftar_tamu.admin_validation') }}";
+        const modalEl = document.getElementById('guestbookGalleryModal');
+        const modalImg = document.getElementById('guestbookGalleryModalImg');
+        const modalTitle = document.getElementById('guestbookGalleryModalTitle');
+        const modalSubtitle = document.getElementById('guestbookGalleryModalSubtitle');
+        const modalCount = document.getElementById('guestbookGalleryModalCount');
+        const modalMeta = document.getElementById('guestbookGalleryModalMeta');
+        const viewportEl = document.getElementById('guestbookGalleryViewport');
+        const modalBodyEl = modalEl ? modalEl.querySelector('.guestbook-photo-modal') : null;
+        const prevBtn = document.getElementById('guestbookGalleryPrevBtn');
+        const nextBtn = document.getElementById('guestbookGalleryNextBtn');
+        const prevBtnTop = document.getElementById('guestbookGalleryPrevBtnTop');
+        const nextBtnTop = document.getElementById('guestbookGalleryNextBtnTop');
+        const zoomInBtn = document.getElementById('guestbookGalleryZoomInBtn');
+        const zoomOutBtn = document.getElementById('guestbookGalleryZoomOutBtn');
+        const zoomInput = document.getElementById('guestbookGalleryZoomInput');
+        const rotateLeftBtn = document.getElementById('guestbookGalleryRotateLeftBtn');
+        const rotateRightBtn = document.getElementById('guestbookGalleryRotateRightBtn');
+        const galleryGrid = document.getElementById('guestbookGalleryGrid');
+        const cancelVerifyBtn = document.getElementById('guestbookCancelVerifyBtn');
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? (csrfMeta.getAttribute('content') || '') : '';
+
+        if (!modalEl || !modalImg || !galleryGrid || !window.bootstrap) return;
+        const modal = new bootstrap.Modal(modalEl);
+        let currentTransactionId = '';
+        let thumbs = [];
+        let currentIndex = 0;
+        let zoomLevel = 1;
+        let rotationDeg = 0;
+        let baseWidth = 0;
+        let baseHeight = 0;
+        let panX = 0;
+        let panY = 0;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let panStartX = 0;
+        let panStartY = 0;
+        const activePointers = new Map();
+        let isPinching = false;
+        let pinchStartDistance = 0;
+        let pinchStartZoom = 1;
+
+        modalImg.setAttribute('draggable', 'false');
+        modalImg.addEventListener('dragstart', function (event) {
+            event.preventDefault();
+        });
+
+        function clampZoom(value) {
+            return Math.min(3, Math.max(0.5, value));
+        }
+
+        function updateZoomLabel(force) {
+            if (!zoomInput) return;
+            if (!force && document.activeElement === zoomInput) return;
+            zoomInput.value = Math.round(zoomLevel * 100) + '%';
+        }
+
+        function computeBaseSize() {
+            if (!modalImg || !modalImg.naturalWidth) return;
+            const container = viewportEl || modalBodyEl;
+            if (!container) return;
+            const vw = container.clientWidth;
+            const vh = container.clientHeight;
+            if (!vw || !vh) return;
+            const ratio = modalImg.naturalWidth / modalImg.naturalHeight;
+            let fitWidth = vw;
+            let fitHeight = vw / ratio;
+            if (fitHeight > vh) {
+                fitHeight = vh;
+                fitWidth = vh * ratio;
+            }
+            baseWidth = fitWidth;
+            baseHeight = fitHeight;
+        }
+
+        function clampPan() {
+            if (!viewportEl || !baseWidth || !baseHeight) return;
+            const vw = viewportEl.clientWidth;
+            const vh = viewportEl.clientHeight;
+            if (!vw || !vh) return;
+            const scaledW = baseWidth * zoomLevel;
+            const scaledH = baseHeight * zoomLevel;
+            const maxX = Math.max(0, (scaledW - vw) / 2);
+            const maxY = Math.max(0, (scaledH - vh) / 2);
+            panX = Math.min(maxX, Math.max(-maxX, panX));
+            panY = Math.min(maxY, Math.max(-maxY, panY));
+        }
+
+        function applyTransform() {
+            if (!modalImg) return;
+            if (!baseWidth || !baseHeight) computeBaseSize();
+            if (baseWidth && baseHeight) {
+                modalImg.style.width = baseWidth.toFixed(1) + 'px';
+                modalImg.style.height = baseHeight.toFixed(1) + 'px';
+            }
+            clampPan();
+            modalImg.style.transform =
+                'translate(' +
+                panX.toFixed(1) +
+                'px, ' +
+                panY.toFixed(1) +
+                'px) scale(' +
+                zoomLevel.toFixed(2) +
+                ') rotate(' +
+                rotationDeg +
+                'deg)';
+            updateZoomLabel();
+        }
+
+        function resetTransform() {
+            zoomLevel = 1;
+            rotationDeg = 0;
+            baseWidth = 0;
+            baseHeight = 0;
+            panX = 0;
+            panY = 0;
+            isDragging = false;
+            isPinching = false;
+            pinchStartDistance = 0;
+            pinchStartZoom = zoomLevel;
+            activePointers.clear();
+            if (viewportEl) viewportEl.classList.remove('is-grabbing');
+            applyTransform();
+        }
+
+        function parseZoomInput(raw) {
+            if (raw === null || raw === undefined) return null;
+            const text = String(raw).trim();
+            if (!text) return null;
+            const cleaned = text.replace(/[^0-9.]/g, '');
+            if (!cleaned) return null;
+            const num = parseFloat(cleaned);
+            if (!isFinite(num)) return null;
+            if (num <= 3.5) return clampZoom(num);
+            return clampZoom(num / 100);
+        }
+
+        function applyZoomInput(raw) {
+            const parsed = parseZoomInput(raw);
+            if (parsed === null) {
+                updateZoomLabel(true);
+                return;
+            }
+            zoomLevel = parsed;
+            applyTransform();
+            updateZoomLabel(true);
+        }
+
+        function getPointerPosition(event) {
+            if (event.touches && event.touches.length) {
+                return { x: event.touches[0].clientX, y: event.touches[0].clientY };
+            }
+            return { x: event.clientX, y: event.clientY };
+        }
+
+        function getPointerDistance(pointerA, pointerB) {
+            const dx = pointerA.x - pointerB.x;
+            const dy = pointerA.y - pointerB.y;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function startDrag(event) {
+            if (!viewportEl) return;
+            if (event.type === 'mousedown' && event.button !== 0) return;
+            if (event.pointerId !== undefined) {
+                activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+            }
+            if (activePointers.size >= 2) {
+                const pinchPoints = Array.from(activePointers.values());
+                pinchStartDistance = getPointerDistance(pinchPoints[0], pinchPoints[1]) || 1;
+                pinchStartZoom = zoomLevel;
+                isPinching = true;
+                isDragging = false;
+                viewportEl.classList.remove('is-grabbing');
+                event.preventDefault();
+                return;
+            }
+            const pos = getPointerPosition(event);
+            isDragging = true;
+            dragStartX = pos.x;
+            dragStartY = pos.y;
+            panStartX = panX;
+            panStartY = panY;
+            viewportEl.classList.add('is-grabbing');
+            if (viewportEl.setPointerCapture && event.pointerId !== undefined) {
+                viewportEl.setPointerCapture(event.pointerId);
+            }
+            event.preventDefault();
+        }
+
+        function dragMove(event) {
+            if (event.pointerId !== undefined && activePointers.has(event.pointerId)) {
+                activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+            }
+            if (activePointers.size >= 2 || isPinching) {
+                const pinchPoints = Array.from(activePointers.values());
+                if (pinchPoints.length >= 2) {
+                    const currentDistance = getPointerDistance(pinchPoints[0], pinchPoints[1]);
+                    if (currentDistance > 0 && pinchStartDistance > 0) {
+                        const pinchFactor = currentDistance / pinchStartDistance;
+                        zoomLevel = clampZoom(pinchStartZoom * pinchFactor);
+                        applyTransform();
+                    }
+                }
+                event.preventDefault();
+                return;
+            }
+            if (!isDragging) return;
+            const pos = getPointerPosition(event);
+            panX = panStartX + (pos.x - dragStartX);
+            panY = panStartY + (pos.y - dragStartY);
+            applyTransform();
+            event.preventDefault();
+        }
+
+        function endDrag(event) {
+            if (event && event.pointerId !== undefined) {
+                activePointers.delete(event.pointerId);
+            }
+            if (isPinching && activePointers.size < 2) {
+                isPinching = false;
+                pinchStartDistance = 0;
+                pinchStartZoom = zoomLevel;
+            }
+            if (!isDragging) return;
+            if (activePointers.size === 0) {
+                isDragging = false;
+                if (viewportEl) viewportEl.classList.remove('is-grabbing');
+            } else {
+                const remaining = Array.from(activePointers.values())[0];
+                dragStartX = remaining.x;
+                dragStartY = remaining.y;
+                panStartX = panX;
+                panStartY = panY;
+            }
+            if (viewportEl && viewportEl.releasePointerCapture && event && event.pointerId !== undefined) {
+                try {
+                    viewportEl.releasePointerCapture(event.pointerId);
+                } catch (_err) {
+                    // Ignore release errors when pointer already ended.
+                }
+            }
+        }
+
+        function collectThumbs() {
+            const seen = new Set();
+            thumbs = [];
+            document.querySelectorAll('#guestbookGalleryGrid .gallery-thumb').forEach(function (el) {
+                const url = el.dataset.photoUrl;
+                if (!url || seen.has(url)) return;
+                seen.add(url);
+                thumbs.push(el);
+            });
+        }
+
+        function fillModal(el) {
+            resetTransform();
+            const src = el.dataset.photoUrl || '';
+            modalImg.onload = function () {
+                computeBaseSize();
+                applyTransform();
+            };
+            modalImg.src = src;
+            if (modalImg.complete) {
+                computeBaseSize();
+                applyTransform();
+            }
+
+            const school = el.dataset.school || '';
+            const guest = el.dataset.guest || '';
+            const purpose = el.dataset.purpose || '';
+            const guestCount = Number(el.dataset.guestCount || 0);
+            const date = el.dataset.date || '';
+            const lat = el.dataset.lat;
+            const lon = el.dataset.lon;
+            const txId = el.dataset.transactionId;
+            currentTransactionId = txId || '';
+
+            modalTitle.textContent = purpose || 'Foto Kunjungan';
+            const subtitleParts = [school, guest].filter(Boolean);
+            const subtitleText = subtitleParts.join(' • ') || 'Sekolah';
+            if (txId) {
+                modalSubtitle.innerHTML = '<a href="' + validationBaseUrl + '?open_transaction_id=' + encodeURIComponent(txId) + '" class="link-primary text-decoration-underline">' + subtitleText + '</a>';
+            } else {
+                modalSubtitle.textContent = subtitleText;
+            }
+            if (cancelVerifyBtn) {
+                cancelVerifyBtn.style.display = txId ? '' : 'none';
+            }
+            modalCount.textContent = guestCount > 0 ? (guestCount + ' tamu') : '-';
+            modalCount.className = 'badge bg-primary';
+
+            let metaText = '';
+            if (date) {
+                const parsedDate = new Date(date);
+                if (!isNaN(parsedDate.getTime())) {
+                    metaText += parsedDate.toLocaleString('id-ID', {
+                        day: '2-digit',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        timeZone: 'Asia/Jakarta',
+                    });
+                }
+            }
+            if (lat && lon) {
+                if (metaText) metaText += ' • ';
+                metaText += Number(lat).toFixed(4) + ', ' + Number(lon).toFixed(4);
+            }
+            modalMeta.textContent = metaText || '-';
+        }
+
+        function show(index) {
+            if (!thumbs.length) return;
+            if (index < 0) index = thumbs.length - 1;
+            if (index >= thumbs.length) index = 0;
+            currentIndex = index;
+            fillModal(thumbs[currentIndex]);
+            modal.show();
+        }
+
+        function openThumb(el) {
+            collectThumbs();
+            currentIndex = thumbs.findIndex(function (thumb) {
+                return thumb.dataset.photoUrl === el.dataset.photoUrl;
+            });
+            if (currentIndex < 0) currentIndex = 0;
+            show(currentIndex);
+        }
+
+        modalEl.addEventListener('shown.bs.modal', function () {
+            computeBaseSize();
+            applyTransform();
+        });
+
+        galleryGrid.addEventListener('click', function (event) {
+            const thumb = event.target.closest('.gallery-thumb');
+            if (!thumb) return;
+            openThumb(thumb);
+        });
+        galleryGrid.addEventListener('keydown', function (event) {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            const thumb = event.target.closest('.gallery-thumb');
+            if (!thumb) return;
+            event.preventDefault();
+            openThumb(thumb);
+        });
+
+        const triggerPrev = function () {
+            show(currentIndex - 1);
+        };
+        const triggerNext = function () {
+            show(currentIndex + 1);
+        };
+        if (prevBtn) prevBtn.addEventListener('click', function (event) {
+            event.stopPropagation();
+            triggerPrev();
+        });
+        if (nextBtn) nextBtn.addEventListener('click', function (event) {
+            event.stopPropagation();
+            triggerNext();
+        });
+        if (prevBtnTop) prevBtnTop.addEventListener('click', function (event) {
+            event.stopPropagation();
+            triggerPrev();
+        });
+        if (nextBtnTop) nextBtnTop.addEventListener('click', function (event) {
+            event.stopPropagation();
+            triggerNext();
+        });
+        if (zoomInBtn) zoomInBtn.addEventListener('click', function (event) {
+            event.stopPropagation();
+            zoomLevel = clampZoom(zoomLevel + 0.2);
+            applyTransform();
+        });
+        if (zoomOutBtn) zoomOutBtn.addEventListener('click', function (event) {
+            event.stopPropagation();
+            zoomLevel = clampZoom(zoomLevel - 0.2);
+            applyTransform();
+        });
+        if (zoomInput) {
+            zoomInput.addEventListener('focus', function () {
+                zoomInput.select();
+            });
+            zoomInput.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    applyZoomInput(zoomInput.value);
+                    zoomInput.blur();
+                }
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    resetTransform();
+                    zoomInput.blur();
+                }
+            });
+            zoomInput.addEventListener('blur', function () {
+                applyZoomInput(zoomInput.value);
+            });
+        }
+
+        if (viewportEl) {
+            viewportEl.addEventListener('pointerdown', startDrag);
+            viewportEl.addEventListener('pointermove', dragMove);
+            viewportEl.addEventListener('pointerup', endDrag);
+            viewportEl.addEventListener('pointercancel', endDrag);
+            viewportEl.addEventListener('pointerleave', endDrag);
+        }
+        if (rotateLeftBtn) rotateLeftBtn.addEventListener('click', function (event) {
+            event.stopPropagation();
+            rotationDeg -= 90;
+            applyTransform();
+        });
+        if (rotateRightBtn) rotateRightBtn.addEventListener('click', function (event) {
+            event.stopPropagation();
+            rotationDeg += 90;
+            applyTransform();
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (!modalEl.classList.contains('show')) return;
+            if (event.key === 'ArrowLeft') {
+                event.preventDefault();
+                triggerPrev();
+            }
+            if (event.key === 'ArrowRight') {
+                event.preventDefault();
+                triggerNext();
+            }
+            if (event.key === 'Escape') {
+                modal.hide();
+            }
+        });
+
+        window.addEventListener('resize', function () {
+            if (!modalEl.classList.contains('show')) return;
+            computeBaseSize();
+            applyTransform();
+        });
+
+        if (cancelVerifyBtn) {
+            cancelVerifyBtn.addEventListener('click', function () {
+                if (!currentTransactionId) return;
+                if (!window.confirm('Batalkan verifikasi transaksi ini dan kembalikan ke pending?')) return;
+
+                cancelVerifyBtn.disabled = true;
+                const originalLabel = cancelVerifyBtn.innerHTML;
+                cancelVerifyBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Memproses...';
+
+                const headers = { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' };
+                if (csrfToken) {
+                    headers['X-CSRFToken'] = csrfToken;
+                }
+                fetch('/daftar-tamu/admin/transactions/' + encodeURIComponent(currentTransactionId) + '/pending', {
+                    method: 'POST',
+                    headers: headers,
+                    body: new URLSearchParams({ reviewer_note: '' }).toString(),
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (!data || !data.success) {
+                            throw new Error((data && data.message) ? data.message : 'Gagal membatalkan verifikasi.');
+                        }
+                        window.location.reload();
+                    })
+                    .catch(function (err) {
+                        alert((err && err.message) ? err.message : 'Gagal membatalkan verifikasi.');
+                        cancelVerifyBtn.disabled = false;
+                        cancelVerifyBtn.innerHTML = originalLabel;
+                    });
+            });
+        }
+
+        window.GUESTBOOK_OPEN_GALLERY = openThumb;
     })();
 </script>
 <script>

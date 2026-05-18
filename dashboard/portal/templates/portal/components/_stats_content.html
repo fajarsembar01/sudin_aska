@@ -465,6 +465,37 @@
   </div>
 </section>
 
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const recentSearchInput = document.getElementById("recentAssessmentsSearch");
+    const recentTableBody = document.getElementById("recentAssessmentsBody");
+    const recentEmptySearch = document.getElementById("recentAssessmentsEmptySearch");
+
+    if (!recentSearchInput || !recentTableBody) return;
+
+    const recentRows = Array.from(recentTableBody.querySelectorAll("tr[data-search]"));
+
+    function applyRecentAssessmentsSearch() {
+      const query = (recentSearchInput.value || "").trim().toLowerCase();
+      let visibleCount = 0;
+
+      recentRows.forEach((row) => {
+        const haystack = (row.dataset.search || "").toLowerCase();
+        const show = !query || haystack.includes(query);
+        row.classList.toggle("d-none", !show);
+        if (show) visibleCount += 1;
+      });
+
+      if (recentEmptySearch) {
+        recentEmptySearch.classList.toggle("d-none", visibleCount !== 0 || !query);
+      }
+    }
+
+    recentSearchInput.addEventListener("input", applyRecentAssessmentsSearch);
+    applyRecentAssessmentsSearch();
+  });
+</script>
+
 <section class="row g-3">
   <div class="col-12">
     <div class="card border-0 shadow-sm">
@@ -544,6 +575,20 @@
           {% if current_team_id %}
           <input type="hidden" name="team_id" value="{{ current_team_id }}" />
           {% endif %}
+          <div class="col-md-4">
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-search"></i>
+              </span>
+              <input
+                type="search"
+                id="recentAssessmentsSearch"
+                class="form-control border-primary text-primary"
+                placeholder="Cari sekolah atau NPSN..."
+                aria-label="Cari penilaian terbaru"
+              />
+            </div>
+          </div>
           <div class="col-md-4">
             <select name="jenjang" class="form-select border-primary text-primary">
               <option value="">Semua Jenjang</option>
@@ -628,9 +673,10 @@
                 <th class="border-0 text-end pe-3">Aksi</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="recentAssessmentsBody">
               {% for a in recent_assessments %}
-              <tr>
+              {% set recent_search = ((a['school_name'] or '') ~ ' ' ~ (a['npsn'] or '') ~ ' ' ~ (a['jenjang'] or ''))|lower %}
+              <tr data-search="{{ recent_search }}">
                 <td class="ps-3">
                   <a
                     href="{{ url_for('portal.view_assessment', assessment_id=a['id']) }}"
@@ -686,6 +732,13 @@
               {% endfor %}
             </tbody>
           </table>
+        </div>
+        <div
+          id="recentAssessmentsEmptySearch"
+          class="alert alert-warning mt-3 mb-0 d-none"
+          role="alert"
+        >
+          Tidak ada hasil yang cocok dengan pencarian.
         </div>
       </div>
     </div>

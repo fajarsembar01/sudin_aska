@@ -1,0 +1,274 @@
+{% extends "daftar_tamu/base_daftar_tamu.html" %}
+{% set page_title = "Galeri Foto Buku Tamu" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url_for('daftar_tamu.admin_dashboard',
+                q=dashboard_q or None,
+                sort=dashboard_sort or None,
+                per_page=dashboard_per_page,
+                page=dashboard_page,
+                date_from=date_from_str or None,
+                date_to=date_to_str or None,
+                guest_scope=guest_scope,
+                school_status=school_status,
+                photo_order=photo_order
+            ) }}#galleryTitle" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="h4 fw-bold mb-0">Galeri Foto Buku Tamu</h1>
+                <p class="text-muted mb-0 small">Kunjungan terverifikasi dari sekolah.</p>
+            </div>
+        </div>
+        <form method="get" class="d-flex flex-wrap align-items-center gap-2">
+            <input type="hidden" name="q" value="{{ dashboard_q }}">
+            <input type="hidden" name="sort" value="{{ dashboard_sort }}">
+            <input type="hidden" name="per_page" value="{{ dashboard_per_page }}">
+            <input type="hidden" name="page" value="{{ dashboard_page }}">
+            <input type="date" class="form-control form-control-sm" name="date_from" value="{{ date_from_str }}" max="{{ today_str }}">
+            <input type="date" class="form-control form-control-sm" name="date_to" value="{{ date_to_str }}" max="{{ today_str }}">
+            <select name="guest_scope" class="form-select form-select-sm">
+                <option value="sudin" {% if guest_scope=='sudin' %}selected{% endif %}>SUDIN</option>
+                <option value="umum" {% if guest_scope=='umum' %}selected{% endif %}>Umum</option>
+                <option value="all" {% if guest_scope=='all' %}selected{% endif %}>Semua</option>
+            </select>
+            <select name="school_status" class="form-select form-select-sm">
+                <option value="negeri" {% if school_status=='negeri' %}selected{% endif %}>Negeri</option>
+                <option value="swasta" {% if school_status=='swasta' %}selected{% endif %}>Swasta</option>
+                <option value="all" {% if school_status=='all' %}selected{% endif %}>Semua</option>
+            </select>
+            <select name="photo_order" class="form-select form-select-sm">
+                <option value="random" {% if photo_order=='random' %}selected{% endif %}>Random</option>
+                <option value="newest" {% if photo_order=='newest' %}selected{% endif %}>Terbaru</option>
+                <option value="oldest" {% if photo_order=='oldest' %}selected{% endif %}>Terlama</option>
+            </select>
+            <button type="submit" class="btn btn-sm btn-primary">Terapkan</button>
+        </form>
+    </div>
+</section>
+
+<section class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Total Sekolah</div>
+                <div class="h4 fw-bold mb-0">{{ total_schools or 0 }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Total Foto</div>
+                <div class="h4 fw-bold mb-0">{{ total_photos or 0 }}</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if albums %}
+{% for album in albums %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent border-0 pt-3 pb-0">
+        <div class="fw-semibold">{{ album.school_name }}</div>
+        <div class="text-muted small">{{ album.school_jenjang or '-' }} - {{ album.photos|length }} foto</div>
+    </div>
+    <div class="card-body">
+        <div class="row g-2">
+            {% for p in album.photos %}
+            {% set filename = (p.photo_path or '').split('uploads/portal/')[-1] %}
+            {% set photo_url = url_for('portal.uploaded_file', filename=filename) if filename else 'https://placehold.co/300x300?text=No+Image' %}
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+                <div class="ratio ratio-1x1 rounded overflow-hidden shadow-sm position-relative gallery-thumb"
+                    role="button" tabindex="0" data-photo-url="{{ photo_url }}"
+                    data-school="{{ p.school_name or album.school_name or '' }}"
+                    data-transaction-id="{{ p.transaction_id or '' }}" data-purpose="{{ p.purpose or '' }}"
+                    data-guest="{{ p.guest_display or '' }}" data-guest-count="{{ p.guest_count or 0 }}"
+                    data-date="{{ p.captured_at.isoformat() if p.captured_at else '' }}"
+                    data-lat="{{ p.latitude if p.latitude is not none else '' }}"
+                    data-lon="{{ p.longitude if p.longitude is not none else '' }}">
+                    <img src="{{ photo_url }}" class="object-fit-cover w-100 h-100"
+                        alt="Foto {{ p.guest_display or p.school_name or 'buku tamu' }}" loading="lazy"
+                        onerror="this.src='https://placehold.co/300x300?text=No+Image'">
+                    <div class="position-absolute top-0 start-0 w-100 d-flex justify-content-between align-items-start p-2 gallery-top">
+                        <div class="gallery-title text-white text-truncate me-2 gallery-chip" title="{{ p.guest_display or '-' }}">
+                            {{ p.guest_display or '-' }}
+                        </div>
+                        <div class="px-2 py-1 rounded-pill small gallery-badge-photo">{{ p.guest_count or 0 }} <i class="bi bi-person-fill"></i></div>
+                    </div>
+                    <div class="position-absolute bottom-0 start-0 w-100 d-flex justify-content-between px-2 pb-1 gallery-meta text-white small"
+                        style="gap: 0.35rem;">
+                        <div class="d-inline-flex align-items-center gap-1 text-truncate gallery-chip" style="max-width: 60%;">
+                            <i class="bi bi-calendar-event"></i>
+                            {% if p.captured_at %}{{ p.captured_at.strftime('%d %b %Y') }}{% else %}-{% endif %}
+                        </div>
+                        <div class="d-inline-flex align-items-center gap-1 text-truncate gallery-chip" style="max-width: 38%;">
+                            <i class="bi bi-geo-alt"></i>
+                            {% if p.latitude is not none and p.longitude is not none %}
+                            {{ '%.4f'|format(p.latitude) }}, {{ '%.4f'|format(p.longitude) }}
+                            {% else %}
+                            GPS tidak ada
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="alert alert-info">Belum ada foto untuk ditampilkan.</div>
+{% endif %}
+
+<div class="modal fade" id="guestbookGalleryModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header guestbook-photo-modal-header d-flex flex-column align-items-start gap-2">
+                <div class="d-flex flex-column">
+                    <h5 class="modal-title" id="guestbookGalleryModalTitle">Foto</h5>
+                </div>
+                <div><span id="guestbookGalleryModalSubtitle" class="text-primary">Sekolah</span></div>
+                <div class="guestbook-photo-modal-tools">
+                    <span class="badge bg-primary" id="guestbookGalleryModalCount">-</span>
+                    <span class="badge bg-secondary" id="guestbookGalleryModalMeta"></span>
+                    <div class="input-group input-group-sm" role="group" aria-label="Zoom foto">
+                        <button type="button" class="btn btn-outline-secondary" id="guestbookGalleryZoomOutBtn" title="Perkecil"><i class="bi bi-zoom-out"></i></button>
+                        <input type="text" class="form-control guestbook-photo-zoom-input" id="guestbookGalleryZoomInput" value="100%" list="guestbookGalleryZoomOptions">
+                        <button type="button" class="btn btn-outline-secondary" id="guestbookGalleryZoomInBtn" title="Perbesar"><i class="bi bi-zoom-in"></i></button>
+                    </div>
+                    <datalist id="guestbookGalleryZoomOptions">
+                        <option value="50%"></option><option value="75%"></option><option value="100%"></option><option value="125%"></option><option value="150%"></option><option value="200%"></option><option value="300%"></option>
+                    </datalist>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Rotasi foto">
+                        <button type="button" class="btn btn-outline-secondary" id="guestbookGalleryRotateLeftBtn"><i class="bi bi-arrow-counterclockwise"></i></button>
+                        <button type="button" class="btn btn-outline-secondary" id="guestbookGalleryRotateRightBtn"><i class="bi bi-arrow-clockwise"></i></button>
+                    </div>
+                    <div class="btn-group btn-group-sm guestbook-photo-nav-top" role="group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="guestbookGalleryPrevBtnTop"><i class="bi bi-chevron-left"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="guestbookGalleryNextBtnTop"><i class="bi bi-chevron-right"></i></button>
+                    </div>
+                </div>
+                <button type="button" class="btn-close guestbook-photo-modal-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body guestbook-photo-modal p-0 d-flex align-items-center justify-content-center" style="min-height:60vh;position:relative;background:var(--bg-body)">
+                <button type="button" class="btn btn-outline-secondary guestbook-photo-nav-btn guestbook-photo-nav-left" id="guestbookGalleryPrevBtn"><i class="bi bi-chevron-left"></i></button>
+                <div class="guestbook-photo-viewport" id="guestbookGalleryViewport"><img src="" alt="Foto buku tamu" id="guestbookGalleryModalImg"></div>
+                <button type="button" class="btn btn-outline-secondary guestbook-photo-nav-btn guestbook-photo-nav-right" id="guestbookGalleryNextBtn"><i class="bi bi-chevron-right"></i></button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-warning" id="guestbookCancelVerifyBtn" style="display:none;"><i class="bi bi-arrow-counterclockwise me-1"></i>Batalkan Verifikasi</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block portal_scripts %}
+<style>
+    .gallery-thumb {
+        cursor: pointer;
+    }
+
+    .gallery-top {
+        background: transparent;
+    }
+
+    .gallery-title {
+        font-weight: 700;
+        max-width: 64%;
+        font-size: 0.85rem;
+    }
+
+    .gallery-badge-photo {
+        background: transparent;
+        color: #fff;
+        border: 0;
+        font-weight: 700;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+    }
+
+    .gallery-meta {
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+        pointer-events: none;
+        align-items: flex-end;
+    }
+
+    .gallery-chip {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 8px;
+        padding: 4px 8px;
+        height: auto;
+    }
+
+    .guestbook-photo-modal-header { --photo-modal-pad: 1rem; position: relative; padding: var(--photo-modal-pad); padding-right: calc(var(--photo-modal-pad) + 2.5rem); }
+    .guestbook-photo-modal-close { position: absolute; top: var(--photo-modal-pad); right: var(--photo-modal-pad); margin: 0; }
+    .guestbook-photo-modal-tools { width: 100%; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; padding-right: 2.5rem; }
+    .guestbook-photo-viewport { width: 100%; height: 80vh; max-height: 80vh; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--bg-body); cursor: grab; touch-action: none; user-select: none; }
+    .guestbook-photo-viewport.is-grabbing { cursor: grabbing; }
+    .guestbook-photo-modal img { display: block; max-width: none; max-height: none; object-fit: contain; transform-origin: center center; transition: transform .15s ease; }
+    .guestbook-photo-nav-btn { position: absolute; top: 50%; transform: translateY(-50%); z-index: 10; border-radius: 50%; width: 44px; height: 44px; }
+    .guestbook-photo-nav-left { left: 12px; }
+    .guestbook-photo-nav-right { right: 12px; }
+    .guestbook-photo-zoom-input { width: 72px; min-width: 72px; text-align: center; }
+</style>
+<script>
+(() => {
+  const modalEl = document.getElementById('guestbookGalleryModal');
+  const grid = document.querySelector('.row.g-2');
+  if (!modalEl || !grid || !window.bootstrap) return;
+  const modal = new bootstrap.Modal(modalEl);
+  const img = document.getElementById('guestbookGalleryModalImg');
+  const title = document.getElementById('guestbookGalleryModalTitle');
+  const subtitle = document.getElementById('guestbookGalleryModalSubtitle');
+  const count = document.getElementById('guestbookGalleryModalCount');
+  const meta = document.getElementById('guestbookGalleryModalMeta');
+  const cancelBtn = document.getElementById('guestbookCancelVerifyBtn');
+  const csrf = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+  const validationBaseUrl = "{{ url_for('daftar_tamu.admin_validation') }}";
+  let thumbs = [], idx = 0, currentTx = '', zoom = 1, rot = 0;
+  const viewport = document.getElementById('guestbookGalleryViewport');
+  function collect(){ thumbs=[...document.querySelectorAll('.gallery-thumb')]; }
+  function render(el){
+    currentTx = el.dataset.transactionId || '';
+    img.src = el.dataset.photoUrl || '';
+    title.textContent = el.dataset.purpose || 'Foto Kunjungan';
+    const st = [el.dataset.school || '', el.dataset.guest || ''].filter(Boolean).join(' • ') || 'Sekolah';
+    subtitle.innerHTML = currentTx ? `<a class="link-primary text-decoration-underline" href="${validationBaseUrl}?open_transaction_id=${encodeURIComponent(currentTx)}">${st}</a>` : st;
+    count.textContent = ((Number(el.dataset.guestCount||0)) || '-') + '';
+    const d = el.dataset.date ? new Date(el.dataset.date) : null;
+    meta.textContent = d && !isNaN(d) ? d.toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'}) : '-';
+    cancelBtn.style.display = currentTx ? '' : 'none';
+    zoom=1; rot=0; img.style.transform='translate(0px,0px) scale(1) rotate(0deg)';
+  }
+  function show(i){ if(!thumbs.length) return; idx=(i+thumbs.length)%thumbs.length; render(thumbs[idx]); modal.show(); }
+  grid.addEventListener('click', e=>{ const t=e.target.closest('.gallery-thumb'); if(!t) return; collect(); show(thumbs.indexOf(t)); });
+  grid.addEventListener('keydown', e=>{ if(e.key!=='Enter'&&e.key!==' ') return; const t=e.target.closest('.gallery-thumb'); if(!t) return; e.preventDefault(); collect(); show(thumbs.indexOf(t)); });
+  document.getElementById('guestbookGalleryPrevBtn').onclick=()=>show(idx-1);
+  document.getElementById('guestbookGalleryNextBtn').onclick=()=>show(idx+1);
+  document.getElementById('guestbookGalleryPrevBtnTop').onclick=()=>show(idx-1);
+  document.getElementById('guestbookGalleryNextBtnTop').onclick=()=>show(idx+1);
+  document.getElementById('guestbookGalleryZoomInBtn').onclick=()=>{ zoom=Math.min(3,zoom+0.2); img.style.transform=`scale(${zoom}) rotate(${rot}deg)`; };
+  document.getElementById('guestbookGalleryZoomOutBtn').onclick=()=>{ zoom=Math.max(0.5,zoom-0.2); img.style.transform=`scale(${zoom}) rotate(${rot}deg)`; };
+  document.getElementById('guestbookGalleryRotateLeftBtn').onclick=()=>{ rot-=90; img.style.transform=`scale(${zoom}) rotate(${rot}deg)`; };
+  document.getElementById('guestbookGalleryRotateRightBtn').onclick=()=>{ rot+=90; img.style.transform=`scale(${zoom}) rotate(${rot}deg)`; };
+  cancelBtn.addEventListener('click', ()=>{
+    if(!currentTx || !confirm('Batalkan verifikasi transaksi ini dan kembalikan ke pending?')) return;
+    const headers = {'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'};
+    if(csrf) headers['X-CSRFToken']=csrf;
+    fetch('/daftar-tamu/admin/transactions/'+encodeURIComponent(currentTx)+'/pending', {method:'POST', headers, body:new URLSearchParams({reviewer_note:''}).toString()})
+      .then(r=>r.json()).then(d=>{ if(!d.success) throw new Error(d.message||'Gagal'); location.reload(); })
+      .catch(err=>alert(err.message||'Gagal membatalkan verifikasi.'));
+  });
+})();
+</script>
+{% endblock %}

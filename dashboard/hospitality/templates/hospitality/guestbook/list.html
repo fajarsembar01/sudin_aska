@@ -310,12 +310,12 @@
         <div class="d-flex align-items-center gap-3">
           <span class="metric-icon"><i class="bi bi-journal-text"></i></span>
           <div>
-            <div class="small text-uppercase fw-semibold text-muted">Total Review</div>
+            <div class="small text-uppercase fw-semibold text-muted">Total Tamu</div>
             <div class="metric-value">{{ stats.total_reviews }}</div>
           </div>
         </div>
         <div class="metric-subtitle mt-3">
-          {{ stats.created_today }} masuk hari ini
+          {{ stats.created_today }} tamu hari ini
         </div>
       </div>
     </div>
@@ -353,7 +353,7 @@
             {% set badge_class = 'bg-success text-white' if e.avg_score >= 4 else ('bg-warning text-dark' if e.avg_score >= 3 else 'bg-danger text-white') %}
             <div class="text-center flex-fill" style="min-width: 0;">
               <span class="badge {{ badge_class }} rounded-pill mb-1" style="font-size: 1rem">
-                {{ "%.1f"|format(e.avg_score)|replace('.', ',') }}
+                {{ "%.2f"|format(e.avg_score)|replace('.', ',') }}
               </span>
               <div class="text-muted text-capitalize text-truncate" style="font-size: 0.7rem;" title="{{ e.name }}">
                 {{ e.name }}
@@ -439,9 +439,16 @@
 <section class="row g-3 mb-4">
   <div class="col-lg-6">
     <div class="guestbook-rank-card card border-0 h-100">
-      <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
-        <h2 class="h6 fw-bold mb-1">Sekolah Terbaik</h2>
-        <p class="small text-muted mb-0">Rata-rata rating tertinggi dari review selesai.</p>
+      <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="h6 fw-bold mb-1">Sekolah Terbaik</h2>
+          <p class="small text-muted mb-0">Rata-rata rating tertinggi dari review selesai.</p>
+        </div>
+        {% if rankings_url %}
+        <a href="{{ rankings_url }}?sort=avg_rating&dir=desc" class="btn btn-sm btn-link text-decoration-none">
+          Lihat Semua <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+        {% endif %}
       </div>
       <div class="card-body px-4 pb-4">
         {% if top_schools %}
@@ -477,9 +484,16 @@
   </div>
   <div class="col-lg-6">
     <div class="guestbook-rank-card card border-0 h-100">
-      <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
-        <h2 class="h6 fw-bold mb-1">Sekolah Terendah</h2>
-        <p class="small text-muted mb-0">Rata-rata rating terendah dari review selesai.</p>
+      <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="h6 fw-bold mb-1">Sekolah Terendah</h2>
+          <p class="small text-muted mb-0">Rata-rata rating terendah dari review selesai.</p>
+        </div>
+        {% if rankings_url %}
+        <a href="{{ rankings_url }}?sort=avg_rating&dir=asc" class="btn btn-sm btn-link text-decoration-none text-danger">
+          Lihat Semua <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+        {% endif %}
       </div>
       <div class="card-body px-4 pb-4">
         {% if bottom_schools %}

@@ -1233,7 +1233,7 @@ def fetch_guestbook_review_stats(
     end_date: date | None = None,
     use_tanggal_edit: bool = True,
 ) -> Dict[str, Any]:
-    _dexpr_completed = "COALESCE(r.tanggal_edit, r.completed_at)" if use_tanggal_edit else "r.completed_at"
+    _dexpr_completed = _date_expr(use_tanggal_edit)
     _dexpr_created = "COALESCE(r.tanggal_edit, r.created_at)" if use_tanggal_edit else "r.created_at"
     where_sql, params = _build_guestbook_review_filters(
         school_id=school_id,
@@ -1267,16 +1267,16 @@ def fetch_guestbook_review_stats(
             """,
             params,
         )
-        row = cur.fetchone() or {}
+        stats_row = cur.fetchone() or {}
 
-    total_reviews = int(row.get("total_reviews") or 0)
-    completed_reviews = int(row.get("completed_reviews") or 0)
-    pending_reviews = int(row.get("pending_reviews") or 0)
-    linked_reviews = int(row.get("linked_reviews") or 0)
-    unlinked_reviews = int(row.get("unlinked_reviews") or 0)
+    total_reviews = int(stats_row.get("total_reviews") or 0)
+    completed_reviews = int(stats_row.get("completed_reviews") or 0)
+    pending_reviews = int(stats_row.get("pending_reviews") or 0)
+    linked_reviews = int(stats_row.get("linked_reviews") or 0)
+    unlinked_reviews = int(stats_row.get("unlinked_reviews") or 0)
     completion_rate = (completed_reviews / total_reviews * 100) if total_reviews else 0.0
     linked_rate = (linked_reviews / total_reviews * 100) if total_reviews else 0.0
-    avg_rating = float(row.get("avg_rating") or 0)
+    avg_rating = float(stats_row.get("avg_rating") or 0)
     with get_cursor() as cur:
         cur.execute(
             f"""
@@ -1298,10 +1298,10 @@ def fetch_guestbook_review_stats(
 
     extra_stats = []
     total_extra = 0.0
-    for row in extra_stats_rows:
-        score = float(row["avg_score"] or 0)
+    for extra_row in extra_stats_rows:
+        score = float(extra_row["avg_score"] or 0)
         extra_stats.append({
-            "name": row["name"],
+            "name": extra_row["name"],
             "avg_score": score
         })
         total_extra += score
@@ -1314,10 +1314,10 @@ def fetch_guestbook_review_stats(
         "pending_reviews": pending_reviews,
         "linked_reviews": linked_reviews,
         "unlinked_reviews": unlinked_reviews,
-        "completed_today": int(row.get("completed_today") or 0),
-        "created_today": int(row.get("created_today") or 0),
+        "completed_today": int(stats_row.get("completed_today") or 0),
+        "created_today": int(stats_row.get("created_today") or 0),
         "avg_rating": avg_rating,
-        "avg_rating_completed": float(row.get("avg_rating_completed") or 0),
+        "avg_rating_completed": float(stats_row.get("avg_rating_completed") or 0),
         "completion_rate": round(completion_rate, 2),
         "linked_rate": round(linked_rate, 2),
         "extra_stats": extra_stats,
@@ -1481,6 +1481,106 @@ def fetch_guestbook_review_bottom_schools(*, limit: int = 10) -> List[Dict[str, 
             (safe_limit,),
         )
         return [dict(row) for row in cur.fetchall()]
+
+
+def fetch_guestbook_review_school_rankings(
+    *,
+    search: str | None = None,
+    jenjang: str | None = None,
+    kecamatan: str | None = None,
+    sort_by: str = "avg_rating",
+    sort_dir: str = "desc",
+    page: int = 1,
+    per_page: int = 50,
+) -> tuple[List[Dict[str, Any]], int]:
+    """Return all schools ranked by guestbook review metrics, with pagination."""
+    _ensure_soft_delete_schema()
+
+    # Validate sort options
+    allowed_sort = {"avg_rating", "review_count", "school_name"}
+    if sort_by not in allowed_sort:
+        sort_by = "avg_rating"
+    if sort_dir not in ("asc", "desc"):
+        sort_dir = "desc"
+
+    safe_page = max(1, int(page or 1))
+    safe_per_page = max(1, min(int(per_page or 50), 200))
+    offset = (safe_page - 1) * safe_per_page
+
+    # Build WHERE clauses for the outer query
+    outer_clauses: List[str] = []
+    params: List[Any] = []
+
+    if search:
+        like = f"%{search.strip()}%"
+        outer_clauses.append("(s.name ILIKE %s OR s.npsn ILIKE %s)")
+        params.extend([like, like])
+
+    if jenjang:
+        outer_clauses.append("s.jenjang = %s")
+        params.append(jenjang.strip())
+
+    if kecamatan:
+        outer_clauses.append("kec.name = %s")
+        params.append(kecamatan.strip())
+
+    outer_where = f"AND {' AND '.join(outer_clauses)}" if outer_clauses else ""
+
+    # Build ORDER BY
+    sort_map = {
+        "avg_rating": "avg_rating",
+        "review_count": "review_count",
+        "school_name": "s.name",
+    }
+    order_col = sort_map.get(sort_by, "avg_rating")
+    # For avg_rating desc, put NULLs last; for asc, put NULLs last too
+    nulls = "NULLS LAST"
+    order_clause = f"{order_col} {sort_dir.upper()} {nulls}"
+    # Secondary sort for ties
+    if sort_by != "school_name":
+        order_clause += ", s.name ASC"
+
+    base_query = f"""
+        WITH scored AS (
+            SELECT
+                r.school_id,
+                r.rating,
+                r.completed_at
+            FROM hospitality_guestbook_reviews r
+            WHERE r.status = 'completed'
+              AND r.rating IS NOT NULL
+              AND COALESCE(r.is_deleted, FALSE) = FALSE
+        )
+        SELECT
+            s.id AS school_id,
+            s.name AS school_name,
+            s.npsn,
+            s.jenjang,
+            kec.name AS kecamatan,
+            COUNT(scored.school_id) AS review_count,
+            AVG(scored.rating)::DECIMAL(5,2) AS avg_rating,
+            MAX(scored.completed_at) AS last_completed_at
+        FROM portal_schools s
+        LEFT JOIN portal_kelurahan kel ON s.kelurahan_id = kel.id
+        LEFT JOIN portal_kecamatan kec ON kel.kecamatan_id = kec.id
+        LEFT JOIN scored ON s.id = scored.school_id
+        WHERE s.active = TRUE {outer_where}
+        GROUP BY s.id, s.name, s.npsn, s.jenjang, kec.name
+    """
+
+    with get_cursor() as cur:
+        # Count total
+        count_query = f"SELECT COUNT(*) AS cnt FROM ({base_query}) sub"
+        cur.execute(count_query, params)
+        total = int((cur.fetchone() or {}).get("cnt", 0))
+
+        # Fetch page
+        data_query = f"{base_query} ORDER BY {order_clause} LIMIT %s OFFSET %s"
+        data_params = list(params) + [safe_per_page, offset]
+        cur.execute(data_query, data_params)
+        rows = [dict(row) for row in cur.fetchall()]
+
+    return rows, total
 
 
 def list_guestbook_reviews(
