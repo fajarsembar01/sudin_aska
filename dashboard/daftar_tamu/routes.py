@@ -140,6 +140,32 @@ _VISIT_FREQUENCY_BUCKETS = [
     {"key": "f10_plus", "label": "10+", "min_visits": 10, "max_visits": None},
 ]
 
+def _generate_dynamic_dist_buckets(dist_bb: int, dist_ba: int) -> list:
+    if dist_ba <= dist_bb:
+        dist_ba = dist_bb + 7
+
+    buckets = []
+    buckets.append({"key": "d_0", "label": f"{dist_bb}x", "min_visits": dist_bb, "max_visits": dist_bb})
+    
+    current_min = dist_bb + 1
+    for i in range(1, 7):
+        fraction = i / 6.0
+        target_max = dist_bb + int(round(fraction * (dist_ba - dist_bb - 1)))
+        
+        if current_min >= dist_ba:
+            buckets.append({"key": f"d_{i}", "label": "-", "min_visits": -1, "max_visits": -2})
+        else:
+            current_max = max(current_min, min(target_max, dist_ba - 1))
+            if current_min == current_max:
+                label = f"{current_min}x"
+            else:
+                label = f"{current_min}-{current_max}x"
+            buckets.append({"key": f"d_{i}", "label": label, "min_visits": current_min, "max_visits": current_max})
+            current_min = current_max + 1
+            
+    buckets.append({"key": "d_7", "label": f"{dist_ba}+", "min_visits": dist_ba, "max_visits": None})
+    return buckets
+
 
 daftar_tamu_bp = Blueprint(
     "daftar_tamu",
@@ -1247,14 +1273,48 @@ def admin_dashboard() -> Response:
             total += int(school_count or 0)
         return total
 
-    visit_dist_labels = [bucket["label"] for bucket in _VISIT_DISTRIBUTION_BUCKETS]
+    ui_settings = {}
+    with get_cursor() as cur:
+        cur.execute("SELECT ui_settings FROM dashboard_users WHERE id = %s", ((session.get("user") or {}).get("id"),))
+        row = cur.fetchone()
+        if row and row[0]:
+            ui_settings = dict(row).get("ui_settings") or {}
+
+    dist_chart_batas = ui_settings.get("dist_chart_batas") or {"bawah": 0, "atas": 7}
+    try:
+        dist_bb = int(dist_chart_batas.get("bawah", 0))
+        dist_ba = int(dist_chart_batas.get("atas", 7))
+    except (TypeError, ValueError):
+        dist_bb, dist_ba = 0, 7
+
+    visit_dist_buckets = _generate_dynamic_dist_buckets(dist_bb, dist_ba)
+
+    visit_dist_labels = [bucket["label"] for bucket in visit_dist_buckets]
+    visit_dist_keys = [bucket["key"] for bucket in visit_dist_buckets]
     visit_dist_values = [
         _count_histogram_bucket(
             int(bucket.get("min_visits") or 0),
             int(bucket["max_visits"]) if bucket.get("max_visits") is not None else None,
         )
-        for bucket in _VISIT_DISTRIBUTION_BUCKETS
+        for bucket in visit_dist_buckets
     ]
+
+    pie_chart_batas = ui_settings.get("pie_chart_batas") or {"bawah": 0, "tengah": 5, "atas": 10}
+    
+    try:
+        bb = int(pie_chart_batas.get("bawah", 0))
+        bt = int(pie_chart_batas.get("tengah", 5))
+        ba = int(pie_chart_batas.get("atas", 10))
+    except (TypeError, ValueError):
+        bb, bt, ba = 0, 5, 10
+        
+    visit_freq_buckets = [
+        {"key": "f_0", "label": f"{bb}x", "min_visits": bb, "max_visits": bb},
+        {"key": "f_1", "label": f"{bb+1}-{bt-1}x" if bt - 1 > bb + 1 else f"{bb+1}x", "min_visits": bb + 1, "max_visits": bt - 1},
+        {"key": "f_2", "label": f"{bt}-{ba-1}x" if ba - 1 > bt else f"{bt}x", "min_visits": bt, "max_visits": ba - 1},
+        {"key": "f_3", "label": f"{ba}+", "min_visits": ba, "max_visits": None},
+    ]
+
     visit_frequency_groups = [
         {
             "key": bucket["key"],
@@ -1264,7 +1324,7 @@ def admin_dashboard() -> Response:
                 int(bucket["max_visits"]) if bucket.get("max_visits") is not None else None,
             ),
         }
-        for bucket in _VISIT_FREQUENCY_BUCKETS
+        for bucket in visit_freq_buckets
     ]
 
     top_visit_rankings, _ = fetch_school_rankings(
@@ -1370,6 +1430,7 @@ def admin_dashboard() -> Response:
         summary=summary,
         visit_dist_labels=visit_dist_labels,
         visit_dist_values=visit_dist_values,
+        visit_dist_keys=visit_dist_keys,
         visit_frequency_groups=visit_frequency_groups,
         top_visit_rankings=top_visit_rankings,
         bottom_visit_rankings=bottom_visit_rankings,
@@ -1397,7 +1458,82 @@ def admin_dashboard() -> Response:
         today_str=_today_jakarta().isoformat(),
         guest_scope=guest_scope,
         school_status=school_status,
+        pie_chart_batas=pie_chart_batas,
+        dist_chart_batas=dist_chart_batas,
     )
+
+@daftar_tamu_bp.route("/admin/dashboard/settings", methods=["POST"])
+@role_required("admin")
+def save_dashboard_settings() -> Response:
+    """Save admin UI settings for the dashboard."""
+    if _is_preview_read_only_session():
+        return jsonify({"success": False, "message": "Mode preview aktif. Aksi edit dinonaktifkan."}), 403
+
+    payload = request.get_json() or {}
+    batas_bawah = payload.get("batas_bawah")
+    batas_tengah = payload.get("batas_tengah")
+    batas_atas = payload.get("batas_atas")
+
+    try:
+        bb = int(batas_bawah)
+        bt = int(batas_tengah)
+        ba = int(batas_atas)
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "message": "Harus diisi angka"}), 400
+
+    if bb < 0:
+        return jsonify({"success": False, "message": "Batas Bawah tidak boleh negatif"}), 400
+
+    if not (bb < bt < ba):
+        return jsonify({"success": False, "message": "Besaran angka harus Batas Bawah < Batas Tengah < Batas Atas"}), 400
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE dashboard_users
+            SET ui_settings = COALESCE(ui_settings, '{}'::jsonb) || jsonb_build_object('pie_chart_batas', %s::jsonb)
+            WHERE id = %s
+            """,
+            (Json({"bawah": bb, "tengah": bt, "atas": ba}), (session.get("user") or {}).get("id")),
+        )
+
+    return jsonify({"success": True})
+
+
+@daftar_tamu_bp.route("/admin/dashboard/settings/dist", methods=["POST"])
+@role_required("admin")
+def save_dashboard_dist_settings() -> Response:
+    """Save admin UI settings for the distribution bar chart."""
+    if _is_preview_read_only_session():
+        return jsonify({"success": False, "message": "Mode preview aktif. Aksi edit dinonaktifkan."}), 403
+
+    payload = request.get_json() or {}
+    batas_bawah = payload.get("batas_bawah")
+    batas_atas = payload.get("batas_atas")
+
+    try:
+        bb = int(batas_bawah)
+        ba = int(batas_atas)
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "message": "Harus diisi angka"}), 400
+
+    if bb < 0:
+        return jsonify({"success": False, "message": "Batas Bawah tidak boleh negatif"}), 400
+
+    if not (bb < ba):
+        return jsonify({"success": False, "message": "Batas Bawah harus lebih kecil dari Batas Atas"}), 400
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE dashboard_users
+            SET ui_settings = COALESCE(ui_settings, '{}'::jsonb) || jsonb_build_object('dist_chart_batas', %s::jsonb)
+            WHERE id = %s
+            """,
+            (Json({"bawah": bb, "atas": ba}), (session.get("user") or {}).get("id")),
+        )
+
+    return jsonify({"success": True})
 
 
 @daftar_tamu_bp.route("/admin/user/<int:user_id>/riwayat")
@@ -1971,7 +2107,45 @@ def admin_visit_bucket_detail() -> Response:
     source = (request.args.get("source") or "distribution").strip().lower()
     if source not in {"distribution", "frequency"}:
         source = "distribution"
-    bucket_options = _VISIT_DISTRIBUTION_BUCKETS if source == "distribution" else _VISIT_FREQUENCY_BUCKETS
+
+    if source == "distribution":
+        ui_settings = {}
+        with get_cursor() as cur:
+            cur.execute("SELECT ui_settings FROM dashboard_users WHERE id = %s", ((session.get("user") or {}).get("id"),))
+            row = cur.fetchone()
+            if row and row[0]:
+                ui_settings = dict(row).get("ui_settings") or {}
+                
+        dist_chart_batas = ui_settings.get("dist_chart_batas") or {"bawah": 0, "atas": 7}
+        try:
+            dist_bb = int(dist_chart_batas.get("bawah", 0))
+            dist_ba = int(dist_chart_batas.get("atas", 7))
+        except (TypeError, ValueError):
+            dist_bb, dist_ba = 0, 7
+            
+        bucket_options = _generate_dynamic_dist_buckets(dist_bb, dist_ba)
+    else:
+        ui_settings = {}
+        with get_cursor() as cur:
+            cur.execute("SELECT ui_settings FROM dashboard_users WHERE id = %s", ((session.get("user") or {}).get("id"),))
+            row = cur.fetchone()
+            if row and row[0]:
+                ui_settings = dict(row).get("ui_settings") or {}
+        
+        pie_chart_batas = ui_settings.get("pie_chart_batas") or {"bawah": 0, "tengah": 5, "atas": 10}
+        try:
+            bb = int(pie_chart_batas.get("bawah", 0))
+            bt = int(pie_chart_batas.get("tengah", 5))
+            ba = int(pie_chart_batas.get("atas", 10))
+        except (TypeError, ValueError):
+            bb, bt, ba = 0, 5, 10
+            
+        bucket_options = [
+            {"key": "f_0", "label": f"{bb}x", "min_visits": bb, "max_visits": bb},
+            {"key": "f_1", "label": f"{bb+1}-{bt-1}x" if bt - 1 > bb + 1 else f"{bb+1}x", "min_visits": bb + 1, "max_visits": bt - 1},
+            {"key": "f_2", "label": f"{bt}-{ba-1}x" if ba - 1 > bt else f"{bt}x", "min_visits": bt, "max_visits": ba - 1},
+            {"key": "f_3", "label": f"{ba}+", "min_visits": ba, "max_visits": None},
+        ]
 
     selected_bucket_key = (request.args.get("bucket") or "").strip().lower()
     selected_bucket = next((row for row in bucket_options if row.get("key") == selected_bucket_key), None)
