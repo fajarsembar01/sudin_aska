@@ -1359,6 +1359,7 @@ def _render_guestbook_rankings(
     search = (request.args.get("q") or "").strip() or None
     jenjang = (request.args.get("jenjang") or "").strip() or None
     kecamatan = (request.args.get("kecamatan") or "").strip() or None
+    school_status = (request.args.get("school_status") or "").strip() or None
     sort_by = (request.args.get("sort") or "avg_rating").strip().lower()
     sort_dir = (request.args.get("dir") or "desc").strip().lower()
     page = request.args.get("page", type=int) or 1
@@ -1369,6 +1370,7 @@ def _render_guestbook_rankings(
         search=search,
         jenjang=jenjang,
         kecamatan=kecamatan,
+        school_status=school_status,
         sort_by=sort_by,
         sort_dir=sort_dir,
         page=page,
@@ -1414,6 +1416,7 @@ def _render_guestbook_rankings(
         search_query=search or "",
         jenjang_filter=jenjang or "",
         kecamatan_filter=kecamatan or "",
+        school_status_filter=school_status or "",
         sort_by=sort_by,
         sort_dir=sort_dir,
         jenjang_options=jenjang_options,

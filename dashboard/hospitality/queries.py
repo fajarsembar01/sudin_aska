@@ -1488,6 +1488,7 @@ def fetch_guestbook_review_school_rankings(
     search: str | None = None,
     jenjang: str | None = None,
     kecamatan: str | None = None,
+    school_status: str | None = None,
     sort_by: str = "avg_rating",
     sort_dir: str = "desc",
     page: int = 1,
@@ -1523,6 +1524,10 @@ def fetch_guestbook_review_school_rankings(
     if kecamatan:
         outer_clauses.append("kec.name = %s")
         params.append(kecamatan.strip())
+
+    if school_status:
+        outer_clauses.append("s.status = %s")
+        params.append(school_status.strip().upper())
 
     outer_where = f"AND {' AND '.join(outer_clauses)}" if outer_clauses else ""
 
