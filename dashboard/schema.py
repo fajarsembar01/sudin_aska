@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS dashboard_users (
     degree_suffix TEXT,
     profile_photo_path TEXT,
     no_tester_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    ui_settings JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     last_login_at TIMESTAMPTZ
 );
@@ -1288,6 +1289,7 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE daftar_tamu_transaction_guests ADD COLUMN IF NOT EXISTS general_guest_id INTEGER REFERENCES daftar_tamu_general_guests(id) ON DELETE SET NULL",
         "CREATE UNIQUE INDEX IF NOT EXISTS uniq_daftar_tamu_tx_general_guest_full ON daftar_tamu_transaction_guests (transaction_id, general_guest_id)",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS no_tester_enabled BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS ui_settings JSONB NOT NULL DEFAULT '{}'::jsonb",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS nrk TEXT",
         "ALTER TABLE dashboard_users ALTER COLUMN nrk DROP NOT NULL",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS nip TEXT",

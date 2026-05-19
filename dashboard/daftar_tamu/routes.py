@@ -179,6 +179,7 @@ daftar_tamu_bp = Blueprint(
 _PREVIEW_ADMIN_SESSION_KEY = "preview_admin_user"
 _PREVIEW_TARGET_SESSION_KEY = "preview_target_user"
 _PREVIEW_READ_ONLY_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+_HAS_DASHBOARD_USER_UI_SETTINGS_COLUMN: Optional[bool] = None
 
 
 def _is_preview_read_only_session() -> bool:
@@ -237,6 +238,82 @@ def _to_int(value: Optional[str], default: int) -> int:
 
 def _today_jakarta() -> date:
     return current_jakarta_time().date()
+
+
+def _has_dashboard_user_ui_settings_column() -> bool:
+    """Return True if dashboard_users.ui_settings exists in current schema."""
+    global _HAS_DASHBOARD_USER_UI_SETTINGS_COLUMN
+    if _HAS_DASHBOARD_USER_UI_SETTINGS_COLUMN is True:
+        return _HAS_DASHBOARD_USER_UI_SETTINGS_COLUMN
+
+    exists = False
+    try:
+        with get_cursor() as cur:
+            cur.execute(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_schema = ANY (current_schemas(TRUE))
+                      AND table_name = 'dashboard_users'
+                      AND column_name = 'ui_settings'
+                ) AS exists
+                """
+            )
+            row = cur.fetchone() or {}
+            exists = bool(dict(row).get("exists"))
+    except Exception:
+        exists = False
+
+    if exists:
+        _HAS_DASHBOARD_USER_UI_SETTINGS_COLUMN = True
+    return exists
+
+
+def _load_dashboard_ui_settings(user_id: Optional[int]) -> dict:
+    if not user_id or not _has_dashboard_user_ui_settings_column():
+        return {}
+
+    try:
+        with get_cursor() as cur:
+            cur.execute("SELECT ui_settings FROM dashboard_users WHERE id = %s", (user_id,))
+            row = cur.fetchone()
+    except Exception:
+        return {}
+
+    if not row:
+        return {}
+
+    raw_settings = dict(row).get("ui_settings")
+    if isinstance(raw_settings, dict):
+        return raw_settings
+    if isinstance(raw_settings, str):
+        try:
+            parsed = json.loads(raw_settings)
+        except json.JSONDecodeError:
+            return {}
+        if isinstance(parsed, dict):
+            return parsed
+    return {}
+
+
+def _save_dashboard_ui_setting(user_id: Optional[int], setting_key: str, setting_value: dict) -> bool:
+    if not user_id or not _has_dashboard_user_ui_settings_column():
+        return False
+
+    try:
+        with get_cursor(commit=True) as cur:
+            cur.execute(
+                """
+                UPDATE dashboard_users
+                SET ui_settings = COALESCE(ui_settings, '{}'::jsonb) || jsonb_build_object(%s::text, %s::jsonb)
+                WHERE id = %s
+                """,
+                (setting_key, Json(setting_value), user_id),
+            )
+        return True
+    except Exception:
+        return False
 
 
 def _detect_likely_screen_recapture(photo_file) -> tuple[bool, float]:
@@ -1386,12 +1463,7 @@ def admin_dashboard() -> Response:
             total += int(school_count or 0)
         return total
 
-    ui_settings = {}
-    with get_cursor() as cur:
-        cur.execute("SELECT ui_settings FROM dashboard_users WHERE id = %s", ((session.get("user") or {}).get("id"),))
-        row = cur.fetchone()
-        if row and row[0]:
-            ui_settings = dict(row).get("ui_settings") or {}
+    ui_settings = _load_dashboard_ui_settings((session.get("user") or {}).get("id"))
 
     dist_chart_batas = ui_settings.get("dist_chart_batas") or {"bawah": 0, "atas": 7}
     try:
@@ -1708,15 +1780,18 @@ def save_dashboard_settings() -> Response:
     if not (bb < bt < ba):
         return jsonify({"success": False, "message": "Besaran angka harus Batas Bawah < Batas Tengah < Batas Atas"}), 400
 
-    with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
-            UPDATE dashboard_users
-            SET ui_settings = COALESCE(ui_settings, '{}'::jsonb) || jsonb_build_object('pie_chart_batas', %s::jsonb)
-            WHERE id = %s
-            """,
-            (Json({"bawah": bb, "tengah": bt, "atas": ba}), (session.get("user") or {}).get("id")),
-        )
+    updated = _save_dashboard_ui_setting(
+        user_id=(session.get("user") or {}).get("id"),
+        setting_key="pie_chart_batas",
+        setting_value={"bawah": bb, "tengah": bt, "atas": ba},
+    )
+    if not updated:
+        return jsonify(
+            {
+                "success": False,
+                "message": "Schema database belum update (dashboard_users.ui_settings belum tersedia).",
+            }
+        ), 503
 
     return jsonify({"success": True})
 
@@ -1744,15 +1819,18 @@ def save_dashboard_dist_settings() -> Response:
     if not (bb < ba):
         return jsonify({"success": False, "message": "Batas Bawah harus lebih kecil dari Batas Atas"}), 400
 
-    with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
-            UPDATE dashboard_users
-            SET ui_settings = COALESCE(ui_settings, '{}'::jsonb) || jsonb_build_object('dist_chart_batas', %s::jsonb)
-            WHERE id = %s
-            """,
-            (Json({"bawah": bb, "atas": ba}), (session.get("user") or {}).get("id")),
-        )
+    updated = _save_dashboard_ui_setting(
+        user_id=(session.get("user") or {}).get("id"),
+        setting_key="dist_chart_batas",
+        setting_value={"bawah": bb, "atas": ba},
+    )
+    if not updated:
+        return jsonify(
+            {
+                "success": False,
+                "message": "Schema database belum update (dashboard_users.ui_settings belum tersedia).",
+            }
+        ), 503
 
     return jsonify({"success": True})
 
@@ -2393,14 +2471,8 @@ def admin_visit_bucket_detail() -> Response:
     if source not in {"distribution", "frequency"}:
         source = "distribution"
 
+    ui_settings = _load_dashboard_ui_settings((session.get("user") or {}).get("id"))
     if source == "distribution":
-        ui_settings = {}
-        with get_cursor() as cur:
-            cur.execute("SELECT ui_settings FROM dashboard_users WHERE id = %s", ((session.get("user") or {}).get("id"),))
-            row = cur.fetchone()
-            if row and row[0]:
-                ui_settings = dict(row).get("ui_settings") or {}
-                
         dist_chart_batas = ui_settings.get("dist_chart_batas") or {"bawah": 0, "atas": 7}
         try:
             dist_bb = int(dist_chart_batas.get("bawah", 0))
@@ -2410,13 +2482,6 @@ def admin_visit_bucket_detail() -> Response:
             
         bucket_options = _generate_dynamic_dist_buckets(dist_bb, dist_ba)
     else:
-        ui_settings = {}
-        with get_cursor() as cur:
-            cur.execute("SELECT ui_settings FROM dashboard_users WHERE id = %s", ((session.get("user") or {}).get("id"),))
-            row = cur.fetchone()
-            if row and row[0]:
-                ui_settings = dict(row).get("ui_settings") or {}
-        
         pie_chart_batas = ui_settings.get("pie_chart_batas") or {"bawah": 0, "tengah": 5, "atas": 10}
         try:
             bb = int(pie_chart_batas.get("bawah", 0))
