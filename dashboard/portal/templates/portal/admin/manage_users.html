@@ -308,7 +308,7 @@
                                     <tr {% if not read_only %}style="cursor: pointer;" onclick='editUser({{ user|tojson }})'{% endif %} data-user-row="true"
                                         data-role="{{ user.role or '' }}"
                                         data-status="{{ user.account_status or '' }}"
-                                        data-search="{{ (user.full_name or '') ~ ' ' ~ (user.email or '') ~ ' ' ~ (user.role or '') ~ ' ' ~ (user.account_status or '') ~ ' ' ~ (user.kecamatan_name or '') ~ ' ' ~ (user.jabatan or '') ~ ' ' ~ (user.whatsapp_number or '') ~ ' ' ~ (user.get('school_npsn') or '') ~ ' ' ~ (user.get('school_name') or '') }}">
+                                        data-search="{{ (user.full_name or '') ~ ' ' ~ (user.email or '') ~ ' ' ~ (user.role or '') ~ ' ' ~ (user.account_status or '') ~ ' ' ~ (user.kecamatan_name or '') ~ ' ' ~ (user.jabatan or '') ~ ' ' ~ (user.whatsapp_number or '') ~ ' ' ~ (user.get('school_npsn') or '') ~ ' ' ~ (user.get('school_name') or '') ~ ' ' ~ (user.get('school_operator_phone') or '') ~ ' ' ~ (user.get('school_phone') or '') }}">
                                         <td>
                                             <div class="fw-bold">{{ user.full_name }}</div>
                                             <div class="small text-muted">{{ user.email }}</div>
@@ -354,10 +354,19 @@
                                                 <i class="bi bi-eye me-1"></i>Preview
                                             </button>
                                             {% else %}
-                                            <button class="btn btn-sm btn-outline-primary"
-                                                onclick='editUser({{ user|tojson }})'>
-                                                <i class="bi bi-pencil-square"></i>
-                                            </button>
+                                            {% set has_wa_contact = (user.whatsapp_number or user.school_operator_phone or user.school_phone) %}
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="button" class="btn btn-outline-success"
+                                                    onclick='openWhatsAppContact({{ user|tojson }})'
+                                                    title="Hubungi WhatsApp" {% if not has_wa_contact %}disabled{% endif %}>
+                                                    <i class="bi bi-whatsapp"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-primary"
+                                                    onclick='editUser({{ user|tojson }})'
+                                                    title="Edit user">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </button>
+                                            </div>
                                             {% endif %}
                                         </td>
                                     </tr>
@@ -604,6 +613,35 @@
     </div>
 </div>
 
+<div class="modal fade" id="schoolWaPickerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-whatsapp me-2"></i>Pilih Nomor WhatsApp
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <div class="small text-muted mb-2">Sekolah: <span id="schoolWaPickerSchoolName">-</span></div>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-success text-start" id="schoolWaOperatorBtn"
+                        onclick="contactSchoolViaWhatsApp('operator')">
+                        Hubungi Nomor Operator
+                    </button>
+                    <button type="button" class="btn btn-outline-primary text-start" id="schoolWaSchoolBtn"
+                        onclick="contactSchoolViaWhatsApp('school')">
+                        Hubungi Nomor Sekolah
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endmacro %}
 
 {% macro render_scripts() %}
@@ -633,6 +671,102 @@
     let mergeOldSelect;
     let mergeNewSelect;
     let userPreviewModal;
+    let schoolWaPickerModal;
+    let schoolWaPickerPayload = null;
+    const adminContactName = {{ admin_contact_name|tojson }};
+
+    function normalizeWhatsAppNumber(value) {
+        if (!value) return '';
+        return String(value).replace(/[^0-9]/g, '');
+    }
+
+    function buildWhatsAppMessage(user) {
+        const adminName = (adminContactName || 'Admin').toString().trim();
+        const targetName = (user && (user.full_name || user.school_name || user.email)) || 'Bapak/Ibu';
+        return `Halo ${targetName}, saya ${adminName} dari Admin Sudin.`;
+    }
+
+    function openWhatsAppLink(phone, message) {
+        const normalizedPhone = normalizeWhatsAppNumber(phone);
+        if (!normalizedPhone) return false;
+        const encodedText = encodeURIComponent(message || '');
+        window.open(`https://wa.me/${normalizedPhone}?text=${encodedText}`, '_blank');
+        return true;
+    }
+
+    function openSchoolWaPicker(user, operatorPhone, schoolPhone) {
+        const modalEl = document.getElementById('schoolWaPickerModal');
+        const operatorBtn = document.getElementById('schoolWaOperatorBtn');
+        const schoolBtn = document.getElementById('schoolWaSchoolBtn');
+        const schoolNameEl = document.getElementById('schoolWaPickerSchoolName');
+
+        if (!modalEl || !operatorBtn || !schoolBtn || !schoolNameEl || !window.bootstrap || !window.bootstrap.Modal) {
+            return false;
+        }
+
+        if (!schoolWaPickerModal) {
+            schoolWaPickerModal = new window.bootstrap.Modal(modalEl);
+        }
+
+        schoolWaPickerPayload = {
+            user: user || {},
+            operatorPhone: operatorPhone || '',
+            schoolPhone: schoolPhone || '',
+        };
+
+        schoolNameEl.textContent = user.school_name || user.full_name || '-';
+
+        const operatorLabel = operatorPhone ? `Hubungi Nomor Operator (${operatorPhone})` : 'Nomor Operator tidak tersedia';
+        const schoolLabel = schoolPhone ? `Hubungi Nomor Sekolah (${schoolPhone})` : 'Nomor Sekolah tidak tersedia';
+
+        operatorBtn.textContent = operatorLabel;
+        schoolBtn.textContent = schoolLabel;
+        operatorBtn.disabled = !operatorPhone;
+        schoolBtn.disabled = !schoolPhone;
+
+        schoolWaPickerModal.show();
+        return true;
+    }
+
+    function contactSchoolViaWhatsApp(targetType) {
+        if (!schoolWaPickerPayload) return;
+        const payload = schoolWaPickerPayload;
+        const isOperator = targetType === 'operator';
+        const phone = isOperator ? payload.operatorPhone : payload.schoolPhone;
+        if (!phone) return;
+
+        const message = buildWhatsAppMessage(payload.user);
+        openWhatsAppLink(phone, message);
+        if (schoolWaPickerModal) schoolWaPickerModal.hide();
+    }
+
+    function openWhatsAppContact(user) {
+        if (!user) return;
+        const role = (user.role || '').toString().trim().toLowerCase();
+        const operatorPhone = normalizeWhatsAppNumber(user.school_operator_phone || '');
+        const schoolPhone = normalizeWhatsAppNumber(user.school_phone || '');
+        const generalPhone = normalizeWhatsAppNumber(user.whatsapp_number || '');
+        const message = buildWhatsAppMessage(user);
+
+        if (role === 'sekolah') {
+            const hasAnySchoolPhone = Boolean(operatorPhone || schoolPhone);
+            if (!hasAnySchoolPhone && !generalPhone) {
+                alert('Nomor WhatsApp belum tersedia untuk user ini.');
+                return;
+            }
+            if (hasAnySchoolPhone) {
+                const openedModal = openSchoolWaPicker(user, operatorPhone, schoolPhone);
+                if (openedModal) return;
+            }
+        }
+
+        if (!generalPhone) {
+            alert('Nomor WhatsApp belum tersedia untuk user ini.');
+            return;
+        }
+
+        openWhatsAppLink(generalPhone, message);
+    }
 
     function _previewValue(value) {
         if (value === null || value === undefined) return '-';

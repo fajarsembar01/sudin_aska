@@ -7,13 +7,14 @@ from typing import Iterable
 
 BASE_DIR = Path(__file__).resolve().parent
 KECERDASAN_DIR = BASE_DIR / "kecerdasan"
-GENERAL_FILE = KECERDASAN_DIR / "umum.md"
-SPECIFIC_FILE = KECERDASAN_DIR / "profil_sudindikju2.md"
+MARKDOWN_DIR = KECERDASAN_DIR / "markdown"
+GENERAL_FILE = MARKDOWN_DIR / "umum.md"
+SPECIFIC_FILE = MARKDOWN_DIR / "profil_sudindikju2.md"
 PLACEHOLDER = "<!-- {{ASKA_PROFIL_DAN_JADWAL}} -->"
 
-DATA_SEKOLAH_FILE = KECERDASAN_DIR / "Data_Sekolah_Sudin_JU2.md"
-DETAIL_SEKOLAH_FILE = KECERDASAN_DIR / "Detail_Sekolah.md"
-STRUKTUR_ORG_FILE = KECERDASAN_DIR / "struktur_organisasi_sudindikju2.md"
+DATA_SEKOLAH_FILE = MARKDOWN_DIR / "Data_Sekolah_Sudin_JU2.md"
+DETAIL_SEKOLAH_FILE = MARKDOWN_DIR / "Detail_Sekolah.md"
+STRUKTUR_ORG_FILE = MARKDOWN_DIR / "struktur_organisasi_sudindikju2.md"
 
 GENERATED_DIR = KECERDASAN_DIR / ".generated"
 

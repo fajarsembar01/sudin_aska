@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate kecerdasan/Detail_Sekolah.md from portal_schools data.
+"""Generate kecerdasan/markdown/Detail_Sekolah.md from portal_schools data.
 
 Default filters:
 - status = NEGERI
@@ -195,7 +195,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Generate Detail_Sekolah.md from portal_schools")
     parser.add_argument(
         "--output",
-        default="kecerdasan/Detail_Sekolah.md",
+        default="kecerdasan/markdown/Detail_Sekolah.md",
         help="Output markdown path",
     )
     parser.add_argument(

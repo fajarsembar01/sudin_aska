@@ -1840,7 +1840,9 @@ def list_dashboard_users() -> List[Dict[str, Any]]:
                 s.jenjang as school_jenjang,
                 s.status as school_status,
                 s.logo_url as school_logo_url,
-                sk.name as school_kecamatan_name
+                sk.name as school_kecamatan_name,
+                NULLIF(TRIM(s.metadata->>'coordinator_phone'), '') as school_operator_phone,
+                NULLIF(TRIM(s.metadata->>'school_phone'), '') as school_phone
             FROM dashboard_users u
             LEFT JOIN portal_kecamatan k ON u.requested_kecamatan = k.id
             LEFT JOIN portal_schools s ON u.school_id = s.id

@@ -247,6 +247,7 @@ def handle_manage_users(*, actor: Optional[dict], base_template: str, read_only:
         merge_new_users=merge_new_users,
         kecamatan_list=kecamatan_list,
         activity_logs=activity_logs,
+        admin_contact_name=((actor or {}).get("full_name") or (actor or {}).get("email") or "Admin"),
         base_template=base_template,
         read_only=read_only,
     )

@@ -16,7 +16,7 @@ Repo ini awalnya diproduksi untuk satu sekolah, namun seluruh konfigurasi dipisa
 ## 🔍 Kenapa Cocok untuk Sekolah Lain?
 
 - **Modular** — tiga kanal (Telegram, Web, Twitter) berbagi _logic_ yang sama di `ai_core.py` + `flows/`.
-- **Pengetahuan mudah diganti** — cukup edit `kecerdasan/profil_sudindikju2.md` & `kecerdasan/umum.md`, lalu jalankan `python knowledge_loader.py`.
+- **Pengetahuan mudah diganti** — cukup edit `kecerdasan/markdown/profil_sudindikju2.md` & `kecerdasan/markdown/umum.md`, lalu jalankan `python knowledge_loader.py`.
 - **Data internal aman** — semua laporan masuk PostgreSQL dan bisa dimonitor via dashboard.
 - **Ops-friendly** — tersedia skrip `scripts/init_db.py`, CLI dashboard (`dashboard/cli.py`), serta contoh unit `systemd` dan Nginx.
 - **Gratis bila perlu** — dukung embedding lokal HuggingFace dan STT/LLM OpenAI-compatible.
@@ -230,8 +230,8 @@ TWITTER_SPAM_KEYWORDS=promo,follback
 
 ## 📚 Menyiapkan Pengetahuan Sekolah
 
-1. Isi `kecerdasan/profil_sudindikju2.md` dengan data unik instansi (profil, layanan, jadwal kegiatan).
-2. Lengkapi `kecerdasan/umum.md` untuk panduan generik (layanan, kebijakan nasional, FAQ).
+1. Isi `kecerdasan/markdown/profil_sudindikju2.md` dengan data unik instansi (profil, layanan, jadwal kegiatan).
+2. Lengkapi `kecerdasan/markdown/umum.md` untuk panduan generik (layanan, kebijakan nasional, FAQ).
 3. Sisipkan `<!-- {{ASKA_PROFIL_DAN_JADWAL}} -->` di `umum.md` bila ingin menempel profil secara otomatis.
 4. Jalankan `python knowledge_loader.py` agar `kecerdasan.md` diperbarui dan tersimpan di cache FAISS.
 5. Jika ingin mereset vektor, hapus folder `.aska_vectorstore/` kemudian jalankan ulang bot.
@@ -446,8 +446,8 @@ sudo certbot --nginx -d dashboard.sekolah.sch.id -d aska.sekolah.sch.id
    - Ubah nama sekolah di `.env` dan `dashboard/templates/*.html`.
    - Sesuaikan emoji/gaya bahasa di `responses/`.
 2. **Pengetahuan**
-   - Tulis data unik instansi di `kecerdasan/profil_sudindikju2.md`.
-   - Isi kalender kegiatan dan SOP di `kecerdasan/umum.md`.
+   - Tulis data unik instansi di `kecerdasan/markdown/profil_sudindikju2.md`.
+   - Isi kalender kegiatan dan SOP di `kecerdasan/markdown/umum.md`.
    - Jalankan `python knowledge_loader.py`.
 3. **Integrasi Google**
    - Buat OAuth client baru, isi `GOOGLE_CLIENT_ID/SECRET`, dan perbarui domain yang diizinkan.
