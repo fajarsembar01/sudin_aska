@@ -1499,6 +1499,40 @@ def admin_home() -> Response:
     )
 
 
+@hospitality_bp.route("/admin/api/rankings")
+@role_required("admin")
+def admin_api_rankings() -> Response:
+    """API endpoint untuk memuat tambahan data perankingan sekolah."""
+    from .queries import fetch_bottom_schools, fetch_top_schools
+
+    type_ = (request.args.get("type") or "best").strip().lower()
+    if type_ not in {"best", "worst"}:
+        type_ = "best"
+
+    limit = request.args.get("limit", 10, type=int)
+    offset = request.args.get("offset", 0, type=int)
+    safe_limit = max(1, min(int(limit or 10), 50))
+    safe_offset = max(0, int(offset or 0))
+
+    if type_ == "worst":
+        rows = fetch_bottom_schools(limit=safe_limit, offset=safe_offset)
+    else:
+        rows = fetch_top_schools(limit=safe_limit, offset=safe_offset)
+
+    payload = []
+    for row in rows:
+        payload.append(
+            {
+                "school_id": row.get("school_id"),
+                "school_name": row.get("school_name"),
+                "jenjang": row.get("jenjang"),
+                "assessment_count": int(row.get("assessment_count") or 0),
+                "avg_pct": float(row.get("avg_pct") or 0),
+            }
+        )
+    return jsonify(payload)
+
+
 @hospitality_bp.route("/admin/all-assessments")
 @role_required("admin")
 def admin_all_assessments() -> Response:

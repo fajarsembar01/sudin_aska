@@ -189,7 +189,7 @@ portal_content %} {# ===== HERO SECTION ===== #}
                 <div class="tab-content" style="max-height: 240px; overflow-y: auto">
                     <div class="tab-pane fade show active" id="best-pane" role="tabpanel" aria-labelledby="best-tab">
                         {% if top_schools %}
-                        <div class="list-group list-group-flush">
+                        <div class="list-group list-group-flush" id="bestRankingList">
                             {% for s in top_schools %}
                             <div
                                 class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-bottom-0">
@@ -210,6 +210,14 @@ portal_content %} {# ===== HERO SECTION ===== #}
                             </div>
                             {% endfor %}
                         </div>
+                        {% if top_schools|length >= 10 %}
+                        <div class="text-center mt-2">
+                            <button id="loadMoreBest" class="btn btn-sm btn-link text-decoration-none"
+                                onclick="loadMoreHospitalityRankings('best')">
+                                Lihat lagi <i class="bi bi-chevron-down"></i>
+                            </button>
+                        </div>
+                        {% endif %}
                         {% else %}
                         <p class="text-muted small text-center my-4">
                             Belum ada data
@@ -218,7 +226,7 @@ portal_content %} {# ===== HERO SECTION ===== #}
                     </div>
                     <div class="tab-pane fade" id="worst-pane" role="tabpanel" aria-labelledby="worst-tab">
                         {% if bottom_schools %}
-                        <div class="list-group list-group-flush">
+                        <div class="list-group list-group-flush" id="worstRankingList">
                             {% for s in bottom_schools %}
                             <div
                                 class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-bottom-0">
@@ -239,6 +247,14 @@ portal_content %} {# ===== HERO SECTION ===== #}
                             </div>
                             {% endfor %}
                         </div>
+                        {% if bottom_schools|length >= 10 %}
+                        <div class="text-center mt-2">
+                            <button id="loadMoreWorst" class="btn btn-sm btn-link text-decoration-none"
+                                onclick="loadMoreHospitalityRankings('worst')">
+                                Lihat lagi <i class="bi bi-chevron-down"></i>
+                            </button>
+                        </div>
+                        {% endif %}
                         {% else %}
                         <p class="text-muted small text-center my-4">
                             Belum ada data
@@ -538,54 +554,137 @@ SCRIPTS ===== #}
         });
     }
 
-    // ── Status Pie Chart ───────────────────────────────────────────
-    const pieCtx = document.getElementById('statusPieChart');
-    if (pieCtx) {
-        const totalAss = {{ stats.total_assessments | int
-    }};
-    const verifiedAss = {{ stats.verified_assessments | int }};
-    const pendingAss = {{ stats.pending_assessments | int }};
-    const draftAss = Math.max(0, totalAss - verifiedAss - pendingAss);
+        // ── Status Pie Chart ───────────────────────────────────────────
+        const pieCtx = document.getElementById('statusPieChart');
+        if (pieCtx) {
+            const totalAss = {{ stats.total_assessments | int }};
+            const verifiedAss = {{ stats.verified_assessments | int }};
+            const pendingAss = {{ stats.pending_assessments | int }};
+            const draftAss = Math.max(0, totalAss - verifiedAss - pendingAss);
 
-    new Chart(pieCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Verified', 'Submitted', 'Draft'],
-            datasets: [{
-                data: [verifiedAss, pendingAss, draftAss],
-                backgroundColor: ['#198754', '#ffc107', '#6c757d'],
-                borderWidth: 0,
-                hoverOffset: 5,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '60%',
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        usePointStyle: true,
-                        padding: 14,
-                    }
+            new Chart(pieCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Verified', 'Submitted', 'Draft'],
+                    datasets: [{
+                        data: [verifiedAss, pendingAss, draftAss],
+                        backgroundColor: ['#198754', '#ffc107', '#6c757d'],
+                        borderWidth: 0,
+                        hoverOffset: 5,
+                    }]
                 },
-                tooltip: {
-                    callbacks: {
-                        label: function (ctx) {
-                            const val = Number(ctx.raw || 0);
-                            const dataArr = ctx.dataset && Array.isArray(ctx.dataset.data) ? ctx.dataset.data : [];
-                            const total = dataArr.reduce(function (acc, n) { return acc + (Number(n) || 0); }, 0);
-                            const pct = total > 0 ? Math.round((val / total) * 100) : 0;
-                            return ctx.label + ': ' + val + ' penilaian (' + pct + '%)';
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 14,
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    const val = Number(ctx.raw || 0);
+                                    const dataArr = ctx.dataset && Array.isArray(ctx.dataset.data) ? ctx.dataset.data : [];
+                                    const total = dataArr.reduce(function (acc, n) { return acc + (Number(n) || 0); }, 0);
+                                    const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+                                    return ctx.label + ': ' + val + ' penilaian (' + pct + '%)';
+                                }
+                            }
                         }
                     }
                 }
-            }
+            });
         }
-    });
-      }
-    }) ();
+
+        // ── Ranking Load More ──────────────────────────────────────────
+        const rankingEndpoint = "{{ url_for('hospitality.admin_api_rankings') }}";
+        const rankingLimit = 10;
+        const rankingOffset = {
+            best: {{ top_schools|length }},
+            worst: {{ bottom_schools|length }},
+        };
+
+        function setLoadMoreButtonState(button, isLoading) {
+            if (!button) return;
+            if (isLoading) {
+                button.disabled = true;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...';
+                return;
+            }
+            button.disabled = false;
+            button.innerHTML = 'Lihat lagi <i class="bi bi-chevron-down"></i>';
+        }
+
+        window.loadMoreHospitalityRankings = function (type) {
+            const config = type === 'worst'
+                ? { buttonId: 'loadMoreWorst', listId: 'worstRankingList', badgeClass: 'bg-danger' }
+                : { buttonId: 'loadMoreBest', listId: 'bestRankingList', badgeClass: 'bg-success' };
+            const button = document.getElementById(config.buttonId);
+            const list = document.getElementById(config.listId);
+            if (!button || !list) return;
+
+            setLoadMoreButtonState(button, true);
+            const offset = rankingOffset[type] || 0;
+            const params = new URLSearchParams({
+                type: type,
+                limit: String(rankingLimit),
+                offset: String(offset),
+            });
+
+            fetch(`${rankingEndpoint}?${params.toString()}`)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then((rows) => {
+                    if (!Array.isArray(rows) || rows.length === 0) {
+                        button.style.display = 'none';
+                        return;
+                    }
+
+                    rows.forEach((school, index) => {
+                        const rankNumber = offset + index + 1;
+                        const pct = Number.parseFloat(school.avg_pct || 0);
+                        const pctText = Number.isFinite(pct) ? pct.toFixed(1) : '0.0';
+                        const assessmentCount = Number.parseInt(school.assessment_count || 0, 10) || 0;
+                        const schoolName = school.school_name || '-';
+                        const jenjang = school.jenjang || '-';
+                        const itemHtml = `
+                            <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center border-bottom-0">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-muted small" style="width: 20px">${rankNumber}</span>
+                                    <div>
+                                        <div class="fw-semibold small">${schoolName}</div>
+                                        <div class="text-muted" style="font-size: 0.7rem">${jenjang} &bull; ${assessmentCount} penilaian</div>
+                                    </div>
+                                </div>
+                                <span class="badge ${config.badgeClass} text-white rounded-pill">${pctText}%</span>
+                            </div>
+                        `;
+                        list.insertAdjacentHTML('beforeend', itemHtml);
+                    });
+
+                    rankingOffset[type] = offset + rows.length;
+                    if (rows.length < rankingLimit) {
+                        button.style.display = 'none';
+                        return;
+                    }
+                    setLoadMoreButtonState(button, false);
+                })
+                .catch((error) => {
+                    console.error('Gagal load more ranking hospitality:', error);
+                    button.disabled = false;
+                    button.innerHTML = 'Coba lagi';
+                });
+        };
+    })();
 </script>
 
 {% endblock %}

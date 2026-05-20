@@ -923,8 +923,10 @@ def fetch_daily_trend(*, days: int | None = 30) -> List[Dict[str, Any]]:
         return [dict(row) for row in cur.fetchall()]
 
 
-def fetch_top_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
+def fetch_top_schools(*, limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
     """Top schools by average score percentage."""
+    safe_limit = max(1, min(int(limit or 10), 100))
+    safe_offset = max(0, int(offset or 0))
     _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
@@ -955,15 +957,17 @@ def fetch_top_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
             GROUP BY sc.school_id, sch.name, sch.npsn, sch.jenjang
             HAVING COUNT(*) > 0
             ORDER BY avg_pct DESC NULLS LAST, assessment_count DESC, sch.name ASC
-            LIMIT %s
+            LIMIT %s OFFSET %s
             """,
-            (limit,),
+            (safe_limit, safe_offset),
         )
         return [dict(row) for row in cur.fetchall()]
 
 
-def fetch_bottom_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
+def fetch_bottom_schools(*, limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
     """Bottom schools by average score percentage (lowest first)."""
+    safe_limit = max(1, min(int(limit or 10), 100))
+    safe_offset = max(0, int(offset or 0))
     _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
@@ -994,9 +998,9 @@ def fetch_bottom_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
             GROUP BY sc.school_id, sch.name, sch.npsn, sch.jenjang
             HAVING COUNT(*) > 0
             ORDER BY avg_pct ASC NULLS LAST, assessment_count DESC, sch.name ASC
-            LIMIT %s
+            LIMIT %s OFFSET %s
             """,
-            (limit,),
+            (safe_limit, safe_offset),
         )
         return [dict(row) for row in cur.fetchall()]
 
