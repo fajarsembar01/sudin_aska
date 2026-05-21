@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Optional
 
 import requests
+from dotenv import dotenv_values
 from flask import (
     Response,
     current_app,
@@ -60,14 +61,24 @@ PAGE_SIZE = 50
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
+def _project_env_value(name: str, default: str = "") -> str:
+    value = os.getenv(name)
+    if value is not None:
+        return value
+    try:
+        return str(dotenv_values(PROJECT_ROOT / ".env").get(name) or default)
+    except Exception:
+        return default
+
+
 # ---------------------------------------------------------------------------
 # Helpers — bridge management
 # ---------------------------------------------------------------------------
 
 def _cc_runtime_paths() -> dict:
     root = PROJECT_ROOT
-    session = root / (os.getenv("ASKA_CC_WHATSAPP_SESSION_PATH") or ".wa_cc_session")
-    status = root / (os.getenv("ASKA_CC_WHATSAPP_STATUS_PATH") or "runtime/whatsapp_cc_status.json")
+    session = root / (_project_env_value("ASKA_CC_WHATSAPP_SESSION_PATH") or ".wa_cc_session")
+    status = root / (_project_env_value("ASKA_CC_WHATSAPP_STATUS_PATH") or "runtime/whatsapp_cc_status.json")
     pid = root / "runtime" / "whatsapp_cc.pid"
     log = root / "runtime" / "whatsapp_cc.log"
     return {"root": root, "session": session, "status": status, "pid": pid, "log": log}
@@ -116,13 +127,13 @@ def _stop_existing_bridge(pid_path: Path) -> None:
 
 
 def _cc_bridge_http_port() -> int:
-    return int(os.getenv("ASKA_CC_HTTP_PORT") or "3100")
+    return int(_project_env_value("ASKA_CC_HTTP_PORT") or "3100")
 
 
 def _send_via_bridge(to: str, message: str) -> dict:
     """Send an outbound WA message through the CC bridge HTTP API."""
     port = _cc_bridge_http_port()
-    token = (os.getenv("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+    token = (_project_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
     try:
         resp = requests.post(
             f"http://127.0.0.1:{port}/send",
@@ -141,7 +152,7 @@ def _restart_cc_bridge(reset_session: bool = True) -> dict:
 
     # Clean stale lock files
     try:
-        client_dir = paths["session"] / f"session-{os.getenv('ASKA_CC_WHATSAPP_CLIENT_ID', 'cc-main')}"
+        client_dir = paths["session"] / f"session-{_project_env_value('ASKA_CC_WHATSAPP_CLIENT_ID', 'cc-main')}"
         for lock_name in ("SingletonLock", "SingletonCookie", "SingletonSocket", "lockfile"):
             for lp in client_dir.rglob(lock_name):
                 try:
@@ -157,7 +168,6 @@ def _restart_cc_bridge(reset_session: bool = True) -> dict:
     paths["log"].parent.mkdir(parents=True, exist_ok=True)
 
     env = os.environ.copy()
-    from dotenv import dotenv_values
     env_file = paths["root"] / ".env"
     if env_file.exists():
         for k, v in dotenv_values(env_file).items():

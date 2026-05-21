@@ -10,6 +10,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 from flask import Flask, request, jsonify, render_template, session, redirect, url_for, flash, send_from_directory, abort, make_response
 from authlib.integrations.flask_client import OAuth
+from dotenv import dotenv_values
 
 from .handlers import process_channel_request, process_web_request, web_sessions, reload_qa_chain
 from .feedback_routes import feedback_bp
@@ -44,6 +45,17 @@ LIMIT_BLOCK_MESSAGE = (
 )
 GMAIL_ALLOWED_DOMAINS = {"gmail.com", "googlemail.com"}
 WEB_BOT_USERNAME = "ASKA_WEB"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _env_value(name: str, default: str = "") -> str:
+    value = os.getenv(name)
+    if value is not None:
+        return value
+    try:
+        return str(dotenv_values(PROJECT_ROOT / ".env").get(name) or default)
+    except Exception:
+        return default
 
 
 def _run_async(coro):
@@ -903,7 +915,7 @@ def create_app() -> Flask:
         Unlike the ASKA bot, this does NOT generate an AI reply.
         It stores the message and notifies admins via Telegram.
         """
-        token_expected = (os.getenv("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+        token_expected = (_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
         if not token_expected:
             return jsonify({"error": "ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}), 501
 
@@ -911,7 +923,7 @@ def create_app() -> Flask:
             request.headers.get("X-ASKA-CC-TOKEN")
             or request.args.get("token")
             or ""
-        )
+        ).strip()
         if provided_token != token_expected:
             return jsonify({"error": "Unauthorized"}), 403
 
