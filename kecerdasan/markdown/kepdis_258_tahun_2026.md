@@ -2340,155 +2340,155 @@
 
 ### [1] SLB A PEMBINA TINGKAT NASIONAL (NPSN: 20103099)
 - Jenjang TKLB:
-  - A: 10 murid
+- A: 10 murid
 - Jenjang SDLB:
-  - A: 10 murid
+- A: 10 murid
 - Jenjang SMPLB:
-  - A: 16 murid
+- A: 16 murid
 - Jenjang SMALB:
-  - A: 16 murid
+- A: 16 murid
 
 ### [2] SLB NEGERI 1 JAKARTA (NPSN: 20109425)
 - Jenjang SDLB:
-  - B: 5 murid
-  - C: 10 murid
+- B: 5 murid
+- C: 10 murid
 - Jenjang SMPLB:
-  - B: 8 murid
-  - C: 16 murid
+- B: 8 murid
+- C: 16 murid
 - Jenjang SMALB:
-  - B: 8 murid
-  - C: 16 murid
+- B: 8 murid
+- C: 16 murid
 
 ### [3] SLB NEGERI 2 JAKARTA (NPSN: 20103089)
 - Jenjang SDLB:
-  - B: 5 murid
-  - C: 10 murid
+- B: 5 murid
+- C: 10 murid
 - Jenjang SMPLB:
-  - B: 16 murid
-  - C: 16 murid
+- B: 16 murid
+- C: 16 murid
 - Jenjang SMALB:
-  - B: 16 murid
-  - C: 24 murid
+- B: 16 murid
+- C: 24 murid
 
 ### [4] SLB NEGERI 3 JAKARTA (NPSN: 20109970)
 - Jenjang SDLB:
-  - B: 5 murid
-  - C: 10 murid
+- B: 5 murid
+- C: 10 murid
 - Jenjang SMPLB:
-  - B: 8 murid
-  - C: 16 murid
+- B: 8 murid
+- C: 16 murid
 - Jenjang SMALB:
-  - B: 8 murid
-  - C: 16 murid
+- B: 8 murid
+- C: 16 murid
 
 ### [5] SLB NEGERI 4 JAKARTA (NPSN: 20110821)
 - Jenjang SDLB:
-  - B: 5 murid
-  - C: 10 murid
+- B: 5 murid
+- C: 10 murid
 - Jenjang SMPLB:
-  - A: 0 murid
-  - B: 8 murid
-  - C: 16 murid
+- A: 0 murid
+- B: 8 murid
+- C: 16 murid
 - Jenjang SMALB:
-  - B: 8 murid
-  - C: 16 murid
+- B: 8 murid
+- C: 16 murid
 
 ### [6] SLB NEGERI 5 JAKARTA (NPSN: 20112403)
 - Jenjang SDLB:
-  - B: 5 murid
-  - C: 5 murid
+- B: 5 murid
+- C: 5 murid
 - Jenjang SMPLB:
-  - B: 8 murid
-  - C: 24 murid
+- B: 8 murid
+- C: 24 murid
 - Jenjang SMALB:
-  - B: 16 murid
-  - C: 16 murid
+- B: 16 murid
+- C: 16 murid
 
 ### [7] SLB NEGERI 6 JAKARTA (NPSN: 20109529)
 - Jenjang SDLB:
-  - B: 5 murid
-  - C: 5 murid
+- B: 5 murid
+- C: 5 murid
 - Jenjang SMPLB:
-  - B: 7 murid
-  - C: 7 murid
+- B: 7 murid
+- C: 7 murid
 - Jenjang SMALB:
-  - B: 7 murid
-  - C: 7 murid
+- B: 7 murid
+- C: 7 murid
 
 ### [8] SLB NEGERI 7 JAKARTA (NPSN: 20109280)
 - Jenjang SDLB:
-  - A: 5 murid
-  - B: 5 murid
-  - C: 10 murid
+- A: 5 murid
+- B: 5 murid
+- C: 10 murid
 - Jenjang SMPLB:
-  - B: 16 murid
-  - C: 16 murid
+- B: 16 murid
+- C: 16 murid
 - Jenjang SMALB:
-  - B: 16 murid
-  - C: 8 murid
+- B: 16 murid
+- C: 8 murid
 
 ### [9] SLB NEGERI 8 JAKARTA (NPSN: 69980881)
 - Jenjang SDLB:
-  - B: 5 murid
-  - C: 5 murid
+- B: 5 murid
+- C: 5 murid
 - Jenjang SMPLB:
-  - A: 0 murid
-  - B: 8 murid
-  - C: 8 murid
-  - D: 8 murid
+- A: 0 murid
+- B: 8 murid
+- C: 8 murid
+- D: 8 murid
 - Jenjang SMALB:
-  - B: 8 murid
-  - C: 24 murid
-  - A: 8 murid
+- B: 8 murid
+- C: 24 murid
+- A: 8 murid
 
 ### [10] SLB NEGERI 9 JAKARTA (NPSN: 69988210)
 - Jenjang SDLB:
-  - B: 5 murid
-  - C: 10 murid
+- B: 5 murid
+- C: 10 murid
 - Jenjang SMPLB:
-  - A: 0 murid
-  - B: 8 murid
-  - C: 40 murid
-  - Autis: 4 murid
+- A: 0 murid
+- B: 8 murid
+- C: 40 murid
+- Autis: 4 murid
 - Jenjang SMALB:
-  - B: 8 murid
-  - C: 32 murid
+- B: 8 murid
+- C: 32 murid
 
 ### [11] SLB NEGERI 10 JAKARTA (NPSN: 69988475)
 - Jenjang SDLB:
-  - B: 10 murid
-  - C: 5 murid
+- B: 10 murid
+- C: 5 murid
 - Jenjang SMPLB:
-  - A: 8 murid
-  - B: 16 murid
-  - C: 16 murid
+- A: 8 murid
+- B: 16 murid
+- C: 16 murid
 - Jenjang SMALB:
-  - B: 8 murid
-  - C: 16 murid
+- B: 8 murid
+- C: 16 murid
 
 ### [12] SLB NEGERI 11 JAKARTA (NPSN: 69988460)
 - Jenjang SDLB:
-  - B: 5 murid
-  - C: 10 murid
-  - Autis: 3 murid
+- B: 5 murid
+- C: 10 murid
+- Autis: 3 murid
 - Jenjang SMPLB:
-  - B: 8 murid
-  - C: 16 murid
+- B: 8 murid
+- C: 16 murid
 - Jenjang SMALB:
-  - Autis: 4 murid
-  - B: 8 murid
-  - C: 16 murid
+- Autis: 4 murid
+- B: 8 murid
+- C: 16 murid
 
 ### [13] SLB NEGERI 12 JAKARTA (NPSN: 69988408)
 - Jenjang SDLB:
-  - B: 5 murid
-  - C: 5 murid
+- B: 5 murid
+- C: 5 murid
 - Jenjang SMPLB:
-  - B: 7 murid
-  - C: 7 murid
+- B: 7 murid
+- C: 7 murid
 - Jenjang SMALB:
-  - B: 14 murid
-  - C: 7 murid
+- B: 14 murid
+- C: 7 murid
 
 ## Lampiran G - Sanggar Kegiatan Belajar (SKB)
 - Jumlah satuan pendidikan: 33
@@ -2497,232 +2497,232 @@
 - Program A: - murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [2] SKB 02 (NPSN: P2965971)
 - Program A: - murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [3] SKB 03 (NPSN: P2966171)
 - Program A: - murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [4] SKB 04 (NPSN: P2966295)
 - Program A: - murid
 - Program B: 30 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [5] SKB 05 (NPSN: P9926222)
 - Program A: - murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [6] SKB 06 (NPSN: P2969301)
 - Program A: 20 murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 60 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 60 murid
 
 ### [7] SKB 07 (NPSN: P9908916)
 - Program A: - murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [8] SKB 08 (NPSN: P2966606)
 - Program A: - murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [9] SKB 09 (NPSN: P2966639)
 - Program A: - murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [10] SKB 10 (NPSN: P2966615)
 - Program A: 20 murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [11] SKB 11 (NPSN: P2966608)
 - Program A: 20 murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [12] SKB 12 (NPSN: P2966872)
 - Program A: - murid
 - Program B: 50 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 60 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 60 murid
 
 ### [13] SKB 13 (NPSN: P2967206)
 - Program A: - murid
 - Program B: 15 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 15 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 15 murid
 
 ### [14] SKB 14 (NPSN: P2967200)
 - Program A: 15 murid
 - Program B: 20 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 25 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 25 murid
 
 ### [15] SKB 15 (NPSN: P2965963)
 - Program A: - murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [16] SKB 16 (NPSN: P2965967)
 - Program A: - murid
 - Program B: 40 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 40 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 40 murid
 
 ### [17] SKB 17 (NPSN: P2966315)
 - Program A: - murid
 - Program B: 60 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 60 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 60 murid
 
 ### [18] SKB 18 (NPSN: P9926496)
 - Program A: - murid
 - Program B: 50 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 60 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 60 murid
 
 ### [19] SKB 19 (NPSN: P2967365)
 - Program A: - murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [20] SKB 20 (NPSN: P9934360)
 - Program A: - murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [21] SKB 21 (NPSN: P2966612)
 - Program A: - murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [22] SKB 22 (NPSN: P2967208)
 - Program A: 20 murid
 - Program B: 50 murid
 - Program C:
-  - Peminatan IPA: 30 murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: 30 murid
+- Peminatan IPS: 30 murid
 
 ### [23] SKB 23 (NPSN: P2965972)
 - Program A: 20 murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 60 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 60 murid
 
 ### [24] SKB 24 (NPSN: P2969409)
 - Program A: - murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [25] SKB 25 (NPSN: P2966616)
 - Program A: 20 murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [26] SKB 26 (NPSN: P2966649)
 - Program A: 20 murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [27] SKB 27 (NPSN: P2966648)
 - Program A: - murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [28] SKB 28 (NPSN: P2967209)
 - Program A: - murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [29] SKB 29 (NPSN: P2965982)
 - Program A: - murid
 - Program B: 50 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 60 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 60 murid
 
 ### [30] SKB 30 (NPSN: P2967896)
 - Program A: - murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: 30 murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: 30 murid
+- Peminatan IPS: 30 murid
 
 ### [31] SKB 31 (NPSN: P2966652)
 - Program A: - murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ### [32] SKB 32 (NPSN: P2967199)
 - Program A: 10 murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 25 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 25 murid
 
 ### [33] SKB 33 (NPSN: P2967201)
 - Program A: 20 murid
 - Program B: 25 murid
 - Program C:
-  - Peminatan IPA: - murid
-  - Peminatan IPS: 30 murid
+- Peminatan IPA: - murid
+- Peminatan IPS: 30 murid
 
 ## Catatan Ekstraksi
 - Halaman 3 dan 54 pada file PDF sumber tidak memiliki lapisan teks yang dapat diekstrak otomatis.

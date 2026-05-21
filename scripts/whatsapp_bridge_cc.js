@@ -40,7 +40,7 @@ function loadDotEnvFile(filePath) {
             if (key && !(key in process.env)) process.env[key] = value;
         }
     } catch (err) {
-        console.warn("[CC] Gagal membaca .env:", err?.message || err);
+        console.warn("[CC] Gagal membaca .env:", (err && err.message) || err);
     }
 }
 
@@ -84,7 +84,7 @@ function writeStatus(patch) {
             "utf8"
         );
     } catch (err) {
-        console.error("[CC] Gagal menulis status:", err?.message || err);
+        console.error("[CC] Gagal menulis status:", (err && err.message) || err);
     }
 }
 
@@ -135,7 +135,7 @@ client.on("disconnected", (reason) => {
     console.warn("[CC] Disconnected:", reason);
     setTimeout(() => {
         client.initialize().catch((e) =>
-            console.error("[CC] Reinit error:", e?.message || e)
+            console.error("[CC] Reinit error:", (e && e.message) || e)
         );
     }, 3000);
 });
@@ -145,7 +145,7 @@ client.on("disconnected", (reason) => {
 async function handleIncoming(msg) {
     try {
         if (!msg || msg.fromMe) return;
-        const mid = msg.id?._serialized || "";
+        const mid = (msg.id && msg.id._serialized) || "";
         if (mid && (ignoredIds.has(mid) || processedIds.has(mid))) return;
         if (mid) {
             processedIds.add(mid);
@@ -170,7 +170,10 @@ async function handleIncoming(msg) {
                 realNumber = String(contact.number).replace(/\D/g, "");
             }
             displayName = String(
-                contact?.pushname || contact?.name || contact?.shortName || displayName
+                (contact && contact.pushname) ||
+                (contact && contact.name) ||
+                (contact && contact.shortName) ||
+                displayName
             ).trim() || displayName;
         } catch (_) {
             // fallback to normalized fromJid
@@ -200,10 +203,13 @@ async function handleIncoming(msg) {
                 }
             )
             .catch((err) => {
-                console.error("[CC] Backend error:", err?.response?.data || err?.message || err);
+                console.error(
+                    "[CC] Backend error:",
+                    (err && err.response && err.response.data) || (err && err.message) || err
+                );
             });
     } catch (err) {
-        console.error("[CC] handleIncoming error:", err?.message || err);
+        console.error("[CC] handleIncoming error:", (err && err.message) || err);
     }
 }
 
@@ -246,13 +252,13 @@ app.post("/send", authCheck, async (req, res) => {
         }
 
         const sent = await client.sendMessage(jid, String(message));
-        const sentId = sent?.id?._serialized || "";
+        const sentId = (sent && sent.id && sent.id._serialized) || "";
         if (sentId) ignoredIds.add(sentId);
         console.log(`[CC] sent to=${jid} len=${message.length}`);
         res.json({ ok: true, messageId: sentId });
     } catch (err) {
-        console.error("[CC] sendMessage error:", err?.message || err);
-        res.status(500).json({ error: err?.message || "Send failed" });
+        console.error("[CC] sendMessage error:", (err && err.message) || err);
+        res.status(500).json({ error: (err && err.message) || "Send failed" });
     }
 });
 
@@ -273,7 +279,7 @@ writeStatus({
 });
 
 client.initialize().catch((err) => {
-    writeStatus({ state: "error", qrText: "", message: err?.message || String(err) });
-    console.error("[CC] Init error:", err?.message || err);
+    writeStatus({ state: "error", qrText: "", message: (err && err.message) || String(err) });
+    console.error("[CC] Init error:", (err && err.message) || err);
     process.exit(1);
 });
