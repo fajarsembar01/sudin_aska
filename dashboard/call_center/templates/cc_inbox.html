@@ -473,9 +473,6 @@
 
         function validateAttachment(file, options) {
             if (!file) return null;
-            var opts = options || {};
-            var docMaxBytes = opts.docMaxBytes || (1024 * 1024);
-            var docMaxLabel = opts.docMaxLabel || '1 MB';
             var name = String(file.name || '').toLowerCase();
             var ext = name.indexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
             var mime = String(file.type || '').toLowerCase();
@@ -485,16 +482,14 @@
             var isPdf = ext === '.pdf' || mime === 'application/pdf';
             var allowedDocs = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.csv'];
             if (isImage) {
-                if (file.size > 20 * 1024 * 1024) return 'Ukuran gambar maksimal 20 MB sebelum kompresi.';
                 return null;
             }
             if (isPdf) {
-                if (file.size > 20 * 1024 * 1024) return 'Ukuran PDF maksimal 20 MB sebelum kompresi.';
                 return null;
             }
             if (mime.indexOf('image/') === 0) return 'Tipe gambar belum didukung. Gunakan JPG, PNG, WebP, GIF, HEIC, BMP, atau TIFF.';
             if (allowedDocs.indexOf(ext) === -1) return 'Tipe file belum didukung.';
-            if (file.size > docMaxBytes) return 'Ukuran dokumen selain PDF maksimal ' + docMaxLabel + '.';
+            // Limit ukuran sengaja tidak diterapkan. Jika perlu lagi, aktifkan cek file.size di sini.
             return null;
         }
 
@@ -650,7 +645,7 @@
                 return;
             }
             if (draftFile) {
-                var fileError = validateAttachment(draftFile, { docMaxBytes: 1024 * 1024, docMaxLabel: '1 MB' });
+                var fileError = validateAttachment(draftFile);
                 if (fileError) {
                     alert(fileError);
                     return;
@@ -731,7 +726,7 @@
         if (draftMediaInput) {
             draftMediaInput.addEventListener('change', function () {
                 var file = this.files && this.files.length ? this.files[0] : null;
-                var error = validateAttachment(file, { docMaxBytes: 1024 * 1024, docMaxLabel: '1 MB' });
+                var error = validateAttachment(file);
                 if (error) {
                     alert(error);
                     clearDraftEditorAttachment(false);

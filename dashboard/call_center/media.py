@@ -8,7 +8,6 @@ import io
 import mimetypes
 import os
 import re
-import uuid
 from datetime import datetime
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping, Optional
@@ -132,6 +131,10 @@ def call_center_media_label(mime_type: Optional[str] = None) -> str:
     clean_mime = (mime_type or "").strip().lower()
     if clean_mime.startswith("image/"):
         return "[Gambar]"
+    if clean_mime.startswith("video/"):
+        return "[Video]"
+    if clean_mime.startswith("audio/"):
+        return "[Audio]"
     if clean_mime == "application/pdf":
         return "[PDF]"
     if clean_mime:
@@ -212,13 +215,16 @@ def _save_call_center_media(
 
     if not content:
         return {}, "Lampiran kosong."
-    if len(content) > _max_media_bytes():
-        return {}, f"Ukuran lampiran maksimal {_format_bytes(_max_media_bytes())} sebelum kompresi."
+    raw_limit = _max_media_bytes()
+    if raw_limit > 0 and len(content) > raw_limit:
+        return {}, f"Ukuran lampiran maksimal {_format_bytes(raw_limit)} sebelum kompresi."
 
     if mime_type.startswith("image/"):
-        image_limit = _coerce_limit(max_image_bytes, _max_image_bytes())
+        # LIMIT DINONAKTIFKAN — aktifkan kembali jika diperlukan:
+        # image_limit = _coerce_limit(max_image_bytes, _max_image_bytes())
+        image_limit = max_image_bytes  # None = tanpa limit ukuran
         needs_conversion = mime_type not in _WEB_SAFE_IMAGE_MIME_TYPES
-        if len(content) > image_limit or needs_conversion:
+        if image_limit is not None and (len(content) > image_limit or needs_conversion):
             compressed = _compress_image_for_storage(
                 content,
                 force=needs_conversion,
@@ -232,21 +238,38 @@ def _save_call_center_media(
                 **media_payload,
                 "filename": _with_suffix(media_payload.get("filename"), ".webp"),
             }
+        elif image_limit is None and needs_conversion:
+            # Konversi format non-web-safe tanpa limit ukuran
+            compressed = _compress_image_for_storage(content, force=True, target_bytes=None)
+            if compressed:
+                content = compressed
+                mime_type = "image/webp"
+                media_payload = {
+                    **media_payload,
+                    "filename": _with_suffix(media_payload.get("filename"), ".webp"),
+                }
     elif mime_type == "application/pdf":
-        pdf_limit = _coerce_limit(max_pdf_bytes, _max_pdf_bytes())
-        if len(content) > pdf_limit:
+        # LIMIT DINONAKTIFKAN — aktifkan kembali jika diperlukan:
+        # pdf_limit = _coerce_limit(max_pdf_bytes, _max_pdf_bytes())
+        pdf_limit = max_pdf_bytes  # None = tanpa limit ukuran
+        if pdf_limit is not None and len(content) > pdf_limit:
             compressed = _compress_pdf_for_storage(content, target_bytes=pdf_limit)
             if not compressed or len(compressed) > pdf_limit:
                 return {}, f"PDF tidak bisa dikompres di bawah {_format_bytes(pdf_limit)}."
             content = compressed
     else:
-        file_limit = _coerce_limit(max_file_bytes, _max_file_bytes())
-        if len(content) > file_limit:
+        # LIMIT DINONAKTIFKAN — aktifkan kembali jika diperlukan:
+        # file_limit = _coerce_limit(max_file_bytes, _max_file_bytes())
+        file_limit = max_file_bytes  # None = tanpa limit ukuran
+        if file_limit is not None and len(content) > file_limit:
             return {}, f"Dokumen selain gambar/PDF maksimal {_format_bytes(file_limit)}."
 
     ext = _extension_for_payload(media_payload, mime_type)
-    stem_seed = (message_id or "").strip() or uuid.uuid4().hex
-    stem = hashlib.sha256(stem_seed.encode("utf-8")).hexdigest()[:24]
+    stem_seed = (message_id or "").strip()
+    if stem_seed:
+        stem = hashlib.sha256(stem_seed.encode("utf-8")).hexdigest()[:24]
+    else:
+        stem = hashlib.sha256(content).hexdigest()[:24]
     stored_filename = f"{stem}{ext}"
 
     now = datetime.now(ZoneInfo("Asia/Jakarta"))
@@ -291,7 +314,9 @@ def resolve_call_center_media_path(filename: str) -> Optional[Path]:
 
 
 def _is_allowed_mime(mime_type: str) -> bool:
-    return mime_type in _ALLOWED_MIME_TYPES
+    # FILTER MIME DINONAKTIFKAN — aktifkan kembali jika diperlukan:
+    # return mime_type in _ALLOWED_MIME_TYPES
+    return bool(mime_type)  # Terima semua tipe MIME yang valid
 
 
 def _normalize_mime_type(raw_mime_type: str, filename: str) -> str:
@@ -339,8 +364,7 @@ def _compress_image_for_storage(
     force: bool = False,
     target_bytes: Optional[int] = None,
 ) -> Optional[bytes]:
-    target_bytes = _coerce_limit(target_bytes, _max_image_bytes())
-    if len(content) <= target_bytes and not force:
+    if target_bytes is not None and len(content) <= target_bytes and not force:
         return None
 
     try:
@@ -359,6 +383,15 @@ def _compress_image_for_storage(
     if image.mode not in {"RGB", "RGBA"}:
         image = image.convert("RGBA" if "A" in image.getbands() else "RGB")
 
+    if target_bytes is None:
+        output = io.BytesIO()
+        try:
+            image.save(output, format="WEBP", quality=82, method=6)
+        except Exception:
+            return None
+        return output.getvalue()
+
+    effective_target = target_bytes
     max_side = min(max(image.size), _max_image_side())
     best: Optional[bytes] = None
 
@@ -377,7 +410,7 @@ def _compress_image_for_storage(
             candidate = output.getvalue()
             if best is None or len(candidate) < len(best):
                 best = candidate
-            if len(candidate) <= target_bytes:
+            if len(candidate) <= effective_target:
                 return candidate
 
         max_side = int(max_side * 0.82)
@@ -603,6 +636,6 @@ def _max_image_side() -> int:
 
 def _max_media_bytes() -> int:
     try:
-        return max(1, int(os.getenv("ASKA_CC_MEDIA_MAX_BYTES", "20971520")))
+        return max(0, int(os.getenv("ASKA_CC_MEDIA_MAX_BYTES", "0")))
     except ValueError:
-        return 20 * 1024 * 1024
+        return 0

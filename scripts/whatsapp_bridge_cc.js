@@ -65,14 +65,14 @@ const STATUS_PATH = path.resolve(
     process.env.ASKA_CC_WHATSAPP_STATUS_PATH || "runtime/whatsapp_cc_status.json"
 );
 const HTTP_PORT = parseInt(process.env.ASKA_CC_HTTP_PORT || "3100", 10);
-const MAX_MEDIA_BYTES = parseInt(process.env.ASKA_CC_MEDIA_MAX_BYTES || "20971520", 10);
+const MAX_MEDIA_BYTES = parseInt(process.env.ASKA_CC_MEDIA_MAX_BYTES || "0", 10);
 const MAX_PDF_RAW_BYTES = parseInt(process.env.ASKA_CC_PDF_RAW_MAX_BYTES || String(MAX_MEDIA_BYTES), 10);
-const MAX_PDF_BYTES = parseInt(process.env.ASKA_CC_PDF_MAX_BYTES || "307200", 10);
-const MAX_FILE_BYTES = parseInt(process.env.ASKA_CC_FILE_MAX_BYTES || "307200", 10);
+const MAX_PDF_BYTES = parseInt(process.env.ASKA_CC_PDF_MAX_BYTES || "0", 10);
+const MAX_FILE_BYTES = parseInt(process.env.ASKA_CC_FILE_MAX_BYTES || "0", 10);
 const MAX_OUTBOUND_MEDIA_BYTES = parseInt(
     process.env.ASKA_CC_OUTBOUND_MEDIA_MAX_BYTES ||
     process.env.ASKA_CC_DRAFT_MEDIA_MAX_BYTES ||
-    "1048576",
+    "0",
     10
 );
 
@@ -625,6 +625,38 @@ app.post("/send", authCheck, async (req, res) => {
     } catch (err) {
         console.error("[CC] sendMessage error:", (err && err.message) || err);
         res.status(500).json({ error: (err && err.message) || "Send failed" });
+    }
+});
+
+app.post("/edit", authCheck, async (req, res) => {
+    const { messageId, message } = req.body || {};
+    const cleanMessageId = String(messageId || "").trim();
+    const cleanMessage = String(message || "").trim();
+    if (!cleanMessageId || !cleanMessage) {
+        return res.status(400).json({ error: "Missing 'messageId' or 'message'" });
+    }
+
+    try {
+        const original = await client.getMessageById(cleanMessageId);
+        if (!original) {
+            return res.status(404).json({ error: "Message not found in WhatsApp session" });
+        }
+        if (!original.fromMe) {
+            return res.status(400).json({ error: "Only outbound messages can be edited" });
+        }
+
+        const edited = await original.edit(cleanMessage);
+        if (!edited) {
+            return res.status(409).json({ error: "WhatsApp no longer allows editing this message" });
+        }
+
+        const editedId = (edited && edited.id && edited.id._serialized) || cleanMessageId;
+        if (editedId) ignoredIds.add(editedId);
+        console.log(`[CC] edited message=${cleanMessageId} len=${cleanMessage.length}`);
+        res.json({ ok: true, messageId: editedId });
+    } catch (err) {
+        console.error("[CC] editMessage error:", (err && err.message) || err);
+        res.status(500).json({ error: (err && err.message) || "Edit failed" });
     }
 });
 

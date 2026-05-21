@@ -25,7 +25,10 @@ def _ensure_cc_messages_media_schema() -> None:
             ADD COLUMN IF NOT EXISTS media_path TEXT,
             ADD COLUMN IF NOT EXISTS media_mime_type TEXT,
             ADD COLUMN IF NOT EXISTS media_filename TEXT,
-            ADD COLUMN IF NOT EXISTS media_size INTEGER
+            ADD COLUMN IF NOT EXISTS media_size INTEGER,
+            ADD COLUMN IF NOT EXISTS original_message_text TEXT,
+            ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ,
+            ADD COLUMN IF NOT EXISTS edited_by_admin_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
             """
         )
     _CC_MESSAGES_MEDIA_SCHEMA_READY = True
@@ -191,7 +194,8 @@ def save_cc_message(
                 """
                 SELECT id, conversation_id, direction, message_text,
                        admin_user_id, admin_display_name, wa_message_id, created_at,
-                       media_path, media_mime_type, media_filename, media_size
+                       media_path, media_mime_type, media_filename, media_size,
+                       original_message_text, edited_at, edited_by_admin_user_id
                 FROM cc_messages
                 WHERE wa_message_id = %(wa_msg)s
                 LIMIT 1
@@ -217,7 +221,8 @@ def save_cc_message(
             )
             RETURNING id, conversation_id, direction, message_text,
                       admin_user_id, admin_display_name, wa_message_id, created_at,
-                      media_path, media_mime_type, media_filename, media_size
+                      media_path, media_mime_type, media_filename, media_size,
+                      original_message_text, edited_at, edited_by_admin_user_id
             """,
             {
                 "conv": conversation_id,
@@ -291,7 +296,8 @@ def fetch_cc_messages(
             f"""
             SELECT m.id, m.conversation_id, m.direction, m.message_text,
                    m.admin_user_id, m.admin_display_name, m.wa_message_id, m.created_at,
-                   m.media_path, m.media_mime_type, m.media_filename, m.media_size
+                   m.media_path, m.media_mime_type, m.media_filename, m.media_size,
+                   m.original_message_text, m.edited_at, m.edited_by_admin_user_id
             FROM cc_messages m
             WHERE m.conversation_id = %(conv)s {after_clause}
             ORDER BY m.created_at ASC
@@ -300,6 +306,65 @@ def fetch_cc_messages(
             params,
         )
         return [dict(r) for r in cur.fetchall()]
+
+
+def fetch_cc_message(message_id: int) -> Optional[dict]:
+    """Fetch one Call Center message."""
+    _ensure_cc_messages_media_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, conversation_id, direction, message_text,
+                   admin_user_id, admin_display_name, wa_message_id, created_at,
+                   media_path, media_mime_type, media_filename, media_size,
+                   original_message_text, edited_at, edited_by_admin_user_id
+            FROM cc_messages
+            WHERE id = %(id)s
+            """,
+            {"id": message_id},
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def update_cc_message_text(
+    message_id: int,
+    message_text: str,
+    edited_by_admin_user_id: Optional[int] = None,
+) -> Optional[dict]:
+    """Update an outbound Call Center message text and retain its first text."""
+    _ensure_cc_messages_media_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE cc_messages
+            SET original_message_text = COALESCE(original_message_text, message_text),
+                message_text = %(message_text)s,
+                edited_at = NOW(),
+                edited_by_admin_user_id = %(edited_by)s
+            WHERE id = %(id)s AND direction = 'outbound'
+            RETURNING id, conversation_id, direction, message_text,
+                      admin_user_id, admin_display_name, wa_message_id, created_at,
+                      media_path, media_mime_type, media_filename, media_size,
+                      original_message_text, edited_at, edited_by_admin_user_id
+            """,
+            {
+                "id": message_id,
+                "message_text": message_text,
+                "edited_by": edited_by_admin_user_id,
+            },
+        )
+        row = cur.fetchone()
+        if row:
+            cur.execute(
+                """
+                UPDATE cc_conversations
+                SET updated_at = NOW()
+                WHERE id = %(conv)s
+                """,
+                {"conv": row["conversation_id"]},
+            )
+    return dict(row) if row else None
 
 
 # ---------------------------------------------------------------------------
@@ -678,6 +743,68 @@ def send_cc_telegram_notification(
             traceback.print_exc()
 
     return {"sent": sent, "total_groups": len(groups)}
+
+
+# ---------------------------------------------------------------------------
+# Media Manager
+# ---------------------------------------------------------------------------
+
+def fetch_cc_media_db_refs(paths: list[str]) -> list[dict]:
+    """Return DB rows that reference any of the given relative media paths.
+
+    Each row has: table, id, media_path.
+    """
+    if not paths:
+        return []
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT 'cc_messages' AS tbl, id, media_path
+            FROM cc_messages
+            WHERE media_path = ANY(%(paths)s)
+            UNION ALL
+            SELECT 'cc_message_drafts' AS tbl, id, media_path
+            FROM cc_message_drafts
+            WHERE media_path = ANY(%(paths)s)
+            """,
+            {"paths": paths},
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def clear_cc_media_db_refs(paths: list[str]) -> int:
+    """Null-out media columns in cc_messages and cc_message_drafts for the given paths.
+
+    Returns the total number of rows updated.
+    """
+    if not paths:
+        return 0
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE cc_messages
+            SET media_path = NULL,
+                media_mime_type = NULL,
+                media_filename = NULL,
+                media_size = NULL
+            WHERE media_path = ANY(%(paths)s)
+            """,
+            {"paths": paths},
+        )
+        messages_updated = cur.rowcount
+        cur.execute(
+            """
+            UPDATE cc_message_drafts
+            SET media_path = NULL,
+                media_mime_type = NULL,
+                media_filename = NULL,
+                media_size = NULL
+            WHERE media_path = ANY(%(paths)s)
+            """,
+            {"paths": paths},
+        )
+        drafts_updated = cur.rowcount
+    return messages_updated + drafts_updated
 
 
 def _escape_md(text: str) -> str:

@@ -955,13 +955,18 @@ def create_app() -> Flask:
             )
 
             media_payload = data.get("media") or {}
-            inbound_limit = _cc_inbound_media_max_bytes()
+            # Tanpa limit ukuran secara default. Jika perlu diaktifkan lagi:
+            # inbound_limit = _cc_inbound_media_max_bytes()
+            # media_meta = save_call_center_media(
+            #     media_payload,
+            #     message_id=message_id,
+            #     max_image_bytes=inbound_limit,
+            #     max_pdf_bytes=inbound_limit,
+            #     max_file_bytes=inbound_limit,
+            # )
             media_meta = save_call_center_media(
                 media_payload,
                 message_id=message_id,
-                max_image_bytes=inbound_limit,
-                max_pdf_bytes=inbound_limit,
-                max_file_bytes=inbound_limit,
             )
             if not message and (media_payload or media_meta):
                 message = call_center_media_label(
@@ -1049,13 +1054,18 @@ def create_app() -> Flask:
                     continue
 
                 media_payload = item.get("media") or {}
-                inbound_limit = _cc_inbound_media_max_bytes()
+                # Tanpa limit ukuran secara default. Jika perlu diaktifkan lagi:
+                # inbound_limit = _cc_inbound_media_max_bytes()
+                # media_meta = save_call_center_media(
+                #     media_payload,
+                #     message_id=item.get("message_id") or None,
+                #     max_image_bytes=inbound_limit,
+                #     max_pdf_bytes=inbound_limit,
+                #     max_file_bytes=inbound_limit,
+                # )
                 media_meta = save_call_center_media(
                     media_payload,
                     message_id=item.get("message_id") or None,
-                    max_image_bytes=inbound_limit,
-                    max_pdf_bytes=inbound_limit,
-                    max_file_bytes=inbound_limit,
                 )
                 if not message and (media_payload or media_meta):
                     message = call_center_media_label(

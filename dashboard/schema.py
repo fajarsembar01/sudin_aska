@@ -1100,6 +1100,9 @@ CREATE TABLE IF NOT EXISTS cc_messages (
     media_mime_type TEXT,
     media_filename TEXT,
     media_size INTEGER,
+    original_message_text TEXT,
+    edited_at TIMESTAMPTZ,
+    edited_by_admin_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 """
@@ -1422,6 +1425,9 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS media_mime_type TEXT",
         "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS media_filename TEXT",
         "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS media_size INTEGER",
+        "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS original_message_text TEXT",
+        "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ",
+        "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS edited_by_admin_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL",
         _CC_MESSAGES_INDEX_SQL,
         _CC_TELEGRAM_SETTINGS_SQL,
         _CC_TELEGRAM_GROUPS_SQL,

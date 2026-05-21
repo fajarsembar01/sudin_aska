@@ -185,6 +185,37 @@
         white-space: pre-wrap;
     }
 
+    .cc-bubble-edited {
+        display: inline-block;
+        margin-left: .25rem;
+        font-size: .68rem;
+        opacity: .72;
+    }
+
+    .cc-bubble-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: .25rem;
+    }
+
+    .cc-bubble-action {
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border-radius: .5rem;
+        border: 0;
+        background: rgba(255, 255, 255, .18);
+        color: inherit;
+    }
+
+    .cc-bubble-action:hover {
+        background: rgba(255, 255, 255, .28);
+        color: inherit;
+    }
+
     .cc-bubble-media {
         margin-bottom: .45rem;
     }
@@ -481,7 +512,7 @@
         <div class="cc-chat-messages" id="chatMessages">
             {% for m in messages %}
             <div class="cc-bubble {% if m.direction == 'inbound' %}cc-bubble-in{% else %}cc-bubble-out{% endif %}"
-                data-msg-id="{{ m.id }}">
+                data-msg-id="{{ m.id }}" data-message-text="{{ m.message_text|e }}">
                 {% if m.media_path %}
                 <div class="cc-bubble-media">
                     {% if (m.media_mime_type or '').startswith('image/') %}
@@ -498,12 +529,20 @@
                     {% endif %}
                 </div>
                 {% endif %}
-                <div class="cc-bubble-text">{{ m.message_text }}</div>
+                <div class="cc-bubble-text">{{ m.message_text }}{% if m.edited_at %}<span class="cc-bubble-edited">(diedit)</span>{% endif %}</div>
                 <div class="cc-bubble-meta">
                     {{ m.created_at|jakarta('%H:%M') }}
                 </div>
                 {% if m.direction == 'outbound' and m.admin_display_name %}
                 <div class="cc-bubble-admin"><i class="bi bi-person-fill me-1"></i>{{ m.admin_display_name }}</div>
+                {% endif %}
+                {% if m.direction == 'outbound' %}
+                <div class="cc-bubble-actions">
+                    <button type="button" class="cc-bubble-action" data-message-action="edit"
+                        data-message-id="{{ m.id }}" title="Edit pesan">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                </div>
                 {% endif %}
             </div>
             {% endfor %}
@@ -521,7 +560,7 @@
             </div>
             <div class="input-group">
                 <input type="file" class="d-none" id="mediaInput"
-                    accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,image/bmp,image/tiff,.jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.bmp,.tif,.tiff,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv">
+                    accept="*/*">
                 <button class="btn btn-outline-secondary btn-attach" id="btnAttach" type="button"
                     title="Lampirkan file">
                     <i class="bi bi-paperclip"></i>
@@ -563,6 +602,26 @@
             </div>
         </div>
     </aside>
+</div>
+
+<!-- Message edit modal -->
+<div class="modal fade" id="messageEditModal" tabindex="-1" aria-labelledby="messageEditModalTitle" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="messageEditModalTitle">Edit Pesan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <label for="editMessageInput" class="form-label">Pesan</label>
+                <textarea id="editMessageInput" class="form-control" rows="4"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnSaveMessageEdit">Simpan</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Draft panel (mobile) -->
@@ -619,7 +678,7 @@
                 <div class="mt-3">
                     <label for="draftMediaInput" class="form-label">Lampiran</label>
                     <input type="file" class="form-control" id="draftMediaInput"
-                        accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,image/bmp,image/tiff,.jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.bmp,.tif,.tiff,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv">
+                        accept="*/*">
                     <div class="cc-attachment-preview mt-2 d-none" id="draftAttachmentPreview">
                         <i class="bi bi-paperclip"></i>
                         <span id="draftAttachmentName"></span>
@@ -655,6 +714,7 @@
     var draftDetailApiBase = '{{ url_for("call_center.api_draft_detail", draft_id=0) }}';
     var draftUseApiBase = '{{ url_for("call_center.api_draft_use", draft_id=0) }}';
     var draftPinApiBase = '{{ url_for("call_center.api_draft_pin", draft_id=0) }}';
+    var messageDetailApiBase = '{{ url_for("call_center.api_message_detail", message_id=0) }}';
     var mediaUrlBase = '{{ url_for("call_center.media_file", filename="__PATH__") }}';
     var csrfToken = '{{ csrf_token() }}';
     var lastMsgId = 0;
@@ -675,6 +735,11 @@
     var draftModalTitle = document.getElementById('draftModalTitle');
     var pendingDraftId = null;
     var draftRemoveMedia = false;
+    var editingMessageId = null;
+    var messageEditModalEl = document.getElementById('messageEditModal');
+    var messageEditModal = (messageEditModalEl && window.bootstrap) ? new window.bootstrap.Modal(messageEditModalEl) : null;
+    var editMessageInput = document.getElementById('editMessageInput');
+    var btnSaveMessageEdit = document.getElementById('btnSaveMessageEdit');
 
     // Scroll to bottom
     function scrollBottom() {
@@ -769,9 +834,6 @@
 
     function validateAttachment(file, options) {
         if (!file) return null;
-        var opts = options || {};
-        var docMaxBytes = opts.docMaxBytes || (1024 * 1024);
-        var docMaxLabel = opts.docMaxLabel || '1 MB';
         var name = String(file.name || '').toLowerCase();
         var ext = name.indexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
         var mime = String(file.type || '').toLowerCase();
@@ -781,11 +843,9 @@
         var isPdf = ext === '.pdf' || mime === 'application/pdf';
         var allowedDocs = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.csv'];
         if (isImage) {
-            if (file.size > 20 * 1024 * 1024) return 'Ukuran gambar maksimal 20 MB sebelum kompresi.';
             return null;
         }
         if (isPdf) {
-            if (file.size > 20 * 1024 * 1024) return 'Ukuran PDF maksimal 20 MB sebelum kompresi.';
             return null;
         }
         if (mime.indexOf('image/') === 0) {
@@ -794,9 +854,7 @@
         if (allowedDocs.indexOf(ext) === -1) {
             return 'Tipe file belum didukung.';
         }
-        if (file.size > docMaxBytes) {
-            return 'Ukuran dokumen selain PDF maksimal ' + docMaxLabel + '.';
-        }
+        // Limit ukuran sengaja tidak diterapkan. Jika perlu lagi, aktifkan cek file.size di sini.
         return null;
     }
 
@@ -855,6 +913,81 @@
             + '<i class="bi bi-paperclip"></i><span>' + filename + '</span></a></div>';
     }
 
+    function buildMessageTextHtml(messageText, editedAt) {
+        var html = '<div class="cc-bubble-text">' + escapeHtml(messageText || '');
+        if (editedAt) {
+            html += '<span class="cc-bubble-edited">(diedit)</span>';
+        }
+        return html + '</div>';
+    }
+
+    function buildMessageActionsHtml(m) {
+        if (!m || m.direction !== 'outbound') return '';
+        return '<div class="cc-bubble-actions">'
+            + '<button type="button" class="cc-bubble-action" data-message-action="edit" data-message-id="' + m.id + '" title="Edit pesan">'
+            + '<i class="bi bi-pencil"></i></button></div>';
+    }
+
+    function messageDetailUrl(messageId) {
+        return messageDetailApiBase.replace(/0$/, String(messageId));
+    }
+
+    function updateMessageBubble(message) {
+        if (!message || !chatBox) return;
+        var bubble = chatBox.querySelector('.cc-bubble[data-msg-id="' + message.id + '"]');
+        if (!bubble) return;
+        bubble.setAttribute('data-message-text', message.message_text || '');
+        var textEl = bubble.querySelector('.cc-bubble-text');
+        if (textEl) {
+            textEl.outerHTML = buildMessageTextHtml(message.message_text || '', message.edited_at);
+        }
+    }
+
+    function openMessageEditModal(messageId) {
+        if (!messageEditModal || !editMessageInput || !chatBox) return;
+        var bubble = chatBox.querySelector('.cc-bubble[data-msg-id="' + messageId + '"]');
+        if (!bubble) return;
+        editingMessageId = messageId;
+        editMessageInput.value = bubble.getAttribute('data-message-text') || '';
+        messageEditModal.show();
+        setTimeout(function () {
+            editMessageInput.focus();
+            editMessageInput.selectionStart = editMessageInput.value.length;
+            editMessageInput.selectionEnd = editMessageInput.value.length;
+        }, 80);
+    }
+
+    function saveMessageEdit() {
+        if (!editingMessageId || !editMessageInput || !btnSaveMessageEdit) return;
+        var text = (editMessageInput.value || '').trim();
+        if (!text) {
+            alert('Pesan wajib diisi.');
+            editMessageInput.focus();
+            return;
+        }
+        btnSaveMessageEdit.disabled = true;
+        fetch(messageDetailUrl(editingMessageId), {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ message: text })
+        })
+            .then(parseApiResponse)
+            .then(function (data) {
+                if (data.error) throw new Error(data.error);
+                updateMessageBubble(data.message);
+                if (messageEditModal) messageEditModal.hide();
+            })
+            .catch(function (err) {
+                alert('Gagal edit pesan: ' + (err.message || 'Unknown error'));
+            })
+            .finally(function () {
+                btnSaveMessageEdit.disabled = false;
+            });
+    }
+
     function pollMessages() {
         fetch('{{ url_for("call_center.api_messages", conv_id=conversation.id) }}?after_id=' + lastMsgId)
             .then(function (r) { return r.json(); })
@@ -864,21 +997,23 @@
                 msgs.forEach(function (m) {
                     if (m.id <= lastMsgId) return;
                     lastMsgId = m.id;
-                    var div = document.createElement('div');
-                    div.className = 'cc-bubble ' + (m.direction === 'inbound' ? 'cc-bubble-in' : 'cc-bubble-out');
-                    div.setAttribute('data-msg-id', m.id);
+	                    var div = document.createElement('div');
+	                    div.className = 'cc-bubble ' + (m.direction === 'inbound' ? 'cc-bubble-in' : 'cc-bubble-out');
+	                    div.setAttribute('data-msg-id', m.id);
+	                    div.setAttribute('data-message-text', m.message_text || '');
                     var time = '';
                     try {
                         var d = new Date(m.created_at);
                         time = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-                    } catch (_) { }
-                    var html = buildMessageMediaHtml(m);
-                    html += '<div class="cc-bubble-text">' + escapeHtml(m.message_text) + '</div>';
-                    html += '<div class="cc-bubble-meta">' + time + '</div>';
-                    if (m.direction === 'outbound' && m.admin_display_name) {
-                        html += '<div class="cc-bubble-admin"><i class="bi bi-person-fill me-1"></i>' + escapeHtml(m.admin_display_name) + '</div>';
-                    }
-                    div.innerHTML = html;
+	                    } catch (_) { }
+	                    var html = buildMessageMediaHtml(m);
+	                    html += buildMessageTextHtml(m.message_text, m.edited_at);
+	                    html += '<div class="cc-bubble-meta">' + time + '</div>';
+	                    if (m.direction === 'outbound' && m.admin_display_name) {
+	                        html += '<div class="cc-bubble-admin"><i class="bi bi-person-fill me-1"></i>' + escapeHtml(m.admin_display_name) + '</div>';
+	                    }
+	                    html += buildMessageActionsHtml(m);
+	                    div.innerHTML = html;
                     chatBox.appendChild(div);
                 });
                 scrollBottom();
@@ -1089,7 +1224,7 @@
         }
 
         if (draftFile) {
-            var fileError = validateAttachment(draftFile, { docMaxBytes: 1024 * 1024, docMaxLabel: '1 MB' });
+            var fileError = validateAttachment(draftFile);
             if (fileError) {
                 alert(fileError);
                 return;
@@ -1277,10 +1412,26 @@
     if (btnSaveDraft) {
         btnSaveDraft.addEventListener('click', saveDraft);
     }
+    if (btnSaveMessageEdit) {
+        btnSaveMessageEdit.addEventListener('click', saveMessageEdit);
+    }
+    if (editMessageInput) {
+        editMessageInput.addEventListener('keydown', function (evt) {
+            if ((evt.ctrlKey || evt.metaKey) && evt.key === 'Enter') {
+                evt.preventDefault();
+                saveMessageEdit();
+            }
+        });
+    }
+    if (messageEditModalEl) {
+        messageEditModalEl.addEventListener('hidden.bs.modal', function () {
+            editingMessageId = null;
+        });
+    }
     if (draftMediaInput) {
         draftMediaInput.addEventListener('change', function () {
             var file = this.files && this.files.length ? this.files[0] : null;
-            var error = validateAttachment(file, { docMaxBytes: 1024 * 1024, docMaxLabel: '1 MB' });
+            var error = validateAttachment(file);
             if (error) {
                 alert(error);
                 clearDraftEditorAttachment(false);
@@ -1306,6 +1457,16 @@
     }
 
     document.addEventListener('click', function (evt) {
+        var messageActionBtn = evt.target.closest('[data-message-action]');
+        if (messageActionBtn) {
+            var messageAction = messageActionBtn.getAttribute('data-message-action');
+            var messageId = parseInt(messageActionBtn.getAttribute('data-message-id') || '0', 10);
+            if (messageAction === 'edit' && messageId) {
+                openMessageEditModal(messageId);
+            }
+            return;
+        }
+
         var actionBtn = evt.target.closest('[data-draft-action]');
         if (!actionBtn) return;
         var action = actionBtn.getAttribute('data-draft-action');

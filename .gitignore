@@ -25,6 +25,8 @@ Thumbs.db
 *.swp
 *.swo
 
+.kiro
+tests
 # Log & PID files
 *.log
 *.pid

@@ -9,6 +9,7 @@ import mimetypes
 import shutil
 import signal
 import subprocess
+from datetime import datetime
 from math import ceil
 from pathlib import Path
 from typing import Optional
@@ -41,7 +42,9 @@ from .queries import (
     fetch_cc_conversations,
     fetch_cc_conversation,
     fetch_cc_messages,
+    fetch_cc_message,
     save_cc_message,
+    update_cc_message_text,
     mark_conversation_read,
     close_conversation,
     reopen_conversation,
@@ -59,6 +62,8 @@ from .queries import (
     update_cc_message_draft,
     delete_cc_message_draft,
     toggle_cc_message_draft_pin,
+    fetch_cc_media_db_refs,
+    clear_cc_media_db_refs,
 )
 from . import call_center_api_bp, call_center_bp
 from .media import (
@@ -250,6 +255,22 @@ def _send_via_bridge(to: str, message: str = "", media: Optional[dict] = None) -
         return {"error": str(exc)}
 
 
+def _edit_via_bridge(wa_message_id: str, message: str) -> dict:
+    """Edit an outbound WA message through the CC bridge HTTP API."""
+    port = _cc_bridge_http_port()
+    token = (_project_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+    try:
+        resp = requests.post(
+            f"http://127.0.0.1:{port}/edit",
+            json={"messageId": wa_message_id, "message": message or ""},
+            headers={"X-ASKA-CC-TOKEN": token, "Content-Type": "application/json"},
+            timeout=30,
+        )
+        return resp.json()
+    except Exception as exc:
+        return {"error": str(exc)}
+
+
 def _media_payload_from_upload(uploaded_file) -> tuple[Optional[dict], Optional[str]]:
     """Build a base64 media payload from a Flask upload."""
     if not uploaded_file or not (uploaded_file.filename or "").strip():
@@ -303,13 +324,18 @@ def _inbound_media_max_bytes() -> int:
 
 
 def _save_inbound_media(media_payload, *, message_id: Optional[str] = None) -> dict:
-    inbound_limit = _inbound_media_max_bytes()
+    # Tanpa limit ukuran secara default. Jika perlu diaktifkan lagi:
+    # inbound_limit = _inbound_media_max_bytes()
+    # return save_call_center_media(
+    #     media_payload,
+    #     message_id=message_id,
+    #     max_image_bytes=inbound_limit,
+    #     max_pdf_bytes=inbound_limit,
+    #     max_file_bytes=inbound_limit,
+    # )
     return save_call_center_media(
         media_payload,
         message_id=message_id,
-        max_image_bytes=inbound_limit,
-        max_pdf_bytes=inbound_limit,
-        max_file_bytes=inbound_limit,
     )
 
 
@@ -329,22 +355,30 @@ def _outbound_media_max_bytes() -> int:
 
 
 def _save_outbound_media(media_payload) -> tuple[dict, Optional[str]]:
-    outbound_limit = _outbound_media_max_bytes()
+    # Tanpa limit ukuran secara default. Jika perlu diaktifkan lagi:
+    # outbound_limit = _outbound_media_max_bytes()
+    # return save_call_center_media_with_error(
+    #     media_payload,
+    #     max_image_bytes=outbound_limit,
+    #     max_pdf_bytes=outbound_limit,
+    #     max_file_bytes=outbound_limit,
+    # )
     return save_call_center_media_with_error(
         media_payload,
-        max_image_bytes=outbound_limit,
-        max_pdf_bytes=outbound_limit,
-        max_file_bytes=outbound_limit,
     )
 
 
 def _save_draft_media(media_payload) -> tuple[dict, Optional[str]]:
-    draft_limit = _draft_media_max_bytes()
+    # Tanpa limit ukuran secara default. Jika perlu diaktifkan lagi:
+    # draft_limit = _draft_media_max_bytes()
+    # return save_call_center_media_with_error(
+    #     media_payload,
+    #     max_image_bytes=draft_limit,
+    #     max_pdf_bytes=draft_limit,
+    #     max_file_bytes=draft_limit,
+    # )
     return save_call_center_media_with_error(
         media_payload,
-        max_image_bytes=draft_limit,
-        max_pdf_bytes=draft_limit,
-        max_file_bytes=draft_limit,
     )
 
 
@@ -607,7 +641,9 @@ def thread(conv_id: int) -> Response:
         return redirect(url_for("call_center.inbox"))
 
     messages = fetch_cc_messages(conv_id, limit=500)
-    mark_conversation_read(conv_id)
+    # Status terbaca TIDAK diubah saat membuka thread.
+    # unread_count hanya di-reset ketika admin mengirim balasan (lihat api_send).
+    # mark_conversation_read(conv_id)  # DINONAKTIFKAN — aktifkan kembali jika diperlukan
 
     # Sidebar conversations
     conversations, _ = fetch_cc_conversations(limit=50)
@@ -723,6 +759,8 @@ def api_send() -> Response:
         wa_message_id=result.get("messageId"),
         **media_meta,
     )
+    # Tandai percakapan sebagai terbaca setelah admin berhasil mengirim balasan.
+    mark_conversation_read(int(conv_id))
 
     if draft_id:
         try:
@@ -761,6 +799,59 @@ def api_messages(conv_id: int) -> Response:
     after_id = request.args.get("after_id", type=int)
     messages = fetch_cc_messages(conv_id, limit=200, after_id=after_id)
     return jsonify({"messages": messages})
+
+
+@call_center_bp.route("/api/message/<int:message_id>", methods=["PUT"])
+@role_required("admin")
+def api_message_detail(message_id: int) -> Response:
+    """Edit an outbound message that was already sent."""
+    user = current_user() or {}
+    admin_user_id = user.get("id")
+    if not admin_user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json(silent=True) or {}
+    message_text = (data.get("message") or data.get("message_text") or "").strip()
+    if not message_text:
+        return jsonify({"error": "Pesan wajib diisi."}), 400
+
+    message = fetch_cc_message(message_id)
+    if not message:
+        return jsonify({"error": "Pesan tidak ditemukan."}), 404
+    if message.get("direction") != "outbound":
+        return jsonify({"error": "Hanya pesan admin yang bisa diedit."}), 400
+    if message_text == (message.get("message_text") or ""):
+        return jsonify({"ok": True, "message": message, "wa_edit_applied": False})
+
+    wa_edit_applied = False
+    wa_message_id = (message.get("wa_message_id") or "").strip()
+    if wa_message_id:
+        result = _edit_via_bridge(wa_message_id, message_text)
+        if result.get("error"):
+            return jsonify({"error": f"Gagal edit WhatsApp: {result['error']}"}), 502
+        wa_edit_applied = bool(result.get("ok"))
+
+    updated = update_cc_message_text(
+        message_id=message_id,
+        message_text=message_text,
+        edited_by_admin_user_id=admin_user_id,
+    )
+    if not updated:
+        return jsonify({"error": "Pesan tidak bisa diedit."}), 400
+
+    try:
+        record_admin_action(
+            user_id=admin_user_id,
+            feature_key="call_center",
+            action="UPDATE",
+            target_type="CALL_CENTER_MESSAGE",
+            target_id=message_id,
+            target_name=f"Message #{message_id}",
+        )
+    except Exception:
+        pass
+
+    return jsonify({"ok": True, "message": updated, "wa_edit_applied": wa_edit_applied})
 
 
 @call_center_bp.route("/api/drafts/<int:draft_id>/use", methods=["POST"])
@@ -1011,6 +1102,146 @@ def api_draft_pin(draft_id: int) -> Response:
     except Exception as exc:
         current_app.logger.exception("Call Center draft pin API error")
         return jsonify({"error": f"Gagal mengubah pin draft: {exc}"}), 500
+
+
+# ── Media Manager ─────────────────────────────────────────────────────────────
+
+@call_center_bp.route("/media-manager")
+@role_required("admin")
+def media_manager() -> Response:
+    """Media Manager page — list and delete stored CC media files."""
+    return render_template("cc_media_manager.html")
+
+
+def _build_media_list(sort_by: str = "newest", type_filter: str = "all") -> dict:
+    """Core logic for listing media files. Extracted for testability."""
+    _SORT_OPTIONS = {"newest", "oldest", "largest", "smallest"}
+    _TYPE_OPTIONS = {"all", "image", "video", "audio", "document"}
+    if sort_by not in _SORT_OPTIONS:
+        sort_by = "newest"
+    if type_filter not in _TYPE_OPTIONS:
+        type_filter = "all"
+
+    media_root = CC_MEDIA_ROOT.resolve()
+    items: list[dict] = []
+
+    if media_root.is_dir():
+        for file_path in media_root.rglob("*"):
+            if not file_path.is_file():
+                continue
+            try:
+                stat = file_path.stat()
+            except OSError:
+                continue
+
+            relative_path = file_path.relative_to(media_root).as_posix()
+            mime_type, _ = mimetypes.guess_type(file_path.name)
+            if not mime_type:
+                mime_type = "application/octet-stream"
+
+            items.append({
+                "path": relative_path,
+                "filename": file_path.name,
+                "size": stat.st_size,
+                "mime_type": mime_type,
+                "uploaded_at": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+            })
+
+    # Apply type filter
+    if type_filter != "all":
+        def _matches_type(item: dict) -> bool:
+            mt = item["mime_type"]
+            if type_filter == "image":
+                return mt.startswith("image/")
+            if type_filter == "video":
+                return mt.startswith("video/")
+            if type_filter == "audio":
+                return mt.startswith("audio/")
+            if type_filter == "document":
+                return not (mt.startswith("image/") or mt.startswith("video/") or mt.startswith("audio/"))
+            return True
+        items = [i for i in items if _matches_type(i)]
+
+    # Sort
+    if sort_by == "newest":
+        items.sort(key=lambda x: x["uploaded_at"], reverse=True)
+    elif sort_by == "oldest":
+        items.sort(key=lambda x: x["uploaded_at"])
+    elif sort_by == "largest":
+        items.sort(key=lambda x: x["size"], reverse=True)
+    elif sort_by == "smallest":
+        items.sort(key=lambda x: x["size"])
+
+    total_size = sum(i["size"] for i in items)
+    return {"items": items, "total_size": total_size, "count": len(items)}
+
+
+@call_center_bp.route("/api/media-list")
+@role_required("admin")
+def api_media_list() -> Response:
+    """Return JSON list of all files in CC_MEDIA_ROOT with metadata.
+
+    Query params:
+      sort  — newest (default) | oldest | largest | smallest
+      type  — all (default) | image | video | audio | document
+    """
+    sort_by = (request.args.get("sort") or "newest").strip().lower()
+    type_filter = (request.args.get("type") or "all").strip().lower()
+    return jsonify(_build_media_list(sort_by=sort_by, type_filter=type_filter))
+
+
+def _delete_media_files(raw_paths: list) -> dict:
+    """Core logic for deleting media files. Extracted for testability."""
+    deleted: list[str] = []
+    failed: list[dict] = []
+    valid_paths: list[str] = []
+
+    for raw_path in raw_paths:
+        if not isinstance(raw_path, str):
+            failed.append({"path": str(raw_path), "reason": "invalid path type"})
+            continue
+
+        target_path = resolve_call_center_media_path(raw_path)
+        if not target_path:
+            failed.append({"path": raw_path, "reason": "path traversal rejected"})
+            continue
+
+        if not target_path.exists():
+            # Already gone — still clean up DB refs
+            valid_paths.append(raw_path)
+            deleted.append(raw_path)
+            continue
+
+        try:
+            target_path.unlink()
+            deleted.append(raw_path)
+            valid_paths.append(raw_path)
+        except OSError as exc:
+            failed.append({"path": raw_path, "reason": str(exc)})
+
+    # Clear DB references for all successfully deleted (or already-missing) paths
+    db_updated = 0
+    if valid_paths:
+        try:
+            db_updated = clear_cc_media_db_refs(valid_paths)
+        except Exception:
+            pass
+
+    return {"ok": True, "deleted": deleted, "failed": failed, "db_updated": db_updated}
+
+
+@call_center_bp.route("/api/media-delete", methods=["POST"])
+@role_required("admin")
+def api_media_delete() -> Response:
+    """Delete one or more media files from disk and clear DB references.
+
+    Request body (JSON): {"paths": ["2025/05/21/abc.jpg", ...]}
+    """
+    data = request.get_json(silent=True) or {}
+    raw_paths = data.get("paths") or []
+    if not isinstance(raw_paths, list) or not raw_paths:
+        return jsonify({"error": "paths must be a non-empty list"}), 400
+    return jsonify(_delete_media_files(raw_paths))
 
 
 # ── Settings ──────────────────────────────────────────────────────────────────
