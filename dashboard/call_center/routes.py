@@ -805,12 +805,31 @@ def api_messages(conv_id: int) -> Response:
 @role_required("admin")
 def api_message_detail(message_id: int) -> Response:
     """Edit an outbound message that was already sent."""
+    return _handle_message_edit(message_id)
+
+
+@call_center_bp.route("/api/edit-message", methods=["POST"])
+@role_required("admin")
+def api_message_edit() -> Response:
+    """FormData-compatible edit endpoint for production proxies."""
+    data = request.form if request.form else (request.get_json(silent=True) or {})
+    try:
+        message_id = int(data.get("message_id") or 0)
+    except (TypeError, ValueError):
+        message_id = 0
+    if not message_id:
+        return jsonify({"error": "message_id wajib diisi."}), 400
+    return _handle_message_edit(message_id, data=data)
+
+
+def _handle_message_edit(message_id: int, data=None) -> Response:
     user = current_user() or {}
     admin_user_id = user.get("id")
     if not admin_user_id:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.get_json(silent=True) or {}
+    if data is None:
+        data = request.form if request.form else (request.get_json(silent=True) or {})
     message_text = (data.get("message") or data.get("message_text") or "").strip()
     if not message_text:
         return jsonify({"error": "Pesan wajib diisi."}), 400

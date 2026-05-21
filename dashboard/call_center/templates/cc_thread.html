@@ -714,7 +714,7 @@
     var draftDetailApiBase = '{{ url_for("call_center.api_draft_detail", draft_id=0) }}';
     var draftUseApiBase = '{{ url_for("call_center.api_draft_use", draft_id=0) }}';
     var draftPinApiBase = '{{ url_for("call_center.api_draft_pin", draft_id=0) }}';
-    var messageDetailApiBase = '{{ url_for("call_center.api_message_detail", message_id=0) }}';
+    var messageEditApiUrl = '{{ url_for("call_center.api_message_edit") }}';
     var mediaUrlBase = '{{ url_for("call_center.media_file", filename="__PATH__") }}';
     var csrfToken = '{{ csrf_token() }}';
     var lastMsgId = 0;
@@ -928,10 +928,6 @@
             + '<i class="bi bi-pencil"></i></button></div>';
     }
 
-    function messageDetailUrl(messageId) {
-        return messageDetailApiBase.replace(/0$/, String(messageId));
-    }
-
     function updateMessageBubble(message) {
         if (!message || !chatBox) return;
         var bubble = chatBox.querySelector('.cc-bubble[data-msg-id="' + message.id + '"]');
@@ -966,13 +962,16 @@
             return;
         }
         btnSaveMessageEdit.disabled = true;
-        fetch(messageDetailUrl(editingMessageId), {
+        var payload = new FormData();
+        payload.append('message_id', String(editingMessageId));
+        payload.append('message', text);
+        payload.append('csrf_token', csrfToken);
+        fetch(messageEditApiUrl, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'X-CSRFToken': csrfToken
             },
-            body: JSON.stringify({ message: text })
+            body: payload
         })
             .then(parseApiResponse)
             .then(function (data) {
