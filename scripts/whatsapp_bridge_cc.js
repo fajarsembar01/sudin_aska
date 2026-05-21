@@ -52,6 +52,10 @@ const INTERNAL_URL = (
     process.env.ASKA_CC_WHATSAPP_INTERNAL_URL ||
     "http://127.0.0.1:5001/api/callcenter/inbound"
 ).trim();
+const IMPORT_URL = (
+    process.env.ASKA_CC_WHATSAPP_IMPORT_URL ||
+    INTERNAL_URL.replace(/\/inbound\/?$/, "/import-history")
+).trim();
 const INTERNAL_TOKEN = (process.env.ASKA_CC_WHATSAPP_INTERNAL_TOKEN || "").trim();
 const SESSION_PATH = path.resolve(
     process.env.ASKA_CC_WHATSAPP_SESSION_PATH || ".wa_cc_session"
@@ -96,6 +100,7 @@ function normalizeNumber(jid) {
 
 const processedIds = new Set();
 const ignoredIds = new Set();
+let clientReady = false;
 
 // ── WhatsApp client ──────────────────────────────────────────────────────────
 
@@ -121,16 +126,19 @@ client.on("authenticated", () => {
 });
 
 client.on("ready", () => {
+    clientReady = true;
     writeStatus({ state: "ready", qrText: "", message: "Call Center bridge siap." });
     console.log("[CC] Bridge siap menerima chat.");
 });
 
 client.on("auth_failure", (msg) => {
+    clientReady = false;
     writeStatus({ state: "auth_failure", qrText: "", message: String(msg) });
     console.error("[CC] Auth failure:", msg);
 });
 
 client.on("disconnected", (reason) => {
+    clientReady = false;
     writeStatus({ state: "disconnected", qrText: "", message: String(reason) });
     console.warn("[CC] Disconnected:", reason);
     setTimeout(() => {
@@ -231,8 +239,170 @@ function authCheck(req, res, next) {
     next();
 }
 
+function boundedInt(value, fallback, min, max) {
+    const parsed = parseInt(value, 10);
+    if (!Number.isFinite(parsed)) return fallback;
+    return Math.max(min, Math.min(max, parsed));
+}
+
+async function getChatIdentity(chat) {
+    const chatId = (chat && chat.id && chat.id._serialized) || "";
+    let number = normalizeNumber(chatId);
+    let displayName = (chat && chat.name) || number || chatId;
+
+    try {
+        const contact = await chat.getContact();
+        if (contact && contact.number) {
+            number = String(contact.number).replace(/\D/g, "");
+        }
+        displayName = String(
+            (contact && contact.pushname) ||
+            (contact && contact.name) ||
+            (contact && contact.shortName) ||
+            displayName
+        ).trim() || displayName;
+    } catch (_) {
+        // Some historical chats may not expose a contact object.
+    }
+
+    return { number, displayName, chatId };
+}
+
+function serializeHistoryMessage(msg, identity) {
+    if (!msg || msg.type !== "chat") return null;
+    if (msg.from === "status@broadcast" || msg.to === "status@broadcast") return null;
+
+    const text = String(msg.body || "").trim();
+    if (!text) return null;
+
+    const timestamp = Number(msg.timestamp || 0);
+    const createdAt = timestamp > 0 ? new Date(timestamp * 1000).toISOString() : new Date().toISOString();
+    const messageId = (msg.id && msg.id._serialized) || "";
+
+    return {
+        user_id: identity.number,
+        username: identity.displayName,
+        direction: msg.fromMe ? "outbound" : "inbound",
+        message: text,
+        message_id: messageId || null,
+        created_at: createdAt,
+    };
+}
+
+function mergeImportStats(total, batchResult) {
+    total.saved += Number((batchResult && batchResult.saved) || 0);
+    total.duplicates += Number((batchResult && batchResult.duplicates) || 0);
+    total.skipped += Number((batchResult && batchResult.skipped) || 0);
+    total.conversations += Number((batchResult && batchResult.conversations) || 0);
+}
+
+async function postImportBatch(messages) {
+    if (!messages.length) return {};
+    const response = await axios.post(
+        IMPORT_URL,
+        { messages },
+        {
+            headers: {
+                "Content-Type": "application/json",
+                "X-ASKA-CC-TOKEN": INTERNAL_TOKEN,
+            },
+            timeout: 60000,
+        }
+    );
+    return response.data || {};
+}
+
 app.get("/health", (_req, res) => {
     res.json({ ok: true, state: "running" });
+});
+
+app.post("/sync-history", authCheck, async (req, res) => {
+    if (!clientReady) {
+        return res.status(409).json({ error: "WhatsApp bridge belum ready." });
+    }
+
+    const chatLimit = boundedInt(req.body && (req.body.chatLimit || req.body.chat_limit), 25, 1, 200);
+    const limitPerChat = boundedInt(req.body && (req.body.limitPerChat || req.body.limit_per_chat), 50, 1, 500);
+    const stats = {
+        ok: true,
+        chatLimit,
+        limitPerChat,
+        chats: 0,
+        fetched: 0,
+        sent: 0,
+        saved: 0,
+        duplicates: 0,
+        skipped: 0,
+        conversations: 0,
+        failedChats: 0,
+    };
+
+    try {
+        const chats = await client.getChats();
+        const directChats = chats
+            .filter((chat) => {
+                const jid = (chat && chat.id && chat.id._serialized) || "";
+                if (!jid || jid === "status@broadcast") return false;
+                if (chat.isGroup || jid.endsWith("@g.us")) return false;
+                return Boolean(normalizeNumber(jid));
+            })
+            .sort((a, b) => {
+                const aTime = Number((a && a.timestamp) || (a && a.lastMessage && a.lastMessage.timestamp) || 0);
+                const bTime = Number((b && b.timestamp) || (b && b.lastMessage && b.lastMessage.timestamp) || 0);
+                return bTime - aTime;
+            })
+            .slice(0, chatLimit);
+
+        stats.chats = directChats.length;
+        let batch = [];
+
+        for (const chat of directChats) {
+            try {
+                const identity = await getChatIdentity(chat);
+                if (!identity.number) {
+                    stats.skipped += 1;
+                    continue;
+                }
+
+                const messages = await chat.fetchMessages({ limit: limitPerChat });
+                messages.sort((a, b) => Number(a.timestamp || 0) - Number(b.timestamp || 0));
+
+                for (const msg of messages) {
+                    const item = serializeHistoryMessage(msg, identity);
+                    if (!item) {
+                        stats.skipped += 1;
+                        continue;
+                    }
+                    batch.push(item);
+                    stats.fetched += 1;
+
+                    if (batch.length >= 100) {
+                        const result = await postImportBatch(batch);
+                        stats.sent += batch.length;
+                        mergeImportStats(stats, result);
+                        batch = [];
+                    }
+                }
+            } catch (err) {
+                stats.failedChats += 1;
+                console.error("[CC] sync chat error:", (err && err.message) || err);
+            }
+        }
+
+        if (batch.length) {
+            const result = await postImportBatch(batch);
+            stats.sent += batch.length;
+            mergeImportStats(stats, result);
+        }
+
+        console.log(
+            `[CC] sync-history chats=${stats.chats} fetched=${stats.fetched} saved=${stats.saved} duplicates=${stats.duplicates} skipped=${stats.skipped}`
+        );
+        res.json(stats);
+    } catch (err) {
+        console.error("[CC] sync-history error:", (err && err.message) || err);
+        res.status(500).json({ error: (err && err.message) || "Sync history failed" });
+    }
 });
 
 app.post("/send", authCheck, async (req, res) => {

@@ -18,6 +18,7 @@ _CC_DRAFTS_SCHEMA_READY = False
 def upsert_cc_conversation(
     wa_user_id: str,
     display_name: Optional[str] = None,
+    last_message_at: Optional[str] = None,
 ) -> dict:
     """Create or update a conversation for the given WA user.
 
@@ -27,15 +28,18 @@ def upsert_cc_conversation(
         cur.execute(
             """
             INSERT INTO cc_conversations (wa_user_id, display_name, last_message_at, updated_at)
-            VALUES (%(wa)s, %(name)s, NOW(), NOW())
+            VALUES (%(wa)s, %(name)s, COALESCE(%(last_message_at)s::timestamptz, NOW()), NOW())
             ON CONFLICT (wa_user_id) DO UPDATE SET
                 display_name = COALESCE(EXCLUDED.display_name, cc_conversations.display_name),
-                last_message_at = NOW(),
+                last_message_at = GREATEST(
+                    COALESCE(cc_conversations.last_message_at, EXCLUDED.last_message_at),
+                    EXCLUDED.last_message_at
+                ),
                 updated_at = NOW()
             RETURNING id, wa_user_id, display_name, status, last_message_at,
                       unread_count, created_at, updated_at
             """,
-            {"wa": wa_user_id, "name": display_name},
+            {"wa": wa_user_id, "name": display_name, "last_message_at": last_message_at},
         )
         row = cur.fetchone()
     return dict(row) if row else {}
@@ -152,15 +156,37 @@ def save_cc_message(
     admin_user_id: Optional[int] = None,
     admin_display_name: Optional[str] = None,
     wa_message_id: Optional[str] = None,
+    created_at: Optional[str] = None,
+    increment_unread: bool = True,
 ) -> dict:
     """Insert a message and update conversation timestamps/unread."""
     with get_cursor(commit=True) as cur:
+        if wa_message_id:
+            cur.execute(
+                """
+                SELECT id, conversation_id, direction, message_text,
+                       admin_user_id, admin_display_name, wa_message_id, created_at
+                FROM cc_messages
+                WHERE wa_message_id = %(wa_msg)s
+                LIMIT 1
+                """,
+                {"wa_msg": wa_message_id},
+            )
+            existing = cur.fetchone()
+            if existing:
+                duplicate = dict(existing)
+                duplicate["duplicate"] = True
+                return duplicate
+
         cur.execute(
             """
             INSERT INTO cc_messages
                 (conversation_id, direction, message_text,
-                 admin_user_id, admin_display_name, wa_message_id)
-            VALUES (%(conv)s, %(dir)s, %(text)s, %(admin)s, %(admin_name)s, %(wa_msg)s)
+                 admin_user_id, admin_display_name, wa_message_id, created_at)
+            VALUES (
+                %(conv)s, %(dir)s, %(text)s, %(admin)s, %(admin_name)s, %(wa_msg)s,
+                COALESCE(%(created_at)s::timestamptz, NOW())
+            )
             RETURNING id, conversation_id, direction, message_text,
                       admin_user_id, admin_display_name, wa_message_id, created_at
             """,
@@ -171,31 +197,44 @@ def save_cc_message(
                 "admin": admin_user_id,
                 "admin_name": admin_display_name,
                 "wa_msg": wa_message_id,
+                "created_at": created_at,
             },
         )
         row = cur.fetchone()
+        message_created_at = row["created_at"] if row else None
 
         # Update conversation
         if direction == "inbound":
             cur.execute(
                 """
                 UPDATE cc_conversations
-                SET last_message_at = NOW(),
-                    unread_count = unread_count + 1,
+                SET last_message_at = GREATEST(
+                        COALESCE(last_message_at, %(created_at)s),
+                        %(created_at)s
+                    ),
+                    unread_count = unread_count + %(unread_delta)s,
                     status = 'open',
                     updated_at = NOW()
                 WHERE id = %(conv)s
                 """,
-                {"conv": conversation_id},
+                {
+                    "conv": conversation_id,
+                    "created_at": message_created_at,
+                    "unread_delta": 1 if increment_unread else 0,
+                },
             )
         else:
             cur.execute(
                 """
                 UPDATE cc_conversations
-                SET last_message_at = NOW(), updated_at = NOW()
+                SET last_message_at = GREATEST(
+                        COALESCE(last_message_at, %(created_at)s),
+                        %(created_at)s
+                    ),
+                    updated_at = NOW()
                 WHERE id = %(conv)s
                 """,
-                {"conv": conversation_id},
+                {"conv": conversation_id, "created_at": message_created_at},
             )
 
     return dict(row) if row else {}

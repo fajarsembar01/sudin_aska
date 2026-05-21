@@ -1103,6 +1103,7 @@ CREATE TABLE IF NOT EXISTS cc_messages (
 _CC_MESSAGES_INDEX_SQL = """
 CREATE INDEX IF NOT EXISTS idx_cc_messages_conversation ON cc_messages (conversation_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_cc_messages_created ON cc_messages (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cc_messages_wa_message_id ON cc_messages (wa_message_id) WHERE wa_message_id IS NOT NULL;
 """
 
 _CC_TELEGRAM_SETTINGS_SQL = """
