@@ -801,7 +801,7 @@ def api_messages(conv_id: int) -> Response:
     return jsonify({"messages": messages})
 
 
-@call_center_bp.route("/api/message/<int:message_id>", methods=["PUT"])
+@call_center_bp.route("/api/message/<int:message_id>", methods=["POST", "PUT"])
 @role_required("admin")
 def api_message_detail(message_id: int) -> Response:
     """Edit an outbound message that was already sent."""

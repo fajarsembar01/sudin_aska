@@ -967,7 +967,7 @@
         }
         btnSaveMessageEdit.disabled = true;
         fetch(messageDetailUrl(editingMessageId), {
-            method: 'PUT',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': csrfToken
