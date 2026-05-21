@@ -9,6 +9,26 @@ from typing import Optional, List, Dict, Any
 from ..db_access import get_cursor
 
 _CC_DRAFTS_SCHEMA_READY = False
+_CC_MESSAGES_MEDIA_SCHEMA_READY = False
+
+
+def _ensure_cc_messages_media_schema() -> None:
+    """Ensure media columns exist for WhatsApp attachments."""
+    global _CC_MESSAGES_MEDIA_SCHEMA_READY
+    if _CC_MESSAGES_MEDIA_SCHEMA_READY:
+        return
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            ALTER TABLE cc_messages
+            ADD COLUMN IF NOT EXISTS media_path TEXT,
+            ADD COLUMN IF NOT EXISTS media_mime_type TEXT,
+            ADD COLUMN IF NOT EXISTS media_filename TEXT,
+            ADD COLUMN IF NOT EXISTS media_size INTEGER
+            """
+        )
+    _CC_MESSAGES_MEDIA_SCHEMA_READY = True
 
 
 # ---------------------------------------------------------------------------
@@ -158,14 +178,20 @@ def save_cc_message(
     wa_message_id: Optional[str] = None,
     created_at: Optional[str] = None,
     increment_unread: bool = True,
+    media_path: Optional[str] = None,
+    media_mime_type: Optional[str] = None,
+    media_filename: Optional[str] = None,
+    media_size: Optional[int] = None,
 ) -> dict:
     """Insert a message and update conversation timestamps/unread."""
+    _ensure_cc_messages_media_schema()
     with get_cursor(commit=True) as cur:
         if wa_message_id:
             cur.execute(
                 """
                 SELECT id, conversation_id, direction, message_text,
-                       admin_user_id, admin_display_name, wa_message_id, created_at
+                       admin_user_id, admin_display_name, wa_message_id, created_at,
+                       media_path, media_mime_type, media_filename, media_size
                 FROM cc_messages
                 WHERE wa_message_id = %(wa_msg)s
                 LIMIT 1
@@ -182,13 +208,16 @@ def save_cc_message(
             """
             INSERT INTO cc_messages
                 (conversation_id, direction, message_text,
-                 admin_user_id, admin_display_name, wa_message_id, created_at)
+                 admin_user_id, admin_display_name, wa_message_id, created_at,
+                 media_path, media_mime_type, media_filename, media_size)
             VALUES (
                 %(conv)s, %(dir)s, %(text)s, %(admin)s, %(admin_name)s, %(wa_msg)s,
-                COALESCE(%(created_at)s::timestamptz, NOW())
+                COALESCE(%(created_at)s::timestamptz, NOW()),
+                %(media_path)s, %(media_mime_type)s, %(media_filename)s, %(media_size)s
             )
             RETURNING id, conversation_id, direction, message_text,
-                      admin_user_id, admin_display_name, wa_message_id, created_at
+                      admin_user_id, admin_display_name, wa_message_id, created_at,
+                      media_path, media_mime_type, media_filename, media_size
             """,
             {
                 "conv": conversation_id,
@@ -198,6 +227,10 @@ def save_cc_message(
                 "admin_name": admin_display_name,
                 "wa_msg": wa_message_id,
                 "created_at": created_at,
+                "media_path": media_path,
+                "media_mime_type": media_mime_type,
+                "media_filename": media_filename,
+                "media_size": media_size,
             },
         )
         row = cur.fetchone()
@@ -246,6 +279,7 @@ def fetch_cc_messages(
     after_id: Optional[int] = None,
 ) -> list[dict]:
     """Fetch messages for a conversation, optionally only those after a given ID."""
+    _ensure_cc_messages_media_schema()
     params: dict = {"conv": conversation_id, "limit": limit}
     after_clause = ""
     if after_id:
@@ -256,7 +290,8 @@ def fetch_cc_messages(
         cur.execute(
             f"""
             SELECT m.id, m.conversation_id, m.direction, m.message_text,
-                   m.admin_user_id, m.admin_display_name, m.wa_message_id, m.created_at
+                   m.admin_user_id, m.admin_display_name, m.wa_message_id, m.created_at,
+                   m.media_path, m.media_mime_type, m.media_filename, m.media_size
             FROM cc_messages m
             WHERE m.conversation_id = %(conv)s {after_clause}
             ORDER BY m.created_at ASC
@@ -286,6 +321,10 @@ def _ensure_cc_message_drafts_schema() -> None:
                 title TEXT NOT NULL,
                 category TEXT NOT NULL DEFAULT 'Umum',
                 message_text TEXT NOT NULL,
+                media_path TEXT,
+                media_mime_type TEXT,
+                media_filename TEXT,
+                media_size INTEGER,
                 pinned BOOLEAN NOT NULL DEFAULT FALSE,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -296,6 +335,15 @@ def _ensure_cc_message_drafts_schema() -> None:
             """
             ALTER TABLE cc_message_drafts
             ADD COLUMN IF NOT EXISTS pinned BOOLEAN NOT NULL DEFAULT FALSE
+            """
+        )
+        cur.execute(
+            """
+            ALTER TABLE cc_message_drafts
+            ADD COLUMN IF NOT EXISTS media_path TEXT,
+            ADD COLUMN IF NOT EXISTS media_mime_type TEXT,
+            ADD COLUMN IF NOT EXISTS media_filename TEXT,
+            ADD COLUMN IF NOT EXISTS media_size INTEGER
             """
         )
         cur.execute(
@@ -337,7 +385,9 @@ def list_cc_message_drafts(
                   AND action IN ('USE', 'SEND')
                 GROUP BY target_id
             )
-            SELECT d.id, d.admin_user_id, d.title, d.category, d.message_text, d.pinned, d.created_at, d.updated_at
+            SELECT d.id, d.admin_user_id, d.title, d.category, d.message_text,
+                   d.media_path, d.media_mime_type, d.media_filename, d.media_size,
+                   d.pinned, d.created_at, d.updated_at
                  , COALESCE(du.usage_count, 0) AS usage_count
             FROM cc_message_drafts d
             LEFT JOIN draft_usage du ON du.target_id = d.id
@@ -347,6 +397,23 @@ def list_cc_message_drafts(
             params,
         )
         return [dict(r) for r in cur.fetchall()]
+
+
+def get_cc_message_draft(draft_id: int, admin_user_id: int) -> Optional[dict]:
+    _ensure_cc_message_drafts_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, admin_user_id, title, category, message_text,
+                   media_path, media_mime_type, media_filename, media_size,
+                   pinned, created_at, updated_at
+            FROM cc_message_drafts
+            WHERE id = %(draft_id)s AND admin_user_id = %(admin_user_id)s
+            """,
+            {"draft_id": draft_id, "admin_user_id": admin_user_id},
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
 
 
 def list_cc_message_draft_categories(admin_user_id: int) -> list[str]:
@@ -370,20 +437,38 @@ def create_cc_message_draft(
     title: str,
     category: str,
     message_text: str,
+    media_path: Optional[str] = None,
+    media_mime_type: Optional[str] = None,
+    media_filename: Optional[str] = None,
+    media_size: Optional[int] = None,
 ) -> dict:
     _ensure_cc_message_drafts_schema()
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
-            INSERT INTO cc_message_drafts (admin_user_id, title, category, message_text, pinned, updated_at)
-            VALUES (%(admin_user_id)s, %(title)s, %(category)s, %(message_text)s, FALSE, NOW())
-            RETURNING id, admin_user_id, title, category, message_text, pinned, created_at, updated_at
+            INSERT INTO cc_message_drafts (
+                admin_user_id, title, category, message_text,
+                media_path, media_mime_type, media_filename, media_size,
+                pinned, updated_at
+            )
+            VALUES (
+                %(admin_user_id)s, %(title)s, %(category)s, %(message_text)s,
+                %(media_path)s, %(media_mime_type)s, %(media_filename)s, %(media_size)s,
+                FALSE, NOW()
+            )
+            RETURNING id, admin_user_id, title, category, message_text,
+                      media_path, media_mime_type, media_filename, media_size,
+                      pinned, created_at, updated_at
             """,
             {
                 "admin_user_id": admin_user_id,
                 "title": title,
                 "category": category,
                 "message_text": message_text,
+                "media_path": media_path,
+                "media_mime_type": media_mime_type,
+                "media_filename": media_filename,
+                "media_size": media_size,
             },
         )
         row = cur.fetchone()
@@ -396,26 +481,52 @@ def update_cc_message_draft(
     title: str,
     category: str,
     message_text: str,
+    media_path: Optional[str] = None,
+    media_mime_type: Optional[str] = None,
+    media_filename: Optional[str] = None,
+    media_size: Optional[int] = None,
+    update_media: bool = False,
 ) -> Optional[dict]:
     _ensure_cc_message_drafts_schema()
+    media_set_clause = ""
+    params = {
+        "draft_id": draft_id,
+        "admin_user_id": admin_user_id,
+        "title": title,
+        "category": category,
+        "message_text": message_text,
+    }
+    if update_media:
+        media_set_clause = """
+                media_path = %(media_path)s,
+                media_mime_type = %(media_mime_type)s,
+                media_filename = %(media_filename)s,
+                media_size = %(media_size)s,
+        """
+        params.update(
+            {
+                "media_path": media_path,
+                "media_mime_type": media_mime_type,
+                "media_filename": media_filename,
+                "media_size": media_size,
+            }
+        )
+
     with get_cursor(commit=True) as cur:
         cur.execute(
-            """
+            f"""
             UPDATE cc_message_drafts
             SET title = %(title)s,
                 category = %(category)s,
                 message_text = %(message_text)s,
+                {media_set_clause}
                 updated_at = NOW()
             WHERE id = %(draft_id)s AND admin_user_id = %(admin_user_id)s
-            RETURNING id, admin_user_id, title, category, message_text, pinned, created_at, updated_at
+            RETURNING id, admin_user_id, title, category, message_text,
+                      media_path, media_mime_type, media_filename, media_size,
+                      pinned, created_at, updated_at
             """,
-            {
-                "draft_id": draft_id,
-                "admin_user_id": admin_user_id,
-                "title": title,
-                "category": category,
-                "message_text": message_text,
-            },
+            params,
         )
         row = cur.fetchone()
     return dict(row) if row else None
@@ -429,10 +540,12 @@ def toggle_cc_message_draft_pin(draft_id: int, admin_user_id: int) -> Optional[d
             UPDATE cc_message_drafts
             SET pinned = NOT pinned,
                 updated_at = NOW()
-            WHERE id = %(draft_id)s
-            RETURNING id, admin_user_id, title, category, message_text, pinned, created_at, updated_at
+            WHERE id = %(draft_id)s AND admin_user_id = %(admin_user_id)s
+            RETURNING id, admin_user_id, title, category, message_text,
+                      media_path, media_mime_type, media_filename, media_size,
+                      pinned, created_at, updated_at
             """,
-            {"draft_id": draft_id},
+            {"draft_id": draft_id, "admin_user_id": admin_user_id},
         )
         row = cur.fetchone()
         if row:

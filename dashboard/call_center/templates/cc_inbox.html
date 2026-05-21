@@ -181,6 +181,25 @@
         resize: vertical;
     }
 
+    .cc-attachment-preview {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        max-width: 100%;
+        padding: .35rem .55rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: .6rem;
+        background: var(--bs-body-bg);
+        font-size: .78rem;
+    }
+
+    .cc-attachment-preview span {
+        max-width: 280px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     .cc-empty-state {
         text-align: center;
     }
@@ -373,6 +392,19 @@
                     <label for="draftMessageInput" class="form-label">Isi Draft</label>
                     <textarea id="draftMessageInput" class="form-control" placeholder="Tulis template balasan di sini..."></textarea>
                 </div>
+                <div class="mt-3">
+                    <label for="draftMediaInput" class="form-label">Lampiran</label>
+                    <input type="file" class="form-control" id="draftMediaInput"
+                        accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,image/bmp,image/tiff,.jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.bmp,.tif,.tiff,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv">
+                    <div class="cc-attachment-preview mt-2 d-none" id="draftAttachmentPreview">
+                        <i class="bi bi-paperclip"></i>
+                        <span id="draftAttachmentName"></span>
+                        <button class="btn btn-link btn-sm p-0 text-secondary" id="btnRemoveDraftAttachment"
+                            type="button" title="Hapus lampiran draft">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
@@ -398,8 +430,13 @@
         var draftTitleInput = document.getElementById('draftTitleInput');
         var draftCategoryInput = document.getElementById('draftCategoryInput');
         var draftMessageInput = document.getElementById('draftMessageInput');
+        var draftMediaInput = document.getElementById('draftMediaInput');
+        var draftAttachmentPreview = document.getElementById('draftAttachmentPreview');
+        var draftAttachmentName = document.getElementById('draftAttachmentName');
+        var btnRemoveDraftAttachment = document.getElementById('btnRemoveDraftAttachment');
         var btnSaveDraft = document.getElementById('btnSaveDraft');
         var draftModalTitle = document.getElementById('draftModalTitle');
+        var draftRemoveMedia = false;
 
         function escapeHtml(text) {
             var el = document.createElement('span');
@@ -420,6 +457,63 @@
 
         function draftDetailUrl(draftId) {
             return draftDetailApiBase.replace(/0$/, String(draftId));
+        }
+
+        function formatBytes(size) {
+            if (!size) return '0 B';
+            var units = ['B', 'KB', 'MB'];
+            var value = Number(size);
+            var index = 0;
+            while (value >= 1024 && index < units.length - 1) {
+                value = value / 1024;
+                index += 1;
+            }
+            return (index === 0 ? String(value) : value.toFixed(1)) + ' ' + units[index];
+        }
+
+        function validateAttachment(file, options) {
+            if (!file) return null;
+            var opts = options || {};
+            var docMaxBytes = opts.docMaxBytes || (1024 * 1024);
+            var docMaxLabel = opts.docMaxLabel || '1 MB';
+            var name = String(file.name || '').toLowerCase();
+            var ext = name.indexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
+            var mime = String(file.type || '').toLowerCase();
+            var imageExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif', '.bmp', '.tif', '.tiff'];
+            var imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif', 'image/bmp', 'image/tiff'];
+            var isImage = imageTypes.indexOf(mime) !== -1 || imageExts.indexOf(ext) !== -1;
+            var isPdf = ext === '.pdf' || mime === 'application/pdf';
+            var allowedDocs = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.csv'];
+            if (isImage) {
+                if (file.size > 20 * 1024 * 1024) return 'Ukuran gambar maksimal 20 MB sebelum kompresi.';
+                return null;
+            }
+            if (isPdf) {
+                if (file.size > 20 * 1024 * 1024) return 'Ukuran PDF maksimal 20 MB sebelum kompresi.';
+                return null;
+            }
+            if (mime.indexOf('image/') === 0) return 'Tipe gambar belum didukung. Gunakan JPG, PNG, WebP, GIF, HEIC, BMP, atau TIFF.';
+            if (allowedDocs.indexOf(ext) === -1) return 'Tipe file belum didukung.';
+            if (file.size > docMaxBytes) return 'Ukuran dokumen selain PDF maksimal ' + docMaxLabel + '.';
+            return null;
+        }
+
+        function draftAttachmentText(draft) {
+            if (!draft || !draft.media_path) return '';
+            return (draft.media_filename || 'Lampiran draft') + (draft.media_size ? ' · ' + formatBytes(draft.media_size) : '');
+        }
+
+        function showDraftEditorAttachment(text) {
+            if (!draftAttachmentPreview || !draftAttachmentName) return;
+            draftAttachmentName.textContent = text || 'Lampiran draft';
+            draftAttachmentPreview.classList.remove('d-none');
+        }
+
+        function clearDraftEditorAttachment(markRemove) {
+            if (draftMediaInput) draftMediaInput.value = '';
+            if (draftAttachmentPreview) draftAttachmentPreview.classList.add('d-none');
+            if (draftAttachmentName) draftAttachmentName.textContent = '';
+            draftRemoveMedia = !!markRemove;
         }
 
         function upsertUniqueCategory(list, value) {
@@ -476,11 +570,16 @@
                     var preview = escapeHtml((draft.message_text || '').trim());
                     var title = escapeHtml(draft.title || '');
                     var category = escapeHtml(draft.category || 'Umum');
+                    var attachmentText = escapeHtml(draftAttachmentText(draft));
+                    var attachmentHtml = attachmentText
+                        ? '<div class="cc-draft-item-preview"><i class="bi bi-paperclip me-1"></i>' + attachmentText + '</div>'
+                        : '';
                     html += ''
                         + '<div class="cc-draft-item" data-draft-id="' + draft.id + '">'
                         + '<div class="cc-draft-item-title">' + title + '</div>'
                         + '<div class="mt-2"><span class="badge text-bg-light border">' + category + '</span></div>'
-                        + '<div class="cc-draft-item-preview">' + preview + '</div>'
+                        + (preview ? '<div class="cc-draft-item-preview">' + preview + '</div>' : '')
+                        + attachmentHtml
                         + '<div class="cc-draft-item-actions">'
                         + '<button type="button" class="btn btn-outline-secondary btn-sm flex-fill" data-draft-action="edit" data-draft-id="' + draft.id + '"><i class="bi bi-pencil me-1"></i>Edit</button>'
                         + '<button type="button" class="btn btn-outline-danger btn-sm" data-draft-action="delete" data-draft-id="' + draft.id + '"><i class="bi bi-trash"></i></button>'
@@ -519,6 +618,13 @@
             draftTitleInput.value = draft ? (draft.title || '') : '';
             draftCategoryInput.value = draft ? (draft.category || '') : (selectedDraftCategory !== 'all' ? selectedDraftCategory : '');
             draftMessageInput.value = draft ? (draft.message_text || '') : '';
+            draftRemoveMedia = false;
+            if (draftMediaInput) draftMediaInput.value = '';
+            if (draft && draft.media_path) {
+                showDraftEditorAttachment(draftAttachmentText(draft));
+            } else {
+                clearDraftEditorAttachment(false);
+            }
             draftModal.show();
             setTimeout(function () {
                 draftTitleInput.focus();
@@ -529,33 +635,49 @@
             var title = (draftTitleInput.value || '').trim();
             var category = (draftCategoryInput.value || '').trim() || 'Umum';
             var messageText = (draftMessageInput.value || '').trim();
+            var draftFile = draftMediaInput && draftMediaInput.files && draftMediaInput.files.length ? draftMediaInput.files[0] : null;
+            var existingDraft = editingDraftId !== null
+                ? draftItems.find(function (item) { return item.id === editingDraftId; })
+                : null;
             if (!title) {
                 alert('Judul draft wajib diisi.');
                 draftTitleInput.focus();
                 return;
             }
-            if (!messageText) {
-                alert('Isi draft wajib diisi.');
+            if (!messageText && !draftFile && !(existingDraft && existingDraft.media_path && !draftRemoveMedia)) {
+                alert('Isi draft atau lampiran wajib diisi.');
                 draftMessageInput.focus();
                 return;
+            }
+            if (draftFile) {
+                var fileError = validateAttachment(draftFile, { docMaxBytes: 1024 * 1024, docMaxLabel: '1 MB' });
+                if (fileError) {
+                    alert(fileError);
+                    return;
+                }
             }
 
             var isEdit = editingDraftId !== null;
             var url = isEdit ? draftDetailUrl(editingDraftId) : draftsApiUrl;
             var method = isEdit ? 'PUT' : 'POST';
+            var payload = new FormData();
+            payload.append('title', title);
+            payload.append('category', category);
+            payload.append('message_text', messageText);
+            if (draftFile) {
+                payload.append('media', draftFile, draftFile.name);
+            }
+            if (draftRemoveMedia) {
+                payload.append('remove_media', '1');
+            }
             btnSaveDraft.disabled = true;
 
             fetch(url, {
                 method: method,
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-CSRFToken': csrfToken
                 },
-                body: JSON.stringify({
-                    title: title,
-                    category: category,
-                    message_text: messageText
-                })
+                body: payload
             })
                 .then(parseApiResponse)
                 .then(function (data) {
@@ -605,6 +727,33 @@
 
         if (btnSaveDraft) {
             btnSaveDraft.addEventListener('click', saveDraft);
+        }
+        if (draftMediaInput) {
+            draftMediaInput.addEventListener('change', function () {
+                var file = this.files && this.files.length ? this.files[0] : null;
+                var error = validateAttachment(file, { docMaxBytes: 1024 * 1024, docMaxLabel: '1 MB' });
+                if (error) {
+                    alert(error);
+                    clearDraftEditorAttachment(false);
+                    return;
+                }
+                if (file) {
+                    draftRemoveMedia = false;
+                    showDraftEditorAttachment(file.name + ' · ' + formatBytes(file.size));
+                } else if (editingDraftId !== null) {
+                    var draft = draftItems.find(function (item) { return item.id === editingDraftId; });
+                    if (draft && draft.media_path) {
+                        showDraftEditorAttachment(draftAttachmentText(draft));
+                    } else {
+                        clearDraftEditorAttachment(false);
+                    }
+                }
+            });
+        }
+        if (btnRemoveDraftAttachment) {
+            btnRemoveDraftAttachment.addEventListener('click', function () {
+                clearDraftEditorAttachment(editingDraftId !== null);
+            });
         }
 
         document.addEventListener('click', function (evt) {

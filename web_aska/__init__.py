@@ -58,6 +58,13 @@ def _env_value(name: str, default: str = "") -> str:
         return default
 
 
+def _cc_inbound_media_max_bytes() -> int:
+    try:
+        return max(1, int(_env_value("ASKA_CC_INBOUND_MEDIA_MAX_BYTES", "307200")))
+    except ValueError:
+        return 300 * 1024
+
+
 def _run_async(coro):
     """Safely run an async coroutine from a sync Flask/gunicorn context."""
     try:
@@ -935,8 +942,6 @@ def create_app() -> Flask:
         username = (data.get("username") or raw_user_id).strip()[:120]
         message = (data.get("message") or "").strip()
         message_id = data.get("message_id") or None
-        if not message:
-            return jsonify({"error": "message required"}), 400
 
         try:
             from dashboard.call_center.queries import (
@@ -944,6 +949,27 @@ def create_app() -> Flask:
                 save_cc_message,
                 send_cc_telegram_notification,
             )
+            from dashboard.call_center.media import (
+                call_center_media_label,
+                save_call_center_media,
+            )
+
+            media_payload = data.get("media") or {}
+            inbound_limit = _cc_inbound_media_max_bytes()
+            media_meta = save_call_center_media(
+                media_payload,
+                message_id=message_id,
+                max_image_bytes=inbound_limit,
+                max_pdf_bytes=inbound_limit,
+                max_file_bytes=inbound_limit,
+            )
+            if not message and (media_payload or media_meta):
+                message = call_center_media_label(
+                    media_meta.get("media_mime_type")
+                    or (media_payload.get("mimetype") if isinstance(media_payload, dict) else None)
+                )
+            if not message:
+                return jsonify({"error": "message required"}), 400
 
             conv = upsert_cc_conversation(wa_user_id=raw_user_id, display_name=username)
             msg = save_cc_message(
@@ -951,6 +977,7 @@ def create_app() -> Flask:
                 direction="inbound",
                 message_text=message,
                 wa_message_id=message_id,
+                **media_meta,
             )
 
             if not msg.get("duplicate"):
@@ -999,6 +1026,10 @@ def create_app() -> Flask:
                 upsert_cc_conversation,
                 save_cc_message,
             )
+            from dashboard.call_center.media import (
+                call_center_media_label,
+                save_call_center_media,
+            )
 
             saved = 0
             duplicates = 0
@@ -1013,7 +1044,25 @@ def create_app() -> Flask:
                 raw_user_id = str(item.get("user_id") or "").strip()
                 message = str(item.get("message") or "").strip()
                 direction = str(item.get("direction") or "inbound").strip().lower()
-                if not raw_user_id or not message or direction not in {"inbound", "outbound"}:
+                if not raw_user_id or direction not in {"inbound", "outbound"}:
+                    skipped += 1
+                    continue
+
+                media_payload = item.get("media") or {}
+                inbound_limit = _cc_inbound_media_max_bytes()
+                media_meta = save_call_center_media(
+                    media_payload,
+                    message_id=item.get("message_id") or None,
+                    max_image_bytes=inbound_limit,
+                    max_pdf_bytes=inbound_limit,
+                    max_file_bytes=inbound_limit,
+                )
+                if not message and (media_payload or media_meta):
+                    message = call_center_media_label(
+                        media_meta.get("media_mime_type")
+                        or (media_payload.get("mimetype") if isinstance(media_payload, dict) else None)
+                    )
+                if not message:
                     skipped += 1
                     continue
 
@@ -1038,6 +1087,7 @@ def create_app() -> Flask:
                     wa_message_id=message_id,
                     created_at=created_at,
                     increment_unread=False,
+                    **media_meta,
                 )
                 conversations.add(conv["id"])
                 if msg.get("duplicate"):

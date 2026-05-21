@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
+import base64
 import json
+import mimetypes
 import shutil
 import signal
 import subprocess
@@ -15,12 +17,14 @@ import requests
 from dotenv import dotenv_values
 from flask import (
     Response,
+    abort,
     current_app,
     flash,
     jsonify,
     redirect,
     render_template,
     request,
+    send_from_directory,
     url_for,
 )
 
@@ -50,12 +54,20 @@ from .queries import (
     send_cc_telegram_notification,
     list_cc_message_drafts,
     list_cc_message_draft_categories,
+    get_cc_message_draft,
     create_cc_message_draft,
     update_cc_message_draft,
     delete_cc_message_draft,
     toggle_cc_message_draft_pin,
 )
 from . import call_center_api_bp, call_center_bp
+from .media import (
+    CC_MEDIA_ROOT,
+    call_center_media_label,
+    resolve_call_center_media_path,
+    save_call_center_media,
+    save_call_center_media_with_error,
+)
 
 PAGE_SIZE = 50
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -160,20 +172,121 @@ def _cc_bridge_http_port() -> int:
     return int(_project_env_value("ASKA_CC_HTTP_PORT") or "3100")
 
 
-def _send_via_bridge(to: str, message: str) -> dict:
+def _send_via_bridge(to: str, message: str = "", media: Optional[dict] = None) -> dict:
     """Send an outbound WA message through the CC bridge HTTP API."""
     port = _cc_bridge_http_port()
     token = (_project_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+    payload = {"to": to, "message": message or ""}
+    if media:
+        payload["media"] = media
     try:
         resp = requests.post(
             f"http://127.0.0.1:{port}/send",
-            json={"to": to, "message": message},
+            json=payload,
             headers={"X-ASKA-CC-TOKEN": token, "Content-Type": "application/json"},
             timeout=30,
         )
         return resp.json()
     except Exception as exc:
         return {"error": str(exc)}
+
+
+def _media_payload_from_upload(uploaded_file) -> tuple[Optional[dict], Optional[str]]:
+    """Build a base64 media payload from a Flask upload."""
+    if not uploaded_file or not (uploaded_file.filename or "").strip():
+        return None, None
+
+    filename = Path(uploaded_file.filename).name
+    try:
+        content = uploaded_file.read()
+    except Exception as exc:
+        return None, f"Gagal membaca file: {exc}"
+
+    if not content:
+        return None, "File kosong."
+
+    mime_type = (
+        getattr(uploaded_file, "mimetype", None)
+        or mimetypes.guess_type(filename)[0]
+        or "application/octet-stream"
+    )
+    return {
+        "mimetype": mime_type,
+        "filename": filename,
+        "data": base64.b64encode(content).decode("ascii"),
+    }, None
+
+
+def _bridge_media_from_saved(media_meta: dict) -> Optional[dict]:
+    """Read the stored/compressed media back into the bridge payload format."""
+    media_path = media_meta.get("media_path")
+    target_path = resolve_call_center_media_path(media_path)
+    if not target_path or not target_path.is_file():
+        return None
+
+    try:
+        content = target_path.read_bytes()
+    except OSError:
+        return None
+
+    return {
+        "mimetype": media_meta.get("media_mime_type") or "application/octet-stream",
+        "filename": media_meta.get("media_filename") or target_path.name,
+        "data": base64.b64encode(content).decode("ascii"),
+    }
+
+
+def _inbound_media_max_bytes() -> int:
+    try:
+        return max(1, int(_project_env_value("ASKA_CC_INBOUND_MEDIA_MAX_BYTES", "307200")))
+    except ValueError:
+        return 300 * 1024
+
+
+def _save_inbound_media(media_payload, *, message_id: Optional[str] = None) -> dict:
+    inbound_limit = _inbound_media_max_bytes()
+    return save_call_center_media(
+        media_payload,
+        message_id=message_id,
+        max_image_bytes=inbound_limit,
+        max_pdf_bytes=inbound_limit,
+        max_file_bytes=inbound_limit,
+    )
+
+
+def _draft_media_max_bytes() -> int:
+    try:
+        return max(1, int(_project_env_value("ASKA_CC_DRAFT_MEDIA_MAX_BYTES", "1048576")))
+    except ValueError:
+        return 1024 * 1024
+
+
+def _outbound_media_max_bytes() -> int:
+    default_limit = _project_env_value("ASKA_CC_DRAFT_MEDIA_MAX_BYTES", "1048576")
+    try:
+        return max(1, int(_project_env_value("ASKA_CC_OUTBOUND_MEDIA_MAX_BYTES", default_limit)))
+    except ValueError:
+        return 1024 * 1024
+
+
+def _save_outbound_media(media_payload) -> tuple[dict, Optional[str]]:
+    outbound_limit = _outbound_media_max_bytes()
+    return save_call_center_media_with_error(
+        media_payload,
+        max_image_bytes=outbound_limit,
+        max_pdf_bytes=outbound_limit,
+        max_file_bytes=outbound_limit,
+    )
+
+
+def _save_draft_media(media_payload) -> tuple[dict, Optional[str]]:
+    draft_limit = _draft_media_max_bytes()
+    return save_call_center_media_with_error(
+        media_payload,
+        max_image_bytes=draft_limit,
+        max_pdf_bytes=draft_limit,
+        max_file_bytes=draft_limit,
+    )
 
 
 def _sync_history_via_bridge(chat_limit: int, limit_per_chat: int) -> dict:
@@ -262,6 +375,13 @@ def api_callcenter_inbound() -> Response:
     username = str(data.get("username") or raw_user_id).strip()[:120] or raw_user_id
     message = str(data.get("message") or "").strip()
     message_id = data.get("message_id") or None
+    media_payload = data.get("media") or {}
+    media_meta = _save_inbound_media(media_payload, message_id=message_id)
+    if not message and (media_payload or media_meta):
+        message = call_center_media_label(
+            media_meta.get("media_mime_type")
+            or (media_payload.get("mimetype") if isinstance(media_payload, dict) else None)
+        )
     if not message:
         return jsonify({"error": "message required"}), 400
 
@@ -272,6 +392,7 @@ def api_callcenter_inbound() -> Response:
             direction="inbound",
             message_text=message,
             wa_message_id=message_id,
+            **media_meta,
         )
 
         if not msg.get("duplicate"):
@@ -321,7 +442,18 @@ def api_callcenter_import_history() -> Response:
             raw_user_id = str(item.get("user_id") or "").strip()
             message = str(item.get("message") or "").strip()
             direction = str(item.get("direction") or "inbound").strip().lower()
-            if not raw_user_id or not message or direction not in {"inbound", "outbound"}:
+            if not raw_user_id or direction not in {"inbound", "outbound"}:
+                skipped += 1
+                continue
+
+            media_payload = item.get("media") or {}
+            media_meta = _save_inbound_media(media_payload, message_id=item.get("message_id") or None)
+            if not message and (media_payload or media_meta):
+                message = call_center_media_label(
+                    media_meta.get("media_mime_type")
+                    or (media_payload.get("mimetype") if isinstance(media_payload, dict) else None)
+                )
+            if not message:
                 skipped += 1
                 continue
 
@@ -346,6 +478,7 @@ def api_callcenter_import_history() -> Response:
                 wa_message_id=message_id,
                 created_at=created_at,
                 increment_unread=False,
+                **media_meta,
             )
             conversations.add(conv["id"])
             if msg.get("duplicate"):
@@ -419,6 +552,17 @@ def thread(conv_id: int) -> Response:
     )
 
 
+@call_center_bp.route("/media/<path:filename>")
+@role_required("admin")
+def media_file(filename: str) -> Response:
+    """Serve stored WhatsApp media for authenticated dashboard admins."""
+    target_path = resolve_call_center_media_path(filename)
+    if not target_path or not target_path.is_file():
+        abort(404)
+    safe_name = target_path.relative_to(CC_MEDIA_ROOT.resolve()).as_posix()
+    return send_from_directory(CC_MEDIA_ROOT, safe_name)
+
+
 # ── API endpoints ─────────────────────────────────────────────────────────────
 
 @call_center_bp.route("/api/send", methods=["POST"])
@@ -426,13 +570,25 @@ def thread(conv_id: int) -> Response:
 def api_send() -> Response:
     """Send a reply to a WA user."""
     user = current_user() or {}
-    data = request.get_json(silent=True) or {}
+    media_payload = None
+
+    if request.content_type and request.content_type.startswith("multipart/form-data"):
+        data = request.form
+        uploaded_file = request.files.get("media")
+        media_payload, upload_error = _media_payload_from_upload(uploaded_file)
+        if upload_error:
+            return jsonify({"error": upload_error}), 400
+    else:
+        data = request.get_json(silent=True) or {}
+        media_payload = data.get("media") or None
+
     conv_id = data.get("conversation_id")
     message_text = (data.get("message") or "").strip()
     draft_id = data.get("draft_id")
+    admin_user_id = user.get("id")
 
-    if not conv_id or not message_text:
-        return jsonify({"error": "conversation_id and message required"}), 400
+    if not conv_id or (not message_text and not media_payload and not draft_id):
+        return jsonify({"error": "conversation_id and message/media required"}), 400
 
     # Keep admin identity on web UI only via admin_display_name.
     # Outbound WhatsApp message should not append admin signature.
@@ -442,20 +598,62 @@ def api_send() -> Response:
     if not conv:
         return jsonify({"error": "Conversation not found"}), 404
 
+    media_meta = {}
+    bridge_media = None
+    media_from_upload = False
+    if media_payload:
+        media_meta, media_error = _save_outbound_media(media_payload)
+        if not media_meta:
+            return jsonify({
+                "error": media_error or "File tidak didukung atau terlalu besar."
+            }), 400
+
+        bridge_media = _bridge_media_from_saved(media_meta)
+        if not bridge_media:
+            return jsonify({"error": "Gagal menyiapkan file untuk dikirim."}), 500
+        media_from_upload = True
+    elif draft_id and admin_user_id:
+        try:
+            draft = get_cc_message_draft(int(draft_id), int(admin_user_id))
+        except Exception:
+            draft = None
+        if draft and draft.get("media_path"):
+            media_meta = {
+                "media_path": draft.get("media_path"),
+                "media_mime_type": draft.get("media_mime_type"),
+                "media_filename": draft.get("media_filename"),
+                "media_size": draft.get("media_size"),
+            }
+            bridge_media = _bridge_media_from_saved(media_meta)
+            if not bridge_media:
+                return jsonify({"error": "Gagal menyiapkan file draft untuk dikirim."}), 500
+
+    if not outbound_text and not bridge_media:
+        return jsonify({"error": "Pesan atau lampiran wajib diisi."}), 400
+
     # Send via WA bridge HTTP API
-    result = _send_via_bridge(conv["wa_user_id"], outbound_text)
+    result = _send_via_bridge(conv["wa_user_id"], outbound_text, media=bridge_media)
     if result.get("error"):
+        if media_from_upload and media_meta.get("media_path"):
+            target_path = resolve_call_center_media_path(media_meta.get("media_path"))
+            if target_path and target_path.is_file():
+                try:
+                    target_path.unlink()
+                except OSError:
+                    pass
         return jsonify({"error": f"Gagal kirim: {result['error']}"}), 502
 
     # Save message to DB
     admin_name = user.get("full_name") or user.get("email") or "Admin"
+    db_message_text = outbound_text or call_center_media_label(media_meta.get("media_mime_type"))
     msg = save_cc_message(
         conversation_id=int(conv_id),
         direction="outbound",
-        message_text=outbound_text,
+        message_text=db_message_text,
         admin_user_id=user.get("id"),
         admin_display_name=admin_name,
         wa_message_id=result.get("messageId"),
+        **media_meta,
     )
 
     if draft_id:
@@ -569,21 +767,38 @@ def api_drafts() -> Response:
             categories = list_cc_message_draft_categories(admin_user_id=admin_user_id)
             return jsonify({"drafts": drafts, "categories": categories})
 
-        data = request.get_json(silent=True) or {}
+        media_payload = None
+        if request.content_type and request.content_type.startswith("multipart/form-data"):
+            data = request.form
+            media_payload, upload_error = _media_payload_from_upload(request.files.get("media"))
+            if upload_error:
+                return jsonify({"error": upload_error}), 400
+        else:
+            data = request.get_json(silent=True) or {}
+            media_payload = data.get("media") or None
+
         title = (data.get("title") or "").strip()
         category = (data.get("category") or "").strip() or "Umum"
         message_text = (data.get("message_text") or "").strip()
+        media_meta = {}
+        if media_payload:
+            media_meta, media_error = _save_draft_media(media_payload)
+            if not media_meta:
+                return jsonify({
+                    "error": media_error or "Lampiran draft tidak didukung atau terlalu besar."
+                }), 400
 
         if not title:
             return jsonify({"error": "Judul draft wajib diisi."}), 400
-        if not message_text:
-            return jsonify({"error": "Isi draft wajib diisi."}), 400
+        if not message_text and not media_meta:
+            return jsonify({"error": "Isi draft atau lampiran wajib diisi."}), 400
 
         draft = create_cc_message_draft(
             admin_user_id=admin_user_id,
             title=title,
             category=category,
             message_text=message_text,
+            **media_meta,
         )
         try:
             record_admin_action(
@@ -628,15 +843,48 @@ def api_draft_detail(draft_id: int) -> Response:
                 pass
             return jsonify({"ok": True})
 
-        data = request.get_json(silent=True) or {}
+        existing = get_cc_message_draft(draft_id=draft_id, admin_user_id=admin_user_id)
+        if not existing:
+            return jsonify({"error": "Draft tidak ditemukan."}), 404
+
+        media_payload = None
+        if request.content_type and request.content_type.startswith("multipart/form-data"):
+            data = request.form
+            media_payload, upload_error = _media_payload_from_upload(request.files.get("media"))
+            if upload_error:
+                return jsonify({"error": upload_error}), 400
+        else:
+            data = request.get_json(silent=True) or {}
+            media_payload = data.get("media") or None
+
         title = (data.get("title") or "").strip()
         category = (data.get("category") or "").strip() or "Umum"
         message_text = (data.get("message_text") or "").strip()
+        remove_media = str(data.get("remove_media") or "").strip().lower() in {"1", "true", "yes", "on"}
+        media_meta: dict = {}
+        update_media = False
+        if media_payload:
+            media_meta, media_error = _save_draft_media(media_payload)
+            if not media_meta:
+                return jsonify({
+                    "error": media_error or "Lampiran draft tidak didukung atau terlalu besar."
+                }), 400
+            update_media = True
+        elif remove_media:
+            media_meta = {
+                "media_path": None,
+                "media_mime_type": None,
+                "media_filename": None,
+                "media_size": None,
+            }
+            update_media = True
 
         if not title:
             return jsonify({"error": "Judul draft wajib diisi."}), 400
-        if not message_text:
-            return jsonify({"error": "Isi draft wajib diisi."}), 400
+        if not message_text and not media_meta and not existing.get("media_path"):
+            return jsonify({"error": "Isi draft atau lampiran wajib diisi."}), 400
+        if not message_text and remove_media and not media_payload:
+            return jsonify({"error": "Isi draft atau lampiran wajib diisi."}), 400
 
         updated = update_cc_message_draft(
             draft_id=draft_id,
@@ -644,6 +892,8 @@ def api_draft_detail(draft_id: int) -> Response:
             title=title,
             category=category,
             message_text=message_text,
+            update_media=update_media,
+            **media_meta,
         )
         if not updated:
             return jsonify({"error": "Draft tidak ditemukan."}), 404

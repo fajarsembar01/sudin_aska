@@ -1096,6 +1096,10 @@ CREATE TABLE IF NOT EXISTS cc_messages (
     admin_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
     admin_display_name TEXT,
     wa_message_id TEXT,
+    media_path TEXT,
+    media_mime_type TEXT,
+    media_filename TEXT,
+    media_size INTEGER,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 """
@@ -1150,6 +1154,10 @@ CREATE TABLE IF NOT EXISTS cc_message_drafts (
     title TEXT NOT NULL,
     category TEXT NOT NULL DEFAULT 'Umum',
     message_text TEXT NOT NULL,
+    media_path TEXT,
+    media_mime_type TEXT,
+    media_filename TEXT,
+    media_size INTEGER,
     pinned BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -1410,10 +1418,18 @@ def ensure_dashboard_schema() -> None:
         _CC_CONVERSATIONS_SQL,
         _CC_CONVERSATIONS_INDEX_SQL,
         _CC_MESSAGES_SQL,
+        "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS media_path TEXT",
+        "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS media_mime_type TEXT",
+        "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS media_filename TEXT",
+        "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS media_size INTEGER",
         _CC_MESSAGES_INDEX_SQL,
         _CC_TELEGRAM_SETTINGS_SQL,
         _CC_TELEGRAM_GROUPS_SQL,
         _CC_MESSAGE_DRAFTS_SQL,
+        "ALTER TABLE cc_message_drafts ADD COLUMN IF NOT EXISTS media_path TEXT",
+        "ALTER TABLE cc_message_drafts ADD COLUMN IF NOT EXISTS media_mime_type TEXT",
+        "ALTER TABLE cc_message_drafts ADD COLUMN IF NOT EXISTS media_filename TEXT",
+        "ALTER TABLE cc_message_drafts ADD COLUMN IF NOT EXISTS media_size INTEGER",
         _CC_MESSAGE_DRAFTS_INDEX_SQL,
     )
     

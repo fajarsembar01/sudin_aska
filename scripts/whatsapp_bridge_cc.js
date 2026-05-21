@@ -22,7 +22,7 @@ const path = require("path");
 const axios = require("axios");
 const express = require("express");
 const qrcode = require("qrcode-terminal");
-const { Client, LocalAuth } = require("whatsapp-web.js");
+const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -65,6 +65,16 @@ const STATUS_PATH = path.resolve(
     process.env.ASKA_CC_WHATSAPP_STATUS_PATH || "runtime/whatsapp_cc_status.json"
 );
 const HTTP_PORT = parseInt(process.env.ASKA_CC_HTTP_PORT || "3100", 10);
+const MAX_MEDIA_BYTES = parseInt(process.env.ASKA_CC_MEDIA_MAX_BYTES || "20971520", 10);
+const MAX_PDF_RAW_BYTES = parseInt(process.env.ASKA_CC_PDF_RAW_MAX_BYTES || String(MAX_MEDIA_BYTES), 10);
+const MAX_PDF_BYTES = parseInt(process.env.ASKA_CC_PDF_MAX_BYTES || "307200", 10);
+const MAX_FILE_BYTES = parseInt(process.env.ASKA_CC_FILE_MAX_BYTES || "307200", 10);
+const MAX_OUTBOUND_MEDIA_BYTES = parseInt(
+    process.env.ASKA_CC_OUTBOUND_MEDIA_MAX_BYTES ||
+    process.env.ASKA_CC_DRAFT_MEDIA_MAX_BYTES ||
+    "1048576",
+    10
+);
 
 if (!INTERNAL_TOKEN) {
     console.error("[CC] ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum diset. Worker dihentikan.");
@@ -96,6 +106,80 @@ function writeStatus(patch) {
 
 function normalizeNumber(jid) {
     return (String(jid || "").split("@")[0] || "").replace(/\D/g, "") || "";
+}
+
+function estimateBase64Bytes(data) {
+    const clean = String(data || "").replace(/\s+/g, "");
+    if (!clean) return 0;
+    const padding = clean.endsWith("==") ? 2 : (clean.endsWith("=") ? 1 : 0);
+    return Math.max(0, Math.floor((clean.length * 3) / 4) - padding);
+}
+
+function mediaFallbackText(mimeType) {
+    const clean = String(mimeType || "").toLowerCase();
+    if (clean.startsWith("image/")) return "[Gambar]";
+    if (clean === "application/pdf") return "[PDF]";
+    return "[Media]";
+}
+
+function isAllowedMediaMime(mimeType) {
+    const clean = String(mimeType || "").toLowerCase();
+    return clean.startsWith("image/") || [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "text/plain",
+        "text/csv",
+    ].includes(clean);
+}
+
+function mediaSizeLimit(mimeType) {
+    const clean = String(mimeType || "").toLowerCase();
+    if (clean.startsWith("image/")) return MAX_MEDIA_BYTES;
+    if (clean === "application/pdf") return MAX_PDF_BYTES;
+    return MAX_FILE_BYTES;
+}
+
+function inboundMediaSizeLimit(mimeType) {
+    const clean = String(mimeType || "").toLowerCase();
+    if (clean === "application/pdf") return MAX_PDF_RAW_BYTES;
+    return mediaSizeLimit(clean);
+}
+
+function outboundMediaSizeLimit() {
+    return MAX_OUTBOUND_MEDIA_BYTES;
+}
+
+async function buildMediaPayload(msg) {
+    if (!msg || !msg.hasMedia) return null;
+    const msgType = String(msg.type || "").toLowerCase();
+    if (msgType && !["image", "document"].includes(msgType)) return null;
+    try {
+        const media = await msg.downloadMedia();
+        if (!media || !media.data || !media.mimetype) return null;
+        if (!isAllowedMediaMime(media.mimetype)) return null;
+
+        const size = estimateBase64Bytes(media.data);
+        const limit = inboundMediaSizeLimit(media.mimetype);
+        if (Number.isFinite(limit) && limit > 0 && size > limit) {
+            console.warn(`[CC] media skipped: size=${size} limit=${limit} mimetype=${media.mimetype}`);
+            return null;
+        }
+
+        return {
+            mimetype: media.mimetype,
+            filename: media.filename || (msg._data && msg._data.filename) || "",
+            data: media.data,
+            size,
+        };
+    } catch (err) {
+        console.error("[CC] downloadMedia error:", (err && err.message) || err);
+        return null;
+    }
 }
 
 const processedIds = new Set();
@@ -162,8 +246,11 @@ async function handleIncoming(msg) {
         if (msg.from === "status@broadcast") return;
         if (String(msg.from || "").endsWith("@g.us")) return;
 
+        const hadMedia = Boolean(msg.hasMedia);
+        const probableMime = (msg._data && msg._data.mimetype) || (String(msg.type || "").toLowerCase() === "image" ? "image/jpeg" : "");
+        const media = await buildMediaPayload(msg);
         const text = String(msg.body || "").trim();
-        if (!text) return;
+        if (!text && !media && !hadMedia) return;
 
         // Get the JID first
         const fromJid = String(msg.from || "");
@@ -190,7 +277,9 @@ async function handleIncoming(msg) {
         // Use real phone number (e.g. 62812...) as user_id for DB
         const userId = realNumber || normalizeNumber(fromJid);
 
-        console.log(`[CC] recv from=${fromJid} number=${userId} name=${displayName} text="${text.slice(0, 80)}"`);
+        const messageText = text || mediaFallbackText((media && media.mimetype) || probableMime);
+
+        console.log(`[CC] recv from=${fromJid} number=${userId} name=${displayName} text="${messageText.slice(0, 80)}" media=${media ? media.mimetype : "-"}`);
 
         // Forward to dashboard backend — do not wait for or send a reply
         axios
@@ -199,14 +288,17 @@ async function handleIncoming(msg) {
                 {
                     user_id: userId,
                     username: displayName,
-                    message: text,
+                    message: messageText,
                     message_id: mid || null,
+                    media,
                 },
                 {
                     headers: {
                         "Content-Type": "application/json",
                         "X-ASKA-CC-TOKEN": INTERNAL_TOKEN,
                     },
+                    maxBodyLength: Infinity,
+                    maxContentLength: Infinity,
                     timeout: 15000,
                 }
             )
@@ -227,7 +319,7 @@ client.on("message_create", (msg) => handleIncoming(msg));
 // ── Express HTTP API for outbound messages ───────────────────────────────────
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
 
 // Auth middleware
 function authCheck(req, res, next) {
@@ -268,12 +360,15 @@ async function getChatIdentity(chat) {
     return { number, displayName, chatId };
 }
 
-function serializeHistoryMessage(msg, identity) {
-    if (!msg || msg.type !== "chat") return null;
+async function serializeHistoryMessage(msg, identity) {
+    if (!msg) return null;
     if (msg.from === "status@broadcast" || msg.to === "status@broadcast") return null;
 
+    const hadMedia = Boolean(msg.hasMedia);
+    const probableMime = (msg._data && msg._data.mimetype) || (String(msg.type || "").toLowerCase() === "image" ? "image/jpeg" : "");
     const text = String(msg.body || "").trim();
-    if (!text) return null;
+    const media = await buildMediaPayload(msg);
+    if (!text && !media && !hadMedia) return null;
 
     const timestamp = Number(msg.timestamp || 0);
     const createdAt = timestamp > 0 ? new Date(timestamp * 1000).toISOString() : new Date().toISOString();
@@ -283,9 +378,10 @@ function serializeHistoryMessage(msg, identity) {
         user_id: identity.number,
         username: identity.displayName,
         direction: msg.fromMe ? "outbound" : "inbound",
-        message: text,
+        message: text || mediaFallbackText((media && media.mimetype) || probableMime),
         message_id: messageId || null,
         created_at: createdAt,
+        media,
     };
 }
 
@@ -306,6 +402,8 @@ async function postImportBatch(messages) {
                 "Content-Type": "application/json",
                 "X-ASKA-CC-TOKEN": INTERNAL_TOKEN,
             },
+            maxBodyLength: Infinity,
+            maxContentLength: Infinity,
             timeout: 60000,
         }
     );
@@ -368,7 +466,7 @@ app.post("/sync-history", authCheck, async (req, res) => {
                 messages.sort((a, b) => Number(a.timestamp || 0) - Number(b.timestamp || 0));
 
                 for (const msg of messages) {
-                    const item = serializeHistoryMessage(msg, identity);
+                    const item = await serializeHistoryMessage(msg, identity);
                     if (!item) {
                         stats.skipped += 1;
                         continue;
@@ -406,9 +504,11 @@ app.post("/sync-history", authCheck, async (req, res) => {
 });
 
 app.post("/send", authCheck, async (req, res) => {
-    const { to, message } = req.body || {};
-    if (!to || !message) {
-        return res.status(400).json({ error: "Missing 'to' or 'message'" });
+    const { to, message, media } = req.body || {};
+    const hasMessage = String(message || "").trim().length > 0;
+    const hasMedia = Boolean(media && media.data && media.mimetype);
+    if (!to || (!hasMessage && !hasMedia)) {
+        return res.status(400).json({ error: "Missing 'to' or 'message/media'" });
     }
     try {
         let jid;
@@ -421,10 +521,32 @@ app.post("/send", authCheck, async (req, res) => {
             jid = `${sanitized}@c.us`;
         }
 
-        const sent = await client.sendMessage(jid, String(message));
+        let sent;
+        if (hasMedia) {
+            const mimetype = String(media.mimetype || "").trim();
+            const filename = String(media.filename || "attachment").trim() || "attachment";
+            const data = String(media.data || "").replace(/\s+/g, "");
+            if (!isAllowedMediaMime(mimetype)) {
+                return res.status(400).json({ error: "Unsupported media type" });
+            }
+            const size = estimateBase64Bytes(data);
+            const limit = outboundMediaSizeLimit(mimetype);
+            if (Number.isFinite(limit) && limit > 0 && size > limit) {
+                return res.status(413).json({ error: `Media too large. Max ${limit} bytes.` });
+            }
+
+            const messageMedia = new MessageMedia(mimetype, data, filename);
+            const isImage = mimetype.toLowerCase().startsWith("image/");
+            const options = {};
+            if (hasMessage) options.caption = String(message).trim();
+            if (!isImage) options.sendMediaAsDocument = true;
+            sent = await client.sendMessage(jid, messageMedia, options);
+        } else {
+            sent = await client.sendMessage(jid, String(message));
+        }
         const sentId = (sent && sent.id && sent.id._serialized) || "";
         if (sentId) ignoredIds.add(sentId);
-        console.log(`[CC] sent to=${jid} len=${message.length}`);
+        console.log(`[CC] sent to=${jid} len=${String(message || "").length} media=${hasMedia ? media.mimetype : "-"}`);
         res.json({ ok: true, messageId: sentId });
     } catch (err) {
         console.error("[CC] sendMessage error:", (err && err.message) || err);
