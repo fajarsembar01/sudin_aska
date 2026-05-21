@@ -1505,6 +1505,9 @@ def admin_all_assessments() -> Response:
     """Full paginated list of all hospitality assessments."""
     search = (request.args.get("q") or "").strip() or None
     status = (request.args.get("status") or "").strip().lower() or None
+    jenjang = (request.args.get("jenjang") or "").strip() or None
+    kecamatan = (request.args.get("kecamatan") or "").strip() or None
+    school_status = (request.args.get("school_status") or "").strip() or None
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 50, type=int)
     per_page = max(10, min(per_page, 100))
@@ -1512,6 +1515,9 @@ def admin_all_assessments() -> Response:
     assessments, total = fetch_all_assessed_schools(
         search=search,
         status=status,
+        jenjang=jenjang,
+        kecamatan=kecamatan,
+        school_status=school_status,
         page=page,
         per_page=per_page,
     )
@@ -1523,6 +1529,9 @@ def admin_all_assessments() -> Response:
     filter_params.pop("page", None)
     prev_url = url_for("hospitality.admin_all_assessments", **filter_params, page=page - 1) if page > 1 else None
     next_url = url_for("hospitality.admin_all_assessments", **filter_params, page=page + 1) if page < total_pages else None
+
+    jenjang_options = _list_jenjang_options()
+    kecamatan_options = _list_kecamatan_options()
 
     return render_template(
         "hospitality/admin/all_assessments.html",
@@ -1537,6 +1546,11 @@ def admin_all_assessments() -> Response:
         next_url=next_url,
         search_query=search or "",
         status_filter=status or "",
+        jenjang_filter=jenjang or "",
+        kecamatan_filter=kecamatan or "",
+        school_status_filter=school_status or "",
+        jenjang_options=jenjang_options,
+        kecamatan_options=kecamatan_options,
     )
 
 

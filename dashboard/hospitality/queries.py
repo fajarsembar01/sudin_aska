@@ -1048,6 +1048,9 @@ def fetch_all_assessed_schools(
     *,
     search: str | None = None,
     status: str | None = None,
+    jenjang: str | None = None,
+    kecamatan: str | None = None,
+    school_status: str | None = None,
     page: int = 1,
     per_page: int = 50,
 ) -> tuple[List[Dict[str, Any]], int]:
@@ -1059,6 +1062,15 @@ def fetch_all_assessed_schools(
     if clean_status:
         clauses.append("LOWER(a.status) = %s")
         params.append(clean_status)
+    if jenjang:
+        clauses.append("s.jenjang = %s")
+        params.append(jenjang.strip())
+    if kecamatan:
+        clauses.append("kec.name = %s")
+        params.append(kecamatan.strip())
+    if school_status:
+        clauses.append("s.status = %s")
+        params.append(school_status.strip().upper())
     if search:
         like = f"%{search.strip()}%"
         clauses.append("(s.name ILIKE %s OR s.npsn ILIKE %s OR u.full_name ILIKE %s)")
@@ -1069,6 +1081,8 @@ def fetch_all_assessed_schools(
         cur.execute(
             f"SELECT COUNT(*) AS cnt FROM hospitality_assessments a "
             f"JOIN portal_schools s ON s.id = a.school_id "
+            f"LEFT JOIN portal_kelurahan kel ON s.kelurahan_id = kel.id "
+            f"LEFT JOIN portal_kecamatan kec ON kel.kecamatan_id = kec.id "
             f"LEFT JOIN dashboard_users u ON u.id = a.staff_id "
             f"WHERE {where}",
             params,
@@ -1100,6 +1114,8 @@ def fetch_all_assessed_schools(
                 END AS score_pct
             FROM hospitality_assessments a
             JOIN portal_schools s ON s.id = a.school_id
+            LEFT JOIN portal_kelurahan kel ON s.kelurahan_id = kel.id
+            LEFT JOIN portal_kecamatan kec ON kel.kecamatan_id = kec.id
             LEFT JOIN dashboard_users u ON u.id = a.staff_id
             LEFT JOIN hospitality_assessment_guestbook_links g ON g.assessment_id = a.id
             LEFT JOIN daftar_tamu_transactions t ON t.id = g.transaction_id
