@@ -112,6 +112,35 @@ def _cc_runtime_paths() -> dict:
     return {"root": root, "session": session, "status": status, "pid": pid, "log": log}
 
 
+def _cc_systemd_service() -> str:
+    """Nama systemd service untuk bridge CC, atau string kosong jika tidak pakai systemd."""
+    return (_project_env_value("ASKA_CC_SYSTEMD_SERVICE") or "aska-wa-cc").strip()
+
+
+def _systemd_service_active(service: str) -> bool:
+    """True jika systemd service sedang active (running)."""
+    try:
+        result = subprocess.run(
+            ["systemctl", "is-active", "--quiet", service],
+            timeout=5,
+        )
+        return result.returncode == 0
+    except Exception:
+        return False
+
+
+def _systemd_service_exists(service: str) -> bool:
+    """True jika unit file systemd untuk service ini ditemukan."""
+    try:
+        result = subprocess.run(
+            ["systemctl", "list-unit-files", "--quiet", service],
+            capture_output=True, timeout=5,
+        )
+        return service in (result.stdout.decode(errors="replace") or "")
+    except Exception:
+        return False
+
+
 def _load_cc_bridge_status() -> dict:
     paths = _cc_runtime_paths()
     status: dict = {}
@@ -121,9 +150,17 @@ def _load_cc_bridge_status() -> dict:
     except Exception:
         status = {}
 
-    pid = _read_pid(paths["pid"])
-    running = bool(pid and _pid_alive(pid))
-    status["pid"] = pid
+    # Cek apakah proses berjalan — via systemd jika tersedia, fallback ke PID
+    svc = _cc_systemd_service()
+    if svc and _systemd_service_exists(svc):
+        running = _systemd_service_active(svc)
+        status["managed_by"] = "systemd"
+    else:
+        pid = _read_pid(paths["pid"])
+        running = bool(pid and _pid_alive(pid))
+        status["pid"] = pid
+        status["managed_by"] = "subprocess"
+
     status["isRunning"] = running
 
     if not running:
@@ -153,6 +190,16 @@ def _pid_alive(pid: int) -> bool:
 
 
 def _stop_existing_bridge(pid_path: Path) -> None:
+    svc = _cc_systemd_service()
+    if svc and _systemd_service_exists(svc):
+        # Hentikan via systemd
+        try:
+            subprocess.run(["systemctl", "stop", svc], timeout=15)
+        except Exception:
+            pass
+        return
+
+    # Fallback: kill via PID
     pid = _read_pid(pid_path)
     if pid and _pid_alive(pid):
         try:
@@ -310,9 +357,8 @@ def _sync_history_via_bridge(chat_limit: int, limit_per_chat: int) -> dict:
 
 def _restart_cc_bridge(reset_session: bool = True) -> dict:
     paths = _cc_runtime_paths()
-    _stop_existing_bridge(paths["pid"])
 
-    # Clean stale lock files
+    # Bersihkan lock file Chromium yang mungkin tersisa
     try:
         client_dir = paths["session"] / f"session-{_project_env_value('ASKA_CC_WHATSAPP_CLIENT_ID', 'cc-main')}"
         for lock_name in ("SingletonLock", "SingletonCookie", "SingletonSocket", "lockfile"):
@@ -329,6 +375,16 @@ def _restart_cc_bridge(reset_session: bool = True) -> dict:
 
     paths["log"].parent.mkdir(parents=True, exist_ok=True)
 
+    # ── Kelola via systemd jika service tersedia ──────────────────────────────
+    svc = _cc_systemd_service()
+    if svc and _systemd_service_exists(svc):
+        try:
+            subprocess.run(["systemctl", "restart", svc], timeout=15, check=True)
+        except subprocess.CalledProcessError as exc:
+            raise RuntimeError(f"systemctl restart {svc} gagal: {exc}") from exc
+        return {"managed_by": "systemd", "service": svc}
+
+    # ── Fallback: spawn subprocess langsung ───────────────────────────────────
     env = os.environ.copy()
     env_file = paths["root"] / ".env"
     if env_file.exists():
@@ -353,7 +409,7 @@ def _restart_cc_bridge(reset_session: bool = True) -> dict:
         )
 
     paths["pid"].write_text(str(proc.pid), encoding="utf-8")
-    return {"pid": proc.pid, "log_path": str(paths["log"])}
+    return {"pid": proc.pid, "log_path": str(paths["log"]), "managed_by": "subprocess"}
 
 
 # ---------------------------------------------------------------------------
