@@ -141,6 +141,19 @@ def _systemd_service_exists(service: str) -> bool:
         return False
 
 
+def _bridge_http_alive() -> bool:
+    """Cek apakah bridge HTTP API merespons di portnya — cara paling akurat."""
+    port = _cc_bridge_http_port()
+    try:
+        resp = requests.get(
+            f"http://127.0.0.1:{port}/health",
+            timeout=2,
+        )
+        return resp.status_code == 200
+    except Exception:
+        return False
+
+
 def _load_cc_bridge_status() -> dict:
     paths = _cc_runtime_paths()
     status: dict = {}
@@ -150,16 +163,15 @@ def _load_cc_bridge_status() -> dict:
     except Exception:
         status = {}
 
-    # Cek apakah proses berjalan — via systemd jika tersedia, fallback ke PID
-    svc = _cc_systemd_service()
-    if svc and _systemd_service_exists(svc):
-        running = _systemd_service_active(svc)
-        status["managed_by"] = "systemd"
-    else:
+    # Cara paling andal: cek HTTP health endpoint bridge (tidak butuh permission)
+    running = _bridge_http_alive()
+
+    # Fallback jika HTTP check gagal: cek via PID file
+    if not running:
         pid = _read_pid(paths["pid"])
-        running = bool(pid and _pid_alive(pid))
-        status["pid"] = pid
-        status["managed_by"] = "subprocess"
+        if pid and _pid_alive(pid):
+            running = True
+            status["pid"] = pid
 
     status["isRunning"] = running
 
