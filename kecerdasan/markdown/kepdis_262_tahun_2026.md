@@ -1,11 +1,19 @@
+---
+title: "Keputusan Kepala Dinas Pendidikan DKI Jakarta Nomor 262 Tahun 2026"
+nomor: "262 Tahun 2026"
+tentang: "Petunjuk Teknis Pelaksanaan Penerimaan Murid Baru Bersama Tahun Ajaran 2026/2027"
+instansi: "Dinas Pendidikan Provinsi Daerah Khusus Ibukota Jakarta"
+type: "regulasi"
+---
+
 # Keputusan Kepala Dinas Pendidikan DKI Jakarta Nomor 262 Tahun 2026
 
 ## Metadata Dokumen
 - Judul: Petunjuk Teknis Pelaksanaan Penerimaan Murid Baru Bersama Tahun Ajaran 2026/2027
 - Nomor: 262 Tahun 2026
-- Instansi: Dinas Pendidikan Provinsi Daerah Khusus Ibukota Jakarta
-- Jumlah halaman sumber: 114 halaman PDF
-- Sumber: `kecerdasan/pdf/kepdis 262 tahun 2026.pdf`
+  - Instansi: Dinas Pendidikan Provinsi Daerah Khusus Ibukota Jakarta
+  - Jumlah halaman sumber: 114 halaman PDF
+  - Sumber: `kecerdasan/pdf/kepdis 262 tahun 2026.pdf`
 
 ## Bagian Keputusan (Naskah Utama)
 ### Menimbang
@@ -20,19 +28,19 @@
 - Poin 6: Keputusan Gubernur Daerah Khusus Ibukota Jakarta Nomor 238 Tahun 2026 tentang Petunjuk Teknis Penerimaan Murid Baru;
 
 ### Menetapkan
-- KEPUTUSAN KEPALA DINAS PENDIDIKAN TENTANG PETUNJUK TEKNIS PELAKSANAAN PENERIMAAN MURID BARU BERSAMA TAHUN AJARAN 2026/2027.
+  - KEPUTUSAN KEPALA DINAS PENDIDIKAN TENTANG PETUNJUK TEKNIS PELAKSANAAN PENERIMAAN MURID BARU BERSAMA TAHUN AJARAN 2026/2027.
 
 ### Diktum KESATU
-- Menetapkan Petunjuk Teknis Pelaksanaan Penerimaan Murid Baru Bersama Tahun Ajaran 2026/2027 yang mengatur Alur Proses Pelaksanaan Penerimaan Murid Baru Bersama sebagaimana tercantum dalam Lampiran I, Lampiran II dan Lampiran III yang merupakan bagian tidak terpisahkan dari Keputusan Kepala Dinas Pendidikan ini.
+  - Menetapkan Petunjuk Teknis Pelaksanaan Penerimaan Murid Baru Bersama Tahun Ajaran 2026/2027 yang mengatur Alur Proses Pelaksanaan Penerimaan Murid Baru Bersama sebagaimana tercantum dalam Lampiran I, Lampiran II dan Lampiran III yang merupakan bagian tidak terpisahkan dari Keputusan Kepala Dinas Pendidikan ini.
 
 ### Diktum KEDUA
-- Daftar Nama dan Daya Tampung SMP Swasta, SMA Swasta dan SMK Swasta sebagaimana tercantum dalam Lampiran IV, Lampiran V dan Lampiran VI yang merupakan bagian tidak terpisahkan dari Keputusan Kepala Dinas Pendidikan ini.
+  - Daftar Nama dan Daya Tampung SMP Swasta, SMA Swasta dan SMK Swasta sebagaimana tercantum dalam Lampiran IV, Lampiran V dan Lampiran VI yang merupakan bagian tidak terpisahkan dari Keputusan Kepala Dinas Pendidikan ini.
 
 ### Diktum KETIGA
-- Daftar Wilayah Penerimaan Murid Baru Bersama SMP Swasta dan SMA Swasta sebagaimana tercantum dalam Lampiran VII dan Lampiran VIII yang merupakan bagian tidak terpisahkan dari Keputusan Kepala Dinas Pendidikan ini.
+  - Daftar Wilayah Penerimaan Murid Baru Bersama SMP Swasta dan SMA Swasta sebagaimana tercantum dalam Lampiran VII dan Lampiran VIII yang merupakan bagian tidak terpisahkan dari Keputusan Kepala Dinas Pendidikan ini.
 
 ### Diktum KEEMPAT
-- Keputusan Kepala Dinas Pendidikan ini mulai berlaku pada tanggal ditetapkan.
+  - Keputusan Kepala Dinas Pendidikan ini mulai berlaku pada tanggal ditetapkan.
 
 ## Lampiran I - PMB Bersama SMP Swasta
 
@@ -58,78 +66,78 @@ _Konten bab belum terbaca dari lapisan teks PDF._
 ### Subbab A. Pengumuman
 1. Tujuan Penerimaan Murid Baru Bersama Penerimaan Murid Baru (PMB) Bersama bertujuan untuk meningkatkan akses pendidikan dan mendukung peningkatan mutu pendidikan bersama Satuan Pendidikan yang diselenggarakan oleh Swasta atau masyarakat sesuai dengan kriteria yang ditetapkan oleh Kepala Dinas Pendidikan Provinsi DKI Jakarta.
 2. Ketentuan PMB Bersama SMP Swasta
-a. Pelaksanaan PMB Bersama SMP Swasta tidak dipungut dan tidak menerima biaya dari orang tua/wali CMB.
-b. Calon Murid Baru (CMB) yang dapat mengikuti PMB Bersama
+    a. Pelaksanaan PMB Bersama SMP Swasta tidak dipungut dan tidak menerima biaya dari orang tua/wali CMB.
+    b. Calon Murid Baru (CMB) yang dapat mengikuti PMB Bersama
 SMP Swasta Tahun Ajaran 2026/2027 adalah Warga Provinsi
 DKI Jakarta dibuktikan dengan Kartu Keluarga yang dikeluarkan oleh Dinas Kependudukan dan Catatan Sipil Provinsi DKI Jakarta paling lambat 15 Juni 2025.
-c. Dalam hal status pada Kartu Keluarga:
-1) Status FAMILI dibuktikan hubungan kakek/nenek atau saudara sekandung dari bapak/ibu CMB, maka dapat disetujui untuk mengikuti PMB.
-2) Status FAMILI yang tidak dapat dibuktikan hubungan kakek/nenek atau saudara sekandung dari bapak/ibu CMB, atau status LAINNYA, dapat disetujui untuk mengikuti PMB jika:
-a) dibuktikan Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Putusan/Penetapan Pengadilan, atau
-b) Surat Keterangan (PM1) dari kelurahan domisili yang menjelaskan orang tua kandung CMB:
-(1) Meninggal Dunia;
-(2) Hilang Ingatan; dan/atau
-(3) Sakit Berkepanjangan
-d. Kartu Keluarga sebagaimana dimaksud pada huruf b dan huruf c adalah Kartu Keluarga yang telah diverifikasi oleh Tim verifikator Satuan Pendidikan yang dipilih sebagai tempat verifikasi sesuai jenjang yang dituju.
-e. CMB yang dapat mengikuti PMB Bersama SMP Swasta Tahun Ajaran 2026/2027 adalah CMB yang tidak terdaftar di Satuan Pendidikan Negeri dan Swasta pada jenjang yang dituju.
-f. CMB yang diterima pada PMB Bersama harus mengikuti peraturan pada Satuan Pendidikan yang menerima.
-g. Dalam hal CMB yang telah diterima melalui PMB Bersama mengundurkan diri dari Satuan Pendidikan Swasta maka yang bersangkutan tidak dapat mengikuti PMB pada Satuan Pendidikan Negeri dan PMB Bersama tahun berikutnya.
-h. Seluruh Murid yang diterima melalui PMB Bersama harus mematuhi ketentuan penerima Bantuan Sosial Biaya Pendidikan dalam Pasal 23 dan Pasal 24 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan.
-i. Murid yang dikenakan sanksi diskualifikasi pada Pasal 26 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau melanggar ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan, maka yang bersangkutan dapat diberhentikan bantuannya dan tidak dapat mengikuti PMB Bersama.
-j. CMB yang dapat mengikuti PMB Bersama SMP Swasta Tahun Ajaran 2026/2027 adalah CMB yang telah memenuhi ketentuan dan persyaratan pelaksanaan PMB Bersama.
-k. CMB yang diterima pada PMB Bersama bersedia untuk mematuhi ketentuan pada angka 2 huruf f, g, h, dan i serta bersedia tidak pindah (mutasi) ke Satuan Pendidikan lainnya selama 3 (tiga) tahun dengan menyerahkan Surat Pernyataan tertulis bermaterai cukup kepada Satuan Pendidikan tempat
+    c. Dalam hal status pada Kartu Keluarga:
+        1) Status FAMILI dibuktikan hubungan kakek/nenek atau saudara sekandung dari bapak/ibu CMB, maka dapat disetujui untuk mengikuti PMB.
+        2) Status FAMILI yang tidak dapat dibuktikan hubungan kakek/nenek atau saudara sekandung dari bapak/ibu CMB, atau status LAINNYA, dapat disetujui untuk mengikuti PMB jika:
+            a) dibuktikan Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Putusan/Penetapan Pengadilan, atau
+            b) Surat Keterangan (PM1) dari kelurahan domisili yang menjelaskan orang tua kandung CMB:
+                (1) Meninggal Dunia;
+                (2) Hilang Ingatan; dan/atau
+                (3) Sakit Berkepanjangan
+    d. Kartu Keluarga sebagaimana dimaksud pada huruf b dan huruf c adalah Kartu Keluarga yang telah diverifikasi oleh Tim verifikator Satuan Pendidikan yang dipilih sebagai tempat verifikasi sesuai jenjang yang dituju.
+    e. CMB yang dapat mengikuti PMB Bersama SMP Swasta Tahun Ajaran 2026/2027 adalah CMB yang tidak terdaftar di Satuan Pendidikan Negeri dan Swasta pada jenjang yang dituju.
+    f. CMB yang diterima pada PMB Bersama harus mengikuti peraturan pada Satuan Pendidikan yang menerima.
+    g. Dalam hal CMB yang telah diterima melalui PMB Bersama mengundurkan diri dari Satuan Pendidikan Swasta maka yang bersangkutan tidak dapat mengikuti PMB pada Satuan Pendidikan Negeri dan PMB Bersama tahun berikutnya.
+    h. Seluruh Murid yang diterima melalui PMB Bersama harus mematuhi ketentuan penerima Bantuan Sosial Biaya Pendidikan dalam Pasal 23 dan Pasal 24 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan.
+    i. Murid yang dikenakan sanksi diskualifikasi pada Pasal 26 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau melanggar ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan, maka yang bersangkutan dapat diberhentikan bantuannya dan tidak dapat mengikuti PMB Bersama.
+    j. CMB yang dapat mengikuti PMB Bersama SMP Swasta Tahun Ajaran 2026/2027 adalah CMB yang telah memenuhi ketentuan dan persyaratan pelaksanaan PMB Bersama.
+    k. CMB yang diterima pada PMB Bersama bersedia untuk mematuhi ketentuan pada angka 2 huruf f, g, h, dan i serta bersedia tidak pindah (mutasi) ke Satuan Pendidikan lainnya selama 3 (tiga) tahun dengan menyerahkan Surat Pernyataan tertulis bermaterai cukup kepada Satuan Pendidikan tempat
 CMB diterima yang ditandatangani oleh Orang Tua/Wali.
 3. Persyaratan PMB Bersama SMP Swasta.
-a. CMB yang memenuhi persyaratan:
-1) pemegang Kartu Jakarta Pintar Plus yang masih aktif;
-2) anak dari pengemudi mitra Transjakarta yang mengemudikan bus kecil, yang direkomendasikan oleh Kepala Dinas Perhubungan Provinsi DKI Jakarta;
-3) anak dari pekerja/buruh yang tercatat dalam Kartu Keluarga, yang direkomendasikan oleh Kepala Dinas Ketenagakerjaan, Transmigrasi, dan Energi Provinsi DKI Jakarta; atau
-4) penerima Program Indonesia Pintar.
-5) persyaratan umum CMB sebagaimana dimaksud pada angka 1), 2), 3), dan 4) terdaftar dalam Data Tunggal Sosial dan Ekonomi Nasional (DTSEN) dan/atau data lain sah dan relevan, yang dapat dipadankan dengan kriteria penerima bantuan sosial daerah sesuai dengan ketentuan peraturan perundang-undangan.
-b. telah menyelesaikan Kelas 6 (enam) Sekolah Dasar atau bentuk lain yang sederajat, dibuktikan dengan ijazah atau dokumen lain yang menyatakan kelulusan.
-c. berusia paling tinggi 15 (lima belas) tahun pada tanggal 1 Juli
+    a. CMB yang memenuhi persyaratan:
+        1) pemegang Kartu Jakarta Pintar Plus yang masih aktif;
+        2) anak dari pengemudi mitra Transjakarta yang mengemudikan bus kecil, yang direkomendasikan oleh Kepala Dinas Perhubungan Provinsi DKI Jakarta;
+        3) anak dari pekerja/buruh yang tercatat dalam Kartu Keluarga, yang direkomendasikan oleh Kepala Dinas Ketenagakerjaan, Transmigrasi, dan Energi Provinsi DKI Jakarta; atau
+        4) penerima Program Indonesia Pintar.
+        5) persyaratan umum CMB sebagaimana dimaksud pada angka 1), 2), 3), dan 4) terdaftar dalam Data Tunggal Sosial dan Ekonomi Nasional (DTSEN) dan/atau data lain sah dan relevan, yang dapat dipadankan dengan kriteria penerima bantuan sosial daerah sesuai dengan ketentuan peraturan perundang-undangan.
+    b. telah menyelesaikan Kelas 6 (enam) Sekolah Dasar atau bentuk lain yang sederajat, dibuktikan dengan ijazah atau dokumen lain yang menyatakan kelulusan.
+    c. berusia paling tinggi 15 (lima belas) tahun pada tanggal 1 Juli
 2026.
 4. Mekanisme Pendaftaran
-a. Jadwal
+    a. Jadwal
 Jadwal pengajuan akun dan verifikasi Kartu Keluarga untuk PMB Bersama SMP Swasta sejak tanggal 25 Mei 2026.
-b. Pengajuan Akun
+    b. Pengajuan Akun
 CMB melakukan pengajuan akun dan verifikasi Kartu Keluarga
 (KK) dengan tahapan sebagai berikut:
-1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
-2) mengajukan akun dengan cara klik tombol Pengajuan Akun sesuai jenjang;
-3) mengisi formulir pendaftaran dan data kependudukan CMB sesuai dengan KK asli;
-4) memilih lokasi satuan Pendidikan untuk tempat verifikasi ajuan akun dan KK;
-5) mengunggah hasil pindai/foto dokumen KK asli;
-6) mengunggah dokumen yang menunjukkan keterangan diri Murid pada halaman depan Rapor/Keterangan tentang Diri Murid/Ijazah/Akte Kelahiran;
-7) khusus CMB yang diasuh oleh wali, mengunggah Surat Perwalian Anak Di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Surat Putusan/Penetapan Pengadilan;
-8) khusus CMB yang diasuh oleh Kakek/Nenek/Saudara Kandung Ayah/Ibu dari CMB, mengunggah Kartu Keluarga sebelumnya;
-9) mengunggah Surat Pernyataan Tanggung Jawab Mutlak
+        1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
+        2) mengajukan akun dengan cara klik tombol Pengajuan Akun sesuai jenjang;
+        3) mengisi formulir pendaftaran dan data kependudukan CMB sesuai dengan KK asli;
+        4) memilih lokasi satuan Pendidikan untuk tempat verifikasi ajuan akun dan KK;
+        5) mengunggah hasil pindai/foto dokumen KK asli;
+        6) mengunggah dokumen yang menunjukkan keterangan diri Murid pada halaman depan Rapor/Keterangan tentang Diri Murid/Ijazah/Akte Kelahiran;
+        7) khusus CMB yang diasuh oleh wali, mengunggah Surat Perwalian Anak Di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Surat Putusan/Penetapan Pengadilan;
+        8) khusus CMB yang diasuh oleh Kakek/Nenek/Saudara Kandung Ayah/Ibu dari CMB, mengunggah Kartu Keluarga sebelumnya;
+        9) mengunggah Surat Pernyataan Tanggung Jawab Mutlak
 (SPTJM) tentang Keabsahan Dokumen dari Orang Tua/Wali
 CMB.
-10) mencetak tanda bukti pengajuan akun yang berisi Nomor Peserta dan PIN/Token untuk Aktivasi; dan
-11) menunggu proses verifikasi ajuan akun dan KK secara daring oleh tim verifikator.
-c. Cek Status Ajuan Akun dan KK
+        10) mencetak tanda bukti pengajuan akun yang berisi Nomor Peserta dan PIN/Token untuk Aktivasi; dan
+        11) menunggu proses verifikasi ajuan akun dan KK secara daring oleh tim verifikator.
+    c. Cek Status Ajuan Akun dan KK
 CMB dapat mengecek status verifikasi ajuan akun dan KK dengan cara:
-1) mengakses laman publik PMB di https://spmb.jakarta.go.id; dan
-2) mengecek status verifikasi pada menu cek status pengajuan akun di masing-masing jenjang.
-d. Aktivasi PIN/Token
+        1) mengakses laman publik PMB di https://spmb.jakarta.go.id; dan
+        2) mengecek status verifikasi pada menu cek status pengajuan akun di masing-masing jenjang.
+    d. Aktivasi PIN/Token
 CMB/Orang Tua/Wali yang telah memiliki PIN/Token dan status verifikasi sudah disetujui, dapat melanjutkan ke tahapan aktivasi PIN/Token pendaftaran sebagai berikut:
-1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
-2) melakukan aktivasi akun dengan cara klik tombol aktivasi dilanjutkan input Nomor Peserta;
-3) mengganti PIN/Token dengan password; dan
-4) setelah melakukan aktivasi PIN/Token dilanjutkan dengan fase pilihan satuan pendidikan tujuan.
-e. Pemilihan SMP Swasta Tujuan
+        1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
+        2) melakukan aktivasi akun dengan cara klik tombol aktivasi dilanjutkan input Nomor Peserta;
+        3) mengganti PIN/Token dengan password; dan
+        4) setelah melakukan aktivasi PIN/Token dilanjutkan dengan fase pilihan satuan pendidikan tujuan.
+    e. Pemilihan SMP Swasta Tujuan
 CMB/Orang Tua/Wali yang telah melakukan aktivasi
 PIN/Token dapat melanjutkan ke tahapan pemilihan SMP Swasta sebagai berikut:
-1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
-2) melakukan Login dengan cara input Nomor Peserta dan Password;
-3) memilih SMP Swasta tujuan; dan
-4) mencetak tanda bukti pemilihan SMP Swasta tujuan.
-f. Memantau Hasil Seleksi
+        1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
+        2) melakukan Login dengan cara input Nomor Peserta dan Password;
+        3) memilih SMP Swasta tujuan; dan
+        4) mencetak tanda bukti pemilihan SMP Swasta tujuan.
+    f. Memantau Hasil Seleksi
 CMB/Orang Tua/Wali yang telah melakukan pemilihan SMP Swasta tujuan dapat memantau hasil seleksi PMB sebagai berikut:
-1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
-2) memilih jenjang dan jalur yang sesuai; dan
-3) klik menu seleksi dilanjutkan melihat satuan pendidikan pilihan.
+        1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
+        2) memilih jenjang dan jalur yang sesuai; dan
+        3) klik menu seleksi dilanjutkan melihat satuan pendidikan pilihan.
 
 ### Subbab B. Pendaftaran
 CMB dapat memilih SMP Swasta dengan ketentuan:
@@ -140,38 +148,38 @@ PMB SMP Swasta sebagaimana tercantum dalam Lampiran VII Keputusan Kepala Dinas P
 
 ### Subbab C. Seleksi
 1. Dalam hal jumlah pendaftar PMB Bersama SMP Swasta melebihi daya tampung, maka dilakukan pengaturan seleksi dengan urutan langkah sebagai berikut:
-a. wilayah PMB prioritas;
-b. pembobotan nilai rapor dan persentil nilai rapor;
-c. urutan pilihan sekolah; dan
-d. waktu mendaftar.
+    a. wilayah PMB prioritas;
+    b. pembobotan nilai rapor dan persentil nilai rapor;
+    c. urutan pilihan sekolah; dan
+    d. waktu mendaftar.
 2. Seleksi berdasarkan wilayah PMB prioritas sebagai berikut:
-a. Wilayah PMB prioritas Pertama: kelurahan domisili CMB sama dengan kelurahan lokasi sekolah;dan
-b. Wilayah PMB prioritas Kedua: kelurahan domisili CMB berdekatan dengan kelurahan lokasi sekolah yang telah ditetapkan.
+    a. Wilayah PMB prioritas Pertama: kelurahan domisili CMB sama dengan kelurahan lokasi sekolah;dan
+    b. Wilayah PMB prioritas Kedua: kelurahan domisili CMB berdekatan dengan kelurahan lokasi sekolah yang telah ditetapkan.
 3. Dalam hal kuota PMB Bersama tidak terpenuhi, maka sisa kuota dapat dilimpahkan ke PMB Bersama tahap kedua.
 
 ### Subbab D. Penjelasan Indikator dan Pembobotan
 Rapor
 1. Indikator dan pembobotan Nilai Rapor dan Persentil Nilai Rapor adalah sebagai berikut: Kemampuan Indikator Detail Indikator Akademik rerata nilai rapor selama 5 Semester yang sudah divalidasi, meliputi: • kelas 4 semester 1 dan semester 2, • kelas 5 semester 1 dan semester 2, dan • kelas 6 semester 1 SD/MI/Paket A Rerata pada mata pelajaran Pendidikan Nilai Kewarganegaraan (PKn) atau 75% Rapor Pendidikan Pancasila, Bahasa Indonesia, Matematika, dan Ilmu Pengetahuan Alam (IPA) atau Ilmu Pengetahuan Alam dan Sosial (IPAS); Kemampuan Indikator Detail Indikator Akademik Persentil Nilai Rapor adalah peringkat rerata nilai rapor yang dikelompokkan menjadi 100 bagian yang sama setelah data diurutkan dari yang terbesar ke yang terkecil dalam satu sekolah
 1. CMB dengan rerata nilai rapor tertinggi di sekolah masing-masing untuk mata pelajaran yang terdaftar dalam Petunjuk Teknis PMB ini untuk sekolah nilai Rapor Pendidikan Baik:
-I. Peringkat (1-15)% skor 100
-II. Peringkat (16-30)% skor 90
+    I. Peringkat (1-15)% skor 100
+    II. Peringkat (16-30)% skor 90
 III.Peringkat (31-45)% skor 80
 IV.Peringkat (46-60)% skor 70
-V. Peringkat (61-100)% skor 60
+    V. Peringkat (61-100)% skor 60
 2. CMB dengan rerata nilai rapor tertinggi di sekolah masing-masing Persentil untuk mata pelajaran yang terdaftar Nilai dalam Petunjuk Teknis PMB ini 25% Rapor untuk sekolah nilai Rapor Pendidikan Sedang:
-I. Peringkat (1-10)% skor 100
-II. Peringkat (11-20)% skor 90
+    I. Peringkat (1-10)% skor 100
+    II. Peringkat (11-20)% skor 90
 III.Peringkat (21-30)% skor 80
 IV.Peringkat (31-40)% skor 70
-V. Peringkat (41-100)% skor 60
+    V. Peringkat (41-100)% skor 60
 3. CMB dengan rerata nilai rapor tertinggi di sekolah masing-masing untuk mata pelajaran yang terdaftar dalam Petunjuk Teknis PMB ini untuk sekolah nilai Rapor Pendidikan Kurang:
-I. Peringkat (1-5)% skor 100
-II. Peringkat (6-10)% skor 90
+    I. Peringkat (1-5)% skor 100
+    II. Peringkat (6-10)% skor 90
 III.Peringkat (11-15)% skor 80
 IV.Peringkat (16-20)% skor 70
-V. Peringkat (21-100)% skor 60 Total 100%
+    V. Peringkat (21-100)% skor 60 Total 100%
 2. Rapor Pendidikan
-a. Definisi Rapor Pendidikan
+    a. Definisi Rapor Pendidikan
 No Indikator Rapor Pendidikan Keterangan
 Persentase murid berdasarkan kemampuan dalam memahami, menggunakan, merefleksi,
 1. Kemampuan Literasi Murid dan mengevaluasi beragam jenis teks (teks informasional dan teks fiksi) Persentase murid berdasarkan kemampuan dalam berpikir menggunakan konsep,
@@ -180,8 +188,8 @@ Persentase murid berdasarkan kemampuan dalam memahami, menggunakan, merefleksi,
 4. Kondisi Kebhinekaan Sekolah pendidikan berdasarkan survei lingkungan belajar Nilai komposit nilai indeks rasa aman, perundungan, hukuman fisik, kekerasan
 5. Kondisi Keamanan Sekolah seksual, rokok, minuman keras, dan narkoba berdasarkan survei lingkungan belajar Nilai rerata untuk kualitas pembelajaran meliputi manajemen kelas,
 6. Kualitas Pembelajaran dukungan psikologi, dan metode pembelajaran di survei lingkungan belajar
-b. Skor indikator Rapor Pendidikan Predikat Skor indikator Baik 100 Sedang 67 Kurang 33
-c. Rentang Nilai Rapor Pendidikan Nilai akhir rapor pendidikan merupakan rerata dari 6 (enam) nilai indikator rapor pendidikan yang diperoleh sekolah dengan rentang Predikat: Predikat Rentang Baik 78-100 Sedang 55-77 Kurang 33-54
+    b. Skor indikator Rapor Pendidikan Predikat Skor indikator Baik 100 Sedang 67 Kurang 33
+    c. Rentang Nilai Rapor Pendidikan Nilai akhir rapor pendidikan merupakan rerata dari 6 (enam) nilai indikator rapor pendidikan yang diperoleh sekolah dengan rentang Predikat: Predikat Rentang Baik 78-100 Sedang 55-77 Kurang 33-54
 
 ### Subbab E. Pengumuman Hasil Seleksi
 Pengumuman dilakukan secara daring sesuai jadwal yang telah ditentukan melalui laman https://spmb.jakarta.go.id.
@@ -197,37 +205,37 @@ PMB selanjutnya dan kuota dilimpahkan ke PMB Bersama tahap kedua.
 1. Jadwal Tahap Pertama
 No Kegiatan Tanggal Waktu
 Pendaftaran dan 15 Juni dan 17 Juni 08.00-23.59 WIB
-1 Pemilihan SMP 2026 Swasta Tujuan 18 Juni 2026 00.00-14.00 WIB
+  - 1 Pemilihan SMP 2026 Swasta Tujuan 18 Juni 2026 00.00-14.00 WIB
 15 Juni dan 17 Juni 08.00-23.59 WIB
 2 Proses Seleksi 2026
-18 Juni 2026 00.00-14.00 WIB
+  - 18 Juni 2026 00.00-14.00 WIB
 3 Pengumuman 18 Juni 2026 17.00 WIB
 No Kegiatan Tanggal Waktu
-19 Juni 2026 08.00-23.59 WIB
+  - 19 Juni 2026 08.00-23.59 WIB
 4 Daftar Ulang
-20 Juni 2026 00.00-14.00 WIB
+  - 20 Juni 2026 00.00-14.00 WIB
 2. Jadwal Tahap Kedua
 No Kegiatan Tanggal Waktu
 22-23 Juni 2026 08.00-23.59 WIB Pendaftaran dan 1 Pemilihan SMP
 24 Juni 2026 00.00-14.00 WIB Swasta Tujuan
 22-23 Juni 2026 08.00-23.59 WIB
 2 Proses Seleksi
-24 Juni 2026 00.00-14.00 WIB
+  - 24 Juni 2026 00.00-14.00 WIB
 3 Pengumuman 24 Juni 2026 17.00 WIB
-25 Juni 2026 08.00-23.59 WIB
+  - 25 Juni 2026 08.00-23.59 WIB
 4 Daftar Ulang
-26 Juni 2026 00.00-14.00 WIB
+  - 26 Juni 2026 00.00-14.00 WIB
 3. Jadwal Tahap Akhir
 No Kegiatan Tanggal Waktu
 6 Juli 2026 08.00-23.59 WIB Pendaftaran dan 1 Pemilihan SMP
 7 Juli 2026 00.00-14.00 WIB Swasta Tujuan
-6 Juli 2026 08.00-23.59 WIB
+  - 6 Juli 2026 08.00-23.59 WIB
 2 Proses Seleksi
-7 Juli 2026 00.00-14.00 WIB
+  - 7 Juli 2026 00.00-14.00 WIB
 3 Pengumuman 7 Juli 2026 17.00 WIB
-8 Juli 2026 08.00-23.59 WIB
+  - 8 Juli 2026 08.00-23.59 WIB
 4 Daftar Ulang
-9 Juli 2026 00.00-14.00 WIB
+  - 9 Juli 2026 00.00-14.00 WIB
 
 ### Bab IV. Pembiayaan
 1. Biaya Investasi (Uang Pangkal/sejenisnya) dibiayai hanya 1 (satu) kali setelah CMB diterima.
@@ -240,13 +248,13 @@ No Kegiatan Tanggal Waktu
 Pemilihan sekolah dan seleksi
 PMB Bersama tahap kedua dilaksanakan sesuai dengan PMB Bersama tahap pertama.
 Dalam hal daya tampung PMB Bersama tahap kedua masih terdapat sisa kuota, maka akan dibuka PMB Bersama tahap akhir., Pemilihan sekolah PMB Bersama tahap akhir CMB dapat memilih melebihi daya tampung, maka dilakukan pengaturan seleksi dengan urutan langkah sebagai berikut:
-a. wilayah PMB prioritas;
-b. pembobotan nilaj rapor dan persentil nilai rapor;
+    a. wilayah PMB prioritas;
+    b. pembobotan nilaj rapor dan persentil nilai rapor;
 C. urutan pilihan sekolah; dan
-d. waktu mendaftar., Seleksi berdasarkan wilayah PMB prioritas di SMP Swasta pada PMB Bersama Tahap Akhir sebagai berikut:
-a. wilayah PMB prioritas pertama: kelurahan domisili CMB sama dengan kelurahan lokasi sekolah;
-b. wilayah PMB prioritas kedua: kelurahan domisili CMB berdekatan dengan kelurahan lokasi sekolah yang telah ditetapkan.
-c. wilayah PMB prioritas ketiga: seluruh kelurahan di Provinsi DK] Jakarta.
+    d. waktu mendaftar., Seleksi berdasarkan wilayah PMB prioritas di SMP Swasta pada PMB Bersama Tahap Akhir sebagai berikut:
+    a. wilayah PMB prioritas pertama: kelurahan domisili CMB sama dengan kelurahan lokasi sekolah;
+    b. wilayah PMB prioritas kedua: kelurahan domisili CMB berdekatan dengan kelurahan lokasi sekolah yang telah ditetapkan.
+    c. wilayah PMB prioritas ketiga: seluruh kelurahan di Provinsi DK] Jakarta.
 
 ## Lampiran II - PMB Bersama SMA Swasta
 
@@ -272,78 +280,78 @@ _Konten bab belum terbaca dari lapisan teks PDF._
 ### Subbab A. Pengumuman
 1. Tujuan Penerimaan Murid Baru Bersama Penerimaan Murid Baru (PMB) Bersama bertujuan untuk meningkatkan akses pendidikan dan mendukung peningkatan mutu pendidikan bersama Satuan Pendidikan yang diselenggarakan oleh Swasta atau masyarakat sesuai dengan kriteria yang ditetapkan oleh Kepala Dinas Pendidikan Provinsi DKI Jakarta
 2. Ketentuan PMB Bersama SMA Swasta
-a. Pelaksanaan PMB Bersama SMA Swasta tidak dipungut dan tidak menerima biaya dari orang tua/wali CMB.
-b. Calon Murid Baru (CMB) yang dapat mengikuti PMB Bersama
+    a. Pelaksanaan PMB Bersama SMA Swasta tidak dipungut dan tidak menerima biaya dari orang tua/wali CMB.
+    b. Calon Murid Baru (CMB) yang dapat mengikuti PMB Bersama
 SMA Swasta Tahun Ajaran 2026/2027 adalah Warga Provinsi
 DKI Jakarta dibuktikan dengan Kartu Keluarga yang dikeluarkan oleh Dinas Kependudukan dan Catatan Sipil Provinsi DKI Jakarta paling lambat 15 Juni 2025.
-c. Dalam hal status pada Kartu Keluarga:
-1) Status FAMILI dibuktikan hubungan kakek/nenek atau saudara sekandung dari bapak/ibu CMB, maka dapat disetujui untuk mengikuti PMB.
-2) Status FAMILI yang tidak dapat dibuktikan hubungan kakek/nenek atau saudara sekandung dari bapak/ibu CMB, atau status LAINNYA, dapat disetujui untuk mengikuti PMB jika:
-a) dibuktikan Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Putusan/Penetapan Pengadilan, atau
-b) Surat Keterangan (PM1) dari kelurahan domisili yang menjelaskan orang tua kandung CMB:
-(1) Meninggal Dunia;
-(2) Hilang Ingatan; dan/atau
-(3) Sakit Berkepanjangan
-d. Kartu Keluarga sebagaimana dimaksud pada huruf b dan huruf c adalah Kartu Keluarga yang telah diverifikasi oleh Tim verifikator Satuan Pendidikan yang dipilih sebagai tempat verifikasi sesuai jenjang yang dituju.
-e. CMB yang dapat mengikuti PMB Bersama SMA Swasta Tahun Ajaran 2026/2027 adalah CMB yang tidak terdaftar di Satuan Pendidikan Negeri dan Swasta pada jenjang yang dituju.
-f. CMB yang diterima pada PMB Bersama harus mengikuti peraturan pada Satuan Pendidikan yang menerima.
-g. Dalam hal CMB yang telah diterima melalui PMB Bersama mengundurkan diri dari Satuan Pendidikan Swasta maka yang bersangkutan tidak dapat mengikuti PMB pada Satuan Pendidikan Negeri dan PMB Bersama tahun berikutnya.
-h. Seluruh Murid yang diterima melalui PMB Bersama harus mematuhi ketentuan penerima Bantuan Sosial Biaya Pendidikan dalam Pasal 23 dan Pasal 24 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan.
-i. Murid yang dikenakan sanksi diskualifikasi pada Pasal 26 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau melanggar ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan, maka yang bersangkutan dapat diberhentikan bantuannya dan tidak dapat mengikuti PMB Bersama.
-j. CMB yang dapat mengikuti PMB Bersama SMA Swasta Tahun Ajaran 2026/2027 adalah CMB yang telah memenuhi ketentuan dan persyaratan pelaksanaan PMB Bersama.
-k. CMB yang diterima pada PMB Bersama bersedia untuk mematuhi ketentuan pada angka 2 huruf f, g, h, dan i serta bersedia tidak pindah (mutasi) ke Satuan Pendidikan lainnya selama 3 (tiga) tahun dengan menyerahkan Surat Pernyataan tertulis bermaterai cukup kepada Satuan Pendidikan tempat
+    c. Dalam hal status pada Kartu Keluarga:
+        1) Status FAMILI dibuktikan hubungan kakek/nenek atau saudara sekandung dari bapak/ibu CMB, maka dapat disetujui untuk mengikuti PMB.
+        2) Status FAMILI yang tidak dapat dibuktikan hubungan kakek/nenek atau saudara sekandung dari bapak/ibu CMB, atau status LAINNYA, dapat disetujui untuk mengikuti PMB jika:
+            a) dibuktikan Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Putusan/Penetapan Pengadilan, atau
+            b) Surat Keterangan (PM1) dari kelurahan domisili yang menjelaskan orang tua kandung CMB:
+                (1) Meninggal Dunia;
+                (2) Hilang Ingatan; dan/atau
+                (3) Sakit Berkepanjangan
+    d. Kartu Keluarga sebagaimana dimaksud pada huruf b dan huruf c adalah Kartu Keluarga yang telah diverifikasi oleh Tim verifikator Satuan Pendidikan yang dipilih sebagai tempat verifikasi sesuai jenjang yang dituju.
+    e. CMB yang dapat mengikuti PMB Bersama SMA Swasta Tahun Ajaran 2026/2027 adalah CMB yang tidak terdaftar di Satuan Pendidikan Negeri dan Swasta pada jenjang yang dituju.
+    f. CMB yang diterima pada PMB Bersama harus mengikuti peraturan pada Satuan Pendidikan yang menerima.
+    g. Dalam hal CMB yang telah diterima melalui PMB Bersama mengundurkan diri dari Satuan Pendidikan Swasta maka yang bersangkutan tidak dapat mengikuti PMB pada Satuan Pendidikan Negeri dan PMB Bersama tahun berikutnya.
+    h. Seluruh Murid yang diterima melalui PMB Bersama harus mematuhi ketentuan penerima Bantuan Sosial Biaya Pendidikan dalam Pasal 23 dan Pasal 24 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan.
+    i. Murid yang dikenakan sanksi diskualifikasi pada Pasal 26 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau melanggar ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan, maka yang bersangkutan dapat diberhentikan bantuannya dan tidak dapat mengikuti PMB Bersama.
+    j. CMB yang dapat mengikuti PMB Bersama SMA Swasta Tahun Ajaran 2026/2027 adalah CMB yang telah memenuhi ketentuan dan persyaratan pelaksanaan PMB Bersama.
+    k. CMB yang diterima pada PMB Bersama bersedia untuk mematuhi ketentuan pada angka 2 huruf f, g, h, dan i serta bersedia tidak pindah (mutasi) ke Satuan Pendidikan lainnya selama 3 (tiga) tahun dengan menyerahkan Surat Pernyataan tertulis bermaterai cukup kepada Satuan Pendidikan tempat
 CMB diterima yang ditandatangani oleh Orang Tua/Wali.
 3. Persyaratan PMB Bersama SMA Swasta.
-a. CMB yang memenuhi persyaratan:
-1) pemegang Kartu Jakarta Pintar Plus yang masih aktif;
-2) anak dari pengemudi mitra Transjakarta yang mengemudikan bus kecil, yang direkomendasikan oleh Kepala Dinas Perhubungan Provinsi DKI Jakarta;
-3) anak dari pekerja/buruh yang tercatat dalam Kartu Keluarga, yang direkomendasikan oleh Kepala Dinas Ketenagakerjaan, Transmigrasi, dan Energi Provinsi DKI Jakarta; atau
-4) penerima Program Indonesia Pintar.
-5) persyaratan umum CMB sebagaimana dimaksud pada angka
+    a. CMB yang memenuhi persyaratan:
+        1) pemegang Kartu Jakarta Pintar Plus yang masih aktif;
+        2) anak dari pengemudi mitra Transjakarta yang mengemudikan bus kecil, yang direkomendasikan oleh Kepala Dinas Perhubungan Provinsi DKI Jakarta;
+        3) anak dari pekerja/buruh yang tercatat dalam Kartu Keluarga, yang direkomendasikan oleh Kepala Dinas Ketenagakerjaan, Transmigrasi, dan Energi Provinsi DKI Jakarta; atau
+        4) penerima Program Indonesia Pintar.
+        5) persyaratan umum CMB sebagaimana dimaksud pada angka
 1), 2), 3), dan 4) terdaftar dalam Data Tunggal Sosial dan Ekonomi Nasional (DTSEN) dan/atau data lain sah dan relevan, yang dapat dipadankan dengan kriteria penerima bantuan sosial daerah sesuai dengan ketentuan peraturan perundang-undangan.
-b. telah menyelesaikan Kelas 9 (sembilan) Sekolah Menengah Pertama atau bentuk lain yang sederajat, dibuktikan dengan ijazah atau dokumen lain yang menyatakan kelulusan.
-c. berusia paling tinggi 21 (dua puluh satu) tahun pada tanggal 1 Juli 2026.
+    b. telah menyelesaikan Kelas 9 (sembilan) Sekolah Menengah Pertama atau bentuk lain yang sederajat, dibuktikan dengan ijazah atau dokumen lain yang menyatakan kelulusan.
+    c. berusia paling tinggi 21 (dua puluh satu) tahun pada tanggal 1 Juli 2026.
 4. Mekanisme Pendaftaran
-a. Jadwal
+    a. Jadwal
 Jadwal pengajuan akun dan verifikasi Kartu Keluarga untuk PMB Bersama SMA Swasta sejak tanggal 2 Juni 2026.
-b. Pengajuan Akun
+    b. Pengajuan Akun
 CMB melakukan pengajuan akun dan verifikasi Kartu Keluarga
 (KK) dengan tahapan sebagai berikut:
-1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
-2) mengajukan akun dengan cara klik tombol Pengajuan Akun sesuai jenjang;
-3) mengisi formulir pendaftaran dan data kependudukan
+        1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
+        2) mengajukan akun dengan cara klik tombol Pengajuan Akun sesuai jenjang;
+        3) mengisi formulir pendaftaran dan data kependudukan
 CMB sesuai dengan KK asli;
-4) memilih lokasi satuan Pendidikan untuk tempat verifikasi ajuan akun dan KK;
-5) mengunggah hasil pindai/foto dokumen KK asli;
-6) mengunggah dokumen yang menunjukkan keterangan diri Murid pada halaman depan Rapor/Keterangan Tentang Diri Murid/Ijazah/Akte Kelahiran
-7) khusus CMB yang diasuh oleh wali, mengunggah Surat Perwalian Anak Di Bawah Umur atau Penetapan/Putusan Pengadilan;
-8) khusus CMB yang diasuh oleh Kakek/Nenek/Saudara Kandung Ayah/Ibu dari CMB, mengunggah Kartu Keluarga sebelumnya;
-9) mengunggah Surat Pernyataan Tanggung Jawab Mutlak
+        4) memilih lokasi satuan Pendidikan untuk tempat verifikasi ajuan akun dan KK;
+        5) mengunggah hasil pindai/foto dokumen KK asli;
+        6) mengunggah dokumen yang menunjukkan keterangan diri Murid pada halaman depan Rapor/Keterangan Tentang Diri Murid/Ijazah/Akte Kelahiran
+        7) khusus CMB yang diasuh oleh wali, mengunggah Surat Perwalian Anak Di Bawah Umur atau Penetapan/Putusan Pengadilan;
+        8) khusus CMB yang diasuh oleh Kakek/Nenek/Saudara Kandung Ayah/Ibu dari CMB, mengunggah Kartu Keluarga sebelumnya;
+        9) mengunggah Surat Pernyataan Tanggung Jawab Mutlak
 (SPTJM) tentang Keabsahan Dokumen dari Orang Tua/Wali CMB.
-10) mencetak tanda bukti pengajuan akun yang berisi Nomor Peserta dan PIN/Token untuk Aktivasi; dan
-11) menunggu proses verifikasi ajuan akun dan KK secara daring oleh tim verifikator.
-c. Cek Status Ajuan Akun dan KK
+        10) mencetak tanda bukti pengajuan akun yang berisi Nomor Peserta dan PIN/Token untuk Aktivasi; dan
+        11) menunggu proses verifikasi ajuan akun dan KK secara daring oleh tim verifikator.
+    c. Cek Status Ajuan Akun dan KK
 CMB dapat mengecek status verifikasi ajuan akun dan KK dengan cara:
-1) mengakses laman publik PMB di https://spmb.jakarta.go.id; dan
-2) mengecek status verifikasi pada menu cek status pengajuan akun di masing-masing jenjang.
-d. Aktivasi PIN/Token
+        1) mengakses laman publik PMB di https://spmb.jakarta.go.id; dan
+        2) mengecek status verifikasi pada menu cek status pengajuan akun di masing-masing jenjang.
+    d. Aktivasi PIN/Token
 CMB/Orang Tua/Wali yang telah memiliki PIN/Token dan status verifikasi sudah disetujui, dapat melanjutkan ke tahapan aktivasi PIN/Token pendaftaran sebagai berikut:
-1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
-2) melakukan aktivasi akun dengan cara klik tombol aktivasi dilanjutkan input Nomor Peserta;
-3) mengganti PIN/Token dengan password; dan
-4) setelah melakukan aktivasi PIN/Token dilanjutkan dengan fase pilihan satuan pendidikan tujuan.
-e. Pemilihan SMA Swasta Tujuan
+        1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
+        2) melakukan aktivasi akun dengan cara klik tombol aktivasi dilanjutkan input Nomor Peserta;
+        3) mengganti PIN/Token dengan password; dan
+        4) setelah melakukan aktivasi PIN/Token dilanjutkan dengan fase pilihan satuan pendidikan tujuan.
+    e. Pemilihan SMA Swasta Tujuan
 CMB/Orang Tua/Wali yang telah melakukan aktivasi
 PIN/Token dapat melanjutkan ke tahapan pemilihan SMA Swasta sebagai berikut:
-1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
-2) melakukan Login dengan cara input Nomor Peserta dan Password;
-3) memilih SMA Swasta tujuan; dan
-4) mencetak tanda bukti pemilihan SMA Swasta tujuan.
-f. Memantau Hasil Seleksi
+        1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
+        2) melakukan Login dengan cara input Nomor Peserta dan Password;
+        3) memilih SMA Swasta tujuan; dan
+        4) mencetak tanda bukti pemilihan SMA Swasta tujuan.
+    f. Memantau Hasil Seleksi
 CMB/Orang Tua/Wali yang telah melakukan pemilihan SMA Swasta tujuan dapat memantau hasil seleksi PMB sebagai berikut:
-1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
-2) memilih jenjang dan jalur yang sesuai; dan
-3) klik menu seleksi dilanjutkan melihat satuan pendidikan pilihan.
+        1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
+        2) memilih jenjang dan jalur yang sesuai; dan
+        3) klik menu seleksi dilanjutkan melihat satuan pendidikan pilihan.
 
 ### Subbab B. Pendaftaran
 CMB dapat memilih SMA Swasta dengan ketentuan:
@@ -354,38 +362,38 @@ PMB SMA Swasta sebagaimana tercantum dalam Lampiran VIII Keputusan Kepala Dinas 
 
 ### Subbab C. Seleksi
 1. Dalam hal jumlah pendaftar PMB Bersama SMA Swasta melebihi daya tampung, maka dilakukan pengaturan seleksi dengan urutan langkah sebagai berikut:
-a. wilayah PMB prioritas;
-b. pembobotan nilai rapor dan persentil nilai rapor;
-c. urutan pilihan sekolah; dan
-d. waktu mendaftar.
+    a. wilayah PMB prioritas;
+    b. pembobotan nilai rapor dan persentil nilai rapor;
+    c. urutan pilihan sekolah; dan
+    d. waktu mendaftar.
 2. Seleksi berdasarkan wilayah PMB prioritas sebagai berikut:
-a. Wilayah PMB prioritas Pertama: kelurahan domisili CMB sama dengan kelurahan lokasi sekolah;dan
-b. Wilayah PMB prioritas Kedua: kelurahan domisili CMB berdekatan dengan kelurahan lokasi sekolah yang telah ditetapkan.
+    a. Wilayah PMB prioritas Pertama: kelurahan domisili CMB sama dengan kelurahan lokasi sekolah;dan
+    b. Wilayah PMB prioritas Kedua: kelurahan domisili CMB berdekatan dengan kelurahan lokasi sekolah yang telah ditetapkan.
 3. Dalam hal kuota PMB Bersama tidak terpenuhi, maka sisa kuota dapat dilimpahkan ke PMB Bersama tahap kedua.
 
 ### Subbab D. Penjelasan Indikator dan Pembobotan
 Rapor
 1. Indikator dan pembobotan Kemampuan Akademik adalah sebagai berikut: Kemampuan Indikator Detail Indikator Akademik rerata nilai rapor selama 5 Semester yang sudah divalidasi, meliputi: • kelas 7 semester 1 dan semester 2, • kelas 8 semester 1 dan semester 2, Rerata dan Nilai 75% • kelas 9 semester 1 SMP/MTs/Paket Rapor B pada mata pelajaran Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam (IPA), Ilmu Pengetahuan Sosial (IPS), dan Bahasa Inggris; Persentil Nilai Rapor adalah peringkat rerata nilai rapor yang dikelompokkan menjadi 100 bagian yang sama setelah data diurutkan dari yang terbesar ke yang terkecil dalam satu sekolah
 1. CMB dengan rerata nilai rapor tertinggi di sekolah masing-masing untuk mata pelajaran yang terdaftar dalam Petunjuk Teknis PMB ini Persentil untuk sekolah nilai Rapor Nilai 25% Pendidikan Baik: Rapor
-I. Peringkat (1-15)% skor 100
-II. Peringkat (16-30)% skor 90
-III. Peringkat (31-45)% skor 80
-IV. Peringkat (46-60)% skor 70
-V. Peringkat (61-100)% skor 60
+    I. Peringkat (1-15)% skor 100
+    II. Peringkat (16-30)% skor 90
+    III. Peringkat (31-45)% skor 80
+    IV. Peringkat (46-60)% skor 70
+    V. Peringkat (61-100)% skor 60
 2. CMB dengan rerata nilai rapor tertinggi di sekolah masing-masing untuk mata pelajaran yang terdaftar Kemampuan Indikator Detail Indikator Akademik dalam Petunjuk Teknis PMB ini untuk sekolah nilai Rapor Pendidikan Sedang:
-I. Peringkat (1-10)% skor 100
-II. Peringkat (11-20)% skor 90
+    I. Peringkat (1-10)% skor 100
+    II. Peringkat (11-20)% skor 90
 III.Peringkat (21-30)% skor 80
 IV.Peringkat (31-40)% skor 70
-V. Peringkat (41-100)% skor 60
+    V. Peringkat (41-100)% skor 60
 3. CMB dengan rerata nilai rapor tertinggi di sekolah masing-masing untuk mata pelajaran yang terdaftar dalam Petunjuk Teknis PMB ini untuk sekolah nilai Rapor Pendidikan Kurang:
-I. Peringkat (1-5)% skor 100
-II. Peringkat (6-10)% skor 90
+    I. Peringkat (1-5)% skor 100
+    II. Peringkat (6-10)% skor 90
 III.Peringkat (11-15)% skor 80
 IV.Peringkat (16-20)% skor 70
-V. Peringkat (21-100)% skor 60 Total 100%
+    V. Peringkat (21-100)% skor 60 Total 100%
 2. Rapor Pendidikan
-a. Definisi Rapor Pendidikan
+    a. Definisi Rapor Pendidikan
 No Indikator Rapor Pendidikan Keterangan
 Persentase murid berdasarkan kemampuan dalam memahami, menggunakan,
 1. Kemampuan Literasi Murid merefleksi, dan mengevaluasi beragam jenis teks (teks informasional dan teks fiksi) Persentase murid berdasarkan kemampuan dalam berpikir menggunakan konsep, prosedur, fakta, dan alat Kemampuan Numerasi
@@ -397,8 +405,8 @@ Nilai rerata karakter murid berdasarkan nilai akhlak pada manusia, akhlak pada a
 Sekolah pendidikan berdasarkan survei lingkungan belajar Nilai komposit nilai indeks rasa aman, perundungan, hukuman fisik, kekerasan seksual,
 5. Kondisi Keamanan Sekolah rokok, minuman keras, dan narkoba berdasarkan survei lingkungan belajar Nilai rerata untuk kualitas pembelajaran meliputi manajemen
 6. Kualitas Pembelajaran kelas, dukungan psikologi, dan metode pembelajaran di survei lingkungan belajar
-b. Skor indikator Rapor Pendidikan Predikat Skor indikator Baik 100 Sedang 67 Kurang 33
-c. Rentang Nilai Rapor Pendidikan Nilai akhir rapor pendidikan merupakan rerata dari 6 (enam) nilai indikator rapor pendidikan yang diperoleh sekolah dengan rentang Predikat: Predikat Rentang Baik 78-100 Sedang 55-77 Kurang 33-54
+    b. Skor indikator Rapor Pendidikan Predikat Skor indikator Baik 100 Sedang 67 Kurang 33
+    c. Rentang Nilai Rapor Pendidikan Nilai akhir rapor pendidikan merupakan rerata dari 6 (enam) nilai indikator rapor pendidikan yang diperoleh sekolah dengan rentang Predikat: Predikat Rentang Baik 78-100 Sedang 55-77 Kurang 33-54
 
 ### Subbab E. Pengumuman Hasil Seleksi
 Pengumuman dilakukan secara daring sesuai jadwal yang telah ditentukan melalui laman https://spmb.jakarta.go.id.
@@ -415,37 +423,37 @@ PMB selanjutnya dan kuota dilimpahkan ke PMB Bersama tahap kedua.
 No Kegiatan Tanggal Waktu
 15 Juni dan 17 08.00-23.59 WIB Pendaftaran dan Pemilihan Juni 2026
 1 SMA Swasta Tujuan
-18 Juni 2026 00.00-14.00 WIB
+  - 18 Juni 2026 00.00-14.00 WIB
 15 Juni dan 17 08.00-23.59 WIB Juni 2026 2 Proses Seleksi
-18 Juni 2026 00.00-14.00 WIB
+  - 18 Juni 2026 00.00-14.00 WIB
 3 Pengumuman 18 Juni 2026 17.00 WIB
-19 Juni 2026 08.00-23.59 WIB
+  - 19 Juni 2026 08.00-23.59 WIB
 4 Daftar Ulang
-20 Juni 2026 00.00-14.00 WIB
+  - 20 Juni 2026 00.00-14.00 WIB
 2. Jadwal Tahap Kedua
 No Kegiatan Tanggal Waktu
 22-23 Juni 2026 08.00-23.59 WIB Pendaftaran dan Pemilihan
 SMA Swasta Tujuan
-24 Juni 2026 00.00-14.00 WIB
+  - 24 Juni 2026 00.00-14.00 WIB
 22-23 Juni 2026 08.00-23.59 WIB
 2 Proses Seleksi
-24 Juni 2026 00.00-14.00 WIB
+  - 24 Juni 2026 00.00-14.00 WIB
 3 Pengumuman 24 Juni 2026 17.00 WIB
-25 Juni 2026 08.00-23.59 WIB
+  - 25 Juni 2026 08.00-23.59 WIB
 4 Daftar Ulang
-26 Juni 2026 00.00-14.00 WIB
+  - 26 Juni 2026 00.00-14.00 WIB
 3. Jadwal Tahap Akhir
 No Kegiatan Tanggal Waktu
 Pendaftaran dan Pemilihan 6 Juli 2026 08.00-23.59 WIB
 SMA Swasta Tujuan
-7 Juli 2026 00.00-14.00 WIB
-6 Juli 2026 08.00-23.59 WIB
+  - 7 Juli 2026 00.00-14.00 WIB
+  - 6 Juli 2026 08.00-23.59 WIB
 2 Proses Seleksi
-7 Juli 2026 00.00-14.00 WIB
+  - 7 Juli 2026 00.00-14.00 WIB
 3 Pengumuman 7 Juli 2026 17.00 WIB
-8 Juli 2026 08.00-23.59 WIB
+  - 8 Juli 2026 08.00-23.59 WIB
 4 Daftar Ulang
-9 Juli 2026 00.00-14.00 WIB
+  - 9 Juli 2026 00.00-14.00 WIB
 
 ### Bab IV. Pembiayaan
 1. Biaya Investasi (Uang Pangkal/sejenisnya) dibiayai hanya 1 (satu) kali setelah CMB diterima.
@@ -459,12 +467,12 @@ SMA Swasta Tujuan
 3. Dalam hal daya tampung PMB Bersama tahap kedua masih terdapat sisa kuota, maka akan dibuka PMB Bersama tahap akhir.
 4. Pemilihan sekolah PMB Bersama tahap akhir CMB dapat memilih seluruh SMA Swasta peserta PMB Bersama di wilayah DKI Jakarta.
 5. Dalam hal jumlah pendaftar PMB Bersama SMA Swasta tahap akhir melebihi daya tampung, maka dilakukan pengaturan seleksi dengan urutan langkah sebagai berikut:
-a. wilayah PMB prioritas;
-b. pembobotan nilai rapor dan persentil nilai rapor;
-c. urutan pilihan sekolah; dan
-d. waktu mendaftar.
+    a. wilayah PMB prioritas;
+    b. pembobotan nilai rapor dan persentil nilai rapor;
+    c. urutan pilihan sekolah; dan
+    d. waktu mendaftar.
 6.
-b. a, Bersama Seleksi Jakarta. wilayah dengan wilayah dengan wilayah Tahap PMB PMB PMB berdasarkan kelurahan kelurahan Akhir prioritas prioritas prioritas lokasi lokasi wilayah PROVINSI sebagai D \% ketiga; kedua: PMB & sekolah sekolah; pertama:: berikut: ) KEPALA yang seluruh prioritas 7 kelurahan telah di DINAS SUS kelurahanTANA SMA domisilj kelurahan IBUKO di domisi; ditetapkan; CMB Swasta PENDIDIKAN dan CMB Provinsi pada JAKARTA, DK berdekatan sama PMB
+    b. a, Bersama Seleksi Jakarta. wilayah dengan wilayah dengan wilayah Tahap PMB PMB PMB berdasarkan kelurahan kelurahan Akhir prioritas prioritas prioritas lokasi lokasi wilayah PROVINSI sebagai D \% ketiga; kedua: PMB & sekolah sekolah; pertama:: berikut: ) KEPALA yang seluruh prioritas 7 kelurahan telah di DINAS SUS kelurahanTANA SMA domisilj kelurahan IBUKO di domisi; ditetapkan; CMB Swasta PENDIDIKAN dan CMB Provinsi pada JAKARTA, DK berdekatan sama PMB
 
 ## Lampiran III - PMB Bersama SMK Swasta
 
@@ -490,39 +498,39 @@ _Konten bab belum terbaca dari lapisan teks PDF._
 ### Subbab A. Pengumuman
 1. Tujuan Penerimaan Murid Baru Bersama Penerimaan Murid Baru (PMB) Bersama bertujuan untuk meningkatkan akses pendidikan dan mendukung peningkatan mutu pendidikan bersama Satuan Pendidikan yang diselenggarakan oleh Swasta atau masyarakat sesuai dengan kriteria yang ditetapkan oleh Kepala Dinas Pendidikan Provinsi DKI Jakarta
 2. Ketentuan PMB Bersama SMK Swasta
-a. Pelaksanaan PMB Bersama SMK Swasta tidak dipungut biaya.
-b. Calon Murid Baru (CMB) yang dapat mengikuti PMB Bersama
+    a. Pelaksanaan PMB Bersama SMK Swasta tidak dipungut biaya.
+    b. Calon Murid Baru (CMB) yang dapat mengikuti PMB Bersama
 SMK Swasta Tahun Ajaran 2026/2027 adalah Warga Provinsi
 DKI Jakarta dibuktikan dengan Kartu Keluarga yang dikeluarkan oleh Dinas Kependudukan dan Catatan Sipil Provinsi DKI Jakarta paling lambat 15 Juni 2025.
-c. Dalam hal status pada Kartu Keluarga:
-1) Status FAMILI dibuktikan hubungan kakek/nenek atau saudara sekandung dari bapak/ibu CMB, maka dapat disetujui untuk mengikuti PMB.
-2) Status FAMILI yang tidak dapat dibuktikan hubungan kakek/nenek atau saudara sekandung dari bapak/ibu CMB, atau status LAINNYA, dapat disetujui untuk mengikuti PMB jika:
-a) dibuktikan Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Putusan/Penetapan Pengadilan, atau
-b) Surat Keterangan (PM1) dari kelurahan domisili yang menjelaskan orang tua kandung CMB:
-(1) Meninggal Dunia;
-(2) Hilang Ingatan; dan/atau
-(3) Sakit Berkepanjangan
-d. Kartu Keluarga sebagaimana dimaksud pada huruf b dan huruf c adalah Kartu Keluarga yang telah diverifikasi oleh Tim verifikator Satuan Pendidikan yang dipilih sebagai tempat verifikasi sesuai jenjang yang dituju.
-e. CMB yang dapat mengikuti PMB Bersama SMK Swasta Tahun Ajaran 2026/2027 adalah CMB yang tidak terdaftar di Satuan Pendidikan Negeri dan Swasta pada jenjang yang dituju.
-f. CMB yang diterima pada PMB Bersama harus mengikuti peraturan pada Satuan Pendidikan yang menerima.
-g. Dalam hal CMB yang telah diterima melalui PMB Bersama mengundurkan diri dari Satuan Pendidikan Swasta maka yang bersangkutan tidak dapat mengikuti PMB pada Satuan Pendidikan Negeri dan PMB Bersama tahun berikutnya.
-h. Seluruh Murid yang diterima melalui PMB Bersama harus mematuhi ketentuan penerima Bantuan Sosial Biaya Pendidikan dalam Pasal 23 dan Pasal 24 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan.
-i. Murid yang dikenakan sanksi diskualifikasi pada Pasal 26 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau melanggar ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan, maka yang bersangkutan dapat diberhentikan bantuannya dan tidak dapat mengikuti PMB Bersama.
-j. CMB yang dapat mengikuti PMB Bersama SMK Swasta Tahun Ajaran 2026/2027 adalah CMB yang telah memenuhi ketentuan dan persyaratan pelaksanaan PMB Bersama.
-k. CMB yang diterima pada PMB Bersama bersedia untuk mematuhi ketentuan pada angka 2 huruf f, g, h, dan i serta bersedia tidak pindah (mutasi) ke Satuan Pendidikan lainnya selama 3 (tiga) tahun dengan menyerahkan Surat Pernyataan tertulis bermaterai cukup kepada Satuan Pendidikan tempat
+    c. Dalam hal status pada Kartu Keluarga:
+        1) Status FAMILI dibuktikan hubungan kakek/nenek atau saudara sekandung dari bapak/ibu CMB, maka dapat disetujui untuk mengikuti PMB.
+        2) Status FAMILI yang tidak dapat dibuktikan hubungan kakek/nenek atau saudara sekandung dari bapak/ibu CMB, atau status LAINNYA, dapat disetujui untuk mengikuti PMB jika:
+            a) dibuktikan Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Putusan/Penetapan Pengadilan, atau
+            b) Surat Keterangan (PM1) dari kelurahan domisili yang menjelaskan orang tua kandung CMB:
+                (1) Meninggal Dunia;
+                (2) Hilang Ingatan; dan/atau
+                (3) Sakit Berkepanjangan
+    d. Kartu Keluarga sebagaimana dimaksud pada huruf b dan huruf c adalah Kartu Keluarga yang telah diverifikasi oleh Tim verifikator Satuan Pendidikan yang dipilih sebagai tempat verifikasi sesuai jenjang yang dituju.
+    e. CMB yang dapat mengikuti PMB Bersama SMK Swasta Tahun Ajaran 2026/2027 adalah CMB yang tidak terdaftar di Satuan Pendidikan Negeri dan Swasta pada jenjang yang dituju.
+    f. CMB yang diterima pada PMB Bersama harus mengikuti peraturan pada Satuan Pendidikan yang menerima.
+    g. Dalam hal CMB yang telah diterima melalui PMB Bersama mengundurkan diri dari Satuan Pendidikan Swasta maka yang bersangkutan tidak dapat mengikuti PMB pada Satuan Pendidikan Negeri dan PMB Bersama tahun berikutnya.
+    h. Seluruh Murid yang diterima melalui PMB Bersama harus mematuhi ketentuan penerima Bantuan Sosial Biaya Pendidikan dalam Pasal 23 dan Pasal 24 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan.
+    i. Murid yang dikenakan sanksi diskualifikasi pada Pasal 26 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau melanggar ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan, maka yang bersangkutan dapat diberhentikan bantuannya dan tidak dapat mengikuti PMB Bersama.
+    j. CMB yang dapat mengikuti PMB Bersama SMK Swasta Tahun Ajaran 2026/2027 adalah CMB yang telah memenuhi ketentuan dan persyaratan pelaksanaan PMB Bersama.
+    k. CMB yang diterima pada PMB Bersama bersedia untuk mematuhi ketentuan pada angka 2 huruf f, g, h, dan i serta bersedia tidak pindah (mutasi) ke Satuan Pendidikan lainnya selama 3 (tiga) tahun dengan menyerahkan Surat Pernyataan tertulis bermaterai cukup kepada Satuan Pendidikan tempat
 CMB diterima yang ditandatangani oleh Orang Tua/Wali.
 3. Persyaratan Umum dan Khusus PMB Bersama SMK Swasta
-a. Persyaratan Umum
-1) CMB yang memenuhi persyaratan:
-a) penerima pemegang Kartu Jakarta Pintar Plus yang masih aktif;
-b) anak dari pengemudi mitra Transjakarta yang mengemudikan bus kecil, yang direkomendasikan oleh Kepala Dinas Perhubungan Provinsi DKI Jakarta;
-c) anak dari pekerja/buruh yang tercatat dalam Kartu Keluarga, yang direkomendasikan oleh Kepala Dinas Ketenagakerjaan, Transmigrasi, dan Energi Provinsi DKI Jakarta; atau
-d) penerima Program Indonesia Pintar.
-e) persyaratan umum CMB sebagaimana dimaksud pada angka 1), 2), 3), dan 4) terdaftar dalam Data Tunggal Sosial dan Ekonomi Nasional (DTSEN) dan/atau data lain sah dan relevan, yang dapat dipadankan dengan kriteria penerima bantuan sosial daerah sesuai dengan ketentuan peraturan perundang-undangan.
-2) telah menyelesaikan Kelas 9 (sembilan) Sekolah Menengah Pertama atau bentuk lain yang sederajat, dibuktikan dengan ijazah atau dokumen lain yang menyatakan kelulusan.
-3) berusia paling tinggi 21 (dua puluh satu) tahun pada tanggal 1 Juli 2026.
-b. Persyaratan Khusus
-1) Persyaratan khusus bagi CMB yang harus dipenuhi yaitu tidak memiliki kendala fisik untuk mengikuti kegiatan belajar mengajar sesuai karakteristik konsentrasi keahlian yang dipilih sebagaimana Daftar Konsentrasi Keahlian berikut: Persyaratan
+    a. Persyaratan Umum
+        1) CMB yang memenuhi persyaratan:
+            a) penerima pemegang Kartu Jakarta Pintar Plus yang masih aktif;
+            b) anak dari pengemudi mitra Transjakarta yang mengemudikan bus kecil, yang direkomendasikan oleh Kepala Dinas Perhubungan Provinsi DKI Jakarta;
+            c) anak dari pekerja/buruh yang tercatat dalam Kartu Keluarga, yang direkomendasikan oleh Kepala Dinas Ketenagakerjaan, Transmigrasi, dan Energi Provinsi DKI Jakarta; atau
+            d) penerima Program Indonesia Pintar.
+            e) persyaratan umum CMB sebagaimana dimaksud pada angka 1), 2), 3), dan 4) terdaftar dalam Data Tunggal Sosial dan Ekonomi Nasional (DTSEN) dan/atau data lain sah dan relevan, yang dapat dipadankan dengan kriteria penerima bantuan sosial daerah sesuai dengan ketentuan peraturan perundang-undangan.
+        2) telah menyelesaikan Kelas 9 (sembilan) Sekolah Menengah Pertama atau bentuk lain yang sederajat, dibuktikan dengan ijazah atau dokumen lain yang menyatakan kelulusan.
+        3) berusia paling tinggi 21 (dua puluh satu) tahun pada tanggal 1 Juli 2026.
+    b. Persyaratan Khusus
+        1) Persyaratan khusus bagi CMB yang harus dipenuhi yaitu tidak memiliki kendala fisik untuk mengikuti kegiatan belajar mengajar sesuai karakteristik konsentrasi keahlian yang dipilih sebagaimana Daftar Konsentrasi Keahlian berikut: Persyaratan
 No Konsentrasi Keahlian
 Khusus
 1 Airframe Powerplant Tidak Buta Warna
@@ -556,49 +564,49 @@ Tidak Buta Warna
 31 Teknika Kapal Niaga Diutamakan lakilaki
 32 Usaha Layanan Wisata Tidak Buta Warna
 33 Seni Musik -
-2) Memiliki surat keterangan tidak buta warna dari instansi kesehatan pemerintah untuk pilihan konsentrasi keahlian tertentu;
-3) Surat Pernyataan Tanggung Jawab Mutlak (SPTJM) tentang Keabsahan Dokumen tidak buta warna dari Orang Tua/Wali
+        2) Memiliki surat keterangan tidak buta warna dari instansi kesehatan pemerintah untuk pilihan konsentrasi keahlian tertentu;
+        3) Surat Pernyataan Tanggung Jawab Mutlak (SPTJM) tentang Keabsahan Dokumen tidak buta warna dari Orang Tua/Wali
 CMB bermeterai cukup.
-4) Bagi CMB yang diterima di satuan pendidikan menyerahkan surat keterangan tidak buta warna dan SPTJM tentang keabsahan dokumen tidak buta warna dari Orang Tua/Wali ke Satuan Pendidikan sesuai jadwal daftar ulang untuk diverifikasi oleh Satuan Pendidikan.
+        4) Bagi CMB yang diterima di satuan pendidikan menyerahkan surat keterangan tidak buta warna dan SPTJM tentang keabsahan dokumen tidak buta warna dari Orang Tua/Wali ke Satuan Pendidikan sesuai jadwal daftar ulang untuk diverifikasi oleh Satuan Pendidikan.
 4. Mekanisme Pendaftaran
-a. Jadwal
+    a. Jadwal
 Jadwal pengajuan akun dan verifikasi Kartu Keluarga untuk PMB Bersama SMK Swasta sejak tanggal 2 Juni 2026.
-b. Pengajuan Akun
-1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
-2) mengajukan akun dengan cara klik tombol pengajuan akun sesuai jenjang;
-3) mengisi formulir pendaftaran dan data kependudukan
+    b. Pengajuan Akun
+        1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
+        2) mengajukan akun dengan cara klik tombol pengajuan akun sesuai jenjang;
+        3) mengisi formulir pendaftaran dan data kependudukan
 CMB sesuai dengan KK asli;
-4) memilih lokasi satuan Pendidikan untuk tempat verifikasi ajuan akun dan KK;
-5) mengunggah hasil pindai/foto dokumen asli KK asli;
-6) mengunggah dokumen yang menunjukkan keterangan diri Murid pada halaman depan Rapor/Keterangan Tentang Diri Murid/Ijazah/Akte Kelahiran
-7) khusus CMB yang diasuh oleh wali, mengunggah Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Penetapan/Putusan Pengadilan;
-8) khusus CMB yang diasuh oleh Kakek/Nenek/Saudara Kandung Ayah/Ibu dari CMB, mengunggah Kartu Keluarga sebelumnya;
-9) mengunggah Surat Pernyataan Tanggung Jawab Mutlak
+        4) memilih lokasi satuan Pendidikan untuk tempat verifikasi ajuan akun dan KK;
+        5) mengunggah hasil pindai/foto dokumen asli KK asli;
+        6) mengunggah dokumen yang menunjukkan keterangan diri Murid pada halaman depan Rapor/Keterangan Tentang Diri Murid/Ijazah/Akte Kelahiran
+        7) khusus CMB yang diasuh oleh wali, mengunggah Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Penetapan/Putusan Pengadilan;
+        8) khusus CMB yang diasuh oleh Kakek/Nenek/Saudara Kandung Ayah/Ibu dari CMB, mengunggah Kartu Keluarga sebelumnya;
+        9) mengunggah Surat Pernyataan Tanggung Jawab Mutlak
 (SPTJM) tentang Keabsahan Dokumen dari Orang Tua/Wali CMB.
-10) mencetak tanda bukti pengajuan akun yang berisi Nomor Peserta dan PIN/Token untuk aktivasi; dan
-11) menunggu proses verifikasi ajuan akun dan KK secara daring oleh tim verifikator.
-c. Cek Status Ajuan Akun dan KK
+        10) mencetak tanda bukti pengajuan akun yang berisi Nomor Peserta dan PIN/Token untuk aktivasi; dan
+        11) menunggu proses verifikasi ajuan akun dan KK secara daring oleh tim verifikator.
+    c. Cek Status Ajuan Akun dan KK
 CMB dapat mengecek status verifikasi ajuan akun dan KK dengan cara:
-1) mengakses laman publik PMB di https://spmb.jakarta.go.id; dan
-2) mengecek status verifikasi pada menu cek status pengajuan akun di masing-masing jenjang.
-d. Aktivasi PIN/Token
+        1) mengakses laman publik PMB di https://spmb.jakarta.go.id; dan
+        2) mengecek status verifikasi pada menu cek status pengajuan akun di masing-masing jenjang.
+    d. Aktivasi PIN/Token
 CMB/Orang Tua/Wali yang telah memiliki PIN/Token dan status verifikasi sudah disetujui, dapat melanjutkan ke tahapan aktivasi PIN/Token pendaftaran sebagai berikut:
-1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
-2) melakukan aktivasi akun dengan cara klik tombol aktivasi dilanjutkan input Nomor Peserta;
-3) mengganti PIN/Token dengan password; dan
-4) setelah melakukan aktivasi PIN/Token dilanjutkan dengan fase pilihan satuan pendidikan tujuan.
-e. Pemilihan SMK Swasta Tujuan
+        1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
+        2) melakukan aktivasi akun dengan cara klik tombol aktivasi dilanjutkan input Nomor Peserta;
+        3) mengganti PIN/Token dengan password; dan
+        4) setelah melakukan aktivasi PIN/Token dilanjutkan dengan fase pilihan satuan pendidikan tujuan.
+    e. Pemilihan SMK Swasta Tujuan
 CMB/Orang Tua/Wali yang telah melakukan aktivasi
 PIN/Token dapat melanjutkan ke tahapan pemilihan SMK Swasta tujuan sebagai berikut:
-1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
-2) melakukan Login dengan cara input Nomor Peserta dan Password;
-3) memilih SMK Swasta tujuan; dan
-4) mencetak tanda bukti pemilihan SMK Swasta tujuan.
-f. Memantau Hasil Seleksi
+        1) mengakses laman publik PMB di https://spmb.jakarta.go.id;
+        2) melakukan Login dengan cara input Nomor Peserta dan Password;
+        3) memilih SMK Swasta tujuan; dan
+        4) mencetak tanda bukti pemilihan SMK Swasta tujuan.
+    f. Memantau Hasil Seleksi
 CMB/Orang Tua/Wali yang telah melakukan pemilihan SMK Swasta tujuan dapat memantau hasil seleksi PMB sebagai berikut:
-1) mengakses laman publik PMB di https:// spmb.jakarta.go.id;
-2) memilih jenjang dan jalur yang sesuai; dan
-3) klik menu seleksi dilanjutkan melihat sekolah pilihan.
+        1) mengakses laman publik PMB di https:// spmb.jakarta.go.id;
+        2) memilih jenjang dan jalur yang sesuai; dan
+        3) klik menu seleksi dilanjutkan melihat sekolah pilihan.
 
 ### Subbab B. Pendaftaran
 CMB dapat memilih Konsentrasi Keahlian pada SMK Swasta dengan ketentuan:
@@ -608,36 +616,36 @@ CMB dapat memilih Konsentrasi Keahlian pada SMK Swasta dengan ketentuan:
 
 ### Subbab C. Seleksi
 1. Dalam hal jumlah pendaftar PMB Bersama SMK Swasta melebihi daya tampung, maka dilakukan seleksi dengan urutan langkah sebagai berikut:
-a. total pembobotan indeks prestasi akademik;
-b. urutan pilihan sekolah; dan
-c. waktu mendaftar.
+    a. total pembobotan indeks prestasi akademik;
+    b. urutan pilihan sekolah; dan
+    c. waktu mendaftar.
 2. Dalam hal kuota PMB Bersama tidak terpenuhi, maka sisa kuota dapat dilimpahkan ke PMB Bersama tahap kedua.
 
 ### Subbab D. Penjelasan Indikator dan Pembobotan
 Rapor
 1. Penjelasan Indikator dan pembobotan indeks prestasi Akademik adalah sebagai berikut: Bobot Indeks Indikator Detail Indikator Prestasi Akademik rerata nilai mata pelajaran 5 Semester Rerata Nilai terakhir (70%) dan rerata nilai TKA 40% rapor terakhir (30%)
 1.CMB dengan rerata nilai rapor tertinggi di sekolah masing-masing untuk mata pelajaran yang terdaftar dalam Petunjuk Teknis PMB untuk sekolah nilai rapor pendidikan Baik:
-I. Peringkat (1-15)% skor 100
-II. Peringkat (16-30)% skor 90
-III. Peringkat (31-45)% skor 80
-IV. Peringkat (46-60)% skor 70
-V. Peringkat (61-100)% skor 60
+    I. Peringkat (1-15)% skor 100
+    II. Peringkat (16-30)% skor 90
+    III. Peringkat (31-45)% skor 80
+    IV. Peringkat (46-60)% skor 70
+    V. Peringkat (61-100)% skor 60
 2.CMB dengan rerata nilai rapor tertinggi di sekolah masing-masing untuk mata pelajaran yang terdaftar dalam Petunjuk Teknis PMB untuk sekolah nilai rapor pendidikan Sedang: Persentil nilai
-I. Peringkat (1-10)% skor 100 20% rapor II. Peringkat (11-20)% skor 90
-III. Peringkat (21-30)% skor 80
-IV. Peringkat (31-40)% skor 70
-V. Peringkat (41-100)% skor 60
+    I. Peringkat (1-10)% skor 100 20% rapor II. Peringkat (11-20)% skor 90
+    III. Peringkat (21-30)% skor 80
+    IV. Peringkat (31-40)% skor 70
+    V. Peringkat (41-100)% skor 60
 3.CMB dengan rerata nilai rapor tertinggi di sekolah masing-masing untuk mata pelajaran yang terdaftar dalam Petunjuk Teknis PMB untuk sekolah nilai rapor pendidikan Kurang:
-I. Peringkat (1-5)% skor100
-II. Peringkat (6-10)% skor90
-III. Peringkat (11-15)% skor 80
-IV. Peringkat (16-20)% skor 70
-V. Peringkat (21-100)% skor 60 Prestasi akademik: Prestasi peringkat 3 (tiga) teratas untuk tingkat akademik 25% Internasional, Nasional, Provinsi, Kota/ Kabupaten dalam bidang akademik Prestasi Nonakademik: Prestasi peringkat 3 (tiga) teratas untuk tingkat
+    I. Peringkat (1-5)% skor100
+    II. Peringkat (6-10)% skor90
+    III. Peringkat (11-15)% skor 80
+    IV. Peringkat (16-20)% skor 70
+    V. Peringkat (21-100)% skor 60 Prestasi akademik: Prestasi peringkat 3 (tiga) teratas untuk tingkat akademik 25% Internasional, Nasional, Provinsi, Kota/ Kabupaten dalam bidang akademik Prestasi Nonakademik: Prestasi peringkat 3 (tiga) teratas untuk tingkat
 5% nonakademik Internasional, Nasional, Provinsi, Kota/ Kabupaten dalam bidang nonakademik Bobot Indeks Indikator Detail Indikator Prestasi Akademik Pembobotan dari masing-masing unsur Pengalaman Kepemimpinan sebagai berikut:
 1. Pengalaman kepemimpinan OSIS Pengalaman atau MPK: 40% 10% Kepemimpinan 2. Pengalaman kepemimpinan ekstrakurikuler: 20%
 3. Prestasi yang diperoleh dengan hasil seleksi ketat: 40% Total 100%
 2. Rapor Pendidikan
-a. Definisi Rapor Pendidikan
+    a. Definisi Rapor Pendidikan
 No Indikator Rapor Pendidikan Keterangan
 Persentase murid berdasarkan kemampuan dalam memahami, menggunakan, merefleksi,
 1. Kemampuan Literasi Murid dan mengevaluasi beragam jenis teks (teks informasional dan teks fiksi) Persentase murid berdasarkan kemampuan dalam berpikir menggunakan konsep, prosedur, fakta, dan alat 2. Kemampuan Numerasi Murid matematika untuk menyelesaikan masalah sehari-hari pada berbagai jenis konteks yang relevan Nilai rerata karakter murid berdasarkan nilai akhlak pada manusia, akhlak pada alam, akhlak bernegara,
@@ -647,55 +655,55 @@ No Indikator Rapor Pendidikan Keterangan
 Nilai komposit nilai indeks rasa aman, perundungan, hukuman fisik, kekerasan
 5. Kondisi Keamanan Sekolah seksual, rokok, minuman keras, dan narkoba berdasarkan survei lingkungan belajar Nilai rerata untuk kualitas pembelajaran meliputi manajemen kelas,
 6. Kualitas Pembelajaran dukungan psikologi, dan metode pembelajaran di survei lingkungan belajar
-b. Skor indikator Rapor Pendidikan Predikat Skor indikator Baik 100 Sedang 67 Kurang 33
-c. Rentang Nilai Rapor Pendidikan Nilai akhir rapor pendidikan merupakan rerata dari 6 (enam) nilai indikator rapor pendidikan yang diperoleh sekolah dengan rentang Predikat: Predikat Rentang Baik 78-100 Sedang 55-77 Kurang 33-54
+    b. Skor indikator Rapor Pendidikan Predikat Skor indikator Baik 100 Sedang 67 Kurang 33
+    c. Rentang Nilai Rapor Pendidikan Nilai akhir rapor pendidikan merupakan rerata dari 6 (enam) nilai indikator rapor pendidikan yang diperoleh sekolah dengan rentang Predikat: Predikat Rentang Baik 78-100 Sedang 55-77 Kurang 33-54
 3. Penjelasan Indikator dan pembobotan indeks prestasi Akademik dan Nonakademik:
-a. Rerata Nilai Rapor dan TKA:
-1) Rerata nilai Rapor yang sudah divalidasi yaitu rerata nilai rapor kelas 7 semester 1 dan semester 2, kelas 8 semester 1 dan semester 2, dan kelas 9 semester 1
+    a. Rerata Nilai Rapor dan TKA:
+        1) Rerata nilai Rapor yang sudah divalidasi yaitu rerata nilai rapor kelas 7 semester 1 dan semester 2, kelas 8 semester 1 dan semester 2, dan kelas 9 semester 1
 SMP/MTs/Paket B pada mata pelajaran Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam (IPA), Ilmu Pengetahuan Sosial (IPS), dan Bahasa Inggris dengan bobot 70% ; dan
-2) Rerata nilai hasil TKA terakhir yang berupa angka pada mata pelajaran Bahasa Indonesia dan Matematika dengan bobot 30%;
-b. Persentil Nilai Rapor adalah peringkat rerata nilai rapor yang dikelompokkan menjadi 100 bagian yang sama setelah data diurutkan dari yang terbesar ke yang terkecil dalam satu sekolah;
-c. Prestasi Akademik adalah Prestasi yang diperoleh melalui perlombaan di bidang akademik dengan perolehan 3 (tiga) peringkat teratas untuk tingkat Internasional, Nasional, Provinsi, dan Kota/kabupaten;
-d. Prestasi Nonakademik adalah Prestasi yang diperoleh melalui perlombaan di bidang nonakademik dengan perolehan 3 (tiga) peringkat teratas untuk tingkat Internasional, Nasional, Provinsi, dan Kota/kabupaten;
-e. Prestasi Akademik dan Nonakademik berupa hasil kejuaraan, dengan ketentuan :
-1) diselenggarakan oleh instansi kedinasan atau induk organisasi resmi;
-2) kejuaraan yang diselenggarakan di luar instansi kedinasan atau induk organisasi resmi harus mendapatkan surat rekomendasi terlebih dahulu sebelum penyelenggaraan dari instansi kedinasan atau induk organisasi resmi yang menaungi;
-3) Prestasi akademik dan nonakademik yang bersifat pemasalan, ekshibisi, undangan, dan festival yang dilaksanakan oleh instansi non kedinasan dan non induk organisasi resmi tidak dapat diinput sebagai prestasi kecuali sertifikatnya telah dikurasi oleh unit kerja di Kementerian yang menyelenggarakan urusan pemerintahan bidang pendidikan bagian talenta dan prestasi melalui laman kurasiprestasi.kemendikdasmen.go.id;
-4) Prestasi akademik dan nonakademik yang bersifat pemasalan, ekshibisi, undangan, dan festival sebagaimana dimaksud pada huruf c) adalah:
-a) Pemasalan
+        2) Rerata nilai hasil TKA terakhir yang berupa angka pada mata pelajaran Bahasa Indonesia dan Matematika dengan bobot 30%;
+    b. Persentil Nilai Rapor adalah peringkat rerata nilai rapor yang dikelompokkan menjadi 100 bagian yang sama setelah data diurutkan dari yang terbesar ke yang terkecil dalam satu sekolah;
+    c. Prestasi Akademik adalah Prestasi yang diperoleh melalui perlombaan di bidang akademik dengan perolehan 3 (tiga) peringkat teratas untuk tingkat Internasional, Nasional, Provinsi, dan Kota/kabupaten;
+    d. Prestasi Nonakademik adalah Prestasi yang diperoleh melalui perlombaan di bidang nonakademik dengan perolehan 3 (tiga) peringkat teratas untuk tingkat Internasional, Nasional, Provinsi, dan Kota/kabupaten;
+    e. Prestasi Akademik dan Nonakademik berupa hasil kejuaraan, dengan ketentuan :
+        1) diselenggarakan oleh instansi kedinasan atau induk organisasi resmi;
+        2) kejuaraan yang diselenggarakan di luar instansi kedinasan atau induk organisasi resmi harus mendapatkan surat rekomendasi terlebih dahulu sebelum penyelenggaraan dari instansi kedinasan atau induk organisasi resmi yang menaungi;
+        3) Prestasi akademik dan nonakademik yang bersifat pemasalan, ekshibisi, undangan, dan festival yang dilaksanakan oleh instansi non kedinasan dan non induk organisasi resmi tidak dapat diinput sebagai prestasi kecuali sertifikatnya telah dikurasi oleh unit kerja di Kementerian yang menyelenggarakan urusan pemerintahan bidang pendidikan bagian talenta dan prestasi melalui laman kurasiprestasi.kemendikdasmen.go.id;
+        4) Prestasi akademik dan nonakademik yang bersifat pemasalan, ekshibisi, undangan, dan festival sebagaimana dimaksud pada huruf c) adalah:
+            a) Pemasalan
 Perlombaan yang diselenggarakan dengan melibatkan banyak peserta yang masing-masing mendapatkan apresiasi dengan kategori yang sama dalam pembinaan.
-b) Ekshibisi
+            b) Ekshibisi
 Pertandingan yang diselenggarakan melalui bentuk uji coba, hiburan, promosi, atau tujuan tertentu di luar perlombaan utama, dalam bidang olahraga, ilmu pengetahuan, seni, dan budaya.
-c) Festival
+            c) Festival
 Perayaan yang berbentuk pertunjukkan, pelestarian atau sarana promosi yang diselenggarakan dalam rangka peringatan suatu peristiwa, unjuk budaya, hiburan, olahraga, ilmu pengetahuan, seni, dan budaya.
-d) Undangan
+            d) Undangan
 Pertunjukkan bakat kemampuan tertentu yang diselenggarakan oleh instansi kedinasan bukan dalam bentuk perlombaan.
-f. Prestasi Akademik dan Nonakademik sebagaimana dimaksud pada angka 3 huruf e diatas, dilakukan pembobotan penilaian menjadi 3 (tiga) kategori, yaitu:
-1) Kedinasan: Penilaian untuk Prestasi Akademik dan Prestasi Nonakademik yang diselenggarakan oleh instansi kedinasan
-2) Induk Organisasi: Penilaian untuk Prestasi Akademik dan Prestasi Nonakademik yang diselenggarakan oleh induk organisasi resmi
-3) Hasil kurasi yang terdiri dari:
-a) Hasil Rekomendasi: Penilaian untuk Kejuaraan yang diselenggarakan di luar instansi kedinasan atau induk organisasi resmi dan telah mendapatkan surat rekomendasi terlebih dahulu sebelum penyelenggaraan dari instansi kedinasan atau induk organisasi resmi yang menaungi; dan
-b) Pemasalan, Ekshibisi, Undangan, Festival: Penilaian untuk prestasi akademik dan nonakademik yang bersifat pemasalan, ekshibisi, undangan, dan festival yang dilaksanakan oleh instansi non kedinasan dan non induk organisasi resmi dimana sertifikatnya telah dikurasi oleh unit kerja di Kementerian yang menyelenggarakan urusan pemerintahan bidang pendidikan bagian talenta dan prestasi melalui laman https://kurasiprestasi.kemendikdasmen.go.id.
-g. Bobot skor untuk kategori prestasi Akademik maupun Nonakademik prestasi kejuaraan sebagaimana dimaksud di atas dapat dilihat pada tabel skor prestasi kejuaran berikut: Tabel. Skor Prestasi Kejuaraan Skor Prestasi Kejuaraan Kedinasan Induk Organisasi Hasil Kurasi Tingkat Juara Pemasalan, Hasil Tidak Tidak Ekshibisi, Berjenjang Berjenjang Rekomend Berjenjang Berjenjang Undangan, asi Festival Internasional 2 97 89 89 81 73 65 Nasional 2 88 80 80 72 64 56 Provinsi Kota/Kab. 2 70 62 62 54 46 38
-h. CMB dapat menyertakan sertifikat yang dimiliki dari prestasi kejuaraan atau perlombaan yang diselenggarakan di bidang Olahraga, Seni, Budaya, Keagamaan, Sains dan Teknologi, Pramuka, Paskibra, dan/atau PMR yang diselenggarakan oleh instansi kedinasan dan/atau Induk Organisasi yang resmi;
-i. Prestasi dan kejuaraan diperoleh CMB 3 (tiga) tahun terakhir di kelas 7, kelas 8, dan kelas 9 cut off tanggal 31 Maret 2026;
-j. Sertifikat kejuaraan Akademik dan/atau Nonakademik yang diunggah dalam sistem adalah sertifikat tertinggi;
-k. Skor untuk pengalaman kepemimpinan OSIS atau MPK di sekolah terdiri dari:
+    f. Prestasi Akademik dan Nonakademik sebagaimana dimaksud pada angka 3 huruf e diatas, dilakukan pembobotan penilaian menjadi 3 (tiga) kategori, yaitu:
+        1) Kedinasan: Penilaian untuk Prestasi Akademik dan Prestasi Nonakademik yang diselenggarakan oleh instansi kedinasan
+        2) Induk Organisasi: Penilaian untuk Prestasi Akademik dan Prestasi Nonakademik yang diselenggarakan oleh induk organisasi resmi
+        3) Hasil kurasi yang terdiri dari:
+            a) Hasil Rekomendasi: Penilaian untuk Kejuaraan yang diselenggarakan di luar instansi kedinasan atau induk organisasi resmi dan telah mendapatkan surat rekomendasi terlebih dahulu sebelum penyelenggaraan dari instansi kedinasan atau induk organisasi resmi yang menaungi; dan
+            b) Pemasalan, Ekshibisi, Undangan, Festival: Penilaian untuk prestasi akademik dan nonakademik yang bersifat pemasalan, ekshibisi, undangan, dan festival yang dilaksanakan oleh instansi non kedinasan dan non induk organisasi resmi dimana sertifikatnya telah dikurasi oleh unit kerja di Kementerian yang menyelenggarakan urusan pemerintahan bidang pendidikan bagian talenta dan prestasi melalui laman https://kurasiprestasi.kemendikdasmen.go.id.
+    g. Bobot skor untuk kategori prestasi Akademik maupun Nonakademik prestasi kejuaraan sebagaimana dimaksud di atas dapat dilihat pada tabel skor prestasi kejuaran berikut: Tabel. Skor Prestasi Kejuaraan Skor Prestasi Kejuaraan Kedinasan Induk Organisasi Hasil Kurasi Tingkat Juara Pemasalan, Hasil Tidak Tidak Ekshibisi, Berjenjang Berjenjang Rekomend Berjenjang Berjenjang Undangan, asi Festival Internasional 2 97 89 89 81 73 65 Nasional 2 88 80 80 72 64 56 Provinsi Kota/Kab. 2 70 62 62 54 46 38
+    h. CMB dapat menyertakan sertifikat yang dimiliki dari prestasi kejuaraan atau perlombaan yang diselenggarakan di bidang Olahraga, Seni, Budaya, Keagamaan, Sains dan Teknologi, Pramuka, Paskibra, dan/atau PMR yang diselenggarakan oleh instansi kedinasan dan/atau Induk Organisasi yang resmi;
+    i. Prestasi dan kejuaraan diperoleh CMB 3 (tiga) tahun terakhir di kelas 7, kelas 8, dan kelas 9 cut off tanggal 31 Maret 2026;
+    j. Sertifikat kejuaraan Akademik dan/atau Nonakademik yang diunggah dalam sistem adalah sertifikat tertinggi;
+    k. Skor untuk pengalaman kepemimpinan OSIS atau MPK di sekolah terdiri dari:
 No. Jabatan Skor
 1. Ketua 100 Pengurus (Wakil Ketua,
 2. 67
 Sekretaris, dan Bendahara)
 3. Ketua Seksi dan Anggota Seksi 33
-l. Skor untuk pengalaman kepemimpinan Ekstrakurikuler di sekolah terdiri dari:
+    l. Skor untuk pengalaman kepemimpinan Ekstrakurikuler di sekolah terdiri dari:
 No. Jabatan Skor
 1. Ketua 100 Pengurus (Wakil Ketua,
 2. 67
 Sekretaris, dan Bendahara) Ketua Seksi atau Koordinator
 3. 33
 Seksi
-m. Sertifikat yang diperoleh dengan hasil seleksi ketat (Pramuka, Paskibra, Jumbara, dan Hafiz Quran)
-n. Capaian dalam mengikuti Jambore Nasional, Pramuka Garuda, Paskibra, dan Jumbara Tingkat Skor Internasional 100 Nasional 81 Provinsi 62 Kota/Kab. 43
-o. Capaian dalam mengikuti Hafiz Quran Jumlah Juz Skor
+    m. Sertifikat yang diperoleh dengan hasil seleksi ketat (Pramuka, Paskibra, Jumbara, dan Hafiz Quran)
+    n. Capaian dalam mengikuti Jambore Nasional, Pramuka Garuda, Paskibra, dan Jumbara Tingkat Skor Internasional 100 Nasional 81 Provinsi 62 Kota/Kab. 43
+    o. Capaian dalam mengikuti Hafiz Quran Jumlah Juz Skor
 28 – 30 100
 25-27 94
 22-24 88
@@ -726,36 +734,36 @@ No Kegiatan Tanggal Waktu
 15 Juni dan 17 Pendaftaran dan Pemilihan 08.00-23.59 WIB
 1 Juni 2026
 SMK Swasta Tujuan
-18 Juni 2026 00.00-14.00 WIB
+  - 18 Juni 2026 00.00-14.00 WIB
 15 Juni dan 17 08.00-23.59 WIB
 2 Proses Seleksi Juni 2026
-18 Juni 2026 00.00-14.00 WIB
+  - 18 Juni 2026 00.00-14.00 WIB
 3 Pengumuman 18 Juni 2026 17.00 WIB
-19 Juni 2026 08.00-23.59 WIB
+  - 19 Juni 2026 08.00-23.59 WIB
 4 Daftar Ulang
-20 Juni 2026 00.00-14.00 WIB
+  - 20 Juni 2026 00.00-14.00 WIB
 2. Jadwal Tahap Kedua
 No Kegiatan Tanggal Waktu
 Pendaftaran dan Pemilihan 22-23 Juni 2026 08.00-23.59 WIB
 SMK Swasta Tujuan 24 Juni 2026 00.00-14.00 WIB
 22-23 Juni 2026 08.00-23.59 WIB
 2 Proses Seleksi
-24 Juni 2026 00.00-14.00 WIB
+  - 24 Juni 2026 00.00-14.00 WIB
 3 Pengumuman 24 Juni 2026 17.00 WIB
-25 Juni 2026 08.00-23.59 WIB
+  - 25 Juni 2026 08.00-23.59 WIB
 4 Daftar Ulang
-26 Juni 2026 00.00-14.00 WIB
+  - 26 Juni 2026 00.00-14.00 WIB
 3. Jadwal Tahap Akhir
 No Kegiatan Tanggal Waktu
 Pendaftaran dan Pemilihan 6 Juli 2026 08.00-23.59 WIB
 SMK Swasta Tujuan 7 Juli 2026 00.00-14.00 WIB
-6 Juli 2026 08.00-23.59 WIB
+  - 6 Juli 2026 08.00-23.59 WIB
 2 Proses Seleksi
-7 Juli 2026 00.00-14.00 WIB
+  - 7 Juli 2026 00.00-14.00 WIB
 3 Pengumuman 7 Juli 2026 17.00 WIB
-8 Juli 2026 08.00-23.59 WIB
+  - 8 Juli 2026 08.00-23.59 WIB
 4 Daftar Ulang
-9 Juli 2026 00.00-14.00 WIB
+  - 9 Juli 2026 00.00-14.00 WIB
 
 ### Bab IV. Pembiayaan
 1. Biaya Investasi (Uang Pangkal/sejenisnya) dibiayai hanya 1 (satu) kali setelah CMB diterima.
@@ -782,143 +790,155 @@ NOMOR 262 TAHUN 2026
 TENTANG PETUNJUK TEKNIS PELAKSANAAN PENERIMAAN MURID BARU BERSAMA TAHUN
 AJARAN 2026/2027
 DAFTAR NAMA DAN DAYA TAMPUNG SMP SWASTA PESERTA PMB BERSAMA
-TAHUN AJARAN 2026/2027 Kategori Daya Satuan
+TAHUN AJARAN 2026/2027
 No Nama Satuan Pendidikan NPSN Tampung Pendidikan
 (Murid) *)
-1 SMPIT Said Naum ISLAM 20100328 15
-2 SMP Santo Bellarminus KATOLIK 20106433 5
-3 SMP YP IPPI Petojo ISLAM 20100249 24
-4 SMP Perguruan Cikini UMUM 20106427 3
-5 SMP Yapermas UMUM 20106443 20
-6 SMP An Nur ISLAM 20100293 10
-7 SMP Haleluyah KRISTEN 20106359 5
-8 SMP Islam Manhalun Nasyiin ISLAM 20106361 17
-9 SMP Advent Menteng UMUM 20100291 5
-10 SMP Taman Siswa UMUM 20109354 15
-11 SMP Bethel UMUM 20100334 5
-12 SMP Santo Paulus UMUM 20106429 10
-13 SMP Ksatrya UMUM 20100336 14
-14 SMP Kristen Saint John KRISTEN 20100319 5
-15 SMP Muhammadiyah 2 Jakarta ISLAM 20100311 15
-16 SMP Advent 1 Jakarta KRISTEN 20106349 9
-17 SMP Islam Al Jihad UMUM 20106360 14
-18 SMP ST. Fransiskus I KATOLIK 20106434 9
-19 SMP Melania II KATOLIK 20100323 11
-20 SMP Muhammadiyah 13 ISLAM 20106379 15
-21 SMP Taman Siswa UMUM 69863239 12
-22 SMP Islam Miftahussa'adah Al Khairiah ISLAM 20106363 13
-23 SMP Muhammadiyah 3 ISLAM 20106381 15
-24 SMP Cahaya Sakti UMUM 20107070 9 Kategori Daya Satuan
+
+| No | Nama Satuan Pendidikan | Kategori | NPSN | Daya Tampung |
+|---|---|---|---|---|
+| 1 | SMPIT Said Naum | ISLAM | 20100328 | 15 |
+| 2 | SMP Santo Bellarminus | KATOLIK | 20106433 | 5 |
+| 3 | SMP YP IPPI Petojo | ISLAM | 20100249 | 24 |
+| 4 | SMP Perguruan Cikini | UMUM | 20106427 | 3 |
+| 5 | SMP Yapermas | UMUM | 20106443 | 20 |
+| 6 | SMP An Nur | ISLAM | 20100293 | 10 |
+| 7 | SMP Haleluyah | KRISTEN | 20106359 | 5 |
+| 8 | SMP Islam Manhalun Nasyiin | ISLAM | 20106361 | 17 |
+| 9 | SMP Advent Menteng | UMUM | 20100291 | 5 |
+| 10 | SMP Taman Siswa | UMUM | 20109354 | 15 |
+| 11 | SMP Bethel | UMUM | 20100334 | 5 |
+| 12 | SMP Santo Paulus | UMUM | 20106429 | 10 |
+| 13 | SMP Ksatrya | UMUM | 20100336 | 14 |
+| 14 | SMP Kristen Saint John | KRISTEN | 20100319 | 5 |
+| 15 | SMP Muhammadiyah 2 Jakarta | ISLAM | 20100311 | 15 |
+| 16 | SMP Advent 1 Jakarta | KRISTEN | 20106349 | 9 |
+| 17 | SMP Islam Al Jihad | UMUM | 20106360 | 14 |
+| 18 | SMP ST. Fransiskus I | KATOLIK | 20106434 | 9 |
+| 19 | SMP Melania II | KATOLIK | 20100323 | 11 |
+| 20 | SMP Muhammadiyah 13 | ISLAM | 20106379 | 15 |
+| 21 | SMP Taman Siswa | UMUM | 69863239 | 12 |
+| 22 | SMP Islam Miftahussa'adah Al Khairiah | ISLAM | 20106363 | 13 |
+| 23 | SMP Muhammadiyah 3 | ISLAM | 20106381 | 15 |
+24 SMP Cahaya Sakti UMUM 20107070 9
 No Nama Satuan Pendidikan NPSN Tampung
 Pendidikan (Murid)
-25 SMP YP IPPI Cakung ISLAM 20107170 12
-26 SMP Al Ghurabaa ISLAM 20107040 13
-27 SMP Kartini 3 UMUM 20107102 13
-28 SMP Tirta Sari Surya UMUM 20107158 13
-29 SMP Imtaq Darurrahim ISLAM 20107077 13
-30 SMP Assyairiyah ISLAM 20107052 10
-31 SMP Cawang Baru UMUM 20177802 13
-32 SMP Bhakti Mulia UMUM 20109919 12
-33 SMP Bahagia UMUM 20107056 12
-34 SMP Muhammadiyah 5 UMUM 20107120 13
-35 SMP PGRI 20 UMUM 20107130 12
-36 SMP Kartika XI-3 UMUM 20107101 13
-37 SMP Corpatarin UMUM 20107073 13
-38 SMP YWKA UMUM 20107175 12
-39 SMP Santa Maria Fatimah KATOLIK 20107152 4
-40 SMP PGRI 9 UMUM 20107133 13
-41 SMP Bina Dharma UMUM 20107061 13
-42 SMP Ignatius Slamet Riyadi KATOLIK 20107089 4
-43 SMP Kartika VIII-1 UMUM 20107100 13
-44 SMP PGRI 30 UMUM 20107131 13
-45 SMP Uswatun Hasanah UMUM 20103490 9
-46 SMP Trisoko UMUM 20107161 13
-47 SMP Trampil UMUM 20109275 12
-48 SMP Yamas UMUM 20103506 13
-49 SMP Widya Manggala UMUM 20107167 13
-50 SMP Budhi Warman UMUM 20107069 13
-51 SMP Perguruan Advent XV KRISTEN 20109279 11
-52 SMP Islam Karya Darma ISLAM 20107104 11
-53 SMP Katolik Nusa Melati KATOLIK 20107096 10
-54 SMP Strada Bhakti Utama KATOLIK 20107003 1
-55 SMP Islam Al Hikmah ISLAM 20106924 13
-56 SMP Muhammadiyah 35 ISLAM 20106980 5
-57 SMP Trimulya ISLAM 20107014 13
-58 SMP YPUI ISLAM 20107023 12
-59 SMP Keluarga Widuri UMUM 20102416 13 Kategori Daya Satuan
+
+| No | Nama Satuan Pendidikan | Kategori | NPSN | Daya Tampung |
+|---|---|---|---|---|
+| 25 | SMP YP IPPI Cakung | ISLAM | 20107170 | 12 |
+| 26 | SMP Al Ghurabaa | ISLAM | 20107040 | 13 |
+| 27 | SMP Kartini 3 | UMUM | 20107102 | 13 |
+| 28 | SMP Tirta Sari Surya | UMUM | 20107158 | 13 |
+| 29 | SMP Imtaq Darurrahim | ISLAM | 20107077 | 13 |
+| 30 | SMP Assyairiyah | ISLAM | 20107052 | 10 |
+| 31 | SMP Cawang Baru | UMUM | 20177802 | 13 |
+| 32 | SMP Bhakti Mulia | UMUM | 20109919 | 12 |
+| 33 | SMP Bahagia | UMUM | 20107056 | 12 |
+| 34 | SMP Muhammadiyah 5 | UMUM | 20107120 | 13 |
+| 35 | SMP PGRI 20 | UMUM | 20107130 | 12 |
+| 36 | SMP Kartika XI-3 | UMUM | 20107101 | 13 |
+| 37 | SMP Corpatarin | UMUM | 20107073 | 13 |
+| 38 | SMP YWKA | UMUM | 20107175 | 12 |
+| 39 | SMP Santa Maria Fatimah | KATOLIK | 20107152 | 4 |
+| 40 | SMP PGRI 9 | UMUM | 20107133 | 13 |
+| 41 | SMP Bina Dharma | UMUM | 20107061 | 13 |
+| 42 | SMP Ignatius Slamet Riyadi | KATOLIK | 20107089 | 4 |
+| 43 | SMP Kartika VIII-1 | UMUM | 20107100 | 13 |
+| 44 | SMP PGRI 30 | UMUM | 20107131 | 13 |
+| 45 | SMP Uswatun Hasanah | UMUM | 20103490 | 9 |
+| 46 | SMP Trisoko | UMUM | 20107161 | 13 |
+| 47 | SMP Trampil | UMUM | 20109275 | 12 |
+| 48 | SMP Yamas | UMUM | 20103506 | 13 |
+| 49 | SMP Widya Manggala | UMUM | 20107167 | 13 |
+| 50 | SMP Budhi Warman | UMUM | 20107069 | 13 |
+| 51 | SMP Perguruan Advent XV | KRISTEN | 20109279 | 11 |
+| 52 | SMP Islam Karya Darma | ISLAM | 20107104 | 11 |
+| 53 | SMP Katolik Nusa Melati | KATOLIK | 20107096 | 10 |
+| 54 | SMP Strada Bhakti Utama | KATOLIK | 20107003 | 1 |
+| 55 | SMP Islam Al Hikmah | ISLAM | 20106924 | 13 |
+| 56 | SMP Muhammadiyah 35 | ISLAM | 20106980 | 5 |
+| 57 | SMP Trimulya | ISLAM | 20107014 | 13 |
+| 58 | SMP YPUI | ISLAM | 20107023 | 12 |
+59 SMP Keluarga Widuri UMUM 20102416 13
 No Nama Satuan Pendidikan NPSN Tampung
 Pendidikan (Murid)
-60 SMP Bakti Idhata UMUM 20106935 13
-61 SMP YPI Bintaro ISLAM 20107018 13
-62 SMP PGRI 12 UMUM 20102430 13
-63 SMP El Syifa ISLAM 20106953 13
-64 SMP Darul Ma'arif Jakarta ISLAM 20102408 13
-65 SMP PGRI 3 UMUM 20106987 13
-66 SMP Islam Al-Hidayah ISLAM 20106922 13
-67 SMP Yapenka UMUM 20102425 13
-68 SMP Dewi Sartika UMUM 20106948 10
-69 SMP Makarya UMUM 20106977 9
-70 SMP Pelita Harapan UMUM 20106992 10
-71 SMP Bunda Kandung UMUM 69968367 15
-72 SMP Pasar Minggu UMUM 20102431 15
-73 SMP Islam Assalam ISLAM 20106967 5
-74 SMP Sultan Hasanuddin ISLAM 20107004 15
-75 SMP PGRI 10 UMUM 20106913 14
-76 SMP YWKA I UMUM 20107024 15
-77 SMP Muttaqien ISLAM 20106984 15
-78 SMP Purnama UMUM 20106998 10
-79 SMP Palapa UMUM 20106989 14
-80 SMP Islam Andalus UMUM 20106966 9
-81 SMPIT Assa’adah Alchilashiyyah ISLAM 69979246 10
-82 SMP Bait Al Rahman ISLAM 20108330 10
-83 SMP 28 Oktober 1928 UMUM 20106915 8
-84 SMP Islam As-Syafi’iyah 02 ISLAM 20106932 13
-85 SMP Strada Marga Mulia KATOLIK 20102428 9
-86 SMP Barunawati II UMUM 20106473 14
-87 SMP Al Jihad ISLAM 20106460 15
-88 SMP Wijayakusuma UMUM 20106696 10
-89 SMP Nurul Iman UMUM 20106619 15
-90 SMP Kencana UMUM 20106549 15
-91 SMP Mutiara 2 UMUM 20100827 15
-92 SMP Islam Al-Muttaqin ISLAM 20106464 13
-93 SMP Cordova UMUM 20109342 12
-94 SMP Permata Indah UMUM 20106630 15 Kategori Daya Satuan
+
+| No | Nama Satuan Pendidikan | Kategori | NPSN | Daya Tampung |
+|---|---|---|---|---|
+| 60 | SMP Bakti Idhata | UMUM | 20106935 | 13 |
+| 61 | SMP YPI Bintaro | ISLAM | 20107018 | 13 |
+| 62 | SMP PGRI 12 | UMUM | 20102430 | 13 |
+| 63 | SMP El Syifa | ISLAM | 20106953 | 13 |
+| 64 | SMP Darul Ma'arif Jakarta | ISLAM | 20102408 | 13 |
+| 65 | SMP PGRI 3 | UMUM | 20106987 | 13 |
+| 66 | SMP Islam Al-Hidayah | ISLAM | 20106922 | 13 |
+| 67 | SMP Yapenka | UMUM | 20102425 | 13 |
+| 68 | SMP Dewi Sartika | UMUM | 20106948 | 10 |
+| 69 | SMP Makarya | UMUM | 20106977 | 9 |
+| 70 | SMP Pelita Harapan | UMUM | 20106992 | 10 |
+| 71 | SMP Bunda Kandung | UMUM | 69968367 | 15 |
+| 72 | SMP Pasar Minggu | UMUM | 20102431 | 15 |
+| 73 | SMP Islam Assalam | ISLAM | 20106967 | 5 |
+| 74 | SMP Sultan Hasanuddin | ISLAM | 20107004 | 15 |
+| 75 | SMP PGRI 10 | UMUM | 20106913 | 14 |
+| 76 | SMP YWKA I | UMUM | 20107024 | 15 |
+| 77 | SMP Muttaqien | ISLAM | 20106984 | 15 |
+| 78 | SMP Purnama | UMUM | 20106998 | 10 |
+| 79 | SMP Palapa | UMUM | 20106989 | 14 |
+| 80 | SMP Islam Andalus | UMUM | 20106966 | 9 |
+| 81 | SMPIT Assa’adah Alchilashiyyah | ISLAM | 69979246 | 10 |
+| 82 | SMP Bait Al Rahman | ISLAM | 20108330 | 10 |
+| 83 | SMP 28 Oktober 1928 | UMUM | 20106915 | 8 |
+| 84 | SMP Islam As-Syafi’iyah 02 | ISLAM | 20106932 | 13 |
+| 85 | SMP Strada Marga Mulia | KATOLIK | 20102428 | 9 |
+| 86 | SMP Barunawati II | UMUM | 20106473 | 14 |
+| 87 | SMP Al Jihad | ISLAM | 20106460 | 15 |
+| 88 | SMP Wijayakusuma | UMUM | 20106696 | 10 |
+| 89 | SMP Nurul Iman | UMUM | 20106619 | 15 |
+| 90 | SMP Kencana | UMUM | 20106549 | 15 |
+| 91 | SMP Mutiara 2 | UMUM | 20100827 | 15 |
+| 92 | SMP Islam Al-Muttaqin | ISLAM | 20106464 | 13 |
+| 93 | SMP Cordova | UMUM | 20109342 | 12 |
+94 SMP Permata Indah UMUM 20106630 15
 No Nama Satuan Pendidikan NPSN Tampung
 Pendidikan (Murid)
-95 SMP Yappenda UMUM 20106708 15
-96 SMP Gita Kirtti 2 UMUM 20106520 15
-97 SMP Mekar Tanjung UMUM 20106560 14
-98 SMPI Nurul Islam ISLAM 20106621 14
-99 SMPI Al-Fatah ISLAM 20109378 13
-100 SMP Gunung Jati UMUM 20106521 14
-101 SMP Wiyatamandala UMUM 20106697 14
-102 SMP Mutiara I UMUM 20100826 14
-103 SMP Nusantara UMUM 20109401 10
-104 SMP Hang Tuah 1 UMUM 20109337 12
-105 SMP Ar Raudhah ISLAM 20100788 12
-106 SMP Hang Tuah 5 UMUM 20106471 11
-107 SMP Sejahtera UMUM 20106653 12
-108 SMP Barunawati 3 UMUM 20106474 12
-109 SMP Fikri ISLAM 20106514 12
-110 SMP Tunas Karya UMUM 20109350 10
-111 SMP Tanjung Priok UMUM 20106684 12
-112 SMP Unwanus Saadah UMUM 20106693 10
-113 SMP Muhammadiyah 14 ISLAM 20100825 12
-114 SMP Lagoa UMUM 20106552 10
-115 SMP Al Khairiyah II ISLAM 20106462 13
-116 SMP Yadika 2 UMUM 20108808 5
-117 SMP Al-Qomar ISLAM 20106730 13
-118 SMP Setia Gama ISLAM 20106880 13
-119 SMP PGRI 39 UMUM 20106849 7
-120 SMP Dhammasavana BUDDHA 20106768 6
-121 SMP Galatia 3 KRISTEN 20106792 8
-122 SMP Bintang Kejora KATOLIK 20106750 11
-123 SMP Lamaholot KATOLIK 20106831 11
-124 SMP Islam Terpadu An-Nashr ISLAM 20112448 7
-125 SMP Insan Cita UMUM 69754417 13
-126 SMP Citra Utama UMUM 69774535 12
-127 SMP Bina Bangsa UMUM 20108796 13
-128 SMP Yadika 5 UMUM 20106905 5
+
+| No | Nama Satuan Pendidikan | Kategori | NPSN | Daya Tampung |
+|---|---|---|---|---|
+| 95 | SMP Yappenda | UMUM | 20106708 | 15 |
+| 96 | SMP Gita Kirtti 2 | UMUM | 20106520 | 15 |
+| 97 | SMP Mekar Tanjung | UMUM | 20106560 | 14 |
+| 98 | SMPI Nurul Islam | ISLAM | 20106621 | 14 |
+| 99 | SMPI Al-Fatah | ISLAM | 20109378 | 13 |
+| 100 | SMP Gunung Jati | UMUM | 20106521 | 14 |
+| 101 | SMP Wiyatamandala | UMUM | 20106697 | 14 |
+| 102 | SMP Mutiara I | UMUM | 20100826 | 14 |
+| 103 | SMP Nusantara | UMUM | 20109401 | 10 |
+| 104 | SMP Hang Tuah 1 | UMUM | 20109337 | 12 |
+| 105 | SMP Ar Raudhah | ISLAM | 20100788 | 12 |
+| 106 | SMP Hang Tuah 5 | UMUM | 20106471 | 11 |
+| 107 | SMP Sejahtera | UMUM | 20106653 | 12 |
+| 108 | SMP Barunawati 3 | UMUM | 20106474 | 12 |
+| 109 | SMP Fikri | ISLAM | 20106514 | 12 |
+| 110 | SMP Tunas Karya | UMUM | 20109350 | 10 |
+| 111 | SMP Tanjung Priok | UMUM | 20106684 | 12 |
+| 112 | SMP Unwanus Saadah | UMUM | 20106693 | 10 |
+| 113 | SMP Muhammadiyah 14 | ISLAM | 20100825 | 12 |
+| 114 | SMP Lagoa | UMUM | 20106552 | 10 |
+| 115 | SMP Al Khairiyah II | ISLAM | 20106462 | 13 |
+| 116 | SMP Yadika 2 | UMUM | 20108808 | 5 |
+| 117 | SMP Al-Qomar | ISLAM | 20106730 | 13 |
+| 118 | SMP Setia Gama | ISLAM | 20106880 | 13 |
+| 119 | SMP PGRI 39 | UMUM | 20106849 | 7 |
+| 120 | SMP Dhammasavana | BUDDHA | 20106768 | 6 |
+| 121 | SMP Galatia 3 | KRISTEN | 20106792 | 8 |
+| 122 | SMP Bintang Kejora | KATOLIK | 20106750 | 11 |
+| 123 | SMP Lamaholot | KATOLIK | 20106831 | 11 |
+| 124 | SMP Islam Terpadu An-Nashr | ISLAM | 20112448 | 7 |
+| 125 | SMP Insan Cita | UMUM | 69754417 | 13 |
+| 126 | SMP Citra Utama | UMUM | 69774535 | 12 |
+| 127 | SMP Bina Bangsa | UMUM | 20108796 | 13 |
+| 128 | SMP Yadika 5 | UMUM | 20106905 | 5 |
 129 SMP Budi Murni 2 UMUM 20108797 10%) 137 136 135 134 133 132 131 130 No
 CMB Catatan: SMP SMP SMP SMP SMP SMP SMP SMP Semua Al tanpa Duta Mitra Bhara YP BDN Sumpah Mas Nama kategori Fathachillah Hamidiyah Muhamadiyah Trikora Reformasi Satuan 33 Pemuda memandang satuan. latar Pendidikan JUMLAH pendidikan belakang.
 PKEPALA memberikan ) o Satuan KategoriDINAS ISLAM UMUM ISLAM UMUM ISLAM UMUM UMUM UMUM endidikan pelayanan
@@ -937,7 +957,7 @@ NOMOR 262 TAHUN 2026
 TENTANG PETUNJUK TEKNIS PELAKSANAAN PENERIMAAN MURID BARU BERSAMA TAHUN
 AJARAN 2026/2027
 DAFTAR NAMA DAN DAYA TAMPUNG SMA SWASTA PESERTA PMB BERSAMA
-TAHUN AJARAN 2026/2027 Kategori Daya
+TAHUN AJARAN 2026/2027
 No Nama Sekolah NPSN Sekolah Tampung
 *) (Murid)
 1 SMAS Santo Paulus Jakarta 20100179 Umum 16
@@ -958,7 +978,7 @@ No Nama Sekolah NPSN Sekolah Tampung
 16 SMAS Muhammadiyah 1 Jakarta 20100195 Islam 45
 17 SMAS Advent Salemba 20100175 Kristen 21
 18 SMAS PSKD 3 Jakarta 20100483 Kristen 23
-19 SMAS Chandra Kusuma Jakarta 20107372 Umum 14 Umum Dengan 20 SMAS Permata Indah Jakarta 20107389 20 Nuansa Kristen Kategori Daya
+19 SMAS Chandra Kusuma Jakarta 20107372 Umum 14 Umum Dengan 20 SMAS Permata Indah Jakarta 20107389 20 Nuansa Kristen
 No Nama Sekolah NPSN Sekolah Tampung
 *) (Murid)
 21 SMAS Harapan Kasih Jakarta 20107378 Umum 15
@@ -988,7 +1008,7 @@ No Nama Sekolah NPSN Sekolah Tampung
 46 SMAS 2 Yadika 20101630 Umum 9
 47 SMAS Tri Ratna 20101608 Buddha 7
 48 SMAS Sentosa 20101611 Umum 28
-49 SMAS Dhammasavana 20101343 Buddha 8 Kategori Daya
+49 SMAS Dhammasavana 20101343 Buddha 8
 No Nama Sekolah NPSN Sekolah Tampung
 *) (Murid)
 Umum
@@ -1014,7 +1034,7 @@ Dengan 50 SMAS Damai 20101342 14 Nuansa Katolik
 71 SMAS Purnama Jakarta 20107328 Umum 15
 72 SMAS 28 Oktober 1928 20107275 Umum 35
 73 SMAS Fatahillah Jakarta 20107297 Islam 37
-74 SMA Bunda Kandung Jakarta 20107287 Umum 50 Kategori Daya
+74 SMA Bunda Kandung Jakarta 20107287 Umum 50
 No Nama Sekolah NPSN Sekolah Tampung
 *) (Murid)
 75 SMA Kemala Bhayangkari 1 20107311 Umum 36
@@ -1065,7 +1085,7 @@ NOMOR 262 TAHUN 2026
 TENTANG PETUNJUK TEKNIS PELAKSANAAN PENERIMAAN MURID BARU BERSAMA TAHUN
 AJARAN 2026/2027
 DAFTAR NAMA DAN DAYA TAMPUNG SMK SWASTA PESERTA PMB BERSAMA
-TAHUN AJARAN 2026/2027 Kategori Daya
+TAHUN AJARAN 2026/2027
 Nama Satuan
 No NPSN Satuan Konsentrasi Keahlian Tampung
 Pendidikan
@@ -1083,7 +1103,7 @@ SMKS Satya Akuntansi 20
 6 6 SMKS Asisi 20102537 Katolik Jaringan
 Akuntansi 6
 SMKS Sumpah
-7 20101480 Umum Akuntansi 9 Pemuda Kategori Daya
+7 20101480 Umum Akuntansi 9 Pemuda
 Nama Satuan
 No NPSN Satuan Konsentrasi Keahlian Tampung
 Pendidikan
@@ -1100,7 +1120,7 @@ SMKS Dewi13 20101661 Umum Akuntansi 7 Sartika Manajemen Perkantoran 6 Bisnis Ret
 14 20104453 Umum Naya Teknik Komputer dan Jaringan Produksi Film 20 Perhotelan 13
 15 SMKS Teladan 20101490 Umum Usaha Layanan Wisata 7 Akuntansi 10
 SMKS Bina
-16 20103267 Umum Dharma Manajemen Perkantoran 10 Kategori Daya
+16 20103267 Umum Dharma Manajemen Perkantoran 10
 Nama Satuan
 No NPSN Satuan Konsentrasi Keahlian Tampung
 Pendidikan
@@ -1127,7 +1147,7 @@ SMKS Jakarta Akuntansi 4
 27 20103674 Umum Raya 2 Manajemen Perkantoran 8 Perhotelan 8
 SMKS Jayawisata
 28 20108510 Umum Kuliner 5 Usaha Layanan Wisata 7
-29 SMKS Jayawisata 20103667 Umum Usaha Layanan Wisata 10 Kategori Daya
+29 SMKS Jayawisata 20103667 Umum Usaha Layanan Wisata 10
 Nama Satuan
 No NPSN Satuan Konsentrasi Keahlian Tampung
 Pendidikan
@@ -1150,7 +1170,7 @@ SMKS Triguna Akuntansi 15
 39 69821209 Umum
 1956 Manajemen Perkantoran 15 Perhotelan 10
 40 SMKS Sismadi 20107461 Umum Desain Komunikasi Visual 10
-41 SMKS Walisongo 20102450 Islam Teknik Komputer dan 4 Kategori Daya
+41 SMKS Walisongo 20102450 Islam Teknik Komputer dan 4
 Nama Satuan
 No NPSN Satuan Konsentrasi Keahlian Tampung
 Pendidikan
@@ -1170,7 +1190,7 @@ SMKS47 20108509 Islam Akuntansi 5 Muhammadiyah 5 Bisnis Retail 5 Teknik Instalas
 49 Muhammadiyah 20107431 Islam Teknik Kendaraan Ringan 10
 12 Teknik Komputer dan Jaringan Teknik Kendaraan Ringan 10
 50 SMKS Nusantara 2 20107441 Umum Teknik Sepeda Motor 10
-51 SMKS Harnasto 20109247 Umum Akuntansi 6 Kategori Daya
+51 SMKS Harnasto 20109247 Umum Akuntansi 6
 Nama Satuan
 No NPSN Satuan Konsentrasi Keahlian Tampung
 Pendidikan
@@ -1190,7 +1210,7 @@ SMKS Imtaq
 SMKS
 60 20101506 Islam Bisnis Digital 10 Muhammadiyah 4 Teknik Komputer dan Jaringan
 SMK Ankes Tunas Analisis Pengujian
-61 20103276 Umum 2 Harapan Laboratorium Kategori Daya
+61 20103276 Umum 2 Harapan Laboratorium
 Nama Satuan
 No NPSN Satuan Konsentrasi Keahlian Tampung
 Pendidikan
@@ -1201,7 +1221,7 @@ Keperawatan dan 20 Caregiving Layanan Penunjang Laboratorium Medik Layanan Penun
 65 20103691 Umum Warman II Akuntansi 8 Manajemen Perkantoran 5
 66 SMKS Teladan 20102434 Islam Teknik Sepeda Motor 18 Akuntansi 10
 67 SMKS RPI 20102445 Islam Teknik Komputer dan Jaringan Akuntansi 8
-68 SMK Insan Cita 20177897 Umum Teknik Komputer dan Jaringan Kategori Daya
+68 SMK Insan Cita 20177897 Umum Teknik Komputer dan Jaringan
 Nama Satuan
 No NPSN Satuan Konsentrasi Keahlian Tampung
 Pendidikan
@@ -1228,7 +1248,7 @@ SMKS
 SMKS Pelayaran
 81 20107446 Umum Malahayati Teknika Kapal Niaga 15 Bisnis Digital 10
 SMKS Plus Al
-82 20107347 Islam Teknik Komputer dan Musyarrofah 10 Jaringan Kategori Daya
+82 20107347 Islam Teknik Komputer dan Musyarrofah 10 Jaringan
 Nama Satuan
 No NPSN Satuan Konsentrasi Keahlian Tampung
 Pendidikan
@@ -1248,7 +1268,7 @@ SMKS Akuntansi 5
 91 SMKS Yapermas 20100286 Umum Bisnis Retail 13 Layanan Penunjang
 SMKS Swadaya
 92 69854751 Umum Kefarmasian Klinis dan 25 Global School Komunitas Akuntansi 10 Manajemen Perkantoran 8
-93 SMKS Al Falah 20102558 Umum Teknik Komputer dan Jaringan Kategori Daya
+93 SMKS Al Falah 20102558 Umum Teknik Komputer dan Jaringan
 Nama Satuan
 No NPSN Satuan Konsentrasi Keahlian Tampung
 Pendidikan
@@ -1267,7 +1287,7 @@ SMKS Fransiskus
 103 SMKS Budi Asih 20102559 Umum Manajemen Perkantoran 5 Bisnis Retail 7 Akuntansi 6
 SMKS Mitra
 104 20102606 Umum Manajemen Perkantoran 6 Pembangunan Desain Komunikasi Visual 12
-105 SMKS Tarakanita 20102435 Katolik Manajemen Perkantoran 3 Kategori Daya
+105 SMKS Tarakanita 20102435 Katolik Manajemen Perkantoran 3
 Nama Satuan
 No NPSN Satuan Konsentrasi Keahlian Tampung
 Pendidikan
@@ -1283,7 +1303,7 @@ SMKS Islam
 113 SMKS Malaka 20103760 Umum Listrik Teknik Komputer dan Jaringan Desain Komunikasi Visual 8 Akuntansi 10
 SMKS
 Manajemen Perkantoran 6114 Muhammadiyah 20100141 Islam Desain Komunikasi Visual 9 Akuntansi 7
-115 SMKS Yappenda 20107472 Umum Manajemen Perkantoran 4 Kategori Daya
+115 SMKS Yappenda 20107472 Umum Manajemen Perkantoran 4
 Nama Satuan
 No NPSN Satuan Konsentrasi Keahlian Tampung
 Pendidikan
@@ -1301,7 +1321,7 @@ SMKS
 123 SMKS Yamas 20103504 Umum Kuliner 9 Layanan Penunjang
 SMKS Farmasi
 124 20107254 Umum Kefarmasian Klinis dan 36 Ditkesad Komunitas
-125 SMKS Satria 20101471 Umum Asisten Keperawatan dan 5 Kategori Daya
+125 SMKS Satria 20101471 Umum Asisten Keperawatan dan 5
 Nama Satuan
 No NPSN Satuan Konsentrasi Keahlian Tampung
 Pendidikan
@@ -1319,7 +1339,7 @@ SMKS 28 Oktober Manajemen Perkantoran 8
 130 20102583 Umum
 1928.2 Bisnis Retail 7 Akuntansi 7
 131 SMKS Pertiwi 20103746 Umum Manajemen Perkantoran 6 Bisnis Digital 7 Manajemen Perkantoran 14 Bisnis Retail 10132 SMKS Trimulia 20102630 Umum Tehnik Komputer dan Jaringan Akuntansi 5
-133 SMKS Tri Arga 2 20101487 Umum Manajemen Perkantoran 5 Teknik Kendaraan Ringan 6 Kategori Daya
+133 SMKS Tri Arga 2 20101487 Umum Manajemen Perkantoran 5 Teknik Kendaraan Ringan 6
 Nama Satuan
 No NPSN Satuan Konsentrasi Keahlian Tampung
 Pendidikan
@@ -3313,7 +3333,7 @@ BATU AMPAR KRAMATJATI CAWANG KRAMATJATI CILILITAN KRAMATJATI
 DUKUH KRAMATJATI TENGAH KRAMATJATI KRAMATJATI KRAMATJATI
 
 ## Catatan Ekstraksi
-- Struktur disusun per bab/lampiran, bukan per halaman.
-- Lampiran IV sampai VIII didominasi tabel sehingga baris dapat bergeser saat diekstrak otomatis.
-- Beberapa halaman bertanda tangan/stempel memiliki urutan teks yang tidak linear.
-- Untuk kebutuhan legalisasi final, verifikasi silang dengan PDF sumber.
+  - Struktur disusun per bab/lampiran, bukan per halaman.
+  - Lampiran IV sampai VIII didominasi tabel sehingga baris dapat bergeser saat diekstrak otomatis.
+  - Beberapa halaman bertanda tangan/stempel memiliki urutan teks yang tidak linear.
+  - Untuk kebutuhan legalisasi final, verifikasi silang dengan PDF sumber.
