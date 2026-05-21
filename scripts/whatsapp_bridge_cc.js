@@ -185,6 +185,7 @@ async function buildMediaPayload(msg) {
 const processedIds = new Set();
 const ignoredIds = new Set();
 let clientReady = false;
+let lastHeartbeat = Date.now(); // untuk watchdog deteksi Chromium crash
 
 // ── WhatsApp client ──────────────────────────────────────────────────────────
 
@@ -211,8 +212,10 @@ client.on("authenticated", () => {
 
 client.on("ready", () => {
     clientReady = true;
+    lastHeartbeat = Date.now();
     writeStatus({ state: "ready", qrText: "", message: "Call Center bridge siap." });
     console.log("[CC] Bridge siap menerima chat.");
+    startWatchdog();
 });
 
 client.on("auth_failure", (msg) => {
@@ -231,6 +234,51 @@ client.on("disconnected", (reason) => {
         );
     }, 3000);
 });
+
+// ── Watchdog: deteksi Chromium crash tanpa event disconnected ───────────────
+// Jika bridge mengklaim ready tapi Chromium tidak responsif selama
+// WATCHDOG_TIMEOUT_MS, reinitialize otomatis (tanpa hapus session = tanpa QR).
+
+const WATCHDOG_INTERVAL_MS = 2 * 60 * 1000;  // cek setiap 2 menit
+const WATCHDOG_TIMEOUT_MS  = 5 * 60 * 1000;  // anggap crash jika > 5 menit tak responsif
+let watchdogTimer = null;
+let watchdogRunning = false;
+
+async function pingClient() {
+    try {
+        // getState() akan throw jika Chromium sudah mati
+        const state = await client.getState();
+        if (state) lastHeartbeat = Date.now();
+    } catch (_) {
+        // Chromium tidak responsif — biarkan watchdog menangani
+    }
+}
+
+function startWatchdog() {
+    if (watchdogRunning) return;
+    watchdogRunning = true;
+    console.log("[CC] Watchdog aktif — cek Chromium setiap 2 menit.");
+
+    watchdogTimer = setInterval(async () => {
+        if (!clientReady) return; // biarkan flow normal yang tangani non-ready
+        await pingClient();
+        const elapsed = Date.now() - lastHeartbeat;
+        if (elapsed > WATCHDOG_TIMEOUT_MS) {
+            console.warn(`[CC] Watchdog: Chromium tidak responsif ${Math.round(elapsed/1000)}s. Reinit...`);
+            clientReady = false;
+            lastHeartbeat = Date.now(); // reset agar tidak trigger lagi segera
+            writeStatus({ state: "disconnected", qrText: "", message: "Watchdog: koneksi terputus, mencoba reconnect..." });
+            try {
+                await client.destroy();
+            } catch (_) { /* abaikan */ }
+            setTimeout(() => {
+                client.initialize().catch((e) =>
+                    console.error("[CC] Watchdog reinit error:", (e && e.message) || e)
+                );
+            }, 3000);
+        }
+    }, WATCHDOG_INTERVAL_MS);
+}
 
 // ── incoming messages → forward to backend (NO auto-reply) ───────────────────
 
@@ -462,7 +510,30 @@ app.post("/sync-history", authCheck, async (req, res) => {
                     continue;
                 }
 
-                const messages = await chat.fetchMessages({ limit: limitPerChat });
+                // Delay antar chat agar WhatsApp Web internal store siap
+                await new Promise((r) => setTimeout(r, 300));
+
+                let messages = [];
+                try {
+                    messages = await chat.fetchMessages({ limit: limitPerChat });
+                } catch (fetchErr) {
+                    // Retry sekali setelah delay jika store belum siap (waitForChatLoading)
+                    const isStoreErr = (fetchErr && fetchErr.message || "").includes("waitForChatLoading") ||
+                        (fetchErr && fetchErr.message || "").includes("Cannot read properties of undefined");
+                    if (isStoreErr) {
+                        await new Promise((r) => setTimeout(r, 1500));
+                        try {
+                            messages = await chat.fetchMessages({ limit: limitPerChat });
+                        } catch (_retryErr) {
+                            stats.failedChats += 1;
+                            console.warn("[CC] sync chat skip (store not ready):", identity.number);
+                            continue;
+                        }
+                    } else {
+                        throw fetchErr;
+                    }
+                }
+
                 messages.sort((a, b) => Number(a.timestamp || 0) - Number(b.timestamp || 0));
 
                 for (const msg of messages) {
