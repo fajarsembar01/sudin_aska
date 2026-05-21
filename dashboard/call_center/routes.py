@@ -648,12 +648,16 @@ def thread(conv_id: int) -> Response:
     # Sidebar conversations
     conversations, _ = fetch_cc_conversations(limit=50)
 
-    return render_template(
+    response = current_app.make_response(render_template(
         "cc_thread.html",
         conversation=conv,
         messages=messages,
         conversations=conversations,
-    )
+    ))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 
 @call_center_bp.route("/media/<path:filename>")
@@ -808,10 +812,21 @@ def api_message_detail(message_id: int) -> Response:
     return _handle_message_edit(message_id)
 
 
+@call_center_bp.route("/edit-message", methods=["POST"])
+@role_required("admin")
+def message_edit() -> Response:
+    """Edit endpoint outside /api for proxies that restrict API paths."""
+    return _handle_message_edit_from_request()
+
+
 @call_center_bp.route("/api/edit-message", methods=["POST"])
 @role_required("admin")
 def api_message_edit() -> Response:
     """FormData-compatible edit endpoint for production proxies."""
+    return _handle_message_edit_from_request()
+
+
+def _handle_message_edit_from_request() -> Response:
     data = request.form if request.form else (request.get_json(silent=True) or {})
     try:
         message_id = int(data.get("message_id") or 0)

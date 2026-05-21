@@ -714,7 +714,7 @@
     var draftDetailApiBase = '{{ url_for("call_center.api_draft_detail", draft_id=0) }}';
     var draftUseApiBase = '{{ url_for("call_center.api_draft_use", draft_id=0) }}';
     var draftPinApiBase = '{{ url_for("call_center.api_draft_pin", draft_id=0) }}';
-    var messageEditApiUrl = '{{ url_for("call_center.api_message_edit") }}';
+    var messageEditApiUrl = '{{ url_for("call_center.message_edit") }}';
     var mediaUrlBase = '{{ url_for("call_center.media_file", filename="__PATH__") }}';
     var csrfToken = '{{ csrf_token() }}';
     var lastMsgId = 0;
@@ -968,7 +968,10 @@
         payload.append('csrf_token', csrfToken);
         fetch(messageEditApiUrl, {
             method: 'POST',
+            cache: 'no-store',
             headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRFToken': csrfToken
             },
             body: payload
@@ -1042,7 +1045,9 @@
         }
         return response.text().then(function (text) {
             var cleaned = (text || '').replace(/\s+/g, ' ').trim();
-            throw new Error(cleaned.slice(0, 180) || ('HTTP ' + response.status));
+            var url = response.url || 'request';
+            var prefix = 'HTTP ' + response.status + ' dari ' + url;
+            throw new Error(cleaned ? (prefix + ': ' + cleaned.slice(0, 180)) : prefix);
         });
     }
 
