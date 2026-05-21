@@ -55,7 +55,7 @@ from .queries import (
     delete_cc_message_draft,
     toggle_cc_message_draft_pin,
 )
-from . import call_center_bp
+from . import call_center_api_bp, call_center_bp
 
 PAGE_SIZE = 50
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -69,6 +69,22 @@ def _project_env_value(name: str, default: str = "") -> str:
         return str(dotenv_values(PROJECT_ROOT / ".env").get(name) or default)
     except Exception:
         return default
+
+
+def _cc_bridge_auth_error() -> Optional[tuple[Response, int]]:
+    token_expected = (_project_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+    if not token_expected:
+        return jsonify({"error": "ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}), 501
+
+    provided_token = (
+        request.headers.get("X-ASKA-CC-TOKEN")
+        or request.args.get("token")
+        or ""
+    ).strip()
+    if provided_token != token_expected:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -86,12 +102,26 @@ def _cc_runtime_paths() -> dict:
 
 def _load_cc_bridge_status() -> dict:
     paths = _cc_runtime_paths()
+    status: dict = {}
     try:
         if paths["status"].exists():
-            return json.loads(paths["status"].read_text("utf-8"))
+            status = json.loads(paths["status"].read_text("utf-8"))
     except Exception:
-        pass
-    return {}
+        status = {}
+
+    pid = _read_pid(paths["pid"])
+    running = bool(pid and _pid_alive(pid))
+    status["pid"] = pid
+    status["isRunning"] = running
+
+    if not running:
+        current_state = (status.get("state") or "").strip().lower()
+        if current_state in {"starting", "authenticated", "ready", "qr", "disconnected"}:
+            status["state"] = "stopped"
+            if not (status.get("message") or "").strip() or current_state == "starting":
+                status["message"] = "Bridge tidak berjalan. Jalankan Generate QR untuk memulai lagi."
+
+    return status
 
 
 def _read_pid(pid_path: Path) -> Optional[int]:
@@ -217,6 +247,126 @@ def _restart_cc_bridge(reset_session: bool = True) -> dict:
 # Routes
 # ---------------------------------------------------------------------------
 
+@call_center_api_bp.route("/inbound", methods=["POST"])
+def api_callcenter_inbound() -> Response:
+    """Receive inbound messages directly in the dashboard app."""
+    auth_error = _cc_bridge_auth_error()
+    if auth_error:
+        return auth_error
+
+    data = request.get_json(silent=True) or {}
+    raw_user_id = str(data.get("user_id") or "").strip()
+    if not raw_user_id:
+        return jsonify({"error": "user_id required"}), 400
+
+    username = str(data.get("username") or raw_user_id).strip()[:120] or raw_user_id
+    message = str(data.get("message") or "").strip()
+    message_id = data.get("message_id") or None
+    if not message:
+        return jsonify({"error": "message required"}), 400
+
+    try:
+        conv = upsert_cc_conversation(wa_user_id=raw_user_id, display_name=username)
+        msg = save_cc_message(
+            conversation_id=conv["id"],
+            direction="inbound",
+            message_text=message,
+            wa_message_id=message_id,
+        )
+
+        if not msg.get("duplicate"):
+            try:
+                send_cc_telegram_notification(username, message)
+            except Exception:
+                pass
+
+        return jsonify(
+            {
+                "ok": True,
+                "conversation_id": conv.get("id"),
+                "message_id": msg.get("id"),
+                "duplicate": bool(msg.get("duplicate")),
+            }
+        )
+    except Exception as exc:
+        current_app.logger.exception("api_callcenter_inbound error")
+        return jsonify({"error": str(exc)}), 500
+
+
+@call_center_api_bp.route("/import-history", methods=["POST"])
+def api_callcenter_import_history() -> Response:
+    """Import WhatsApp history pushed by the Call Center bridge."""
+    auth_error = _cc_bridge_auth_error()
+    if auth_error:
+        return auth_error
+
+    data = request.get_json(silent=True) or {}
+    items = data.get("messages") or []
+    if not isinstance(items, list):
+        return jsonify({"error": "messages must be a list"}), 400
+    if len(items) > 5000:
+        return jsonify({"error": "messages limit exceeded"}), 413
+
+    try:
+        saved = 0
+        duplicates = 0
+        skipped = 0
+        conversations: set[int] = set()
+
+        for item in items:
+            if not isinstance(item, dict):
+                skipped += 1
+                continue
+
+            raw_user_id = str(item.get("user_id") or "").strip()
+            message = str(item.get("message") or "").strip()
+            direction = str(item.get("direction") or "inbound").strip().lower()
+            if not raw_user_id or not message or direction not in {"inbound", "outbound"}:
+                skipped += 1
+                continue
+
+            username = str(item.get("username") or raw_user_id).strip()[:120] or raw_user_id
+            message_id = item.get("message_id") or None
+            created_at = item.get("created_at") or item.get("timestamp") or None
+
+            conv = upsert_cc_conversation(
+                wa_user_id=raw_user_id,
+                display_name=username,
+                last_message_at=created_at,
+            )
+            if not conv:
+                skipped += 1
+                continue
+
+            msg = save_cc_message(
+                conversation_id=conv["id"],
+                direction=direction,
+                message_text=message,
+                admin_display_name="WhatsApp Import" if direction == "outbound" else None,
+                wa_message_id=message_id,
+                created_at=created_at,
+                increment_unread=False,
+            )
+            conversations.add(conv["id"])
+            if msg.get("duplicate"):
+                duplicates += 1
+            else:
+                saved += 1
+
+        return jsonify(
+            {
+                "ok": True,
+                "saved": saved,
+                "duplicates": duplicates,
+                "skipped": skipped,
+                "conversations": len(conversations),
+            }
+        )
+    except Exception as exc:
+        current_app.logger.exception("api_callcenter_import_history error")
+        return jsonify({"error": str(exc)}), 500
+
+
 @call_center_bp.route("/")
 @role_required("admin")
 def inbox() -> Response:
@@ -284,15 +434,16 @@ def api_send() -> Response:
     if not conv_id or not message_text:
         return jsonify({"error": "conversation_id and message required"}), 400
 
-    admin_name = user.get("full_name") or user.get("email") or "Admin"
-    message_text = f"{message_text}\n\n- {admin_name}"
+    # Keep admin identity on web UI only via admin_display_name.
+    # Outbound WhatsApp message should not append admin signature.
+    outbound_text = message_text
 
     conv = fetch_cc_conversation(int(conv_id))
     if not conv:
         return jsonify({"error": "Conversation not found"}), 404
 
     # Send via WA bridge HTTP API
-    result = _send_via_bridge(conv["wa_user_id"], message_text)
+    result = _send_via_bridge(conv["wa_user_id"], outbound_text)
     if result.get("error"):
         return jsonify({"error": f"Gagal kirim: {result['error']}"}), 502
 
@@ -301,7 +452,7 @@ def api_send() -> Response:
     msg = save_cc_message(
         conversation_id=int(conv_id),
         direction="outbound",
-        message_text=message_text,
+        message_text=outbound_text,
         admin_user_id=user.get("id"),
         admin_display_name=admin_name,
         wa_message_id=result.get("messageId"),

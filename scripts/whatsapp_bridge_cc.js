@@ -50,7 +50,7 @@ loadDotEnvFile(path.resolve(process.cwd(), ".env"));
 
 const INTERNAL_URL = (
     process.env.ASKA_CC_WHATSAPP_INTERNAL_URL ||
-    "http://127.0.0.1:5001/api/callcenter/inbound"
+    "http://127.0.0.1:5002/api/callcenter/inbound"
 ).trim();
 const IMPORT_URL = (
     process.env.ASKA_CC_WHATSAPP_IMPORT_URL ||
