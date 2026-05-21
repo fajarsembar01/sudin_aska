@@ -936,6 +936,15 @@
         var textEl = bubble.querySelector('.cc-bubble-text');
         if (textEl) {
             textEl.outerHTML = buildMessageTextHtml(message.message_text || '', message.edited_at);
+        } else {
+            var metaEl = bubble.querySelector('.cc-bubble-meta');
+            var wrapper = document.createElement('div');
+            wrapper.innerHTML = buildMessageTextHtml(message.message_text || '', message.edited_at);
+            if (metaEl) {
+                bubble.insertBefore(wrapper.firstChild, metaEl);
+            } else {
+                bubble.appendChild(wrapper.firstChild);
+            }
         }
     }
 
@@ -961,7 +970,9 @@
             editMessageInput.focus();
             return;
         }
+        var originalButtonHtml = btnSaveMessageEdit.innerHTML;
         btnSaveMessageEdit.disabled = true;
+        btnSaveMessageEdit.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>Menyimpan';
         var payload = new FormData();
         payload.append('message_id', String(editingMessageId));
         payload.append('message', text);
@@ -981,12 +992,16 @@
                 if (data.error) throw new Error(data.error);
                 updateMessageBubble(data.message);
                 if (messageEditModal) messageEditModal.hide();
+                if (data.wa_edit_warning) {
+                    alert(data.wa_edit_warning);
+                }
             })
             .catch(function (err) {
                 alert('Gagal edit pesan: ' + (err.message || 'Unknown error'));
             })
             .finally(function () {
                 btnSaveMessageEdit.disabled = false;
+                btnSaveMessageEdit.innerHTML = originalButtonHtml;
             });
     }
 

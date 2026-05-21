@@ -264,9 +264,15 @@ def _edit_via_bridge(wa_message_id: str, message: str) -> dict:
             f"http://127.0.0.1:{port}/edit",
             json={"messageId": wa_message_id, "message": message or ""},
             headers={"X-ASKA-CC-TOKEN": token, "Content-Type": "application/json"},
-            timeout=30,
+            timeout=8,
         )
-        return resp.json()
+        try:
+            result = resp.json()
+        except ValueError:
+            result = {"error": (resp.text or "").strip() or f"HTTP {resp.status_code}"}
+        if resp.status_code >= 400 and not result.get("error"):
+            result["error"] = f"HTTP {resp.status_code}"
+        return result
     except Exception as exc:
         return {"error": str(exc)}
 
@@ -857,14 +863,6 @@ def _handle_message_edit(message_id: int, data=None) -> Response:
     if message_text == (message.get("message_text") or ""):
         return jsonify({"ok": True, "message": message, "wa_edit_applied": False})
 
-    wa_edit_applied = False
-    wa_message_id = (message.get("wa_message_id") or "").strip()
-    if wa_message_id:
-        result = _edit_via_bridge(wa_message_id, message_text)
-        if result.get("error"):
-            return jsonify({"error": f"Gagal edit WhatsApp: {result['error']}"}), 502
-        wa_edit_applied = bool(result.get("ok"))
-
     updated = update_cc_message_text(
         message_id=message_id,
         message_text=message_text,
@@ -872,6 +870,16 @@ def _handle_message_edit(message_id: int, data=None) -> Response:
     )
     if not updated:
         return jsonify({"error": "Pesan tidak bisa diedit."}), 400
+
+    wa_edit_applied = False
+    wa_edit_warning = None
+    wa_message_id = (message.get("wa_message_id") or "").strip()
+    if wa_message_id:
+        result = _edit_via_bridge(wa_message_id, message_text)
+        if result.get("error"):
+            wa_edit_warning = f"Pesan dashboard sudah diedit, tapi WhatsApp belum berubah: {result['error']}"
+        else:
+            wa_edit_applied = bool(result.get("ok"))
 
     try:
         record_admin_action(
@@ -885,7 +893,14 @@ def _handle_message_edit(message_id: int, data=None) -> Response:
     except Exception:
         pass
 
-    return jsonify({"ok": True, "message": updated, "wa_edit_applied": wa_edit_applied})
+    return jsonify(
+        {
+            "ok": True,
+            "message": updated,
+            "wa_edit_applied": wa_edit_applied,
+            "wa_edit_warning": wa_edit_warning,
+        }
+    )
 
 
 @call_center_bp.route("/api/drafts/<int:draft_id>/use", methods=["POST"])
