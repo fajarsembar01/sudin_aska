@@ -294,6 +294,9 @@ async function handleIncoming(msg) {
         if (msg.from === "status@broadcast") return;
         if (String(msg.from || "").endsWith("@g.us")) return;
 
+        // Update heartbeat — ada pesan masuk berarti koneksi masih hidup
+        lastHeartbeat = Date.now();
+
         const hadMedia = Boolean(msg.hasMedia);
         const probableMime = (msg._data && msg._data.mimetype) || (String(msg.type || "").toLowerCase() === "image" ? "image/jpeg" : "");
         const media = await buildMediaPayload(msg);
