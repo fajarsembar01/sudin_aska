@@ -1,0 +1,78 @@
+name: 🧠 Build Kecerdasan ASKA & Deploy ke Server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "kecerdasan/**"
+      - "knowledge_loader.py"
+      - "ai_core.py"
+  workflow_dispatch:  # bisa dipicu manual dari GitHub UI
+
+jobs:
+  build-and-deploy:
+    name: Build Vectorstore & Sync ke Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repo
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: 📦 Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install \
+            langchain \
+            langchain-community \
+            langchain-openai \
+            langchain-huggingface \
+            faiss-cpu \
+            sentence-transformers \
+            python-dotenv \
+            openai
+
+      - name: 🧠 Build FAISS Vectorstore
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ASKA_EMBEDDING_BACKEND: openai
+          ASKA_EMBEDDING_MODEL: text-embedding-3-large
+          ASKA_ALLOW_REMOTE_EMBEDDING_REINDEX: "1"
+          ASKA_VECTORSTORE_PATH: .aska_vectorstore
+          ASKA_VECTORSTORE_INDEX: kecerdasan
+          ASKA_CHUNK_SIZE: "500"
+          ASKA_CHUNK_OVERLAP: "50"
+        run: |
+          echo "🚀 Memulai proses embedding kecerdasan ASKA..."
+          python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from ai_core import build_qa_chain
+          print('✅ Vectorstore berhasil dibangun!')
+          build_qa_chain()
+          "
+
+      - name: 🔑 Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: 📤 Sync vectorstore ke server
+        run: |
+          rsync -avz --progress --delete \
+            .aska_vectorstore/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/.aska_vectorstore/
+
+      - name: 🔄 Reload ASKA di server
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "cd ${{ secrets.SERVER_PROJECT_PATH }} && \
+             echo '✅ Vectorstore sudah diperbarui. Merestart bot...' && \
+             sudo systemctl restart aska || pm2 restart aska || echo '⚠️ Restart manual diperlukan'"
