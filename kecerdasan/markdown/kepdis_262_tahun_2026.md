@@ -49,7 +49,7 @@ PETUNJUK TEKNIS PELAKSANAAN PENERIMAAN MURID BARU BERSAMA
 SMP SWASTA TAHUN AJARAN 2026/2027
 
 ### Bab I. Tahapan Pelaksanaan PMB Bersama SMP Swasta
-PENGUMUMAN PENGUMUMAN PENDAFTARAN SELEKSI DAFTAR ULANG
+PENGUMUMAN PENDAFTARAN SELEKSI DAFTAR ULANG
 HASIL SELEKSI
 
 ### Bab II. Penjelasan Tahapan Pelaksanaan PMB Bersama SMP Swasta
@@ -77,7 +77,7 @@ g. Dalam hal CMB yang telah diterima melalui PMB Bersama mengundurkan diri dari 
 h. Seluruh Murid yang diterima melalui PMB Bersama harus mematuhi ketentuan penerima Bantuan Sosial Biaya Pendidikan dalam Pasal 23 dan Pasal 24 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan.
 i. Murid yang dikenakan sanksi diskualifikasi pada Pasal 26 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau melanggar ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan, maka yang bersangkutan dapat diberhentikan bantuannya dan tidak dapat mengikuti PMB Bersama.
 j. CMB yang dapat mengikuti PMB Bersama SMP Swasta Tahun Ajaran 2026/2027 adalah CMB yang telah memenuhi ketentuan dan persyaratan pelaksanaan PMB Bersama.
-k. CMB yang diterima pada PMB Bersama bersedia untuk mematuhi ketentuan pada angka 2 huruf f, g, h, dan i serta bersedia tidak pindah (mutasi) ke Satuan Pendidikan lainnya selama 3 (tiga) tahun dengan menyerahkan Surat Pernyataan tertulis bermaterai cukup kepada Satuan Pendidikan tempat
+k. CMB yang diterima pada PMB Bersama bersedia untuk mematuhi ketentuan pada angka 2 huruf f, g, h, dan i serta bersedia tidak pindah (mutasi) ke Satuan Pendidikan lainnya selama 3 (tiga) tahun dengan menyerahkan Surat Pernyataan tertulis bermeterai cukup kepada Satuan Pendidikan tempat
 CMB diterima yang ditandatangani oleh Orang Tua/Wali.
 3. Persyaratan PMB Bersama SMP Swasta.
 a. CMB yang memenuhi persyaratan:
@@ -100,7 +100,7 @@ CMB melakukan pengajuan akun dan verifikasi Kartu Keluarga
 3) mengisi formulir pendaftaran dan data kependudukan CMB sesuai dengan KK asli;
 4) memilih lokasi satuan Pendidikan untuk tempat verifikasi ajuan akun dan KK;
 5) mengunggah hasil pindai/foto dokumen KK asli;
-6) mengunggah dokumen yang menunjukkan keterangan diri Murid pada halaman depan Rapor/Keterangan tentang Diri Murid/Ijazah/Akte Kelahiran;
+6) mengunggah dokumen yang menunjukkan keterangan diri Murid pada halaman depan Rapor/Keterangan tentang Diri Murid/Ijazah/Akta Kelahiran;
 7) khusus CMB yang diasuh oleh wali, mengunggah Surat Perwalian Anak Di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Surat Putusan/Penetapan Pengadilan;
 8) khusus CMB yang diasuh oleh Kakek/Nenek/Saudara Kandung Ayah/Ibu dari CMB, mengunggah Kartu Keluarga sebelumnya;
 9) mengunggah Surat Pernyataan Tanggung Jawab Mutlak
@@ -145,7 +145,7 @@ b. pembobotan nilai rapor dan persentil nilai rapor;
 c. urutan pilihan sekolah; dan
 d. waktu mendaftar.
 2. Seleksi berdasarkan wilayah PMB prioritas sebagai berikut:
-a. Wilayah PMB prioritas Pertama: kelurahan domisili CMB sama dengan kelurahan lokasi sekolah;dan
+a. Wilayah PMB prioritas Pertama: kelurahan domisili CMB sama dengan kelurahan lokasi sekolah; dan
 b. Wilayah PMB prioritas Kedua: kelurahan domisili CMB berdekatan dengan kelurahan lokasi sekolah yang telah ditetapkan.
 3. Dalam hal kuota PMB Bersama tidak terpenuhi, maka sisa kuota dapat dilimpahkan ke PMB Bersama tahap kedua.
 
@@ -155,20 +155,20 @@ Rapor
 1. CMB dengan rerata nilai rapor tertinggi di sekolah masing-masing untuk mata pelajaran yang terdaftar dalam Petunjuk Teknis PMB ini untuk sekolah nilai Rapor Pendidikan Baik:
 I. Peringkat (1-15)% skor 100
 II. Peringkat (16-30)% skor 90
-III.Peringkat (31-45)% skor 80
-IV.Peringkat (46-60)% skor 70
+III. Peringkat (31-45)% skor 80
+IV. Peringkat (46-60)% skor 70
 V. Peringkat (61-100)% skor 60
 2. CMB dengan rerata nilai rapor tertinggi di sekolah masing-masing Persentil untuk mata pelajaran yang terdaftar Nilai dalam Petunjuk Teknis PMB ini 25% Rapor untuk sekolah nilai Rapor Pendidikan Sedang:
 I. Peringkat (1-10)% skor 100
 II. Peringkat (11-20)% skor 90
-III.Peringkat (21-30)% skor 80
-IV.Peringkat (31-40)% skor 70
+III. Peringkat (21-30)% skor 80
+IV. Peringkat (31-40)% skor 70
 V. Peringkat (41-100)% skor 60
 3. CMB dengan rerata nilai rapor tertinggi di sekolah masing-masing untuk mata pelajaran yang terdaftar dalam Petunjuk Teknis PMB ini untuk sekolah nilai Rapor Pendidikan Kurang:
 I. Peringkat (1-5)% skor 100
 II. Peringkat (6-10)% skor 90
-III.Peringkat (11-15)% skor 80
-IV.Peringkat (16-20)% skor 70
+III. Peringkat (11-15)% skor 80
+IV. Peringkat (16-20)% skor 70
 V. Peringkat (21-100)% skor 60 Total 100%
 2. Rapor Pendidikan
 a. Definisi Rapor Pendidikan
@@ -176,7 +176,7 @@ No Indikator Rapor Pendidikan Keterangan
 Persentase murid berdasarkan kemampuan dalam memahami, menggunakan, merefleksi,
 1. Kemampuan Literasi Murid dan mengevaluasi beragam jenis teks (teks informasional dan teks fiksi) Persentase murid berdasarkan kemampuan dalam berpikir menggunakan konsep,
 2. Kemampuan Numerasi Murid prosedur, fakta, dan alat matematika untuk menyelesaikan masalah sehari-hari pada berbagai jenis konteks yang relevan Nilai rerata karakter murid berdasarkan nilai akhlak pada manusia, akhlak pada alam, akhlak
-3. Karakter Murid bernegara, gotong royong, kreativitas, nalar kritis, kebinekaan global dan kemandirian pada survei karakter Nilai rerata iklim kebhinekaan di satuan
+3. karakter Murid bernegara, gotong royong, kreativitas, nalar kritis, kebinekaan global dan kemandirian pada survei karakter Nilai rerata iklim kebhinekaan di satuan
 4. Kondisi Kebhinekaan Sekolah pendidikan berdasarkan survei lingkungan belajar Nilai komposit nilai indeks rasa aman, perundungan, hukuman fisik, kekerasan
 5. Kondisi Keamanan Sekolah seksual, rokok, minuman keras, dan narkoba berdasarkan survei lingkungan belajar Nilai rerata untuk kualitas pembelajaran meliputi manajemen kelas,
 6. Kualitas Pembelajaran dukungan psikologi, dan metode pembelajaran di survei lingkungan belajar
@@ -232,7 +232,7 @@ No Kegiatan Tanggal Waktu
 ### Bab IV. Pembiayaan
 1. Biaya Investasi (Uang Pangkal/sejenisnya) dibiayai hanya 1 (satu) kali setelah CMB diterima.
 2. Biaya Operasional (SPP/sejenisnya) dibiayai paling lama 3 (tiga) tahun masa studi.
-3. Biaya sebagaimana dimaksud pada angka 1 dan angka 2 merupakan biaya total untuk CMB yang diterima dalam PMB Bersama dan dibiayai oleh Pemerintah Provinsi DKI Jakarta, sehingga CMB tidak dipungut biaya apapun.
+3. Biaya sebagaimana dimaksud pada angka 1 dan angka 2 merupakan biaya total untuk CMB yang diterima dalam PMB Bersama dan dibiayai oleh Pemerintah Provinsi DKI Jakarta, sehingga CMB tidak dipungut biaya apa pun.
 4. Sumber anggaran pada PMB Bersama berasal dari APBD pada DPA Dinas Pendidikan Provinsi DKI Jakarta sesuai dengan ketentuan peraturan perundang-undangan.
 
 ### Bab V. PMB Bersama Tahap Kedua dan Tahap Akhir
@@ -241,7 +241,7 @@ Pemilihan sekolah dan seleksi
 PMB Bersama tahap kedua dilaksanakan sesuai dengan PMB Bersama tahap pertama.
 Dalam hal daya tampung PMB Bersama tahap kedua masih terdapat sisa kuota, maka akan dibuka PMB Bersama tahap akhir., Pemilihan sekolah PMB Bersama tahap akhir CMB dapat memilih melebihi daya tampung, maka dilakukan pengaturan seleksi dengan urutan langkah sebagai berikut:
 a. wilayah PMB prioritas;
-b. pembobotan nilaj rapor dan persentil nilai rapor;
+b. pembobotan nilai rapor dan persentil nilai rapor;
 C. urutan pilihan sekolah; dan
 d. waktu mendaftar., Seleksi berdasarkan wilayah PMB prioritas di SMP Swasta pada PMB Bersama Tahap Akhir sebagai berikut:
 a. wilayah PMB prioritas pertama: kelurahan domisili CMB sama dengan kelurahan lokasi sekolah;
@@ -263,7 +263,7 @@ PETUNJUK TEKNIS PELAKSANAAN PENERIMAAN MURID BARU BERSAMA
 SMA SWASTA TAHUN AJARAN 2026/2027
 
 ### Bab I. Tahapan Pelaksanaan PMB Bersama SMA Swasta
-PENGUMUMAN PENGUMUMAN PENDAFTARAN SELEKSI DAFTAR ULANG
+PENGUMUMAN PENDAFTARAN SELEKSI DAFTAR ULANG
 HASIL SELEKSI
 
 ### Bab II. Penjelasan Tahapan Pelaksanaan PMB Bersama SMA Swasta
@@ -291,7 +291,7 @@ g. Dalam hal CMB yang telah diterima melalui PMB Bersama mengundurkan diri dari 
 h. Seluruh Murid yang diterima melalui PMB Bersama harus mematuhi ketentuan penerima Bantuan Sosial Biaya Pendidikan dalam Pasal 23 dan Pasal 24 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan.
 i. Murid yang dikenakan sanksi diskualifikasi pada Pasal 26 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau melanggar ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan, maka yang bersangkutan dapat diberhentikan bantuannya dan tidak dapat mengikuti PMB Bersama.
 j. CMB yang dapat mengikuti PMB Bersama SMA Swasta Tahun Ajaran 2026/2027 adalah CMB yang telah memenuhi ketentuan dan persyaratan pelaksanaan PMB Bersama.
-k. CMB yang diterima pada PMB Bersama bersedia untuk mematuhi ketentuan pada angka 2 huruf f, g, h, dan i serta bersedia tidak pindah (mutasi) ke Satuan Pendidikan lainnya selama 3 (tiga) tahun dengan menyerahkan Surat Pernyataan tertulis bermaterai cukup kepada Satuan Pendidikan tempat
+k. CMB yang diterima pada PMB Bersama bersedia untuk mematuhi ketentuan pada angka 2 huruf f, g, h, dan i serta bersedia tidak pindah (mutasi) ke Satuan Pendidikan lainnya selama 3 (tiga) tahun dengan menyerahkan Surat Pernyataan tertulis bermeterai cukup kepada Satuan Pendidikan tempat
 CMB diterima yang ditandatangani oleh Orang Tua/Wali.
 3. Persyaratan PMB Bersama SMA Swasta.
 a. CMB yang memenuhi persyaratan:
@@ -315,7 +315,7 @@ CMB melakukan pengajuan akun dan verifikasi Kartu Keluarga
 CMB sesuai dengan KK asli;
 4) memilih lokasi satuan Pendidikan untuk tempat verifikasi ajuan akun dan KK;
 5) mengunggah hasil pindai/foto dokumen KK asli;
-6) mengunggah dokumen yang menunjukkan keterangan diri Murid pada halaman depan Rapor/Keterangan Tentang Diri Murid/Ijazah/Akte Kelahiran
+6) mengunggah dokumen yang menunjukkan keterangan diri Murid pada halaman depan Rapor/Keterangan Tentang Diri Murid/Ijazah/Akta Kelahiran
 7) khusus CMB yang diasuh oleh wali, mengunggah Surat Perwalian Anak Di Bawah Umur atau Penetapan/Putusan Pengadilan;
 8) khusus CMB yang diasuh oleh Kakek/Nenek/Saudara Kandung Ayah/Ibu dari CMB, mengunggah Kartu Keluarga sebelumnya;
 9) mengunggah Surat Pernyataan Tanggung Jawab Mutlak
@@ -359,7 +359,7 @@ b. pembobotan nilai rapor dan persentil nilai rapor;
 c. urutan pilihan sekolah; dan
 d. waktu mendaftar.
 2. Seleksi berdasarkan wilayah PMB prioritas sebagai berikut:
-a. Wilayah PMB prioritas Pertama: kelurahan domisili CMB sama dengan kelurahan lokasi sekolah;dan
+a. Wilayah PMB prioritas Pertama: kelurahan domisili CMB sama dengan kelurahan lokasi sekolah; dan
 b. Wilayah PMB prioritas Kedua: kelurahan domisili CMB berdekatan dengan kelurahan lokasi sekolah yang telah ditetapkan.
 3. Dalam hal kuota PMB Bersama tidak terpenuhi, maka sisa kuota dapat dilimpahkan ke PMB Bersama tahap kedua.
 
@@ -375,14 +375,14 @@ V. Peringkat (61-100)% skor 60
 2. CMB dengan rerata nilai rapor tertinggi di sekolah masing-masing untuk mata pelajaran yang terdaftar Kemampuan Indikator Detail Indikator Akademik dalam Petunjuk Teknis PMB ini untuk sekolah nilai Rapor Pendidikan Sedang:
 I. Peringkat (1-10)% skor 100
 II. Peringkat (11-20)% skor 90
-III.Peringkat (21-30)% skor 80
-IV.Peringkat (31-40)% skor 70
+III. Peringkat (21-30)% skor 80
+IV. Peringkat (31-40)% skor 70
 V. Peringkat (41-100)% skor 60
 3. CMB dengan rerata nilai rapor tertinggi di sekolah masing-masing untuk mata pelajaran yang terdaftar dalam Petunjuk Teknis PMB ini untuk sekolah nilai Rapor Pendidikan Kurang:
 I. Peringkat (1-5)% skor 100
 II. Peringkat (6-10)% skor 90
-III.Peringkat (11-15)% skor 80
-IV.Peringkat (16-20)% skor 70
+III. Peringkat (11-15)% skor 80
+IV. Peringkat (16-20)% skor 70
 V. Peringkat (21-100)% skor 60 Total 100%
 2. Rapor Pendidikan
 a. Definisi Rapor Pendidikan
@@ -392,7 +392,7 @@ Persentase murid berdasarkan kemampuan dalam memahami, menggunakan,
 2. matematika untuk Murid menyelesaikan masalah sehari-hari pada berbagai jenis konteks yang relevan
 No Indikator Rapor Pendidikan Keterangan
 Nilai rerata karakter murid berdasarkan nilai akhlak pada manusia, akhlak pada alam,
-3. Karakter Murid akhlak bernegara, gotong royong, kreativitas, nalar kritis, kebinekaan global dan kemandirian pada survei karakter Nilai rerata iklim Kondisi Kebhinekaan kebhinekaan di satuan
+3. karakter Murid akhlak bernegara, gotong royong, kreativitas, nalar kritis, kebinekaan global dan kemandirian pada survei karakter Nilai rerata iklim Kondisi Kebhinekaan di satuan
 4.
 Sekolah pendidikan berdasarkan survei lingkungan belajar Nilai komposit nilai indeks rasa aman, perundungan, hukuman fisik, kekerasan seksual,
 5. Kondisi Keamanan Sekolah rokok, minuman keras, dan narkoba berdasarkan survei lingkungan belajar Nilai rerata untuk kualitas pembelajaran meliputi manajemen
@@ -450,7 +450,7 @@ SMA Swasta Tujuan
 ### Bab IV. Pembiayaan
 1. Biaya Investasi (Uang Pangkal/sejenisnya) dibiayai hanya 1 (satu) kali setelah CMB diterima.
 2. Biaya Operasional (SPP/sejenisnya) dibiayai paling lama 3 (tiga) tahun masa studi.
-3. Biaya sebagaimana dimaksud pada angka 1 dan angka 2 merupakan biaya total untuk CMB yang diterima dalam PMB Bersama dan dibiayai oleh Pemerintah Provinsi DKI Jakarta, sehingga CMB tidak dipungut biaya apapun.
+3. Biaya sebagaimana dimaksud pada angka 1 dan angka 2 merupakan biaya total untuk CMB yang diterima dalam PMB Bersama dan dibiayai oleh Pemerintah Provinsi DKI Jakarta, sehingga CMB tidak dipungut biaya apa pun.
 4. Sumber anggaran pada PMB Bersama berasal dari APBD pada DPA Dinas Pendidikan Provinsi DKI Jakarta sesuai dengan ketentuan peraturan perundang-undangan.
 
 ### Bab V. PMB Bersama Tahap Kedua dan Tahap Akhir
@@ -464,7 +464,7 @@ b. pembobotan nilai rapor dan persentil nilai rapor;
 c. urutan pilihan sekolah; dan
 d. waktu mendaftar.
 6.
-b. a, Bersama Seleksi Jakarta. wilayah dengan wilayah dengan wilayah Tahap PMB PMB PMB berdasarkan kelurahan kelurahan Akhir prioritas prioritas prioritas lokasi lokasi wilayah PROVINSI sebagai D \% ketiga; kedua: PMB & sekolah sekolah; pertama:: berikut: ) KEPALA yang seluruh prioritas 7 kelurahan telah di DINAS SUS kelurahanTANA SMA domisilj kelurahan IBUKO di domisi; ditetapkan; CMB Swasta PENDIDIKAN dan CMB Provinsi pada JAKARTA, DK berdekatan sama PMB
+b. a, Bersama Seleksi Jakarta. wilayah dengan wilayah dengan wilayah Tahap PMB berdasarkan kelurahan. Akhir prioritas prioritas prioritas lokasi lokasi wilayah PROVINSI sebagai D \% ketiga; kedua: PMB & sekolah sekolah; pertama:: berikut: ) KEPALA yang seluruh prioritas 7 kelurahan telah di DINAS SUS kelurahanTANA SMA domisilj kelurahan IBUKO di domisi; ditetapkan; CMB Swasta PENDIDIKAN dan CMB Provinsi pada JAKARTA, DK berdekatan sama PMB
 
 ## Lampiran III - PMB Bersama SMK Swasta
 
@@ -481,7 +481,7 @@ PETUNJUK TEKNIS PELAKSANAAN PENERIMAAN MURID BARU BERSAMA
 SMK SWASTA TAHUN AJARAN 2026/2027
 
 ### Bab I. Tahapan Pelaksanaan PMB Bersama SMK Swasta
-PENGUMUMAN PENGUMUMAN PENDAFTARAN SELEKSI DAFTAR ULANG
+PENGUMUMAN PENDAFTARAN SELEKSI DAFTAR ULANG
 HASIL SELEKSI
 
 ### Bab II. Penjelasan Tahapan Pelaksanaan PMB Bersama SMK Swasta
@@ -509,7 +509,7 @@ g. Dalam hal CMB yang telah diterima melalui PMB Bersama mengundurkan diri dari 
 h. Seluruh Murid yang diterima melalui PMB Bersama harus mematuhi ketentuan penerima Bantuan Sosial Biaya Pendidikan dalam Pasal 23 dan Pasal 24 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan.
 i. Murid yang dikenakan sanksi diskualifikasi pada Pasal 26 Peraturan Gubernur Nomor 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan atau melanggar ketentuan perundang-undangan terkait Bantuan Sosial Biaya Pendidikan, maka yang bersangkutan dapat diberhentikan bantuannya dan tidak dapat mengikuti PMB Bersama.
 j. CMB yang dapat mengikuti PMB Bersama SMK Swasta Tahun Ajaran 2026/2027 adalah CMB yang telah memenuhi ketentuan dan persyaratan pelaksanaan PMB Bersama.
-k. CMB yang diterima pada PMB Bersama bersedia untuk mematuhi ketentuan pada angka 2 huruf f, g, h, dan i serta bersedia tidak pindah (mutasi) ke Satuan Pendidikan lainnya selama 3 (tiga) tahun dengan menyerahkan Surat Pernyataan tertulis bermaterai cukup kepada Satuan Pendidikan tempat
+k. CMB yang diterima pada PMB Bersama bersedia untuk mematuhi ketentuan pada angka 2 huruf f, g, h, dan i serta bersedia tidak pindah (mutasi) ke Satuan Pendidikan lainnya selama 3 (tiga) tahun dengan menyerahkan Surat Pernyataan tertulis bermeterai cukup kepada Satuan Pendidikan tempat
 CMB diterima yang ditandatangani oleh Orang Tua/Wali.
 3. Persyaratan Umum dan Khusus PMB Bersama SMK Swasta
 a. Persyaratan Umum
@@ -538,7 +538,7 @@ Khusus
 No Konsentrasi Keahlian
 Khusus
 Tidak Buta Warna
-15 Nautika Kapal Niaga Diutamakan lakilaki
+15 Nautika Kapal Niaga Diutamakan laki-laki
 16 Perhotelan Tidak Buta Warna Produksi dan Siaran Program
 17 Tidak Buta Warna Televisi
 18 Produksi Film Tidak Buta Warna
@@ -551,9 +551,9 @@ Tidak Buta Warna
 25 Teknik Logistik Tidak Buta Warna
 26 Teknik Mekanik Industri Tidak Buta Warna Teknik Pemanasan, Tata Udara, 27 Tidak Buta Warna dan Pendinginan
 28 Teknik Pemesinan Tidak Buta Warna Tidak Buta Warna
-29 Teknik Pemesinan Kapal Diutamakan lakilaki
+29 Teknik Pemesinan Kapal Diutamakan laki-laki
 30 Teknik Sepeda Motor Tidak Buta Warna Tidak Buta Warna
-31 Teknika Kapal Niaga Diutamakan lakilaki
+31 Teknika Kapal Niaga Diutamakan laki-laki
 32 Usaha Layanan Wisata Tidak Buta Warna
 33 Seni Musik -
 2) Memiliki surat keterangan tidak buta warna dari instansi kesehatan pemerintah untuk pilihan konsentrasi keahlian tertentu;
@@ -570,7 +570,7 @@ b. Pengajuan Akun
 CMB sesuai dengan KK asli;
 4) memilih lokasi satuan Pendidikan untuk tempat verifikasi ajuan akun dan KK;
 5) mengunggah hasil pindai/foto dokumen asli KK asli;
-6) mengunggah dokumen yang menunjukkan keterangan diri Murid pada halaman depan Rapor/Keterangan Tentang Diri Murid/Ijazah/Akte Kelahiran
+6) mengunggah dokumen yang menunjukkan keterangan diri Murid pada halaman depan Rapor/Keterangan Tentang Diri Murid/Ijazah/Akta Kelahiran
 7) khusus CMB yang diasuh oleh wali, mengunggah Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Penetapan/Putusan Pengadilan;
 8) khusus CMB yang diasuh oleh Kakek/Nenek/Saudara Kandung Ayah/Ibu dari CMB, mengunggah Kartu Keluarga sebelumnya;
 9) mengunggah Surat Pernyataan Tanggung Jawab Mutlak
@@ -632,8 +632,8 @@ I. Peringkat (1-5)% skor100
 II. Peringkat (6-10)% skor90
 III. Peringkat (11-15)% skor 80
 IV. Peringkat (16-20)% skor 70
-V. Peringkat (21-100)% skor 60 Prestasi akademik: Prestasi peringkat 3 (tiga) teratas untuk tingkat akademik 25% Internasional, Nasional, Provinsi, Kota/ Kabupaten dalam bidang akademik Prestasi Nonakademik: Prestasi peringkat 3 (tiga) teratas untuk tingkat
-5% nonakademik Internasional, Nasional, Provinsi, Kota/ Kabupaten dalam bidang nonakademik Bobot Indeks Indikator Detail Indikator Prestasi Akademik Pembobotan dari masing-masing unsur Pengalaman Kepemimpinan sebagai berikut:
+V. Peringkat (21-100)% skor 60 Prestasi akademik: Prestasi peringkat 3 (tiga) teratas untuk tingkat akademik 25% Internasional, Nasional, Provinsi, Kota/ Kabupaten dalam bidang akademik Prestasi Non akademik: Prestasi peringkat 3 (tiga) teratas untuk tingkat
+5% Non akademik Internasional, Nasional, Provinsi, Kota/ Kabupaten dalam bidang Non akademik Bobot Indeks Indikator Detail Indikator Prestasi Akademik Pembobotan dari masing-masing unsur Pengalaman Kepemimpinan sebagai berikut:
 1. Pengalaman kepemimpinan OSIS Pengalaman atau MPK: 40% 10% Kepemimpinan 2. Pengalaman kepemimpinan ekstrakurikuler: 20%
 3. Prestasi yang diperoleh dengan hasil seleksi ketat: 40% Total 100%
 2. Rapor Pendidikan
@@ -641,7 +641,7 @@ a. Definisi Rapor Pendidikan
 No Indikator Rapor Pendidikan Keterangan
 Persentase murid berdasarkan kemampuan dalam memahami, menggunakan, merefleksi,
 1. Kemampuan Literasi Murid dan mengevaluasi beragam jenis teks (teks informasional dan teks fiksi) Persentase murid berdasarkan kemampuan dalam berpikir menggunakan konsep, prosedur, fakta, dan alat 2. Kemampuan Numerasi Murid matematika untuk menyelesaikan masalah sehari-hari pada berbagai jenis konteks yang relevan Nilai rerata karakter murid berdasarkan nilai akhlak pada manusia, akhlak pada alam, akhlak bernegara,
-3. Karakter Murid gotong royong, kreativitas, nalar kritis, kebinekaan global dan kemandirian pada survei karakter Nilai rerata iklim kebhinekaan di satuan
+3. karakter Murid gotong royong, kreativitas, nalar kritis, kebinekaan global dan kemandirian pada survei karakter Nilai rerata iklim kebhinekaan di satuan
 4. Kondisi Kebhinekaan Sekolah pendidikan berdasarkan survei lingkungan belajar
 No Indikator Rapor Pendidikan Keterangan
 Nilai komposit nilai indeks rasa aman, perundungan, hukuman fisik, kekerasan
@@ -649,19 +649,19 @@ Nilai komposit nilai indeks rasa aman, perundungan, hukuman fisik, kekerasan
 6. Kualitas Pembelajaran dukungan psikologi, dan metode pembelajaran di survei lingkungan belajar
 b. Skor indikator Rapor Pendidikan Predikat Skor indikator Baik 100 Sedang 67 Kurang 33
 c. Rentang Nilai Rapor Pendidikan Nilai akhir rapor pendidikan merupakan rerata dari 6 (enam) nilai indikator rapor pendidikan yang diperoleh sekolah dengan rentang Predikat: Predikat Rentang Baik 78-100 Sedang 55-77 Kurang 33-54
-3. Penjelasan Indikator dan pembobotan indeks prestasi Akademik dan Nonakademik:
+3. Penjelasan Indikator dan pembobotan indeks prestasi Akademik dan Non akademik:
 a. Rerata Nilai Rapor dan TKA:
 1) Rerata nilai Rapor yang sudah divalidasi yaitu rerata nilai rapor kelas 7 semester 1 dan semester 2, kelas 8 semester 1 dan semester 2, dan kelas 9 semester 1
 SMP/MTs/Paket B pada mata pelajaran Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam (IPA), Ilmu Pengetahuan Sosial (IPS), dan Bahasa Inggris dengan bobot 70% ; dan
 2) Rerata nilai hasil TKA terakhir yang berupa angka pada mata pelajaran Bahasa Indonesia dan Matematika dengan bobot 30%;
 b. Persentil Nilai Rapor adalah peringkat rerata nilai rapor yang dikelompokkan menjadi 100 bagian yang sama setelah data diurutkan dari yang terbesar ke yang terkecil dalam satu sekolah;
 c. Prestasi Akademik adalah Prestasi yang diperoleh melalui perlombaan di bidang akademik dengan perolehan 3 (tiga) peringkat teratas untuk tingkat Internasional, Nasional, Provinsi, dan Kota/kabupaten;
-d. Prestasi Nonakademik adalah Prestasi yang diperoleh melalui perlombaan di bidang nonakademik dengan perolehan 3 (tiga) peringkat teratas untuk tingkat Internasional, Nasional, Provinsi, dan Kota/kabupaten;
-e. Prestasi Akademik dan Nonakademik berupa hasil kejuaraan, dengan ketentuan :
+d. Prestasi Non akademik adalah Prestasi yang diperoleh melalui perlombaan di bidang Non akademik dengan perolehan 3 (tiga) peringkat teratas untuk tingkat Internasional, Nasional, Provinsi, dan Kota/kabupaten;
+e. Prestasi Akademik dan Non akademik berupa hasil kejuaraan, dengan ketentuan :
 1) diselenggarakan oleh instansi kedinasan atau induk organisasi resmi;
 2) kejuaraan yang diselenggarakan di luar instansi kedinasan atau induk organisasi resmi harus mendapatkan surat rekomendasi terlebih dahulu sebelum penyelenggaraan dari instansi kedinasan atau induk organisasi resmi yang menaungi;
-3) Prestasi akademik dan nonakademik yang bersifat pemasalan, ekshibisi, undangan, dan festival yang dilaksanakan oleh instansi non kedinasan dan non induk organisasi resmi tidak dapat diinput sebagai prestasi kecuali sertifikatnya telah dikurasi oleh unit kerja di Kementerian yang menyelenggarakan urusan pemerintahan bidang pendidikan bagian talenta dan prestasi melalui laman kurasiprestasi.kemendikdasmen.go.id;
-4) Prestasi akademik dan nonakademik yang bersifat pemasalan, ekshibisi, undangan, dan festival sebagaimana dimaksud pada huruf c) adalah:
+3) Prestasi akademik dan Non akademik yang bersifat pemasalan, ekshibisi, undangan, dan festival yang dilaksanakan oleh instansi non kedinasan dan non induk organisasi resmi tidak dapat diinput sebagai prestasi kecuali sertifikatnya telah dikurasi oleh unit kerja di Kementerian yang menyelenggarakan urusan pemerintahan bidang pendidikan bagian talenta dan prestasi melalui laman kurasiprestasi.kemendikdasmen.go.id;
+4) Prestasi akademik dan Non akademik yang bersifat pemasalan, ekshibisi, undangan, dan festival sebagaimana dimaksud pada huruf c) adalah:
 a) Pemasalan
 Perlombaan yang diselenggarakan dengan melibatkan banyak peserta yang masing-masing mendapatkan apresiasi dengan kategori yang sama dalam pembinaan.
 b) Ekshibisi
@@ -670,16 +670,16 @@ c) Festival
 Perayaan yang berbentuk pertunjukkan, pelestarian atau sarana promosi yang diselenggarakan dalam rangka peringatan suatu peristiwa, unjuk budaya, hiburan, olahraga, ilmu pengetahuan, seni, dan budaya.
 d) Undangan
 Pertunjukkan bakat kemampuan tertentu yang diselenggarakan oleh instansi kedinasan bukan dalam bentuk perlombaan.
-f. Prestasi Akademik dan Nonakademik sebagaimana dimaksud pada angka 3 huruf e diatas, dilakukan pembobotan penilaian menjadi 3 (tiga) kategori, yaitu:
-1) Kedinasan: Penilaian untuk Prestasi Akademik dan Prestasi Nonakademik yang diselenggarakan oleh instansi kedinasan
-2) Induk Organisasi: Penilaian untuk Prestasi Akademik dan Prestasi Nonakademik yang diselenggarakan oleh induk organisasi resmi
+f. Prestasi Akademik dan Non akademik sebagaimana dimaksud pada angka 3 huruf e di atas, dilakukan pembobotan penilaian menjadi 3 (tiga) kategori, yaitu:
+1) Kedinasan: Penilaian untuk Prestasi Akademik dan Prestasi Non akademik yang diselenggarakan oleh instansi kedinasan
+2) Induk Organisasi: Penilaian untuk Prestasi Akademik dan Prestasi Non akademik yang diselenggarakan oleh induk organisasi resmi
 3) Hasil kurasi yang terdiri dari:
 a) Hasil Rekomendasi: Penilaian untuk Kejuaraan yang diselenggarakan di luar instansi kedinasan atau induk organisasi resmi dan telah mendapatkan surat rekomendasi terlebih dahulu sebelum penyelenggaraan dari instansi kedinasan atau induk organisasi resmi yang menaungi; dan
-b) Pemasalan, Ekshibisi, Undangan, Festival: Penilaian untuk prestasi akademik dan nonakademik yang bersifat pemasalan, ekshibisi, undangan, dan festival yang dilaksanakan oleh instansi non kedinasan dan non induk organisasi resmi dimana sertifikatnya telah dikurasi oleh unit kerja di Kementerian yang menyelenggarakan urusan pemerintahan bidang pendidikan bagian talenta dan prestasi melalui laman https://kurasiprestasi.kemendikdasmen.go.id.
-g. Bobot skor untuk kategori prestasi Akademik maupun Nonakademik prestasi kejuaraan sebagaimana dimaksud di atas dapat dilihat pada tabel skor prestasi kejuaran berikut: Tabel. Skor Prestasi Kejuaraan Skor Prestasi Kejuaraan Kedinasan Induk Organisasi Hasil Kurasi Tingkat Juara Pemasalan, Hasil Tidak Tidak Ekshibisi, Berjenjang Berjenjang Rekomend Berjenjang Berjenjang Undangan, asi Festival Internasional 2 97 89 89 81 73 65 Nasional 2 88 80 80 72 64 56 Provinsi Kota/Kab. 2 70 62 62 54 46 38
+b) Pemasalan, Ekshibisi, Undangan, Festival: Penilaian untuk prestasi akademik dan Non akademik yang bersifat pemasalan, ekshibisi, undangan, dan festival yang dilaksanakan oleh instansi non kedinasan dan non induk organisasi resmi dimana sertifikatnya telah dikurasi oleh unit kerja di Kementerian yang menyelenggarakan urusan pemerintahan bidang pendidikan bagian talenta dan prestasi melalui laman https://kurasiprestasi.kemendikdasmen.go.id.
+g. Bobot skor untuk kategori prestasi Akademik maupun Non akademik prestasi kejuaraan sebagaimana dimaksud di atas dapat dilihat pada tabel skor prestasi kejuaraan berikut: Tabel. Skor Prestasi Kejuaraan Skor Prestasi Kejuaraan Kedinasan Induk Organisasi Hasil Kurasi Tingkat Juara Pemasalan, Hasil Tidak Ekshibisi, Berjenjang Undangan, Rekomendasi Festival Internasional 2 97 89 89 81 73 65 Nasional 2 88 80 80 72 64 56 Provinsi Kota/Kab. 2 70 62 62 54 46 38
 h. CMB dapat menyertakan sertifikat yang dimiliki dari prestasi kejuaraan atau perlombaan yang diselenggarakan di bidang Olahraga, Seni, Budaya, Keagamaan, Sains dan Teknologi, Pramuka, Paskibra, dan/atau PMR yang diselenggarakan oleh instansi kedinasan dan/atau Induk Organisasi yang resmi;
 i. Prestasi dan kejuaraan diperoleh CMB 3 (tiga) tahun terakhir di kelas 7, kelas 8, dan kelas 9 cut off tanggal 31 Maret 2026;
-j. Sertifikat kejuaraan Akademik dan/atau Nonakademik yang diunggah dalam sistem adalah sertifikat tertinggi;
+j. Sertifikat kejuaraan Akademik dan/atau Non akademik yang diunggah dalam sistem adalah sertifikat tertinggi;
 k. Skor untuk pengalaman kepemimpinan OSIS atau MPK di sekolah terdiri dari:
 No. Jabatan Skor
 1. Ketua 100 Pengurus (Wakil Ketua,
@@ -760,7 +760,7 @@ SMK Swasta Tujuan 7 Juli 2026 00.00-14.00 WIB
 ### Bab IV. Pembiayaan
 1. Biaya Investasi (Uang Pangkal/sejenisnya) dibiayai hanya 1 (satu) kali setelah CMB diterima.
 2. Biaya Operasional (SPP/sejenisnya) dibiayai paling lama 3 (tiga) tahun masa studi.
-3. Biaya sebagaimana dimaksud pada angka 1 dan angka 2 merupakan biaya total untuk CMB yang diterima dalam PMB Bersama dan dibiayai oleh Pemerintah Provinsi DKI Jakarta, sehingga CMB tidak dipungut biaya apapun.
+3. Biaya sebagaimana dimaksud pada angka 1 dan angka 2 merupakan biaya total untuk CMB yang diterima dalam PMB Bersama dan dibiayai oleh Pemerintah Provinsi DKI Jakarta, sehingga CMB tidak dipungut biaya apa pun.
 4. Sumber anggaran pada PMB Bersama berasal dari APBD pada DPA Dinas Pendidikan Provinsi DKI Jakarta sesuai dengan ketentuan peraturan perundang-undangan.
 
 ### Bab V. PMB Bersama Tahap Kedua dan Tahap Akhir
