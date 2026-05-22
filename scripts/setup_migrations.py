@@ -19,6 +19,7 @@ def run_migrations():
         "dashboard/migrations/031_add_hospitality_activity_logs.sql",
         "dashboard/migrations/032_add_cms_artikel.sql",
         "dashboard/migrations/033_add_hospitality_guestbook_extra_questions.sql",
+        "dashboard/migrations/034_add_dashboard_users_ui_settings.sql",
     ]
     
     print("Mengeksekusi migrasi modul tambahan (Hospitality & Reopen)...")

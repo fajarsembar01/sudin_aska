@@ -82,6 +82,34 @@
                     <small class="text-secondary ms-2">Reset sesi & scan QR ulang</small>
                 </form>
 
+                <hr class="my-4">
+
+                <form method="post" action="{{ url_for('call_center.sync_history') }}"
+                    class="row g-2 align-items-end">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="col-6 col-md-3">
+                        <label for="syncChatLimit" class="form-label small text-secondary mb-1">Chat terbaru</label>
+                        <input id="syncChatLimit" type="number" name="chat_limit" min="1" max="200" value="25"
+                            class="form-control form-control-sm">
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label for="syncLimitPerChat" class="form-label small text-secondary mb-1">Pesan/chat</label>
+                        <input id="syncLimitPerChat" type="number" name="limit_per_chat" min="1" max="500" value="50"
+                            class="form-control form-control-sm">
+                    </div>
+                    <div class="col-12 col-md-auto">
+                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-cloud-download me-1"></i>Sync pesan lama
+                        </button>
+                    </div>
+                    <div class="col-12">
+                        <small class="text-secondary">
+                            Import terbatas dari histori yang masih tersedia di sesi WhatsApp Web. Pesan duplikat akan
+                            dilewati.
+                        </small>
+                    </div>
+                </form>
+
 
             </div>
         </div>

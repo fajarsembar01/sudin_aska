@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Optional
 
 import requests
+from dotenv import dotenv_values
 from flask import (
     Response,
     current_app,
@@ -60,14 +61,24 @@ PAGE_SIZE = 50
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
+def _project_env_value(name: str, default: str = "") -> str:
+    value = os.getenv(name)
+    if value is not None:
+        return value
+    try:
+        return str(dotenv_values(PROJECT_ROOT / ".env").get(name) or default)
+    except Exception:
+        return default
+
+
 # ---------------------------------------------------------------------------
 # Helpers — bridge management
 # ---------------------------------------------------------------------------
 
 def _cc_runtime_paths() -> dict:
     root = PROJECT_ROOT
-    session = root / (os.getenv("ASKA_CC_WHATSAPP_SESSION_PATH") or ".wa_cc_session")
-    status = root / (os.getenv("ASKA_CC_WHATSAPP_STATUS_PATH") or "runtime/whatsapp_cc_status.json")
+    session = root / (_project_env_value("ASKA_CC_WHATSAPP_SESSION_PATH") or ".wa_cc_session")
+    status = root / (_project_env_value("ASKA_CC_WHATSAPP_STATUS_PATH") or "runtime/whatsapp_cc_status.json")
     pid = root / "runtime" / "whatsapp_cc.pid"
     log = root / "runtime" / "whatsapp_cc.log"
     return {"root": root, "session": session, "status": status, "pid": pid, "log": log}
@@ -116,13 +127,13 @@ def _stop_existing_bridge(pid_path: Path) -> None:
 
 
 def _cc_bridge_http_port() -> int:
-    return int(os.getenv("ASKA_CC_HTTP_PORT") or "3100")
+    return int(_project_env_value("ASKA_CC_HTTP_PORT") or "3100")
 
 
 def _send_via_bridge(to: str, message: str) -> dict:
     """Send an outbound WA message through the CC bridge HTTP API."""
     port = _cc_bridge_http_port()
-    token = (os.getenv("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+    token = (_project_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
     try:
         resp = requests.post(
             f"http://127.0.0.1:{port}/send",
@@ -135,13 +146,32 @@ def _send_via_bridge(to: str, message: str) -> dict:
         return {"error": str(exc)}
 
 
+def _sync_history_via_bridge(chat_limit: int, limit_per_chat: int) -> dict:
+    """Ask the local CC bridge to import recent WhatsApp chat history."""
+    port = _cc_bridge_http_port()
+    token = (_project_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+    try:
+        resp = requests.post(
+            f"http://127.0.0.1:{port}/sync-history",
+            json={"chatLimit": chat_limit, "limitPerChat": limit_per_chat},
+            headers={"X-ASKA-CC-TOKEN": token, "Content-Type": "application/json"},
+            timeout=180,
+        )
+        data = resp.json()
+        if resp.status_code >= 400:
+            return {"error": data.get("error") or f"HTTP {resp.status_code}"}
+        return data
+    except Exception as exc:
+        return {"error": str(exc)}
+
+
 def _restart_cc_bridge(reset_session: bool = True) -> dict:
     paths = _cc_runtime_paths()
     _stop_existing_bridge(paths["pid"])
 
     # Clean stale lock files
     try:
-        client_dir = paths["session"] / f"session-{os.getenv('ASKA_CC_WHATSAPP_CLIENT_ID', 'cc-main')}"
+        client_dir = paths["session"] / f"session-{_project_env_value('ASKA_CC_WHATSAPP_CLIENT_ID', 'cc-main')}"
         for lock_name in ("SingletonLock", "SingletonCookie", "SingletonSocket", "lockfile"):
             for lp in client_dir.rglob(lock_name):
                 try:
@@ -157,7 +187,6 @@ def _restart_cc_bridge(reset_session: bool = True) -> dict:
     paths["log"].parent.mkdir(parents=True, exist_ok=True)
 
     env = os.environ.copy()
-    from dotenv import dotenv_values
     env_file = paths["root"] / ".env"
     if env_file.exists():
         for k, v in dotenv_values(env_file).items():
@@ -681,4 +710,40 @@ def generate_qr() -> Response:
         if request.is_json:
             return jsonify({"success": False, "message": msg}), 500
         flash(msg, "danger")
+    return redirect(url_for("call_center.settings_wa"))
+
+
+@call_center_bp.route("/settings/sync-history", methods=["POST"])
+@role_required("admin")
+def sync_history() -> Response:
+    payload = request.get_json(silent=True) or request.form
+    try:
+        chat_limit = int(payload.get("chat_limit") or payload.get("chatLimit") or 25)
+    except Exception:
+        chat_limit = 25
+    try:
+        limit_per_chat = int(payload.get("limit_per_chat") or payload.get("limitPerChat") or 50)
+    except Exception:
+        limit_per_chat = 50
+
+    chat_limit = max(1, min(chat_limit, 200))
+    limit_per_chat = max(1, min(limit_per_chat, 500))
+
+    result = _sync_history_via_bridge(chat_limit=chat_limit, limit_per_chat=limit_per_chat)
+    if result.get("error"):
+        msg = f"Gagal sync histori: {result['error']}"
+        if request.is_json:
+            return jsonify({"success": False, "message": msg}), 502
+        flash(msg, "danger")
+        return redirect(url_for("call_center.settings_wa"))
+
+    msg = (
+        "Sync histori selesai: "
+        f"{result.get('saved', 0)} pesan baru, "
+        f"{result.get('duplicates', 0)} duplikat, "
+        f"{result.get('skipped', 0)} dilewati."
+    )
+    if request.is_json:
+        return jsonify({"success": True, "message": msg, "result": result})
+    flash(msg, "success")
     return redirect(url_for("call_center.settings_wa"))

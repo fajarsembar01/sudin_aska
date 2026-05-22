@@ -150,7 +150,7 @@ _MD_SANITIZE_RE = re.compile(r"[^A-Za-z0-9._-]+")
 _FOLDER_SANITIZE_RE = re.compile(r"[^A-Za-z0-9 _.-]+")
 
 
-def _normalize_relative_path(raw: Optional[str], default: str = "umum.md") -> str:
+def _normalize_relative_path(raw: Optional[str], default: str = "markdown/umum.md") -> str:
     value = (raw or "").strip()
     if not value:
         return default
@@ -1630,7 +1630,7 @@ def manage_knowledge() -> Response:
     user = current_user()
     admin_id = user.get("id") if user else None
     files = _list_knowledge_files()
-    default_file = files[0]["rel_path"] if files else "umum.md"
+    default_file = files[0]["rel_path"] if files else "markdown/umum.md"
     values = request.values
     selected_file = _normalize_relative_path(values.get("file"), default=default_file)
     selected_tab = (values.get("tab") or "editor").strip().lower()

@@ -923,8 +923,10 @@ def fetch_daily_trend(*, days: int | None = 30) -> List[Dict[str, Any]]:
         return [dict(row) for row in cur.fetchall()]
 
 
-def fetch_top_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
+def fetch_top_schools(*, limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
     """Top schools by average score percentage."""
+    safe_limit = max(1, min(int(limit or 10), 100))
+    safe_offset = max(0, int(offset or 0))
     _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
@@ -955,15 +957,17 @@ def fetch_top_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
             GROUP BY sc.school_id, sch.name, sch.npsn, sch.jenjang
             HAVING COUNT(*) > 0
             ORDER BY avg_pct DESC NULLS LAST, assessment_count DESC, sch.name ASC
-            LIMIT %s
+            LIMIT %s OFFSET %s
             """,
-            (limit,),
+            (safe_limit, safe_offset),
         )
         return [dict(row) for row in cur.fetchall()]
 
 
-def fetch_bottom_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
+def fetch_bottom_schools(*, limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
     """Bottom schools by average score percentage (lowest first)."""
+    safe_limit = max(1, min(int(limit or 10), 100))
+    safe_offset = max(0, int(offset or 0))
     _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
@@ -994,9 +998,9 @@ def fetch_bottom_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
             GROUP BY sc.school_id, sch.name, sch.npsn, sch.jenjang
             HAVING COUNT(*) > 0
             ORDER BY avg_pct ASC NULLS LAST, assessment_count DESC, sch.name ASC
-            LIMIT %s
+            LIMIT %s OFFSET %s
             """,
-            (limit,),
+            (safe_limit, safe_offset),
         )
         return [dict(row) for row in cur.fetchall()]
 
@@ -1249,7 +1253,7 @@ def fetch_guestbook_review_stats(
     end_date: date | None = None,
     use_tanggal_edit: bool = True,
 ) -> Dict[str, Any]:
-    _dexpr_completed = "COALESCE(r.tanggal_edit, r.completed_at)" if use_tanggal_edit else "r.completed_at"
+    _dexpr_completed = _date_expr(use_tanggal_edit)
     _dexpr_created = "COALESCE(r.tanggal_edit, r.created_at)" if use_tanggal_edit else "r.created_at"
     where_sql, params = _build_guestbook_review_filters(
         school_id=school_id,
@@ -1283,16 +1287,16 @@ def fetch_guestbook_review_stats(
             """,
             params,
         )
-        row = cur.fetchone() or {}
+        stats_row = cur.fetchone() or {}
 
-    total_reviews = int(row.get("total_reviews") or 0)
-    completed_reviews = int(row.get("completed_reviews") or 0)
-    pending_reviews = int(row.get("pending_reviews") or 0)
-    linked_reviews = int(row.get("linked_reviews") or 0)
-    unlinked_reviews = int(row.get("unlinked_reviews") or 0)
+    total_reviews = int(stats_row.get("total_reviews") or 0)
+    completed_reviews = int(stats_row.get("completed_reviews") or 0)
+    pending_reviews = int(stats_row.get("pending_reviews") or 0)
+    linked_reviews = int(stats_row.get("linked_reviews") or 0)
+    unlinked_reviews = int(stats_row.get("unlinked_reviews") or 0)
     completion_rate = (completed_reviews / total_reviews * 100) if total_reviews else 0.0
     linked_rate = (linked_reviews / total_reviews * 100) if total_reviews else 0.0
-    avg_rating = float(row.get("avg_rating") or 0)
+    avg_rating = float(stats_row.get("avg_rating") or 0)
     with get_cursor() as cur:
         cur.execute(
             f"""
@@ -1314,10 +1318,10 @@ def fetch_guestbook_review_stats(
 
     extra_stats = []
     total_extra = 0.0
-    for row in extra_stats_rows:
-        score = float(row["avg_score"] or 0)
+    for extra_row in extra_stats_rows:
+        score = float(extra_row["avg_score"] or 0)
         extra_stats.append({
-            "name": row["name"],
+            "name": extra_row["name"],
             "avg_score": score
         })
         total_extra += score
@@ -1330,10 +1334,10 @@ def fetch_guestbook_review_stats(
         "pending_reviews": pending_reviews,
         "linked_reviews": linked_reviews,
         "unlinked_reviews": unlinked_reviews,
-        "completed_today": int(row.get("completed_today") or 0),
-        "created_today": int(row.get("created_today") or 0),
+        "completed_today": int(stats_row.get("completed_today") or 0),
+        "created_today": int(stats_row.get("created_today") or 0),
         "avg_rating": avg_rating,
-        "avg_rating_completed": float(row.get("avg_rating_completed") or 0),
+        "avg_rating_completed": float(stats_row.get("avg_rating_completed") or 0),
         "completion_rate": round(completion_rate, 2),
         "linked_rate": round(linked_rate, 2),
         "extra_stats": extra_stats,

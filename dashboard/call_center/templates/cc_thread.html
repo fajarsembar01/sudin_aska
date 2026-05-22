@@ -85,6 +85,18 @@
         text-overflow: ellipsis;
     }
 
+    .cc-conv-meta {
+        text-align: right;
+        flex-shrink: 0;
+        min-width: 48px;
+    }
+
+    .cc-conv-time {
+        font-size: .68rem;
+        color: var(--bs-secondary-color);
+        white-space: nowrap;
+    }
+
     /* ── Chat area ── */
     .cc-chat {
         flex: 1;
@@ -340,9 +352,16 @@
                 <div class="cc-conv-avatar">{{ (c.display_name or c.wa_user_id)[:1].upper() }}</div>
                 <div class="cc-conv-info">
                     <div class="cc-conv-name">{{ c.display_name or c.wa_user_id }}</div>
+                    <div class="cc-conv-preview">{{ c.last_message_preview or '—' }}</div>
+                </div>
+                <div class="cc-conv-meta">
+                    {% if c.last_message_at %}
+                    <div class="cc-conv-time">{{ c.last_message_at|jakarta('%d/%m %H:%M') }}</div>
+                    {% endif %}
                     {% if c.unread_count %}
-                    <span class="badge rounded-pill text-bg-primary" style="font-size:.65rem">{{ c.unread_count
-                        }}</span>
+                    <span class="badge rounded-pill text-bg-primary mt-1" style="font-size:.65rem">
+                        {{ c.unread_count }}
+                    </span>
                     {% endif %}
                 </div>
             </a>

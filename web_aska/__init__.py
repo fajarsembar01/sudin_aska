@@ -10,6 +10,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 from flask import Flask, request, jsonify, render_template, session, redirect, url_for, flash, send_from_directory, abort, make_response
 from authlib.integrations.flask_client import OAuth
+from dotenv import dotenv_values
 
 from .handlers import process_channel_request, process_web_request, web_sessions, reload_qa_chain
 from .feedback_routes import feedback_bp
@@ -44,6 +45,17 @@ LIMIT_BLOCK_MESSAGE = (
 )
 GMAIL_ALLOWED_DOMAINS = {"gmail.com", "googlemail.com"}
 WEB_BOT_USERNAME = "ASKA_WEB"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _env_value(name: str, default: str = "") -> str:
+    value = os.getenv(name)
+    if value is not None:
+        return value
+    try:
+        return str(dotenv_values(PROJECT_ROOT / ".env").get(name) or default)
+    except Exception:
+        return default
 
 
 def _run_async(coro):
@@ -903,7 +915,7 @@ def create_app() -> Flask:
         Unlike the ASKA bot, this does NOT generate an AI reply.
         It stores the message and notifies admins via Telegram.
         """
-        token_expected = (os.getenv("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+        token_expected = (_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
         if not token_expected:
             return jsonify({"error": "ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}), 501
 
@@ -911,7 +923,7 @@ def create_app() -> Flask:
             request.headers.get("X-ASKA-CC-TOKEN")
             or request.args.get("token")
             or ""
-        )
+        ).strip()
         if provided_token != token_expected:
             return jsonify({"error": "Unauthorized"}), 403
 
@@ -941,15 +953,109 @@ def create_app() -> Flask:
                 wa_message_id=message_id,
             )
 
-            # Fire-and-forget Telegram notification
-            try:
-                send_cc_telegram_notification(username, message)
-            except Exception:
-                pass
+            if not msg.get("duplicate"):
+                # Fire-and-forget Telegram notification
+                try:
+                    send_cc_telegram_notification(username, message)
+                except Exception:
+                    pass
 
-            return jsonify({"ok": True, "conversation_id": conv.get("id"), "message_id": msg.get("id")})
+            return jsonify(
+                {
+                    "ok": True,
+                    "conversation_id": conv.get("id"),
+                    "message_id": msg.get("id"),
+                    "duplicate": bool(msg.get("duplicate")),
+                }
+            )
         except Exception as exc:
             current_app.logger.exception("callcenter_inbound error")
+            return jsonify({"error": str(exc)}), 500
+
+    @app.route("/api/callcenter/import-history", methods=["POST"])
+    def callcenter_import_history():
+        """Import WhatsApp history pushed by the Call Center bridge."""
+        token_expected = (_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+        if not token_expected:
+            return jsonify({"error": "ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}), 501
+
+        provided_token = (
+            request.headers.get("X-ASKA-CC-TOKEN")
+            or request.args.get("token")
+            or ""
+        ).strip()
+        if provided_token != token_expected:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        data = request.get_json(silent=True) or {}
+        items = data.get("messages") or []
+        if not isinstance(items, list):
+            return jsonify({"error": "messages must be a list"}), 400
+        if len(items) > 5000:
+            return jsonify({"error": "messages limit exceeded"}), 413
+
+        try:
+            from dashboard.call_center.queries import (
+                upsert_cc_conversation,
+                save_cc_message,
+            )
+
+            saved = 0
+            duplicates = 0
+            skipped = 0
+            conversations: set[int] = set()
+
+            for item in items:
+                if not isinstance(item, dict):
+                    skipped += 1
+                    continue
+
+                raw_user_id = str(item.get("user_id") or "").strip()
+                message = str(item.get("message") or "").strip()
+                direction = str(item.get("direction") or "inbound").strip().lower()
+                if not raw_user_id or not message or direction not in {"inbound", "outbound"}:
+                    skipped += 1
+                    continue
+
+                username = str(item.get("username") or raw_user_id).strip()[:120]
+                message_id = item.get("message_id") or None
+                created_at = item.get("created_at") or item.get("timestamp") or None
+
+                conv = upsert_cc_conversation(
+                    wa_user_id=raw_user_id,
+                    display_name=username,
+                    last_message_at=created_at,
+                )
+                if not conv:
+                    skipped += 1
+                    continue
+
+                msg = save_cc_message(
+                    conversation_id=conv["id"],
+                    direction=direction,
+                    message_text=message,
+                    admin_display_name="WhatsApp Import" if direction == "outbound" else None,
+                    wa_message_id=message_id,
+                    created_at=created_at,
+                    increment_unread=False,
+                )
+                conversations.add(conv["id"])
+                if msg.get("duplicate"):
+                    duplicates += 1
+                else:
+                    saved += 1
+
+            return jsonify(
+                {
+                    "ok": True,
+                    "saved": saved,
+                    "duplicates": duplicates,
+                    "skipped": skipped,
+                    "conversations": len(conversations),
+                }
+            )
+        except Exception as exc:
+            current_app.logger.exception("callcenter_import_history error")
             return jsonify({"error": str(exc)}), 500
 
     @app.route("/api/chat", methods=["POST"])

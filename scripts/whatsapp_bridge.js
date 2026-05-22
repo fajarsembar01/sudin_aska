@@ -29,7 +29,7 @@ function loadDotEnvFile(filePath) {
       }
     }
   } catch (err) {
-    console.warn("[WA] Gagal membaca .env:", err?.message || err);
+    console.warn("[WA] Gagal membaca .env:", (err && err.message) || err);
   }
 }
 
@@ -78,7 +78,7 @@ function writeStatus(statusPatch) {
     };
     fs.writeFileSync(STATUS_PATH, JSON.stringify(payload, null, 2), "utf8");
   } catch (err) {
-    console.error("[WA] Gagal menulis status file:", err?.message || err);
+    console.error("[WA] Gagal menulis status file:", (err && err.message) || err);
   }
 }
 
@@ -189,7 +189,7 @@ client.on("disconnected", (reason) => {
   console.warn("[WA] Disconnected:", reason);
   setTimeout(() => {
     client.initialize().catch((err) => {
-      console.error("[WA] Gagal reinitialize client:", err?.message || err);
+      console.error("[WA] Gagal reinitialize client:", (err && err.message) || err);
     });
   }, 3000);
 });
@@ -199,7 +199,7 @@ async function handleIncomingMessage(msg, sourceEvent = "message") {
     if (!msg) {
       return;
     }
-    const incomingId = msg.id?._serialized || "";
+    const incomingId = (msg.id && msg.id._serialized) || "";
     if (incomingId && ignoredMessageIds.has(incomingId)) {
       ignoredMessageIds.delete(incomingId);
       return;
@@ -251,7 +251,12 @@ async function handleIncomingMessage(msg, sourceEvent = "message") {
     try {
       const contact = await msg.getContact();
       displayName =
-        String(contact?.pushname || contact?.name || contact?.shortName || number).trim() || number;
+        String(
+          (contact && contact.pushname) ||
+            (contact && contact.name) ||
+            (contact && contact.shortName) ||
+            number
+        ).trim() || number;
     } catch (err) {
       displayName = number;
     }
@@ -261,7 +266,7 @@ async function handleIncomingMessage(msg, sourceEvent = "message") {
       username: displayName,
       message: text,
       message_type: "text",
-      message_id: msg.id?._serialized || null,
+      message_id: (msg.id && msg.id._serialized) || null,
     };
 
     const data = await postToAska(payload);
@@ -274,18 +279,21 @@ async function handleIncomingMessage(msg, sourceEvent = "message") {
     const chunks = splitLongReply(replyText);
     for (const chunk of chunks) {
       const sent = await client.sendMessage(msg.from, chunk);
-      const sentId = sent?.id?._serialized || "";
+      const sentId = (sent && sent.id && sent.id._serialized) || "";
       if (sentId) {
         ignoredMessageIds.add(sentId);
       }
       console.log(`${DEBUG_PREFIX} sent to=${msg.from} len=${chunk.length}`);
     }
   } catch (err) {
-    console.error("[WA] Error menangani pesan:", err?.response?.data || err?.message || err);
+    console.error(
+      "[WA] Error menangani pesan:",
+      (err && err.response && err.response.data) || (err && err.message) || err
+    );
     try {
       await msg.reply(TECHNICAL_REPLY);
     } catch (sendErr) {
-      console.error("[WA] Gagal kirim fallback reply:", sendErr?.message || sendErr);
+      console.error("[WA] Gagal kirim fallback reply:", (sendErr && sendErr.message) || sendErr);
     }
   }
 }
@@ -310,8 +318,8 @@ client.initialize().catch((err) => {
   writeStatus({
     state: "error",
     qrText: "",
-    message: err?.message || String(err),
+    message: (err && err.message) || String(err),
   });
-  console.error("[WA] Gagal initialize client:", err?.message || err);
+  console.error("[WA] Gagal initialize client:", (err && err.message) || err);
   process.exit(1);
 });

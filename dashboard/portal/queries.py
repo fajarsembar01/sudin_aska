@@ -4448,6 +4448,7 @@ def get_staff_assigned_schools(staff_id: int, period_id: Optional[int] = None) -
                 s.npsn,
                 s.name as school_name,
                 s.jenjang,
+                s.status as school_status,
                 s.alamat,
                 l.name as kelurahan_name,
                 k.name as kecamatan_name,

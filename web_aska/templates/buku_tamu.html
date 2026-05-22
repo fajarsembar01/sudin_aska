@@ -508,8 +508,8 @@
                             <div class="register-header mb-3">
                                 <span class="register-icon"><i class="bi bi-person-vcard"></i></span>
                                 <div>
-                                    <div class="register-title">Daftar Tamu Baru</div>
-                                    <div class="register-subtitle">Isi data singkat di bawah, lalu klik Tambah ke Buku Tamu.</div>
+                                    <div class="register-title" id="registerTitleText">Daftar Tamu Baru</div>
+                                    <div class="register-subtitle" id="registerSubtitleText">Isi data singkat di bawah, lalu klik Tambah ke Buku Tamu.</div>
                                 </div>
                             </div>
                             <div class="row g-3">
@@ -570,9 +570,12 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-12 d-grid">
+                                <div class="col-12 d-grid gap-2">
                                     <button type="button" class="btn btn-primary" id="addNewGuestBtn">
                                         <i class="bi bi-person-plus me-1"></i>Tambah ke Buku Tamu
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary d-none" id="cancelUpdateBtn">
+                                        Batal Ubah
                                     </button>
                                     <div class="form-text text-center mt-2">Pastikan data sudah benar sebelum ditambahkan.</div>
                                 </div>
@@ -678,6 +681,9 @@
             var showRegisterBtn = document.getElementById('showRegisterBtn');
             var registerForm = document.getElementById('registerForm');
             var addNewGuestBtn = document.getElementById('addNewGuestBtn');
+            var cancelUpdateBtn = document.getElementById('cancelUpdateBtn');
+            var registerTitleText = document.getElementById('registerTitleText');
+            var registerSubtitleText = document.getElementById('registerSubtitleText');
             var selectedGuestsWrap = document.getElementById('selectedGuests');
             var selectedGuestsEmpty = document.getElementById('selectedGuestsEmpty');
             var selectedGuestsField = document.getElementById('selectedGuestsField');
@@ -706,6 +712,9 @@
             var parentFields = document.querySelectorAll('[data-parent-field]');
             var regStudentClass = document.getElementById('regStudentClass');
             var regStudentName = document.getElementById('regStudentName');
+            var defaultRegisterTitle = registerTitleText ? registerTitleText.textContent : 'Daftar Tamu Baru';
+            var defaultRegisterSubtitle = registerSubtitleText ? registerSubtitleText.textContent : 'Isi data singkat di bawah, lalu klik Tambah ke Buku Tamu.';
+            var isRegisterUpdateMode = false;
 
             var selectedGuests = new Map();
 
@@ -807,6 +816,69 @@
                         ? 'Untuk orang tua, isi kelas dan nama siswa.'
                         : 'Untuk tamu instansi, isi nama instansi dan jabatan.';
                 }
+            }
+
+            function isParentGuest(guest) {
+                var instansiLower = String((guest && guest.instansi) || '').toLowerCase();
+                var jabatanLower = String((guest && guest.jabatan) || '').toLowerCase();
+                return Boolean((guest && guest.is_parent) || instansiLower === 'wali murid' || jabatanLower === 'wali murid');
+            }
+
+            function setRegisterUpdateMode(isUpdateMode) {
+                isRegisterUpdateMode = Boolean(isUpdateMode);
+                if (!addNewGuestBtn) return;
+                addNewGuestBtn.classList.toggle('btn-primary', !isRegisterUpdateMode);
+                addNewGuestBtn.classList.toggle('btn-warning', isRegisterUpdateMode);
+                addNewGuestBtn.innerHTML = isRegisterUpdateMode
+                    ? '<i class="bi bi-pencil-square me-1"></i>Tambah ke Buku Tamu'
+                    : '<i class="bi bi-person-plus me-1"></i>Tambah ke Buku Tamu';
+                if (registerTitleText) {
+                    registerTitleText.textContent = isRegisterUpdateMode ? 'Ubah Data Tamu' : defaultRegisterTitle;
+                }
+                if (registerSubtitleText) {
+                    registerSubtitleText.textContent = isRegisterUpdateMode
+                        ? 'Edit data tamu yang ditemukan, lalu klik Tambah ke Buku Tamu.'
+                        : defaultRegisterSubtitle;
+                }
+                if (cancelUpdateBtn) {
+                    cancelUpdateBtn.classList.toggle('d-none', !isRegisterUpdateMode);
+                }
+            }
+
+            function fillRegisterFormFromGuest(guest) {
+                if (!guest) return;
+                var normalizedPhone = normalizePhone(guest.phone || (phoneInput ? phoneInput.value : '') || '');
+                var isParent = isParentGuest(guest);
+                if (regName) regName.value = (guest.full_name || '').trim();
+                if (regPhone) regPhone.value = normalizedPhone;
+                if (regEmail) regEmail.value = (guest.email || '').trim();
+                if (regInstansi) regInstansi.value = isParent ? '' : ((guest.instansi || '').trim());
+                if (regJabatan) regJabatan.value = isParent ? '' : ((guest.jabatan || '').trim());
+                if (regStudentClass) regStudentClass.value = isParent ? ((guest.student_class || '').trim()) : '';
+                if (regStudentName) regStudentName.value = isParent ? ((guest.student_name || '').trim()) : '';
+                if (regParentYes && regParentNo) {
+                    regParentYes.checked = isParent;
+                    regParentNo.checked = !isParent;
+                }
+                setParentMode(isParent);
+            }
+
+            function resetRegisterFormForNewGuest() {
+                if (regName) regName.value = '';
+                if (regEmail) regEmail.value = '';
+                if (regInstansi) regInstansi.value = '';
+                if (regJabatan) regJabatan.value = '';
+                if (regStudentClass) regStudentClass.value = '';
+                if (regStudentName) regStudentName.value = '';
+                if (regParentYes && regParentNo) {
+                    regParentYes.checked = true;
+                    regParentNo.checked = false;
+                }
+                setParentMode(true);
+                if (regPhone && phoneInput) {
+                    regPhone.value = normalizePhone(phoneInput.value || '');
+                }
+                setRegisterUpdateMode(false);
             }
 
             function setParentMode(isParent) {
@@ -987,6 +1059,7 @@
                 renderSelectedGuests({ moveToVisit: true });
                 hideSearchResult();
                 setRegisterFormVisible(false);
+                setRegisterUpdateMode(false);
             }
 
             async function lookupPhone() {
@@ -1011,9 +1084,7 @@
                         if (!guest.phone) {
                             guest.phone = normalized;
                         }
-                        var instansiLower = String(guest.instansi || '').toLowerCase();
-                        var jabatanLower = String(guest.jabatan || '').toLowerCase();
-                        var isParent = guest.is_parent || instansiLower === 'wali murid' || jabatanLower === 'wali murid';
+                        var isParent = isParentGuest(guest);
                         var infoLine1 = '';
                         var infoLine2 = '';
                         if (isParent) {
@@ -1029,7 +1100,10 @@
                             + '<div class="small text-muted">' + infoLine2 + '</div>'
                             + '<div class="small text-muted">' + (guest.phone || normalized) + '</div>'
                             + '<div class="small text-muted mt-1">Klik kartu atau tombol untuk menambahkan.</div>'
-                            + '<button type="button" class="btn btn-sm btn-outline-primary mt-2" id="addExistingBtn">Tambah ke Buku Tamu</button>'
+                            + '<div class="d-flex flex-wrap gap-2 mt-2">'
+                            + '<button type="button" class="btn btn-sm btn-outline-primary" id="addExistingBtn">Tambah ke Buku Tamu</button>'
+                            + '<button type="button" class="btn btn-sm btn-outline-warning" id="editExistingBtn">Ubah Data</button>'
+                            + '</div>'
                             + '</div>';
                         showSearchResult(html);
                         var card = searchResult.querySelector('[data-guest-card="true"]');
@@ -1045,9 +1119,20 @@
                                 addGuest(guest);
                             });
                         }
+                        var editBtn = document.getElementById('editExistingBtn');
+                        if (editBtn) {
+                            editBtn.addEventListener('click', function (event) {
+                                event.stopPropagation();
+                                setRegisterFormVisible(true);
+                                fillRegisterFormFromGuest(guest);
+                                setRegisterUpdateMode(true);
+                                if (regName) regName.focus();
+                            });
+                        }
                     } else {
                         showSearchResult('<div class="text-muted">Nomor belum terdaftar. Silakan lanjut isi form pendaftaran tamu baru di bawah.</div>');
                         setRegisterFormVisible(true);
+                        setRegisterUpdateMode(false);
                         if (regName) regName.focus();
                     }
                 } catch (err) {
@@ -1067,6 +1152,13 @@
                 var willShow = registerForm.classList.contains('d-none');
                 setRegisterFormVisible(willShow);
             });
+
+            if (cancelUpdateBtn) {
+                cancelUpdateBtn.addEventListener('click', function () {
+                    resetRegisterFormForNewGuest();
+                    if (regName) regName.focus();
+                });
+            }
 
             addNewGuestBtn.addEventListener('click', function () {
                 var name = (regName.value || '').trim();
@@ -1103,6 +1195,7 @@
                     student_name: isParent ? studentName : ''
                 });
                 setRegisterFormVisible(false);
+                setRegisterUpdateMode(false);
             });
 
             if (tabSudin) {
@@ -1185,6 +1278,7 @@
             });
 
             setRegisterFormVisible(!registerForm.classList.contains('d-none'));
+            setRegisterUpdateMode(false);
             setGuestType('umum');
             syncSubmitState();
         })();
