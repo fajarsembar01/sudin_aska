@@ -9,6 +9,9 @@ on:
       - "ai_core.py"
   workflow_dispatch:  # bisa dipicu manual dari GitHub UI
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # fix Node.js deprecation warning
+
 jobs:
   build-and-deploy:
     name: Build Vectorstore & Sync ke Server
@@ -28,14 +31,14 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install \
-            langchain \
-            langchain-community \
-            langchain-openai \
-            langchain-huggingface \
-            faiss-cpu \
-            sentence-transformers \
-            python-dotenv \
-            openai
+            "langchain==0.3.25" \
+            "langchain-community==0.3.23" \
+            "langchain-openai==0.3.18" \
+            "langchain-huggingface==0.1.2" \
+            "faiss-cpu==1.9.0" \
+            "sentence-transformers==3.4.1" \
+            "python-dotenv==1.0.1" \
+            "openai==1.79.0"
 
       - name: 🧠 Build FAISS Vectorstore
         env:
@@ -47,22 +50,69 @@ jobs:
           ASKA_VECTORSTORE_INDEX: kecerdasan
           ASKA_CHUNK_SIZE: "500"
           ASKA_CHUNK_OVERLAP: "50"
+          # LLM key (hanya untuk inisialisasi chain, tidak dipakai embed)
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           echo "🚀 Memulai proses embedding kecerdasan ASKA..."
-          python -c "
-          import sys
+          python - <<'EOF'
+          import sys, os
           sys.path.insert(0, '.')
-          from ai_core import build_qa_chain
-          print('✅ Vectorstore berhasil dibangun!')
-          build_qa_chain()
-          "
+          from knowledge_loader import load_kecerdasan
+          from langchain_openai import OpenAIEmbeddings
+          from langchain_community.vectorstores import FAISS
+          from langchain.text_splitter import RecursiveCharacterTextSplitter
+          import hashlib, json
+          from pathlib import Path
+
+          # Load konten
+          content = load_kecerdasan()
+          print(f"✅ Konten dimuat: {len(content):,} karakter")
+
+          # Split
+          splitter = RecursiveCharacterTextSplitter(
+              chunk_size=int(os.getenv("ASKA_CHUNK_SIZE", "500")),
+              chunk_overlap=int(os.getenv("ASKA_CHUNK_OVERLAP", "50")),
+              separators=["\n|", "\n## ", "\n\n", "\n", " ", ""],
+              keep_separator=True,
+          )
+          docs = splitter.create_documents([content])
+          print(f"📄 Jumlah chunk: {len(docs)}")
+
+          # Embed
+          embedding = OpenAIEmbeddings(
+              model=os.getenv("ASKA_EMBEDDING_MODEL", "text-embedding-3-large"),
+              openai_api_key=os.getenv("OPENAI_API_KEY"),
+          )
+          vectorstore = FAISS.from_documents(docs, embedding)
+          print("🧠 Embedding selesai!")
+
+          # Simpan cache
+          cache_root = Path(os.getenv("ASKA_VECTORSTORE_PATH", ".aska_vectorstore"))
+          index_name = os.getenv("ASKA_VECTORSTORE_INDEX", "kecerdasan")
+          cache_dir = cache_root / index_name
+          metadata_path = cache_root / f"{index_name}.meta.json"
+          cache_dir.parent.mkdir(parents=True, exist_ok=True)
+          vectorstore.save_local(str(cache_dir))
+          doc_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+          metadata_path.write_text(json.dumps({
+              "doc_hash": doc_hash,
+              "chunk_size": int(os.getenv("ASKA_CHUNK_SIZE", "500")),
+              "chunk_overlap": int(os.getenv("ASKA_CHUNK_OVERLAP", "50")),
+              "embedding_signature": {
+                  "provider": "openai",
+                  "model": os.getenv("ASKA_EMBEDDING_MODEL", "text-embedding-3-large"),
+                  "api_base": "https://api.openai.com/v1",
+              },
+          }, indent=2))
+          print(f"💾 Cache tersimpan di: {cache_dir}")
+          EOF
 
       - name: 🔑 Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SERVER_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          printf '%s' "${{ secrets.SERVER_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: 📤 Sync vectorstore ke server
         run: |
@@ -74,5 +124,5 @@ jobs:
         run: |
           ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
             "cd ${{ secrets.SERVER_PROJECT_PATH }} && \
-             echo '✅ Vectorstore sudah diperbarui. Merestart bot...' && \
-             sudo systemctl restart aska || pm2 restart aska || echo '⚠️ Restart manual diperlukan'"
+             echo '✅ Vectorstore diperbarui!' && \
+             (sudo systemctl restart aska 2>/dev/null || pm2 restart aska 2>/dev/null || echo '⚠️ Restart manual diperlukan')"
