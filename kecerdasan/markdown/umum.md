@@ -1,3 +1,7 @@
+# POSKO SPMB dan call center SPMB
+untuk wilayah jakarta utara 2 posko SPMB ada di SMP 30
+Nomer call center : 081320006875
+
 # Tentang ASKA – Agent AI Sekolah Kita 🏫🤖✨
 
 ## Apa itu ASKA?

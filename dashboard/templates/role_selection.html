@@ -87,6 +87,8 @@
             color: var(--text-main);
             text-decoration: none;
             gap: 16px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: rgba(13, 110, 253, 0.14);
         }
 
         .selection-card:hover {
@@ -247,7 +249,7 @@
                 <div class="row g-3 role-selection-row{% if enable_odd_center %} odd-center-enabled{% endif %}">
                     {% for card in cards %}
                     <div class="{{ card.col_class or default_col_class }}{% if enable_odd_center and is_odd_count and loop.last %} odd-card-center{% endif %}">
-                        <a href="{{ card.href }}" class="selection-card">
+                        <a href="{{ card.href }}" class="selection-card" data-nav-href="{{ card.href }}">
                             <div class="icon-wrapper">
                                 <i class="bi {{ card.icon }}"></i>
                             </div>
@@ -269,6 +271,25 @@
             {% endif %}
         </div>
     </div>
+    <script>
+        (function () {
+            function getCardHref(card) {
+                if (!card) return '';
+                return (card.getAttribute('data-nav-href') || card.getAttribute('href') || '').trim();
+            }
+
+            document.addEventListener('click', function (event) {
+                var card = event.target.closest('.selection-card[data-nav-href]');
+                if (!card) return;
+                if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                if (typeof event.button === 'number' && event.button !== 0) return;
+                var href = getCardHref(card);
+                if (!href) return;
+                event.preventDefault();
+                window.location.assign(href);
+            }, true);
+        })();
+    </script>
 </body>
 
 </html>
