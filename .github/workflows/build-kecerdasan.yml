@@ -108,12 +108,19 @@ jobs:
           EOF
 
       - name: 🔑 Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.SERVER_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          # Tulis key via env var agar newline tidak rusak
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
+          # Verifikasi key valid
+          ssh-keygen -l -f ~/.ssh/id_ed25519
+          # Config SSH
           cat >> ~/.ssh/config <<EOF
-          Host ${{ secrets.SERVER_HOST }}
+          Host ${SERVER_HOST}
             StrictHostKeyChecking no
             UserKnownHostsFile /dev/null
             IdentityFile ~/.ssh/id_ed25519
