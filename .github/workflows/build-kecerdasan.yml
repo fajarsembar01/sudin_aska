@@ -110,9 +110,14 @@ jobs:
       - name: 🔑 Setup SSH
         run: |
           mkdir -p ~/.ssh
-          printf '%s' "${{ secrets.SERVER_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          printf '%s\n' "${{ secrets.SERVER_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          cat >> ~/.ssh/config <<EOF
+          Host ${{ secrets.SERVER_HOST }}
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            IdentityFile ~/.ssh/id_ed25519
+          EOF
 
       - name: 📤 Sync vectorstore ke server
         run: |
