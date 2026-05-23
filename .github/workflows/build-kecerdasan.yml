@@ -128,9 +128,14 @@ jobs:
 
       - name: 📤 Sync vectorstore ke server
         run: |
+          # Sync vectorstore (hasil embedding)
           rsync -avz --progress --delete \
             .aska_vectorstore/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/.aska_vectorstore/
+          # Sync kecerdasan/ agar doc_hash cocok di server
+          rsync -avz --progress --delete \
+            kecerdasan/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/kecerdasan/
 
       - name: 🔄 Reload ASKA di server
         run: |
