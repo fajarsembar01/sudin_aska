@@ -1,13 +1,7 @@
 name: 🧠 Build Kecerdasan ASKA & Deploy ke Server
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "kecerdasan/**"
-      - "knowledge_loader.py"
-      - "ai_core.py"
-  workflow_dispatch:  # bisa dipicu manual dari GitHub UI
+  workflow_dispatch:  # hanya jalan jika dipicu manual dari GitHub Actions UI
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # fix Node.js deprecation warning
