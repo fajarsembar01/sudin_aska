@@ -98,6 +98,31 @@ def _save_vectorstore_cache(
     metadata_path.write_text(json.dumps(metadata, indent=2))
 
 
+def _load_cached_vectorstore_fallback(
+    *,
+    cache_dir: Path,
+    embedding,
+) -> Optional[FAISS]:
+    """Muat FAISS yang sudah ada tanpa validasi hash — dipakai sebagai fallback
+    agar bot tetap jalan dengan kecerdasan lama saat cache tidak cocok."""
+    if not cache_dir.exists():
+        return None
+    try:
+        vs = FAISS.load_local(
+            str(cache_dir),
+            embeddings=embedding,
+            allow_dangerous_deserialization=True,
+        )
+        _embed_log_also_file(
+            "[FALLBACK] Vectorstore lama berhasil dimuat — bot tetap jalan dengan kecerdasan sebelumnya.",
+            "warning",
+        )
+        return vs
+    except Exception as exc:
+        _embed_log_also_file(f"[FALLBACK] Gagal memuat vectorstore lama: {exc}", "error")
+        return None
+
+
 def build_qa_chain():
     _embed_log_also_file("=== build_qa_chain() dipanggil ===")
     t_start = time.perf_counter()
@@ -224,45 +249,60 @@ def build_qa_chain():
         embedding=embedding,
     )
     if vectorstore is None:
-        _embed_log_also_file("Cache FAISS tidak ditemukan / kadaluarsa — membangun ulang vectorstore...", "warning")
+        _embed_log_also_file("Cache FAISS tidak ditemukan / kadaluarsa.", "warning")
 
-        # Safety guard: cegah re-embed remote yang tidak disengaja (biaya API).
-        # Ini biasa kejadian setelah git pull saat konten knowledge berubah
-        # sehingga doc_hash berbeda dan cache lama invalid.
-        if embedding_signature.get("provider") == "openai" and not _is_truthy(
-            os.getenv("ASKA_ALLOW_REMOTE_EMBEDDING_REINDEX")
-        ):
+        allow_reindex = _is_truthy(os.getenv("ASKA_ALLOW_REMOTE_EMBEDDING_REINDEX"))
+        is_remote = embedding_signature.get("provider") == "openai"
+
+        # Coba pakai vectorstore LAMA dulu sebagai fallback agar bot tetap jalan
+        # tanpa harus rebuild (hemat token & waktu).
+        vectorstore = _load_cached_vectorstore_fallback(
+            cache_dir=cache_dir,
+            embedding=embedding,
+        )
+        if vectorstore is not None:
+            # Fallback berhasil — tidak perlu rebuild, bot jalan dengan kecerdasan lama
+            _embed_log_also_file(
+                "Menggunakan vectorstore lama sebagai fallback. "
+                "Jalankan build ulang via GitHub Actions untuk memperbarui kecerdasan.",
+                "warning",
+            )
+        elif is_remote and not allow_reindex:
+            # Tidak ada fallback & rebuild remote diblokir → raise agar tidak buang token
             msg_blocked = (
-                "Cache embedding tidak cocok dan re-index remote diblokir untuk mencegah biaya tak sengaja. "
-                "Set ASKA_ALLOW_REMOTE_EMBEDDING_REINDEX=1 bila memang ingin re-embed via API."
+                "Cache tidak cocok, tidak ada fallback, dan re-index remote diblokir. "
+                "Set ASKA_ALLOW_REMOTE_EMBEDDING_REINDEX=1 untuk rebuild, "
+                "atau jalankan build via GitHub Actions lalu sync ke server."
             )
             _embed_log_also_file(msg_blocked, "error")
             raise RuntimeError(msg_blocked)
-
-        t_embed = time.perf_counter()
-        docs = text_splitter.create_documents([content])
-        _embed_log_also_file(f"Jumlah chunk: {len(docs)}")
-        try:
-            vectorstore = FAISS.from_documents(docs, embedding)
-            dur_ms = int((time.perf_counter() - t_embed) * 1000)
-            _embed_log_also_file(f"Embedding selesai dalam {dur_ms} ms — menyimpan cache...")
-        except Exception as exc:
-            _embed_log_also_file(
-                f"GAGAL saat FAISS.from_documents: {type(exc).__name__}: {exc}", "error"
+        else:
+            # Tidak ada fallback, rebuild diizinkan (lokal atau ASKA_ALLOW_REMOTE_EMBEDDING_REINDEX=1)
+            _embed_log_also_file("Membangun ulang vectorstore...", "warning")
+            t_embed = time.perf_counter()
+            docs = text_splitter.create_documents([content])
+            _embed_log_also_file(f"Jumlah chunk: {len(docs)}")
+            try:
+                vectorstore = FAISS.from_documents(docs, embedding)
+                dur_ms = int((time.perf_counter() - t_embed) * 1000)
+                _embed_log_also_file(f"Embedding selesai dalam {dur_ms} ms — menyimpan cache...")
+            except Exception as exc:
+                _embed_log_also_file(
+                    f"GAGAL saat FAISS.from_documents: {type(exc).__name__}: {exc}", "error"
+                )
+                raise
+            _save_vectorstore_cache(
+                vectorstore=vectorstore,
+                cache_dir=cache_dir,
+                metadata_path=metadata_path,
+                metadata={
+                    "doc_hash": doc_hash,
+                    "chunk_size": chunk_size,
+                    "chunk_overlap": chunk_overlap,
+                    "embedding_signature": embedding_signature,
+                },
             )
-            raise
-        _save_vectorstore_cache(
-            vectorstore=vectorstore,
-            cache_dir=cache_dir,
-            metadata_path=metadata_path,
-            metadata={
-                "doc_hash": doc_hash,
-                "chunk_size": chunk_size,
-                "chunk_overlap": chunk_overlap,
-                "embedding_signature": embedding_signature,
-            },
-        )
-        _embed_log_also_file("Cache FAISS berhasil disimpan")
+            _embed_log_also_file("Cache FAISS berhasil disimpan")
     else:
         _embed_log_also_file("Cache FAISS dimuat dari disk — embedding SKIP")
 
