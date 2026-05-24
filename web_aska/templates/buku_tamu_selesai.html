@@ -60,11 +60,11 @@
             <div class="autoplay-media-wrap">
             <audio {% if not bubble.media_autoplay %}controls{% endif %} preload="metadata"
                 {% if bubble.media_loop %}loop{% endif %}
-                {% if bubble.media_autoplay %}autoplay data-autoplay-lock="1"{% endif %}>
+                {% if bubble.media_autoplay %}autoplay muted data-autoplay-lock="1"{% endif %}>
                 <source src="{{ bubble.media_src }}">
                 Browser kamu belum support audio ini.
             </audio>
-            {% if bubble.media_autoplay %}<div class="tap-to-play-audio" aria-label="Ketuk untuk putar audio">▶️ Ketuk untuk putar</div>{% endif %}
+            {% if bubble.media_autoplay %}<div class="tap-to-unmute" aria-label="Ketuk untuk aktifkan suara">🔇 Ketuk untuk suara</div>{% endif %}
             </div>
             {% endif %}
         </div>
@@ -137,11 +137,11 @@
             <div class="autoplay-media-wrap">
             <audio {% if not limit_bubble.media_autoplay %}controls{% endif %} preload="metadata"
                 {% if limit_bubble.media_loop %}loop{% endif %}
-                {% if limit_bubble.media_autoplay %}autoplay data-autoplay-lock="1"{% endif %}>
+                {% if limit_bubble.media_autoplay %}autoplay muted data-autoplay-lock="1"{% endif %}>
                 <source src="{{ limit_bubble.media_src }}">
                 Browser kamu belum support audio ini.
             </audio>
-            {% if limit_bubble.media_autoplay %}<div class="tap-to-play-audio" aria-label="Ketuk untuk putar audio">▶️ Ketuk untuk putar</div>{% endif %}
+            {% if limit_bubble.media_autoplay %}<div class="tap-to-unmute" aria-label="Ketuk untuk aktifkan suara">🔇 Ketuk untuk suara</div>{% endif %}
             </div>
             {% endif %}
         </div>
@@ -528,9 +528,9 @@
                 .replace(/<br\s*\/?>/gi, '\n');
         }
 
-        // iOS Safari hanya izinkan autoplay jika video muted.
-        // Strategi: force muted saat play, tampilkan overlay unmute untuk video.
-        // Audio: coba autoplay, jika gagal (blocked) tampilkan overlay tap-to-play.
+        // iOS Safari hanya izinkan autoplay jika media muted.
+        // Semua media dengan autoplay=on di-force muted agar langsung putar di iOS.
+        // Overlay tap-to-unmute ditampilkan agar user bisa aktifkan suara setelah itu.
         function enforceAutoplayLock(mediaEl) {
             if (!mediaEl || mediaEl.getAttribute('data-autoplay-lock') !== '1') return;
             if (mediaEl.getAttribute('data-autoplay-bound') === '1') return;
@@ -541,50 +541,27 @@
             mediaEl.setAttribute('controlslist', 'nodownload nofullscreen noremoteplayback');
             mediaEl.setAttribute('disablepictureinpicture', '');
 
-            var isVideo = mediaEl.tagName.toLowerCase() === 'video';
             var wrap = mediaEl.closest('.autoplay-media-wrap');
             var unmuteOverlay = wrap ? wrap.querySelector('.tap-to-unmute') : null;
-            var audioOverlay = wrap ? wrap.querySelector('.tap-to-play-audio') : null;
 
-            // Untuk video: pastikan muted agar Safari izinkan autoplay
-            if (isVideo) {
-                mediaEl.muted = true;
-                if (unmuteOverlay) {
-                    unmuteOverlay.style.display = 'flex';
-                    unmuteOverlay.addEventListener('click', function () {
-                        mediaEl.muted = false;
-                        unmuteOverlay.style.display = 'none';
-                    });
-                }
+            // Force muted agar iOS Safari izinkan autoplay (berlaku video & audio)
+            mediaEl.muted = true;
+            if (unmuteOverlay) {
+                unmuteOverlay.style.display = 'flex';
+                unmuteOverlay.addEventListener('click', function () {
+                    mediaEl.muted = false;
+                    unmuteOverlay.style.display = 'none';
+                });
             }
 
             var replay = function () {
                 var playPromise = mediaEl.play();
                 if (playPromise && typeof playPromise.catch === 'function') {
-                    playPromise.catch(function () {
-                        // Autoplay diblokir (iOS audio atau kebijakan browser)
-                        if (!isVideo && audioOverlay) {
-                            // Tampilkan tombol play manual untuk audio
-                            audioOverlay.style.display = 'flex';
-                            mediaEl.style.pointerEvents = '';
-                            mediaEl.controls = true;
-                            audioOverlay.addEventListener('click', function () {
-                                mediaEl.play();
-                                audioOverlay.style.display = 'none';
-                            }, { once: true });
-                        } else if (isVideo) {
-                            // Coba lagi setelah user interaction pertama
-                            document.addEventListener('touchstart', function retryPlay() {
-                                mediaEl.play().catch(function () {});
-                                document.removeEventListener('touchstart', retryPlay);
-                            }, { once: true });
-                        }
-                    });
+                    playPromise.catch(function () {});
                 }
             };
 
             mediaEl.addEventListener('pause', function () {
-                // Jangan force-replay jika di-pause karena overlay
                 if (!mediaEl.ended) replay();
             });
             mediaEl.addEventListener('ended', function () {
@@ -727,6 +704,7 @@
                     if (limitBubble.mediaLoop) audio.loop = true;
                     if (limitBubble.mediaAutoplay) {
                         audio.autoplay = true;
+                        audio.muted = true; // force muted agar iOS Safari izinkan autoplay
                         audio.setAttribute('data-autoplay-lock', '1');
                     } else {
                         audio.controls = true;
@@ -735,13 +713,13 @@
                     sourceAudio.src = mediaSrc;
                     audio.appendChild(sourceAudio);
                     audioWrap.appendChild(audio);
-                    // Overlay tap-to-play untuk audio (fallback iOS)
+                    // Overlay tap-to-unmute untuk audio autoplay
                     if (limitBubble.mediaAutoplay) {
-                        var audioPlayBtn = document.createElement('div');
-                        audioPlayBtn.className = 'tap-to-play-audio';
-                        audioPlayBtn.setAttribute('aria-label', 'Ketuk untuk putar audio');
-                        audioPlayBtn.textContent = '▶️ Ketuk untuk putar';
-                        audioWrap.appendChild(audioPlayBtn);
+                        var audioUnmuteBtn = document.createElement('div');
+                        audioUnmuteBtn.className = 'tap-to-unmute';
+                        audioUnmuteBtn.setAttribute('aria-label', 'Ketuk untuk aktifkan suara');
+                        audioUnmuteBtn.textContent = '🔇 Ketuk untuk suara';
+                        audioWrap.appendChild(audioUnmuteBtn);
                     }
                     mediaWrap.appendChild(audioWrap);
                 }
