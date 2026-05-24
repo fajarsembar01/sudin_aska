@@ -47,20 +47,25 @@
             {% if bubble.media_type == 'image' %}
             <img src="{{ bubble.media_src }}" alt="Media bubble ASKA" loading="lazy">
             {% elif bubble.media_type == 'video' %}
+            <div class="autoplay-media-wrap">
             <video {% if not bubble.media_autoplay %}controls{% endif %} playsinline preload="metadata"
                 {% if bubble.media_loop %}loop{% endif %}
-                {% if bubble.media_autoplay %}autoplay data-autoplay-lock="1"{% endif %}
-                {% if bubble.video_muted %}muted{% endif %}>
+                {% if bubble.media_autoplay %}autoplay muted data-autoplay-lock="1"{% elif bubble.video_muted %}muted{% endif %}>
                 <source src="{{ bubble.media_src }}">
                 Browser kamu belum support video ini.
             </video>
+            {% if bubble.media_autoplay and not bubble.video_muted %}<div class="tap-to-unmute" aria-label="Ketuk untuk aktifkan suara">🔇 Ketuk untuk suara</div>{% endif %}
+            </div>
             {% elif bubble.media_type == 'audio' %}
+            <div class="autoplay-media-wrap">
             <audio {% if not bubble.media_autoplay %}controls{% endif %} preload="metadata"
                 {% if bubble.media_loop %}loop{% endif %}
                 {% if bubble.media_autoplay %}autoplay data-autoplay-lock="1"{% endif %}>
                 <source src="{{ bubble.media_src }}">
                 Browser kamu belum support audio ini.
             </audio>
+            {% if bubble.media_autoplay %}<div class="tap-to-play-audio" aria-label="Ketuk untuk putar audio">▶️ Ketuk untuk putar</div>{% endif %}
+            </div>
             {% endif %}
         </div>
         {% endif %}
@@ -119,20 +124,25 @@
             {% if limit_bubble.media_type == 'image' %}
             <img src="{{ limit_bubble.media_src }}" alt="Media bubble limit chat ASKA" loading="lazy">
             {% elif limit_bubble.media_type == 'video' %}
+            <div class="autoplay-media-wrap">
             <video {% if not limit_bubble.media_autoplay %}controls{% endif %} playsinline preload="metadata"
                 {% if limit_bubble.media_loop %}loop{% endif %}
-                {% if limit_bubble.media_autoplay %}autoplay data-autoplay-lock="1"{% endif %}
-                {% if limit_bubble.video_muted %}muted{% endif %}>
+                {% if limit_bubble.media_autoplay %}autoplay muted data-autoplay-lock="1"{% elif limit_bubble.video_muted %}muted{% endif %}>
                 <source src="{{ limit_bubble.media_src }}">
                 Browser kamu belum support video ini.
             </video>
+            {% if limit_bubble.media_autoplay and not limit_bubble.video_muted %}<div class="tap-to-unmute" aria-label="Ketuk untuk aktifkan suara">🔇 Ketuk untuk suara</div>{% endif %}
+            </div>
             {% elif limit_bubble.media_type == 'audio' %}
+            <div class="autoplay-media-wrap">
             <audio {% if not limit_bubble.media_autoplay %}controls{% endif %} preload="metadata"
                 {% if limit_bubble.media_loop %}loop{% endif %}
                 {% if limit_bubble.media_autoplay %}autoplay data-autoplay-lock="1"{% endif %}>
                 <source src="{{ limit_bubble.media_src }}">
                 Browser kamu belum support audio ini.
             </audio>
+            {% if limit_bubble.media_autoplay %}<div class="tap-to-play-audio" aria-label="Ketuk untuk putar audio">▶️ Ketuk untuk putar</div>{% endif %}
+            </div>
             {% endif %}
         </div>
         {% endif %}
@@ -518,6 +528,9 @@
                 .replace(/<br\s*\/?>/gi, '\n');
         }
 
+        // iOS Safari hanya izinkan autoplay jika video muted.
+        // Strategi: force muted saat play, tampilkan overlay unmute untuk video.
+        // Audio: coba autoplay, jika gagal (blocked) tampilkan overlay tap-to-play.
         function enforceAutoplayLock(mediaEl) {
             if (!mediaEl || mediaEl.getAttribute('data-autoplay-lock') !== '1') return;
             if (mediaEl.getAttribute('data-autoplay-bound') === '1') return;
@@ -528,14 +541,51 @@
             mediaEl.setAttribute('controlslist', 'nodownload nofullscreen noremoteplayback');
             mediaEl.setAttribute('disablepictureinpicture', '');
 
+            var isVideo = mediaEl.tagName.toLowerCase() === 'video';
+            var wrap = mediaEl.closest('.autoplay-media-wrap');
+            var unmuteOverlay = wrap ? wrap.querySelector('.tap-to-unmute') : null;
+            var audioOverlay = wrap ? wrap.querySelector('.tap-to-play-audio') : null;
+
+            // Untuk video: pastikan muted agar Safari izinkan autoplay
+            if (isVideo) {
+                mediaEl.muted = true;
+                if (unmuteOverlay) {
+                    unmuteOverlay.style.display = 'flex';
+                    unmuteOverlay.addEventListener('click', function () {
+                        mediaEl.muted = false;
+                        unmuteOverlay.style.display = 'none';
+                    });
+                }
+            }
+
             var replay = function () {
                 var playPromise = mediaEl.play();
                 if (playPromise && typeof playPromise.catch === 'function') {
-                    playPromise.catch(function () { });
+                    playPromise.catch(function () {
+                        // Autoplay diblokir (iOS audio atau kebijakan browser)
+                        if (!isVideo && audioOverlay) {
+                            // Tampilkan tombol play manual untuk audio
+                            audioOverlay.style.display = 'flex';
+                            mediaEl.style.pointerEvents = '';
+                            mediaEl.controls = true;
+                            audioOverlay.addEventListener('click', function () {
+                                mediaEl.play();
+                                audioOverlay.style.display = 'none';
+                            }, { once: true });
+                        } else if (isVideo) {
+                            // Coba lagi setelah user interaction pertama
+                            document.addEventListener('touchstart', function retryPlay() {
+                                mediaEl.play().catch(function () {});
+                                document.removeEventListener('touchstart', retryPlay);
+                            }, { once: true });
+                        }
+                    });
                 }
             };
+
             mediaEl.addEventListener('pause', function () {
-                replay();
+                // Jangan force-replay jika di-pause karena overlay
+                if (!mediaEl.ended) replay();
             });
             mediaEl.addEventListener('ended', function () {
                 if (mediaEl.loop) return;
@@ -642,22 +692,36 @@
                     img.loading = 'lazy';
                     mediaWrap.appendChild(img);
                 } else if (mediaType === 'video') {
+                    var videoWrap = document.createElement('div');
+                    videoWrap.className = 'autoplay-media-wrap';
                     var video = document.createElement('video');
                     video.playsInline = true;
                     video.preload = 'metadata';
                     if (limitBubble.mediaLoop) video.loop = true;
                     if (limitBubble.mediaAutoplay) {
                         video.autoplay = true;
+                        video.muted = true; // force muted agar iOS Safari izinkan autoplay
                         video.setAttribute('data-autoplay-lock', '1');
                     } else {
                         video.controls = true;
+                        if (limitBubble.videoMuted) video.muted = true;
                     }
-                    if (limitBubble.videoMuted) video.muted = true;
                     var source = document.createElement('source');
                     source.src = mediaSrc;
                     video.appendChild(source);
-                    mediaWrap.appendChild(video);
+                    videoWrap.appendChild(video);
+                    // Overlay unmute untuk video autoplay (jika aslinya tidak muted)
+                    if (limitBubble.mediaAutoplay && !limitBubble.videoMuted) {
+                        var unmuteBtn = document.createElement('div');
+                        unmuteBtn.className = 'tap-to-unmute';
+                        unmuteBtn.setAttribute('aria-label', 'Ketuk untuk aktifkan suara');
+                        unmuteBtn.textContent = '🔇 Ketuk untuk suara';
+                        videoWrap.appendChild(unmuteBtn);
+                    }
+                    mediaWrap.appendChild(videoWrap);
                 } else if (mediaType === 'audio') {
+                    var audioWrap = document.createElement('div');
+                    audioWrap.className = 'autoplay-media-wrap';
                     var audio = document.createElement('audio');
                     audio.preload = 'metadata';
                     if (limitBubble.mediaLoop) audio.loop = true;
@@ -670,7 +734,16 @@
                     var sourceAudio = document.createElement('source');
                     sourceAudio.src = mediaSrc;
                     audio.appendChild(sourceAudio);
-                    mediaWrap.appendChild(audio);
+                    audioWrap.appendChild(audio);
+                    // Overlay tap-to-play untuk audio (fallback iOS)
+                    if (limitBubble.mediaAutoplay) {
+                        var audioPlayBtn = document.createElement('div');
+                        audioPlayBtn.className = 'tap-to-play-audio';
+                        audioPlayBtn.setAttribute('aria-label', 'Ketuk untuk putar audio');
+                        audioPlayBtn.textContent = '▶️ Ketuk untuk putar';
+                        audioWrap.appendChild(audioPlayBtn);
+                    }
+                    mediaWrap.appendChild(audioWrap);
                 }
 
                 wrapper.appendChild(mediaWrap);

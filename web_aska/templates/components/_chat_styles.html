@@ -739,4 +739,42 @@
         .jump-bottom.show {
             display: inline-flex;
         }
+
+        /* iOS autoplay fallback overlays */
+        .autoplay-media-wrap {
+            position: relative;
+            display: block;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .tap-to-unmute,
+        .tap-to-play-audio {
+            display: none; /* ditampilkan via JS bila autoplay gagal */
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.62);
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 999px;
+            cursor: pointer;
+            white-space: nowrap;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 5;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .tap-to-unmute:hover,
+        .tap-to-play-audio:hover {
+            opacity: 0.85;
+        }
     </style>
