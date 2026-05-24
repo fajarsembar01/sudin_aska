@@ -1047,6 +1047,8 @@ def _ensure_guest_chat_bubble_schema(*, force_refresh: bool = False) -> None:
 
     _ensure_guestbook_general_schema()
     with conn.cursor() as cur:
+        # Gunakan advisory lock untuk mencegah deadlock saat gunicorn workers melakukan CREATE/ALTER TABLE bersamaan
+        cur.execute("SELECT pg_advisory_xact_lock(777123)")
         cur.execute(
             """
             CREATE TABLE IF NOT EXISTS daftar_tamu_guest_chat_bubbles (
