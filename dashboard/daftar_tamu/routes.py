@@ -3979,7 +3979,7 @@ def admin_update_guest_chat_settings() -> Response:
             limit_reached_links=direct_links,
             limit_reached_media_loop=media_loop,
             limit_reached_media_autoplay=media_autoplay,
-            limit_reached_video_muted=video_muted,
+            limit_reached_video_muted=True if media_autoplay else video_muted,
             updated_by=user.get("id"),
         )
     except ValueError as exc:
@@ -4060,7 +4060,7 @@ def admin_create_guest_chat_bubble() -> Response:
             direct_links=direct_links,
             media_loop=media_loop,
             media_autoplay=media_autoplay,
-            video_muted=video_muted,
+            video_muted=True if media_autoplay else video_muted,
             created_by=user.get("id"),
         )
     except ValueError as exc:
@@ -4142,7 +4142,7 @@ def admin_update_guest_chat_bubble(bubble_id: int) -> Response:
             direct_links=direct_links,
             media_loop=media_loop,
             media_autoplay=media_autoplay,
-            video_muted=video_muted,
+            video_muted=True if media_autoplay else video_muted,
         )
     except ValueError as exc:
         flash(str(exc), "danger")

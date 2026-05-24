@@ -184,11 +184,11 @@
                     {% if settings.limit_reached_media_type == 'image' and settings.limit_reached_media_preview_url %}
                     <img src="{{ settings.limit_reached_media_preview_url }}" alt="Media limit bubble">
                     {% elif settings.limit_reached_media_type == 'video' and (settings.limit_reached_media_preview_url or settings.limit_reached_media_url) %}
-                    <video {% if not settings.limit_reached_media_autoplay %}controls{% endif %} playsinline {% if settings.limit_reached_media_loop %}loop{% endif %} {% if settings.limit_reached_media_autoplay %}autoplay{% endif %} {% if settings.limit_reached_video_muted %}muted{% endif %}>
+                    <video {% if not settings.limit_reached_media_autoplay %}controls="controls"{% endif %} playsinline="playsinline" preload="auto" {% if settings.limit_reached_media_loop %}loop="loop"{% endif %} {% if settings.limit_reached_media_autoplay %}autoplay="autoplay" muted="muted"{% elif settings.limit_reached_video_muted %}muted="muted"{% endif %}>
                         <source src="{{ settings.limit_reached_media_preview_url or settings.limit_reached_media_url }}">
                     </video>
                     {% elif settings.limit_reached_media_type == 'audio' and (settings.limit_reached_media_preview_url or settings.limit_reached_media_url) %}
-                    <audio {% if not settings.limit_reached_media_autoplay %}controls{% endif %} preload="metadata" {% if settings.limit_reached_media_loop %}loop{% endif %} {% if settings.limit_reached_media_autoplay %}autoplay{% endif %}>
+                    <audio {% if not settings.limit_reached_media_autoplay %}controls="controls"{% endif %} preload="auto" {% if settings.limit_reached_media_loop %}loop="loop"{% endif %} {% if settings.limit_reached_media_autoplay %}autoplay="autoplay" muted="muted"{% endif %}>
                         <source src="{{ settings.limit_reached_media_preview_url or settings.limit_reached_media_url }}">
                     </audio>
                     {% endif %}
@@ -421,11 +421,11 @@
                     {% if row.media_type == 'image' and row.media_preview_url %}
                     <img src="{{ row.media_preview_url }}" alt="Media bubble saat ini">
                     {% elif row.media_type == 'video' and (row.media_preview_url or row.media_url) %}
-                    <video {% if not row.media_autoplay %}controls{% endif %} playsinline {% if row.media_loop %}loop{% endif %} {% if row.media_autoplay %}autoplay{% endif %} {% if row.video_muted %}muted{% endif %}>
+                    <video {% if not row.media_autoplay %}controls="controls"{% endif %} playsinline="playsinline" preload="auto" {% if row.media_loop %}loop="loop"{% endif %} {% if row.media_autoplay %}autoplay="autoplay" muted="muted"{% elif row.video_muted %}muted="muted"{% endif %}>
                         <source src="{{ row.media_preview_url or row.media_url }}">
                     </video>
                     {% elif row.media_type == 'audio' and (row.media_preview_url or row.media_url) %}
-                    <audio {% if not row.media_autoplay %}controls{% endif %} preload="metadata" {% if row.media_loop %}loop{% endif %} {% if row.media_autoplay %}autoplay{% endif %}>
+                    <audio {% if not row.media_autoplay %}controls="controls"{% endif %} preload="auto" {% if row.media_loop %}loop="loop"{% endif %} {% if row.media_autoplay %}autoplay="autoplay" muted="muted"{% endif %}>
                         <source src="{{ row.media_preview_url or row.media_url }}">
                     </audio>
                     {% endif %}
