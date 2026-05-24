@@ -298,6 +298,46 @@
             margin-bottom: 0;
         }
 
+        .onboarding-text {
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        .onboarding-media {
+            margin-top: 0.25rem;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+
+        .onboarding-media img,
+        .onboarding-media video,
+        .onboarding-media audio {
+            max-width: 100%;
+            border-radius: 12px;
+            display: block;
+            border: none;
+            box-shadow: none;
+            background: transparent;
+        }
+
+        .onboarding-media video {
+            width: 100%;
+        }
+
+        .onboarding-media audio {
+            width: 100%;
+        }
+
+        .onboarding-message.onboarding-media-only {
+            background: transparent;
+            padding: 0;
+            box-shadow: none;
+        }
+
+        .onboarding-message.onboarding-media-only .onboarding-media {
+            margin-top: 0;
+        }
+
         .onboarding-section {
             display: flex;
             align-items: flex-start;

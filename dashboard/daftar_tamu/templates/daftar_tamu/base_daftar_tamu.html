@@ -22,6 +22,7 @@
                 'daftar_tamu.admin_public_transactions',
                 'daftar_tamu.admin_purpose_keywords',
                 'daftar_tamu.admin_contact_priority',
+                'daftar_tamu.admin_guest_chat_bubbles',
                 'daftar_tamu.admin_guestbook_ux_metrics',
                 'daftar_tamu.admin_screen_recapture_logs'
                 ] %}
@@ -79,6 +80,12 @@
                             <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_contact_priority' %}active{% endif %}"
                                 href="{{ url_for('daftar_tamu.admin_contact_priority') }}">
                                 <i class="bi bi-list-ol me-2"></i>Prioritas Kontak
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_guest_chat_bubbles' %}active{% endif %}"
+                                href="{{ url_for('daftar_tamu.admin_guest_chat_bubbles') }}">
+                                <i class="bi bi-chat-square-text me-2"></i>Bubble Chat Buku Tamu
                             </a>
                         </li>
                         <li>
