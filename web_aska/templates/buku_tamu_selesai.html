@@ -47,15 +47,15 @@
             {% if bubble.media_type == 'image' %}
             <img src="{{ bubble.media_src }}" alt="Media bubble ASKA" loading="lazy">
             {% elif bubble.media_type == 'video' %}
-            <video {% if not bubble.media_autoplay %}controls="controls"{% endif %} playsinline="playsinline" preload="auto"
+            <video {% if not bubble.media_autoplay %}controls="controls"{% endif %} playsinline="playsinline" webkit-playsinline="webkit-playsinline" preload="auto"
                 {% if bubble.media_loop %}loop="loop"{% endif %}
-                {% if bubble.media_autoplay %}autoplay="autoplay" muted="muted"{% elif bubble.video_muted %}muted="muted"{% endif %}>
+                {% if bubble.media_autoplay %}autoplay="autoplay" muted="muted" data-autoplay-lock="1"{% elif bubble.video_muted %}muted="muted"{% endif %}>
                 <source src="{{ bubble.media_src }}">
             </video>
             {% elif bubble.media_type == 'audio' %}
             <audio {% if not bubble.media_autoplay %}controls="controls"{% endif %} preload="auto"
                 {% if bubble.media_loop %}loop="loop"{% endif %}
-                {% if bubble.media_autoplay %}autoplay="autoplay" muted="muted"{% endif %}>
+                {% if bubble.media_autoplay %}autoplay="autoplay" muted="muted" data-autoplay-lock="1"{% endif %}>
                 <source src="{{ bubble.media_src }}">
             </audio>
             {% endif %}
@@ -116,15 +116,15 @@
             {% if limit_bubble.media_type == 'image' %}
             <img src="{{ limit_bubble.media_src }}" alt="Media bubble limit chat ASKA" loading="lazy">
             {% elif limit_bubble.media_type == 'video' %}
-            <video {% if not limit_bubble.media_autoplay %}controls="controls"{% endif %} playsinline="playsinline" preload="auto"
+            <video {% if not limit_bubble.media_autoplay %}controls="controls"{% endif %} playsinline="playsinline" webkit-playsinline="webkit-playsinline" preload="auto"
                 {% if limit_bubble.media_loop %}loop="loop"{% endif %}
-                {% if limit_bubble.media_autoplay %}autoplay="autoplay" muted="muted"{% elif limit_bubble.video_muted %}muted="muted"{% endif %}>
+                {% if limit_bubble.media_autoplay %}autoplay="autoplay" muted="muted" data-autoplay-lock="1"{% elif limit_bubble.video_muted %}muted="muted"{% endif %}>
                 <source src="{{ limit_bubble.media_src }}">
             </video>
             {% elif limit_bubble.media_type == 'audio' %}
             <audio {% if not limit_bubble.media_autoplay %}controls="controls"{% endif %} preload="auto"
                 {% if limit_bubble.media_loop %}loop="loop"{% endif %}
-                {% if limit_bubble.media_autoplay %}autoplay="autoplay" muted="muted"{% endif %}>
+                {% if limit_bubble.media_autoplay %}autoplay="autoplay" muted="muted" data-autoplay-lock="1"{% endif %}>
                 <source src="{{ limit_bubble.media_src }}">
             </audio>
             {% endif %}
@@ -512,10 +512,70 @@
                 .replace(/<br\s*\/?>/gi, '\n');
         }
 
-        // Autoplay selalu muted — iOS Safari izinkan autoplay jika muted.
-        // Tidak perlu enforceAutoplayLock; cukup atribut HTML autoplay+muted.
+        function isIOSLikeDevice() {
+            var ua = navigator.userAgent || '';
+            var platform = navigator.platform || '';
+            return /iPhone|iPad|iPod/i.test(ua) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        }
+
+        function enforceAutoplayLock(mediaEl) {
+            if (!mediaEl || mediaEl.getAttribute('data-autoplay-lock') !== '1') return;
+            if (mediaEl.getAttribute('data-autoplay-bound') === '1') return;
+            mediaEl.setAttribute('data-autoplay-bound', '1');
+
+            mediaEl.controls = false;
+            mediaEl.style.pointerEvents = 'none';
+            mediaEl.setAttribute('tabindex', '-1');
+            mediaEl.setAttribute('controlslist', 'nodownload nofullscreen noremoteplayback');
+            mediaEl.setAttribute('disablepictureinpicture', '');
+
+            if ((mediaEl.tagName || '').toLowerCase() === 'video') {
+                mediaEl.setAttribute('playsinline', 'playsinline');
+                mediaEl.setAttribute('webkit-playsinline', 'webkit-playsinline');
+            }
+
+            var replay = function (allowMuteFallback) {
+                var playPromise = mediaEl.play();
+                if (playPromise && typeof playPromise.catch === 'function') {
+                    playPromise.catch(function () {
+                        if (!allowMuteFallback) return;
+                        if ((mediaEl.tagName || '').toLowerCase() !== 'video') return;
+                        mediaEl.muted = true;
+                        mediaEl.defaultMuted = true;
+                        mediaEl.setAttribute('muted', 'muted');
+                        var retryPromise = mediaEl.play();
+                        if (retryPromise && typeof retryPromise.catch === 'function') {
+                            retryPromise.catch(function () { });
+                        }
+                    });
+                }
+            };
+
+            mediaEl.addEventListener('pause', function () {
+                replay(false);
+            });
+            mediaEl.addEventListener('ended', function () {
+                if (mediaEl.loop) return;
+                replay(false);
+            });
+            mediaEl.addEventListener('loadedmetadata', function () {
+                replay(true);
+            });
+            mediaEl.addEventListener('canplay', function () {
+                replay(true);
+            });
+
+            // iOS Safari sering butuh trigger play() eksplisit meski atribut autoplay sudah ada.
+            replay(isIOSLikeDevice());
+            setTimeout(function () { replay(isIOSLikeDevice()); }, 120);
+            setTimeout(function () { replay(isIOSLikeDevice()); }, 450);
+        }
+
         function hydrateAutoplayLocks(root) {
-            // no-op: browser handle langsung dari atribut HTML
+            var scope = root || document;
+            scope.querySelectorAll('video[data-autoplay-lock="1"], audio[data-autoplay-lock="1"]').forEach(function (mediaEl) {
+                enforceAutoplayLock(mediaEl);
+            });
         }
 
         function appendMessage(text, sender) {
@@ -611,11 +671,13 @@
                 } else if (mediaType === 'video') {
                     var video = document.createElement('video');
                     video.setAttribute('playsinline', 'playsinline');
+                    video.setAttribute('webkit-playsinline', 'webkit-playsinline');
                     video.preload = 'auto';
                     if (limitBubble.mediaLoop) video.setAttribute('loop', 'loop');
                     if (limitBubble.mediaAutoplay) {
                         video.setAttribute('autoplay', 'autoplay');
                         video.setAttribute('muted', 'muted');
+                        video.setAttribute('data-autoplay-lock', '1');
                         video.muted = true;
                     } else {
                         video.controls = true;
@@ -635,6 +697,7 @@
                     if (limitBubble.mediaAutoplay) {
                         audio.setAttribute('autoplay', 'autoplay');
                         audio.setAttribute('muted', 'muted');
+                        audio.setAttribute('data-autoplay-lock', '1');
                         audio.muted = true;
                     } else {
                         audio.controls = true;
@@ -787,6 +850,15 @@
                 if (url) window.location.href = url;
             });
         }
+
+        var retriedByGesture = false;
+        function retryAutoplayOnFirstGesture() {
+            if (retriedByGesture) return;
+            retriedByGesture = true;
+            hydrateAutoplayLocks(chatBox);
+        }
+        document.addEventListener('touchstart', retryAutoplayOnFirstGesture, { passive: true, once: true });
+        document.addEventListener('click', retryAutoplayOnFirstGesture, { passive: true, once: true });
 
         updateRemaining();
         hydrateIntroBubbleLinks();
