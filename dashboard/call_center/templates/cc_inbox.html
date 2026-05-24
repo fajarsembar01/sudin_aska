@@ -257,26 +257,41 @@
     <i class="bi bi-info-circle me-1"></i>Draft membantu menyiapkan template balasan. Saat membuka thread chat, draft bisa langsung diisikan ke textbox.
 </div>
 
+{% set bridge_query = bridge_filter if bridge_filter != 'all' else None %}
+{% set status_query = status_filter if status_filter != 'all' else None %}
+{% set search_query = search or None %}
+
 <div class="cc-container">
     <div class="cc-sidebar">
         <div class="cc-sidebar-header">
             <form method="get" class="d-flex gap-2 mb-2">
                 <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari nama/nomor/isi pesan..."
                     value="{{ search }}">
+                {% if status_filter != 'all' %}
+                <input type="hidden" name="status" value="{{ status_filter }}">
+                {% endif %}
+                <select name="bridge" class="form-select form-select-sm" style="max-width: 180px;">
+                    <option value="all" {{ 'selected' if bridge_filter == 'all' else '' }}>Semua bridge</option>
+                    {% for acc in bridge_accounts %}
+                    <option value="{{ acc.bridge_key }}" {{ 'selected' if bridge_filter == acc.bridge_key else '' }}>
+                        {{ acc.display_name or acc.bridge_key }}
+                    </option>
+                    {% endfor %}
+                </select>
                 <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i></button>
             </form>
             <div class="btn-group btn-group-sm w-100" role="group">
-                <a href="{{ url_for('call_center.inbox') }}"
+                <a href="{{ url_for('call_center.inbox', search=search_query, bridge=bridge_query) }}"
                     class="btn btn-outline-secondary {% if status_filter == 'all' %}active{% endif %}">Semua</a>
-                <a href="{{ url_for('call_center.inbox', status='open') }}"
+                <a href="{{ url_for('call_center.inbox', status='open', search=search_query, bridge=bridge_query) }}"
                     class="btn btn-outline-secondary {% if status_filter == 'open' %}active{% endif %}">Open</a>
-                <a href="{{ url_for('call_center.inbox', status='closed') }}"
+                <a href="{{ url_for('call_center.inbox', status='closed', search=search_query, bridge=bridge_query) }}"
                     class="btn btn-outline-secondary {% if status_filter == 'closed' %}active{% endif %}">Closed</a>
             </div>
         </div>
         <div class="cc-conv-list">
             {% for conv in conversations %}
-            <a href="{{ url_for('call_center.thread', conv_id=conv.id) }}" class="cc-conv-item">
+            <a href="{{ url_for('call_center.thread', conv_id=conv.id, bridge=bridge_query) }}" class="cc-conv-item">
                 <div class="cc-conv-avatar">
                     {{ (conv.display_name or conv.wa_user_id_raw or conv.wa_user_id)[:1].upper() }}
                 </div>
@@ -309,12 +324,12 @@
         {% if total_pages > 1 %}
         <div class="cc-sidebar-header d-flex justify-content-between align-items-center">
             {% if page > 1 %}
-            <a href="{{ url_for('call_center.inbox', page=page-1, status=status_filter if status_filter != 'all' else '', search=search) }}"
+            <a href="{{ url_for('call_center.inbox', page=page-1, status=status_query, search=search_query, bridge=bridge_query) }}"
                 class="btn btn-sm btn-outline-secondary">&laquo;</a>
             {% else %}<span></span>{% endif %}
             <small>{{ page }} / {{ total_pages }}</small>
             {% if page < total_pages %} <a
-                href="{{ url_for('call_center.inbox', page=page+1, status=status_filter if status_filter != 'all' else '', search=search) }}"
+                href="{{ url_for('call_center.inbox', page=page+1, status=status_query, search=search_query, bridge=bridge_query) }}"
                 class="btn btn-sm btn-outline-secondary">&raquo;</a>
                 {% else %}<span></span>{% endif %}
         </div>
@@ -783,4 +798,3 @@
     });
 </script>
 {% endblock %}
-

@@ -46,7 +46,7 @@ except Exception:  # pragma: no cover - optional dependency
 
 load_dotenv()
 
-def _is_truthy(value: str | None) -> bool:
+def _is_truthy(value: Optional[str]) -> bool:
     return (value or "").strip().lower() in {"1", "true", "yes", "on"}
 
 

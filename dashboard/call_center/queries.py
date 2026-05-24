@@ -58,6 +58,18 @@ def _normalize_route_mode(raw_mode: Optional[str]) -> str:
     return mode
 
 
+def normalize_cc_route_mode(raw_mode: Optional[str]) -> str:
+    """Public normalizer for route mode values used by routes/UI."""
+    return _normalize_route_mode(raw_mode)
+
+
+def _normalize_cc_bridge_filter(raw_bridge_key: Optional[str]) -> Optional[str]:
+    raw = str(raw_bridge_key or "").strip().lower()
+    if raw in {"", "all", "*"}:
+        return None
+    return normalize_cc_bridge_key(raw)
+
+
 def _ensure_cc_wa_routing_schema() -> None:
     global _CC_WA_ROUTING_SCHEMA_READY
     if _CC_WA_ROUTING_SCHEMA_READY:
@@ -68,7 +80,8 @@ def _ensure_cc_wa_routing_schema() -> None:
             """
             CREATE TABLE IF NOT EXISTS cc_wa_routing (
                 id SERIAL PRIMARY KEY,
-                wa_user_id TEXT UNIQUE NOT NULL,
+                bridge_key TEXT NOT NULL DEFAULT 'main',
+                wa_user_id TEXT NOT NULL,
                 display_name TEXT,
                 route_mode TEXT NOT NULL DEFAULT 'manual' CHECK (route_mode IN ('manual','ai')),
                 is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -82,11 +95,54 @@ def _ensure_cc_wa_routing_schema() -> None:
         cur.execute(
             """
             ALTER TABLE cc_wa_routing
+            ADD COLUMN IF NOT EXISTS bridge_key TEXT NOT NULL DEFAULT 'main',
             ADD COLUMN IF NOT EXISTS route_mode TEXT NOT NULL DEFAULT 'manual',
             ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE,
             ADD COLUMN IF NOT EXISTS notes TEXT,
             ADD COLUMN IF NOT EXISTS updated_by INTEGER,
             ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            """
+        )
+        cur.execute(
+            """
+            UPDATE cc_wa_routing
+            SET bridge_key = 'main'
+            WHERE bridge_key IS NULL OR bridge_key = ''
+            """
+        )
+        cur.execute(
+            """
+            DO $$
+            DECLARE
+                legacy_unique_name TEXT;
+                wa_attnum SMALLINT;
+            BEGIN
+                SELECT a.attnum
+                INTO wa_attnum
+                FROM pg_attribute a
+                WHERE a.attrelid = 'cc_wa_routing'::regclass
+                  AND a.attname = 'wa_user_id'
+                  AND NOT a.attisdropped
+                LIMIT 1;
+
+                IF wa_attnum IS NOT NULL THEN
+                    SELECT c.conname
+                    INTO legacy_unique_name
+                    FROM pg_constraint c
+                    WHERE c.conrelid = 'cc_wa_routing'::regclass
+                      AND c.contype = 'u'
+                      AND array_length(c.conkey, 1) = 1
+                      AND c.conkey[1] = wa_attnum
+                    LIMIT 1;
+                END IF;
+
+                IF legacy_unique_name IS NOT NULL THEN
+                    EXECUTE format(
+                        'ALTER TABLE cc_wa_routing DROP CONSTRAINT %I',
+                        legacy_unique_name
+                    );
+                END IF;
+            END $$;
             """
         )
         cur.execute(
@@ -107,8 +163,14 @@ def _ensure_cc_wa_routing_schema() -> None:
         )
         cur.execute(
             """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_cc_wa_routing_bridge_user_unique
+            ON cc_wa_routing (bridge_key, wa_user_id)
+            """
+        )
+        cur.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_cc_wa_routing_mode_active
-            ON cc_wa_routing (route_mode, is_active)
+            ON cc_wa_routing (bridge_key, route_mode, is_active)
             """
         )
         cur.execute(
@@ -123,17 +185,22 @@ def _ensure_cc_wa_routing_schema() -> None:
 def ensure_cc_wa_routing_contact(
     wa_user_id: str,
     display_name: Optional[str] = None,
+    route_mode: Optional[str] = None,
+    bridge_key: Optional[str] = None,
 ) -> Optional[dict]:
     _ensure_cc_wa_routing_schema()
+    key = normalize_cc_bridge_key(bridge_key)
     clean_wa = _normalize_wa_user_id(wa_user_id)
     if not clean_wa:
         return None
 
     clean_name = str(display_name or "").strip()[:120] or None
+    mode = _normalize_route_mode(route_mode or "manual")
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
             INSERT INTO cc_wa_routing (
+                bridge_key,
                 wa_user_id,
                 display_name,
                 route_mode,
@@ -141,56 +208,69 @@ def ensure_cc_wa_routing_contact(
                 updated_at
             )
             VALUES (
+                %(bridge_key)s,
                 %(wa)s,
                 %(name)s,
-                'manual',
+                %(mode)s,
                 TRUE,
                 NOW()
             )
-            ON CONFLICT (wa_user_id) DO UPDATE SET
+            ON CONFLICT (bridge_key, wa_user_id) DO UPDATE SET
                 display_name = COALESCE(EXCLUDED.display_name, cc_wa_routing.display_name),
                 updated_at = NOW()
-            RETURNING id, wa_user_id, display_name, route_mode, is_active, notes, created_at, updated_at, updated_by
+            RETURNING id, bridge_key, wa_user_id, display_name, route_mode, is_active, notes, created_at, updated_at, updated_by
             """,
-            {"wa": clean_wa, "name": clean_name},
+            {"bridge_key": key, "wa": clean_wa, "name": clean_name, "mode": mode},
         )
         row = cur.fetchone()
     return dict(row) if row else None
 
 
-def get_cc_wa_routing(wa_user_id: str) -> Optional[dict]:
+def get_cc_wa_routing(wa_user_id: str, *, bridge_key: Optional[str] = None) -> Optional[dict]:
     _ensure_cc_wa_routing_schema()
+    key = normalize_cc_bridge_key(bridge_key)
     clean_wa = _normalize_wa_user_id(wa_user_id)
     if not clean_wa:
         return None
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT r.id, r.wa_user_id, r.display_name, r.route_mode, r.is_active, r.notes,
+            SELECT r.id, r.bridge_key, r.wa_user_id, r.display_name, r.route_mode, r.is_active, r.notes,
                    r.created_at, r.updated_at, r.updated_by
             FROM cc_wa_routing r
-            WHERE r.wa_user_id = %(wa)s
+            WHERE r.bridge_key = %(bridge_key)s
+              AND r.wa_user_id = %(wa)s
             LIMIT 1
             """,
-            {"wa": clean_wa},
+            {"bridge_key": key, "wa": clean_wa},
         )
         row = cur.fetchone()
     return dict(row) if row else None
 
 
-def list_cc_wa_routing(search: Optional[str] = None, limit: int = 300) -> list[dict]:
+def list_cc_wa_routing(
+    search: Optional[str] = None,
+    limit: int = 300,
+    *,
+    bridge_key: Optional[str] = None,
+) -> list[dict]:
     _ensure_cc_wa_routing_schema()
+    key = _normalize_cc_bridge_filter(bridge_key)
     clean_limit = max(1, min(int(limit or 300), 1000))
     params: dict[str, Any] = {"limit": clean_limit}
-    where = ""
+    where_parts: list[str] = []
+    if key:
+        where_parts.append("r.bridge_key = %(bridge_key)s")
+        params["bridge_key"] = key
     clean_search = str(search or "").strip()
     if clean_search:
-        where = "WHERE (r.wa_user_id ILIKE %(search)s OR r.display_name ILIKE %(search)s)"
+        where_parts.append("(r.wa_user_id ILIKE %(search)s OR r.display_name ILIKE %(search)s)")
         params["search"] = f"%{clean_search}%"
+    where = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
     with get_cursor() as cur:
         cur.execute(
             f"""
-            SELECT r.id, r.wa_user_id, r.display_name, r.route_mode, r.is_active, r.notes,
+            SELECT r.id, r.bridge_key, r.wa_user_id, r.display_name, r.route_mode, r.is_active, r.notes,
                    r.created_at, r.updated_at, r.updated_by,
                    c.id AS conversation_id,
                    c.status AS conversation_status,
@@ -200,8 +280,10 @@ def list_cc_wa_routing(search: Optional[str] = None, limit: int = 300) -> list[d
             LEFT JOIN LATERAL (
                 SELECT c1.id, c1.status, c1.last_message_at, c1.unread_count
                 FROM cc_conversations c1
-                WHERE c1.wa_user_id = r.wa_user_id
-                   OR c1.wa_user_id LIKE ('%::' || r.wa_user_id)
+                WHERE (
+                    (r.bridge_key = 'main' AND c1.wa_user_id = r.wa_user_id)
+                    OR c1.wa_user_id = (r.bridge_key || '::' || r.wa_user_id)
+                )
                 ORDER BY c1.last_message_at DESC NULLS LAST, c1.id DESC
                 LIMIT 1
             ) c ON TRUE
@@ -214,8 +296,9 @@ def list_cc_wa_routing(search: Optional[str] = None, limit: int = 300) -> list[d
         return [dict(r) for r in cur.fetchall()]
 
 
-def summarize_cc_wa_routing() -> dict:
+def summarize_cc_wa_routing(*, bridge_key: Optional[str] = None) -> dict:
     _ensure_cc_wa_routing_schema()
+    key = _normalize_cc_bridge_filter(bridge_key)
     summary = {
         "total": 0,
         "active": 0,
@@ -224,17 +307,32 @@ def summarize_cc_wa_routing() -> dict:
         "ai": 0,
     }
     with get_cursor() as cur:
-        cur.execute(
-            """
-            SELECT
-                COUNT(*)::int AS total,
-                COUNT(*) FILTER (WHERE is_active)::int AS active,
-                COUNT(*) FILTER (WHERE NOT is_active)::int AS inactive,
-                COUNT(*) FILTER (WHERE route_mode = 'manual')::int AS manual,
-                COUNT(*) FILTER (WHERE route_mode = 'ai')::int AS ai
-            FROM cc_wa_routing
-            """
-        )
+        if key:
+            cur.execute(
+                """
+                SELECT
+                    COUNT(*)::int AS total,
+                    COUNT(*) FILTER (WHERE is_active)::int AS active,
+                    COUNT(*) FILTER (WHERE NOT is_active)::int AS inactive,
+                    COUNT(*) FILTER (WHERE route_mode = 'manual')::int AS manual,
+                    COUNT(*) FILTER (WHERE route_mode = 'ai')::int AS ai
+                FROM cc_wa_routing
+                WHERE bridge_key = %(bridge_key)s
+                """,
+                {"bridge_key": key},
+            )
+        else:
+            cur.execute(
+                """
+                SELECT
+                    COUNT(*)::int AS total,
+                    COUNT(*) FILTER (WHERE is_active)::int AS active,
+                    COUNT(*) FILTER (WHERE NOT is_active)::int AS inactive,
+                    COUNT(*) FILTER (WHERE route_mode = 'manual')::int AS manual,
+                    COUNT(*) FILTER (WHERE route_mode = 'ai')::int AS ai
+                FROM cc_wa_routing
+                """
+            )
         row = cur.fetchone() or {}
     summary.update(
         {
@@ -251,6 +349,7 @@ def summarize_cc_wa_routing() -> dict:
 def save_cc_wa_routing(
     wa_user_id: str,
     *,
+    bridge_key: Optional[str] = None,
     display_name: Optional[str] = None,
     route_mode: str = "manual",
     is_active: bool = True,
@@ -258,6 +357,7 @@ def save_cc_wa_routing(
     updated_by: Optional[int] = None,
 ) -> dict:
     _ensure_cc_wa_routing_schema()
+    key = normalize_cc_bridge_key(bridge_key)
     clean_wa = _normalize_wa_user_id(wa_user_id)
     if not clean_wa:
         raise ValueError("Nomor WA tidak valid.")
@@ -270,6 +370,7 @@ def save_cc_wa_routing(
         cur.execute(
             """
             INSERT INTO cc_wa_routing (
+                bridge_key,
                 wa_user_id,
                 display_name,
                 route_mode,
@@ -279,6 +380,7 @@ def save_cc_wa_routing(
                 updated_at
             )
             VALUES (
+                %(bridge_key)s,
                 %(wa)s,
                 %(name)s,
                 %(mode)s,
@@ -287,16 +389,17 @@ def save_cc_wa_routing(
                 %(updated_by)s,
                 NOW()
             )
-            ON CONFLICT (wa_user_id) DO UPDATE SET
+            ON CONFLICT (bridge_key, wa_user_id) DO UPDATE SET
                 display_name = COALESCE(EXCLUDED.display_name, cc_wa_routing.display_name),
                 route_mode = EXCLUDED.route_mode,
                 is_active = EXCLUDED.is_active,
                 notes = EXCLUDED.notes,
                 updated_by = EXCLUDED.updated_by,
                 updated_at = NOW()
-            RETURNING id, wa_user_id, display_name, route_mode, is_active, notes, created_at, updated_at, updated_by
+            RETURNING id, bridge_key, wa_user_id, display_name, route_mode, is_active, notes, created_at, updated_at, updated_by
             """,
             {
+                "bridge_key": key,
                 "wa": clean_wa,
                 "name": clean_name,
                 "mode": mode,
@@ -309,15 +412,16 @@ def save_cc_wa_routing(
     return dict(row) if row else {}
 
 
-def delete_cc_wa_routing(wa_user_id: str) -> bool:
+def delete_cc_wa_routing(wa_user_id: str, *, bridge_key: Optional[str] = None) -> bool:
     _ensure_cc_wa_routing_schema()
+    key = normalize_cc_bridge_key(bridge_key)
     clean_wa = _normalize_wa_user_id(wa_user_id)
     if not clean_wa:
         return False
     with get_cursor(commit=True) as cur:
         cur.execute(
-            "DELETE FROM cc_wa_routing WHERE wa_user_id = %(wa)s",
-            {"wa": clean_wa},
+            "DELETE FROM cc_wa_routing WHERE bridge_key = %(bridge_key)s AND wa_user_id = %(wa)s",
+            {"bridge_key": key, "wa": clean_wa},
         )
         return cur.rowcount > 0
 
@@ -386,6 +490,7 @@ def _bridge_defaults_for_key(bridge_key: str) -> dict:
             "log_path": "runtime/whatsapp_cc.log",
             "internal_url": os.getenv("ASKA_CC_WHATSAPP_INTERNAL_URL") or "http://127.0.0.1:5002/api/callcenter/inbound",
             "is_active": True,
+            "default_route_mode": "manual",
         }
     return {
         "display_name": f"WA {key.upper()}",
@@ -397,6 +502,7 @@ def _bridge_defaults_for_key(bridge_key: str) -> dict:
         "log_path": f"runtime/whatsapp_cc_{key}.log",
         "internal_url": os.getenv("ASKA_CC_WHATSAPP_INTERNAL_URL") or "http://127.0.0.1:5002/api/callcenter/inbound",
         "is_active": True,
+        "default_route_mode": "manual",
     }
 
 
@@ -413,6 +519,7 @@ def _ensure_cc_wa_bridge_accounts_schema() -> None:
                 bridge_key TEXT UNIQUE NOT NULL,
                 display_name TEXT NOT NULL,
                 wa_number_hint TEXT,
+                default_route_mode TEXT NOT NULL DEFAULT 'manual' CHECK (default_route_mode IN ('manual','ai')),
                 client_id TEXT NOT NULL,
                 http_port INTEGER NOT NULL UNIQUE,
                 session_path TEXT NOT NULL,
@@ -430,7 +537,24 @@ def _ensure_cc_wa_bridge_accounts_schema() -> None:
         cur.execute(
             """
             ALTER TABLE cc_wa_bridge_accounts
-            ADD COLUMN IF NOT EXISTS wa_number_hint TEXT
+            ADD COLUMN IF NOT EXISTS wa_number_hint TEXT,
+            ADD COLUMN IF NOT EXISTS default_route_mode TEXT NOT NULL DEFAULT 'manual'
+            """
+        )
+        cur.execute(
+            """
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM pg_constraint
+                    WHERE conname = 'cc_wa_bridge_accounts_default_route_mode_check'
+                ) THEN
+                    ALTER TABLE cc_wa_bridge_accounts
+                    ADD CONSTRAINT cc_wa_bridge_accounts_default_route_mode_check
+                    CHECK (default_route_mode IN ('manual','ai'));
+                END IF;
+            END $$;
             """
         )
         cur.execute(
@@ -452,6 +576,7 @@ def ensure_default_cc_wa_bridge_account(updated_by: Optional[int] = None) -> dic
         bridge_key=_CC_BRIDGE_DEFAULT_KEY,
         display_name=defaults["display_name"],
         wa_number_hint=None,
+        default_route_mode=defaults["default_route_mode"],
         client_id=defaults["client_id"],
         http_port=defaults["http_port"],
         session_path=defaults["session_path"],
@@ -470,7 +595,7 @@ def list_cc_wa_bridge_accounts(*, include_inactive: bool = True) -> list[dict]:
     with get_cursor() as cur:
         cur.execute(
             f"""
-            SELECT id, bridge_key, display_name, wa_number_hint, client_id, http_port,
+            SELECT id, bridge_key, display_name, wa_number_hint, default_route_mode, client_id, http_port,
                    session_path, status_path, pid_path, log_path,
                    internal_url, is_active, created_at, updated_at, updated_by
             FROM cc_wa_bridge_accounts
@@ -487,7 +612,7 @@ def get_cc_wa_bridge_account(bridge_key: Optional[str]) -> Optional[dict]:
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT id, bridge_key, display_name, wa_number_hint, client_id, http_port,
+            SELECT id, bridge_key, display_name, wa_number_hint, default_route_mode, client_id, http_port,
                    session_path, status_path, pid_path, log_path,
                    internal_url, is_active, created_at, updated_at, updated_by
             FROM cc_wa_bridge_accounts
@@ -505,7 +630,7 @@ def find_cc_wa_bridge_account_by_port(http_port: int) -> Optional[dict]:
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT id, bridge_key, display_name, wa_number_hint, client_id, http_port,
+            SELECT id, bridge_key, display_name, wa_number_hint, default_route_mode, client_id, http_port,
                    session_path, status_path, pid_path, log_path,
                    internal_url, is_active, created_at, updated_at, updated_by
             FROM cc_wa_bridge_accounts
@@ -518,11 +643,50 @@ def find_cc_wa_bridge_account_by_port(http_port: int) -> Optional[dict]:
     return dict(row) if row else None
 
 
+def _find_next_available_bridge_port(start_port: int, *, bridge_key: str) -> int:
+    """Find next free bridge HTTP port starting from start_port."""
+    _ensure_cc_wa_bridge_accounts_schema()
+    start = max(1, int(start_port or 1))
+    key = normalize_cc_bridge_key(bridge_key)
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT bridge_key, http_port
+            FROM cc_wa_bridge_accounts
+            WHERE http_port >= %(start)s
+            ORDER BY http_port ASC
+            """,
+            {"start": start},
+        )
+        rows = [dict(r) for r in cur.fetchall()]
+
+    candidate = start
+    for row in rows:
+        row_key = normalize_cc_bridge_key(row.get("bridge_key"))
+        if row_key == key:
+            continue
+        used_port = int(row.get("http_port") or 0)
+        if used_port < candidate:
+            continue
+        if used_port == candidate:
+            candidate += 1
+            if candidate > 65535:
+                raise ValueError("Tidak ada HTTP port yang tersedia untuk akun bridge.")
+            continue
+        break
+
+    if candidate > 65535:
+        raise ValueError("Tidak ada HTTP port yang tersedia untuk akun bridge.")
+    return candidate
+
+
 def save_cc_wa_bridge_account(
     *,
     bridge_key: str,
     display_name: Optional[str],
     wa_number_hint: Optional[str],
+    default_route_mode: Optional[str],
     client_id: Optional[str],
     http_port: Optional[int],
     session_path: Optional[str],
@@ -536,11 +700,31 @@ def save_cc_wa_bridge_account(
     _ensure_cc_wa_bridge_accounts_schema()
     key = normalize_cc_bridge_key(bridge_key)
     defaults = _bridge_defaults_for_key(key)
+    existing = get_cc_wa_bridge_account(key)
 
     clean_display_name = str(display_name or "").strip() or defaults["display_name"]
     clean_wa_hint = _normalize_wa_user_id(wa_number_hint) or None
+    raw_default_route_mode = str(default_route_mode or "").strip()
+    if raw_default_route_mode:
+        clean_default_route_mode = _normalize_route_mode(raw_default_route_mode)
+    elif existing and existing.get("default_route_mode"):
+        clean_default_route_mode = _normalize_route_mode(existing.get("default_route_mode"))
+    else:
+        clean_default_route_mode = _normalize_route_mode(defaults["default_route_mode"])
     clean_client_id = str(client_id or "").strip() or defaults["client_id"]
-    clean_http_port = int(http_port or defaults["http_port"])
+    try:
+        requested_http_port = int(http_port or 0)
+    except Exception:
+        requested_http_port = 0
+    if requested_http_port > 0:
+        clean_http_port = requested_http_port
+    elif existing and existing.get("http_port"):
+        clean_http_port = int(existing.get("http_port") or 0)
+    else:
+        clean_http_port = _find_next_available_bridge_port(
+            int(defaults["http_port"]),
+            bridge_key=key,
+        )
     clean_session_path = str(session_path or "").strip() or defaults["session_path"]
     clean_status_path = str(status_path or "").strip() or defaults["status_path"]
     clean_pid_path = str(pid_path or "").strip() or defaults["pid_path"]
@@ -554,18 +738,19 @@ def save_cc_wa_bridge_account(
         cur.execute(
             """
             INSERT INTO cc_wa_bridge_accounts (
-                bridge_key, display_name, wa_number_hint, client_id, http_port,
+                bridge_key, display_name, wa_number_hint, default_route_mode, client_id, http_port,
                 session_path, status_path, pid_path, log_path,
                 internal_url, is_active, updated_by, updated_at
             )
             VALUES (
-                %(bridge_key)s, %(display_name)s, %(wa_number_hint)s, %(client_id)s, %(http_port)s,
+                %(bridge_key)s, %(display_name)s, %(wa_number_hint)s, %(default_route_mode)s, %(client_id)s, %(http_port)s,
                 %(session_path)s, %(status_path)s, %(pid_path)s, %(log_path)s,
                 %(internal_url)s, %(is_active)s, %(updated_by)s, NOW()
             )
             ON CONFLICT (bridge_key) DO UPDATE SET
                 display_name = EXCLUDED.display_name,
                 wa_number_hint = EXCLUDED.wa_number_hint,
+                default_route_mode = EXCLUDED.default_route_mode,
                 client_id = EXCLUDED.client_id,
                 http_port = EXCLUDED.http_port,
                 session_path = EXCLUDED.session_path,
@@ -576,7 +761,7 @@ def save_cc_wa_bridge_account(
                 is_active = EXCLUDED.is_active,
                 updated_by = EXCLUDED.updated_by,
                 updated_at = NOW()
-            RETURNING id, bridge_key, display_name, wa_number_hint, client_id, http_port,
+            RETURNING id, bridge_key, display_name, wa_number_hint, default_route_mode, client_id, http_port,
                       session_path, status_path, pid_path, log_path,
                       internal_url, is_active, created_at, updated_at, updated_by
             """,
@@ -584,6 +769,7 @@ def save_cc_wa_bridge_account(
                 "bridge_key": key,
                 "display_name": clean_display_name,
                 "wa_number_hint": clean_wa_hint,
+                "default_route_mode": clean_default_route_mode,
                 "client_id": clean_client_id,
                 "http_port": clean_http_port,
                 "session_path": clean_session_path,
@@ -678,6 +864,7 @@ def upsert_cc_conversation(
 def fetch_cc_conversations(
     status_filter: Optional[str] = None,
     search: Optional[str] = None,
+    bridge_key: Optional[str] = None,
     limit: int = 100,
     offset: int = 0,
 ) -> tuple[list[dict], int]:
@@ -708,6 +895,14 @@ def fetch_cc_conversations(
             """
         )
         params["search"] = f"%{search}%"
+
+    selected_bridge_key = _normalize_cc_bridge_filter(bridge_key)
+    if selected_bridge_key:
+        if selected_bridge_key == _CC_BRIDGE_DEFAULT_KEY:
+            conditions.append("POSITION('::' IN COALESCE(c.wa_user_id, '')) = 0")
+        else:
+            conditions.append("c.wa_user_id LIKE %(bridge_prefix)s")
+            params["bridge_prefix"] = f"{selected_bridge_key}::%"
 
     where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
 

@@ -194,6 +194,12 @@
                                     <div class="small text-secondary"><code>+{{ st_number }}</code></div>
                                     {% endif %}
                                     <div class="small mt-1">
+                                        {% set acc_mode = acc.default_route_mode or 'manual' %}
+                                        {% if acc_mode == 'ai' %}
+                                        <span class="badge text-bg-primary">Default: ASKA</span>
+                                        {% else %}
+                                        <span class="badge text-bg-dark">Default: Manual</span>
+                                        {% endif %}
                                         {% if acc.is_active %}
                                         <span class="badge text-bg-success">Aktif</span>
                                         {% else %}
@@ -221,6 +227,7 @@
                                         data-log-path="{{ acc.log_path or '' }}"
                                         data-internal-url="{{ acc.internal_url or '' }}"
                                         data-wa-number-hint="{{ acc.wa_number_hint or '' }}"
+                                        data-default-route-mode="{{ acc.default_route_mode or 'manual' }}"
                                         data-is-active="{{ '1' if acc.is_active else '0' }}">Edit</button>
                                 </td>
                             </tr>
@@ -238,76 +245,99 @@
 </div>
 
 <div class="mt-4">
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-transparent d-flex justify-content-between align-items-center gap-2">
-            <h6 class="mb-0"><i class="bi bi-sliders text-primary me-2"></i>Form Akun Bridge</h6>
-            <button type="button" id="bridgeFormResetBtn" class="btn btn-outline-secondary btn-sm">Reset Form</button>
-        </div>
-        <div class="card-body">
-            <form method="post" id="bridgeAccountForm" class="row g-2">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="action" value="save_bridge_account">
-                <input type="hidden" name="selected_bridge_key" id="bridgeSelectedBridgeKey" value="{{ selected_bridge_key }}">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center gap-2">
+                <h6 class="mb-0"><i class="bi bi-sliders text-primary me-2"></i>Form Akun Bridge</h6>
+                <button type="button" id="bridgeFormResetBtn" class="btn btn-outline-secondary btn-sm">Reset Form</button>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-light border small py-2 mb-3">
+                    Buat akun cepat: isi <strong>Bridge Key</strong> + <strong>Nama Akun</strong>, lalu klik <strong>Simpan</strong>.
+                    Pilih <strong>Mode Default</strong> untuk chat baru di bridge ini. Field teknis lain opsional.
+                </div>
+                <form method="post" id="bridgeAccountForm" class="row g-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="save_bridge_account">
+                    <input type="hidden" name="selected_bridge_key" id="bridgeSelectedBridgeKey" value="{{ selected_bridge_key }}">
 
-                <div class="col-md-2">
-                    <label class="form-label small mb-1">Bridge Key</label>
-                    <input type="text" class="form-control form-control-sm" id="bridgeKey" name="bridge_key"
-                        placeholder="main/ops1" required>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small mb-1">Nama Akun</label>
-                    <input type="text" class="form-control form-control-sm" id="bridgeDisplayName" name="display_name"
-                        placeholder="WA Operator 1">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small mb-1">Nomor WA (manual)</label>
-                    <input type="text" class="form-control form-control-sm" id="bridgeWaNumberHint" name="wa_number_hint"
-                        placeholder="62812xxxx">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small mb-1">Client ID</label>
-                    <input type="text" class="form-control form-control-sm" id="bridgeClientId" name="client_id"
-                        placeholder="cc-main">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small mb-1">HTTP Port</label>
-                    <input type="number" class="form-control form-control-sm" id="bridgeHttpPort" name="http_port"
-                        min="1" max="65535" required>
-                </div>
-                <div class="col-md-1">
-                    <label class="form-label small mb-1">Aktif</label>
-                    <div class="form-check form-switch mt-1">
-                        <input class="form-check-input" type="checkbox" id="bridgeIsActive" name="is_active" checked>
+                    <div class="col-md-2">
+                        <label class="form-label small mb-1">Bridge Key</label>
+                        <input type="text" class="form-control form-control-sm" id="bridgeKey" name="bridge_key"
+                            placeholder="main / ops1 / aska1" value="{{ selected_bridge.bridge_key or '' }}" required>
                     </div>
-                </div>
-                <div class="col-md-1 d-grid">
-                    <label class="form-label small mb-1 invisible">Aksi</label>
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-save me-1"></i>Simpan
-                    </button>
-                </div>
+                    <div class="col-md-3">
+                        <label class="form-label small mb-1">Nama Akun</label>
+                        <input type="text" class="form-control form-control-sm" id="bridgeDisplayName" name="display_name"
+                            placeholder="WA Manual / WA ASKA" value="{{ selected_bridge.display_name or '' }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small mb-1">Nomor WA (manual, opsional)</label>
+                        <input type="text" class="form-control form-control-sm" id="bridgeWaNumberHint" name="wa_number_hint"
+                            placeholder="62812xxxx" value="{{ selected_bridge.wa_number_hint or '' }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small mb-1">Mode Default</label>
+                        <select class="form-select form-select-sm" id="bridgeDefaultRouteMode" name="default_route_mode">
+                            <option value="manual" {{ 'selected' if (selected_bridge.default_route_mode or 'manual') == 'manual' else '' }}>Manual</option>
+                            <option value="ai" {{ 'selected' if (selected_bridge.default_route_mode or 'manual') == 'ai' else '' }}>ASKA (AI)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label small mb-1">Aktif</label>
+                        <div class="form-check form-switch mt-1">
+                            <input class="form-check-input" type="checkbox" id="bridgeIsActive" name="is_active" {{ 'checked' if selected_bridge.is_active else '' }}>
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <label class="form-label small mb-1 invisible">Aksi</label>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-save me-1"></i>Simpan
+                        </button>
+                    </div>
 
-                <div class="col-md-3">
-                    <label class="form-label small mb-1">Session Path</label>
-                    <input type="text" class="form-control form-control-sm" id="bridgeSessionPath" name="session_path">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label small mb-1">Status Path</label>
-                    <input type="text" class="form-control form-control-sm" id="bridgeStatusPath" name="status_path">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small mb-1">PID Path</label>
-                    <input type="text" class="form-control form-control-sm" id="bridgePidPath" name="pid_path">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small mb-1">Log Path</label>
-                    <input type="text" class="form-control form-control-sm" id="bridgeLogPath" name="log_path">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small mb-1">Internal URL</label>
-                    <input type="text" class="form-control form-control-sm" id="bridgeInternalUrl" name="internal_url">
-                </div>
-            </form>
+                    <div class="col-12">
+                        <details class="border rounded p-2">
+                            <summary class="small text-primary fw-semibold">Pengaturan lanjutan (opsional)</summary>
+                            <div class="row g-2 mt-1">
+                                <div class="col-md-3">
+                                    <label class="form-label small mb-1">Client ID</label>
+                                    <input type="text" class="form-control form-control-sm" id="bridgeClientId" name="client_id"
+                                        placeholder="otomatis jika kosong" value="{{ selected_bridge.client_id or '' }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small mb-1">HTTP Port</label>
+                                    <input type="number" class="form-control form-control-sm" id="bridgeHttpPort" name="http_port"
+                                        min="1" max="65535" placeholder="otomatis" value="{{ selected_bridge.http_port or '' }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small mb-1">Internal URL</label>
+                                    <input type="text" class="form-control form-control-sm" id="bridgeInternalUrl" name="internal_url"
+                                        placeholder="otomatis jika kosong" value="{{ selected_bridge.internal_url or '' }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small mb-1">Session Path</label>
+                                    <input type="text" class="form-control form-control-sm" id="bridgeSessionPath" name="session_path"
+                                        placeholder="otomatis jika kosong" value="{{ selected_bridge.session_path or '' }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small mb-1">Status Path</label>
+                                    <input type="text" class="form-control form-control-sm" id="bridgeStatusPath" name="status_path"
+                                        placeholder="otomatis jika kosong" value="{{ selected_bridge.status_path or '' }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small mb-1">PID Path</label>
+                                    <input type="text" class="form-control form-control-sm" id="bridgePidPath" name="pid_path"
+                                        placeholder="otomatis jika kosong" value="{{ selected_bridge.pid_path or '' }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small mb-1">Log Path</label>
+                                    <input type="text" class="form-control form-control-sm" id="bridgeLogPath" name="log_path"
+                                        placeholder="otomatis jika kosong" value="{{ selected_bridge.log_path or '' }}">
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                </form>
 
             <hr>
 
@@ -349,6 +379,7 @@
         <div class="card-header bg-transparent d-flex flex-wrap justify-content-between align-items-center gap-2">
             <h6 class="mb-0"><i class="bi bi-diagram-3 text-primary me-2"></i>Routing WA Manual vs AI</h6>
             <div class="d-flex flex-wrap gap-2 small">
+                <span class="badge text-bg-info">Bridge: {{ 'semua' if route_bridge_filter == 'all' else route_bridge_filter }}</span>
                 <span class="badge text-bg-secondary">Total: {{ route_summary.total or 0 }}</span>
                 <span class="badge text-bg-success">Aktif: {{ route_summary.active or 0 }}</span>
                 <span class="badge text-bg-danger">Nonaktif: {{ route_summary.inactive or 0 }}</span>
@@ -359,6 +390,17 @@
         <div class="card-body">
             <form method="get" class="row g-2 align-items-end mb-3">
                 <input type="hidden" name="bridge_key" value="{{ selected_bridge_key }}">
+                <div class="col-md-3">
+                    <label class="form-label small text-secondary mb-1">Filter bridge routing</label>
+                    <select class="form-select form-select-sm" name="route_bridge">
+                        <option value="all" {{ 'selected' if route_bridge_filter == 'all' else '' }}>Semua bridge</option>
+                        {% for acc in bridge_accounts %}
+                        <option value="{{ acc.bridge_key }}" {{ 'selected' if route_bridge_filter == acc.bridge_key else '' }}>
+                            {{ acc.display_name or acc.bridge_key }} ({{ acc.bridge_key }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
                 <div class="col-md-4">
                     <label class="form-label small text-secondary mb-1">Cari nomor / nama</label>
                     <input type="text" class="form-control form-control-sm" name="q" value="{{ route_search or '' }}"
@@ -370,7 +412,7 @@
                     </button>
                 </div>
                 <div class="col-auto">
-                    <a href="{{ url_for('call_center.settings_wa', bridge_key=selected_bridge_key) }}"
+                    <a href="{{ url_for('call_center.settings_wa', bridge_key=selected_bridge_key, route_bridge='all') }}"
                         class="btn btn-outline-light btn-sm border">Reset</a>
                 </div>
             </form>
@@ -378,8 +420,21 @@
             <form method="post" id="waRouteForm" class="border rounded p-3 bg-light-subtle mb-3">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="save_wa_route">
-                <input type="hidden" name="selected_bridge_key" value="{{ selected_bridge_key }}">
                 <div class="row g-2">
+                    <div class="col-md-2">
+                        <label class="form-label small mb-1">Bridge</label>
+                        <select class="form-select form-select-sm" id="waRouteBridgeKey" name="selected_bridge_key">
+                            {% for acc in bridge_accounts %}
+                            {% set opt_selected = (
+                                (route_bridge_filter != 'all' and route_bridge_filter == acc.bridge_key)
+                                or (route_bridge_filter == 'all' and selected_bridge_key == acc.bridge_key)
+                            ) %}
+                            <option value="{{ acc.bridge_key }}" {{ 'selected' if opt_selected else '' }}>
+                                {{ acc.bridge_key }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <div class="col-md-3">
                         <label class="form-label small mb-1">Nomor WA</label>
                         <input type="text" class="form-control form-control-sm" id="waRouteUserId" name="wa_user_id"
@@ -424,6 +479,7 @@
                 <table class="table table-sm align-middle">
                     <thead>
                         <tr>
+                            <th>Bridge</th>
                             <th>Nomor</th>
                             <th>Nama</th>
                             <th>Mode</th>
@@ -436,6 +492,7 @@
                     <tbody>
                         {% for route in route_rows %}
                         <tr>
+                            <td><span class="badge text-bg-info">{{ route.bridge_key or 'main' }}</span></td>
                             <td class="fw-semibold">+{{ route.wa_user_id }}</td>
                             <td>{{ route.display_name or '-' }}</td>
                             <td>
@@ -470,6 +527,7 @@
                             </td>
                             <td class="text-end">
                                 <button type="button" class="btn btn-outline-primary btn-sm js-edit-wa-route"
+                                    data-bridge-key="{{ route.bridge_key or 'main' }}"
                                     data-wa-user-id="{{ route.wa_user_id }}"
                                     data-display-name="{{ route.display_name or '' }}"
                                     data-route-mode="{{ route.route_mode or 'manual' }}"
@@ -479,7 +537,7 @@
                                     onsubmit="return confirm('Hapus routing untuk +{{ route.wa_user_id }}?')">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <input type="hidden" name="action" value="delete_wa_route">
-                                    <input type="hidden" name="selected_bridge_key" value="{{ selected_bridge_key }}">
+                                    <input type="hidden" name="selected_bridge_key" value="{{ route.bridge_key or 'main' }}">
                                     <input type="hidden" name="wa_user_id" value="{{ route.wa_user_id }}">
                                     <button type="submit" class="btn btn-outline-danger btn-sm">Hapus</button>
                                 </form>
@@ -487,7 +545,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="7" class="text-center text-secondary py-4">Belum ada data routing WA.</td>
+                            <td colspan="8" class="text-center text-secondary py-4">Belum ada data routing WA.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -646,6 +704,7 @@ ASKA_CC_HTTP_PORT=3100
 
         var inputName = document.getElementById('bridgeDisplayName');
         var inputWaNumberHint = document.getElementById('bridgeWaNumberHint');
+        var inputDefaultMode = document.getElementById('bridgeDefaultRouteMode');
         var inputClient = document.getElementById('bridgeClientId');
         var inputPort = document.getElementById('bridgeHttpPort');
         var inputSession = document.getElementById('bridgeSessionPath');
@@ -656,11 +715,84 @@ ASKA_CC_HTTP_PORT=3100
         var inputActive = document.getElementById('bridgeIsActive');
         var inputSelectedKey = document.getElementById('bridgeSelectedBridgeKey');
         var resetBtn = document.getElementById('bridgeFormResetBtn');
+        var editButtons = document.querySelectorAll('.js-edit-bridge');
+        var defaultInternalUrl = {{ (selected_bridge.internal_url or "http://127.0.0.1:5002/api/callcenter/inbound")|tojson }};
+
+        function normalizeBridgeKey(rawValue) {
+            return String(rawValue || '')
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9_-]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        }
+
+        function bridgeDefaults(key) {
+            if (key === 'main') {
+                return {
+                    displayName: 'WA Main',
+                    clientId: 'cc-main',
+                    httpPort: 3100,
+                    sessionPath: '.wa_cc_session',
+                    statusPath: 'runtime/whatsapp_cc_status.json',
+                    pidPath: 'runtime/whatsapp_cc.pid',
+                    logPath: 'runtime/whatsapp_cc.log',
+                    internalUrl: defaultInternalUrl,
+                };
+            }
+            return {
+                displayName: 'WA ' + key.toUpperCase(),
+                clientId: 'cc-' + key,
+                httpPort: 3200,
+                sessionPath: '.wa_cc_session_' + key,
+                statusPath: 'runtime/whatsapp_cc_status_' + key + '.json',
+                pidPath: 'runtime/whatsapp_cc_' + key + '.pid',
+                logPath: 'runtime/whatsapp_cc_' + key + '.log',
+                internalUrl: defaultInternalUrl,
+            };
+        }
+
+        function usedPorts(excludeKey) {
+            var key = normalizeBridgeKey(excludeKey);
+            var used = new Set();
+            editButtons.forEach(function (btn) {
+                var btnKey = normalizeBridgeKey(btn.getAttribute('data-bridge-key') || '');
+                if (btnKey && btnKey === key) return;
+                var val = parseInt(btn.getAttribute('data-http-port') || '', 10);
+                if (Number.isFinite(val) && val > 0) used.add(val);
+            });
+            return used;
+        }
+
+        function nextAvailablePort(preferredPort, excludeKey) {
+            var candidate = parseInt(preferredPort || 0, 10);
+            if (!Number.isFinite(candidate) || candidate < 1) candidate = 3200;
+            var used = usedPorts(excludeKey);
+            while (used.has(candidate) && candidate <= 65535) {
+                candidate += 1;
+            }
+            return candidate <= 65535 ? candidate : parseInt(preferredPort || 3200, 10);
+        }
+
+        function applyDefaultsFromKey() {
+            var key = normalizeBridgeKey(inputKey.value);
+            if (!key) return;
+            var defs = bridgeDefaults(key);
+
+            if (!inputName.value.trim()) inputName.value = defs.displayName;
+            if (!inputClient.value.trim()) inputClient.value = defs.clientId;
+            if (!inputPort.value.trim()) inputPort.value = String(nextAvailablePort(defs.httpPort, key));
+            if (!inputSession.value.trim()) inputSession.value = defs.sessionPath;
+            if (!inputStatus.value.trim()) inputStatus.value = defs.statusPath;
+            if (!inputPid.value.trim()) inputPid.value = defs.pidPath;
+            if (!inputLog.value.trim()) inputLog.value = defs.logPath;
+            if (!inputUrl.value.trim()) inputUrl.value = defs.internalUrl;
+        }
 
         function resetBridgeForm() {
             inputKey.value = '';
             inputName.value = '';
             inputWaNumberHint.value = '';
+            if (inputDefaultMode) inputDefaultMode.value = 'manual';
             inputClient.value = '';
             inputPort.value = '';
             inputSession.value = '';
@@ -673,11 +805,12 @@ ASKA_CC_HTTP_PORT=3100
             inputKey.focus();
         }
 
-        document.querySelectorAll('.js-edit-bridge').forEach(function (btn) {
+        editButtons.forEach(function (btn) {
             btn.addEventListener('click', function () {
                 inputKey.value = btn.getAttribute('data-bridge-key') || '';
                 inputName.value = btn.getAttribute('data-display-name') || '';
                 inputWaNumberHint.value = btn.getAttribute('data-wa-number-hint') || '';
+                if (inputDefaultMode) inputDefaultMode.value = btn.getAttribute('data-default-route-mode') || 'manual';
                 inputClient.value = btn.getAttribute('data-client-id') || '';
                 inputPort.value = btn.getAttribute('data-http-port') || '';
                 inputSession.value = btn.getAttribute('data-session-path') || '';
@@ -692,6 +825,12 @@ ASKA_CC_HTTP_PORT=3100
             });
         });
 
+        inputKey.addEventListener('input', applyDefaultsFromKey);
+        inputKey.addEventListener('blur', function () {
+            inputKey.value = normalizeBridgeKey(inputKey.value);
+            applyDefaultsFromKey();
+        });
+
         if (resetBtn) {
             resetBtn.addEventListener('click', resetBridgeForm);
         }
@@ -701,6 +840,7 @@ ASKA_CC_HTTP_PORT=3100
         var form = document.getElementById('waRouteForm');
         if (!form) return;
 
+        var inputBridge = document.getElementById('waRouteBridgeKey');
         var inputWa = document.getElementById('waRouteUserId');
         var inputName = document.getElementById('waRouteDisplayName');
         var inputMode = document.getElementById('waRouteMode');
@@ -715,11 +855,15 @@ ASKA_CC_HTTP_PORT=3100
             inputMode.value = 'manual';
             inputActive.checked = true;
             inputNotes.value = '';
+            if (inputBridge && inputBridge.options.length) {
+                inputBridge.value = '{{ selected_bridge_key }}';
+            }
             inputWa.focus();
         }
 
         editButtons.forEach(function (btn) {
             btn.addEventListener('click', function () {
+                if (inputBridge) inputBridge.value = btn.getAttribute('data-bridge-key') || '{{ selected_bridge_key }}';
                 inputWa.value = btn.getAttribute('data-wa-user-id') || '';
                 inputName.value = btn.getAttribute('data-display-name') || '';
                 inputMode.value = btn.getAttribute('data-route-mode') || 'manual';

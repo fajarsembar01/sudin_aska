@@ -72,6 +72,7 @@ from .queries import (
     summarize_cc_wa_routing,
     save_cc_wa_routing,
     delete_cc_wa_routing,
+    normalize_cc_route_mode,
     normalize_cc_bridge_key,
     compose_cc_conversation_user_key,
     split_cc_conversation_user_key,
@@ -345,6 +346,14 @@ def _to_bool_flag(raw_value) -> bool:
 def _settings_wa_redirect(bridge_key: Optional[str] = None) -> Response:
     key = normalize_cc_bridge_key(bridge_key)
     return redirect(url_for("call_center.settings_wa", bridge_key=key))
+
+
+def _normalize_bridge_filter(raw_value: Optional[str]) -> tuple[str, Optional[str]]:
+    value = (raw_value or "all").strip().lower()
+    if value in {"", "all", "*"}:
+        return "all", None
+    key = normalize_cc_bridge_key(value)
+    return key, key
 
 
 def _send_via_bridge(
@@ -683,9 +692,10 @@ def api_callcenter_inbound() -> Response:
         return jsonify({"error": "user_id required"}), 400
     bridge_key = normalize_cc_bridge_key(data.get("bridge_key"))
     try:
-        _resolve_bridge_account(bridge_key)
+        bridge_account = _resolve_bridge_account(bridge_key)
     except Exception:
         bridge_key = normalize_cc_bridge_key(None)
+        bridge_account = _resolve_bridge_account(bridge_key)
 
     conversation_user_key = compose_cc_conversation_user_key(raw_user_id, bridge_key)
     if not conversation_user_key:
@@ -705,10 +715,19 @@ def api_callcenter_inbound() -> Response:
         return jsonify({"error": "message required"}), 400
 
     try:
-        # Auto-register contact on first inbound with default mode=manual.
-        ensure_cc_wa_routing_contact(raw_user_id, display_name=username)
-        route_rule = get_cc_wa_routing(raw_user_id) or {}
-        route_mode = str(route_rule.get("route_mode") or "manual").strip().lower()
+        default_route_mode = normalize_cc_route_mode(
+            bridge_account.get("default_route_mode") or "manual"
+        )
+        route_rule = get_cc_wa_routing(raw_user_id, bridge_key=bridge_key)
+        if not route_rule:
+            # First contact follows bridge default mode (manual/ai).
+            route_rule = ensure_cc_wa_routing_contact(
+                raw_user_id,
+                display_name=username,
+                route_mode=default_route_mode,
+                bridge_key=bridge_key,
+            ) or {}
+        route_mode = normalize_cc_route_mode(route_rule.get("route_mode") or default_route_mode)
         is_active = bool(route_rule.get("is_active", True))
 
         if not is_active:
@@ -832,9 +851,10 @@ def api_callcenter_import_history() -> Response:
             raw_user_id = _normalize_wa_user_id(str(item.get("user_id") or ""))
             bridge_key = normalize_cc_bridge_key(item.get("bridge_key") or request_bridge_key)
             try:
-                _resolve_bridge_account(bridge_key)
+                bridge_account = _resolve_bridge_account(bridge_key)
             except Exception:
                 bridge_key = normalize_cc_bridge_key(None)
+                bridge_account = _resolve_bridge_account(bridge_key)
             message = str(item.get("message") or "").strip()
             direction = str(item.get("direction") or "inbound").strip().lower()
             if not raw_user_id or direction not in {"inbound", "outbound"}:
@@ -866,7 +886,14 @@ def api_callcenter_import_history() -> Response:
                 display_name=username,
                 last_message_at=created_at,
             )
-            ensure_cc_wa_routing_contact(raw_user_id, display_name=username)
+            ensure_cc_wa_routing_contact(
+                raw_user_id,
+                display_name=username,
+                route_mode=normalize_cc_route_mode(
+                    bridge_account.get("default_route_mode") or "manual"
+                ),
+                bridge_key=bridge_key,
+            )
             if not conv:
                 skipped += 1
                 continue
@@ -909,15 +936,18 @@ def inbox() -> Response:
     page = max(1, int(args.get("page", 1)))
     status_filter = args.get("status") or None
     search = (args.get("search") or "").strip() or None
+    bridge_filter, bridge_key = _normalize_bridge_filter(args.get("bridge"))
     offset = (page - 1) * PAGE_SIZE
 
     conversations, total = fetch_cc_conversations(
         status_filter=status_filter,
         search=search,
+        bridge_key=bridge_key,
         limit=PAGE_SIZE,
         offset=offset,
     )
     total_pages = max(1, ceil(total / PAGE_SIZE))
+    bridge_accounts = _bridge_accounts()
 
     return render_template(
         "cc_inbox.html",
@@ -927,6 +957,8 @@ def inbox() -> Response:
         total_pages=total_pages,
         status_filter=status_filter or "all",
         search=search or "",
+        bridge_filter=bridge_filter,
+        bridge_accounts=bridge_accounts,
     )
 
 
@@ -934,6 +966,7 @@ def inbox() -> Response:
 @role_required("admin")
 def thread(conv_id: int) -> Response:
     """Conversation thread view."""
+    bridge_filter, bridge_key = _normalize_bridge_filter(request.args.get("bridge"))
     conv = fetch_cc_conversation(conv_id)
     if not conv:
         flash("Percakapan tidak ditemukan.", "danger")
@@ -945,13 +978,16 @@ def thread(conv_id: int) -> Response:
     # mark_conversation_read(conv_id)  # DINONAKTIFKAN — aktifkan kembali jika diperlukan
 
     # Sidebar conversations
-    conversations, _ = fetch_cc_conversations(limit=50)
+    conversations, _ = fetch_cc_conversations(limit=50, bridge_key=bridge_key)
+    bridge_accounts = _bridge_accounts()
 
     response = current_app.make_response(render_template(
         "cc_thread.html",
         conversation=conv,
         messages=messages,
         conversations=conversations,
+        bridge_filter=bridge_filter,
+        bridge_accounts=bridge_accounts,
     ))
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
@@ -1092,12 +1128,14 @@ def api_conversations() -> Response:
     """JSON API for polling conversations."""
     status_filter = request.args.get("status") or None
     search = (request.args.get("search") or "").strip() or None
+    bridge_filter, bridge_key = _normalize_bridge_filter(request.args.get("bridge"))
     conversations, total = fetch_cc_conversations(
         status_filter=status_filter,
         search=search,
+        bridge_key=bridge_key,
         limit=50,
     )
-    return jsonify({"conversations": conversations, "total": total})
+    return jsonify({"conversations": conversations, "total": total, "bridge_filter": bridge_filter})
 
 
 @call_center_bp.route("/api/messages/<int:conv_id>")
@@ -1613,6 +1651,9 @@ def settings_wa() -> Response:
 
         if action == "save_wa_route":
             wa_user_id = _normalize_wa_user_id(request.form.get("wa_user_id") or "")
+            route_bridge_key = normalize_cc_bridge_key(
+                request.form.get("selected_bridge_key") or selected_bridge_key
+            )
             display_name = (request.form.get("display_name") or "").strip() or None
             route_mode = (request.form.get("route_mode") or "manual").strip().lower()
             is_active = _to_bool_flag(request.form.get("is_active"))
@@ -1621,6 +1662,7 @@ def settings_wa() -> Response:
             try:
                 row = save_cc_wa_routing(
                     wa_user_id,
+                    bridge_key=route_bridge_key,
                     display_name=display_name,
                     route_mode=route_mode,
                     is_active=is_active,
@@ -1642,7 +1684,7 @@ def settings_wa() -> Response:
                 except Exception:
                     pass
                 flash(
-                    f"Routing WA +{row.get('wa_user_id')} disimpan ({row.get('route_mode')}, "
+                    f"Routing WA +{row.get('wa_user_id')} [{route_bridge_key}] disimpan ({row.get('route_mode')}, "
                     f"{'aktif' if row.get('is_active') else 'nonaktif'}).",
                     "success",
                 )
@@ -1653,20 +1695,23 @@ def settings_wa() -> Response:
 
         elif action == "delete_wa_route":
             wa_user_id = _normalize_wa_user_id(request.form.get("wa_user_id") or "")
+            route_bridge_key = normalize_cc_bridge_key(
+                request.form.get("selected_bridge_key") or selected_bridge_key
+            )
             if not wa_user_id:
                 flash("Nomor WA tidak valid.", "warning")
-            elif delete_cc_wa_routing(wa_user_id):
+            elif delete_cc_wa_routing(wa_user_id, bridge_key=route_bridge_key):
                 try:
                     record_admin_action(
                         user_id=actor.get("id"),
                         feature_key="call_center",
                         action="DELETE",
                         target_type="CALL_CENTER_WA_ROUTING",
-                        target_name=f"WA {wa_user_id}",
+                        target_name=f"WA {wa_user_id} [{route_bridge_key}]",
                     )
                 except Exception:
                     pass
-                flash(f"Routing WA +{wa_user_id} dihapus.", "success")
+                flash(f"Routing WA +{wa_user_id} [{route_bridge_key}] dihapus.", "success")
             else:
                 flash("Routing WA tidak ditemukan.", "warning")
 
@@ -1678,6 +1723,9 @@ def settings_wa() -> Response:
             bridge_key = normalize_cc_bridge_key(raw_bridge_key)
             display_name = (request.form.get("display_name") or "").strip() or None
             wa_number_hint = _normalize_wa_user_id(request.form.get("wa_number_hint") or "") or None
+            default_route_mode = normalize_cc_route_mode(
+                request.form.get("default_route_mode") or "manual"
+            )
             client_id = (request.form.get("client_id") or "").strip() or None
             internal_url = (request.form.get("internal_url") or "").strip() or None
             session_path = (request.form.get("session_path") or "").strip() or None
@@ -1695,6 +1743,7 @@ def settings_wa() -> Response:
                     bridge_key=bridge_key,
                     display_name=display_name,
                     wa_number_hint=wa_number_hint,
+                    default_route_mode=default_route_mode,
                     client_id=client_id,
                     http_port=http_port,
                     session_path=session_path,
@@ -1744,8 +1793,9 @@ def settings_wa() -> Response:
         for item in bridge_statuses
     }
     route_search = (request.args.get("q") or "").strip()
-    route_rows = list_cc_wa_routing(search=route_search, limit=500)
-    route_summary = summarize_cc_wa_routing()
+    route_bridge_filter, route_bridge_key = _normalize_bridge_filter(request.args.get("route_bridge"))
+    route_rows = list_cc_wa_routing(search=route_search, limit=500, bridge_key=route_bridge_key)
+    route_summary = summarize_cc_wa_routing(bridge_key=route_bridge_key)
     return render_template(
         "cc_settings_wa.html",
         bridge_status=bridge_status,
@@ -1757,6 +1807,7 @@ def settings_wa() -> Response:
         route_rows=route_rows,
         route_summary=route_summary,
         route_search=route_search,
+        route_bridge_filter=route_bridge_filter,
     )
 
 
