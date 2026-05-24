@@ -607,6 +607,26 @@
                 var showMuted = hasMedia && mediaTypeValue === 'video';
                 mutedWrap.classList.toggle('d-none', !showMuted);
             }
+
+            // Jika autoplay ON → mute wajib ON dan disabled
+            var autoplayChk = autoplayWrap ? autoplayWrap.querySelector('input[type=checkbox]') : null;
+            var mutedChk = mutedWrap ? mutedWrap.querySelector('input[type=checkbox]') : null;
+            if (autoplayChk && mutedChk) {
+                if (autoplayChk.checked) {
+                    mutedChk.checked = true;
+                    mutedChk.disabled = true;
+                } else {
+                    mutedChk.disabled = false;
+                }
+                autoplayChk.addEventListener('change', function () {
+                    if (autoplayChk.checked) {
+                        mutedChk.checked = true;
+                        mutedChk.disabled = true;
+                    } else {
+                        mutedChk.disabled = false;
+                    }
+                });
+            }
         }
 
         function bindBubbleLinkRows(form) {
@@ -686,6 +706,26 @@
             if (mutedWrap) {
                 var showMuted = hasMedia && mediaTypeValue === 'video';
                 mutedWrap.classList.toggle('d-none', !showMuted);
+            }
+
+            // Jika autoplay ON → mute wajib ON dan disabled
+            var autoplayChk = autoplayWrap ? autoplayWrap.querySelector('input[type=checkbox]') : null;
+            var mutedChk = mutedWrap ? mutedWrap.querySelector('input[type=checkbox]') : null;
+            if (autoplayChk && mutedChk) {
+                if (autoplayChk.checked) {
+                    mutedChk.checked = true;
+                    mutedChk.disabled = true;
+                } else {
+                    mutedChk.disabled = false;
+                }
+                autoplayChk.addEventListener('change', function () {
+                    if (autoplayChk.checked) {
+                        mutedChk.checked = true;
+                        mutedChk.disabled = true;
+                    } else {
+                        mutedChk.disabled = false;
+                    }
+                });
             }
         }
 
