@@ -31,6 +31,9 @@ def create_app() -> Flask:
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(
         days=int(os.getenv("DASHBOARD_SESSION_DAYS", "14"))
     )
+    # Batas ukuran upload — default 50 MB, bisa di-override via env DASHBOARD_MAX_UPLOAD_MB
+    _max_upload_mb = int(os.getenv("DASHBOARD_MAX_UPLOAD_MB", "50"))
+    app.config["MAX_CONTENT_LENGTH"] = _max_upload_mb * 1024 * 1024
     
     csrf = CSRFProtect(app)
 
