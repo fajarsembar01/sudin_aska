@@ -47,15 +47,15 @@
             {% if bubble.media_type == 'image' %}
             <img src="{{ bubble.media_src }}" alt="Media bubble ASKA" loading="lazy">
             {% elif bubble.media_type == 'video' %}
-            <video {% if not bubble.media_autoplay %}controls{% endif %} playsinline preload="auto"
-                {% if bubble.media_loop %}loop{% endif %}
-                {% if bubble.media_autoplay %}autoplay muted{% elif bubble.video_muted %}muted{% endif %}>
+            <video {% if not bubble.media_autoplay %}controls="controls"{% endif %} playsinline="playsinline" preload="auto"
+                {% if bubble.media_loop %}loop="loop"{% endif %}
+                {% if bubble.media_autoplay %}autoplay="autoplay" muted="muted"{% elif bubble.video_muted %}muted="muted"{% endif %}>
                 <source src="{{ bubble.media_src }}">
             </video>
             {% elif bubble.media_type == 'audio' %}
-            <audio {% if not bubble.media_autoplay %}controls{% endif %} preload="auto"
-                {% if bubble.media_loop %}loop{% endif %}
-                {% if bubble.media_autoplay %}autoplay muted{% endif %}>
+            <audio {% if not bubble.media_autoplay %}controls="controls"{% endif %} preload="auto"
+                {% if bubble.media_loop %}loop="loop"{% endif %}
+                {% if bubble.media_autoplay %}autoplay="autoplay" muted="muted"{% endif %}>
                 <source src="{{ bubble.media_src }}">
             </audio>
             {% endif %}
@@ -116,15 +116,15 @@
             {% if limit_bubble.media_type == 'image' %}
             <img src="{{ limit_bubble.media_src }}" alt="Media bubble limit chat ASKA" loading="lazy">
             {% elif limit_bubble.media_type == 'video' %}
-            <video {% if not limit_bubble.media_autoplay %}controls{% endif %} playsinline preload="auto"
-                {% if limit_bubble.media_loop %}loop{% endif %}
-                {% if limit_bubble.media_autoplay %}autoplay muted{% elif limit_bubble.video_muted %}muted{% endif %}>
+            <video {% if not limit_bubble.media_autoplay %}controls="controls"{% endif %} playsinline="playsinline" preload="auto"
+                {% if limit_bubble.media_loop %}loop="loop"{% endif %}
+                {% if limit_bubble.media_autoplay %}autoplay="autoplay" muted="muted"{% elif limit_bubble.video_muted %}muted="muted"{% endif %}>
                 <source src="{{ limit_bubble.media_src }}">
             </video>
             {% elif limit_bubble.media_type == 'audio' %}
-            <audio {% if not limit_bubble.media_autoplay %}controls{% endif %} preload="auto"
-                {% if limit_bubble.media_loop %}loop{% endif %}
-                {% if limit_bubble.media_autoplay %}autoplay muted{% endif %}>
+            <audio {% if not limit_bubble.media_autoplay %}controls="controls"{% endif %} preload="auto"
+                {% if limit_bubble.media_loop %}loop="loop"{% endif %}
+                {% if limit_bubble.media_autoplay %}autoplay="autoplay" muted="muted"{% endif %}>
                 <source src="{{ limit_bubble.media_src }}">
             </audio>
             {% endif %}
@@ -610,15 +610,19 @@
                     mediaWrap.appendChild(img);
                 } else if (mediaType === 'video') {
                     var video = document.createElement('video');
-                    video.playsInline = true;
+                    video.setAttribute('playsinline', 'playsinline');
                     video.preload = 'auto';
-                    if (limitBubble.mediaLoop) video.loop = true;
+                    if (limitBubble.mediaLoop) video.setAttribute('loop', 'loop');
                     if (limitBubble.mediaAutoplay) {
-                        video.autoplay = true;
+                        video.setAttribute('autoplay', 'autoplay');
+                        video.setAttribute('muted', 'muted');
                         video.muted = true;
                     } else {
                         video.controls = true;
-                        if (limitBubble.videoMuted) video.muted = true;
+                        if (limitBubble.videoMuted) {
+                            video.setAttribute('muted', 'muted');
+                            video.muted = true;
+                        }
                     }
                     var source = document.createElement('source');
                     source.src = mediaSrc;
@@ -627,9 +631,10 @@
                 } else if (mediaType === 'audio') {
                     var audio = document.createElement('audio');
                     audio.preload = 'auto';
-                    if (limitBubble.mediaLoop) audio.loop = true;
+                    if (limitBubble.mediaLoop) audio.setAttribute('loop', 'loop');
                     if (limitBubble.mediaAutoplay) {
-                        audio.autoplay = true;
+                        audio.setAttribute('autoplay', 'autoplay');
+                        audio.setAttribute('muted', 'muted');
                         audio.muted = true;
                     } else {
                         audio.controls = true;
