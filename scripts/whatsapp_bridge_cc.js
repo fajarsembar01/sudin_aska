@@ -64,6 +64,11 @@ const CLIENT_ID = (process.env.ASKA_CC_WHATSAPP_CLIENT_ID || "cc-main").trim();
 const STATUS_PATH = path.resolve(
     process.env.ASKA_CC_WHATSAPP_STATUS_PATH || "runtime/whatsapp_cc_status.json"
 );
+const BRIDGE_KEY = String(process.env.ASKA_CC_BRIDGE_KEY || "main")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "main";
 const HTTP_PORT = parseInt(process.env.ASKA_CC_HTTP_PORT || "3100", 10);
 const MAX_MEDIA_BYTES = parseInt(process.env.ASKA_CC_MEDIA_MAX_BYTES || "0", 10);
 const MAX_PDF_RAW_BYTES = parseInt(process.env.ASKA_CC_PDF_RAW_MAX_BYTES || String(MAX_MEDIA_BYTES), 10);
@@ -94,7 +99,20 @@ function writeStatus(patch) {
         }
         fs.writeFileSync(
             STATUS_PATH,
-            JSON.stringify({ ...base, ...patch, updatedAt: new Date().toISOString() }, null, 2),
+            JSON.stringify(
+                {
+                    ...base,
+                    ...patch,
+                    bridgeKey: BRIDGE_KEY,
+                    clientId: CLIENT_ID,
+                    sessionPath: SESSION_PATH,
+                    internalUrl: INTERNAL_URL,
+                    httpPort: HTTP_PORT,
+                    updatedAt: new Date().toISOString(),
+                },
+                null,
+                2
+            ),
             "utf8"
         );
     } catch (err) {
@@ -106,6 +124,26 @@ function writeStatus(patch) {
 
 function normalizeNumber(jid) {
     return (String(jid || "").split("@")[0] || "").replace(/\D/g, "") || "";
+}
+
+function resolveBridgeSelfNumber() {
+    try {
+        const info = client && client.info ? client.info : {};
+        const wid = info && info.wid ? info.wid : {};
+        const candidates = [
+            wid.user,
+            wid._serialized,
+            info.me,
+            info.phone && info.phone.wa_version ? info.me : "",
+        ];
+        for (const raw of candidates) {
+            const normalized = normalizeNumber(raw);
+            if (normalized) return normalized;
+        }
+    } catch (_) {
+        // Ignore lookup errors and fallback to empty string.
+    }
+    return "";
 }
 
 function estimateBase64Bytes(data) {
@@ -200,33 +238,54 @@ const client = new Client({
 });
 
 client.on("qr", (qrText) => {
-    writeStatus({ state: "qr", qrText, message: "Scan QR dari WhatsApp Linked Devices." });
+    writeStatus({
+        state: "qr",
+        qrText,
+        message: "Scan QR dari WhatsApp Linked Devices.",
+        whatsappNumber: "",
+    });
     console.log("\n[CC] Scan QR berikut di WhatsApp Linked Devices:\n");
     qrcode.generate(qrText, { small: true });
 });
 
 client.on("authenticated", () => {
-    writeStatus({ state: "authenticated", qrText: "", message: "Authenticated." });
+    writeStatus({
+        state: "authenticated",
+        qrText: "",
+        message: "Authenticated.",
+        whatsappNumber: resolveBridgeSelfNumber(),
+    });
     console.log("[CC] Authenticated.");
 });
 
 client.on("ready", () => {
     clientReady = true;
     lastHeartbeat = Date.now();
-    writeStatus({ state: "ready", qrText: "", message: "Call Center bridge siap." });
+    const selfNumber = resolveBridgeSelfNumber();
+    writeStatus({
+        state: "ready",
+        qrText: "",
+        message: "Call Center bridge siap.",
+        whatsappNumber: selfNumber,
+    });
     console.log("[CC] Bridge siap menerima chat.");
+    if (selfNumber) {
+        console.log(`[CC] Nomor akun terdeteksi: +${selfNumber}`);
+    } else {
+        console.log("[CC] Nomor akun belum bisa dideteksi otomatis.");
+    }
     startWatchdog();
 });
 
 client.on("auth_failure", (msg) => {
     clientReady = false;
-    writeStatus({ state: "auth_failure", qrText: "", message: String(msg) });
+    writeStatus({ state: "auth_failure", qrText: "", message: String(msg), whatsappNumber: "" });
     console.error("[CC] Auth failure:", msg);
 });
 
 client.on("disconnected", (reason) => {
     clientReady = false;
-    writeStatus({ state: "disconnected", qrText: "", message: String(reason) });
+    writeStatus({ state: "disconnected", qrText: "", message: String(reason), whatsappNumber: "" });
     console.warn("[CC] Disconnected:", reason);
     setTimeout(() => {
         client.initialize().catch((e) =>
@@ -341,6 +400,7 @@ async function handleIncoming(msg) {
                     username: displayName,
                     message: messageText,
                     message_id: mid || null,
+                    bridge_key: BRIDGE_KEY,
                     media,
                 },
                 {
@@ -428,6 +488,7 @@ async function serializeHistoryMessage(msg, identity) {
     return {
         user_id: identity.number,
         username: identity.displayName,
+        bridge_key: BRIDGE_KEY,
         direction: msg.fromMe ? "outbound" : "inbound",
         message: text || mediaFallbackText((media && media.mimetype) || probableMime),
         message_id: messageId || null,
@@ -447,7 +508,7 @@ async function postImportBatch(messages) {
     if (!messages.length) return {};
     const response = await axios.post(
         IMPORT_URL,
-        { messages },
+        { bridge_key: BRIDGE_KEY, messages },
         {
             headers: {
                 "Content-Type": "application/json",
@@ -462,7 +523,13 @@ async function postImportBatch(messages) {
 }
 
 app.get("/health", (_req, res) => {
-    res.json({ ok: true, state: "running" });
+    res.json({
+        ok: true,
+        state: "running",
+        bridgeKey: BRIDGE_KEY,
+        httpPort: HTTP_PORT,
+        whatsappNumber: resolveBridgeSelfNumber(),
+    });
 });
 
 app.post("/sync-history", authCheck, async (req, res) => {
@@ -670,6 +737,7 @@ writeStatus({
     state: "starting",
     qrText: "",
     message: "Call Center bridge sedang inisialisasi...",
+    whatsappNumber: "",
     sessionPath: SESSION_PATH,
     clientId: CLIENT_ID,
     internalUrl: INTERNAL_URL,
@@ -677,7 +745,12 @@ writeStatus({
 });
 
 client.initialize().catch((err) => {
-    writeStatus({ state: "error", qrText: "", message: (err && err.message) || String(err) });
+    writeStatus({
+        state: "error",
+        qrText: "",
+        message: (err && err.message) || String(err),
+        whatsappNumber: "",
+    });
     console.error("[CC] Init error:", (err && err.message) || err);
     process.exit(1);
 });

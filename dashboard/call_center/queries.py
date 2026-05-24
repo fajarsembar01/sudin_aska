@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import traceback
 from typing import Optional, List, Dict, Any
 
@@ -10,6 +11,11 @@ from ..db_access import get_cursor
 
 _CC_DRAFTS_SCHEMA_READY = False
 _CC_MESSAGES_MEDIA_SCHEMA_READY = False
+_CC_WA_ROUTING_SCHEMA_READY = False
+_CC_WA_ROUTE_MODES = {"manual", "ai"}
+_CC_BRIDGE_ACCOUNTS_SCHEMA_READY = False
+_CC_BRIDGE_DEFAULT_KEY = "main"
+_CC_BRIDGE_KEY_RE = re.compile(r"[^a-z0-9_-]+")
 
 
 def _ensure_cc_messages_media_schema() -> None:
@@ -18,20 +24,621 @@ def _ensure_cc_messages_media_schema() -> None:
     if _CC_MESSAGES_MEDIA_SCHEMA_READY:
         return
 
+    try:
+        with get_cursor(commit=True) as cur:
+            cur.execute(
+                """
+                ALTER TABLE cc_messages
+                ADD COLUMN IF NOT EXISTS media_path TEXT,
+                ADD COLUMN IF NOT EXISTS media_mime_type TEXT,
+                ADD COLUMN IF NOT EXISTS media_filename TEXT,
+                ADD COLUMN IF NOT EXISTS media_size INTEGER,
+                ADD COLUMN IF NOT EXISTS original_message_text TEXT,
+                ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ,
+                ADD COLUMN IF NOT EXISTS edited_by_admin_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+                """
+            )
+    except Exception as exc:
+        msg = str(exc).lower()
+        # Legacy databases may have cc_messages owned by another role.
+        # In that case, skip ALTER and continue with existing schema.
+        if "must be owner of table cc_messages" not in msg and "permission denied for table cc_messages" not in msg:
+            raise
+    _CC_MESSAGES_MEDIA_SCHEMA_READY = True
+
+
+def _normalize_wa_user_id(raw_user_id: Optional[str]) -> str:
+    return "".join(ch for ch in str(raw_user_id or "") if ch.isdigit())
+
+
+def _normalize_route_mode(raw_mode: Optional[str]) -> str:
+    mode = str(raw_mode or "manual").strip().lower()
+    if mode not in _CC_WA_ROUTE_MODES:
+        return "manual"
+    return mode
+
+
+def _ensure_cc_wa_routing_schema() -> None:
+    global _CC_WA_ROUTING_SCHEMA_READY
+    if _CC_WA_ROUTING_SCHEMA_READY:
+        return
+
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
-            ALTER TABLE cc_messages
-            ADD COLUMN IF NOT EXISTS media_path TEXT,
-            ADD COLUMN IF NOT EXISTS media_mime_type TEXT,
-            ADD COLUMN IF NOT EXISTS media_filename TEXT,
-            ADD COLUMN IF NOT EXISTS media_size INTEGER,
-            ADD COLUMN IF NOT EXISTS original_message_text TEXT,
-            ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ,
-            ADD COLUMN IF NOT EXISTS edited_by_admin_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+            CREATE TABLE IF NOT EXISTS cc_wa_routing (
+                id SERIAL PRIMARY KEY,
+                wa_user_id TEXT UNIQUE NOT NULL,
+                display_name TEXT,
+                route_mode TEXT NOT NULL DEFAULT 'manual' CHECK (route_mode IN ('manual','ai')),
+                is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                notes TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_by INTEGER
+            )
             """
         )
-    _CC_MESSAGES_MEDIA_SCHEMA_READY = True
+        cur.execute(
+            """
+            ALTER TABLE cc_wa_routing
+            ADD COLUMN IF NOT EXISTS route_mode TEXT NOT NULL DEFAULT 'manual',
+            ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            ADD COLUMN IF NOT EXISTS notes TEXT,
+            ADD COLUMN IF NOT EXISTS updated_by INTEGER,
+            ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            """
+        )
+        cur.execute(
+            """
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM pg_constraint
+                    WHERE conname = 'cc_wa_routing_route_mode_check'
+                ) THEN
+                    ALTER TABLE cc_wa_routing
+                    ADD CONSTRAINT cc_wa_routing_route_mode_check
+                    CHECK (route_mode IN ('manual','ai'));
+                END IF;
+            END $$;
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_cc_wa_routing_mode_active
+            ON cc_wa_routing (route_mode, is_active)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_cc_wa_routing_updated_at
+            ON cc_wa_routing (updated_at DESC)
+            """
+        )
+    _CC_WA_ROUTING_SCHEMA_READY = True
+
+
+def ensure_cc_wa_routing_contact(
+    wa_user_id: str,
+    display_name: Optional[str] = None,
+) -> Optional[dict]:
+    _ensure_cc_wa_routing_schema()
+    clean_wa = _normalize_wa_user_id(wa_user_id)
+    if not clean_wa:
+        return None
+
+    clean_name = str(display_name or "").strip()[:120] or None
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO cc_wa_routing (
+                wa_user_id,
+                display_name,
+                route_mode,
+                is_active,
+                updated_at
+            )
+            VALUES (
+                %(wa)s,
+                %(name)s,
+                'manual',
+                TRUE,
+                NOW()
+            )
+            ON CONFLICT (wa_user_id) DO UPDATE SET
+                display_name = COALESCE(EXCLUDED.display_name, cc_wa_routing.display_name),
+                updated_at = NOW()
+            RETURNING id, wa_user_id, display_name, route_mode, is_active, notes, created_at, updated_at, updated_by
+            """,
+            {"wa": clean_wa, "name": clean_name},
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def get_cc_wa_routing(wa_user_id: str) -> Optional[dict]:
+    _ensure_cc_wa_routing_schema()
+    clean_wa = _normalize_wa_user_id(wa_user_id)
+    if not clean_wa:
+        return None
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT r.id, r.wa_user_id, r.display_name, r.route_mode, r.is_active, r.notes,
+                   r.created_at, r.updated_at, r.updated_by
+            FROM cc_wa_routing r
+            WHERE r.wa_user_id = %(wa)s
+            LIMIT 1
+            """,
+            {"wa": clean_wa},
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def list_cc_wa_routing(search: Optional[str] = None, limit: int = 300) -> list[dict]:
+    _ensure_cc_wa_routing_schema()
+    clean_limit = max(1, min(int(limit or 300), 1000))
+    params: dict[str, Any] = {"limit": clean_limit}
+    where = ""
+    clean_search = str(search or "").strip()
+    if clean_search:
+        where = "WHERE (r.wa_user_id ILIKE %(search)s OR r.display_name ILIKE %(search)s)"
+        params["search"] = f"%{clean_search}%"
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT r.id, r.wa_user_id, r.display_name, r.route_mode, r.is_active, r.notes,
+                   r.created_at, r.updated_at, r.updated_by,
+                   c.id AS conversation_id,
+                   c.status AS conversation_status,
+                   c.last_message_at,
+                   c.unread_count
+            FROM cc_wa_routing r
+            LEFT JOIN LATERAL (
+                SELECT c1.id, c1.status, c1.last_message_at, c1.unread_count
+                FROM cc_conversations c1
+                WHERE c1.wa_user_id = r.wa_user_id
+                   OR c1.wa_user_id LIKE ('%::' || r.wa_user_id)
+                ORDER BY c1.last_message_at DESC NULLS LAST, c1.id DESC
+                LIMIT 1
+            ) c ON TRUE
+            {where}
+            ORDER BY r.is_active DESC, r.updated_at DESC, r.id DESC
+            LIMIT %(limit)s
+            """,
+            params,
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def summarize_cc_wa_routing() -> dict:
+    _ensure_cc_wa_routing_schema()
+    summary = {
+        "total": 0,
+        "active": 0,
+        "inactive": 0,
+        "manual": 0,
+        "ai": 0,
+    }
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                COUNT(*)::int AS total,
+                COUNT(*) FILTER (WHERE is_active)::int AS active,
+                COUNT(*) FILTER (WHERE NOT is_active)::int AS inactive,
+                COUNT(*) FILTER (WHERE route_mode = 'manual')::int AS manual,
+                COUNT(*) FILTER (WHERE route_mode = 'ai')::int AS ai
+            FROM cc_wa_routing
+            """
+        )
+        row = cur.fetchone() or {}
+    summary.update(
+        {
+            "total": int(row.get("total") or 0),
+            "active": int(row.get("active") or 0),
+            "inactive": int(row.get("inactive") or 0),
+            "manual": int(row.get("manual") or 0),
+            "ai": int(row.get("ai") or 0),
+        }
+    )
+    return summary
+
+
+def save_cc_wa_routing(
+    wa_user_id: str,
+    *,
+    display_name: Optional[str] = None,
+    route_mode: str = "manual",
+    is_active: bool = True,
+    notes: Optional[str] = None,
+    updated_by: Optional[int] = None,
+) -> dict:
+    _ensure_cc_wa_routing_schema()
+    clean_wa = _normalize_wa_user_id(wa_user_id)
+    if not clean_wa:
+        raise ValueError("Nomor WA tidak valid.")
+
+    clean_name = str(display_name or "").strip()[:120] or None
+    clean_notes = str(notes or "").strip()[:1000] or None
+    mode = _normalize_route_mode(route_mode)
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO cc_wa_routing (
+                wa_user_id,
+                display_name,
+                route_mode,
+                is_active,
+                notes,
+                updated_by,
+                updated_at
+            )
+            VALUES (
+                %(wa)s,
+                %(name)s,
+                %(mode)s,
+                %(active)s,
+                %(notes)s,
+                %(updated_by)s,
+                NOW()
+            )
+            ON CONFLICT (wa_user_id) DO UPDATE SET
+                display_name = COALESCE(EXCLUDED.display_name, cc_wa_routing.display_name),
+                route_mode = EXCLUDED.route_mode,
+                is_active = EXCLUDED.is_active,
+                notes = EXCLUDED.notes,
+                updated_by = EXCLUDED.updated_by,
+                updated_at = NOW()
+            RETURNING id, wa_user_id, display_name, route_mode, is_active, notes, created_at, updated_at, updated_by
+            """,
+            {
+                "wa": clean_wa,
+                "name": clean_name,
+                "mode": mode,
+                "active": bool(is_active),
+                "notes": clean_notes,
+                "updated_by": updated_by,
+            },
+        )
+        row = cur.fetchone()
+    return dict(row) if row else {}
+
+
+def delete_cc_wa_routing(wa_user_id: str) -> bool:
+    _ensure_cc_wa_routing_schema()
+    clean_wa = _normalize_wa_user_id(wa_user_id)
+    if not clean_wa:
+        return False
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            "DELETE FROM cc_wa_routing WHERE wa_user_id = %(wa)s",
+            {"wa": clean_wa},
+        )
+        return cur.rowcount > 0
+
+
+def normalize_cc_bridge_key(raw_key: Optional[str]) -> str:
+    clean = str(raw_key or "").strip().lower()
+    clean = _CC_BRIDGE_KEY_RE.sub("-", clean).strip("-")
+    return clean or _CC_BRIDGE_DEFAULT_KEY
+
+
+def compose_cc_conversation_user_key(raw_wa_user_id: str, bridge_key: Optional[str]) -> str:
+    clean_wa = _normalize_wa_user_id(raw_wa_user_id)
+    key = normalize_cc_bridge_key(bridge_key)
+    if not clean_wa:
+        return ""
+    if key == _CC_BRIDGE_DEFAULT_KEY:
+        return clean_wa
+    return f"{key}::{clean_wa}"
+
+
+def split_cc_conversation_user_key(wa_user_id: Optional[str]) -> dict:
+    raw = str(wa_user_id or "").strip()
+    if not raw:
+        return {
+            "bridge_key": _CC_BRIDGE_DEFAULT_KEY,
+            "raw_wa_user_id": "",
+            "conversation_user_key": "",
+        }
+    if "::" in raw:
+        maybe_key, maybe_wa = raw.split("::", 1)
+        parsed_key = normalize_cc_bridge_key(maybe_key)
+        clean_wa = _normalize_wa_user_id(maybe_wa)
+        if clean_wa:
+            return {
+                "bridge_key": parsed_key,
+                "raw_wa_user_id": clean_wa,
+                "conversation_user_key": raw,
+            }
+    return {
+        "bridge_key": _CC_BRIDGE_DEFAULT_KEY,
+        "raw_wa_user_id": _normalize_wa_user_id(raw),
+        "conversation_user_key": raw,
+    }
+
+
+def enrich_cc_conversation_row(row: Optional[dict]) -> Optional[dict]:
+    if not row:
+        return row
+    parsed = split_cc_conversation_user_key(row.get("wa_user_id"))
+    row["conversation_user_key"] = parsed["conversation_user_key"]
+    row["bridge_key"] = parsed["bridge_key"]
+    row["wa_user_id_raw"] = parsed["raw_wa_user_id"] or str(row.get("wa_user_id") or "")
+    return row
+
+
+def _bridge_defaults_for_key(bridge_key: str) -> dict:
+    key = normalize_cc_bridge_key(bridge_key)
+    if key == _CC_BRIDGE_DEFAULT_KEY:
+        return {
+            "display_name": "WA Main",
+            "client_id": "cc-main",
+            "http_port": 3100,
+            "session_path": ".wa_cc_session",
+            "status_path": "runtime/whatsapp_cc_status.json",
+            "pid_path": "runtime/whatsapp_cc.pid",
+            "log_path": "runtime/whatsapp_cc.log",
+            "internal_url": os.getenv("ASKA_CC_WHATSAPP_INTERNAL_URL") or "http://127.0.0.1:5002/api/callcenter/inbound",
+            "is_active": True,
+        }
+    return {
+        "display_name": f"WA {key.upper()}",
+        "client_id": f"cc-{key}",
+        "http_port": 3200,
+        "session_path": f".wa_cc_session_{key}",
+        "status_path": f"runtime/whatsapp_cc_status_{key}.json",
+        "pid_path": f"runtime/whatsapp_cc_{key}.pid",
+        "log_path": f"runtime/whatsapp_cc_{key}.log",
+        "internal_url": os.getenv("ASKA_CC_WHATSAPP_INTERNAL_URL") or "http://127.0.0.1:5002/api/callcenter/inbound",
+        "is_active": True,
+    }
+
+
+def _ensure_cc_wa_bridge_accounts_schema() -> None:
+    global _CC_BRIDGE_ACCOUNTS_SCHEMA_READY
+    if _CC_BRIDGE_ACCOUNTS_SCHEMA_READY:
+        return
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS cc_wa_bridge_accounts (
+                id SERIAL PRIMARY KEY,
+                bridge_key TEXT UNIQUE NOT NULL,
+                display_name TEXT NOT NULL,
+                wa_number_hint TEXT,
+                client_id TEXT NOT NULL,
+                http_port INTEGER NOT NULL UNIQUE,
+                session_path TEXT NOT NULL,
+                status_path TEXT NOT NULL,
+                pid_path TEXT NOT NULL,
+                log_path TEXT NOT NULL,
+                internal_url TEXT,
+                is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_by INTEGER
+            )
+            """
+        )
+        cur.execute(
+            """
+            ALTER TABLE cc_wa_bridge_accounts
+            ADD COLUMN IF NOT EXISTS wa_number_hint TEXT
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_cc_wa_bridge_accounts_active
+            ON cc_wa_bridge_accounts (is_active, bridge_key)
+            """
+        )
+    _CC_BRIDGE_ACCOUNTS_SCHEMA_READY = True
+
+
+def ensure_default_cc_wa_bridge_account(updated_by: Optional[int] = None) -> dict:
+    _ensure_cc_wa_bridge_accounts_schema()
+    existing = get_cc_wa_bridge_account(_CC_BRIDGE_DEFAULT_KEY)
+    if existing:
+        return existing
+    defaults = _bridge_defaults_for_key(_CC_BRIDGE_DEFAULT_KEY)
+    return save_cc_wa_bridge_account(
+        bridge_key=_CC_BRIDGE_DEFAULT_KEY,
+        display_name=defaults["display_name"],
+        wa_number_hint=None,
+        client_id=defaults["client_id"],
+        http_port=defaults["http_port"],
+        session_path=defaults["session_path"],
+        status_path=defaults["status_path"],
+        pid_path=defaults["pid_path"],
+        log_path=defaults["log_path"],
+        internal_url=defaults["internal_url"],
+        is_active=defaults["is_active"],
+        updated_by=updated_by,
+    )
+
+
+def list_cc_wa_bridge_accounts(*, include_inactive: bool = True) -> list[dict]:
+    _ensure_cc_wa_bridge_accounts_schema()
+    where = "" if include_inactive else "WHERE is_active = TRUE"
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT id, bridge_key, display_name, wa_number_hint, client_id, http_port,
+                   session_path, status_path, pid_path, log_path,
+                   internal_url, is_active, created_at, updated_at, updated_by
+            FROM cc_wa_bridge_accounts
+            {where}
+            ORDER BY CASE WHEN bridge_key = 'main' THEN 0 ELSE 1 END, bridge_key ASC
+            """
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def get_cc_wa_bridge_account(bridge_key: Optional[str]) -> Optional[dict]:
+    _ensure_cc_wa_bridge_accounts_schema()
+    key = normalize_cc_bridge_key(bridge_key)
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, bridge_key, display_name, wa_number_hint, client_id, http_port,
+                   session_path, status_path, pid_path, log_path,
+                   internal_url, is_active, created_at, updated_at, updated_by
+            FROM cc_wa_bridge_accounts
+            WHERE bridge_key = %(bridge_key)s
+            LIMIT 1
+            """,
+            {"bridge_key": key},
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def find_cc_wa_bridge_account_by_port(http_port: int) -> Optional[dict]:
+    _ensure_cc_wa_bridge_accounts_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, bridge_key, display_name, wa_number_hint, client_id, http_port,
+                   session_path, status_path, pid_path, log_path,
+                   internal_url, is_active, created_at, updated_at, updated_by
+            FROM cc_wa_bridge_accounts
+            WHERE http_port = %(http_port)s
+            LIMIT 1
+            """,
+            {"http_port": int(http_port)},
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def save_cc_wa_bridge_account(
+    *,
+    bridge_key: str,
+    display_name: Optional[str],
+    wa_number_hint: Optional[str],
+    client_id: Optional[str],
+    http_port: Optional[int],
+    session_path: Optional[str],
+    status_path: Optional[str],
+    pid_path: Optional[str],
+    log_path: Optional[str],
+    internal_url: Optional[str],
+    is_active: bool,
+    updated_by: Optional[int] = None,
+) -> dict:
+    _ensure_cc_wa_bridge_accounts_schema()
+    key = normalize_cc_bridge_key(bridge_key)
+    defaults = _bridge_defaults_for_key(key)
+
+    clean_display_name = str(display_name or "").strip() or defaults["display_name"]
+    clean_wa_hint = _normalize_wa_user_id(wa_number_hint) or None
+    clean_client_id = str(client_id or "").strip() or defaults["client_id"]
+    clean_http_port = int(http_port or defaults["http_port"])
+    clean_session_path = str(session_path or "").strip() or defaults["session_path"]
+    clean_status_path = str(status_path or "").strip() or defaults["status_path"]
+    clean_pid_path = str(pid_path or "").strip() or defaults["pid_path"]
+    clean_log_path = str(log_path or "").strip() or defaults["log_path"]
+    clean_internal_url = str(internal_url or "").strip() or defaults["internal_url"]
+
+    if clean_http_port < 1 or clean_http_port > 65535:
+        raise ValueError("HTTP port bridge tidak valid.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO cc_wa_bridge_accounts (
+                bridge_key, display_name, wa_number_hint, client_id, http_port,
+                session_path, status_path, pid_path, log_path,
+                internal_url, is_active, updated_by, updated_at
+            )
+            VALUES (
+                %(bridge_key)s, %(display_name)s, %(wa_number_hint)s, %(client_id)s, %(http_port)s,
+                %(session_path)s, %(status_path)s, %(pid_path)s, %(log_path)s,
+                %(internal_url)s, %(is_active)s, %(updated_by)s, NOW()
+            )
+            ON CONFLICT (bridge_key) DO UPDATE SET
+                display_name = EXCLUDED.display_name,
+                wa_number_hint = EXCLUDED.wa_number_hint,
+                client_id = EXCLUDED.client_id,
+                http_port = EXCLUDED.http_port,
+                session_path = EXCLUDED.session_path,
+                status_path = EXCLUDED.status_path,
+                pid_path = EXCLUDED.pid_path,
+                log_path = EXCLUDED.log_path,
+                internal_url = EXCLUDED.internal_url,
+                is_active = EXCLUDED.is_active,
+                updated_by = EXCLUDED.updated_by,
+                updated_at = NOW()
+            RETURNING id, bridge_key, display_name, wa_number_hint, client_id, http_port,
+                      session_path, status_path, pid_path, log_path,
+                      internal_url, is_active, created_at, updated_at, updated_by
+            """,
+            {
+                "bridge_key": key,
+                "display_name": clean_display_name,
+                "wa_number_hint": clean_wa_hint,
+                "client_id": clean_client_id,
+                "http_port": clean_http_port,
+                "session_path": clean_session_path,
+                "status_path": clean_status_path,
+                "pid_path": clean_pid_path,
+                "log_path": clean_log_path,
+                "internal_url": clean_internal_url,
+                "is_active": bool(is_active),
+                "updated_by": updated_by,
+            },
+        )
+        row = cur.fetchone()
+    return dict(row) if row else {}
+
+
+def delete_cc_wa_bridge_account(bridge_key: str) -> bool:
+    _ensure_cc_wa_bridge_accounts_schema()
+    key = normalize_cc_bridge_key(bridge_key)
+    if key == _CC_BRIDGE_DEFAULT_KEY:
+        return False
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            "DELETE FROM cc_wa_bridge_accounts WHERE bridge_key = %(bridge_key)s",
+            {"bridge_key": key},
+        )
+        return cur.rowcount > 0
+
+
+def get_default_cc_wa_bridge_account() -> dict:
+    ensure_default_cc_wa_bridge_account()
+    account = get_cc_wa_bridge_account(_CC_BRIDGE_DEFAULT_KEY)
+    if account:
+        return account
+    accounts = list_cc_wa_bridge_accounts(include_inactive=False)
+    if accounts:
+        return accounts[0]
+    return ensure_default_cc_wa_bridge_account()
+
+
+def list_cc_bridge_keys_in_use() -> list[str]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT DISTINCT wa_user_id
+            FROM cc_conversations
+            WHERE wa_user_id IS NOT NULL
+            """
+        )
+        rows = [dict(r) for r in cur.fetchall()]
+    keys = set()
+    for row in rows:
+        parsed = split_cc_conversation_user_key(row.get("wa_user_id"))
+        if parsed["bridge_key"]:
+            keys.add(parsed["bridge_key"])
+    return sorted(keys)
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +672,7 @@ def upsert_cc_conversation(
             {"wa": wa_user_id, "name": display_name, "last_message_at": last_message_at},
         )
         row = cur.fetchone()
-    return dict(row) if row else {}
+    return enrich_cc_conversation_row(dict(row)) if row else {}
 
 
 def fetch_cc_conversations(
@@ -84,7 +691,21 @@ def fetch_cc_conversations(
 
     if search:
         conditions.append(
-            "(c.display_name ILIKE %(search)s OR c.wa_user_id ILIKE %(search)s)"
+            """
+            (
+                c.display_name ILIKE %(search)s
+                OR c.wa_user_id ILIKE %(search)s
+                OR EXISTS (
+                    SELECT 1
+                    FROM cc_messages m_search
+                    WHERE m_search.conversation_id = c.id
+                      AND (
+                          m_search.message_text ILIKE %(search)s
+                          OR COALESCE(m_search.original_message_text, '') ILIKE %(search)s
+                      )
+                )
+            )
+            """
         )
         params["search"] = f"%{search}%"
 
@@ -110,7 +731,7 @@ def fetch_cc_conversations(
             """,
             {**params, "limit": limit, "offset": offset},
         )
-        rows = [dict(r) for r in cur.fetchall()]
+        rows = [enrich_cc_conversation_row(dict(r)) for r in cur.fetchall()]
 
     return rows, total
 
@@ -127,7 +748,7 @@ def fetch_cc_conversation(conv_id: int) -> Optional[dict]:
             {"id": conv_id},
         )
         row = cur.fetchone()
-    return dict(row) if row else None
+    return enrich_cc_conversation_row(dict(row)) if row else None
 
 
 def mark_conversation_read(conv_id: int) -> None:

@@ -82,6 +82,11 @@
         text-overflow: ellipsis;
     }
 
+    .cc-conv-submeta {
+        font-size: .72rem;
+        color: var(--bs-secondary-color);
+    }
+
     .cc-conv-meta {
         text-align: right;
         flex-shrink: 0;
@@ -256,7 +261,7 @@
     <div class="cc-sidebar">
         <div class="cc-sidebar-header">
             <form method="get" class="d-flex gap-2 mb-2">
-                <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari nama/nomor…"
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari nama/nomor/isi pesan..."
                     value="{{ search }}">
                 <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i></button>
             </form>
@@ -273,11 +278,17 @@
             {% for conv in conversations %}
             <a href="{{ url_for('call_center.thread', conv_id=conv.id) }}" class="cc-conv-item">
                 <div class="cc-conv-avatar">
-                    {{ (conv.display_name or conv.wa_user_id)[:1].upper() }}
+                    {{ (conv.display_name or conv.wa_user_id_raw or conv.wa_user_id)[:1].upper() }}
                 </div>
                 <div class="cc-conv-info">
-                    <div class="cc-conv-name">{{ conv.display_name or conv.wa_user_id }}</div>
-                    <div class="cc-conv-preview">{{ conv.last_message_preview or '—' }}</div>
+                    <div class="cc-conv-name">{{ conv.display_name or ('+' ~ (conv.wa_user_id_raw or conv.wa_user_id)) }}</div>
+                    <div class="cc-conv-submeta">
+                        +{{ conv.wa_user_id_raw or conv.wa_user_id }}
+                        {% if conv.bridge_key and conv.bridge_key != 'main' %}
+                        <span class="badge text-bg-secondary ms-1">{{ conv.bridge_key }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="cc-conv-preview">{{ conv.last_message_preview or '-' }}</div>
                 </div>
                 <div class="cc-conv-meta">
                     {% if conv.last_message_at %}
@@ -495,7 +506,7 @@
 
         function draftAttachmentText(draft) {
             if (!draft || !draft.media_path) return '';
-            return (draft.media_filename || 'Lampiran draft') + (draft.media_size ? ' · ' + formatBytes(draft.media_size) : '');
+            return (draft.media_filename || 'Lampiran draft') + (draft.media_size ? ' | ' + formatBytes(draft.media_size) : '');
         }
 
         function showDraftEditorAttachment(text) {
@@ -734,7 +745,7 @@
                 }
                 if (file) {
                     draftRemoveMedia = false;
-                    showDraftEditorAttachment(file.name + ' · ' + formatBytes(file.size));
+                    showDraftEditorAttachment(file.name + ' | ' + formatBytes(file.size));
                 } else if (editingDraftId !== null) {
                     var draft = draftItems.find(function (item) { return item.id === editingDraftId; });
                     if (draft && draft.media_path) {
@@ -772,3 +783,4 @@
     });
 </script>
 {% endblock %}
+

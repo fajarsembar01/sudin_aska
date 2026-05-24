@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import concurrent.futures
 import os
 import base64
 import json
@@ -64,6 +66,21 @@ from .queries import (
     toggle_cc_message_draft_pin,
     fetch_cc_media_db_refs,
     clear_cc_media_db_refs,
+    ensure_cc_wa_routing_contact,
+    get_cc_wa_routing,
+    list_cc_wa_routing,
+    summarize_cc_wa_routing,
+    save_cc_wa_routing,
+    delete_cc_wa_routing,
+    normalize_cc_bridge_key,
+    compose_cc_conversation_user_key,
+    split_cc_conversation_user_key,
+    ensure_default_cc_wa_bridge_account,
+    list_cc_wa_bridge_accounts,
+    get_cc_wa_bridge_account,
+    save_cc_wa_bridge_account,
+    delete_cc_wa_bridge_account,
+    get_default_cc_wa_bridge_account,
 )
 from . import call_center_api_bp, call_center_bp
 from .media import (
@@ -104,16 +121,54 @@ def _cc_bridge_auth_error() -> Optional[tuple[Response, int]]:
     return None
 
 
+def _run_async(coro):
+    """Safely run async coroutine inside sync Flask handlers."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(asyncio.run, coro)
+            return future.result()
+    return asyncio.run(coro)
+
+
 # ---------------------------------------------------------------------------
 # Helpers — bridge management
 # ---------------------------------------------------------------------------
 
-def _cc_runtime_paths() -> dict:
+def _bridge_accounts() -> list[dict]:
+    ensure_default_cc_wa_bridge_account()
+    rows = list_cc_wa_bridge_accounts(include_inactive=True)
+    return rows or [get_default_cc_wa_bridge_account()]
+
+
+def _resolve_bridge_account(bridge_key: Optional[str] = None) -> dict:
+    ensure_default_cc_wa_bridge_account()
+    key = normalize_cc_bridge_key(bridge_key)
+    row = get_cc_wa_bridge_account(key)
+    if row:
+        return row
+    if key != "main":
+        raise ValueError(f"Akun bridge '{key}' tidak ditemukan.")
+    return get_default_cc_wa_bridge_account()
+
+
+def _cc_runtime_paths(account: Optional[dict] = None) -> dict:
+    account = account or _resolve_bridge_account(None)
     root = PROJECT_ROOT
-    session = root / (_project_env_value("ASKA_CC_WHATSAPP_SESSION_PATH") or ".wa_cc_session")
-    status = root / (_project_env_value("ASKA_CC_WHATSAPP_STATUS_PATH") or "runtime/whatsapp_cc_status.json")
-    pid = root / "runtime" / "whatsapp_cc.pid"
-    log = root / "runtime" / "whatsapp_cc.log"
+    bridge_key = normalize_cc_bridge_key(account.get("bridge_key"))
+    default_session = ".wa_cc_session" if bridge_key == "main" else f".wa_cc_session_{bridge_key}"
+    default_status = "runtime/whatsapp_cc_status.json" if bridge_key == "main" else f"runtime/whatsapp_cc_status_{bridge_key}.json"
+    default_pid = "runtime/whatsapp_cc.pid" if bridge_key == "main" else f"runtime/whatsapp_cc_{bridge_key}.pid"
+    default_log = "runtime/whatsapp_cc.log" if bridge_key == "main" else f"runtime/whatsapp_cc_{bridge_key}.log"
+
+    session = root / (str(account.get("session_path") or default_session).strip() or default_session)
+    status = root / (str(account.get("status_path") or default_status).strip() or default_status)
+    pid = root / (str(account.get("pid_path") or default_pid).strip() or default_pid)
+    log = root / (str(account.get("log_path") or default_log).strip() or default_log)
     return {"root": root, "session": session, "status": status, "pid": pid, "log": log}
 
 
@@ -146,9 +201,9 @@ def _systemd_service_exists(service: str) -> bool:
         return False
 
 
-def _bridge_http_alive() -> bool:
+def _bridge_http_alive(bridge_key: Optional[str] = None) -> bool:
     """Cek apakah bridge HTTP API merespons di portnya — cara paling akurat."""
-    port = _cc_bridge_http_port()
+    port = _cc_bridge_http_port(bridge_key=bridge_key)
     try:
         resp = requests.get(
             f"http://127.0.0.1:{port}/health",
@@ -159,35 +214,82 @@ def _bridge_http_alive() -> bool:
         return False
 
 
-def _load_cc_bridge_status() -> dict:
-    paths = _cc_runtime_paths()
-    status: dict = {}
-    try:
-        if paths["status"].exists():
-            status = json.loads(paths["status"].read_text("utf-8"))
-    except Exception:
-        status = {}
+def _load_cc_bridge_status(bridge_key: Optional[str] = None) -> dict:
+    def _load_one(account: dict) -> dict:
+        paths = _cc_runtime_paths(account=account)
+        status: dict = {}
+        try:
+            if paths["status"].exists():
+                status = json.loads(paths["status"].read_text("utf-8"))
+        except Exception:
+            status = {}
 
-    # Cara paling andal: cek HTTP health endpoint bridge (tidak butuh permission)
-    running = _bridge_http_alive()
+        key = normalize_cc_bridge_key(account.get("bridge_key"))
+        running = _bridge_http_alive(bridge_key=key)
+        if not running:
+            pid = _read_pid(paths["pid"])
+            if pid and _pid_alive(pid):
+                running = True
+                status["pid"] = pid
 
-    # Fallback jika HTTP check gagal: cek via PID file
-    if not running:
-        pid = _read_pid(paths["pid"])
-        if pid and _pid_alive(pid):
-            running = True
-            status["pid"] = pid
+        status["bridgeKey"] = key
+        status["bridgeName"] = account.get("display_name") or key
+        status["httpPort"] = int(account.get("http_port") or 3100)
+        status["isActive"] = bool(account.get("is_active", True))
+        status["isRunning"] = running
+        status["statusPath"] = str(paths["status"])
+        status["pidPath"] = str(paths["pid"])
+        status["logPath"] = str(paths["log"])
+        detected_number = _normalize_wa_user_id(
+            status.get("whatsappNumber")
+            or status.get("waNumber")
+            or status.get("selfNumber")
+            or ""
+        )
+        manual_number = _normalize_wa_user_id(account.get("wa_number_hint") or "")
+        status["whatsappNumberDetected"] = detected_number
+        status["whatsappNumberManual"] = manual_number
+        status["whatsappNumber"] = detected_number or manual_number
+        status["whatsappNumberSource"] = (
+            "detected"
+            if detected_number
+            else ("manual" if manual_number else "")
+        )
 
-    status["isRunning"] = running
+        if not running:
+            current_state = (status.get("state") or "").strip().lower()
+            if current_state in {"starting", "authenticated", "ready", "qr", "disconnected"}:
+                status["state"] = "stopped"
+                if not (status.get("message") or "").strip() or current_state == "starting":
+                    status["message"] = "Bridge tidak berjalan. Jalankan Generate QR untuk memulai lagi."
+        return status
 
-    if not running:
-        current_state = (status.get("state") or "").strip().lower()
-        if current_state in {"starting", "authenticated", "ready", "qr", "disconnected"}:
-            status["state"] = "stopped"
-            if not (status.get("message") or "").strip() or current_state == "starting":
-                status["message"] = "Bridge tidak berjalan. Jalankan Generate QR untuk memulai lagi."
+    if bridge_key:
+        account = _resolve_bridge_account(bridge_key)
+        return _load_one(account)
 
-    return status
+    accounts = _bridge_accounts()
+    statuses = [_load_one(acc) for acc in accounts]
+    if not statuses:
+        return {
+            "state": "stopped",
+            "message": "Belum ada akun bridge aktif.",
+            "isRunning": False,
+            "qrText": "",
+            "accounts": [],
+        }
+
+    active_statuses = [s for s in statuses if bool(s.get("isActive", True))]
+    baseline_statuses = active_statuses or statuses
+    any_ready = any((s.get("state") or "").lower() == "ready" and bool(s.get("isRunning")) for s in baseline_statuses)
+    any_running = any(bool(s.get("isRunning")) for s in baseline_statuses)
+    summary = dict(statuses[0])
+    summary["accounts"] = statuses
+    summary["isRunning"] = any_running
+    if any_ready:
+        summary["state"] = "ready"
+        summary["message"] = "Minimal satu akun bridge sedang aktif."
+    return summary
 
 
 def _read_pid(pid_path: Path) -> Optional[int]:
@@ -206,18 +308,10 @@ def _pid_alive(pid: int) -> bool:
         return False
 
 
-def _stop_existing_bridge(pid_path: Path) -> None:
-    svc = _cc_systemd_service()
-    if svc and _systemd_service_exists(svc):
-        # Hentikan via systemd
-        try:
-            subprocess.run(["systemctl", "stop", svc], timeout=15)
-        except Exception:
-            pass
-        return
-
+def _stop_existing_bridge(account: dict) -> None:
+    paths = _cc_runtime_paths(account=account)
     # Fallback: kill via PID
-    pid = _read_pid(pid_path)
+    pid = _read_pid(paths["pid"])
     if pid and _pid_alive(pid):
         try:
             os.killpg(os.getpgid(pid), signal.SIGTERM)
@@ -227,18 +321,41 @@ def _stop_existing_bridge(pid_path: Path) -> None:
             except Exception:
                 pass
     try:
-        pid_path.unlink()
+        paths["pid"].unlink()
     except Exception:
         pass
 
 
-def _cc_bridge_http_port() -> int:
-    return int(_project_env_value("ASKA_CC_HTTP_PORT") or "3100")
+def _cc_bridge_http_port(bridge_key: Optional[str] = None) -> int:
+    account = _resolve_bridge_account(bridge_key)
+    try:
+        return int(account.get("http_port") or 3100)
+    except Exception:
+        return 3100
 
 
-def _send_via_bridge(to: str, message: str = "", media: Optional[dict] = None) -> dict:
+def _normalize_wa_user_id(raw_user_id: str) -> str:
+    return "".join(ch for ch in str(raw_user_id or "") if ch.isdigit())
+
+
+def _to_bool_flag(raw_value) -> bool:
+    return str(raw_value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _settings_wa_redirect(bridge_key: Optional[str] = None) -> Response:
+    key = normalize_cc_bridge_key(bridge_key)
+    return redirect(url_for("call_center.settings_wa", bridge_key=key))
+
+
+def _send_via_bridge(
+    to: str,
+    message: str = "",
+    media: Optional[dict] = None,
+    *,
+    bridge_key: Optional[str] = None,
+) -> dict:
     """Send an outbound WA message through the CC bridge HTTP API."""
-    port = _cc_bridge_http_port()
+    port = _cc_bridge_http_port(bridge_key=bridge_key)
     token = (_project_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
     payload = {"to": to, "message": message or ""}
     if media:
@@ -255,9 +372,78 @@ def _send_via_bridge(to: str, message: str = "", media: Optional[dict] = None) -
         return {"error": str(exc)}
 
 
-def _edit_via_bridge(wa_message_id: str, message: str) -> dict:
+def _dispatch_to_ai_whatsapp(
+    *,
+    raw_user_id: str,
+    username: str,
+    message: str,
+    bridge_key: Optional[str] = None,
+) -> dict:
+    """Run AI response flow and send the answer back through CC bridge."""
+    from account_status import BLOCKING_STATUSES, build_status_notice
+    from db import get_whatsapp_user_status, save_chat
+    from web_aska.handlers import process_channel_request
+
+    normalized_id = _normalize_wa_user_id(raw_user_id)
+    if not normalized_id:
+        return {"ok": False, "error": "Nomor WhatsApp tidak valid untuk mode AI."}
+
+    user_id = int(normalized_id)
+    status_info = get_whatsapp_user_status(user_id)
+    status_value = (status_info or {}).get("status")
+
+    blocked = False
+    block_type = None
+    chat_log_id = None
+
+    if status_value in BLOCKING_STATUSES:
+        blocked = True
+        block_type = "status"
+        notice = build_status_notice(
+            status_value,
+            reason=(status_info or {}).get("status_reason"),
+            channel="whatsapp",
+        )
+        save_chat(user_id, username, message, role="user", topic="whatsapp")
+        ai_reply = notice.message if notice else "Akses WhatsApp kamu sedang dibatasi oleh sekolah."
+        save_chat(user_id, "ASKA", ai_reply, role="aska", topic="whatsapp")
+    else:
+        ai_reply, chat_log_id = _run_async(
+            process_channel_request(
+                user_id,
+                message,
+                username=username,
+                topic="whatsapp",
+            )
+        )
+
+    ai_reply = str(ai_reply or "").strip()
+    if not ai_reply:
+        ai_reply = "ASKA lagi gangguan teknis sebentar. Coba kirim ulang beberapa saat lagi ya."
+
+    bridge_key = normalize_cc_bridge_key(bridge_key)
+    send_result = _send_via_bridge(to=raw_user_id, message=ai_reply, bridge_key=bridge_key)
+    send_error = (send_result or {}).get("error")
+    wa_message_id = (send_result or {}).get("messageId")
+
+    return {
+        "ok": not bool(send_error),
+        "route_mode": "ai",
+        "is_active": True,
+        "bridge_key": bridge_key,
+        "blocked": blocked,
+        "blockType": block_type,
+        "chat_log_id": chat_log_id,
+        "reply_text": ai_reply,
+        "wa_message_id": wa_message_id,
+        "reply_sent": not bool(send_error),
+        "reply_error": send_error,
+    }
+
+
+def _edit_via_bridge(wa_message_id: str, message: str, *, bridge_key: Optional[str] = None) -> dict:
     """Edit an outbound WA message through the CC bridge HTTP API."""
-    port = _cc_bridge_http_port()
+    port = _cc_bridge_http_port(bridge_key=bridge_key)
     token = (_project_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
     try:
         resp = requests.post(
@@ -388,14 +574,18 @@ def _save_draft_media(media_payload) -> tuple[dict, Optional[str]]:
     )
 
 
-def _sync_history_via_bridge(chat_limit: int, limit_per_chat: int) -> dict:
+def _sync_history_via_bridge(chat_limit: int, limit_per_chat: int, *, bridge_key: Optional[str] = None) -> dict:
     """Ask the local CC bridge to import recent WhatsApp chat history."""
-    port = _cc_bridge_http_port()
+    port = _cc_bridge_http_port(bridge_key=bridge_key)
     token = (_project_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
     try:
         resp = requests.post(
             f"http://127.0.0.1:{port}/sync-history",
-            json={"chatLimit": chat_limit, "limitPerChat": limit_per_chat},
+            json={
+                "chatLimit": chat_limit,
+                "limitPerChat": limit_per_chat,
+                "bridge_key": normalize_cc_bridge_key(bridge_key),
+            },
             headers={"X-ASKA-CC-TOKEN": token, "Content-Type": "application/json"},
             timeout=180,
         )
@@ -407,12 +597,21 @@ def _sync_history_via_bridge(chat_limit: int, limit_per_chat: int) -> dict:
         return {"error": str(exc)}
 
 
-def _restart_cc_bridge(reset_session: bool = True) -> dict:
-    paths = _cc_runtime_paths()
+def _restart_cc_bridge(account: dict, reset_session: bool = True) -> dict:
+    paths = _cc_runtime_paths(account=account)
+    _stop_existing_bridge(account)
+    bridge_key = normalize_cc_bridge_key(account.get("bridge_key"))
+    client_id = (str(account.get("client_id") or "").strip() or f"cc-{bridge_key}")
+    http_port = int(account.get("http_port") or 3100)
+    internal_url = (
+        str(account.get("internal_url") or "").strip()
+        or _project_env_value("ASKA_CC_WHATSAPP_INTERNAL_URL")
+        or "http://127.0.0.1:5002/api/callcenter/inbound"
+    )
 
     # Bersihkan lock file Chromium yang mungkin tersisa
     try:
-        client_dir = paths["session"] / f"session-{_project_env_value('ASKA_CC_WHATSAPP_CLIENT_ID', 'cc-main')}"
+        client_dir = paths["session"] / f"session-{client_id}"
         for lock_name in ("SingletonLock", "SingletonCookie", "SingletonSocket", "lockfile"):
             for lp in client_dir.rglob(lock_name):
                 try:
@@ -428,14 +627,6 @@ def _restart_cc_bridge(reset_session: bool = True) -> dict:
     paths["log"].parent.mkdir(parents=True, exist_ok=True)
 
     # ── Kelola via systemd jika service tersedia ──────────────────────────────
-    svc = _cc_systemd_service()
-    if svc and _systemd_service_exists(svc):
-        try:
-            subprocess.run(["systemctl", "restart", svc], timeout=15, check=True)
-        except subprocess.CalledProcessError as exc:
-            raise RuntimeError(f"systemctl restart {svc} gagal: {exc}") from exc
-        return {"managed_by": "systemd", "service": svc}
-
     # ── Fallback: spawn subprocess langsung ───────────────────────────────────
     env = os.environ.copy()
     env_file = paths["root"] / ".env"
@@ -447,8 +638,12 @@ def _restart_cc_bridge(reset_session: bool = True) -> dict:
     if not (env.get("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip():
         raise RuntimeError("ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum diset di .env")
 
-    if "ASKA_CC_WHATSAPP_STATUS_PATH" not in env:
-        env["ASKA_CC_WHATSAPP_STATUS_PATH"] = str(paths["status"])
+    env["ASKA_CC_BRIDGE_KEY"] = bridge_key
+    env["ASKA_CC_WHATSAPP_CLIENT_ID"] = client_id
+    env["ASKA_CC_HTTP_PORT"] = str(http_port)
+    env["ASKA_CC_WHATSAPP_SESSION_PATH"] = str(paths["session"])
+    env["ASKA_CC_WHATSAPP_STATUS_PATH"] = str(paths["status"])
+    env["ASKA_CC_WHATSAPP_INTERNAL_URL"] = internal_url
 
     with paths["log"].open("a", encoding="utf-8") as logf:
         proc = subprocess.Popen(
@@ -461,7 +656,14 @@ def _restart_cc_bridge(reset_session: bool = True) -> dict:
         )
 
     paths["pid"].write_text(str(proc.pid), encoding="utf-8")
-    return {"pid": proc.pid, "log_path": str(paths["log"]), "managed_by": "subprocess"}
+    return {
+        "bridge_key": bridge_key,
+        "pid": proc.pid,
+        "http_port": http_port,
+        "log_path": str(paths["log"]),
+        "status_path": str(paths["status"]),
+        "managed_by": "subprocess",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -476,9 +678,18 @@ def api_callcenter_inbound() -> Response:
         return auth_error
 
     data = request.get_json(silent=True) or {}
-    raw_user_id = str(data.get("user_id") or "").strip()
+    raw_user_id = _normalize_wa_user_id(str(data.get("user_id") or ""))
     if not raw_user_id:
         return jsonify({"error": "user_id required"}), 400
+    bridge_key = normalize_cc_bridge_key(data.get("bridge_key"))
+    try:
+        _resolve_bridge_account(bridge_key)
+    except Exception:
+        bridge_key = normalize_cc_bridge_key(None)
+
+    conversation_user_key = compose_cc_conversation_user_key(raw_user_id, bridge_key)
+    if not conversation_user_key:
+        return jsonify({"error": "conversation key invalid"}), 400
 
     username = str(data.get("username") or raw_user_id).strip()[:120] or raw_user_id
     message = str(data.get("message") or "").strip()
@@ -494,7 +705,74 @@ def api_callcenter_inbound() -> Response:
         return jsonify({"error": "message required"}), 400
 
     try:
-        conv = upsert_cc_conversation(wa_user_id=raw_user_id, display_name=username)
+        # Auto-register contact on first inbound with default mode=manual.
+        ensure_cc_wa_routing_contact(raw_user_id, display_name=username)
+        route_rule = get_cc_wa_routing(raw_user_id) or {}
+        route_mode = str(route_rule.get("route_mode") or "manual").strip().lower()
+        is_active = bool(route_rule.get("is_active", True))
+
+        if not is_active:
+            return jsonify(
+                {
+                    "ok": True,
+                    "ignored": True,
+                    "reason": "wa_route_inactive",
+                    "route_mode": route_mode,
+                    "is_active": False,
+                    "bridge_key": bridge_key,
+                }
+            )
+
+        if route_mode == "ai":
+            # Keep AI traffic visible in Call Center inbox as well.
+            conv = upsert_cc_conversation(wa_user_id=conversation_user_key, display_name=username)
+            inbound_msg = save_cc_message(
+                conversation_id=conv["id"],
+                direction="inbound",
+                message_text=message,
+                wa_message_id=message_id,
+                **media_meta,
+            )
+            if inbound_msg.get("duplicate"):
+                return jsonify(
+                    {
+                        "ok": True,
+                        "route_mode": "ai",
+                        "is_active": True,
+                        "bridge_key": bridge_key,
+                        "conversation_id": conv.get("id"),
+                        "message_id": inbound_msg.get("id"),
+                        "duplicate": True,
+                        "skipped_ai": True,
+                    }
+                )
+
+            ai_result = _dispatch_to_ai_whatsapp(
+                raw_user_id=raw_user_id,
+                username=username,
+                message=message,
+                bridge_key=bridge_key,
+            )
+
+            reply_text = str(ai_result.get("reply_text") or "").strip()
+            if reply_text:
+                save_cc_message(
+                    conversation_id=conv["id"],
+                    direction="outbound",
+                    message_text=reply_text,
+                    admin_display_name="ASKA",
+                    wa_message_id=ai_result.get("wa_message_id"),
+                    increment_unread=False,
+                )
+
+            ai_result["conversation_id"] = conv.get("id")
+            ai_result["message_id"] = inbound_msg.get("id")
+            ai_result["duplicate"] = False
+            ai_result["bridge_key"] = bridge_key
+            http_code = 200 if ai_result.get("ok") else 502
+            return jsonify(ai_result), http_code
+
+        conv = upsert_cc_conversation(wa_user_id=conversation_user_key, display_name=username)
         msg = save_cc_message(
             conversation_id=conv["id"],
             direction="inbound",
@@ -512,6 +790,9 @@ def api_callcenter_inbound() -> Response:
         return jsonify(
             {
                 "ok": True,
+                "route_mode": "manual",
+                "is_active": True,
+                "bridge_key": bridge_key,
                 "conversation_id": conv.get("id"),
                 "message_id": msg.get("id"),
                 "duplicate": bool(msg.get("duplicate")),
@@ -530,6 +811,7 @@ def api_callcenter_import_history() -> Response:
         return auth_error
 
     data = request.get_json(silent=True) or {}
+    request_bridge_key = normalize_cc_bridge_key(data.get("bridge_key"))
     items = data.get("messages") or []
     if not isinstance(items, list):
         return jsonify({"error": "messages must be a list"}), 400
@@ -547,10 +829,20 @@ def api_callcenter_import_history() -> Response:
                 skipped += 1
                 continue
 
-            raw_user_id = str(item.get("user_id") or "").strip()
+            raw_user_id = _normalize_wa_user_id(str(item.get("user_id") or ""))
+            bridge_key = normalize_cc_bridge_key(item.get("bridge_key") or request_bridge_key)
+            try:
+                _resolve_bridge_account(bridge_key)
+            except Exception:
+                bridge_key = normalize_cc_bridge_key(None)
             message = str(item.get("message") or "").strip()
             direction = str(item.get("direction") or "inbound").strip().lower()
             if not raw_user_id or direction not in {"inbound", "outbound"}:
+                skipped += 1
+                continue
+
+            conversation_user_key = compose_cc_conversation_user_key(raw_user_id, bridge_key)
+            if not conversation_user_key:
                 skipped += 1
                 continue
 
@@ -570,10 +862,11 @@ def api_callcenter_import_history() -> Response:
             created_at = item.get("created_at") or item.get("timestamp") or None
 
             conv = upsert_cc_conversation(
-                wa_user_id=raw_user_id,
+                wa_user_id=conversation_user_key,
                 display_name=username,
                 last_message_at=created_at,
             )
+            ensure_cc_wa_routing_contact(raw_user_id, display_name=username)
             if not conv:
                 skipped += 1
                 continue
@@ -746,7 +1039,12 @@ def api_send() -> Response:
         return jsonify({"error": "Pesan atau lampiran wajib diisi."}), 400
 
     # Send via WA bridge HTTP API
-    result = _send_via_bridge(conv["wa_user_id"], outbound_text, media=bridge_media)
+    result = _send_via_bridge(
+        conv.get("wa_user_id_raw") or conv["wa_user_id"],
+        outbound_text,
+        media=bridge_media,
+        bridge_key=conv.get("bridge_key"),
+    )
     if result.get("error"):
         if media_from_upload and media_meta.get("media_path"):
             target_path = resolve_call_center_media_path(media_meta.get("media_path"))
@@ -874,8 +1172,10 @@ def _handle_message_edit(message_id: int, data=None) -> Response:
     wa_edit_applied = False
     wa_edit_warning = None
     wa_message_id = (message.get("wa_message_id") or "").strip()
+    conv = fetch_cc_conversation(int(message.get("conversation_id") or 0)) if message.get("conversation_id") else None
+    bridge_key = (conv or {}).get("bridge_key")
     if wa_message_id:
-        result = _edit_via_bridge(wa_message_id, message_text)
+        result = _edit_via_bridge(wa_message_id, message_text, bridge_key=bridge_key)
         if result.get("error"):
             wa_edit_warning = f"Pesan dashboard sudah diedit, tapi WhatsApp belum berubah: {result['error']}"
         else:
@@ -1306,8 +1606,158 @@ def settings() -> Response:
 @role_required("admin")
 def settings_wa() -> Response:
     """Call Center — Konfigurasi WhatsApp Bridge."""
-    bridge_status = _load_cc_bridge_status()
-    return render_template("cc_settings_wa.html", bridge_status=bridge_status)
+    actor = current_user() or {}
+    if request.method == "POST":
+        action = (request.form.get("action") or "").strip()
+        selected_bridge_key = normalize_cc_bridge_key(request.form.get("selected_bridge_key") or "main")
+
+        if action == "save_wa_route":
+            wa_user_id = _normalize_wa_user_id(request.form.get("wa_user_id") or "")
+            display_name = (request.form.get("display_name") or "").strip() or None
+            route_mode = (request.form.get("route_mode") or "manual").strip().lower()
+            is_active = _to_bool_flag(request.form.get("is_active"))
+            notes = (request.form.get("notes") or "").strip() or None
+
+            try:
+                row = save_cc_wa_routing(
+                    wa_user_id,
+                    display_name=display_name,
+                    route_mode=route_mode,
+                    is_active=is_active,
+                    notes=notes,
+                    updated_by=actor.get("id"),
+                )
+                try:
+                    record_admin_action(
+                        user_id=actor.get("id"),
+                        feature_key="call_center",
+                        action="UPDATE",
+                        target_type="CALL_CENTER_WA_ROUTING",
+                        target_name=f"WA {row.get('wa_user_id')}",
+                        metadata={
+                            "route_mode": row.get("route_mode"),
+                            "is_active": row.get("is_active"),
+                        },
+                    )
+                except Exception:
+                    pass
+                flash(
+                    f"Routing WA +{row.get('wa_user_id')} disimpan ({row.get('route_mode')}, "
+                    f"{'aktif' if row.get('is_active') else 'nonaktif'}).",
+                    "success",
+                )
+            except ValueError as exc:
+                flash(str(exc), "danger")
+            except Exception as exc:
+                flash(f"Gagal menyimpan routing WA: {exc}", "danger")
+
+        elif action == "delete_wa_route":
+            wa_user_id = _normalize_wa_user_id(request.form.get("wa_user_id") or "")
+            if not wa_user_id:
+                flash("Nomor WA tidak valid.", "warning")
+            elif delete_cc_wa_routing(wa_user_id):
+                try:
+                    record_admin_action(
+                        user_id=actor.get("id"),
+                        feature_key="call_center",
+                        action="DELETE",
+                        target_type="CALL_CENTER_WA_ROUTING",
+                        target_name=f"WA {wa_user_id}",
+                    )
+                except Exception:
+                    pass
+                flash(f"Routing WA +{wa_user_id} dihapus.", "success")
+            else:
+                flash("Routing WA tidak ditemukan.", "warning")
+
+        elif action == "save_bridge_account":
+            raw_bridge_key = (request.form.get("bridge_key") or "").strip()
+            if not raw_bridge_key:
+                flash("Bridge key wajib diisi.", "warning")
+                return _settings_wa_redirect(selected_bridge_key)
+            bridge_key = normalize_cc_bridge_key(raw_bridge_key)
+            display_name = (request.form.get("display_name") or "").strip() or None
+            wa_number_hint = _normalize_wa_user_id(request.form.get("wa_number_hint") or "") or None
+            client_id = (request.form.get("client_id") or "").strip() or None
+            internal_url = (request.form.get("internal_url") or "").strip() or None
+            session_path = (request.form.get("session_path") or "").strip() or None
+            status_path = (request.form.get("status_path") or "").strip() or None
+            pid_path = (request.form.get("pid_path") or "").strip() or None
+            log_path = (request.form.get("log_path") or "").strip() or None
+            is_active = _to_bool_flag(request.form.get("is_active"))
+            try:
+                http_port = int(request.form.get("http_port") or 0)
+            except Exception:
+                http_port = 0
+
+            try:
+                row = save_cc_wa_bridge_account(
+                    bridge_key=bridge_key,
+                    display_name=display_name,
+                    wa_number_hint=wa_number_hint,
+                    client_id=client_id,
+                    http_port=http_port,
+                    session_path=session_path,
+                    status_path=status_path,
+                    pid_path=pid_path,
+                    log_path=log_path,
+                    internal_url=internal_url,
+                    is_active=is_active,
+                    updated_by=actor.get("id"),
+                )
+                flash(f"Akun bridge '{row.get('display_name')}' disimpan.", "success")
+            except Exception as exc:
+                flash(f"Gagal menyimpan akun bridge: {exc}", "danger")
+
+        elif action == "delete_bridge_account":
+            bridge_key = normalize_cc_bridge_key(request.form.get("bridge_key"))
+            if delete_cc_wa_bridge_account(bridge_key):
+                flash(f"Akun bridge '{bridge_key}' dihapus.", "success")
+            else:
+                flash("Akun bridge tidak bisa dihapus (main/protected atau tidak ditemukan).", "warning")
+
+        elif action in {"start_bridge_account", "stop_bridge_account"}:
+            bridge_key = normalize_cc_bridge_key(request.form.get("bridge_key"))
+            try:
+                account = _resolve_bridge_account(bridge_key)
+                if action == "start_bridge_account":
+                    reset_session = _to_bool_flag(request.form.get("reset_session"))
+                    _restart_cc_bridge(account, reset_session=reset_session)
+                    flash(f"Bridge '{bridge_key}' dijalankan ulang.", "success")
+                else:
+                    _stop_existing_bridge(account)
+                    flash(f"Bridge '{bridge_key}' dihentikan.", "success")
+            except Exception as exc:
+                flash(f"Aksi bridge '{bridge_key}' gagal: {exc}", "danger")
+
+        return _settings_wa_redirect(selected_bridge_key)
+
+    ensure_default_cc_wa_bridge_account(updated_by=actor.get("id"))
+    bridge_accounts = list_cc_wa_bridge_accounts(include_inactive=True)
+    selected_bridge_key = normalize_cc_bridge_key(request.args.get("bridge_key") or "main")
+    selected_bridge = get_cc_wa_bridge_account(selected_bridge_key) or get_default_cc_wa_bridge_account()
+    selected_bridge_key = normalize_cc_bridge_key(selected_bridge.get("bridge_key"))
+    bridge_status = _load_cc_bridge_status(bridge_key=selected_bridge_key)
+    bridge_statuses = [_load_cc_bridge_status(bridge_key=acc.get("bridge_key")) for acc in bridge_accounts]
+    bridge_status_map = {
+        normalize_cc_bridge_key(item.get("bridgeKey")): item
+        for item in bridge_statuses
+    }
+    route_search = (request.args.get("q") or "").strip()
+    route_rows = list_cc_wa_routing(search=route_search, limit=500)
+    route_summary = summarize_cc_wa_routing()
+    return render_template(
+        "cc_settings_wa.html",
+        bridge_status=bridge_status,
+        bridge_statuses=bridge_statuses,
+        bridge_status_map=bridge_status_map,
+        bridge_accounts=bridge_accounts,
+        selected_bridge=selected_bridge,
+        selected_bridge_key=selected_bridge_key,
+        route_rows=route_rows,
+        route_summary=route_summary,
+        route_search=route_search,
+    )
 
 
 @call_center_bp.route("/settings/telegram", methods=["GET", "POST"])
@@ -1442,15 +1892,25 @@ def settings_telegram() -> Response:
 @call_center_bp.route("/settings/bridge-status")
 @role_required("admin")
 def bridge_status() -> Response:
+    raw_bridge_key = (request.args.get("bridge_key") or "").strip()
+    if raw_bridge_key:
+        bridge_key = normalize_cc_bridge_key(raw_bridge_key)
+        try:
+            return jsonify(_load_cc_bridge_status(bridge_key=bridge_key))
+        except Exception as exc:
+            return jsonify({"error": str(exc)}), 404
     return jsonify(_load_cc_bridge_status())
 
 
 @call_center_bp.route("/settings/generate-qr", methods=["POST"])
 @role_required("admin")
 def generate_qr() -> Response:
+    payload = request.get_json(silent=True) or request.form
+    bridge_key = normalize_cc_bridge_key(payload.get("bridge_key") or "main")
+    account = _resolve_bridge_account(bridge_key)
     try:
-        runtime = _restart_cc_bridge(reset_session=True)
-        msg = "Bridge Call Center direstart. Tunggu 5-15 detik sampai QR muncul."
+        runtime = _restart_cc_bridge(account, reset_session=True)
+        msg = f"Bridge '{bridge_key}' direstart. Tunggu 5-15 detik sampai QR muncul."
         if request.is_json:
             return jsonify({"success": True, "message": msg, "runtime": runtime})
         flash(msg, "success")
@@ -1459,13 +1919,14 @@ def generate_qr() -> Response:
         if request.is_json:
             return jsonify({"success": False, "message": msg}), 500
         flash(msg, "danger")
-    return redirect(url_for("call_center.settings_wa"))
+    return _settings_wa_redirect(bridge_key)
 
 
 @call_center_bp.route("/settings/sync-history", methods=["POST"])
 @role_required("admin")
 def sync_history() -> Response:
     payload = request.get_json(silent=True) or request.form
+    bridge_key = normalize_cc_bridge_key(payload.get("bridge_key") or "main")
     try:
         chat_limit = int(payload.get("chat_limit") or payload.get("chatLimit") or 25)
     except Exception:
@@ -1478,13 +1939,17 @@ def sync_history() -> Response:
     chat_limit = max(1, min(chat_limit, 200))
     limit_per_chat = max(1, min(limit_per_chat, 500))
 
-    result = _sync_history_via_bridge(chat_limit=chat_limit, limit_per_chat=limit_per_chat)
+    result = _sync_history_via_bridge(
+        chat_limit=chat_limit,
+        limit_per_chat=limit_per_chat,
+        bridge_key=bridge_key,
+    )
     if result.get("error"):
         msg = f"Gagal sync histori: {result['error']}"
         if request.is_json:
             return jsonify({"success": False, "message": msg}), 502
         flash(msg, "danger")
-        return redirect(url_for("call_center.settings_wa"))
+        return _settings_wa_redirect(bridge_key)
 
     msg = (
         "Sync histori selesai: "
@@ -1495,4 +1960,4 @@ def sync_history() -> Response:
     if request.is_json:
         return jsonify({"success": True, "message": msg, "result": result})
     flash(msg, "success")
-    return redirect(url_for("call_center.settings_wa"))
+    return _settings_wa_redirect(bridge_key)

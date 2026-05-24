@@ -1087,6 +1087,52 @@ CREATE INDEX IF NOT EXISTS idx_cc_conversations_status ON cc_conversations (stat
 CREATE INDEX IF NOT EXISTS idx_cc_conversations_last_msg ON cc_conversations (last_message_at DESC NULLS LAST);
 """
 
+_CC_WA_ROUTING_SQL = """
+CREATE TABLE IF NOT EXISTS cc_wa_routing (
+    id SERIAL PRIMARY KEY,
+    wa_user_id TEXT UNIQUE NOT NULL,
+    display_name TEXT,
+    route_mode TEXT NOT NULL DEFAULT 'manual' CHECK (route_mode IN ('manual','ai')),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by INTEGER
+);
+"""
+
+_CC_WA_ROUTING_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_cc_wa_routing_mode_active
+ON cc_wa_routing (route_mode, is_active);
+CREATE INDEX IF NOT EXISTS idx_cc_wa_routing_updated_at
+ON cc_wa_routing (updated_at DESC);
+"""
+
+_CC_WA_BRIDGE_ACCOUNTS_SQL = """
+CREATE TABLE IF NOT EXISTS cc_wa_bridge_accounts (
+    id SERIAL PRIMARY KEY,
+    bridge_key TEXT UNIQUE NOT NULL,
+    display_name TEXT NOT NULL,
+    wa_number_hint TEXT,
+    client_id TEXT NOT NULL,
+    http_port INTEGER NOT NULL UNIQUE,
+    session_path TEXT NOT NULL,
+    status_path TEXT NOT NULL,
+    pid_path TEXT NOT NULL,
+    log_path TEXT NOT NULL,
+    internal_url TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by INTEGER
+);
+"""
+
+_CC_WA_BRIDGE_ACCOUNTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_cc_wa_bridge_accounts_active
+ON cc_wa_bridge_accounts (is_active, bridge_key);
+"""
+
 _CC_MESSAGES_SQL = """
 CREATE TABLE IF NOT EXISTS cc_messages (
     id SERIAL PRIMARY KEY,
@@ -1420,6 +1466,11 @@ def ensure_dashboard_schema() -> None:
         # ===== Call Center tables =====
         _CC_CONVERSATIONS_SQL,
         _CC_CONVERSATIONS_INDEX_SQL,
+        _CC_WA_ROUTING_SQL,
+        _CC_WA_ROUTING_INDEX_SQL,
+        _CC_WA_BRIDGE_ACCOUNTS_SQL,
+        "ALTER TABLE cc_wa_bridge_accounts ADD COLUMN IF NOT EXISTS wa_number_hint TEXT",
+        _CC_WA_BRIDGE_ACCOUNTS_INDEX_SQL,
         _CC_MESSAGES_SQL,
         "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS media_path TEXT",
         "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS media_mime_type TEXT",

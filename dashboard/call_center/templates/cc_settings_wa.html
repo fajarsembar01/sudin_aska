@@ -8,6 +8,15 @@
         color: var(--text-primary);
         border: 1px solid var(--border-soft);
     }
+
+    .bridge-account-row.table-primary {
+        --bs-table-bg: rgba(var(--bs-primary-rgb), .12);
+    }
+
+    .bridge-status-pill {
+        min-width: 78px;
+        text-align: center;
+    }
 </style>
 {% endblock %}
 
@@ -19,14 +28,44 @@
     <h4 class="mb-0"><i class="bi bi-whatsapp text-success me-2"></i>Konfigurasi WhatsApp (Call Center)</h4>
 </div>
 
+<div class="alert alert-info small">
+    Multi akun bridge aktif: tiap akun bisa pakai device WhatsApp berbeda. Routing manual vs AI tetap per nomor.
+    Mode AI tetap tercatat di <code>chat_logs</code> dan dimirror ke inbox manual sebagai balasan <strong>ASKA</strong>.
+</div>
+
 <div class="row g-4">
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-transparent">
-                <h6 class="mb-0"><i class="bi bi-whatsapp text-success me-2"></i>WhatsApp Bridge</h6>
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center gap-2">
+                <h6 class="mb-0"><i class="bi bi-cpu text-success me-2"></i>Bridge Terpilih</h6>
+                <span class="badge text-bg-dark">{{ selected_bridge.display_name or selected_bridge.bridge_key }}</span>
             </div>
             <div class="card-body">
-                <div class="mb-3" id="bridgeStatusArea">
+                {% set selected_number = bridge_status.get('whatsappNumber') or selected_bridge.wa_number_hint %}
+                <div class="small text-secondary mb-2">
+                    Key <code>{{ selected_bridge.bridge_key }}</code> |
+                    Client <code>{{ selected_bridge.client_id }}</code> |
+                    Port <code>{{ selected_bridge.http_port }}</code>
+                </div>
+                <div class="small text-secondary mb-3">
+                    Nomor WA:
+                    <span id="selectedBridgeNumberWrap"
+                        data-manual-number="{{ selected_bridge.wa_number_hint or '' }}"
+                        data-detected-number="{{ bridge_status.get('whatsappNumberDetected') or '' }}">
+                        {% if selected_number %}
+                        <code id="selectedBridgeNumberValue">+{{ selected_number }}</code>
+                        {% if bridge_status.get('whatsappNumberDetected') %}
+                        <span id="selectedBridgeNumberBadge" class="badge text-bg-success ms-1">terdeteksi otomatis</span>
+                        {% else %}
+                        <span id="selectedBridgeNumberBadge" class="badge text-bg-secondary ms-1">manual</span>
+                        {% endif %}
+                        {% else %}
+                        <span id="selectedBridgeNumberEmpty" class="text-muted">belum terbaca / belum diisi</span>
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div id="bridgeStatusArea" class="mb-3">
                     {% set state = bridge_status.get('state', 'unknown') %}
                     {% if state == 'ready' %}
                     <div class="alert alert-success mb-0 d-flex align-items-center gap-2">
@@ -39,54 +78,68 @@
                     {% elif state == 'qr' %}
                     <div class="alert alert-warning mb-0">
                         <strong><i class="bi bi-qr-code-scan me-1"></i>Menunggu Scan QR</strong>
-                        <p class="mb-1 small mt-1">Buka WhatsApp → Linked Devices → Scan QR yang tampil di terminal
-                            <code>npm run wa:cc</code>
-                        </p>
+                        <p class="mb-1 small mt-1">Buka WhatsApp -> Linked Devices -> Scan QR.</p>
                         {% if bridge_status.get('qrText') %}
                         <div class="text-center mt-3">
                             <img id="qrImageInline"
                                 src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={{ bridge_status.get('qrText') | urlencode }}"
                                 alt="QR Code" class="img-fluid" style="max-width:220px;">
-                            <div class="small text-secondary mt-1">QR disediakan ulang setiap 5 detik.</div>
+                            <div class="small text-secondary mt-1">QR diperbarui otomatis.</div>
                         </div>
                         {% endif %}
                     </div>
-                    {% elif state == 'authenticated' %}
-                    <div class="alert alert-info mb-0">
-                        <i class="bi bi-shield-check me-1"></i>Authenticated — menunggu ready…
-                    </div>
-                    {% elif state == 'starting' %}
+                    {% elif state in ['authenticated', 'starting'] %}
                     <div class="alert alert-info mb-0">
                         <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                        Memulai bridge…
+                        {{ bridge_status.get('message') or 'Bridge sedang diproses...' }}
                     </div>
-                    {% elif state == 'disconnected' or state == 'auth_failure' %}
+                    {% elif state in ['disconnected', 'auth_failure', 'error', 'stopped'] %}
                     <div class="alert alert-danger mb-0">
                         <i class="bi bi-exclamation-triangle me-1"></i>
-                        {{ bridge_status.get('message', 'Disconnected') }}
+                        {{ bridge_status.get('message', 'Bridge tidak berjalan.') }}
                     </div>
                     {% else %}
                     <div class="alert alert-secondary mb-0">
-                        <i class="bi bi-question-circle me-1"></i>
-                        Status: <strong>{{ state }}</strong>
-                        <p class="mb-0 small mt-1">Jalankan <code>npm run wa:cc</code> di terminal lalu generate QR.</p>
+                        <i class="bi bi-question-circle me-1"></i>Status: <strong>{{ state }}</strong>
                     </div>
                     {% endif %}
                 </div>
 
-                <form method="post" action="{{ url_for('call_center.generate_qr') }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-warning btn-sm">
-                        <i class="bi bi-arrow-clockwise me-1"></i>Generate QR Baru
-                    </button>
-                    <small class="text-secondary ms-2">Reset sesi & scan QR ulang</small>
-                </form>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <form method="post" action="{{ url_for('call_center.generate_qr') }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="bridge_key" value="{{ selected_bridge_key }}">
+                        <button type="submit" class="btn btn-warning btn-sm">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Generate QR
+                        </button>
+                    </form>
 
-                <hr class="my-4">
+                    <form method="post" action="{{ url_for('call_center.settings_wa') }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="start_bridge_account">
+                        <input type="hidden" name="bridge_key" value="{{ selected_bridge_key }}">
+                        <input type="hidden" name="selected_bridge_key" value="{{ selected_bridge_key }}">
+                        <button type="submit" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-play-circle me-1"></i>Start
+                        </button>
+                    </form>
+
+                    <form method="post" action="{{ url_for('call_center.settings_wa') }}" class="d-inline"
+                        onsubmit="return confirm('Hentikan bridge {{ selected_bridge_key }}?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="stop_bridge_account">
+                        <input type="hidden" name="bridge_key" value="{{ selected_bridge_key }}">
+                        <input type="hidden" name="selected_bridge_key" value="{{ selected_bridge_key }}">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-stop-circle me-1"></i>Stop
+                        </button>
+                    </form>
+                </div>
 
                 <form method="post" action="{{ url_for('call_center.sync_history') }}"
                     class="row g-2 align-items-end">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="bridge_key" value="{{ selected_bridge_key }}">
                     <div class="col-6 col-md-3">
                         <label for="syncChatLimit" class="form-label small text-secondary mb-1">Chat terbaru</label>
                         <input id="syncChatLimit" type="number" name="chat_limit" min="1" max="200" value="25"
@@ -102,15 +155,343 @@
                             <i class="bi bi-cloud-download me-1"></i>Sync pesan lama
                         </button>
                     </div>
-                    <div class="col-12">
-                        <small class="text-secondary">
-                            Import terbatas dari histori yang masih tersedia di sesi WhatsApp Web. Pesan duplikat akan
-                            dilewati.
-                        </small>
-                    </div>
                 </form>
+            </div>
+        </div>
+    </div>
 
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center gap-2">
+                <h6 class="mb-0"><i class="bi bi-phone text-primary me-2"></i>Akun Bridge</h6>
+                <a href="{{ url_for('call_center.settings_wa', bridge_key=selected_bridge_key) }}"
+                    class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-repeat"></i>
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Akun</th>
+                                <th>Port</th>
+                                <th>Status</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for acc in bridge_accounts %}
+                            {% set st = bridge_status_map.get(acc.bridge_key, {}) %}
+                            {% set st_state = st.get('state', 'unknown') %}
+                            {% set st_number = st.get('whatsappNumber') or acc.wa_number_hint %}
+                            <tr class="bridge-account-row {% if acc.bridge_key == selected_bridge_key %}table-primary{% endif %}"
+                                data-bridge-row="{{ acc.bridge_key }}">
+                                <td>
+                                    <div class="fw-semibold">{{ acc.display_name or acc.bridge_key }}</div>
+                                    <div class="small text-secondary"><code>{{ acc.bridge_key }}</code></div>
+                                    {% if st_number %}
+                                    <div class="small text-secondary"><code>+{{ st_number }}</code></div>
+                                    {% endif %}
+                                    <div class="small mt-1">
+                                        {% if acc.is_active %}
+                                        <span class="badge text-bg-success">Aktif</span>
+                                        {% else %}
+                                        <span class="badge text-bg-secondary">Nonaktif</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td><code>{{ acc.http_port }}</code></td>
+                                <td>
+                                    <span class="badge bridge-status-pill js-bridge-state-badge {% if st_state == 'ready' %}text-bg-success{% elif st_state == 'qr' %}text-bg-warning{% elif st_state in ['stopped', 'disconnected', 'auth_failure', 'error'] %}text-bg-danger{% else %}text-bg-secondary{% endif %}">
+                                        <span class="js-bridge-state">{{ st_state }}</span>
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ url_for('call_center.settings_wa', bridge_key=acc.bridge_key) }}"
+                                        class="btn btn-outline-primary btn-sm">Pilih</a>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm js-edit-bridge"
+                                        data-bridge-key="{{ acc.bridge_key }}"
+                                        data-display-name="{{ acc.display_name or '' }}"
+                                        data-client-id="{{ acc.client_id or '' }}"
+                                        data-http-port="{{ acc.http_port }}"
+                                        data-session-path="{{ acc.session_path or '' }}"
+                                        data-status-path="{{ acc.status_path or '' }}"
+                                        data-pid-path="{{ acc.pid_path or '' }}"
+                                        data-log-path="{{ acc.log_path or '' }}"
+                                        data-internal-url="{{ acc.internal_url or '' }}"
+                                        data-wa-number-hint="{{ acc.wa_number_hint or '' }}"
+                                        data-is-active="{{ '1' if acc.is_active else '0' }}">Edit</button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-secondary py-4">Belum ada akun bridge.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
+<div class="mt-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent d-flex justify-content-between align-items-center gap-2">
+            <h6 class="mb-0"><i class="bi bi-sliders text-primary me-2"></i>Form Akun Bridge</h6>
+            <button type="button" id="bridgeFormResetBtn" class="btn btn-outline-secondary btn-sm">Reset Form</button>
+        </div>
+        <div class="card-body">
+            <form method="post" id="bridgeAccountForm" class="row g-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="save_bridge_account">
+                <input type="hidden" name="selected_bridge_key" id="bridgeSelectedBridgeKey" value="{{ selected_bridge_key }}">
+
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">Bridge Key</label>
+                    <input type="text" class="form-control form-control-sm" id="bridgeKey" name="bridge_key"
+                        placeholder="main/ops1" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">Nama Akun</label>
+                    <input type="text" class="form-control form-control-sm" id="bridgeDisplayName" name="display_name"
+                        placeholder="WA Operator 1">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">Nomor WA (manual)</label>
+                    <input type="text" class="form-control form-control-sm" id="bridgeWaNumberHint" name="wa_number_hint"
+                        placeholder="62812xxxx">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">Client ID</label>
+                    <input type="text" class="form-control form-control-sm" id="bridgeClientId" name="client_id"
+                        placeholder="cc-main">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">HTTP Port</label>
+                    <input type="number" class="form-control form-control-sm" id="bridgeHttpPort" name="http_port"
+                        min="1" max="65535" required>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label small mb-1">Aktif</label>
+                    <div class="form-check form-switch mt-1">
+                        <input class="form-check-input" type="checkbox" id="bridgeIsActive" name="is_active" checked>
+                    </div>
+                </div>
+                <div class="col-md-1 d-grid">
+                    <label class="form-label small mb-1 invisible">Aksi</label>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-save me-1"></i>Simpan
+                    </button>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">Session Path</label>
+                    <input type="text" class="form-control form-control-sm" id="bridgeSessionPath" name="session_path">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">Status Path</label>
+                    <input type="text" class="form-control form-control-sm" id="bridgeStatusPath" name="status_path">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">PID Path</label>
+                    <input type="text" class="form-control form-control-sm" id="bridgePidPath" name="pid_path">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">Log Path</label>
+                    <input type="text" class="form-control form-control-sm" id="bridgeLogPath" name="log_path">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">Internal URL</label>
+                    <input type="text" class="form-control form-control-sm" id="bridgeInternalUrl" name="internal_url">
+                </div>
+            </form>
+
+            <hr>
+
+            <div class="d-flex flex-wrap gap-2">
+                {% for acc in bridge_accounts %}
+                <form method="post" action="{{ url_for('call_center.settings_wa') }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="start_bridge_account">
+                    <input type="hidden" name="bridge_key" value="{{ acc.bridge_key }}">
+                    <input type="hidden" name="selected_bridge_key" value="{{ acc.bridge_key }}">
+                    <button type="submit" class="btn btn-outline-success btn-sm">Start {{ acc.bridge_key }}</button>
+                </form>
+                <form method="post" action="{{ url_for('call_center.settings_wa') }}" class="d-inline"
+                    onsubmit="return confirm('Hentikan bridge {{ acc.bridge_key }}?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="stop_bridge_account">
+                    <input type="hidden" name="bridge_key" value="{{ acc.bridge_key }}">
+                    <input type="hidden" name="selected_bridge_key" value="{{ acc.bridge_key }}">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Stop {{ acc.bridge_key }}</button>
+                </form>
+                {% if acc.bridge_key != 'main' %}
+                <form method="post" action="{{ url_for('call_center.settings_wa') }}" class="d-inline"
+                    onsubmit="return confirm('Hapus akun bridge {{ acc.bridge_key }}?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="delete_bridge_account">
+                    <input type="hidden" name="bridge_key" value="{{ acc.bridge_key }}">
+                    <input type="hidden" name="selected_bridge_key" value="main">
+                    <button type="submit" class="btn btn-outline-dark btn-sm">Hapus {{ acc.bridge_key }}</button>
+                </form>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <h6 class="mb-0"><i class="bi bi-diagram-3 text-primary me-2"></i>Routing WA Manual vs AI</h6>
+            <div class="d-flex flex-wrap gap-2 small">
+                <span class="badge text-bg-secondary">Total: {{ route_summary.total or 0 }}</span>
+                <span class="badge text-bg-success">Aktif: {{ route_summary.active or 0 }}</span>
+                <span class="badge text-bg-danger">Nonaktif: {{ route_summary.inactive or 0 }}</span>
+                <span class="badge text-bg-primary">AI: {{ route_summary.ai or 0 }}</span>
+                <span class="badge text-bg-dark">Manual: {{ route_summary.manual or 0 }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end mb-3">
+                <input type="hidden" name="bridge_key" value="{{ selected_bridge_key }}">
+                <div class="col-md-4">
+                    <label class="form-label small text-secondary mb-1">Cari nomor / nama</label>
+                    <input type="text" class="form-control form-control-sm" name="q" value="{{ route_search or '' }}"
+                        placeholder="62812xxxx atau nama">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-search me-1"></i>Cari
+                    </button>
+                </div>
+                <div class="col-auto">
+                    <a href="{{ url_for('call_center.settings_wa', bridge_key=selected_bridge_key) }}"
+                        class="btn btn-outline-light btn-sm border">Reset</a>
+                </div>
+            </form>
+
+            <form method="post" id="waRouteForm" class="border rounded p-3 bg-light-subtle mb-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="save_wa_route">
+                <input type="hidden" name="selected_bridge_key" value="{{ selected_bridge_key }}">
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <label class="form-label small mb-1">Nomor WA</label>
+                        <input type="text" class="form-control form-control-sm" id="waRouteUserId" name="wa_user_id"
+                            placeholder="62812xxxx" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small mb-1">Nama Display</label>
+                        <input type="text" class="form-control form-control-sm" id="waRouteDisplayName" name="display_name"
+                            placeholder="Opsional">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small mb-1">Mode</label>
+                        <select class="form-select form-select-sm" id="waRouteMode" name="route_mode">
+                            <option value="manual">Manual</option>
+                            <option value="ai">AI</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small mb-1">Status</label>
+                        <div class="form-check form-switch mt-1">
+                            <input class="form-check-input" type="checkbox" id="waRouteIsActive" name="is_active" checked>
+                            <label class="form-check-label small" for="waRouteIsActive">Aktif</label>
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <label class="form-label small mb-1 invisible">Aksi</label>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-save me-1"></i>Simpan Routing
+                        </button>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small mb-1">Catatan</label>
+                        <textarea class="form-control form-control-sm" id="waRouteNotes" name="notes" rows="2"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <button type="button" id="waRouteResetBtn" class="btn btn-link btn-sm px-0">Reset form</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>Nomor</th>
+                            <th>Nama</th>
+                            <th>Mode</th>
+                            <th>Status</th>
+                            <th>Pesan Terakhir</th>
+                            <th>Update</th>
+                            <th class="text-end">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for route in route_rows %}
+                        <tr>
+                            <td class="fw-semibold">+{{ route.wa_user_id }}</td>
+                            <td>{{ route.display_name or '-' }}</td>
+                            <td>
+                                {% if route.route_mode == 'ai' %}
+                                <span class="badge text-bg-primary">AI</span>
+                                {% else %}
+                                <span class="badge text-bg-dark">Manual</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if route.is_active %}
+                                <span class="badge text-bg-success">Aktif</span>
+                                {% else %}
+                                <span class="badge text-bg-danger">Nonaktif</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if route.last_message_at %}
+                                {{ route.last_message_at|jakarta('%d %b %Y %H:%M') }}
+                                {% if route.unread_count %}
+                                <span class="badge text-bg-danger ms-1">{{ route.unread_count }} unread</span>
+                                {% endif %}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="small text-secondary">
+                                {{ route.updated_at|jakarta('%d %b %Y %H:%M') if route.updated_at else '-' }}
+                                {% if route.updated_by_name %}
+                                <div>oleh {{ route.updated_by_name }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <button type="button" class="btn btn-outline-primary btn-sm js-edit-wa-route"
+                                    data-wa-user-id="{{ route.wa_user_id }}"
+                                    data-display-name="{{ route.display_name or '' }}"
+                                    data-route-mode="{{ route.route_mode or 'manual' }}"
+                                    data-is-active="{{ '1' if route.is_active else '0' }}"
+                                    data-notes="{{ route.notes or '' }}">Edit</button>
+                                <form method="post" class="d-inline"
+                                    onsubmit="return confirm('Hapus routing untuk +{{ route.wa_user_id }}?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="action" value="delete_wa_route">
+                                    <input type="hidden" name="selected_bridge_key" value="{{ selected_bridge_key }}">
+                                    <input type="hidden" name="wa_user_id" value="{{ route.wa_user_id }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">Hapus</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-secondary py-4">Belum ada data routing WA.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -122,14 +503,16 @@
             <h6 class="mb-0"><i class="bi bi-terminal text-secondary me-2"></i>Environment Variables</h6>
         </div>
         <div class="card-body">
-            <p class="small text-secondary mb-1">Variabel yang perlu diset di <code>.env</code> untuk Call Center:</p>
+            <p class="small text-secondary mb-1">Variabel minimal di <code>.env</code>:</p>
             <pre class="cc-env-pre p-3 rounded small mb-0"><code>ASKA_CC_WHATSAPP_INTERNAL_TOKEN=&lt;token-rahasia&gt;
 ASKA_CC_HTTP_PORT=3100
-# Opsional:
-# ASKA_CC_WHATSAPP_CLIENT_ID=cc-main
-# ASKA_CC_WHATSAPP_SESSION_PATH=.wa_cc_session
-# ASKA_CC_WHATSAPP_STATUS_PATH=runtime/whatsapp_cc_status.json
-# ASKA_CC_WHATSAPP_INTERNAL_URL=http://127.0.0.1:5002/api/callcenter/inbound</code></pre>
+
+# Per akun bridge akan dioverride otomatis dari DB:
+# ASKA_CC_BRIDGE_KEY
+# ASKA_CC_WHATSAPP_CLIENT_ID
+# ASKA_CC_WHATSAPP_SESSION_PATH
+# ASKA_CC_WHATSAPP_STATUS_PATH
+# ASKA_CC_WHATSAPP_INTERNAL_URL</code></pre>
         </div>
     </div>
 </div>
@@ -138,61 +521,48 @@ ASKA_CC_HTTP_PORT=3100
 {% block portal_scripts %}
 <script>
     (function () {
+        var selectedBridgeKey = '{{ selected_bridge_key }}';
         var statusArea = document.getElementById('bridgeStatusArea');
-        if (!statusArea) return;
-
         var prevState = '{{ bridge_status.get("state", "unknown") }}';
 
-        function buildStatusHTML(state, msg, qrText) {
+        function badgeClass(state) {
+            if (state === 'ready') return 'text-bg-success';
+            if (state === 'qr') return 'text-bg-warning';
+            if (state === 'stopped' || state === 'disconnected' || state === 'auth_failure' || state === 'error') return 'text-bg-danger';
+            return 'text-bg-secondary';
+        }
+
+        function buildStatusHTML(data) {
+            var state = (data && data.state) || 'unknown';
+            var msg = (data && data.message) || '';
+            var qrText = (data && data.qrText) || '';
+
             if (state === 'ready') {
                 return '<div class="alert alert-success mb-0 d-flex align-items-center gap-2">'
                     + '<i class="bi bi-check-circle-fill fs-4"></i>'
-                    + '<div><strong>Terhubung</strong>'
-                    + '<div class="small">Bridge siap menerima dan mengirim pesan.</div>'
-                    + '</div></div>';
+                    + '<div><strong>Terhubung</strong><div class="small">Bridge siap menerima dan mengirim pesan.</div></div>'
+                    + '</div>';
             }
             if (state === 'qr') {
                 var html = '<div class="alert alert-warning mb-0">'
                     + '<strong><i class="bi bi-qr-code-scan me-1"></i>Menunggu Scan QR</strong>'
-                    + '<p class="mb-1 small mt-1">Buka WhatsApp → Linked Devices → Scan QR di bawah ini</p>';
+                    + '<p class="mb-1 small mt-1">Buka WhatsApp -> Linked Devices -> Scan QR.</p>';
                 if (qrText) {
                     html += '<div class="text-center mt-3">'
                         + '<img id="qrImageInline" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(qrText) + '" alt="QR Code" class="img-fluid" style="max-width:220px;">'
-                        + '<div class="small text-secondary mt-1">QR diperbarui otomatis setiap 5 detik.</div>'
+                        + '<div class="small text-secondary mt-1">QR diperbarui otomatis.</div>'
                         + '</div>';
                 }
                 html += '</div>';
                 return html;
             }
-            if (state === 'authenticated') {
-                return '<div class="alert alert-info mb-0">'
-                    + '<div class="spinner-border spinner-border-sm me-2" role="status"></div>'
-                    + '<i class="bi bi-shield-check me-1"></i>Authenticated — menunggu ready…'
-                    + '</div>';
+            if (state === 'authenticated' || state === 'starting') {
+                return '<div class="alert alert-info mb-0"><div class="spinner-border spinner-border-sm me-2" role="status"></div>' + (msg || 'Bridge sedang diproses...') + '</div>';
             }
-            if (state === 'starting') {
-                return '<div class="alert alert-info mb-0">'
-                    + '<div class="spinner-border spinner-border-sm me-2" role="status"></div>'
-                    + 'Memulai bridge…'
-                    + '</div>';
+            if (state === 'stopped' || state === 'disconnected' || state === 'auth_failure' || state === 'error') {
+                return '<div class="alert alert-danger mb-0"><i class="bi bi-exclamation-triangle me-1"></i>' + (msg || 'Bridge tidak berjalan.') + '</div>';
             }
-            if (state === 'disconnected' || state === 'auth_failure') {
-                return '<div class="alert alert-danger mb-0">'
-                    + '<i class="bi bi-exclamation-triangle me-1"></i>'
-                    + (msg || 'Disconnected')
-                    + '</div>';
-            }
-            if (state === 'error') {
-                return '<div class="alert alert-danger mb-0">'
-                    + '<i class="bi bi-x-circle me-1"></i>'
-                    + (msg || 'Error')
-                    + '</div>';
-            }
-            return '<div class="alert alert-secondary mb-0">'
-                + '<i class="bi bi-question-circle me-1"></i>'
-                + 'Status: <strong>' + state + '</strong>'
-                + '<p class="mb-0 small mt-1">Jalankan <code>npm run wa:cc</code> di terminal lalu generate QR.</p>'
-                + '</div>';
+            return '<div class="alert alert-secondary mb-0"><i class="bi bi-question-circle me-1"></i>Status: <strong>' + state + '</strong></div>';
         }
 
         function showToast(message, type) {
@@ -205,32 +575,164 @@ ASKA_CC_HTTP_PORT=3100
                 toast.style.transition = 'opacity .5s';
                 toast.style.opacity = '0';
                 setTimeout(function () { toast.remove(); }, 500);
-            }, 5000);
+            }, 4500);
+        }
+
+        function updateAccountRows(statusMap) {
+            document.querySelectorAll('[data-bridge-row]').forEach(function (row) {
+                var key = row.getAttribute('data-bridge-row');
+                var status = statusMap[key] || {};
+                var state = status.state || 'unknown';
+                var badge = row.querySelector('.js-bridge-state-badge');
+                var stateEl = row.querySelector('.js-bridge-state');
+                if (!badge || !stateEl) return;
+
+                badge.classList.remove('text-bg-success', 'text-bg-warning', 'text-bg-danger', 'text-bg-secondary');
+                badge.classList.add(badgeClass(state));
+                stateEl.textContent = state;
+            });
+        }
+
+        function updateSelectedBridgeNumber(selectedStatus) {
+            var wrap = document.getElementById('selectedBridgeNumberWrap');
+            if (!wrap) return;
+
+            var detected = (selectedStatus && selectedStatus.whatsappNumberDetected) || '';
+            var manual = wrap.getAttribute('data-manual-number') || '';
+            var value = (selectedStatus && selectedStatus.whatsappNumber) || manual;
+
+            if (!value) {
+                wrap.innerHTML = '<span id="selectedBridgeNumberEmpty" class="text-muted">belum terbaca / belum diisi</span>';
+                return;
+            }
+
+            var badgeClass = detected ? 'text-bg-success' : 'text-bg-secondary';
+            var badgeText = detected ? 'terdeteksi otomatis' : 'manual';
+            wrap.innerHTML = '<code id="selectedBridgeNumberValue">+' + value + '</code>'
+                + '<span id="selectedBridgeNumberBadge" class="badge ' + badgeClass + ' ms-1">' + badgeText + '</span>';
         }
 
         function pollBridgeStatus() {
             fetch('{{ url_for("call_center.bridge_status") }}')
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
-                    var state = data.state || 'unknown';
-                    var msg = data.message || '';
-                    var qrText = data.qrText || '';
+                    var accounts = Array.isArray(data.accounts) ? data.accounts : [];
+                    var statusMap = {};
+                    accounts.forEach(function (item) {
+                        if (item && item.bridgeKey) statusMap[item.bridgeKey] = item;
+                    });
 
-                    // Update the main status area
-                    statusArea.innerHTML = buildStatusHTML(state, msg, qrText);
+                    var selected = statusMap[selectedBridgeKey] || data;
+                    if (statusArea) statusArea.innerHTML = buildStatusHTML(selected || {});
+                    updateSelectedBridgeNumber(selected || {});
+                    updateAccountRows(statusMap);
 
-                    // Show success toast when newly connected
-                    if (state === 'ready' && prevState !== 'ready') {
-                        showToast('<strong>WhatsApp Terhubung!</strong><br>Bridge siap menerima dan mengirim pesan.', 'success');
+                    var nextState = (selected && selected.state) || 'unknown';
+                    if (nextState === 'ready' && prevState !== 'ready') {
+                        showToast('<strong>WhatsApp tersambung</strong><br>Bridge siap menerima dan mengirim pesan.', 'success');
                     }
-                    prevState = state;
-
-
+                    prevState = nextState;
                 })
                 .catch(function () { });
         }
+
         pollBridgeStatus();
         setInterval(pollBridgeStatus, 5000);
+    })();
+
+    (function () {
+        var inputKey = document.getElementById('bridgeKey');
+        if (!inputKey) return;
+
+        var inputName = document.getElementById('bridgeDisplayName');
+        var inputWaNumberHint = document.getElementById('bridgeWaNumberHint');
+        var inputClient = document.getElementById('bridgeClientId');
+        var inputPort = document.getElementById('bridgeHttpPort');
+        var inputSession = document.getElementById('bridgeSessionPath');
+        var inputStatus = document.getElementById('bridgeStatusPath');
+        var inputPid = document.getElementById('bridgePidPath');
+        var inputLog = document.getElementById('bridgeLogPath');
+        var inputUrl = document.getElementById('bridgeInternalUrl');
+        var inputActive = document.getElementById('bridgeIsActive');
+        var inputSelectedKey = document.getElementById('bridgeSelectedBridgeKey');
+        var resetBtn = document.getElementById('bridgeFormResetBtn');
+
+        function resetBridgeForm() {
+            inputKey.value = '';
+            inputName.value = '';
+            inputWaNumberHint.value = '';
+            inputClient.value = '';
+            inputPort.value = '';
+            inputSession.value = '';
+            inputStatus.value = '';
+            inputPid.value = '';
+            inputLog.value = '';
+            inputUrl.value = '';
+            inputActive.checked = true;
+            if (inputSelectedKey) inputSelectedKey.value = '{{ selected_bridge_key }}';
+            inputKey.focus();
+        }
+
+        document.querySelectorAll('.js-edit-bridge').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                inputKey.value = btn.getAttribute('data-bridge-key') || '';
+                inputName.value = btn.getAttribute('data-display-name') || '';
+                inputWaNumberHint.value = btn.getAttribute('data-wa-number-hint') || '';
+                inputClient.value = btn.getAttribute('data-client-id') || '';
+                inputPort.value = btn.getAttribute('data-http-port') || '';
+                inputSession.value = btn.getAttribute('data-session-path') || '';
+                inputStatus.value = btn.getAttribute('data-status-path') || '';
+                inputPid.value = btn.getAttribute('data-pid-path') || '';
+                inputLog.value = btn.getAttribute('data-log-path') || '';
+                inputUrl.value = btn.getAttribute('data-internal-url') || '';
+                inputActive.checked = (btn.getAttribute('data-is-active') || '0') === '1';
+                if (inputSelectedKey) inputSelectedKey.value = btn.getAttribute('data-bridge-key') || '{{ selected_bridge_key }}';
+                inputKey.focus();
+                inputKey.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+
+        if (resetBtn) {
+            resetBtn.addEventListener('click', resetBridgeForm);
+        }
+    })();
+
+    (function () {
+        var form = document.getElementById('waRouteForm');
+        if (!form) return;
+
+        var inputWa = document.getElementById('waRouteUserId');
+        var inputName = document.getElementById('waRouteDisplayName');
+        var inputMode = document.getElementById('waRouteMode');
+        var inputActive = document.getElementById('waRouteIsActive');
+        var inputNotes = document.getElementById('waRouteNotes');
+        var resetBtn = document.getElementById('waRouteResetBtn');
+        var editButtons = document.querySelectorAll('.js-edit-wa-route');
+
+        function resetForm() {
+            inputWa.value = '';
+            inputName.value = '';
+            inputMode.value = 'manual';
+            inputActive.checked = true;
+            inputNotes.value = '';
+            inputWa.focus();
+        }
+
+        editButtons.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                inputWa.value = btn.getAttribute('data-wa-user-id') || '';
+                inputName.value = btn.getAttribute('data-display-name') || '';
+                inputMode.value = btn.getAttribute('data-route-mode') || 'manual';
+                inputActive.checked = (btn.getAttribute('data-is-active') || '0') === '1';
+                inputNotes.value = btn.getAttribute('data-notes') || '';
+                inputWa.focus();
+                inputWa.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+
+        if (resetBtn) {
+            resetBtn.addEventListener('click', resetForm);
+        }
     })();
 </script>
 <style>
