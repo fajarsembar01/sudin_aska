@@ -1,5 +1,6 @@
 {% extends "daftar_tamu/base_daftar_tamu.html" %}
 {% set page_title = "Bubble Chat Buku Tamu" %}
+{% set active_tab = active_tab if active_tab in ['intro', 'limit'] else 'intro' %}
 
 {% block portal_content %}
 <section class="mb-4">
@@ -64,6 +65,20 @@
     </div>
 </section>
 
+<section class="mb-3">
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{{ url_for('daftar_tamu.admin_guest_chat_bubbles_intro', preview_npsn=preview_npsn) }}"
+            class="btn {% if active_tab == 'intro' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            <i class="bi bi-chat-left-text me-1"></i>Bubble Intro
+        </a>
+        <a href="{{ url_for('daftar_tamu.admin_guest_chat_bubbles_limit', preview_npsn=preview_npsn) }}"
+            class="btn {% if active_tab == 'limit' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            <i class="bi bi-chat-left-quote me-1"></i>Limit Chat & Bubble Limit
+        </a>
+    </div>
+</section>
+
+{% if active_tab == 'limit' %}
 <section class="card border-0 shadow-sm mb-3">
     <div class="card-body">
         <h2 class="h6 fw-bold mb-3">Pengaturan Limit Chat Buku Tamu</h2>
@@ -179,19 +194,24 @@
                     {% endfor %}
                 </div>
                 {% endif %}
-                {% if settings.limit_reached_media_type != 'none' %}
-                <div class="preview-media mt-2">
-                    {% if settings.limit_reached_media_type == 'image' and settings.limit_reached_media_preview_url %}
-                    <img src="{{ settings.limit_reached_media_preview_url }}" alt="Media limit bubble">
-                    {% elif settings.limit_reached_media_type == 'video' and (settings.limit_reached_media_preview_url or settings.limit_reached_media_url) %}
-                    <video {% if not settings.limit_reached_media_autoplay %}controls="controls"{% endif %} playsinline="playsinline" preload="auto" {% if settings.limit_reached_media_loop %}loop="loop"{% endif %} {% if settings.limit_reached_media_autoplay %}autoplay="autoplay" muted="muted"{% elif settings.limit_reached_video_muted %}muted="muted"{% endif %}>
-                        <source src="{{ settings.limit_reached_media_preview_url or settings.limit_reached_media_url }}">
-                    </video>
-                    {% elif settings.limit_reached_media_type == 'audio' and (settings.limit_reached_media_preview_url or settings.limit_reached_media_url) %}
-                    <audio {% if not settings.limit_reached_media_autoplay %}controls="controls"{% endif %} preload="auto" {% if settings.limit_reached_media_loop %}loop="loop"{% endif %} {% if settings.limit_reached_media_autoplay %}autoplay="autoplay" muted="muted"{% endif %}>
-                        <source src="{{ settings.limit_reached_media_preview_url or settings.limit_reached_media_url }}">
-                    </audio>
-                    {% endif %}
+                {% set limit_media_src = settings.limit_reached_media_preview_url or settings.limit_reached_media_url %}
+                {% if settings.limit_reached_media_type != 'none' and limit_media_src %}
+                <div class="preview-media mt-2 js-deferred-media"
+                    data-media-type="{{ settings.limit_reached_media_type }}"
+                    data-media-src="{{ limit_media_src }}"
+                    data-controls="{{ '1' if not settings.limit_reached_media_autoplay else '0' }}"
+                    data-loop="{{ '1' if settings.limit_reached_media_loop else '0' }}"
+                    data-autoplay="{{ '1' if settings.limit_reached_media_autoplay else '0' }}"
+                    data-muted="{{ '1' if settings.limit_reached_video_muted or settings.limit_reached_media_autoplay else '0' }}">
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary js-preview-media-btn">
+                            <i class="bi bi-play-circle me-1"></i>Klik Preview Media
+                        </button>
+                        <a href="{{ limit_media_src }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>Buka di Tab Baru
+                        </a>
+                    </div>
+                    <div class="js-preview-media-target mt-2 d-none"></div>
                 </div>
                 {% endif %}
             </div>
@@ -202,7 +222,9 @@
         </form>
     </div>
 </section>
+{% endif %}
 
+{% if active_tab == 'intro' %}
 <section class="row g-3 mb-3">
     <div class="col-lg-12">
         <div class="card border-0 shadow-sm h-100">
@@ -416,18 +438,27 @@
                 </div>
 
                 {% if row.media_type != 'none' %}
+                {% set row_media_src = row.media_preview_url or row.media_url %}
                 <div class="current-media-box">
                     <div class="small text-muted mb-1">Media saat ini:</div>
-                    {% if row.media_type == 'image' and row.media_preview_url %}
-                    <img src="{{ row.media_preview_url }}" alt="Media bubble saat ini">
-                    {% elif row.media_type == 'video' and (row.media_preview_url or row.media_url) %}
-                    <video {% if not row.media_autoplay %}controls="controls"{% endif %} playsinline="playsinline" preload="auto" {% if row.media_loop %}loop="loop"{% endif %} {% if row.media_autoplay %}autoplay="autoplay" muted="muted"{% elif row.video_muted %}muted="muted"{% endif %}>
-                        <source src="{{ row.media_preview_url or row.media_url }}">
-                    </video>
-                    {% elif row.media_type == 'audio' and (row.media_preview_url or row.media_url) %}
-                    <audio {% if not row.media_autoplay %}controls="controls"{% endif %} preload="auto" {% if row.media_loop %}loop="loop"{% endif %} {% if row.media_autoplay %}autoplay="autoplay" muted="muted"{% endif %}>
-                        <source src="{{ row.media_preview_url or row.media_url }}">
-                    </audio>
+                    {% if row_media_src %}
+                    <div class="preview-media js-deferred-media"
+                        data-media-type="{{ row.media_type }}"
+                        data-media-src="{{ row_media_src }}"
+                        data-controls="{{ '1' if not row.media_autoplay else '0' }}"
+                        data-loop="{{ '1' if row.media_loop else '0' }}"
+                        data-autoplay="{{ '1' if row.media_autoplay else '0' }}"
+                        data-muted="{{ '1' if row.video_muted or row.media_autoplay else '0' }}">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary js-preview-media-btn">
+                                <i class="bi bi-play-circle me-1"></i>Klik Preview Media
+                            </button>
+                            <a href="{{ row_media_src }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>Buka di Tab Baru
+                            </a>
+                        </div>
+                        <div class="js-preview-media-target mt-2 d-none"></div>
+                    </div>
                     {% endif %}
                 </div>
                 {% endif %}
@@ -454,78 +485,17 @@
             </form>
 
             <hr>
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h4 class="h6 fw-bold mb-0">Pertanyaan Cepat</h4>
-                <span class="badge text-bg-light">{{ row.quick_questions|length }} item</span>
-            </div>
-
-            <form method="post" action="{{ url_for('daftar_tamu.admin_create_guest_chat_quick_question', bubble_id=row.id) }}"
-                class="row g-2 align-items-end mb-2">
-                <div class="col-md-7">
-                    <label class="form-label">Tambah Pertanyaan Cepat</label>
-                    <input type="text" name="question_text" class="form-control" maxlength="255" placeholder="Contoh: Cara daftar siswa baru?" required>
+            <details class="quick-questions-details js-quick-questions-details"
+                data-bubble-id="{{ row.id }}"
+                data-fetch-url="{{ url_for('daftar_tamu.admin_list_guest_chat_quick_questions', bubble_id=row.id) }}">
+                <summary class="d-flex justify-content-between align-items-center">
+                    <span class="h6 fw-bold mb-0">Pertanyaan Cepat</span>
+                    <span class="badge text-bg-light js-quick-count" data-bubble-id="{{ row.id }}">{{ row.quick_questions_count or 0 }} item</span>
+                </summary>
+                <div class="mt-3 js-quick-questions-container" data-bubble-id="{{ row.id }}">
+                    <div class="small text-muted">Buka panel ini untuk memuat pertanyaan cepat.</div>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label">Urutan</label>
-                    <input type="number" name="sort_order" class="form-control" value="10" step="1">
-                </div>
-                <div class="col-md-2">
-                    <div class="form-check form-switch mt-4">
-                        <input class="form-check-input" type="checkbox" id="newQActive{{ row.id }}" name="active" value="true" checked>
-                        <label class="form-check-label" for="newQActive{{ row.id }}">Aktif</label>
-                    </div>
-                </div>
-                <div class="col-md-1 text-end">
-                    <button type="submit" class="btn btn-sm btn-success">Tambah</button>
-                </div>
-            </form>
-
-            <div class="table-responsive">
-                <table class="table table-sm align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th>Pertanyaan</th>
-                            <th style="width: 100px;">Urutan</th>
-                            <th style="width: 100px;">Aktif</th>
-                            <th class="text-end" style="width: 170px;">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for q in row.quick_questions %}
-                        <tr>
-                            <td>
-                                <form method="post" action="{{ url_for('daftar_tamu.admin_update_guest_chat_quick_question', bubble_id=row.id, question_id=q.id) }}"
-                                    id="quickUpdate{{ q.id }}"></form>
-                                <input type="text" name="question_text" class="form-control form-control-sm"
-                                    value="{{ q.question_text }}" maxlength="255" required form="quickUpdate{{ q.id }}">
-                            </td>
-                            <td>
-                                <input type="number" name="sort_order" class="form-control form-control-sm"
-                                    value="{{ q.sort_order }}" step="1" form="quickUpdate{{ q.id }}">
-                            </td>
-                            <td>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" name="active" value="true"
-                                        id="quickActive{{ q.id }}" {% if q.active %}checked{% endif %} form="quickUpdate{{ q.id }}">
-                                    <label class="form-check-label" for="quickActive{{ q.id }}"></label>
-                                </div>
-                            </td>
-                            <td class="text-end">
-                                <button type="submit" class="btn btn-sm btn-primary" form="quickUpdate{{ q.id }}">Simpan</button>
-                                <form method="post" action="{{ url_for('daftar_tamu.admin_delete_guest_chat_quick_question', bubble_id=row.id, question_id=q.id) }}"
-                                    class="d-inline" onsubmit="return confirm('Hapus pertanyaan cepat ini?');">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Hapus</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="4" class="text-muted small">Belum ada pertanyaan cepat untuk bubble ini.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            </details>
 
             <div class="d-flex justify-content-end mt-3">
                 <form method="post" action="{{ url_for('daftar_tamu.admin_delete_guest_chat_bubble', bubble_id=row.id) }}"
@@ -541,6 +511,7 @@
     </div>
     {% endfor %}
 </section>
+{% endif %}
 
 <style>
     .preview-media img,
@@ -569,6 +540,19 @@
     .limit-preview-text {
         white-space: pre-wrap;
         line-height: 1.45;
+    }
+
+    .quick-questions-details summary {
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .quick-questions-details summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .quick-questions-details[open] summary {
+        margin-bottom: 0.5rem;
     }
 </style>
 
@@ -729,6 +713,253 @@
             }
         }
 
+        function isFlagOne(value) {
+            return String(value || '').trim() === '1';
+        }
+
+        function createDeferredPreviewMediaElement(wrapper) {
+            if (!wrapper) return null;
+            var mediaType = String(wrapper.getAttribute('data-media-type') || '').trim().toLowerCase();
+            var mediaSrc = String(wrapper.getAttribute('data-media-src') || '').trim();
+            if (!mediaSrc) return null;
+
+            if (mediaType === 'image') {
+                var img = document.createElement('img');
+                img.src = mediaSrc;
+                img.alt = 'Preview media bubble';
+                img.loading = 'lazy';
+                return img;
+            }
+
+            if (mediaType === 'video') {
+                var video = document.createElement('video');
+                video.setAttribute('playsinline', 'playsinline');
+                video.preload = 'metadata';
+                if (isFlagOne(wrapper.getAttribute('data-controls'))) {
+                    video.setAttribute('controls', 'controls');
+                }
+                if (isFlagOne(wrapper.getAttribute('data-loop'))) {
+                    video.setAttribute('loop', 'loop');
+                    video.loop = true;
+                }
+                if (isFlagOne(wrapper.getAttribute('data-autoplay'))) {
+                    video.setAttribute('autoplay', 'autoplay');
+                    video.autoplay = true;
+                }
+                if (isFlagOne(wrapper.getAttribute('data-muted'))) {
+                    video.setAttribute('muted', 'muted');
+                    video.muted = true;
+                }
+                var videoSource = document.createElement('source');
+                videoSource.src = mediaSrc;
+                video.appendChild(videoSource);
+                return video;
+            }
+
+            if (mediaType === 'audio') {
+                var audio = document.createElement('audio');
+                audio.preload = 'metadata';
+                if (isFlagOne(wrapper.getAttribute('data-controls'))) {
+                    audio.setAttribute('controls', 'controls');
+                }
+                if (isFlagOne(wrapper.getAttribute('data-loop'))) {
+                    audio.setAttribute('loop', 'loop');
+                    audio.loop = true;
+                }
+                if (isFlagOne(wrapper.getAttribute('data-autoplay'))) {
+                    audio.setAttribute('autoplay', 'autoplay');
+                    audio.autoplay = true;
+                }
+                if (isFlagOne(wrapper.getAttribute('data-muted'))) {
+                    audio.setAttribute('muted', 'muted');
+                    audio.muted = true;
+                }
+                var audioSource = document.createElement('source');
+                audioSource.src = mediaSrc;
+                audio.appendChild(audioSource);
+                return audio;
+            }
+
+            return null;
+        }
+
+        function setDeferredPreviewButtonLabel(button, isVisible) {
+            if (!button) return;
+            if (isVisible) {
+                button.innerHTML = '<i class="bi bi-eye-slash me-1"></i>Sembunyikan Preview';
+            } else {
+                button.innerHTML = '<i class="bi bi-play-circle me-1"></i>Tampilkan Preview';
+            }
+        }
+
+        function bindDeferredMediaPreview() {
+            document.querySelectorAll('.js-deferred-media').forEach(function (wrapper) {
+                var button = wrapper.querySelector('.js-preview-media-btn');
+                var target = wrapper.querySelector('.js-preview-media-target');
+                if (!button || !target) return;
+
+                setDeferredPreviewButtonLabel(button, false);
+
+                button.addEventListener('click', function () {
+                    var isLoaded = wrapper.getAttribute('data-preview-loaded') === '1';
+                    if (!isLoaded) {
+                        var mediaEl = createDeferredPreviewMediaElement(wrapper);
+                        if (!mediaEl) return;
+                        target.innerHTML = '';
+                        target.appendChild(mediaEl);
+                        wrapper.setAttribute('data-preview-loaded', '1');
+                    }
+
+                    var isHidden = target.classList.contains('d-none');
+                    if (isHidden) {
+                        target.classList.remove('d-none');
+                        setDeferredPreviewButtonLabel(button, true);
+                    } else {
+                        target.classList.add('d-none');
+                        setDeferredPreviewButtonLabel(button, false);
+                    }
+                });
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function quickQuestionActionUrl(bubbleId, questionId, action) {
+            return '/daftar-tamu/admin/chat-bubbles/' + bubbleId + '/quick-questions/' + questionId + '/' + action;
+        }
+
+        function renderQuickQuestionsPanel(detailsEl, items) {
+            if (!detailsEl) return;
+            var bubbleId = parseInt(detailsEl.getAttribute('data-bubble-id') || '0', 10);
+            if (!bubbleId) return;
+
+            var container = detailsEl.querySelector('.js-quick-questions-container');
+            if (!container) return;
+
+            var safeItems = Array.isArray(items) ? items : [];
+            var countBadge = detailsEl.querySelector('.js-quick-count');
+            if (countBadge) {
+                countBadge.textContent = safeItems.length + ' item';
+            }
+
+            var html = [];
+            html.push('<form method="post" action="/daftar-tamu/admin/chat-bubbles/' + bubbleId + '/quick-questions" class="row g-2 align-items-end mb-2">');
+            html.push('  <div class="col-md-7">');
+            html.push('      <label class="form-label">Tambah Pertanyaan Cepat</label>');
+            html.push('      <input type="text" name="question_text" class="form-control" maxlength="255" placeholder="Contoh: Cara daftar siswa baru?" required>');
+            html.push('  </div>');
+            html.push('  <div class="col-md-2">');
+            html.push('      <label class="form-label">Urutan</label>');
+            html.push('      <input type="number" name="sort_order" class="form-control" value="10" step="1">');
+            html.push('  </div>');
+            html.push('  <div class="col-md-2">');
+            html.push('      <div class="form-check form-switch mt-4">');
+            html.push('          <input class="form-check-input" type="checkbox" id="newQActiveLazy' + bubbleId + '" name="active" value="true" checked>');
+            html.push('          <label class="form-check-label" for="newQActiveLazy' + bubbleId + '">Aktif</label>');
+            html.push('      </div>');
+            html.push('  </div>');
+            html.push('  <div class="col-md-1 text-end">');
+            html.push('      <button type="submit" class="btn btn-sm btn-success">Tambah</button>');
+            html.push('  </div>');
+            html.push('</form>');
+
+            html.push('<div class="table-responsive">');
+            html.push('<table class="table table-sm align-middle mb-0">');
+            html.push('<thead><tr><th>Pertanyaan</th><th style="width: 100px;">Urutan</th><th style="width: 100px;">Aktif</th><th class="text-end" style="width: 170px;">Aksi</th></tr></thead>');
+            html.push('<tbody>');
+
+            if (!safeItems.length) {
+                html.push('<tr><td colspan="4" class="text-muted small">Belum ada pertanyaan cepat untuk bubble ini.</td></tr>');
+            } else {
+                safeItems.forEach(function (item) {
+                    var questionId = parseInt(item.id || 0, 10);
+                    if (!questionId) return;
+                    var updateFormId = 'quickUpdateLazy' + bubbleId + '_' + questionId;
+                    html.push('<tr>');
+                    html.push('<td>');
+                    html.push('<form method="post" action="' + quickQuestionActionUrl(bubbleId, questionId, 'update') + '" id="' + updateFormId + '"></form>');
+                    html.push('<input type="text" name="question_text" class="form-control form-control-sm" value="' + escapeHtml(item.question_text || '') + '" maxlength="255" required form="' + updateFormId + '">');
+                    html.push('</td>');
+                    html.push('<td>');
+                    html.push('<input type="number" name="sort_order" class="form-control form-control-sm" value="' + escapeHtml(item.sort_order || 0) + '" step="1" form="' + updateFormId + '">');
+                    html.push('</td>');
+                    html.push('<td>');
+                    html.push('<div class="form-check form-switch">');
+                    html.push('<input class="form-check-input" type="checkbox" name="active" value="true" id="quickActiveLazy' + questionId + '"' + (item.active ? ' checked' : '') + ' form="' + updateFormId + '">');
+                    html.push('<label class="form-check-label" for="quickActiveLazy' + questionId + '"></label>');
+                    html.push('</div>');
+                    html.push('</td>');
+                    html.push('<td class="text-end">');
+                    html.push('<button type="submit" class="btn btn-sm btn-primary" form="' + updateFormId + '">Simpan</button>');
+                    html.push('<form method="post" action="' + quickQuestionActionUrl(bubbleId, questionId, 'delete') + '" class="d-inline" onsubmit="return confirm(&quot;Hapus pertanyaan cepat ini?&quot;);">');
+                    html.push('<button type="submit" class="btn btn-sm btn-outline-danger">Hapus</button>');
+                    html.push('</form>');
+                    html.push('</td>');
+                    html.push('</tr>');
+                });
+            }
+
+            html.push('</tbody></table></div>');
+            container.innerHTML = html.join('');
+            detailsEl.setAttribute('data-loaded', '1');
+        }
+
+        function loadQuickQuestions(detailsEl) {
+            if (!detailsEl || detailsEl.getAttribute('data-loading') === '1') return;
+            var alreadyLoaded = detailsEl.getAttribute('data-loaded') === '1';
+            if (alreadyLoaded) return;
+            var fetchUrl = String(detailsEl.getAttribute('data-fetch-url') || '').trim();
+            if (!fetchUrl) return;
+
+            var container = detailsEl.querySelector('.js-quick-questions-container');
+            if (container) {
+                container.innerHTML = '<div class="small text-muted">Memuat pertanyaan cepat...</div>';
+            }
+            detailsEl.setAttribute('data-loading', '1');
+
+            fetch(fetchUrl, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(function (response) {
+                    return response.json().then(function (payload) {
+                        return { ok: response.ok, payload: payload };
+                    });
+                })
+                .then(function (result) {
+                    if (!result.ok || !result.payload || !result.payload.success) {
+                        throw new Error((result.payload && result.payload.message) || 'Gagal memuat pertanyaan cepat.');
+                    }
+                    renderQuickQuestionsPanel(detailsEl, result.payload.items || []);
+                })
+                .catch(function (err) {
+                    if (container) {
+                        container.innerHTML = '<div class="small text-danger">' + escapeHtml(err.message || 'Gagal memuat pertanyaan cepat.') + '</div>';
+                    }
+                })
+                .finally(function () {
+                    detailsEl.removeAttribute('data-loading');
+                });
+        }
+
+        function bindQuickQuestionLazyLoad() {
+            document.querySelectorAll('.js-quick-questions-details').forEach(function (detailsEl) {
+                detailsEl.addEventListener('toggle', function () {
+                    if (!detailsEl.open) return;
+                    loadQuickQuestions(detailsEl);
+                });
+            });
+        }
+
         var forms = document.querySelectorAll('.js-bubble-form');
         forms.forEach(function (form) {
             var source = form.querySelector('.js-media-source');
@@ -808,6 +1039,9 @@
 
             applyLimitVisibility(limitForm);
         }
+
+        bindDeferredMediaPreview();
+        bindQuickQuestionLazyLoad();
     })();
 </script>
 {% endblock %}

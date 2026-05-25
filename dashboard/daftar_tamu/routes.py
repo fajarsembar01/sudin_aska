@@ -113,6 +113,8 @@ from .queries import (
     create_guest_chat_bubble,
     update_guest_chat_bubble,
     delete_guest_chat_bubble,
+    count_guest_chat_quick_questions_by_bubble,
+    list_guest_chat_quick_questions,
     create_guest_chat_quick_question,
     update_guest_chat_quick_question,
     delete_guest_chat_quick_question,
@@ -3863,8 +3865,37 @@ def admin_contact_priority() -> Response:
     )
 
 
-def _admin_guest_chat_bubbles_redirect(*, bubble_id: Optional[int] = None) -> str:
-    base = url_for("daftar_tamu.admin_guest_chat_bubbles")
+_GUEST_CHAT_ADMIN_TABS = {"intro", "limit"}
+
+
+def _guest_chat_admin_tab(raw_tab: Optional[str], *, default: str = "intro") -> str:
+    clean_default = (default or "intro").strip().lower()
+    if clean_default not in _GUEST_CHAT_ADMIN_TABS:
+        clean_default = "intro"
+    clean = (raw_tab or "").strip().lower()
+    if clean in _GUEST_CHAT_ADMIN_TABS:
+        return clean
+    return clean_default
+
+
+def _guest_chat_preview_context() -> dict:
+    preview_npsn = (request.args.get("preview_npsn") or os.getenv("GUEST_CHAT_PREVIEW_NPSN") or "20100682").strip()
+    if not preview_npsn:
+        preview_npsn = "20100682"
+    guest_chat_preview_url = f"{_web_aska_base_url()}/buku-tamu/{preview_npsn}/preview-chat"
+    guest_chat_preview_limit_url = f"{guest_chat_preview_url}?remaining=0"
+    return {
+        "preview_npsn": preview_npsn,
+        "guest_chat_preview_url": guest_chat_preview_url,
+        "guest_chat_preview_limit_url": guest_chat_preview_limit_url,
+    }
+
+
+def _admin_guest_chat_bubbles_redirect(*, bubble_id: Optional[int] = None, tab: str = "intro") -> str:
+    safe_tab = _guest_chat_admin_tab(tab, default="intro")
+    if safe_tab == "limit":
+        return url_for("daftar_tamu.admin_guest_chat_bubbles_limit")
+    base = url_for("daftar_tamu.admin_guest_chat_bubbles_intro")
     if bubble_id and int(bubble_id) > 0:
         return f"{base}#bubble-{int(bubble_id)}"
     return base
@@ -3873,7 +3904,27 @@ def _admin_guest_chat_bubbles_redirect(*, bubble_id: Optional[int] = None) -> st
 @daftar_tamu_bp.route("/admin/chat-bubbles", methods=["GET"])
 @role_required("admin")
 def admin_guest_chat_bubbles() -> Response:
-    rows = list_guest_chat_bubbles(active_only=None, with_questions=True)
+    active_tab = _guest_chat_admin_tab(request.args.get("tab"), default="intro")
+    kwargs: dict[str, str] = {}
+    preview_npsn = (request.args.get("preview_npsn") or "").strip()
+    if preview_npsn:
+        kwargs["preview_npsn"] = preview_npsn
+    if active_tab == "limit":
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_limit", **kwargs))
+    return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro", **kwargs))
+
+
+@daftar_tamu_bp.route("/admin/chat-bubbles/intro", methods=["GET"])
+@role_required("admin")
+def admin_guest_chat_bubbles_intro() -> Response:
+    rows = list_guest_chat_bubbles(active_only=None, with_questions=False)
+    bubble_ids: list[int] = []
+    for row in rows:
+        bubble_id = int(row.get("id") or 0)
+        if bubble_id > 0:
+            bubble_ids.append(bubble_id)
+    quick_counts = count_guest_chat_quick_questions_by_bubble(bubble_ids=bubble_ids)
+
     for row in rows:
         row["message_preview"] = _guest_chat_render_text_preview(row.get("message_text") or "")
         media_path = (row.get("media_path") or "").strip()
@@ -3882,11 +3933,22 @@ def admin_guest_chat_bubbles() -> Response:
         if not direct_link_rows:
             direct_link_rows = [{"label": "", "url": "", "sort_order": 10}]
         row["direct_link_rows"] = direct_link_rows
-        row["quick_questions"] = sorted(
-            row.get("quick_questions") or [],
-            key=lambda q: (int(q.get("sort_order") or 0), int(q.get("id") or 0)),
-        )
+        row["quick_questions_count"] = int(quick_counts.get(int(row.get("id") or 0), 0))
 
+    preview_context = _guest_chat_preview_context()
+    return render_template(
+        "daftar_tamu/admin_guest_chat_bubbles.html",
+        active_tab="intro",
+        rows=rows,
+        settings={},
+        settings_link_rows=[],
+        **preview_context,
+    )
+
+
+@daftar_tamu_bp.route("/admin/chat-bubbles/limit", methods=["GET"])
+@role_required("admin")
+def admin_guest_chat_bubbles_limit() -> Response:
     settings = get_guest_chat_settings()
     settings_media_path = (settings.get("limit_reached_media_path") or "").strip()
     settings["limit_reached_media_preview_url"] = (
@@ -3898,19 +3960,14 @@ def admin_guest_chat_bubbles() -> Response:
     settings_link_rows = settings.get("limit_reached_links") or []
     if not settings_link_rows:
         settings_link_rows = [{"label": "", "url": "", "sort_order": 10}]
-    preview_npsn = (request.args.get("preview_npsn") or os.getenv("GUEST_CHAT_PREVIEW_NPSN") or "20100682").strip()
-    if not preview_npsn:
-        preview_npsn = "20100682"
-    guest_chat_preview_url = f"{_web_aska_base_url()}/buku-tamu/{preview_npsn}/preview-chat"
-    guest_chat_preview_limit_url = f"{guest_chat_preview_url}?remaining=0"
+    preview_context = _guest_chat_preview_context()
     return render_template(
         "daftar_tamu/admin_guest_chat_bubbles.html",
-        rows=rows,
+        active_tab="limit",
+        rows=[],
         settings=settings,
         settings_link_rows=settings_link_rows,
-        preview_npsn=preview_npsn,
-        guest_chat_preview_url=guest_chat_preview_url,
-        guest_chat_preview_limit_url=guest_chat_preview_limit_url,
+        **preview_context,
     )
 
 
@@ -3984,11 +4041,11 @@ def admin_update_guest_chat_settings() -> Response:
         )
     except ValueError as exc:
         flash(str(exc), "danger")
-        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles"))
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_limit"))
     except Exception:
         current_app.logger.exception("Gagal memperbarui pengaturan chat buku tamu.")
         flash("Gagal memperbarui pengaturan chat buku tamu.", "danger")
-        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles"))
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_limit"))
 
     new_media_path = (updated.get("limit_reached_media_path") or "").strip()
     if old_media_path and old_media_path != new_media_path:
@@ -4000,7 +4057,7 @@ def admin_update_guest_chat_settings() -> Response:
                 current_app.logger.exception("Gagal menghapus file media limit bubble lama: %s", old_media_path)
 
     flash("Pengaturan limit chat buku tamu berhasil diperbarui.", "success")
-    return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles"))
+    return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_limit"))
 
 
 @daftar_tamu_bp.route("/admin/chat-bubbles", methods=["POST"])
@@ -4065,11 +4122,11 @@ def admin_create_guest_chat_bubble() -> Response:
         )
     except ValueError as exc:
         flash(str(exc), "danger")
-        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles"))
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
     except Exception:
         current_app.logger.exception("Gagal menambah bubble chat buku tamu.")
         flash("Gagal menambah bubble chat.", "danger")
-        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles"))
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
 
     flash("Bubble chat berhasil ditambahkan.", "success")
     return redirect(_admin_guest_chat_bubbles_redirect(bubble_id=int(created.get("id") or 0)))
@@ -4081,7 +4138,7 @@ def admin_update_guest_chat_bubble(bubble_id: int) -> Response:
     existing = get_guest_chat_bubble(bubble_id=bubble_id, with_questions=True)
     if not existing:
         flash("Bubble chat tidak ditemukan.", "danger")
-        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles"))
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
 
     message_text = (request.form.get("message_text") or "").strip()
     sort_order = _to_int(request.form.get("sort_order"), int(existing.get("sort_order") or 0))
@@ -4154,7 +4211,7 @@ def admin_update_guest_chat_bubble(bubble_id: int) -> Response:
 
     if not updated:
         flash("Bubble chat tidak ditemukan.", "danger")
-        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles"))
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
 
     new_media_path = (updated.get("media_path") or "").strip()
     if old_media_path and old_media_path != new_media_path:
@@ -4175,13 +4232,13 @@ def admin_delete_guest_chat_bubble(bubble_id: int) -> Response:
     existing = get_guest_chat_bubble(bubble_id=bubble_id, with_questions=False)
     if not existing:
         flash("Bubble chat tidak ditemukan.", "danger")
-        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles"))
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
 
     media_path = (existing.get("media_path") or "").strip()
     deleted = delete_guest_chat_bubble(bubble_id=bubble_id)
     if not deleted:
         flash("Bubble chat tidak ditemukan.", "danger")
-        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles"))
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
 
     if media_path:
         media_file = _guest_chat_media_absolute_path(media_path)
@@ -4192,7 +4249,32 @@ def admin_delete_guest_chat_bubble(bubble_id: int) -> Response:
                 current_app.logger.exception("Gagal menghapus file media bubble: %s", media_path)
 
     flash("Bubble chat berhasil dihapus.", "success")
-    return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles"))
+    return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
+
+
+@daftar_tamu_bp.route("/admin/chat-bubbles/<int:bubble_id>/quick-questions", methods=["GET"])
+@role_required("admin")
+def admin_list_guest_chat_quick_questions(bubble_id: int) -> Response:
+    # Memastikan schema guest chat sudah siap sebelum query langsung.
+    get_guest_chat_settings()
+    with get_cursor() as cur:
+        cur.execute(
+            "SELECT 1 FROM daftar_tamu_guest_chat_bubbles WHERE id = %s LIMIT 1",
+            [int(bubble_id)],
+        )
+        exists = bool(cur.fetchone())
+    if not exists:
+        return jsonify({"success": False, "message": "Bubble chat tidak ditemukan.", "bubble_id": bubble_id, "items": []}), 404
+
+    items = list_guest_chat_quick_questions(bubble_id=bubble_id)
+    return jsonify(
+        {
+            "success": True,
+            "bubble_id": bubble_id,
+            "items": items,
+            "total": len(items),
+        }
+    )
 
 
 @daftar_tamu_bp.route("/admin/chat-bubbles/<int:bubble_id>/quick-questions", methods=["POST"])
@@ -4200,7 +4282,7 @@ def admin_delete_guest_chat_bubble(bubble_id: int) -> Response:
 def admin_create_guest_chat_quick_question(bubble_id: int) -> Response:
     if not get_guest_chat_bubble(bubble_id=bubble_id, with_questions=False):
         flash("Bubble chat tidak ditemukan.", "danger")
-        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles"))
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
 
     question_text = (request.form.get("question_text") or "").strip()
     sort_order = _to_int(request.form.get("sort_order"), 0)

@@ -80,6 +80,21 @@ const MAX_OUTBOUND_MEDIA_BYTES = parseInt(
     "0",
     10
 );
+const INIT_STUCK_TIMEOUT_MS = (() => {
+    const parsed = parseInt(process.env.ASKA_CC_INIT_STUCK_TIMEOUT_MS || "120000", 10);
+    if (!Number.isFinite(parsed)) return 120000;
+    return Math.max(30000, Math.min(parsed, 900000));
+})();
+const INIT_RECOVERY_RETRY_LIMIT = (() => {
+    const parsed = parseInt(process.env.ASKA_CC_INIT_RECOVERY_RETRY_LIMIT || "2", 10);
+    if (!Number.isFinite(parsed)) return 2;
+    return Math.max(0, Math.min(parsed, 10));
+})();
+const INIT_RECOVERY_RETRY_DELAY_MS = (() => {
+    const parsed = parseInt(process.env.ASKA_CC_INIT_RECOVERY_RETRY_DELAY_MS || "2500", 10);
+    if (!Number.isFinite(parsed)) return 2500;
+    return Math.max(500, Math.min(parsed, 60000));
+})();
 
 if (!INTERNAL_TOKEN) {
     console.error("[CC] ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum diset. Worker dihentikan.");
@@ -118,6 +133,21 @@ function writeStatus(patch) {
     } catch (err) {
         console.error("[CC] Gagal menulis status:", (err && err.message) || err);
     }
+}
+
+let currentBridgeState = "starting";
+let currentBridgeMessage = "Call Center bridge sedang inisialisasi...";
+
+function setBridgeStatus(patch) {
+    const nextPatch = patch && typeof patch === "object" ? patch : {};
+    if (Object.prototype.hasOwnProperty.call(nextPatch, "state")) {
+        const nextState = String(nextPatch.state || "").trim().toLowerCase();
+        if (nextState) currentBridgeState = nextState;
+    }
+    if (Object.prototype.hasOwnProperty.call(nextPatch, "message")) {
+        currentBridgeMessage = String(nextPatch.message || "").trim();
+    }
+    writeStatus(nextPatch);
 }
 
 // ── utilities ────────────────────────────────────────────────────────────────
@@ -224,6 +254,72 @@ const processedIds = new Set();
 const ignoredIds = new Set();
 let clientReady = false;
 let lastHeartbeat = Date.now(); // untuk watchdog deteksi Chromium crash
+let initRecoveryTimer = null;
+let initRecoveryAttempts = 0;
+
+function isInitInProgressState() {
+    return !clientReady && (currentBridgeState === "starting" || currentBridgeState === "authenticated");
+}
+
+function clearInitRecoveryWatchdog() {
+    if (initRecoveryTimer) {
+        clearTimeout(initRecoveryTimer);
+        initRecoveryTimer = null;
+    }
+}
+
+function armInitRecoveryWatchdog() {
+    clearInitRecoveryWatchdog();
+    if (!isInitInProgressState()) return;
+    if (INIT_RECOVERY_RETRY_LIMIT <= 0) return;
+
+    initRecoveryTimer = setTimeout(async () => {
+        if (!isInitInProgressState()) return;
+
+        const timeoutSeconds = Math.round(INIT_STUCK_TIMEOUT_MS / 1000);
+        if (initRecoveryAttempts >= INIT_RECOVERY_RETRY_LIMIT) {
+            setBridgeStatus({
+                state: "error",
+                qrText: "",
+                message: `Inisialisasi bridge macet > ${timeoutSeconds} detik. Klik Generate QR untuk restart manual.`,
+                whatsappNumber: "",
+            });
+            console.error(`[CC] Init watchdog: stuck > ${timeoutSeconds}s, retry limit reached.`);
+            return;
+        }
+
+        initRecoveryAttempts += 1;
+        setBridgeStatus({
+            state: "starting",
+            qrText: "",
+            message: `Inisialisasi terlalu lama. Recovery otomatis ${initRecoveryAttempts}/${INIT_RECOVERY_RETRY_LIMIT}...`,
+            whatsappNumber: "",
+        });
+        console.warn(
+            `[CC] Init watchdog: recovery ${initRecoveryAttempts}/${INIT_RECOVERY_RETRY_LIMIT} (timeout ${timeoutSeconds}s).`
+        );
+
+        try {
+            await client.destroy();
+        } catch (_) {
+            // abaikan error destroy
+        }
+
+        setTimeout(() => {
+            client.initialize().catch((err) => {
+                setBridgeStatus({
+                    state: "error",
+                    qrText: "",
+                    message: (err && err.message) || String(err),
+                    whatsappNumber: "",
+                });
+                console.error("[CC] Init watchdog reinit error:", (err && err.message) || err);
+            });
+        }, INIT_RECOVERY_RETRY_DELAY_MS);
+
+        armInitRecoveryWatchdog();
+    }, INIT_STUCK_TIMEOUT_MS);
+}
 
 // ── WhatsApp client ──────────────────────────────────────────────────────────
 
@@ -238,7 +334,9 @@ const client = new Client({
 });
 
 client.on("qr", (qrText) => {
-    writeStatus({
+    initRecoveryAttempts = 0;
+    clearInitRecoveryWatchdog();
+    setBridgeStatus({
         state: "qr",
         qrText,
         message: "Scan QR dari WhatsApp Linked Devices.",
@@ -249,20 +347,23 @@ client.on("qr", (qrText) => {
 });
 
 client.on("authenticated", () => {
-    writeStatus({
+    setBridgeStatus({
         state: "authenticated",
         qrText: "",
         message: "Authenticated.",
         whatsappNumber: resolveBridgeSelfNumber(),
     });
+    armInitRecoveryWatchdog();
     console.log("[CC] Authenticated.");
 });
 
 client.on("ready", () => {
     clientReady = true;
+    initRecoveryAttempts = 0;
+    clearInitRecoveryWatchdog();
     lastHeartbeat = Date.now();
     const selfNumber = resolveBridgeSelfNumber();
-    writeStatus({
+    setBridgeStatus({
         state: "ready",
         qrText: "",
         message: "Call Center bridge siap.",
@@ -279,15 +380,24 @@ client.on("ready", () => {
 
 client.on("auth_failure", (msg) => {
     clientReady = false;
-    writeStatus({ state: "auth_failure", qrText: "", message: String(msg), whatsappNumber: "" });
+    clearInitRecoveryWatchdog();
+    setBridgeStatus({ state: "auth_failure", qrText: "", message: String(msg), whatsappNumber: "" });
     console.error("[CC] Auth failure:", msg);
 });
 
 client.on("disconnected", (reason) => {
     clientReady = false;
-    writeStatus({ state: "disconnected", qrText: "", message: String(reason), whatsappNumber: "" });
+    clearInitRecoveryWatchdog();
+    setBridgeStatus({ state: "disconnected", qrText: "", message: String(reason), whatsappNumber: "" });
     console.warn("[CC] Disconnected:", reason);
     setTimeout(() => {
+        setBridgeStatus({
+            state: "starting",
+            qrText: "",
+            message: "Mencoba inisialisasi ulang setelah disconnect...",
+            whatsappNumber: "",
+        });
+        armInitRecoveryWatchdog();
         client.initialize().catch((e) =>
             console.error("[CC] Reinit error:", (e && e.message) || e)
         );
@@ -326,11 +436,19 @@ function startWatchdog() {
             console.warn(`[CC] Watchdog: Chromium tidak responsif ${Math.round(elapsed/1000)}s. Reinit...`);
             clientReady = false;
             lastHeartbeat = Date.now(); // reset agar tidak trigger lagi segera
-            writeStatus({ state: "disconnected", qrText: "", message: "Watchdog: koneksi terputus, mencoba reconnect..." });
+            clearInitRecoveryWatchdog();
+            setBridgeStatus({ state: "disconnected", qrText: "", message: "Watchdog: koneksi terputus, mencoba reconnect..." });
             try {
                 await client.destroy();
             } catch (_) { /* abaikan */ }
             setTimeout(() => {
+                setBridgeStatus({
+                    state: "starting",
+                    qrText: "",
+                    message: "Watchdog: menjalankan ulang bridge...",
+                    whatsappNumber: "",
+                });
+                armInitRecoveryWatchdog();
                 client.initialize().catch((e) =>
                     console.error("[CC] Watchdog reinit error:", (e && e.message) || e)
                 );
@@ -733,7 +851,7 @@ app.listen(HTTP_PORT, () => {
     console.log(`[CC] HTTP API listening on port ${HTTP_PORT}`);
 });
 
-writeStatus({
+setBridgeStatus({
     state: "starting",
     qrText: "",
     message: "Call Center bridge sedang inisialisasi...",
@@ -743,9 +861,10 @@ writeStatus({
     internalUrl: INTERNAL_URL,
     httpPort: HTTP_PORT,
 });
+armInitRecoveryWatchdog();
 
 client.initialize().catch((err) => {
-    writeStatus({
+    setBridgeStatus({
         state: "error",
         qrText: "",
         message: (err && err.message) || String(err),

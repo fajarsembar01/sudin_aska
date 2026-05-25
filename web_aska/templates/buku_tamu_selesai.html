@@ -518,31 +518,59 @@
             return /iPhone|iPad|iPod/i.test(ua) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         }
 
-        function enforceAutoplayLock(mediaEl) {
-            if (!mediaEl || mediaEl.getAttribute('data-autoplay-lock') !== '1') return;
-            if (mediaEl.getAttribute('data-autoplay-bound') === '1') return;
-            mediaEl.setAttribute('data-autoplay-bound', '1');
-
+        function primeAutoplayMedia(mediaEl) {
+            if (!mediaEl) return;
             mediaEl.controls = false;
             mediaEl.style.pointerEvents = 'none';
             mediaEl.setAttribute('tabindex', '-1');
             mediaEl.setAttribute('controlslist', 'nodownload nofullscreen noremoteplayback');
             mediaEl.setAttribute('disablepictureinpicture', '');
+            mediaEl.setAttribute('disableremoteplayback', '');
+            mediaEl.autoplay = true;
+            mediaEl.setAttribute('autoplay', 'autoplay');
+            mediaEl.muted = true;
+            mediaEl.defaultMuted = true;
+            mediaEl.setAttribute('muted', 'muted');
 
             if ((mediaEl.tagName || '').toLowerCase() === 'video') {
+                mediaEl.playsInline = true;
                 mediaEl.setAttribute('playsinline', 'playsinline');
                 mediaEl.setAttribute('webkit-playsinline', 'webkit-playsinline');
             }
+        }
+
+        function enforceAutoplayLock(mediaEl) {
+            if (!mediaEl || mediaEl.getAttribute('data-autoplay-lock') !== '1') return;
+            primeAutoplayMedia(mediaEl);
+            if (mediaEl.getAttribute('data-autoplay-bound') === '1') {
+                if (typeof mediaEl.__askaReplayAutoplay === 'function') {
+                    mediaEl.__askaReplayAutoplay(isIOSLikeDevice());
+                }
+                return;
+            }
+            mediaEl.setAttribute('data-autoplay-bound', '1');
 
             var replay = function (allowMuteFallback) {
-                var playPromise = mediaEl.play();
+                primeAutoplayMedia(mediaEl);
+                if (mediaEl.readyState === 0 && mediaEl.getAttribute('data-autoplay-load-tried') !== '1') {
+                    mediaEl.setAttribute('data-autoplay-load-tried', '1');
+                    if (typeof mediaEl.load === 'function') {
+                        try {
+                            mediaEl.load();
+                        } catch (err) { }
+                    }
+                }
+                var playPromise;
+                try {
+                    playPromise = mediaEl.play();
+                } catch (err) {
+                    return;
+                }
                 if (playPromise && typeof playPromise.catch === 'function') {
                     playPromise.catch(function () {
                         if (!allowMuteFallback) return;
                         if ((mediaEl.tagName || '').toLowerCase() !== 'video') return;
-                        mediaEl.muted = true;
-                        mediaEl.defaultMuted = true;
-                        mediaEl.setAttribute('muted', 'muted');
+                        primeAutoplayMedia(mediaEl);
                         var retryPromise = mediaEl.play();
                         if (retryPromise && typeof retryPromise.catch === 'function') {
                             retryPromise.catch(function () { });
@@ -550,6 +578,7 @@
                     });
                 }
             };
+            mediaEl.__askaReplayAutoplay = replay;
 
             mediaEl.addEventListener('pause', function () {
                 replay(false);
@@ -562,6 +591,9 @@
                 replay(true);
             });
             mediaEl.addEventListener('canplay', function () {
+                replay(true);
+            });
+            mediaEl.addEventListener('loadeddata', function () {
                 replay(true);
             });
 
@@ -859,6 +891,19 @@
         }
         document.addEventListener('touchstart', retryAutoplayOnFirstGesture, { passive: true, once: true });
         document.addEventListener('click', retryAutoplayOnFirstGesture, { passive: true, once: true });
+        window.addEventListener('pageshow', function () {
+            setTimeout(function () { hydrateAutoplayLocks(chatBox); }, 40);
+            setTimeout(function () { hydrateAutoplayLocks(chatBox); }, 260);
+        });
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) {
+                hydrateAutoplayLocks(chatBox);
+            }
+        });
+        window.addEventListener('load', function () {
+            setTimeout(function () { hydrateAutoplayLocks(chatBox); }, 120);
+            setTimeout(function () { hydrateAutoplayLocks(chatBox); }, 520);
+        });
 
         updateRemaining();
         hydrateIntroBubbleLinks();

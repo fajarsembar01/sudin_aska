@@ -936,7 +936,10 @@ def inbox() -> Response:
     page = max(1, int(args.get("page", 1)))
     status_filter = args.get("status") or None
     search = (args.get("search") or "").strip() or None
-    bridge_filter, bridge_key = _normalize_bridge_filter(args.get("bridge"))
+    raw_bridge_filter = (args.get("bridge") or "").strip()
+    if not raw_bridge_filter:
+        raw_bridge_filter = "main"
+    bridge_filter, bridge_key = _normalize_bridge_filter(raw_bridge_filter)
     offset = (page - 1) * PAGE_SIZE
 
     conversations, total = fetch_cc_conversations(
@@ -966,7 +969,10 @@ def inbox() -> Response:
 @role_required("admin")
 def thread(conv_id: int) -> Response:
     """Conversation thread view."""
-    bridge_filter, bridge_key = _normalize_bridge_filter(request.args.get("bridge"))
+    raw_bridge_filter = (request.args.get("bridge") or "").strip()
+    if not raw_bridge_filter:
+        raw_bridge_filter = "main"
+    bridge_filter, bridge_key = _normalize_bridge_filter(raw_bridge_filter)
     conv = fetch_cc_conversation(conv_id)
     if not conv:
         flash("Percakapan tidak ditemukan.", "danger")

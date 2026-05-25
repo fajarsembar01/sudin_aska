@@ -4832,6 +4832,80 @@ def delete_guest_chat_bubble(*, bubble_id: int) -> bool:
         return cur.rowcount > 0
 
 
+def count_guest_chat_quick_questions_by_bubble(*, bubble_ids: List[int]) -> Dict[int, int]:
+    _ensure_guest_chat_bubble_tables()
+    safe_ids: List[int] = []
+    for raw_id in bubble_ids or []:
+        try:
+            bubble_id = int(raw_id)
+        except (TypeError, ValueError):
+            continue
+        if bubble_id <= 0:
+            continue
+        safe_ids.append(bubble_id)
+    if not safe_ids:
+        return {}
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                bubble_id,
+                COUNT(*) AS total
+            FROM daftar_tamu_guest_chat_quick_questions
+            WHERE bubble_id = ANY(%s)
+            GROUP BY bubble_id
+            """,
+            [safe_ids],
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+
+    counts: Dict[int, int] = {}
+    for row in rows:
+        bubble_id = int(row.get("bubble_id") or 0)
+        if bubble_id <= 0:
+            continue
+        counts[bubble_id] = int(row.get("total") or 0)
+    return counts
+
+
+def list_guest_chat_quick_questions(*, bubble_id: int) -> List[Dict[str, Any]]:
+    _ensure_guest_chat_bubble_tables()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                id,
+                bubble_id,
+                question_text,
+                sort_order,
+                active,
+                created_at,
+                updated_at
+            FROM daftar_tamu_guest_chat_quick_questions
+            WHERE bubble_id = %s
+            ORDER BY sort_order ASC, id ASC
+            """,
+            [int(bubble_id)],
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+
+    questions: List[Dict[str, Any]] = []
+    for row in rows:
+        questions.append(
+            {
+                "id": int(row.get("id") or 0),
+                "bubble_id": int(row.get("bubble_id") or 0),
+                "question_text": (row.get("question_text") or "").strip(),
+                "sort_order": int(row.get("sort_order") or 0),
+                "active": bool(row.get("active")),
+                "created_at": row.get("created_at"),
+                "updated_at": row.get("updated_at"),
+            }
+        )
+    return questions
+
+
 def create_guest_chat_quick_question(
     *,
     bubble_id: int,

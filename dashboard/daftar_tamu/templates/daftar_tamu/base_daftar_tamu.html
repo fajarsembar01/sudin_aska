@@ -23,6 +23,8 @@
                 'daftar_tamu.admin_purpose_keywords',
                 'daftar_tamu.admin_contact_priority',
                 'daftar_tamu.admin_guest_chat_bubbles',
+                'daftar_tamu.admin_guest_chat_bubbles_intro',
+                'daftar_tamu.admin_guest_chat_bubbles_limit',
                 'daftar_tamu.admin_guestbook_ux_metrics',
                 'daftar_tamu.admin_screen_recapture_logs'
                 ] %}
@@ -83,9 +85,15 @@
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_guest_chat_bubbles' %}active{% endif %}"
-                                href="{{ url_for('daftar_tamu.admin_guest_chat_bubbles') }}">
-                                <i class="bi bi-chat-square-text me-2"></i>Bubble Chat Buku Tamu
+                            <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_guest_chat_bubbles_intro' %}active{% endif %}"
+                                href="{{ url_for('daftar_tamu.admin_guest_chat_bubbles_intro') }}">
+                                <i class="bi bi-chat-left-text me-2"></i>Bubble Intro Buku Tamu
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'daftar_tamu.admin_guest_chat_bubbles_limit' %}active{% endif %}"
+                                href="{{ url_for('daftar_tamu.admin_guest_chat_bubbles_limit') }}">
+                                <i class="bi bi-chat-left-quote me-2"></i>Bubble Limit Chat Buku Tamu
                             </a>
                         </li>
                         <li>

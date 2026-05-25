@@ -671,7 +671,12 @@ ASKA_CC_HTTP_PORT=3100
         }
 
         function pollBridgeStatus() {
-            fetch('{{ url_for("call_center.bridge_status") }}')
+            var statusUrl = '{{ url_for("call_center.bridge_status") }}';
+            var sep = statusUrl.indexOf('?') >= 0 ? '&' : '?';
+            fetch(statusUrl + sep + '_ts=' + Date.now(), {
+                cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache' },
+            })
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     var accounts = Array.isArray(data.accounts) ? data.accounts : [];
