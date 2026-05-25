@@ -31,7 +31,7 @@
 - Alamat: JL. CILAMAYA NO.1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan CIDENG: RT 006/RW 001
+    - Kelurahan CIDENG: RW 001 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -51,7 +51,7 @@
 - Alamat: JL. CILAMAYA NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan CIDENG: RT 006/RW 001
+    - Kelurahan CIDENG: RW 001 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -71,7 +71,7 @@
 - Alamat: JL. CIMALAYA NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan CIDENG: RT 006/RW 001
+    - Kelurahan CIDENG: RW 001 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -91,7 +91,7 @@
 - Alamat: JL. SETIAKAWAN III/ 25
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan DURI PULO: RT 006/RW 007
+    - Kelurahan DURI PULO: RW 007 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -105,7 +105,7 @@
 - Alamat: JL. K.H. ZAINUL ARIFIN NO.71
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan DURI PULO: RT 001/RW 001
+    - Kelurahan DURI PULO: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -119,7 +119,7 @@
 - Alamat: JL. CIBUNAR NO.15
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan DURI PULO: RT 009/RW 002
+    - Kelurahan DURI PULO: RW 002 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -132,7 +132,7 @@
 - Alamat: JL. MEDAN MERDEKA TIMUR NO. 14
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan GAMBIR: RT 007/RW 001
+    - Kelurahan GAMBIR: RW 001 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan GAMBIR
@@ -149,7 +149,7 @@
 - Alamat: JL. BATU TULIS RAYA XIII/20
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan KEBON KELAPA: RT 008/RW 002
+    - Kelurahan KEBON KELAPA: RW 002 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan GAMBIR
@@ -166,7 +166,7 @@
 - Alamat: JL.TANAH ABANG V NO.29
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan PETOJO SELATAN: RT 009/RW 002
+    - Kelurahan PETOJO SELATAN: RW 002 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -182,7 +182,7 @@
 - Alamat: JL. PETOJO MELINTANG NO. 29
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan PETOJO SELATAN: RT 017/RW 007
+    - Kelurahan PETOJO SELATAN: RW 007 (RT 017)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -194,7 +194,7 @@
 - Alamat: JL. PETOJO SELATAN I/27
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan PETOJO UTARA: RT 015/RW 005
+    - Kelurahan PETOJO UTARA: RW 005 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -209,7 +209,7 @@
 - Alamat: JL. PETOJO BARAT. NO. 45
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan PETOJO UTARA: RT 004/RW 004
+    - Kelurahan PETOJO UTARA: RW 004 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -223,7 +223,7 @@
 - Alamat: JL. PETOJO BARAT NO. 45
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan PETOJO UTARA: RT 004/RW 004
+    - Kelurahan PETOJO UTARA: RW 004 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -237,7 +237,7 @@
 - Alamat: JL. PETOJO BARAT IV NO.45
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan PETOJO UTARA: RT 004/RW 004
+    - Kelurahan PETOJO UTARA: RW 004 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -251,7 +251,7 @@
 - Alamat: JL. SURYOPRANOTO NO. 20
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan PETOJO UTARA: RT 004/RW 008
+    - Kelurahan PETOJO UTARA: RW 008 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -264,7 +264,7 @@
 - Alamat: JLN. CIDURIAN NOMOR 2 A CIKINI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MENTENG
-    - Kelurahan CIKINI: RT 005/RW 004
+    - Kelurahan CIKINI: RW 004 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MENTENG
     - Kelurahan CIKINI
@@ -280,7 +280,7 @@
 - Alamat: JLN. HOS COKROAMINOTO NO. 66
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MENTENG
-    - Kelurahan GONDANGDIA: RT 006/RW 004
+    - Kelurahan GONDANGDIA: RW 004 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MENTENG
     - Kelurahan CIKINI
@@ -293,7 +293,7 @@
 - Alamat: JLN. PROBOLINGGO NO. 20
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MENTENG
-    - Kelurahan GONDANGDIA: RT 001/RW 002
+    - Kelurahan GONDANGDIA: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MENTENG
     - Kelurahan CIKINI
@@ -306,7 +306,7 @@
 - Alamat: JLN. PROBOLINGGO NO. 20
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MENTENG
-    - Kelurahan GONDANGDIA: RT 001/RW 002
+    - Kelurahan GONDANGDIA: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MENTENG
     - Kelurahan CIKINI
@@ -319,7 +319,7 @@
 - Alamat: JLN. H. AGUS SALIM NO 57
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MENTENG
-    - Kelurahan KEBON SIRIH: RT 003/RW 001
+    - Kelurahan KEBON SIRIH: RW 001 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan GAMBIR
@@ -338,7 +338,7 @@
 - Alamat: JLN. BESUKI NO, 4
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MENTENG
-    - Kelurahan MENTENG: RT 003/RW 005
+    - Kelurahan MENTENG: RW 005 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MENTENG
     - Kelurahan CIKINI
@@ -355,7 +355,7 @@
 - Alamat: JLN. TEGAL NO 10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MENTENG
-    - Kelurahan MENTENG: RT 010/RW 007
+    - Kelurahan MENTENG: RW 007 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MENTENG
     - Kelurahan CIKINI
@@ -373,7 +373,7 @@
 - Alamat: JLN. CILACAP NO. 5
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MENTENG
-    - Kelurahan MENTENG: RT 011/RW 005
+    - Kelurahan MENTENG: RW 005 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MENTENG
     - Kelurahan CIKINI
@@ -391,7 +391,7 @@
 - Alamat: JLN. AMPIUM NO 1 A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MENTENG
-    - Kelurahan PEGANGSAAN: RT 014/RW 001
+    - Kelurahan PEGANGSAAN: RW 001 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KEBON MANGGIS
@@ -408,7 +408,7 @@
 - Alamat: JL. RAJAWALI SELATAN V/3, GUNUNG SAHARI UTARA, SAWAH BESAR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SAWAH BESAR
-    - Kelurahan GUNUNG SAHARI UTARA: RT 002/RW 002
+    - Kelurahan GUNUNG SAHARI UTARA: RW 002 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan GUNUNG SAHARI SELATAN
@@ -419,7 +419,7 @@
 - Alamat: JL.B.III RT.004 RW.05 KELURAHAN KARANG ANYAR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SAWAH BESAR
-    - Kelurahan KARANG ANYAR: RT 004/RW 005
+    - Kelurahan KARANG ANYAR: RW 005 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
     - Kelurahan KARANG ANYAR
@@ -433,7 +433,7 @@
 - Alamat: JLN. KARANG ANYAR IX/17
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SAWAH BESAR
-    - Kelurahan KARANG ANYAR: RT 010/RW 009
+    - Kelurahan KARANG ANYAR: RW 009 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
     - Kelurahan KARANG ANYAR
@@ -447,7 +447,7 @@
 - Alamat: JL. KARANG ANYAR IX/17
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SAWAH BESAR
-    - Kelurahan KARANG ANYAR: RT 010/RW 009
+    - Kelurahan KARANG ANYAR: RW 009 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
     - Kelurahan KARANG ANYAR
@@ -461,7 +461,7 @@
 - Alamat: JL. GOTONG ROYONG GG. E. KEL. KARTINI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SAWAH BESAR
-    - Kelurahan KARTINI: RT 014/RW 002
+    - Kelurahan KARTINI: RW 002 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
     - Kelurahan KARANG ANYAR
@@ -473,7 +473,7 @@
 - Alamat: JL. MELAWAN DALAM NO.1 MANGGA DUA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SAWAH BESAR
-    - Kelurahan MANGGA DUA SELATAN: RT 002/RW 011
+    - Kelurahan MANGGA DUA SELATAN: RW 011 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -488,7 +488,7 @@
 - Alamat: JL. MANGGA BESAR XIIIA NO.1 KEL. MANGGA DUA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SAWAH BESAR
-    - Kelurahan MANGGA DUA SELATAN: RT 005/RW 001
+    - Kelurahan MANGGA DUA SELATAN: RW 001 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
     - Kelurahan KARANG ANYAR
@@ -501,7 +501,7 @@
 - Alamat: JL. PINTU BESI 1 NO. 42 KEL. PASAR BARU, KEC. SAWAH BESAR, KOTA JAKARTA PUSAT, KODE POS 10710, PROVINSI DKI JAKARTA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SAWAH BESAR
-    - Kelurahan PASAR BARU: RT 012/RW 005
+    - Kelurahan PASAR BARU: RW 005 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
     - Kelurahan GUNUNG SAHARI UTARA
@@ -513,7 +513,7 @@
 - Alamat: JL. KREKOT BUNDER III RT 001 /005
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SAWAH BESAR
-    - Kelurahan PASAR BARU: RT 001/RW 005
+    - Kelurahan PASAR BARU: RW 005 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
     - Kelurahan KARANG ANYAR
@@ -526,7 +526,7 @@
 - Alamat: JL. KELINCI RAYA NO 28 KEL. PASAR BARU KEC. SAWAH BESAR JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SAWAH BESAR
-    - Kelurahan PASAR BARU: RT 007/RW 004
+    - Kelurahan PASAR BARU: RW 004 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan KEBON KELAPA
@@ -543,7 +543,7 @@
 - Alamat: JL. DANAU TOBA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan BENDUNGAN HILIR: RT 020/RW 004
+    - Kelurahan BENDUNGAN HILIR: RW 004 (RT 020)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
     - Kelurahan BENDUNGAN HILIR
@@ -557,7 +557,7 @@
 - Alamat: JL. DANAU LIMBOTO NO. 9
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan BENDUNGAN HILIR: RT 021/RW 004
+    - Kelurahan BENDUNGAN HILIR: RW 004 (RT 021)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
     - Kelurahan BENDUNGAN HILIR
@@ -571,7 +571,7 @@
 - Alamat: JL. DANAU TONDANO NO.10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan BENDUNGAN HILIR: RT 021/RW 004
+    - Kelurahan BENDUNGAN HILIR: RW 004 (RT 021)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
     - Kelurahan BENDUNGAN HILIR
@@ -584,7 +584,7 @@
 - Alamat: JL. TAMAN BENDUNGAN JATILUHUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan BENDUNGAN HILIR: RT 011/RW 002
+    - Kelurahan BENDUNGAN HILIR: RW 002 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
     - Kelurahan BENDUNGAN HILIR
@@ -597,7 +597,7 @@
 - Alamat: JL. JATIBARU RAYA NO. 10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan KAMPUNG BALI: RT 009/RW 003
+    - Kelurahan KAMPUNG BALI: RW 003 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -611,7 +611,7 @@
 - Alamat: JL. HATI SUCI NO. 7
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan KAMPUNG BALI: RT 002/RW 007
+    - Kelurahan KAMPUNG BALI: RW 007 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
     - Kelurahan KAMPUNG BALI
@@ -622,7 +622,7 @@
 - Alamat: JL. KAMPUNG BALI 25/ 13
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan KAMPUNG BALI: RT 011/RW 008
+    - Kelurahan KAMPUNG BALI: RW 008 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -637,7 +637,7 @@
 - Alamat: JL. KARET PASAR BARU BARAT I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan KARET TENGSIN: RT 001/RW 006
+    - Kelurahan KARET TENGSIN: RW 006 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
     - Kelurahan BENDUNGAN HILIR
@@ -649,7 +649,7 @@
 - Alamat: JL.KARET PASAR BARU BARAT IV
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan KARET TENGSIN: RT 007/RW 004
+    - Kelurahan KARET TENGSIN: RW 004 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
     - Kelurahan BENDUNGAN HILIR
@@ -660,7 +660,7 @@
 - Alamat: JL. MESJID I KARET TENGSIN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan KARET TENGSIN: RT 011/RW 003
+    - Kelurahan KARET TENGSIN: RW 003 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
     - Kelurahan KARET TENGSIN
@@ -670,7 +670,7 @@
 - Alamat: JL. KEBON KACANG RAYA NO. 48
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan KEBON KACANG: RT 003/RW 008
+    - Kelurahan KEBON KACANG: RW 008 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
     - Kelurahan GELORA
@@ -684,7 +684,7 @@
 - Alamat: JL. KEBON KACANG XI NO.48
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan KEBON KACANG: RT 016/RW 001
+    - Kelurahan KEBON KACANG: RW 001 (RT 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MENTENG
     - Kelurahan GONDANGDIA
@@ -697,7 +697,7 @@
 - Alamat: JL. SABENI NO. 12
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan KEBON MELATI: RT 001/RW 012
+    - Kelurahan KEBON MELATI: RW 012 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
     - Kelurahan BENDUNGAN HILIR
@@ -710,7 +710,7 @@
 - Alamat: JL. PETAMBURAN IV NO. 52
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan PETAMBURAN: RT 008/RW 004
+    - Kelurahan PETAMBURAN: RW 004 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
     - Kelurahan BENDUNGAN HILIR
@@ -723,7 +723,7 @@
 - Alamat: JL. PETAMBURAN II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan PETAMBURAN: RT 010/RW 003
+    - Kelurahan PETAMBURAN: RW 003 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
     - Kelurahan BENDUNGAN HILIR
@@ -737,7 +737,7 @@
 - Alamat: JL. PETAMBURAN II NO. 33
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan PETAMBURAN: RT 010/RW 003
+    - Kelurahan PETAMBURAN: RW 003 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
     - Kelurahan BENDUNGAN HILIR
@@ -751,7 +751,7 @@
 - Alamat: JL. CEMPAKA PUTIH BARAT II/G
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 005/RW 003
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -768,7 +768,7 @@
 - Alamat: JL. CEMPAKA PUTIH BARAT IV NO. 7
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 014/RW 001
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 001 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -782,7 +782,7 @@
 - Alamat: JL. CEMPAKA III/44
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 005/RW 002
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 002 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -796,7 +796,7 @@
 - Alamat: JL. PERCETAKAN NEGARA RAYA NO. 642
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 004/RW 010
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 010 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -811,7 +811,7 @@
 - Alamat: JL. CEMPAKA PUTIH BARAT XIX
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 008/RW 007
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 007 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -826,7 +826,7 @@
 - Alamat: JL. CEMPAKA PUTIH BARAT XIV NO.F15
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 006/RW 012
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 012 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -841,7 +841,7 @@
 - Alamat: JL. PANGKALAN ASEM GANG II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 009/RW 001
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 001 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -855,7 +855,7 @@
 - Alamat: JL. RAWASARI TIMUR IV/2
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH TIMUR: RT 006/RW 002
+    - Kelurahan CEMPAKA PUTIH TIMUR: RW 002 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -870,7 +870,7 @@
 - Alamat: JL. RAWASARI BARAT 1 / 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH TIMUR: RT 006/RW 001
+    - Kelurahan CEMPAKA PUTIH TIMUR: RW 001 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -885,7 +885,7 @@
 - Alamat: JL. PERCETAKAN NEGARA IX/A NO.70
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan RAWASARI: RT 005/RW 004
+    - Kelurahan RAWASARI: RW 004 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -905,7 +905,7 @@
 - Alamat: JL. PERCETAKAN NEGARA XI. A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan RAWASARI: RT 013/RW 005
+    - Kelurahan RAWASARI: RW 005 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -922,7 +922,7 @@
 - Alamat: JL. PRAMUKASARI IV KOMPLEK BRI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan RAWASARI: RT 013/RW 005
+    - Kelurahan RAWASARI: RW 005 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -939,7 +939,7 @@
 - Alamat: JL. PRAMUKA SARI I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan RAWASARI: RT 010/RW 008
+    - Kelurahan RAWASARI: RW 008 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -956,7 +956,7 @@
 - Alamat: JL. KAMPUNG RAWA TENGAH RT.014 RW.004
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan GALUR: RT 014/RW 004
+    - Kelurahan GALUR: RW 004 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -974,7 +974,7 @@
 - Alamat: JL. PERCETAKAN NEGARA IV/8 RT. 008 RW.009
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 008/RW 009
+    - Kelurahan JOHAR BARU: RW 009 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -990,7 +990,7 @@
 - Alamat: JL. KRAMAT JAYA BARU BLOK H1 RT. 013 RW. 010
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 013/RW 010
+    - Kelurahan JOHAR BARU: RW 010 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JOHAR BARU
     - Kelurahan GALUR
@@ -1005,7 +1005,7 @@
 - Alamat: JL. KRAMAT JAYA BARU BLOK H1 RT. 013 RW. 010
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 013/RW 010
+    - Kelurahan JOHAR BARU: RW 010 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JOHAR BARU
     - Kelurahan GALUR
@@ -1020,7 +1020,7 @@
 - Alamat: JL. PERCETAKAN NEGARA II RT. 012 RW. 006
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 012/RW 006
+    - Kelurahan JOHAR BARU: RW 006 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -1036,7 +1036,7 @@
 - Alamat: JL. JOHAR BARU UTARA I NO. 21 RT. 001 RW. 005
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 001/RW 005
+    - Kelurahan JOHAR BARU: RW 005 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -1049,7 +1049,7 @@
 - Alamat: JL. MARDANI RAYA NO. 12 A RT. 001 RW. 005
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 001/RW 005
+    - Kelurahan JOHAR BARU: RW 005 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -1062,7 +1062,7 @@
 - Alamat: JL. KRAMAT JAYA GANG VIII RT. 012 RW. 001
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 012/RW 001
+    - Kelurahan JOHAR BARU: RW 001 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -1079,7 +1079,7 @@
 - Alamat: JL. KRAMAT JAYA GANG VIII RT. 012 RW. 001
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 012/RW 001
+    - Kelurahan JOHAR BARU: RW 001 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -1096,7 +1096,7 @@
 - Alamat: JL. KRAMAT JAYA GANG VIII RT. 013 RW. 001
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 013/RW 001
+    - Kelurahan JOHAR BARU: RW 001 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTH BARAT
@@ -1114,7 +1114,7 @@
 - Alamat: JL. KRAMAT JAYA GANG VIII RT. 013 RW. 001
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 013/RW 001
+    - Kelurahan JOHAR BARU: RW 001 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTH BARAT
@@ -1132,7 +1132,7 @@
 - Alamat: JL. PERCETAKAN NEGARA II A RT. 001 RW. 004
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 001/RW 004
+    - Kelurahan JOHAR BARU: RW 004 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -1150,7 +1150,7 @@
 - Alamat: JL. RAWA SELATAN III RT. 004 RW. 005
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan KAMPUNG RAWA: RT 004/RW 005
+    - Kelurahan KAMPUNG RAWA: RW 005 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -1164,7 +1164,7 @@
 - Alamat: JL. TANAH TINGGI I GG. II RT. 005 RW. 002
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan TANAH TINGGI: RT 005/RW 002
+    - Kelurahan TANAH TINGGI: RW 002 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JOHAR BARU
     - Kelurahan GALUR
@@ -1180,7 +1180,7 @@
 - Alamat: JL. TANAH TINGGI II / 8 RT. 008 RW. 001
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan TANAH TINGGI: RT 008/RW 001
+    - Kelurahan TANAH TINGGI: RW 001 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JOHAR BARU
     - Kelurahan GALUR
@@ -1196,7 +1196,7 @@
 - Alamat: JL. TANAH TINGGI II / 8 RT. 008 RW. 001
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan TANAH TINGGI: RT 008/RW 001
+    - Kelurahan TANAH TINGGI: RW 001 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JOHAR BARU
     - Kelurahan GALUR
@@ -1212,7 +1212,7 @@
 - Alamat: JL. KRAMAT PULO GUNDUL III, RT. 005/009
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan TANAH TINGGI: RT 005/RW 009
+    - Kelurahan TANAH TINGGI: RW 009 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JOHAR BARU
     - Kelurahan GALUR
@@ -1228,7 +1228,7 @@
 - Alamat: JL. LAPANGAN PORS NO.23,SERDANG KEMAYORAN JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan SERDANG: RT 015/RW 004
+    - Kelurahan SERDANG: RW 004 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1243,7 +1243,7 @@
 - Alamat: JL.EKA V RT 009 RW 03,SERDANG KEMAYORAN JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan SERDANG: RT 009/RW 003
+    - Kelurahan SERDANG: RW 003 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1257,7 +1257,7 @@
 - Alamat: JL. KP. IRIAN II RT 5 RW 6 NO 24 SERDANG KEMAYORAN JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan SERDANG: RT 005/RW 006
+    - Kelurahan SERDANG: RW 006 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1272,7 +1272,7 @@
 - Alamat: JL. KP. IRIAN II RT 5 RW 6 NO 24 SERDANG KEMAYORAN JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan SERDANG: RT 005/RW 006
+    - Kelurahan SERDANG: RW 006 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -1286,7 +1286,7 @@
 - Alamat: JL.SERDANGBARU XIII NO. 48
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan SERDANG: RT 010/RW 005
+    - Kelurahan SERDANG: RW 005 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1299,7 +1299,7 @@
 - Alamat: JL. CEMPAKA BARU VII/45, KEL. CEMPAKA BARU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan CEMPAKA BARU: RT 002/RW 007
+    - Kelurahan CEMPAKA BARU: RW 007 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1312,7 +1312,7 @@
 - Alamat: JL. HARAPAN JAYA NO.37
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan CEMPAKA BARU: RT 007/RW 004
+    - Kelurahan CEMPAKA BARU: RW 004 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1325,7 +1325,7 @@
 - Alamat: JL.SUMUR BATU TIMUR RAYA NO. 4 CEMPAKA BARU, KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan CEMPAKA BARU: RT 005/RW 005
+    - Kelurahan CEMPAKA BARU: RW 005 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
     - Kelurahan KELAPA GADING BARAT
@@ -1342,7 +1342,7 @@
 - Alamat: JL.SUMUR BATU TIMUR RAYA NO. 4 CEMPAKA BARU, KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan CEMPAKA BARU: RT 005/RW 005
+    - Kelurahan CEMPAKA BARU: RW 005 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1358,7 +1358,7 @@
 - Alamat: JL. F3 KOMPLEK LISTRIK GG S2 RT012/010, CEMPAKA BARU, KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan CEMPAKA BARU: RT 012/RW 010
+    - Kelurahan CEMPAKA BARU: RW 010 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1370,7 +1370,7 @@
 - Alamat: JL. REMAJA NO.52 CEMPAKA BARU, KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan CEMPAKA BARU: RT 005/RW 008
+    - Kelurahan CEMPAKA BARU: RW 008 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1385,7 +1385,7 @@
 - Alamat: JL. REMAJA II NO. 59 CEMPAKA BARU, KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan CEMPAKA BARU: RT 005/RW 008
+    - Kelurahan CEMPAKA BARU: RW 008 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1399,7 +1399,7 @@
 - Alamat: JL. BENDUNGAN JAGO NO. 11 A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan UTAN PANJANG: RT 004/RW 001
+    - Kelurahan UTAN PANJANG: RW 001 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan HARAPAN MULIA
@@ -1411,7 +1411,7 @@
 - Alamat: JL. BENDUNGAN JAGO NO. 11 A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan UTAN PANJANG: RT 004/RW 001
+    - Kelurahan UTAN PANJANG: RW 001 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan HARAPAN MULIA
@@ -1423,7 +1423,7 @@
 - Alamat: JL. GALINDRA KEMAYORAN GEMPOL - JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEBON KOSONG: RT 008/RW 008
+    - Kelurahan KEBON KOSONG: RW 008 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -1438,7 +1438,7 @@
 - Alamat: JL DAKOTA V
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEBON KOSONG: RT 011/RW 009
+    - Kelurahan KEBON KOSONG: RW 009 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1455,7 +1455,7 @@
 - Alamat: JL. DAKOTA IV RUSUN KEMAYORAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEBON KOSONG: RT 001/RW 009
+    - Kelurahan KEBON KOSONG: RW 009 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -1470,7 +1470,7 @@
 - Alamat: JL. GALINDRA KEMAYORAN GEMPOL
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEBON KOSONG: RT 008/RW 008
+    - Kelurahan KEBON KOSONG: RW 008 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -1485,7 +1485,7 @@
 - Alamat: JL. KEMAYORAN GEMPOL
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEBON KOSONG: RT 015/RW 005
+    - Kelurahan KEBON KOSONG: RW 005 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan GUNUNG SAHARI SELATAN
@@ -1498,7 +1498,7 @@
 - Alamat: JL.KETAPANG BARU II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEBON KOSONG: RT 009/RW 003
+    - Kelurahan KEBON KOSONG: RW 003 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan GUNUNG SAHARI SELATAN
@@ -1512,7 +1512,7 @@
 - Alamat: KETAPANG BARU II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEBON KOSONG: RT 009/RW 003
+    - Kelurahan KEBON KOSONG: RW 003 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan GUNUNG SAHARI SELATAN
@@ -1526,7 +1526,7 @@
 - Alamat: JL. DAKOTA II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEBON KOSONG: RT 009/RW 009
+    - Kelurahan KEBON KOSONG: RW 009 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan GUNUNG SAHARI SELATAN
@@ -1544,7 +1544,7 @@
 - Alamat: JL. KETAPANG BARU III RT 011/ RW 003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEBON KOSONG: RT 011/RW 003
+    - Kelurahan KEBON KOSONG: RW 003 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan GUNUNG SAHARI SELATAN
@@ -1559,7 +1559,7 @@
 - Alamat: JL.CEMPAKA WANGI III NO.1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan HARAPAN MULIA: RT 008/RW 009
+    - Kelurahan HARAPAN MULIA: RW 009 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1572,7 +1572,7 @@
 - Alamat: JL. TEMBAGA DALAM II KEL.HARAPAN MULYA KEC. KEMAYORAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan HARAPAN MULIA: RT 004/RW 003
+    - Kelurahan HARAPAN MULIA: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1583,7 +1583,7 @@
 - Alamat: JL.SUMUR BATURAYA NO. 40 SUMUR BATU, KEMAYORAN JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan SUMUR BATU: RT 008/RW 001
+    - Kelurahan SUMUR BATU: RW 001 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1597,7 +1597,7 @@
 - Alamat: JL.SUMUR BATUUTARA RT. 14/01 SUMUR BATU KEMAYORAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan SUMUR BATU: RT 014/RW 001
+    - Kelurahan SUMUR BATU: RW 001 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1612,7 +1612,7 @@
 - Alamat: JL.SUMUR BATUUTARA RT. 14/01 SUMUR BATU KEMAYORAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan SUMUR BATU: RT 014/RW 001
+    - Kelurahan SUMUR BATU: RW 001 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1627,7 +1627,7 @@
 - Alamat: JL.SUMUR BATUUTARA RT. 14/01 SUMUR BATU KEMAYORAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan SUMUR BATU: RT 014/RW 001
+    - Kelurahan SUMUR BATU: RW 001 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1642,7 +1642,7 @@
 - Alamat: JL. NILAM RAYA NO.6, SUMUR BATU, KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan SUMUR BATU: RT 015/RW 002
+    - Kelurahan SUMUR BATU: RW 002 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1655,7 +1655,7 @@
 - Alamat: JL. NILAM RAYA NO.6, SUMUR BATU, KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan SUMUR BATU: RT 015/RW 002
+    - Kelurahan SUMUR BATU: RW 002 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -1668,7 +1668,7 @@
 - Alamat: KEPU DALAM GG X, KEMAYORAN JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEMAYORAN: RT 008/RW 002
+    - Kelurahan KEMAYORAN: RW 002 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan GUNUNG SAHARI SELATAN
@@ -1682,7 +1682,7 @@
 - Alamat: JL KEPU DALAM GG.X KEMAYORAN JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEMAYORAN: RT 008/RW 002
+    - Kelurahan KEMAYORAN: RW 002 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan GUNUNG SAHARI SELATAN
@@ -1696,7 +1696,7 @@
 - Alamat: JL. KEMAYORAN TENGAH II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEMAYORAN: RT 005/RW 007
+    - Kelurahan KEMAYORAN: RW 007 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan GUNUNG SAHARI SELATAN
@@ -1710,7 +1710,7 @@
 - Alamat: JL. KEMAYORAN TENGAH
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEMAYORAN: RT 005/RW 007
+    - Kelurahan KEMAYORAN: RW 007 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan GUNUNG SAHARI SELATAN
@@ -1724,7 +1724,7 @@
 - Alamat: JL KEPU DALAM GG.X KEMAYORAN JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEMAYORAN: RT 008/RW 002
+    - Kelurahan KEMAYORAN: RW 002 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan GUNUNG SAHARI SELATAN
@@ -1738,7 +1738,7 @@
 - Alamat: JL. GUNUNG SAHARI IV NO.14
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan GUNUNG SAHARI SELATAN: RT 007/RW 007
+    - Kelurahan GUNUNG SAHARI SELATAN: RW 007 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan GUNUNG SAHARI SELATAN
@@ -1753,7 +1753,7 @@
 - Alamat: JL. ANGSANA RT 007 RW 08 NO. 4 KEL. BUNGUR KEC. SENEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SENEN
-    - Kelurahan BUNGUR: RT 007/RW 008
+    - Kelurahan BUNGUR: RW 008 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan HARAPAN MULIA
@@ -1766,7 +1766,7 @@
 - Alamat: JL. ANGSANA RT 007 RW 08 NO. 4 KEL. BUNGUR KEC. SENEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SENEN
-    - Kelurahan BUNGUR: RT 007/RW 008
+    - Kelurahan BUNGUR: RW 008 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan HARAPAN MULIA
@@ -1779,7 +1779,7 @@
 - Alamat: JL. KRAMAT IV NO.25 KEL. KENARI KEC. SENEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SENEN
-    - Kelurahan KENARI: RT 002/RW 008
+    - Kelurahan KENARI: RW 008 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MENTENG
     - Kelurahan CIKINI
@@ -1792,7 +1792,7 @@
 - Alamat: JL. SALEMBA RAYA NO.18 KEL. KENARI KEC. SENEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SENEN
-    - Kelurahan KENARI: RT 003/RW 006
+    - Kelurahan KENARI: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -1809,7 +1809,7 @@
 - Alamat: JL. SALEMBA RAYA NO.18 KEL. KENARI KEC. SENEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SENEN
-    - Kelurahan KENARI: RT 003/RW 006
+    - Kelurahan KENARI: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -1826,7 +1826,7 @@
 - Alamat: JL. KALIBARU NO. 34 KEL. KRAMAT KEC. SENEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SENEN
-    - Kelurahan KRAMAT: RT 003/RW 001
+    - Kelurahan KRAMAT: RW 001 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JOHAR BARU
     - Kelurahan JOHAR BARU
@@ -1841,7 +1841,7 @@
 - Alamat: JL. KALIBARU NO. 34 KEL. KRAMAT KEC. SENEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SENEN
-    - Kelurahan KRAMAT: RT 003/RW 001
+    - Kelurahan KRAMAT: RW 001 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JOHAR BARU
     - Kelurahan JOHAR BARU
@@ -1856,7 +1856,7 @@
 - Alamat: JL. KRAMAT SENTIONG NO.48 KEL, KRAMAT KEC. SENEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SENEN
-    - Kelurahan KRAMAT: RT 008/RW 007
+    - Kelurahan KRAMAT: RW 007 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JOHAR BARU
     - Kelurahan JOHAR BARU
@@ -1872,7 +1872,7 @@
 - Alamat: JL. KRAMAT SENTIONG NO. 3 KEL. KRAMAT KEC. SENEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SENEN
-    - Kelurahan KRAMAT: RT 002/RW 005
+    - Kelurahan KRAMAT: RW 005 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JOHAR BARU
     - Kelurahan JOHAR BARU
@@ -1888,7 +1888,7 @@
 - Alamat: JL. KRAMAT II GG. LISTRIK KEL. KWITANG KEC. SENEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SENEN
-    - Kelurahan KWITANG: RT 003/RW 009
+    - Kelurahan KWITANG: RW 009 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SENEN
     - Kelurahan KENARI
@@ -1900,7 +1900,7 @@
 - Alamat: JL. KRAMAT SAWAH VI KEL. PASEBAN KEC. SENEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SENEN
-    - Kelurahan PASEBAN: RT 008/RW 007
+    - Kelurahan PASEBAN: RW 007 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JOHAR BARU
     - Kelurahan JOHAR BARU
@@ -1913,7 +1913,7 @@
 - Alamat: JL. KRAMAT SAWAH BARU RT.008 RW.007 KEL. PASEBAN KEC. SENEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SENEN
-    - Kelurahan PASEBAN: RT 008/RW 007
+    - Kelurahan PASEBAN: RW 007 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JOHAR BARU
     - Kelurahan JOHAR BARU
@@ -1928,7 +1928,7 @@
 - Alamat: JL. MENTENG NO. 2-4 RT 01 RW 09 JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan LAGOA: RT 001/RW 009
+    - Kelurahan LAGOA: RW 009 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan KALIBARU
@@ -1945,7 +1945,7 @@
 - Alamat: JL. MENTENG NO. 2-4 RT 01 RW 09 JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan LAGOA: RT 001/RW 009
+    - Kelurahan LAGOA: RW 009 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan KALIBARU
@@ -1962,7 +1962,7 @@
 - Alamat: JL. MENTENG NO. 2-4 RT 01 RW 09 JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan LAGOA: RT 001/RW 009
+    - Kelurahan LAGOA: RW 009 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan KALIBARU
@@ -1979,7 +1979,7 @@
 - Alamat: JL. PRAMUKA GG. IV NO. 15 RT 002 RW 004
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan LAGOA: RT 002/RW 004
+    - Kelurahan LAGOA: RW 004 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -1993,7 +1993,7 @@
 - Alamat: JL. LAGOA TERUSAN IV D 1 RT. 017/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan LAGOA: RT 017/RW 003
+    - Kelurahan LAGOA: RW 003 (RT 017)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan KALIBARU
@@ -2010,7 +2010,7 @@
 - Alamat: JL. LAGOA TERUSAN GG. IV D.1 NO.1 RT.17/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan LAGOA: RT 017/RW 003
+    - Kelurahan LAGOA: RW 003 (RT 017)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan KALIBARU
@@ -2027,7 +2027,7 @@
 - Alamat: JL. KEMUDI KOMPLEK PELINDO 2 RT 005 RW 007
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWABADAK SELATAN: RT 005/RW 007
+    - Kelurahan RAWABADAK SELATAN: RW 007 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -2041,7 +2041,7 @@
 - Alamat: JL. KEMUDI KOMPLEK PELINDO 2 RT 005 RW 007
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWABADAK SELATAN: RT 005/RW 007
+    - Kelurahan RAWABADAK SELATAN: RW 007 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -2055,7 +2055,7 @@
 - Alamat: JL. ALUR LAUT GG. PATTIMURA NO. 45
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWABADAK SELATAN: RT 006/RW 003
+    - Kelurahan RAWABADAK SELATAN: RW 003 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
     - Kelurahan KELAPA GADING BARAT
@@ -2071,7 +2071,7 @@
 - Alamat: JL. MUNDARI NO.51
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWABADAK SELATAN: RT 002/RW 001
+    - Kelurahan RAWABADAK SELATAN: RW 001 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
     - Kelurahan KELAPA GADING BARAT
@@ -2087,7 +2087,7 @@
 - Alamat: JL. MUNDARI NO.15 RT 002 RW 001
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWABADAK SELATAN: RT 002/RW 001
+    - Kelurahan RAWABADAK SELATAN: RW 001 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
     - Kelurahan KELAPA GADING BARAT
@@ -2103,7 +2103,7 @@
 - Alamat: JL. BENDUNGAN MELAYU RT. 04/01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWABADAK SELATAN: RT 004/RW 001
+    - Kelurahan RAWABADAK SELATAN: RW 001 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
     - Kelurahan KELAPA GADING BARAT
@@ -2119,7 +2119,7 @@
 - Alamat: JL. SUNTER II NO. 35
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWABADAK UTARA: RT 003/RW 013
+    - Kelurahan RAWABADAK UTARA: RW 013 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -2135,7 +2135,7 @@
 - Alamat: JL. ALUR LAUT NO.37 RT 06 RW 09
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWABADAK UTARA: RT 006/RW 009
+    - Kelurahan RAWABADAK UTARA: RW 009 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -2149,7 +2149,7 @@
 - Alamat: JL. RAWA BINANGUN V NO.36A RT.008/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWABADAK UTARA: RT 008/RW 008
+    - Kelurahan RAWABADAK UTARA: RW 008 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -2163,7 +2163,7 @@
 - Alamat: JL. RAWA BINANGUN III/17A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWABADAK UTARA: RT 006/RW 008
+    - Kelurahan RAWABADAK UTARA: RW 008 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -2177,7 +2177,7 @@
 - Alamat: JL. RAWA BADAK BARAT NO. 37
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWABADAK UTARA: RT 007/RW 005
+    - Kelurahan RAWABADAK UTARA: RW 005 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -2191,7 +2191,7 @@
 - Alamat: JL. RAWA BADAK BARAT. NO. 37 RT 007 / RW 005
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWABADAK UTARA: RT 007/RW 005
+    - Kelurahan RAWABADAK UTARA: RW 005 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -2205,7 +2205,7 @@
 - Alamat: JL. RAWABADAK BAR. NO. 36 RT 002 / RW 005
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWABADAK UTARA: RT 002/RW 005
+    - Kelurahan RAWABADAK UTARA: RW 005 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -2219,7 +2219,7 @@
 - Alamat: JL. F. GG. L. RT.01/05 NO.35 RT 001 RW 005
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWABADAK UTARA: RT 001/RW 005
+    - Kelurahan RAWABADAK UTARA: RW 005 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -2233,7 +2233,7 @@
 - Alamat: JL. F. GG. L. RT.02/02 NO.33
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWABADAK UTARA: RT 002/RW 002
+    - Kelurahan RAWABADAK UTARA: RW 002 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -2247,7 +2247,7 @@
 - Alamat: JL. BALAI RAKYAT NO. 17 RT 001 / RW 004
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU SELATAN: RT 001/RW 004
+    - Kelurahan TUGU SELATAN: RW 004 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -2263,7 +2263,7 @@
 - Alamat: JL. BALAI RAKYAT NO. 19
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU SELATAN: RT 001/RW 004
+    - Kelurahan TUGU SELATAN: RW 004 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -2279,7 +2279,7 @@
 - Alamat: JL. MANGGA UJUNG NO.1- 3
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU UTARA: RT 003/RW 002
+    - Kelurahan TUGU UTARA: RW 002 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -2293,7 +2293,7 @@
 - Alamat: JL. MANGGA UJUNG NO. 3
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU UTARA: RT 003/RW 002
+    - Kelurahan TUGU UTARA: RW 002 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -2307,7 +2307,7 @@
 - Alamat: JL. TURI NO. 3
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU UTARA: RT 003/RW 002
+    - Kelurahan TUGU UTARA: RW 002 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -2321,7 +2321,7 @@
 - Alamat: JL. MAHONI UJUNG KOMP.UKA RT 009 RW 008
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU UTARA: RT 009/RW 008
+    - Kelurahan TUGU UTARA: RW 008 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -2337,7 +2337,7 @@
 - Alamat: JL. MAHONI UJUNG KOMP.UKA RT 009 RW 008
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU UTARA: RT 009/RW 008
+    - Kelurahan TUGU UTARA: RW 008 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -2353,7 +2353,7 @@
 - Alamat: JL. KR. JAYA GG.VIII BLOK R NO. 43 RT 002 RW 018
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU UTARA: RT 002/RW 018
+    - Kelurahan TUGU UTARA: RW 018 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -2369,7 +2369,7 @@
 - Alamat: JL. KRAMAT JAYA GG.VIII BLOK R NO. 43
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU UTARA: RT 002/RW 018
+    - Kelurahan TUGU UTARA: RW 018 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -2385,7 +2385,7 @@
 - Alamat: JL. H. M. DARFI NO. 36 RT. 001 RW. 013
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU UTARA: RT 001/RW 013
+    - Kelurahan TUGU UTARA: RW 013 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -2401,7 +2401,7 @@
 - Alamat: JL. KRAMAT JAYA GG.VIII BLOK R
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU UTARA: RT 001/RW 018
+    - Kelurahan TUGU UTARA: RW 018 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -2417,7 +2417,7 @@
 - Alamat: JL. KRAMAT JAYA GG.VIII BLOK R
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU UTARA: RT 001/RW 018
+    - Kelurahan TUGU UTARA: RW 018 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -2433,7 +2433,7 @@
 - Alamat: JL. KR. JAYA GG.VIII BLOK R
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU UTARA: RT 001/RW 018
+    - Kelurahan TUGU UTARA: RW 018 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -2449,7 +2449,7 @@
 - Alamat: JL. KRAMAT JAYA KOMPLEK DEPERLA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU UTARA: RT 007/RW 014
+    - Kelurahan TUGU UTARA: RW 014 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -2465,7 +2465,7 @@
 - Alamat: JL. AMPERA III GNG. SAHARI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN BARAT: RT 004/RW 009
+    - Kelurahan PADEMANGAN BARAT: RW 009 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -2476,7 +2476,7 @@
 - Alamat: JL. HIDUP BARU I NO. 101
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN BARAT: RT 004/RW 003
+    - Kelurahan PADEMANGAN BARAT: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -2487,7 +2487,7 @@
 - Alamat: JL. SATRIA 12 C
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN BARAT: RT 003/RW 001
+    - Kelurahan PADEMANGAN BARAT: RW 001 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -2500,7 +2500,7 @@
 - Alamat: JL. AMPERA VII
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN BARAT: RT 009/RW 015
+    - Kelurahan PADEMANGAN BARAT: RW 015 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -2511,7 +2511,7 @@
 - Alamat: JL. BUDI MULIA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN BARAT: RT 011/RW 015
+    - Kelurahan PADEMANGAN BARAT: RW 015 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -2522,7 +2522,7 @@
 - Alamat: JL. BUDIMULIA RT. 009/010
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN BARAT: RT 009/RW 010
+    - Kelurahan PADEMANGAN BARAT: RW 010 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -2533,7 +2533,7 @@
 - Alamat: JL. PADEMANGAN II GG. 22
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN TIMUR: RT 013/RW 003
+    - Kelurahan PADEMANGAN TIMUR: RW 003 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -2544,7 +2544,7 @@
 - Alamat: JL. PADEMANGAN VI NO. 79
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN TIMUR: RT 004/RW 010
+    - Kelurahan PADEMANGAN TIMUR: RW 010 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -2555,7 +2555,7 @@
 - Alamat: JL. PADEMANGAN VI GG. 34
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN TIMUR: RT 015/RW 001
+    - Kelurahan PADEMANGAN TIMUR: RW 001 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan PADEMANGAN BARAT
@@ -2565,7 +2565,7 @@
 - Alamat: JL. PADEMANGAN VI GG 34
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN TIMUR: RT 015/RW 001
+    - Kelurahan PADEMANGAN TIMUR: RW 001 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan PADEMANGAN BARAT
@@ -2575,7 +2575,7 @@
 - Alamat: JL. PARANG TRITIS VI NO. 2
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan ANCOL: RT 003/RW 011
+    - Kelurahan ANCOL: RW 011 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -2588,7 +2588,7 @@
 - Alamat: JL. KAMPUNG MUKA NO. 419
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan ANCOL: RT 005/RW 004
+    - Kelurahan ANCOL: RW 004 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -2601,7 +2601,7 @@
 - Alamat: JL. KEPU. NO.21 RT001 RW01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KELAPA GADING
-    - Kelurahan PEGANGSAAN DUA: RT 001/RW 001
+    - Kelurahan PEGANGSAAN DUA: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan RAWA TERATE
@@ -2618,7 +2618,7 @@
 - Alamat: JL. KEPU NO 21 RT 001 RW 01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KELAPA GADING
-    - Kelurahan PEGANGSAAN DUA: RT 001/RW 001
+    - Kelurahan PEGANGSAAN DUA: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan RAWA TERATE
@@ -2635,7 +2635,7 @@
 - Alamat: JL. HARPA I PENGANGSAAN DUA KELAPA GADING
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KELAPA GADING
-    - Kelurahan PEGANGSAAN DUA: RT 008/RW 007
+    - Kelurahan PEGANGSAAN DUA: RW 007 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan RAWA TERATE
@@ -2654,7 +2654,7 @@
 - Alamat: JL. KOMPI UDIN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KELAPA GADING
-    - Kelurahan PEGANGSAAN DUA: RT 003/RW 007
+    - Kelurahan PEGANGSAAN DUA: RW 007 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan RAWA TERATE
@@ -2673,7 +2673,7 @@
 - Alamat: JL. ACORDION
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KELAPA GADING
-    - Kelurahan PEGANGSAAN DUA: RT 001/RW 020
+    - Kelurahan PEGANGSAAN DUA: RW 020 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan RAWA TERATE
@@ -2692,7 +2692,7 @@
 - Alamat: JL. PUSKESMAS NO. 32 RT 006 RW 006 KELAPA GADING JAKARTA UTARA 14240
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KELAPA GADING
-    - Kelurahan KELAPA GADING TIMUR: RT 006/RW 006
+    - Kelurahan KELAPA GADING TIMUR: RW 006 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
     - Kelurahan KELAPA GADING BARAT
@@ -2705,7 +2705,7 @@
 - Alamat: JL. KOMPLEK PT. HI NO.134
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KELAPA GADING
-    - Kelurahan KELAPA GADING TIMUR: RT 007/RW 006
+    - Kelurahan KELAPA GADING TIMUR: RW 006 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
     - Kelurahan KELAPA GADING BARAT
@@ -2719,7 +2719,7 @@
 - Alamat: JL. P. TAMIANG I NO. 45 KOMPLEK TNI AL
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KELAPA GADING
-    - Kelurahan KELAPA GADING BARAT: RT 011/RW 003
+    - Kelurahan KELAPA GADING BARAT: RW 003 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
     - Kelurahan KELAPA GADING BARAT
@@ -2736,7 +2736,7 @@
 - Alamat: JL. BHAKTI IX NO.63
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan CILINCING: RT 003/RW 006
+    - Kelurahan CILINCING: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -2747,7 +2747,7 @@
 - Alamat: JL. BHAKTI VI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan CILINCING: RT 005/RW 009
+    - Kelurahan CILINCING: RW 009 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -2757,7 +2757,7 @@
 - Alamat: JL. SUNGAI LANDAK NO.36
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan CILINCING: RT 003/RW 008
+    - Kelurahan CILINCING: RW 008 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -2767,7 +2767,7 @@
 - Alamat: JL. BARU GG. II RT.011/02 NO.2
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan CILINCING: RT 011/RW 002
+    - Kelurahan CILINCING: RW 002 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -2778,7 +2778,7 @@
 - Alamat: JL. ARTERI CAKUNG DRAIN NO. 1A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan CILINCING: RT 008/RW 009
+    - Kelurahan CILINCING: RW 009 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -2788,7 +2788,7 @@
 - Alamat: JL. PEDONGKELAN NO. 2 RT.001/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan CILINCING: RT 001/RW 006
+    - Kelurahan CILINCING: RW 006 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -2799,7 +2799,7 @@
 - Alamat: JL. BAKTI RT. 05 RW. 06 NO. 12
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan CILINCING: RT 005/RW 006
+    - Kelurahan CILINCING: RW 006 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -2810,7 +2810,7 @@
 - Alamat: JL. RUSUN NAGRAK, RT. 04 RW. 11 CILINCING
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan CILINCING: RT 004/RW 011
+    - Kelurahan CILINCING: RW 011 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -2821,7 +2821,7 @@
 - Alamat: JL. KALIBARU TIMUR IV
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan KALI BARU: RT 010/RW 013
+    - Kelurahan KALI BARU: RW 013 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -2832,7 +2832,7 @@
 - Alamat: JL. KALI BARU TIMUR III F NO. 2
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan KALI BARU: RT 009/RW 002
+    - Kelurahan KALI BARU: RW 002 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -2843,7 +2843,7 @@
 - Alamat: JL. KALIBARU BARAT IV NO.60 RT.003 RW.012
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan KALI BARU: RT 003/RW 012
+    - Kelurahan KALI BARU: RW 012 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -2857,7 +2857,7 @@
 - Alamat: JL. KALIBARU BARAT IV NO. 60
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan KALIBARU: RT 003/RW 012
+    - Kelurahan KALIBARU: RW 012 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -2871,7 +2871,7 @@
 - Alamat: JL. KALI BARU TIMUR VII /5 RT.15/01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan KALIBARU: RT 015/RW 001
+    - Kelurahan KALIBARU: RW 001 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -2882,7 +2882,7 @@
 - Alamat: JL. MARUNDA PULO
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan MARUNDA: RT 003/RW 007
+    - Kelurahan MARUNDA: RW 007 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILIINCING
@@ -2893,7 +2893,7 @@
 - Alamat: JL. MARUNDA BARU I NO. 14
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan MARUNDA: RT 007/RW 006
+    - Kelurahan MARUNDA: RW 006 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan MARUNDA
@@ -2903,7 +2903,7 @@
 - Alamat: JLN. RUMAH SUSUN MARUNDA RT 02/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan MARUNDA: RT 002/RW 007
+    - Kelurahan MARUNDA: RW 007 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan MARUNDA
@@ -2913,7 +2913,7 @@
 - Alamat: JL. ROROTAN IX NO. 1 RT. 11 RW. 10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan ROROTAN: RT 011/RW 010
+    - Kelurahan ROROTAN: RW 010 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG TIMUR
@@ -2925,7 +2925,7 @@
 - Alamat: JL. ROROTAN IX NO. 3 RT.11/10 KEL. ROROTAN KEC.CILINCING JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan ROROTAN: RT 011/RW 010
+    - Kelurahan ROROTAN: RW 010 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG TIMUR
@@ -2937,7 +2937,7 @@
 - Alamat: JL. ROROTAN XI NO. 30
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan ROROTAN: RT 003/RW 006
+    - Kelurahan ROROTAN: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan MARUNDA
@@ -2947,7 +2947,7 @@
 - Alamat: JL. ROROTAN IV MALAKA III HB RT.006/006
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan ROROTAN: RT 006/RW 006
+    - Kelurahan ROROTAN: RW 006 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan MARUNDA
@@ -2957,7 +2957,7 @@
 - Alamat: JL. RAYA TUGU SEMPER NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 007/RW 009
+    - Kelurahan SEMPER BARAT: RW 009 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -2971,7 +2971,7 @@
 - Alamat: JL. KAPUAS RAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 016/RW 001
+    - Kelurahan SEMPER BARAT: RW 001 (RT 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan KALIBARU
@@ -2987,7 +2987,7 @@
 - Alamat: JL. F KEBON BARU RT. 008/10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 008/RW 010
+    - Kelurahan SEMPER BARAT: RW 010 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -2999,7 +2999,7 @@
 - Alamat: JL. PEPAYA V/20
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 003/RW 016
+    - Kelurahan SEMPER BARAT: RW 016 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan KALIBARU
@@ -3015,7 +3015,7 @@
 - Alamat: JL. F. NO. 1 KEBON BARU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 006/RW 010
+    - Kelurahan SEMPER BARAT: RW 010 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -3028,7 +3028,7 @@
 - Alamat: JL. KAPUAS RAYA RT.016/001 KEL. SEMPER BARAT KEC. CILINCING JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 016/RW 001
+    - Kelurahan SEMPER BARAT: RW 001 (RT 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan KALIBARU
@@ -3044,7 +3044,7 @@
 - Alamat: JL. PEMADAM KEBAKARAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 017/RW 001
+    - Kelurahan SEMPER BARAT: RW 001 (RT 017)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -3057,7 +3057,7 @@
 - Alamat: JL. S.CITANDUI RAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 012/RW 001
+    - Kelurahan SEMPER BARAT: RW 001 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -3071,7 +3071,7 @@
 - Alamat: JL. KEBANTENAN IX NO. 36 RT. 005 RW. 006
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER TIMUR: RT 005/RW 006
+    - Kelurahan SEMPER TIMUR: RW 006 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -3082,7 +3082,7 @@
 - Alamat: JL. KEBANTENAN IV NO. 19
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER TIMUR: RT 009/RW 004
+    - Kelurahan SEMPER TIMUR: RW 004 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -3094,7 +3094,7 @@
 - Alamat: JL. KEBANTENAN IV NO. 19
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER TIMUR: RT 009/RW 004
+    - Kelurahan SEMPER TIMUR: RW 004 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -3106,7 +3106,7 @@
 - Alamat: JL. KEBANTENAN IV NO.35 RT. 012 RW. 06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER TIMUR: RT 012/RW 006
+    - Kelurahan SEMPER TIMUR: RW 006 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -3118,7 +3118,7 @@
 - Alamat: JL. BEO NO.15 KOMP.WALIKOTA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SUKAPURA: RT 012/RW 006
+    - Kelurahan SUKAPURA: RW 006 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -3130,7 +3130,7 @@
 - Alamat: JL. KOMPI JENGGOT NO.28
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SUKAPURA: RT 008/RW 001
+    - Kelurahan SUKAPURA: RW 001 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -3142,7 +3142,7 @@
 - Alamat: JL. TIPAR CAKUNG GG. BAMBU KUNING RT.07/04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SUKAPURA: RT 007/RW 004
+    - Kelurahan SUKAPURA: RW 004 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -3156,7 +3156,7 @@
 - Alamat: JL. TIPAR CAKUNG RT. 007/ 04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SUKAPURA: RT 007/RW 004
+    - Kelurahan SUKAPURA: RW 004 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -3170,7 +3170,7 @@
 - Alamat: JL. KAPUK MUARA NO.9
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan KAPUK MUARA: RT 010/RW 004
+    - Kelurahan KAPUK MUARA: RW 004 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -3184,7 +3184,7 @@
 - Alamat: JL. SMP 122 RT.001/003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan KAPUK MUARA: RT 001/RW 003
+    - Kelurahan KAPUK MUARA: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -3198,7 +3198,7 @@
 - Alamat: JL. LUAR BATANG V RT.015/003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan PENJARINGAN: RT 015/RW 003
+    - Kelurahan PENJARINGAN: RW 003 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -3214,7 +3214,7 @@
 - Alamat: JL. RAYA PLUIT SELATAN 105
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan PENJARINGAN: RT 022/RW 017
+    - Kelurahan PENJARINGAN: RW 017 (RT 022)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -3230,7 +3230,7 @@
 - Alamat: JL. BANDENGAN UTARA NO. 80
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan PENJARINGAN: RT 006/RW 016
+    - Kelurahan PENJARINGAN: RW 016 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -3246,7 +3246,7 @@
 - Alamat: JL. BANDENGAN UTARA NO. 80
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan PENJARINGAN: RT 006/RW 016
+    - Kelurahan PENJARINGAN: RW 016 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -3262,7 +3262,7 @@
 - Alamat: JL. BANDENGAN UTARA NO. 80
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan PENJARINGAN: RT 006/RW 016
+    - Kelurahan PENJARINGAN: RW 016 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -3278,7 +3278,7 @@
 - Alamat: TELUK GONG JL. D RT 12/10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan PEJAGALAN: RT 012/RW 010
+    - Kelurahan PEJAGALAN: RW 010 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -3298,7 +3298,7 @@
 - Alamat: JL. TELUK GONG RAYA NO. 160
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan PEJAGALAN: RT 006/RW 008
+    - Kelurahan PEJAGALAN: RW 008 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -3318,7 +3318,7 @@
 - Alamat: JL. TELUK GONG RT.015/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan PEJAGALAN: RT 015/RW 008
+    - Kelurahan PEJAGALAN: RW 008 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -3338,7 +3338,7 @@
 - Alamat: JL. CENANG I TELUK GONG
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan PEJAGALAN: RT 007/RW 012
+    - Kelurahan PEJAGALAN: RW 012 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -3358,7 +3358,7 @@
 - Alamat: JL. RAYA KAMAL PANTAI NO.5
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan KAMAL MUARA: RT 007/RW 001
+    - Kelurahan KAMAL MUARA: RW 001 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -3374,7 +3374,7 @@
 - Alamat: JL. PLUIT SELATAN I/1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan PLUIT: RT 001/RW 006
+    - Kelurahan PLUIT: RW 006 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PENJARINGAN
     - Kelurahan KAPUK MUARA
@@ -3386,7 +3386,7 @@
 - Alamat: JL. KOMP. NELAYAN MUARA ANGKE
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan PLUIT: RT 001/RW 001
+    - Kelurahan PLUIT: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PENJARINGAN
     - Kelurahan KAPUK MUARA
@@ -3398,7 +3398,7 @@
 - Alamat: JL. KEBON BAWANG XIII
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan KEBON BAWANG: RT 008/RW 001
+    - Kelurahan KEBON BAWANG: RW 001 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan RAWA BADAK UTARA
@@ -3412,7 +3412,7 @@
 - Alamat: JL. KEBON BAWANG XIII
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan KEBON BAWANG: RT 008/RW 001
+    - Kelurahan KEBON BAWANG: RW 001 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan RAWA BADAK UTARA
@@ -3426,7 +3426,7 @@
 - Alamat: JL. SWASEMBADA BARAT 2 NO.2
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan KEBON BAWANG: RT 002/RW 009
+    - Kelurahan KEBON BAWANG: RW 009 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan RAWA BADAK UTARA
@@ -3440,7 +3440,7 @@
 - Alamat: JL. KEBON BAWANG XIII
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan KEBON BAWANG: RT 008/RW 001
+    - Kelurahan KEBON BAWANG: RW 001 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan RAWA BADAK UTARA
@@ -3454,7 +3454,7 @@
 - Alamat: JL. SWASEMBADA BAR. II NO.2
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan KEBON BAWANG: RT 002/RW 009
+    - Kelurahan KEBON BAWANG: RW 009 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan RAWA BADAK UTARA
@@ -3468,7 +3468,7 @@
 - Alamat: JL. ANCOL SELATAN I NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 005/RW 007
+    - Kelurahan SUNTER AGUNG: RW 007 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -3483,7 +3483,7 @@
 - Alamat: JL. AGUNG JAYA 15 BLOK D
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 017/RW 010
+    - Kelurahan SUNTER AGUNG: RW 010 (RT 017)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -3497,7 +3497,7 @@
 - Alamat: JL. AGUNG UTARA NO. 13
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 003/RW 009
+    - Kelurahan SUNTER AGUNG: RW 009 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan PADEMANGAN TIMUR
@@ -3510,7 +3510,7 @@
 - Alamat: JL. DANAU AGUNG III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 001/RW 016
+    - Kelurahan SUNTER AGUNG: RW 016 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -3524,7 +3524,7 @@
 - Alamat: JL. SUNTER PERMAI RAYA NO. 21
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 015/RW 006
+    - Kelurahan SUNTER AGUNG: RW 006 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -3539,7 +3539,7 @@
 - Alamat: JL. TAMAN NYIUR 11 KOMPLEK BI SUNTER AGUNG
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 006/RW 015
+    - Kelurahan SUNTER AGUNG: RW 015 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -3555,7 +3555,7 @@
 - Alamat: JL. PARADISE 10 BLOK F. 19-20
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 011/RW 012
+    - Kelurahan SUNTER AGUNG: RW 012 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -3569,7 +3569,7 @@
 - Alamat: JL. SELAT SUMBA, KOMP.GRAHA SUNTER PRATAMA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 016/RW 002
+    - Kelurahan SUNTER AGUNG: RW 002 (RT 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -3583,7 +3583,7 @@
 - Alamat: JL. SUNTER JAYA IV A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER JAYA: RT 004/RW 003
+    - Kelurahan SUNTER JAYA: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -3597,7 +3597,7 @@
 - Alamat: JL. SUNTER JAYA IV
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER JAYA: RT 004/RW 003
+    - Kelurahan SUNTER JAYA: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -3611,7 +3611,7 @@
 - Alamat: JL. SUNTER JAYA IV A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER JAYA: RT 004/RW 003
+    - Kelurahan SUNTER JAYA: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -3625,7 +3625,7 @@
 - Alamat: JL. SUNTER JAYA VII NO. 31
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER JAYA: RT 012/RW 009
+    - Kelurahan SUNTER JAYA: RW 009 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
     - Kelurahan KELAPA GADING BARAT
@@ -3641,7 +3641,7 @@
 - Alamat: JL. DANAU INDAH II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER JAYA: RT 005/RW 013
+    - Kelurahan SUNTER JAYA: RW 013 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
     - Kelurahan KELAPA GADING BARAT
@@ -3657,7 +3657,7 @@
 - Alamat: JL. PAPANGGO III NO. 53
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan PAPANGGO: RT 005/RW 005
+    - Kelurahan PAPANGGO: RW 005 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan PAPANGGO
@@ -3670,7 +3670,7 @@
 - Alamat: JL.WARAKAS I GANG 25
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan PAPANGGO: RT 008/RW 008
+    - Kelurahan PAPANGGO: RW 008 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan PAPANGGO
@@ -3683,7 +3683,7 @@
 - Alamat: JL. GADANG NO. 52
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNGAI BAMBU: RT 003/RW 001
+    - Kelurahan SUNGAI BAMBU: RW 001 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan KEBON BAWANG
@@ -3695,7 +3695,7 @@
 - Alamat: JL. GADANG NO. 52
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNGAI BAMBU: RT 003/RW 001
+    - Kelurahan SUNGAI BAMBU: RW 001 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan KEBON BAWANG
@@ -3707,7 +3707,7 @@
 - Alamat: JL. SUNGAI BAMBU III NO 34
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNGAI BAMBU: RT 008/RW 008
+    - Kelurahan SUNGAI BAMBU: RW 008 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan KEBON BAWANG
@@ -3719,7 +3719,7 @@
 - Alamat: JL. YOS SUDARSO, EDAM II NO. 13
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan TANJUNG PRIOK: RT 002/RW 016
+    - Kelurahan TANJUNG PRIOK: RW 016 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
     - Kelurahan RAWA BADAK UTARA
@@ -3731,7 +3731,7 @@
 - Alamat: JL. RE. MARTADINATA GG.SAMUDERA IX
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan TANJUNG PRIOK: RT 011/RW 014
+    - Kelurahan TANJUNG PRIOK: RW 014 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan PAPANGGO
@@ -3742,7 +3742,7 @@
 - Alamat: JL. BAHARI GG. II A13
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan TANJUNG PRIOK: RT 006/RW 006
+    - Kelurahan TANJUNG PRIOK: RW 006 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan PAPANGGO
@@ -3753,7 +3753,7 @@
 - Alamat: JL. WARAKAS GG. VII NO.104
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan WARAKAS: RT 002/RW 010
+    - Kelurahan WARAKAS: RW 010 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan PAPANGGO
@@ -3765,7 +3765,7 @@
 - Alamat: JL. SALEMBA TENGAH NO.64 RT. 005 RW. 008 KEL. PASEBAN KEC. SENEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SENEN
-    - Kelurahan PASEBAN: RT 005/RW 008
+    - Kelurahan PASEBAN: RW 008 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan RAWASARI
@@ -3783,7 +3783,7 @@
 - Alamat: JL. WARAKAS I GG. 20 NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan WARAKAS: RT 012/RW 014
+    - Kelurahan WARAKAS: RW 014 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan PAPANGGO
@@ -3795,7 +3795,7 @@
 - Alamat: JL. SALEMBA TENGAH I NO. 21 KEL. PASEBAN KEC. SENEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SENEN
-    - Kelurahan PASEBAN: RT 005/RW 008
+    - Kelurahan PASEBAN: RW 008 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan RAWASARI
@@ -3813,7 +3813,7 @@
 - Alamat: JL. H MURTADHO VIII NO. A717 KEL. PASEBAN KEC. SENEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SENEN
-    - Kelurahan PASEBAN: RT 019/RW 006
+    - Kelurahan PASEBAN: RW 006 (RT 019)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JOHAR BARU
     - Kelurahan JOHAR BARU
@@ -3829,7 +3829,7 @@
 - Alamat: JL. ABDRUHMAN SALEH I NO.08 KEL. SENEN KEC. SENEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SENEN
-    - Kelurahan SENEN: RT 009/RW 001
+    - Kelurahan SENEN: RW 001 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan GAMBIR
@@ -3849,7 +3849,7 @@
 - Alamat: JL. PETA SELATAN RT.07/01 NO. 29
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 007/RW 001
+    - Kelurahan KALIDERES: RW 001 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -3862,7 +3862,7 @@
 - Alamat: JL. PETA SELATAN RT.07/01 NO. 29
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 007/RW 001
+    - Kelurahan KALIDERES: RW 001 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -3875,7 +3875,7 @@
 - Alamat: JL. PETA BARAT RT.004/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 004/RW 007
+    - Kelurahan KALIDERES: RW 007 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -3888,7 +3888,7 @@
 - Alamat: JL. PETA BARAT RT.004/07 KALIDERES
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 004/RW 007
+    - Kelurahan KALIDERES: RW 007 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -3901,7 +3901,7 @@
 - Alamat: JL. PETA SELATAN NO. 7 B
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 010/RW 001
+    - Kelurahan KALIDERES: RW 001 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -3914,7 +3914,7 @@
 - Alamat: JL. DAAN MOGOT KM. 15,6
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 001/RW 012
+    - Kelurahan KALIDERES: RW 012 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -3927,7 +3927,7 @@
 - Alamat: JL. UTAN JATI RT.011
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 011/RW 001
+    - Kelurahan KALIDERES: RW 001 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -3940,7 +3940,7 @@
 - Alamat: JL. PETA BARAT RT. 004/007
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 004/RW 007
+    - Kelurahan KALIDERES: RW 007 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -3953,7 +3953,7 @@
 - Alamat: JL. PETA BARAT RT004/007
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 004/RW 007
+    - Kelurahan KALIDERES: RW 007 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -3966,7 +3966,7 @@
 - Alamat: JL. KEBON 200 RT. 003/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KAMAL: RT 003/RW 006
+    - Kelurahan KAMAL: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
     - Kelurahan KAMAL
@@ -3979,7 +3979,7 @@
 - Alamat: JL. KEBON 200 RT.05/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KAMAL: RT 005/RW 006
+    - Kelurahan KAMAL: RW 006 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
     - Kelurahan KAMAL
@@ -3992,7 +3992,7 @@
 - Alamat: JL. KAMPUNG BELAKANG RT. 001/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KAMAL: RT 001/RW 005
+    - Kelurahan KAMAL: RW 005 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
     - Kelurahan KAMAL
@@ -4005,7 +4005,7 @@
 - Alamat: JL. BAKTI PRAMUKA NO. 54
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KAMAL: RT 009/RW 001
+    - Kelurahan KAMAL: RW 001 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
     - Kelurahan KAMAL
@@ -4018,7 +4018,7 @@
 - Alamat: JL. PREPEDAN RT. 04/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KAMAL: RT 004/RW 007
+    - Kelurahan KAMAL: RW 007 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
     - Kelurahan KAMAL
@@ -4031,7 +4031,7 @@
 - Alamat: JL. KEBON 200 RT. 003/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KAMAL: RT 003/RW 006
+    - Kelurahan KAMAL: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
     - Kelurahan KAMAL
@@ -4044,7 +4044,7 @@
 - Alamat: JALAN KAMPUNG BELAKANG RT.011/RW.003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KAMAL: RT 011/RW 003
+    - Kelurahan KAMAL: RW 003 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
     - Kelurahan KAMAL
@@ -4057,7 +4057,7 @@
 - Alamat: JL. PETA BARAT NO. 47
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan PEGADUNGAN: RT 004/RW 007
+    - Kelurahan PEGADUNGAN: RW 007 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4071,7 +4071,7 @@
 - Alamat: JL. 20 DESEMBER RT.001/003 KALIDERES
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan PEGADUNGAN: RT 001/RW 003
+    - Kelurahan PEGADUNGAN: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4085,7 +4085,7 @@
 - Alamat: JL. PETA UTARA NO.29
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan PEGADUNGAN: RT 002/RW 006
+    - Kelurahan PEGADUNGAN: RW 006 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4099,7 +4099,7 @@
 - Alamat: JL. PETA UTARA III RT 002 RW 06 NO.47
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan PEGADUNGAN: RT 002/RW 006
+    - Kelurahan PEGADUNGAN: RW 006 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4113,7 +4113,7 @@
 - Alamat: JL. IRIGASI RT. 008/01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan PEGADUNGAN: RT 008/RW 001
+    - Kelurahan PEGADUNGAN: RW 001 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4125,7 +4125,7 @@
 - Alamat: JL. IRIGASI RT. 008/01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan PEGADUNGAN: RT 008/RW 001
+    - Kelurahan PEGADUNGAN: RW 001 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4137,7 +4137,7 @@
 - Alamat: JL. PETA UTARA NO.10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan PEGADUNGAN: RT 001/RW 007
+    - Kelurahan PEGADUNGAN: RW 007 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4151,7 +4151,7 @@
 - Alamat: JL. KUMBANG RAYA NO. 54
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan PEGADUNGAN: RT 006/RW 007
+    - Kelurahan PEGADUNGAN: RW 007 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4165,7 +4165,7 @@
 - Alamat: JL. UTAN JATI RT. 04/011
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan PEGADUNGAN: RT 004/RW 011
+    - Kelurahan PEGADUNGAN: RW 011 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4179,7 +4179,7 @@
 - Alamat: JL. UTAN JATI RT. 04/011
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan PEGADUNGAN: RT 004/RW 011
+    - Kelurahan PEGADUNGAN: RW 011 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4193,7 +4193,7 @@
 - Alamat: JL. SEMANAN RAYA RT. 006/ 07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan SEMANAN: RT 006/RW 007
+    - Kelurahan SEMANAN: RW 007 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4206,7 +4206,7 @@
 - Alamat: JL SEMANAN RAYA NO. 38
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan SEMANAN: RT 006/RW 007
+    - Kelurahan SEMANAN: RW 007 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4219,7 +4219,7 @@
 - Alamat: JL. KP. GAGA RT. 004/009
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan SEMANAN: RT 004/RW 009
+    - Kelurahan SEMANAN: RW 009 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4232,7 +4232,7 @@
 - Alamat: JL. KMP. GAGA RT. 001/ 03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan SEMANAN: RT 001/RW 003
+    - Kelurahan SEMANAN: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4245,7 +4245,7 @@
 - Alamat: JL. SEMANAN RAYA NO. 004/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan SEMANAN: RT 004/RW 008
+    - Kelurahan SEMANAN: RW 008 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4258,7 +4258,7 @@
 - Alamat: JL. RAYA SEMANAN NO. 55
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan SEMANAN: RT 005/RW 003
+    - Kelurahan SEMANAN: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan DURI KOSAMBI
@@ -4270,7 +4270,7 @@
 - Alamat: JL. SEMANAN RAYA NO.71
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan SEMANAN: RT 004/RW 008
+    - Kelurahan SEMANAN: RW 008 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4283,7 +4283,7 @@
 - Alamat: JL. KP. GAGA RT.001/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan SEMANAN: RT 001/RW 003
+    - Kelurahan SEMANAN: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4296,7 +4296,7 @@
 - Alamat: JL. RAYA SEMANAN NO. 55
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan SEMANAN: RT 005/RW 003
+    - Kelurahan SEMANAN: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan DURI KOSAMBI
@@ -4308,7 +4308,7 @@
 - Alamat: JL. RUSUNAWA DAAN MOGOT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan SEMANAN: RT 010/RW 001
+    - Kelurahan SEMANAN: RW 001 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan DURI KOSAMBI
@@ -4320,7 +4320,7 @@
 - Alamat: JL. KAMAL RAYA NO. 14
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan TEGAL ALUR: RT 014/RW 009
+    - Kelurahan TEGAL ALUR: RW 009 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4335,7 +4335,7 @@
 - Alamat: JL. MENCENG RAYA No. 29 RT.03/11
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan TEGAL ALUR: RT 003/RW 011
+    - Kelurahan TEGAL ALUR: RW 011 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4350,7 +4350,7 @@
 - Alamat: JL. MIRINDA RT.005/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan TEGAL ALUR: RT 005/RW 007
+    - Kelurahan TEGAL ALUR: RW 007 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4365,7 +4365,7 @@
 - Alamat: JL. MENCENG RAYA RT. 003/011
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan TEGAL ALUR: RT 003/RW 011
+    - Kelurahan TEGAL ALUR: RW 011 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4380,7 +4380,7 @@
 - Alamat: JL. LINGKUNGAN III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan TEGAL ALUR: RT 001/RW 003
+    - Kelurahan TEGAL ALUR: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4395,7 +4395,7 @@
 - Alamat: JL. LINGKUNGAN III RT, 001/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan TEGAL ALUR: RT 001/RW 003
+    - Kelurahan TEGAL ALUR: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4410,7 +4410,7 @@
 - Alamat: JL. SEKOLAH RT.007/011
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan TEGAL ALUR: RT 007/RW 011
+    - Kelurahan TEGAL ALUR: RW 011 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4423,7 +4423,7 @@
 - Alamat: JL.SEKOLAH
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan TEGAL ALUR: RT 007/RW 011
+    - Kelurahan TEGAL ALUR: RW 011 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4436,7 +4436,7 @@
 - Alamat: JL. KAPUK KAMAL RT.04/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan TEGAL ALUR: RT 004/RW 008
+    - Kelurahan TEGAL ALUR: RW 008 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4451,7 +4451,7 @@
 - Alamat: JL. KOMPLEK KEBERSIHAN RT. 004/04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan TEGAL ALUR: RT 004/RW 004
+    - Kelurahan TEGAL ALUR: RW 004 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4466,7 +4466,7 @@
 - Alamat: JL. KAYU BESAR RT. 001/12
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan TEGAL ALUR: RT 001/RW 012
+    - Kelurahan TEGAL ALUR: RW 012 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4481,7 +4481,7 @@
 - Alamat: JL. KAYU BESAR RT 008/012
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan TEGAL ALUR: RT 008/RW 012
+    - Kelurahan TEGAL ALUR: RW 012 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4496,7 +4496,7 @@
 - Alamat: JL. RAYA KAMAL NO.14
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan TEGAL ALUR: RT 014/RW 009
+    - Kelurahan TEGAL ALUR: RW 009 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -4511,7 +4511,7 @@
 - Alamat: JL. KERAJINAN NO. 44
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan KEAGUNGAN: RT 009/RW 009
+    - Kelurahan KEAGUNGAN: RW 009 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMANSARI
     - Kelurahan KEAGUNGAN
@@ -4523,7 +4523,7 @@
 - Alamat: JL. KERAJINAN NO. 44
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan KEAGUNGAN: RT 009/RW 009
+    - Kelurahan KEAGUNGAN: RW 009 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMANSARI
     - Kelurahan KEAGUNGAN
@@ -4535,7 +4535,7 @@
 - Alamat: JL. KERAJINAN NO. 44
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan KEAGUNGAN: RT 009/RW 009
+    - Kelurahan KEAGUNGAN: RW 009 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMANSARI
     - Kelurahan KEAGUNGAN
@@ -4547,7 +4547,7 @@
 - Alamat: JL. K.H. ZAINUL ARIFIN NO. 4
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan KRUKUT: RT 002/RW 007
+    - Kelurahan KRUKUT: RW 007 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan PETOJO UTARA
@@ -4559,7 +4559,7 @@
 - Alamat: JL. K.H. ZAINUL ARIFIN NO. 4
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan KRUKUT: RT 002/RW 007
+    - Kelurahan KRUKUT: RW 007 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan PETOJO UTARA
@@ -4571,7 +4571,7 @@
 - Alamat: JL. SEKOLAH TANGKI NO. 141
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan MANGGA BESAR: RT 003/RW 006
+    - Kelurahan MANGGA BESAR: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMANSARI
     - Kelurahan GLODOK
@@ -4583,7 +4583,7 @@
 - Alamat: JL. SEKOLAH TANGKI NO. 141
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan MANGGA BESAR: RT 003/RW 006
+    - Kelurahan MANGGA BESAR: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMANSARI
     - Kelurahan GLODOK
@@ -4595,7 +4595,7 @@
 - Alamat: JL. GEDONG NO. 16
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan MANGGA BESAR: RT 002/RW 003
+    - Kelurahan MANGGA BESAR: RW 003 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMANSARI
     - Kelurahan GLODOK
@@ -4606,7 +4606,7 @@
 - Alamat: JL. BLUSTRU NO. 5
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan MANGGA BESAR: RT 001/RW 006
+    - Kelurahan MANGGA BESAR: RW 006 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMANSARI
     - Kelurahan GLODOK
@@ -4617,7 +4617,7 @@
 - Alamat: JL.KEBON JERUK VII NO. 5
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan MAPHAR: RT 005/RW 004
+    - Kelurahan MAPHAR: RW 004 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMANSARI
     - Kelurahan KRUKUT
@@ -4628,7 +4628,7 @@
 - Alamat: JL. PINANGSIA I NO. 20 ( KOMPLEK RUKO GLODOK PLAZA )
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan PINANGSIA: RT 008/RW 005
+    - Kelurahan PINANGSIA: RW 005 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -4644,7 +4644,7 @@
 - Alamat: JL. JEMBATAN BATU NO. 49
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan PINANGSIA: RT 001/RW 005
+    - Kelurahan PINANGSIA: RW 005 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -4660,7 +4660,7 @@
 - Alamat: JL. JEMBATAN BATU NO. 74 RT.002/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan PINANGSIA: RT 002/RW 005
+    - Kelurahan PINANGSIA: RW 005 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -4674,7 +4674,7 @@
 - Alamat: JL. TAMAN SARI X NO. 17 A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan TAMAN SARI: RT 001/RW 001
+    - Kelurahan TAMAN SARI: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
     - Kelurahan KARANG ANYAR
@@ -4687,7 +4687,7 @@
 - Alamat: JL. TAMAN SARI X NO. 17 A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan TAMAN SARI: RT 001/RW 001
+    - Kelurahan TAMAN SARI: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
     - Kelurahan KARANG ANYAR
@@ -4700,7 +4700,7 @@
 - Alamat: JL. TAMAN SARI X NO. 17 A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan TAMAN SARI: RT 001/RW 001
+    - Kelurahan TAMAN SARI: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
     - Kelurahan KARANG ANYAR
@@ -4713,7 +4713,7 @@
 - Alamat: JL. MANGGA BESAR VI SELATAN NO. 11
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan TAMAN SARI: RT 002/RW 004
+    - Kelurahan TAMAN SARI: RW 004 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
     - Kelurahan KARANG ANYAR
@@ -4726,7 +4726,7 @@
 - Alamat: JL. MANGGA BSR VI SEL. NO.11
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan TAMAN SARI: RT 002/RW 004
+    - Kelurahan TAMAN SARI: RW 004 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
     - Kelurahan KARANG ANYAR
@@ -4739,7 +4739,7 @@
 - Alamat: JL. TAMANSARI X NO. 17 A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan TAMAN SARI: RT 001/RW 001
+    - Kelurahan TAMAN SARI: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
     - Kelurahan KARANG ANYAR
@@ -4752,7 +4752,7 @@
 - Alamat: JL. ANGKE INDAH GG. V NO. 8
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan ANGKE: RT 001/RW 003
+    - Kelurahan ANGKE: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMBORA
     - Kelurahan ANGKE
@@ -4765,7 +4765,7 @@
 - Alamat: JL. ANGKE INDAH GG. VII
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan ANGKE: RT 015/RW 002
+    - Kelurahan ANGKE: RW 002 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMBORA
     - Kelurahan ANGKE
@@ -4778,7 +4778,7 @@
 - Alamat: JL. ANGKE INDAH GG. V NO. 8
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan ANGKE: RT 001/RW 003
+    - Kelurahan ANGKE: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PENJARINGAN
     - Kelurahan PEJAGALAN
@@ -4792,7 +4792,7 @@
 - Alamat: JL. ANGKE INDAH GG. V NO. 8
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan ANGKE: RT 001/RW 003
+    - Kelurahan ANGKE: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMBORA
     - Kelurahan ANGKE
@@ -4805,7 +4805,7 @@
 - Alamat: JL. DURI UTARA I NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan DURI UTARA: RT 010/RW 007
+    - Kelurahan DURI UTARA: RW 007 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -4821,7 +4821,7 @@
 - Alamat: JL. DURI UTARA I NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan DURI UTARA: RT 010/RW 007
+    - Kelurahan DURI UTARA: RW 007 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -4837,7 +4837,7 @@
 - Alamat: JL. DURI UTARA I NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan DURI UTARA: RT 010/RW 007
+    - Kelurahan DURI UTARA: RW 007 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -4853,7 +4853,7 @@
 - Alamat: JL. JEMBATAN BESI IX NO. 31
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan JEMBATAN BESI: RT 007/RW 006
+    - Kelurahan JEMBATAN BESI: RW 006 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMBORA
     - Kelurahan ANGKE
@@ -4866,7 +4866,7 @@
 - Alamat: JL. JEMBATAN BESI IX NO. 31
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan JEMBATAN BESI: RT 007/RW 006
+    - Kelurahan JEMBATAN BESI: RW 006 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMBORA
     - Kelurahan ANGKE
@@ -4879,7 +4879,7 @@
 - Alamat: JL. SAWAH LIO II GG. 2 NO 8A RT 012/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan JEMBATAN LIMA: RT 012/RW 008
+    - Kelurahan JEMBATAN LIMA: RW 008 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMBORA
     - Kelurahan ANGKE
@@ -4893,7 +4893,7 @@
 - Alamat: JL. SAWAH LIO II GG. 2 NO 8A RT 012/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan JEMBATAN LIMA: RT 012/RW 008
+    - Kelurahan JEMBATAN LIMA: RW 008 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMBORA
     - Kelurahan ANGKE
@@ -4907,7 +4907,7 @@
 - Alamat: JL. KALI ANYAR IV GG. I NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan KALIANYAR: RT 005/RW 003
+    - Kelurahan KALIANYAR: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -4922,7 +4922,7 @@
 - Alamat: JL. MESJID PEKOJAN NO. 161- 163
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan PEKOJAN: RT 003/RW 006
+    - Kelurahan PEKOJAN: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PENJARINGAN
     - Kelurahan PEJAGALAN
@@ -4937,7 +4937,7 @@
 - Alamat: JL. MESJID PEKOJAN NO. 161- 163
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan PEKOJAN: RT 003/RW 006
+    - Kelurahan PEKOJAN: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PENJARINGAN
     - Kelurahan PEJAGALAN
@@ -4952,7 +4952,7 @@
 - Alamat: JL. MESJID PEKOJAN NO. 161- 163
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan PEKOJAN: RT 003/RW 006
+    - Kelurahan PEKOJAN: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PENJARINGAN
     - Kelurahan PEJAGALAN
@@ -4967,7 +4967,7 @@
 - Alamat: JL. PERNIAGAAN NO. 31
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan TAMBORA: RT 007/RW 001
+    - Kelurahan TAMBORA: RW 001 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMAN SARI
     - Kelurahan GLODOK
@@ -4984,7 +4984,7 @@
 - Alamat: JLN.PERNIAGAAN RAYA NO.31
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan TAMBORA: RT 007/RW 001
+    - Kelurahan TAMBORA: RW 001 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMAN SARI
     - Kelurahan GLODOK
@@ -5001,7 +5001,7 @@
 - Alamat: JL. PEKAPURAN RAYA NO. 66
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan TANAH SEREAL: RT 010/RW 004
+    - Kelurahan TANAH SEREAL: RW 004 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMBORA
     - Kelurahan DURI UTARA
@@ -5015,7 +5015,7 @@
 - Alamat: JL. PEKAPURAN RAYA NO. 66
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan TANAH SEREAL: RT 010/RW 004
+    - Kelurahan TANAH SEREAL: RW 004 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMBORA
     - Kelurahan DURI UTARA
@@ -5029,7 +5029,7 @@
 - Alamat: JL. TANAH SEREAL XIII NO. 25
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan TANAH SEREAL: RT 001/RW 010
+    - Kelurahan TANAH SEREAL: RW 010 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMANSARI
     - Kelurahan KEAGUNGAN
@@ -5045,7 +5045,7 @@
 - Alamat: JL. UTAMA RAYA NO. 41
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 009/RW 004
+    - Kelurahan CENGKARENG BARAT: RW 004 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5059,7 +5059,7 @@
 - Alamat: JL. UTAMA RAYA NO. 41 RT. 009 RW. 004
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 009/RW 004
+    - Kelurahan CENGKARENG BARAT: RW 004 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5073,7 +5073,7 @@
 - Alamat: JL. UTAMA RAYA NO.41
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 009/RW 004
+    - Kelurahan CENGKARENG BARAT: RW 004 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5087,7 +5087,7 @@
 - Alamat: JL. RAWA KRAMAT RT.004/04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 004/RW 004
+    - Kelurahan CENGKARENG BARAT: RW 004 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5100,7 +5100,7 @@
 - Alamat: JL. BAMBU LARANGAN RT.003/05 NO.25
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 003/RW 005
+    - Kelurahan CENGKARENG BARAT: RW 005 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5112,7 +5112,7 @@
 - Alamat: JL. CENDRAWASIH X RT.006/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 006/RW 007
+    - Kelurahan CENGKARENG BARAT: RW 007 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5127,7 +5127,7 @@
 - Alamat: JL. JAYA NO. 25 RT. 002/10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 002/RW 010
+    - Kelurahan CENGKARENG BARAT: RW 010 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5140,7 +5140,7 @@
 - Alamat: JL. JAYA VIII RT.02/10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 002/RW 010
+    - Kelurahan CENGKARENG BARAT: RW 010 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5153,7 +5153,7 @@
 - Alamat: JL. JAYA VIII RT 002/10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 002/RW 010
+    - Kelurahan CENGKARENG BARAT: RW 010 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5166,7 +5166,7 @@
 - Alamat: JLN.FLAMBOYAN VI NO.I RT.001/014
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 001/RW 014
+    - Kelurahan CENGKARENG BARAT: RW 014 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5178,7 +5178,7 @@
 - Alamat: JL. RAWA BENGKEL RT.004/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 004/RW 007
+    - Kelurahan CENGKARENG BARAT: RW 007 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5191,7 +5191,7 @@
 - Alamat: JL. DAAN MOGOT KM. 14
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 005/RW 001
+    - Kelurahan CENGKARENG TIMUR: RW 001 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5202,7 +5202,7 @@
 - Alamat: JL. BANGUN NUSA III 006/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 006/RW 002
+    - Kelurahan CENGKARENG TIMUR: RW 002 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5214,7 +5214,7 @@
 - Alamat: JL. KAMAL RAYA NO. 12
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 008/RW 002
+    - Kelurahan CENGKARENG TIMUR: RW 002 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5225,7 +5225,7 @@
 - Alamat: JL. FAJAR BARU UTARA NO.7 RT.06/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 006/RW 008
+    - Kelurahan CENGKARENG TIMUR: RW 008 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5236,7 +5236,7 @@
 - Alamat: JL. FAJAR BARU UTARA RT. 006/08 NO. 41
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 006/RW 008
+    - Kelurahan CENGKARENG TIMUR: RW 008 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5247,7 +5247,7 @@
 - Alamat: JL. FAJAR BARU SELATAN 012/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 012/RW 005
+    - Kelurahan CENGKARENG TIMUR: RW 005 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5259,7 +5259,7 @@
 - Alamat: JL. FAJAR BARU SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 012/RW 005
+    - Kelurahan CENGKARENG TIMUR: RW 005 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5271,7 +5271,7 @@
 - Alamat: JL. BANGUN NUSA RAYA RT. 011/013
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 011/RW 013
+    - Kelurahan CENGKARENG TIMUR: RW 013 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5282,7 +5282,7 @@
 - Alamat: JL. BANGUN NUSA RAYA RT. 011/RW. 13
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 011/RW 013
+    - Kelurahan CENGKARENG TIMUR: RW 013 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5293,7 +5293,7 @@
 - Alamat: JL. ANGSANA RAYA RT. 007/12
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 007/RW 012
+    - Kelurahan CENGKARENG TIMUR: RW 012 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5305,7 +5305,7 @@
 - Alamat: JL. OUTER RING ROAD KAYU BESAR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 012/RW 011
+    - Kelurahan CENGKARENG TIMUR: RW 011 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5318,7 +5318,7 @@
 - Alamat: JL. KH. ABDUL HAMID RT. 03/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan DURI KOSAMBI: RT 003/RW 003
+    - Kelurahan DURI KOSAMBI: RW 003 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan DURI KOSAMBI
@@ -5332,7 +5332,7 @@
 - Alamat: JL. DURI KOSAMBI RAYA RT. 05/01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan DURI KOSAMBI: RT 005/RW 001
+    - Kelurahan DURI KOSAMBI: RW 001 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5345,7 +5345,7 @@
 - Alamat: JL. DURI KOSAMBI RAYA RT. 10/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan DURI KOSAMBI: RT 010/RW 002
+    - Kelurahan DURI KOSAMBI: RW 002 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan DURI KOSAMBI
@@ -5359,7 +5359,7 @@
 - Alamat: JL. DURI KOSAMBI RAYA RT. 005/001
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan DURI KOSAMBI: RT 005/RW 001
+    - Kelurahan DURI KOSAMBI: RW 001 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5372,7 +5372,7 @@
 - Alamat: JL. RAYA PONDOK RANDU RT. 006/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan DURI KOSAMBI: RT 006/RW 002
+    - Kelurahan DURI KOSAMBI: RW 002 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan DURI KOSAMBI
@@ -5386,7 +5386,7 @@
 - Alamat: JL. RAYA KRESEK NO.51 RT.07/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan DURI KOSAMBI: RT 007/RW 008
+    - Kelurahan DURI KOSAMBI: RW 008 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan DURI KOSAMBI
@@ -5400,7 +5400,7 @@
 - Alamat: JL. DURI KOSAMBI RAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan DURI KOSAMBI: RT 010/RW 007
+    - Kelurahan DURI KOSAMBI: RW 007 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5413,7 +5413,7 @@
 - Alamat: JL. RAYA DURI KOSAMBI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan DURI KOSAMBI: RT 010/RW 007
+    - Kelurahan DURI KOSAMBI: RW 007 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5426,7 +5426,7 @@
 - Alamat: JL.KAPUK RAYA NO.48 RT.3 RW.11
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KAPUK: RT 003/RW 011
+    - Kelurahan KAPUK: RW 011 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5439,7 +5439,7 @@
 - Alamat: KOMP. CENGKARENG INDAH
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KAPUK: RT 011/RW 014
+    - Kelurahan KAPUK: RW 014 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5450,7 +5450,7 @@
 - Alamat: JL. KAPUK RAYA RT.003/011 NO. 48A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KAPUK: RT 003/RW 011
+    - Kelurahan KAPUK: RW 011 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5463,7 +5463,7 @@
 - Alamat: JL. TENIS RAYA KOMP. CENGKARENG INDAH RT. 011/RW. 014
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KAPUK: RT 011/RW 014
+    - Kelurahan KAPUK: RW 014 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5474,7 +5474,7 @@
 - Alamat: JL. KAPUK RAYA GG. MAWAR RT.007/01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KAPUK: RT 007/RW 001
+    - Kelurahan KAPUK: RW 001 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -5486,7 +5486,7 @@
 - Alamat: JL. TENIS RAYA RT 11/14
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KAPUK: RT 011/RW 014
+    - Kelurahan KAPUK: RW 014 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5497,7 +5497,7 @@
 - Alamat: JL. CENGKARENG INDAH KAPUK
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KAPUK: RT 011/RW 014
+    - Kelurahan KAPUK: RW 014 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5508,7 +5508,7 @@
 - Alamat: JL. UKIR II PEDONGKELAN RT.005/006 KEL KAPUK
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KAPUK: RT 007/RW 009
+    - Kelurahan KAPUK: RW 009 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5519,7 +5519,7 @@
 - Alamat: JL. UKIR II PEDONGKELAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KAPUK: RT 007/RW 009
+    - Kelurahan KAPUK: RW 009 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5530,7 +5530,7 @@
 - Alamat: JL. UKIR RT 01 RW.6
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KAPUK: RT 001/RW 006
+    - Kelurahan KAPUK: RW 006 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5541,7 +5541,7 @@
 - Alamat: JL. KAPUK AMD RT. 010/11
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KAPUK: RT 010/RW 011
+    - Kelurahan KAPUK: RW 011 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5553,7 +5553,7 @@
 - Alamat: JL. KAPUK AMD RT. 010/11
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KAPUK: RT 010/RW 011
+    - Kelurahan KAPUK: RW 011 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -5565,7 +5565,7 @@
 - Alamat: JL. PESING POGLAR RT.004/01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KEDAUNG KALIANGKE: RT 004/RW 001
+    - Kelurahan KEDAUNG KALIANGKE: RW 001 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -5579,7 +5579,7 @@
 - Alamat: KOMP. DEP. AGAMA KALIMATI RT 007/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KEDAUNG KALIANGKE: RT 007/RW 003
+    - Kelurahan KEDAUNG KALIANGKE: RW 003 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -5593,7 +5593,7 @@
 - Alamat: JL.TAWANG MANGU NO.41
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KEDAUNG KALIANGKE: RT 010/RW 003
+    - Kelurahan KEDAUNG KALIANGKE: RW 003 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5606,7 +5606,7 @@
 - Alamat: JL. TAWANG MANGU NO.41
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KEDAUNG KALIANGKE: RT 010/RW 003
+    - Kelurahan KEDAUNG KALIANGKE: RW 003 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5619,7 +5619,7 @@
 - Alamat: KOMPLEK DEPT. AGAMA RT.007 RW.03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KEDAUNG KALIANGKE: RT 007/RW 003
+    - Kelurahan KEDAUNG KALIANGKE: RW 003 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -5633,7 +5633,7 @@
 - Alamat: JL. TAWANG MANGU RT.009/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KEDAUNG KALIANGKE: RT 009/RW 006
+    - Kelurahan KEDAUNG KALIANGKE: RW 006 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -5647,7 +5647,7 @@
 - Alamat: JL. TAWANG MANGU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KEDAUNG KALIANGKE: RT 009/RW 006
+    - Kelurahan KEDAUNG KALIANGKE: RW 006 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -5661,7 +5661,7 @@
 - Alamat: JL. KOMPLEK DEPAG RT 007/003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KEDAUNG KALIANGKE: RT 007/RW 003
+    - Kelurahan KEDAUNG KALIANGKE: RW 003 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -5675,7 +5675,7 @@
 - Alamat: KOMPLEK DEP.AGAMA KALIMATI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KEDAUNG KALIANGKE: RT 007/RW 003
+    - Kelurahan KEDAUNG KALIANGKE: RW 003 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -5689,7 +5689,7 @@
 - Alamat: JL. ZAMRUD RT 012/007
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KEDAUNG KALIANGKE: RT 012/RW 007
+    - Kelurahan KEDAUNG KALIANGKE: RW 007 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -5701,7 +5701,7 @@
 - Alamat: JL. BOJONG RAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan RAWA BUAYA: RT 003/RW 004
+    - Kelurahan RAWA BUAYA: RW 004 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5713,7 +5713,7 @@
 - Alamat: JL. AL BARKAH I RT 001 / 03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan RAWA BUAYA: RT 001/RW 003
+    - Kelurahan RAWA BUAYA: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5726,7 +5726,7 @@
 - Alamat: JL. AL-BARKAH RT.001/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan RAWA BUAYA: RT 001/RW 003
+    - Kelurahan RAWA BUAYA: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5739,7 +5739,7 @@
 - Alamat: JL. BOJONG RAYA RT.02/04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan RAWA BUAYA: RT 002/RW 004
+    - Kelurahan RAWA BUAYA: RW 004 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5752,7 +5752,7 @@
 - Alamat: JL.CEMPAKA RAYA NO.1 RAWA BUAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan RAWA BUAYA: RT 003/RW 012
+    - Kelurahan RAWA BUAYA: RW 012 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -5765,7 +5765,7 @@
 - Alamat: JL. SEMERU VII / J
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan GROGOL: RT 011/RW 009
+    - Kelurahan GROGOL: RW 009 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -5780,7 +5780,7 @@
 - Alamat: JL.DR SEMERU RAYA NO. I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan GROGOL: RT 011/RW 007
+    - Kelurahan GROGOL: RW 007 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -5794,7 +5794,7 @@
 - Alamat: JL. RAWA BAHAGIA RAYA NO. 30
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan GROGOL: RT 007/RW 002
+    - Kelurahan GROGOL: RW 002 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -5809,7 +5809,7 @@
 - Alamat: JL. EMPANG BAHAGIA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan JELAMBAR: RT 005/RW 006
+    - Kelurahan JELAMBAR: RW 006 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan GROGOL
@@ -5821,7 +5821,7 @@
 - Alamat: JL. EMPANG BAHAGIA X
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan JELAMBAR: RT 012/RW 005
+    - Kelurahan JELAMBAR: RW 005 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan GROGOL
@@ -5833,7 +5833,7 @@
 - Alamat: JL. KAVLING POLRI BLOK D.XIII
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan JELAMBAR: RT 007/RW 001
+    - Kelurahan JELAMBAR: RW 001 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan JELAMBAR
@@ -5844,7 +5844,7 @@
 - Alamat: JL. HADIAH NO. 11-13
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan JELAMBAR: RT 005/RW 003
+    - Kelurahan JELAMBAR: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan JELAMBAR
@@ -5855,7 +5855,7 @@
 - Alamat: JL. JELAMBAR BARAT II E
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan JELAMBAR BARU: RT 010/RW 011
+    - Kelurahan JELAMBAR BARU: RW 011 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan JELAMBAR
@@ -5870,7 +5870,7 @@
 - Alamat: JL. JELAMBAR SELATAN XVI RT.001/09
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan JELAMBAR BARU: RT 001/RW 009
+    - Kelurahan JELAMBAR BARU: RW 009 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan JELAMBAR
@@ -5881,7 +5881,7 @@
 - Alamat: JL. JELAMBAR SELATAN XVI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan JELAMBAR BARU: RT 001/RW 009
+    - Kelurahan JELAMBAR BARU: RW 009 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan JELAMBAR
@@ -5892,7 +5892,7 @@
 - Alamat: JL. SUKAJAYA I RT 08/01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan JELAMBAR BARU: RT 008/RW 001
+    - Kelurahan JELAMBAR BARU: RW 001 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan GROGOL
@@ -5906,7 +5906,7 @@
 - Alamat: JL. SUKAJAYA I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan JELAMBAR BARU: RT 008/RW 001
+    - Kelurahan JELAMBAR BARU: RW 001 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan GROGOL
@@ -5920,7 +5920,7 @@
 - Alamat: JL. TANJUNG DUREN TIMUR V/26
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TANJUNG DUREN SELATAN: RT 010/RW 003
+    - Kelurahan TANJUNG DUREN SELATAN: RW 003 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN SELATAN
@@ -5934,7 +5934,7 @@
 - Alamat: JL. TG. DUREN TIMUR DALAM IV/ 26
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TANJUNG DUREN SELATAN: RT 009/RW 003
+    - Kelurahan TANJUNG DUREN SELATAN: RW 003 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN SELATAN
@@ -5948,7 +5948,7 @@
 - Alamat: JL. TANJUNG DUREN UTARA III/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TANJUNG DUREN UTARA: RT 005/RW 002
+    - Kelurahan TANJUNG DUREN UTARA: RW 002 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN SELATAN
@@ -5962,7 +5962,7 @@
 - Alamat: JL. TANJUNG DUREN UTARA III/E RT 008/003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TANJUNG DUREN UTARA: RT 008/RW 003
+    - Kelurahan TANJUNG DUREN UTARA: RW 003 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN SELATAN
@@ -5976,7 +5976,7 @@
 - Alamat: JL. TANJUNG DUREN RAYA NO. 20 RT 013/007
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TANJUNG DUREN UTARA: RT 013/RW 007
+    - Kelurahan TANJUNG DUREN UTARA: RW 007 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN SELATAN
@@ -5991,7 +5991,7 @@
 - Alamat: JL. MANDALA UTARA RAYA NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TOMANG: RT 006/RW 006
+    - Kelurahan TOMANG: RW 006 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -6005,7 +6005,7 @@
 - Alamat: JL. GELONG BARU NO.29A RT. 001/003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TOMANG: RT 001/RW 003
+    - Kelurahan TOMANG: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan GROGOL
@@ -6018,7 +6018,7 @@
 - Alamat: JL. PULO MACAN V/17
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TOMANG: RT 014/RW 005
+    - Kelurahan TOMANG: RW 005 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -6032,7 +6032,7 @@
 - Alamat: JL. RAWA KEPA VII NO. 12
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TOMANG: RT 009/RW 015
+    - Kelurahan TOMANG: RW 015 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -6046,7 +6046,7 @@
 - Alamat: JL. PERDANA RAYA NO. 7
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan WIJAYA KUSUMA: RT 010/RW 004
+    - Kelurahan WIJAYA KUSUMA: RW 004 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -6060,7 +6060,7 @@
 - Alamat: JL. WIJAYA TAMAN DUTA MAS BLOK F 4
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan WIJAYA KUSUMA: RT 005/RW 009
+    - Kelurahan WIJAYA KUSUMA: RW 009 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan JELAMBAR
@@ -6072,7 +6072,7 @@
 - Alamat: JL. KARYA RT.010/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan WIJAYA KUSUMA: RT 010/RW 003
+    - Kelurahan WIJAYA KUSUMA: RW 003 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KEDAUNG KALI ANGKE
@@ -6087,7 +6087,7 @@
 - Alamat: JL.RAYA DURI KEPA RT.001/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan DURI KEPA: RT 001/RW 002
+    - Kelurahan DURI KEPA: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN UTARA
@@ -6100,7 +6100,7 @@
 - Alamat: JALAN MANGGA RAYA RT 002/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan DURI KEPA: RT 002/RW 003
+    - Kelurahan DURI KEPA: RW 003 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN UTARA
@@ -6113,7 +6113,7 @@
 - Alamat: JL. MANGGA 14 RT.006/04, KEL. DURI KEPA, KEC. KEBON JERUK, JAKARTA BARAT 11510
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan DURI KEPA: RT 006/RW 004
+    - Kelurahan DURI KEPA: RW 004 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN UTARA
@@ -6126,7 +6126,7 @@
 - Alamat: JL. RATU ALAMANDA BLOK A7 RT.002/13
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan DURI KEPA: RT 002/RW 013
+    - Kelurahan DURI KEPA: RW 013 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN UTARA
@@ -6140,7 +6140,7 @@
 - Alamat: JL. RAYA DURI KEPA RT. 001/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan DURI KEPA: RT 001/RW 002
+    - Kelurahan DURI KEPA: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN UTARA
@@ -6153,7 +6153,7 @@
 - Alamat: JL.VILLA TOMANG MAS
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan DURI KEPA: RT 002/RW 010
+    - Kelurahan DURI KEPA: RW 010 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan DURI KEPA
@@ -6164,7 +6164,7 @@
 - Alamat: JL.KOMP.GREEN VILLE RT.001/09
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan DURI KEPA: RT 001/RW 009
+    - Kelurahan DURI KEPA: RW 009 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN UTARA
@@ -6177,7 +6177,7 @@
 - Alamat: JL. KOMP. GREEN VILLE RT.001/09
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan DURI KEPA: RT 001/RW 009
+    - Kelurahan DURI KEPA: RW 009 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN UTARA
@@ -6190,7 +6190,7 @@
 - Alamat: JL.RAYA KEBON JERUK NO.41
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 007/RW 001
+    - Kelurahan KEBON JERUK: RW 001 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -6204,7 +6204,7 @@
 - Alamat: JL.SERUNI KOMP.KODAM V JAYA RT.004/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 004/RW 006
+    - Kelurahan KEBON JERUK: RW 006 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -6217,7 +6217,7 @@
 - Alamat: JL.SALMAN RT.003/03 KEBON JERUK
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 003/RW 003
+    - Kelurahan KEBON JERUK: RW 003 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -6230,7 +6230,7 @@
 - Alamat: JL.H MARZUKI RT.012/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 012/RW 003
+    - Kelurahan KEBON JERUK: RW 003 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -6243,7 +6243,7 @@
 - Alamat: JL. RAYA KEBON JERUK NO.41
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 007/RW 001
+    - Kelurahan KEBON JERUK: RW 001 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -6257,7 +6257,7 @@
 - Alamat: JL.C. RT.003/01 KEBON JERUK NO.45
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 003/RW 001
+    - Kelurahan KEBON JERUK: RW 001 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -6271,7 +6271,7 @@
 - Alamat: JL. KEBON JERUK
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 003/RW 013
+    - Kelurahan KEBON JERUK: RW 013 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -6285,7 +6285,7 @@
 - Alamat: JL.ANGGREK CAKRA RT.007/09 NO.70
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 007/RW 009
+    - Kelurahan KEBON JERUK: RW 009 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -6298,7 +6298,7 @@
 - Alamat: JL. KEMIRI RT. 002/ 012
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 002/RW 012
+    - Kelurahan KEBON JERUK: RW 012 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN UTARA
@@ -6312,7 +6312,7 @@
 - Alamat: JL. RAYA KEDOYA PILAR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEDOYA SELATAN: RT 008/RW 003
+    - Kelurahan KEDOYA SELATAN: RW 003 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan DURI KEPA
@@ -6326,7 +6326,7 @@
 - Alamat: JALAN PILAR BARU RT. 005 RW. 003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEDOYA SELATAN: RT 005/RW 003
+    - Kelurahan KEDOYA SELATAN: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan DURI KEPA
@@ -6340,7 +6340,7 @@
 - Alamat: JL. RAYA KEDOYA RT.002/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEDOYA UTARA: RT 002/RW 006
+    - Kelurahan KEDOYA UTARA: RW 006 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan DURI KEPA
@@ -6354,7 +6354,7 @@
 - Alamat: JL. KEDOYA RAYA RT.012/06 NO.2
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEDOYA UTARA: RT 012/RW 006
+    - Kelurahan KEDOYA UTARA: RW 006 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan DURI KEPA
@@ -6368,7 +6368,7 @@
 - Alamat: JL. RAYA KEDOYA UTARA RT.11/7
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEDOYA UTARA: RT 011/RW 007
+    - Kelurahan KEDOYA UTARA: RW 007 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan DURI KEPA
@@ -6382,7 +6382,7 @@
 - Alamat: JL. KEDOYA RAYA PESING KONENG RT. 010/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEDOYA UTARA: RT 010/RW 008
+    - Kelurahan KEDOYA UTARA: RW 008 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan DURI KEPA
@@ -6396,7 +6396,7 @@
 - Alamat: JL. RAYA KELAPA DUA RT.002/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KELAPA DUA: RT 002/RW 008
+    - Kelurahan KELAPA DUA: RW 008 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -6410,7 +6410,7 @@
 - Alamat: JL.INPRES KELAPA DUA RT.004/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KELAPA DUA: RT 004/RW 005
+    - Kelurahan KELAPA DUA: RW 005 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -6425,7 +6425,7 @@
 - Alamat: JL.LADA RT.004/08 KELAPA DUA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KELAPA DUA: RT 004/RW 008
+    - Kelurahan KELAPA DUA: RW 008 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -6439,7 +6439,7 @@
 - Alamat: JL.POS PENGUMBEN RT. 001RW. 06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KELAPA DUA: RT 001/RW 006
+    - Kelurahan KELAPA DUA: RW 006 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KELAPA DUA
@@ -6453,7 +6453,7 @@
 - Alamat: JL. PANJANG SUKABUMI SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan SUKABUMI SELATAN: RT 007/RW 005
+    - Kelurahan SUKABUMI SELATAN: RW 005 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL SELATAN
@@ -6472,7 +6472,7 @@
 - Alamat: JL. K.P.B.D RT. 009 RW. 001 NO. 50
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan SUKABUMI SELATAN: RT 009/RW 001
+    - Kelurahan SUKABUMI SELATAN: RW 001 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL SELATAN
@@ -6486,7 +6486,7 @@
 - Alamat: JL. Z SUKABUMI SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan SUKABUMI SELATAN: RT 011/RW 005
+    - Kelurahan SUKABUMI SELATAN: RW 005 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL SELATAN
@@ -6504,7 +6504,7 @@
 - Alamat: JL. RAYA POS PENGUMBEN RT 02/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan SUKABUMI SELATAN: RT 002/RW 008
+    - Kelurahan SUKABUMI SELATAN: RW 008 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL SELATAN
@@ -6523,7 +6523,7 @@
 - Alamat: JL. ADAM RT.005/011 SUKABUMI UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan SUKABUMI UTARA: RT 005/RW 011
+    - Kelurahan SUKABUMI UTARA: RW 011 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -6539,7 +6539,7 @@
 - Alamat: JL. HARUN RAYA RT. 008/07 NO 49
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan SUKABUMI UTARA: RT 008/RW 007
+    - Kelurahan SUKABUMI UTARA: RW 007 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -6555,7 +6555,7 @@
 - Alamat: JL. DAUD RAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan SUKABUMI UTARA: RT 006/RW 008
+    - Kelurahan SUKABUMI UTARA: RW 008 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -6571,7 +6571,7 @@
 - Alamat: JL.SALAM III RT.004/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan SUKABUMI UTARA: RT 004/RW 006
+    - Kelurahan SUKABUMI UTARA: RW 006 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -6586,7 +6586,7 @@
 - Alamat: JL. SALAM RAYA RT. 01 RW 03 SUKABUMI UTARA KEBON JERUK JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan SUKABUMI UTARA: RT 001/RW 003
+    - Kelurahan SUKABUMI UTARA: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -6602,7 +6602,7 @@
 - Alamat: JL.YUSUF NO.5 RT.001/11
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan SUKABUMI UTARA: RT 001/RW 011
+    - Kelurahan SUKABUMI UTARA: RW 011 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -6618,7 +6618,7 @@
 - Alamat: JL. KOMPLEK DKI RT 02/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 002/RW 008
+    - Kelurahan JOGLO: RW 008 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -6630,7 +6630,7 @@
 - Alamat: JL. KOMP. DKI JOGLO RT.02/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 002/RW 008
+    - Kelurahan JOGLO: RW 008 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -6642,7 +6642,7 @@
 - Alamat: JL. KOMP. DKI JOGLO RT.02/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 002/RW 008
+    - Kelurahan JOGLO: RW 008 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -6654,7 +6654,7 @@
 - Alamat: JL. LAPANGAN MERAH RT. 006/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 006/RW 003
+    - Kelurahan JOGLO: RW 003 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -6666,7 +6666,7 @@
 - Alamat: JL. MAWAR NO.100 RT 006/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 006/RW 006
+    - Kelurahan JOGLO: RW 006 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -6678,7 +6678,7 @@
 - Alamat: JL. AMD JOGLO RT 11/6
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 011/RW 006
+    - Kelurahan JOGLO: RW 006 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -6690,7 +6690,7 @@
 - Alamat: JL. RAYA JOGLO RT. 013/002
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 013/RW 002
+    - Kelurahan JOGLO: RW 002 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -6702,7 +6702,7 @@
 - Alamat: JL RAYA KEMBANGAN SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan KEMBANGAN SELATAN: RT 005/RW 001
+    - Kelurahan KEMBANGAN SELATAN: RW 001 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan DURI KOSAMBI
@@ -6715,7 +6715,7 @@
 - Alamat: JL. RAYA KEMBANGAN RT. 006 / 003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan KEMBANGAN SELATAN: RT 006/RW 003
+    - Kelurahan KEMBANGAN SELATAN: RW 003 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEDOYA SELATAN
@@ -6727,7 +6727,7 @@
 - Alamat: JL.RAYA KEMBANGAN UTARA RT.001/02 NO.83
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan KEMBANGAN UTARA: RT 001/RW 002
+    - Kelurahan KEMBANGAN UTARA: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan RAWA BUAYA
@@ -6739,7 +6739,7 @@
 - Alamat: JL.RAYA KEMBANGAN RT.001/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan KEMBANGAN UTARA: RT 001/RW 003
+    - Kelurahan KEMBANGAN UTARA: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan RAWA BUAYA
@@ -6751,7 +6751,7 @@
 - Alamat: JL. KEMBANGAN BARU RT.005/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan KEMBANGAN UTARA: RT 005/RW 003
+    - Kelurahan KEMBANGAN UTARA: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan RAWA BUAYA
@@ -6763,7 +6763,7 @@
 - Alamat: JALAN KAMPUNG BARU RT 05 RW 03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan KEMBANGAN UTARA: RT 005/RW 003
+    - Kelurahan KEMBANGAN UTARA: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan RAWA BUAYA
@@ -6775,7 +6775,7 @@
 - Alamat: JL. BASMOL RT.009/06 NO.9
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan KEMBANGAN UTARA: RT 009/RW 006
+    - Kelurahan KEMBANGAN UTARA: RW 006 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KEDAUNG KALI ANGKE
@@ -6789,7 +6789,7 @@
 - Alamat: JL. BASMOL RAYA RT.009/006
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan KEMBANGAN UTARA: RT 009/RW 006
+    - Kelurahan KEMBANGAN UTARA: RW 006 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
     - Kelurahan KEDAUNG KALI ANGKE
@@ -6803,7 +6803,7 @@
 - Alamat: JL. H. JUHRI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA SELATAN: RT 003/RW 002
+    - Kelurahan MERUYA SELATAN: RW 002 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -6814,7 +6814,7 @@
 - Alamat: JL. H. SAABA RT 002/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA SELATAN: RT 002/RW 002
+    - Kelurahan MERUYA SELATAN: RW 002 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -6825,7 +6825,7 @@
 - Alamat: JL. H. SAABA RT 08/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA SELATAN: RT 008/RW 003
+    - Kelurahan MERUYA SELATAN: RW 003 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -6836,7 +6836,7 @@
 - Alamat: JL. LAPANGAN JABEK MEGA KEBON JERUK RT. 002/001
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA SELATAN: RT 002/RW 001
+    - Kelurahan MERUYA SELATAN: RW 001 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -6847,7 +6847,7 @@
 - Alamat: JL. MERUYA UTARA RT. 004/04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA UTARA: RT 004/RW 004
+    - Kelurahan MERUYA UTARA: RW 004 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan KEMBANGAN SELATAN
@@ -6858,7 +6858,7 @@
 - Alamat: JL. SANGGRAHAN RT. 09/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA UTARA: RT 009/RW 005
+    - Kelurahan MERUYA UTARA: RW 005 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan KEMBANGAN SELATAN
@@ -6869,7 +6869,7 @@
 - Alamat: JL. JERUK MANIS RT.04/01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA UTARA: RT 004/RW 001
+    - Kelurahan MERUYA UTARA: RW 001 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan KEMBANGAN SELATAN
@@ -6880,7 +6880,7 @@
 - Alamat: JL. SANGGRAHAN RT. 10/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA UTARA: RT 010/RW 005
+    - Kelurahan MERUYA UTARA: RW 005 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -6892,7 +6892,7 @@
 - Alamat: JL. MERUYA SELATAN RT04 / 04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA UTARA: RT 004/RW 004
+    - Kelurahan MERUYA UTARA: RW 004 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan KEMBANGAN SELATAN
@@ -6903,7 +6903,7 @@
 - Alamat: JL.JOMAS RT.2 RW.5 9.A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA UTARA: RT 002/RW 005
+    - Kelurahan MERUYA UTARA: RW 005 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -6915,7 +6915,7 @@
 - Alamat: JL. ARIES UTAMA BLOK F/ 12
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA UTARA: RT 003/RW 003
+    - Kelurahan MERUYA UTARA: RW 003 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -6927,7 +6927,7 @@
 - Alamat: JL. TAMAN ARIES BLOK F/ 12
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA UTARA: RT 003/RW 003
+    - Kelurahan MERUYA UTARA: RW 003 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -6939,7 +6939,7 @@
 - Alamat: JL. SRENGSENG RAYA RT 004/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan SRENGSENG: RT 004/RW 003
+    - Kelurahan SRENGSENG: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KELAPA DUA
@@ -6955,7 +6955,7 @@
 - Alamat: JL. PERUM TAMAN KEBUN JERUK RT.002/04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan SRENGSENG: RT 002/RW 004
+    - Kelurahan SRENGSENG: RW 004 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KELAPA DUA
@@ -6969,7 +6969,7 @@
 - Alamat: JL RAYA SRENGSENG RT 004/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan SRENGSENG: RT 004/RW 003
+    - Kelurahan SRENGSENG: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KELAPA DUA
@@ -6985,7 +6985,7 @@
 - Alamat: JL SRENGSENG RAYA NO.56
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan SRENGSENG: RT 006/RW 001
+    - Kelurahan SRENGSENG: RW 001 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -6998,7 +6998,7 @@
 - Alamat: JL SRENGSENG RAYA NO. 56
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan SRENGSENG: RT 006/RW 001
+    - Kelurahan SRENGSENG: RW 001 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -7011,7 +7011,7 @@
 - Alamat: JL. TURI NO. 32
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan JATI PULO: RT 014/RW 003
+    - Kelurahan JATI PULO: RW 003 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -7027,7 +7027,7 @@
 - Alamat: JL. SEMANGKA II NO. 34
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan JATI PULO: RT 006/RW 007
+    - Kelurahan JATI PULO: RW 007 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PALMERAH
     - Kelurahan JATIPULO
@@ -7042,7 +7042,7 @@
 - Alamat: JL. RAWA PANDAN NO. 14
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan JATI PULO: RT 014/RW 003
+    - Kelurahan JATI PULO: RW 003 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan GROGOL
@@ -7056,7 +7056,7 @@
 - Alamat: JL. TERATAI RT. 004/ 01NO.17
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan JATI PULO: RT 004/RW 001
+    - Kelurahan JATI PULO: RW 001 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan GROGOL
@@ -7070,7 +7070,7 @@
 - Alamat: JL. SEROJA NO. 16
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan JATI PULO: RT 004/RW 001
+    - Kelurahan JATI PULO: RW 001 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan GROGOL
@@ -7084,7 +7084,7 @@
 - Alamat: JL. ANGGREK GARUDA BLOK E
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan KEMANGGISAN: RT 005/RW 002
+    - Kelurahan KEMANGGISAN: RW 002 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN SELATAN
@@ -7099,7 +7099,7 @@
 - Alamat: JL. ANGGREK GARUDA BLOK. E KOMP. SLIPI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan KEMANGGISAN: RT 005/RW 002
+    - Kelurahan KEMANGGISAN: RW 002 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN SELATAN
@@ -7114,7 +7114,7 @@
 - Alamat: JL. ANGGREK GARUDA BLOK E
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan KEMANGGISAN: RT 005/RW 002
+    - Kelurahan KEMANGGISAN: RW 002 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN SELATAN
@@ -7129,7 +7129,7 @@
 - Alamat: JL. ANGGREK GARUDA NO. 17
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan KEMANGGISAN: RT 009/RW 003
+    - Kelurahan KEMANGGISAN: RW 003 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PALMERAH
     - Kelurahan KEMANGGISAN
@@ -7140,7 +7140,7 @@
 - Alamat: JL. ANGGREK ROSLIANA VII
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan KEMANGGISAN: RT 013/RW 006
+    - Kelurahan KEMANGGISAN: RW 006 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN UTARA
@@ -7155,7 +7155,7 @@
 - Alamat: JL. ANGGREK ROSLIANA VII RT.013 RW.006
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan KEMANGGISAN: RT 013/RW 006
+    - Kelurahan KEMANGGISAN: RW 006 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN UTARA
@@ -7170,7 +7170,7 @@
 - Alamat: JL. KEMANGGISAN ILIR II/9
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan KEMANGGISAN: RT 006/RW 007
+    - Kelurahan KEMANGGISAN: RW 007 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN SELATAN
@@ -7185,7 +7185,7 @@
 - Alamat: JL. PLN I RT.002/09 NO.14
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan KEMANGGISAN: RT 002/RW 009
+    - Kelurahan KEMANGGISAN: RW 009 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN SELATAN
@@ -7200,7 +7200,7 @@
 - Alamat: KOMPLEK PJKA PONDOK BANDUNG RT.002/001
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan KOTA BAMBU UTARA: RT 002/RW 001
+    - Kelurahan KOTA BAMBU UTARA: RW 001 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PALMERAH
     - Kelurahan JATI PULO
@@ -7212,7 +7212,7 @@
 - Alamat: JL. K.S. TUBUN I NO. 14
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan KOTA BAMBU SELATAN: RT 002/RW 002
+    - Kelurahan KOTA BAMBU SELATAN: RW 002 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PALMERAH
     - Kelurahan JATIPULO
@@ -7227,7 +7227,7 @@
 - Alamat: JL. KS TUBUN I NO 14
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan KOTA BAMBU SELATAN: RT 002/RW 002
+    - Kelurahan KOTA BAMBU SELATAN: RW 002 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PALMERAH
     - Kelurahan JATIPULO
@@ -7242,7 +7242,7 @@
 - Alamat: JL. KS. TUBUN I/2 RT.005/01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan KOTA BAMBU SELATAN: RT 001/RW 001
+    - Kelurahan KOTA BAMBU SELATAN: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PALMERAH
     - Kelurahan JATIPULO
@@ -7257,7 +7257,7 @@
 - Alamat: JL. PALMERAH UTARA NO. 80
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan PALMERAH: RT 001/RW 006
+    - Kelurahan PALMERAH: RW 006 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PALMERAH
     - Kelurahan KEMANGGISAN
@@ -7270,7 +7270,7 @@
 - Alamat: JL. PALMERAH UTARA NO. 88
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan PALMERAH: RT 001/RW 007
+    - Kelurahan PALMERAH: RW 007 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PALMERAH
     - Kelurahan KEMANGGISAN
@@ -7283,7 +7283,7 @@
 - Alamat: JL. PALMERAH BARAT RT.06/14
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan PALMERAH: RT 006/RW 014
+    - Kelurahan PALMERAH: RW 014 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -7298,7 +7298,7 @@
 - Alamat: JL. PALMERAH BARAT II RT 008/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan PALMERAH: RT 008/RW 008
+    - Kelurahan PALMERAH: RW 008 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -7313,7 +7313,7 @@
 - Alamat: JL. SANDANG PALMERAH RT. 005/015
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan PALMERAH: RT 005/RW 015
+    - Kelurahan PALMERAH: RW 015 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -7328,7 +7328,7 @@
 - Alamat: JL. SANDANG PALMERAH RT. 005/015
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan PALMERAH: RT 005/RW 015
+    - Kelurahan PALMERAH: RW 015 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -7343,7 +7343,7 @@
 - Alamat: JL. RAWA BELONG II/E RT.009 RW.015
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan PALMERAH: RT 009/RW 015
+    - Kelurahan PALMERAH: RW 015 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -7358,7 +7358,7 @@
 - Alamat: JL. PALMERAH BARAT VI RT 009/015
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan PALMERAH: RT 009/RW 015
+    - Kelurahan PALMERAH: RW 015 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -7373,7 +7373,7 @@
 - Alamat: JL. RAWA BELONG II/E NO.153
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan PALMERAH: RT 006/RW 010
+    - Kelurahan PALMERAH: RW 010 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -7388,7 +7388,7 @@
 - Alamat: JL. KEMANGGISAN PULO RT.12/03 NO.21B
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan PALMERAH: RT 012/RW 003
+    - Kelurahan PALMERAH: RW 003 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -7403,7 +7403,7 @@
 - Alamat: JL. K.S. TUBUN III NO. 40
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan SLIPI: RT 012/RW 006
+    - Kelurahan SLIPI: RW 006 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PALMERAH
     - Kelurahan KEMANGGISAN
@@ -7418,7 +7418,7 @@
 - Alamat: JL. TEBET TIMUR I F /14 A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan TEBET TIMUR: RT 012/RW 005
+    - Kelurahan TEBET TIMUR: RW 005 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
     - Kelurahan CIKOKO
@@ -7433,7 +7433,7 @@
 - Alamat: JL. G. II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan SLIPI: RT 006/RW 002
+    - Kelurahan SLIPI: RW 002 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PALMERAH
     - Kelurahan JATIPULO
@@ -7447,7 +7447,7 @@
 - Alamat: JL. TEBET UTARA III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan TEBET TIMUR: RT 008/RW 002
+    - Kelurahan TEBET TIMUR: RW 002 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TEBET
     - Kelurahan BUKIT DURI
@@ -7460,7 +7460,7 @@
 - Alamat: JL. Z SLIPI DALAM RT. 0011/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan SLIPI: RT 011/RW 002
+    - Kelurahan SLIPI: RW 002 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PALMERAH
     - Kelurahan JATIPULO
@@ -7474,7 +7474,7 @@
 - Alamat: JL. TEBET TIMUR DALAM X
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan TEBET TIMUR: RT 007/RW 008
+    - Kelurahan TEBET TIMUR: RW 008 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
     - Kelurahan CIKOKO
@@ -7488,7 +7488,7 @@
 - Alamat: JL. KS. TUBUN III DALAM
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PALMERAH
-    - Kelurahan SLIPI: RT 002/RW 002
+    - Kelurahan SLIPI: RW 002 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PALMERAH
     - Kelurahan KEMANGGISAN
@@ -7502,7 +7502,7 @@
 - Alamat: JL. TEBET TIMUR DALAM III/I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan TEBET TIMUR: RT 001/RW 003
+    - Kelurahan TEBET TIMUR: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
     - Kelurahan CIKOKO
@@ -7516,7 +7516,7 @@
 - Alamat: JL. TEBET TIMUR DALAM II/G
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan TEBET TIMUR: RT 001/RW 004
+    - Kelurahan TEBET TIMUR: RW 004 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan KAMPUNG MELAYU
@@ -7534,7 +7534,7 @@
 - Alamat: JL. BDN I NO. 72
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan CILANDAK BARAT: RT 011/RW 013
+    - Kelurahan CILANDAK BARAT: RW 013 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7545,7 +7545,7 @@
 - Alamat: JL. TANJUNG KOMP. MPR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan CILANDAK BARAT: RT 001/RW 007
+    - Kelurahan CILANDAK BARAT: RW 007 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7560,7 +7560,7 @@
 - Alamat: KOMPLEK BNI 46 NO. 35
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan CILANDAK BARAT: RT 004/RW 005
+    - Kelurahan CILANDAK BARAT: RW 005 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7572,7 +7572,7 @@
 - Alamat: JL. CARINGIN TIMUR NO. 40
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan CILANDAK BARAT: RT 004/RW 005
+    - Kelurahan CILANDAK BARAT: RW 005 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7584,7 +7584,7 @@
 - Alamat: JL. TAMAN WIJAYAKUSUMA V
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan CILANDAK BARAT: RT 009/RW 002
+    - Kelurahan CILANDAK BARAT: RW 002 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7597,7 +7597,7 @@
 - Alamat: JL. TAMAN WIJAYA KUSUMA III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan CILANDAK BARAT: RT 004/RW 002
+    - Kelurahan CILANDAK BARAT: RW 002 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7610,7 +7610,7 @@
 - Alamat: JL. PANGERAN ANTASARI NO.56 RT 004 RW 001
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan CILANDAK BARAT: RT 004/RW 001
+    - Kelurahan CILANDAK BARAT: RW 001 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7624,7 +7624,7 @@
 - Alamat: JL. R.A KARTINI GG AMPERA RT 011/004
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan CILANDAK BARAT: RT 011/RW 004
+    - Kelurahan CILANDAK BARAT: RW 004 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7637,7 +7637,7 @@
 - Alamat: JL. ASEM DUA RT. 003/003 NO. 37
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan CIPETE SELATAN: RT 003/RW 003
+    - Kelurahan CIPETE SELATAN: RW 003 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7650,7 +7650,7 @@
 - Alamat: JL. ANGGUR II NO. 114 RT 008/006 KOMP. BRI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan CIPETE SELATAN: RT 008/RW 006
+    - Kelurahan CIPETE SELATAN: RW 006 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7663,7 +7663,7 @@
 - Alamat: JL. BUNGA MAWAR NO.19B
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan CIPETE SELATAN: RT 011/RW 002
+    - Kelurahan CIPETE SELATAN: RW 002 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7676,7 +7676,7 @@
 - Alamat: JL. TELADAN NO.3 RT 003 RW 006
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan GANDARIA SELATAN: RT 003/RW 006
+    - Kelurahan GANDARIA SELATAN: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7688,7 +7688,7 @@
 - Alamat: JL. MADRASAH NO. 45
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan GANDARIA SELATAN: RT 009/RW 002
+    - Kelurahan GANDARIA SELATAN: RW 002 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7702,7 +7702,7 @@
 - Alamat: JL. GUNUNG BALONG RT. 007/004
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan LEBAK BULUS: RT 007/RW 004
+    - Kelurahan LEBAK BULUS: RW 004 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7715,7 +7715,7 @@
 - Alamat: JL. PERTANIAN RAYA NO. 59
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan LEBAK BULUS: RT 004/RW 004
+    - Kelurahan LEBAK BULUS: RW 004 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7728,7 +7728,7 @@
 - Alamat: JL. PUSKESMAS
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan LEBAK BULUS: RT 001/RW 003
+    - Kelurahan LEBAK BULUS: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7741,7 +7741,7 @@
 - Alamat: JL. GUNUNG BALONG RT. 007/004
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan LEBAK BULUS: RT 007/RW 004
+    - Kelurahan LEBAK BULUS: RW 004 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7754,7 +7754,7 @@
 - Alamat: JL. RS. FATMAWATI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 004/RW 010
+    - Kelurahan PONDOK LABU: RW 010 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7767,7 +7767,7 @@
 - Alamat: JL. SWAKARYA BAWAH
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 003/RW 009
+    - Kelurahan PONDOK LABU: RW 009 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7780,7 +7780,7 @@
 - Alamat: JL. H. SALEH NO. 37
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 003/RW 001
+    - Kelurahan PONDOK LABU: RW 001 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7795,7 +7795,7 @@
 - Alamat: JL. AMBALUN NO. 1 KOMP. TNI-AL
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 001/RW 006
+    - Kelurahan PONDOK LABU: RW 006 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7806,7 +7806,7 @@
 - Alamat: JL. MARGASATWA KOMP. TIMAH
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 001/RW 003
+    - Kelurahan PONDOK LABU: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7821,7 +7821,7 @@
 - Alamat: JL. ANDARA I NO 85
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 002/RW 003
+    - Kelurahan PONDOK LABU: RW 003 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7833,7 +7833,7 @@
 - Alamat: JL. BANGO II PONDOK LABU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 007/RW 003
+    - Kelurahan PONDOK LABU: RW 003 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7848,7 +7848,7 @@
 - Alamat: JL. BANGO IV NO. 55
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 008/RW 003
+    - Kelurahan PONDOK LABU: RW 003 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7863,7 +7863,7 @@
 - Alamat: JL. PONDOK LABU I A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 002/RW 007
+    - Kelurahan PONDOK LABU: RW 007 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -7876,7 +7876,7 @@
 - Alamat: JL. DAMAI II RT.006/002
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan CIGANJUR: RT 006/RW 002
+    - Kelurahan CIGANJUR: RW 002 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -7888,7 +7888,7 @@
 - Alamat: JL. WARUNG SILA RT. 005/004
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan CIGANJUR: RT 005/RW 004
+    - Kelurahan CIGANJUR: RW 004 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -7900,7 +7900,7 @@
 - Alamat: JL. H. MONTONG RT.005/002 NO.53
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan CIGANJUR: RT 005/RW 002
+    - Kelurahan CIGANJUR: RW 002 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -7912,7 +7912,7 @@
 - Alamat: JL. RM. KAHFI I RT. 004/002
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan CIPEDAK: RT 004/RW 002
+    - Kelurahan CIPEDAK: RW 002 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -7923,7 +7923,7 @@
 - Alamat: JL. TIMBUL RT 007/005
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan CIPEDAK: RT 007/RW 005
+    - Kelurahan CIPEDAK: RW 005 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -7934,7 +7934,7 @@
 - Alamat: JL. RM. KAHFI I CIGANJUR, GG. SWADAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan CIPEDAK: RT 001/RW 002
+    - Kelurahan CIPEDAK: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -7945,7 +7945,7 @@
 - Alamat: JL. JAGAKARSA I RT.002/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 002/RW 007
+    - Kelurahan JAGAKARSA: RW 007 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -7957,7 +7957,7 @@
 - Alamat: JL. SIRSAK RT. 008/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 008/RW 007
+    - Kelurahan JAGAKARSA: RW 007 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -7968,7 +7968,7 @@
 - Alamat: JL. JAGAKARSA I RT.002/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 002/RW 007
+    - Kelurahan JAGAKARSA: RW 007 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -7980,7 +7980,7 @@
 - Alamat: JL. KELAPA TIGA, RT. 002 RW. 03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 002/RW 003
+    - Kelurahan JAGAKARSA: RW 003 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -7992,7 +7992,7 @@
 - Alamat: JL. SIRSAK RT.01/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 001/RW 002
+    - Kelurahan JAGAKARSA: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -8003,7 +8003,7 @@
 - Alamat: JLN. KEDONDONG RT.002/05 NO.16
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 002/RW 005
+    - Kelurahan JAGAKARSA: RW 005 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -8014,7 +8014,7 @@
 - Alamat: JL. ANGGREK RT. 01, RW. 02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 001/RW 002
+    - Kelurahan JAGAKARSA: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -8025,7 +8025,7 @@
 - Alamat: JL. R.MOH. KAHFI RT.002/04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 002/RW 004
+    - Kelurahan JAGAKARSA: RW 004 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -8035,7 +8035,7 @@
 - Alamat: JL. KELAPA TIGA RT.001/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 001/RW 003
+    - Kelurahan JAGAKARSA: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -8048,7 +8048,7 @@
 - Alamat: JL. KELAPA TIGA RT. 001 RW. 003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 001/RW 003
+    - Kelurahan JAGAKARSA: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -8061,7 +8061,7 @@
 - Alamat: JL. KEBAGUSAN WATES RT. 011 RW. 005
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 011/RW 005
+    - Kelurahan JAGAKARSA: RW 005 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -8074,7 +8074,7 @@
 - Alamat: JL. KEBAGUSAN WATES RT. 011 RW. 005
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 011/RW 005
+    - Kelurahan JAGAKARSA: RW 005 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -8087,7 +8087,7 @@
 - Alamat: JL. MOCH. KAHFI II RT.001/05 NO.16
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan SRENGSENG SAWAH: RT 001/RW 005
+    - Kelurahan SRENGSENG SAWAH: RW 005 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -8098,7 +8098,7 @@
 - Alamat: JL. SRENGSENG SAWAH RT005/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan SRENGSENG SAWAH: RT 005/RW 007
+    - Kelurahan SRENGSENG SAWAH: RW 007 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -8109,7 +8109,7 @@
 - Alamat: JL. SRENGSENG SAWAH RT.011/03 NO. 10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan SRENGSENG SAWAH: RT 011/RW 003
+    - Kelurahan SRENGSENG SAWAH: RW 003 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -8120,7 +8120,7 @@
 - Alamat: JL. BINA WARGA RT.08/07 NO.73
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan SRENGSENG SAWAH: RT 008/RW 007
+    - Kelurahan SRENGSENG SAWAH: RW 007 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -8132,7 +8132,7 @@
 - Alamat: JL. H. SIBI RT.002 RW.02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan SRENGSENG SAWAH: RT 002/RW 002
+    - Kelurahan SRENGSENG SAWAH: RW 002 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -8143,7 +8143,7 @@
 - Alamat: JL. GARDU RT. 011/002 SRENGSENG SAWAH JAGAKARSA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan SRENGSENG SAWAH: RT 011/RW 002
+    - Kelurahan SRENGSENG SAWAH: RW 002 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -8154,7 +8154,7 @@
 - Alamat: JL. CIPEDAK RT.007/009
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan SRENGSENG SAWAH: RT 007/RW 009
+    - Kelurahan SRENGSENG SAWAH: RW 009 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -8166,7 +8166,7 @@
 - Alamat: JL. LONTAR NO. 37 RT. 004/ 003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan LENTENG AGUNG: RT 004/RW 003
+    - Kelurahan LENTENG AGUNG: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -8177,7 +8177,7 @@
 - Alamat: JL. LONTAR RT.004/03 NO.38
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan LENTENG AGUNG: RT 004/RW 003
+    - Kelurahan LENTENG AGUNG: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -8188,7 +8188,7 @@
 - Alamat: JL. AGUNG RAYA II RT. 002 RW. 04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan LENTENG AGUNG: RT 002/RW 004
+    - Kelurahan LENTENG AGUNG: RW 004 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -8199,7 +8199,7 @@
 - Alamat: JL. LENTENG AGUNG RAYA II RT 02/04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan LENTENG AGUNG: RT 002/RW 004
+    - Kelurahan LENTENG AGUNG: RW 004 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -8210,7 +8210,7 @@
 - Alamat: JL. RAYA DEPOK GG. SUBUR RT. 009 RW. 08 LENTENG AGUNG
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan LENTENG AGUNG: RT 009/RW 008
+    - Kelurahan LENTENG AGUNG: RW 008 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -8221,7 +8221,7 @@
 - Alamat: JL. JOE RT.001/06 NO.1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan LENTENG AGUNG: RT 001/RW 006
+    - Kelurahan LENTENG AGUNG: RW 006 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -8234,7 +8234,7 @@
 - Alamat: JL. WASPADA II RT.014/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan LENTENG AGUNG: RT 014/RW 005
+    - Kelurahan LENTENG AGUNG: RW 005 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -8247,7 +8247,7 @@
 - Alamat: JL. NANGKA NO.57
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan TANJUNG BARAT: RT 007/RW 005
+    - Kelurahan TANJUNG BARAT: RW 005 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -8259,7 +8259,7 @@
 - Alamat: JL. RANCO INDAH RT.008/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan TANJUNG BARAT: RT 008/RW 002
+    - Kelurahan TANJUNG BARAT: RW 002 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -8269,7 +8269,7 @@
 - Alamat: JL. MUARA RT 07/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan TANJUNG BARAT: RT 007/RW 003
+    - Kelurahan TANJUNG BARAT: RW 003 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -8279,7 +8279,7 @@
 - Alamat: JL. RANCHO INDAH RT 01 / 02 NO. 42
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan TANJUNG BARAT: RT 001/RW 002
+    - Kelurahan TANJUNG BARAT: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -8289,7 +8289,7 @@
 - Alamat: JL. NANGKA RT 001/01 NO. 10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan TANJUNG BARAT: RT 001/RW 001
+    - Kelurahan TANJUNG BARAT: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -8299,7 +8299,7 @@
 - Alamat: JL. SWADAYA II NO.49 RT.001/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan TANJUNG BARAT: RT 001/RW 005
+    - Kelurahan TANJUNG BARAT: RW 005 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -8311,7 +8311,7 @@
 - Alamat: JL. CIPULIR VI NO. 1 RT. 009/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan CIPULIR: RT 009/RW 008
+    - Kelurahan CIPULIR: RW 008 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8324,7 +8324,7 @@
 - Alamat: JL. CILEDUG RAYA NO 56
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan CIPULIR: RT 003/RW 006
+    - Kelurahan CIPULIR: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8337,7 +8337,7 @@
 - Alamat: JL. CIPULIR I RT.001/04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan CIPULIR: RT 001/RW 004
+    - Kelurahan CIPULIR: RW 004 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8350,7 +8350,7 @@
 - Alamat: JL. KEBON MANGGA I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan CIPULIR: RT 012/RW 003
+    - Kelurahan CIPULIR: RW 003 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8363,7 +8363,7 @@
 - Alamat: JL. SAMUDRA I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan CIPULIR: RT 002/RW 006
+    - Kelurahan CIPULIR: RW 006 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8376,7 +8376,7 @@
 - Alamat: JL. RAYA KEBAYORAN LAMA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL SELATAN: RT 004/RW 011
+    - Kelurahan GROGOL SELATAN: RW 011 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8389,7 +8389,7 @@
 - Alamat: JL. KUBUR ISLAM
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL SELATAN: RT 012/RW 001
+    - Kelurahan GROGOL SELATAN: RW 001 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8402,7 +8402,7 @@
 - Alamat: JL. MASJID AN NUR III RT 014 RW 001
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL SELATAN: RT 014/RW 001
+    - Kelurahan GROGOL SELATAN: RW 001 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8415,7 +8415,7 @@
 - Alamat: JL. PANJANG CIDODOL RT 002 RW 013
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL SELATAN: RT 002/RW 013
+    - Kelurahan GROGOL SELATAN: RW 013 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8430,7 +8430,7 @@
 - Alamat: KOMPLEK HANKAM CIDODOL
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL SELATAN: RT 011/RW 006
+    - Kelurahan GROGOL SELATAN: RW 006 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8443,7 +8443,7 @@
 - Alamat: JL. MASJID CIDODOL RT. 10 RW 12
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL SELATAN: RT 010/RW 012
+    - Kelurahan GROGOL SELATAN: RW 012 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8458,7 +8458,7 @@
 - Alamat: JL. H. MUHTAR NO. 49 ( GROGOL UTARA )
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL UTARA: RT 003/RW 007
+    - Kelurahan GROGOL UTARA: RW 007 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GUNUNG
@@ -8475,7 +8475,7 @@
 - Alamat: JL. KEBAYORAN LAMA POS PENGUMBEN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL UTARA: RT 002/RW 001
+    - Kelurahan GROGOL UTARA: RW 001 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL SELATAN
@@ -8490,7 +8490,7 @@
 - Alamat: JL. MASJID NUR NO. 33
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL UTARA: RT 002/RW 010
+    - Kelurahan GROGOL UTARA: RW 010 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL SELATAN
@@ -8503,7 +8503,7 @@
 - Alamat: JL. KEMANDORAN I RT 004 RW 005
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL UTARA: RT 004/RW 005
+    - Kelurahan GROGOL UTARA: RW 005 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL SELATAN
@@ -8517,7 +8517,7 @@
 - Alamat: JL. KEMANDORAN VIII RT 005 RW 011
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL UTARA: RT 005/RW 011
+    - Kelurahan GROGOL UTARA: RW 011 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL SELATAN
@@ -8530,7 +8530,7 @@
 - Alamat: JL. KEMANDORAN I NO. 65
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL UTARA: RT 002/RW 011
+    - Kelurahan GROGOL UTARA: RW 011 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL SELATAN
@@ -8543,7 +8543,7 @@
 - Alamat: JL. CIPUTAT RAYA NO. 1 RT 001 RW 001
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA SELATAN: RT 001/RW 001
+    - Kelurahan KEBAYORAN LAMA SELATAN: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8556,7 +8556,7 @@
 - Alamat: JL. DARMA PUTRA RAYA NO.23
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA SELATAN: RT 005/RW 007
+    - Kelurahan KEBAYORAN LAMA SELATAN: RW 007 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GANDARIA UTARA
@@ -8569,7 +8569,7 @@
 - Alamat: JL. MOH. ISMAIL RT. 005 RW. 010 NO. 3 TANAH KUSIR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA SELATAN: RT 005/RW 010
+    - Kelurahan KEBAYORAN LAMA SELATAN: RW 010 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan KEBAYORAN LAMA SELATAN
@@ -8583,7 +8583,7 @@
 - Alamat: JL. H. MOH ISMAIL RT.005/010 N0. 60 TANAH KUSIR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA SELATAN: RT 005/RW 010
+    - Kelurahan KEBAYORAN LAMA SELATAN: RW 010 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan KEBAYORAN LAMA SELATAN
@@ -8597,7 +8597,7 @@
 - Alamat: KOMPLEK BINA MARGA - TANAH KUSIR RT 010 RW 01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA SELATAN: RT 010/RW 001
+    - Kelurahan KEBAYORAN LAMA SELATAN: RW 001 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan KEBAYORAN LAMA SELATAN
@@ -8610,7 +8610,7 @@
 - Alamat: JL. BUNGUR II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA SELATAN: RT 002/RW 012
+    - Kelurahan KEBAYORAN LAMA SELATAN: RW 012 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GANDARIA UTARA
@@ -8624,7 +8624,7 @@
 - Alamat: JL. BUNGUR II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA SELATAN: RT 002/RW 012
+    - Kelurahan KEBAYORAN LAMA SELATAN: RW 012 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GANDARIA UTARA
@@ -8638,7 +8638,7 @@
 - Alamat: JL. PRAJA DALAM G
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA SELATAN: RT 005/RW 005
+    - Kelurahan KEBAYORAN LAMA SELATAN: RW 005 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan GANDARIA SELATAN
@@ -8653,7 +8653,7 @@
 - Alamat: JL. DHARMA PUTRA RAYA NO 51 KOMP.KOSTRAD
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA SELATAN: RT 007/RW 007
+    - Kelurahan KEBAYORAN LAMA SELATAN: RW 007 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GANDARIA UTARA
@@ -8665,7 +8665,7 @@
 - Alamat: JL. KRAMAT ASRAMA POLRI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA UTARA: RT 009/RW 001
+    - Kelurahan KEBAYORAN LAMA UTARA: RW 001 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GUNUNG
@@ -8680,7 +8680,7 @@
 - Alamat: JL. CIPUTAT RAYA NO. 125 RT 009 RW 08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA UTARA: RT 009/RW 008
+    - Kelurahan KEBAYORAN LAMA UTARA: RW 008 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8694,7 +8694,7 @@
 - Alamat: JL. BENDI VIII NO. 10 KEBAYORAN LAMA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA UTARA: RT 005/RW 010
+    - Kelurahan KEBAYORAN LAMA UTARA: RW 010 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8708,7 +8708,7 @@
 - Alamat: JL. DELMAN ASRI IX NO. 15 RT 006 RW 011
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA UTARA: RT 006/RW 011
+    - Kelurahan KEBAYORAN LAMA UTARA: RW 011 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8721,7 +8721,7 @@
 - Alamat: JL. DELMAN ASRI XI RT.014 RW 011
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA UTARA: RT 014/RW 011
+    - Kelurahan KEBAYORAN LAMA UTARA: RW 011 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8734,7 +8734,7 @@
 - Alamat: JL. PENINGGARAN BARAT 3 RT 13 RW 11
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA UTARA: RT 013/RW 011
+    - Kelurahan KEBAYORAN LAMA UTARA: RW 011 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -8746,7 +8746,7 @@
 - Alamat: JL. PONDOK PINANG RAYA NO 19 RT 004 RW 11
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan PONDOK PINANG: RT 004/RW 011
+    - Kelurahan PONDOK PINANG: RW 011 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan LEBAK BULUS
@@ -8760,7 +8760,7 @@
 - Alamat: JL. CIPUTAT RAYA GG. SD III RT 002 RW 08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan PONDOK PINANG: RT 002/RW 008
+    - Kelurahan PONDOK PINANG: RW 008 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -8774,7 +8774,7 @@
 - Alamat: JL. SUBUR RT 012 RW 005
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan PONDOK PINANG: RT 012/RW 005
+    - Kelurahan PONDOK PINANG: RW 005 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan LEBAK BULUS
@@ -8788,7 +8788,7 @@
 - Alamat: JL. RAYA PASAR JUMAT KOMP. PU RT 009 RW 010
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan PONDOK PINANG: RT 009/RW 010
+    - Kelurahan PONDOK PINANG: RW 010 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -8802,7 +8802,7 @@
 - Alamat: JL. BINTARO PERMAI III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 002/RW 009
+    - Kelurahan BINTARO: RW 009 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
     - Kelurahan BINTARO
@@ -8813,7 +8813,7 @@
 - Alamat: JL. BINTARO PERMAI III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 002/RW 009
+    - Kelurahan BINTARO: RW 009 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
     - Kelurahan BINTARO
@@ -8824,7 +8824,7 @@
 - Alamat: JL. RAWAPAPAN RT 014/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 014/RW 006
+    - Kelurahan BINTARO: RW 006 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan PONDOK PINANG
@@ -8836,7 +8836,7 @@
 - Alamat: JL. RAWA PAPAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 005/RW 006
+    - Kelurahan BINTARO: RW 006 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan PONDOK PINANG
@@ -8848,7 +8848,7 @@
 - Alamat: JL. KOMP. IKPN RT.003/04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 003/RW 004
+    - Kelurahan BINTARO: RW 004 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan PONDOK PINANG
@@ -8860,7 +8860,7 @@
 - Alamat: JL. MKJ III RT.003/013
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 003/RW 013
+    - Kelurahan BINTARO: RW 013 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan PONDOK PINANG
@@ -8872,7 +8872,7 @@
 - Alamat: JL. MKJ III RT.003/013
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 003/RW 013
+    - Kelurahan BINTARO: RW 013 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan PONDOK PINANG
@@ -8884,7 +8884,7 @@
 - Alamat: JL. KESEHATAN VI RT.009/011
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 009/RW 011
+    - Kelurahan BINTARO: RW 011 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan PONDOK PINANG
@@ -8896,7 +8896,7 @@
 - Alamat: JL. MAWAR DALAM III RT.006/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 006/RW 005
+    - Kelurahan BINTARO: RW 005 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan PONDOK PINANG
@@ -8908,7 +8908,7 @@
 - Alamat: JL. PENERANGAN IV
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PESANGGRAHAN: RT 006/RW 007
+    - Kelurahan PESANGGRAHAN: RW 007 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
     - Kelurahan PESANGGRAHAN
@@ -8918,7 +8918,7 @@
 - Alamat: JL. RAYA KODAM JAYA BINTARO
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PESANGGRAHAN: RT 006/RW 003
+    - Kelurahan PESANGGRAHAN: RW 003 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
     - Kelurahan BINTARO
@@ -8929,7 +8929,7 @@
 - Alamat: JL. RAYA KODAM JAYA BINTARO
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PESANGGRAHAN: RT 006/RW 003
+    - Kelurahan PESANGGRAHAN: RW 003 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
     - Kelurahan BINTARO
@@ -8940,7 +8940,7 @@
 - Alamat: JL. PONDOK INDAH RT.12/06 NO.35
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PESANGGRAHAN: RT 012/RW 006
+    - Kelurahan PESANGGRAHAN: RW 006 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
     - Kelurahan PESANGGRAHAN
@@ -8950,7 +8950,7 @@
 - Alamat: JL. H. GARI. NO. 24 RT.001/003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PESANGGRAHAN: RT 001/RW 003
+    - Kelurahan PESANGGRAHAN: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
     - Kelurahan BINTARO
@@ -8961,7 +8961,7 @@
 - Alamat: JL. H. GARI. NO. 24 RT.001/003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PESANGGRAHAN: RT 001/RW 003
+    - Kelurahan PESANGGRAHAN: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
     - Kelurahan BINTARO
@@ -8972,7 +8972,7 @@
 - Alamat: JL. CENEK NO.15 KOMP. KODAM
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PESANGGRAHAN: RT 005/RW 003
+    - Kelurahan PESANGGRAHAN: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
     - Kelurahan BINTARO
@@ -8984,7 +8984,7 @@
 - Alamat: JL. SANGRILA INDAH II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN SELATAN: RT 006/RW 001
+    - Kelurahan PETUKANGAN SELATAN: RW 001 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
     - Kelurahan PESANGGRAHAN
@@ -8996,7 +8996,7 @@
 - Alamat: JL. SAKTI VII RT.06/01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN SELATAN: RT 006/RW 001
+    - Kelurahan PETUKANGAN SELATAN: RW 001 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
     - Kelurahan PESANGGRAHAN
@@ -9008,7 +9008,7 @@
 - Alamat: JL. KEMAJUAN RT. 14/02 NO. 47
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN SELATAN: RT 014/RW 002
+    - Kelurahan PETUKANGAN SELATAN: RW 002 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
     - Kelurahan PESANGGRAHAN
@@ -9019,7 +9019,7 @@
 - Alamat: JL. INPRES RT.14 RW.02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN SELATAN: RT 014/RW 002
+    - Kelurahan PETUKANGAN SELATAN: RW 002 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
     - Kelurahan PESANGGRAHAN
@@ -9030,7 +9030,7 @@
 - Alamat: JL. MASJID DARUL FALLAH RT. 004/003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN UTARA: RT 004/RW 003
+    - Kelurahan PETUKANGAN UTARA: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -9043,7 +9043,7 @@
 - Alamat: JL. MASJID DARUL FALLAH RT. 004/003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN UTARA: RT 004/RW 003
+    - Kelurahan PETUKANGAN UTARA: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -9056,7 +9056,7 @@
 - Alamat: JL. H. MUCHTAR RAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN UTARA: RT 001/RW 011
+    - Kelurahan PETUKANGAN UTARA: RW 011 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -9069,7 +9069,7 @@
 - Alamat: JL. PALEM RAYA RT.001/08 NO. 49
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN UTARA: RT 001/RW 008
+    - Kelurahan PETUKANGAN UTARA: RW 008 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -9082,7 +9082,7 @@
 - Alamat: JL. PALEM RAYA RT.001/08 NO. 49
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN UTARA: RT 001/RW 008
+    - Kelurahan PETUKANGAN UTARA: RW 008 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -9095,7 +9095,7 @@
 - Alamat: JL. H. GAIM
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN UTARA: RT 006/RW 002
+    - Kelurahan PETUKANGAN UTARA: RW 002 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -9108,7 +9108,7 @@
 - Alamat: JL. H. JAELANI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN UTARA: RT 011/RW 001
+    - Kelurahan PETUKANGAN UTARA: RW 001 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -9120,7 +9120,7 @@
 - Alamat: JL. H. MUCHTAR RAYA, GG. H. JAELANI I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN UTARA: RT 011/RW 001
+    - Kelurahan PETUKANGAN UTARA: RW 001 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -9132,7 +9132,7 @@
 - Alamat: JL. H. BUANG RT.07/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan ULUJAMI: RT 007/RW 007
+    - Kelurahan ULUJAMI: RW 007 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan KEBAYORAN LAMA UTARA
@@ -9145,7 +9145,7 @@
 - Alamat: JL. SWADARMA RAYA, KOMP. BNI 46
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan ULUJAMI: RT 003/RW 008
+    - Kelurahan ULUJAMI: RW 008 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
     - Kelurahan PETUKANGAN UTARA
@@ -9155,7 +9155,7 @@
 - Alamat: JL. H. ROHIMIN RT.019/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan ULUJAMI: RT 019/RW 003
+    - Kelurahan ULUJAMI: RW 003 (RT 019)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
     - Kelurahan PETUKANGAN SELATAN
@@ -9166,7 +9166,7 @@
 - Alamat: JL. KAMPUNG BARU V
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan ULUJAMI: RT 004/RW 002
+    - Kelurahan ULUJAMI: RW 002 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
     - Kelurahan SUKABUMI SELATAN
@@ -9180,7 +9180,7 @@
 - Alamat: JL. RS. FATMAWATI RT.002/005 NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan CIPETE UTARA: RT 002/RW 005
+    - Kelurahan CIPETE UTARA: RW 005 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CIPETE SELATAN
@@ -9193,7 +9193,7 @@
 - Alamat: JL. NAIM III. RT 012/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan CIPETE UTARA: RT 012/RW 006
+    - Kelurahan CIPETE UTARA: RW 006 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CIPETE SELATAN
@@ -9207,7 +9207,7 @@
 - Alamat: JL. WARAKAS I GG. 20 NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan WARAKAS: RT 012/RW 014
+    - Kelurahan WARAKAS: RW 014 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan PAPANGGO
@@ -9219,7 +9219,7 @@
 - Alamat: JL. KIRAI UJUNG NO.1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan CIPETE UTARA: RT 003/RW 008
+    - Kelurahan CIPETE UTARA: RW 008 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CIPETE SELATAN
@@ -9234,7 +9234,7 @@
 - Alamat: JL. WARAKAS I GG. 20 NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan WARAKAS: RT 012/RW 014
+    - Kelurahan WARAKAS: RW 014 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan PAPANGGO
@@ -9246,7 +9246,7 @@
 - Alamat: JL. KH. M. NAIM III/29
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan CIPETE UTARA: RT 006/RW 009
+    - Kelurahan CIPETE UTARA: RW 009 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CIPETE SELATAN
@@ -9260,7 +9260,7 @@
 - Alamat: JL. SAWO III NO 8
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan CIPETE UTARA: RT 009/RW 007
+    - Kelurahan CIPETE UTARA: RW 007 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CIPETE SELATAN
@@ -9273,7 +9273,7 @@
 - Alamat: JL. GOTONG ROYONG II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GANDARIA UTARA: RT 003/RW 006
+    - Kelurahan GANDARIA UTARA: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan GANDARIA SELATAN
@@ -9289,7 +9289,7 @@
 - Alamat: JL. HIDUP BARU IV/39
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GANDARIA UTARA: RT 002/RW 010
+    - Kelurahan GANDARIA UTARA: RW 010 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan GANDARIA SELATAN
@@ -9305,7 +9305,7 @@
 - Alamat: JL. KAMBOJA NO. 4 RT 05 RW 01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GANDARIA UTARA: RT 005/RW 001
+    - Kelurahan GANDARIA UTARA: RW 001 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan GANDARIA SELATAN
@@ -9321,7 +9321,7 @@
 - Alamat: JL. BRI RADIO DALAM
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GANDARIA UTARA: RT 002/RW 014
+    - Kelurahan GANDARIA UTARA: RW 014 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan GANDARIA SELATAN
@@ -9337,7 +9337,7 @@
 - Alamat: JL. BUMI NO.19
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GUNUNG: RT 013/RW 002
+    - Kelurahan GUNUNG: RW 002 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GUNUNG
@@ -9354,7 +9354,7 @@
 - Alamat: JL. HANG LEKIR V NO. 53
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GUNUNG: RT 004/RW 006
+    - Kelurahan GUNUNG: RW 006 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GUNUNG
@@ -9371,7 +9371,7 @@
 - Alamat: JL. SUNGAI SAMBAS II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan KRAMAT PELA: RT 002/RW 005
+    - Kelurahan KRAMAT PELA: RW 005 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan CIPETE UTARA
@@ -9390,7 +9390,7 @@
 - Alamat: JL. GANDARIA TENGAH II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan KRAMAT PELA: RT 013/RW 001
+    - Kelurahan KRAMAT PELA: RW 001 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GANDARIA UTARA
@@ -9407,7 +9407,7 @@
 - Alamat: JL. GANDARIA TENGAH V
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan KRAMAT PELA: RT 013/RW 001
+    - Kelurahan KRAMAT PELA: RW 001 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GANDARIA UTARA
@@ -9424,7 +9424,7 @@
 - Alamat: JL. JEMBATAN SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan PULO: RT 009/RW 005
+    - Kelurahan PULO: RW 005 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan CIPETE UTARA
@@ -9437,7 +9437,7 @@
 - Alamat: JL. BRAWIJAYA XII
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan PULO: RT 005/RW 003
+    - Kelurahan PULO: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan CIPETE UTARA
@@ -9452,7 +9452,7 @@
 - Alamat: JL. BIRAH III NO. 3 BLOK S
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan RAWA BARAT: RT 005/RW 006
+    - Kelurahan RAWA BARAT: RW 006 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan PETOGOGAN
@@ -9467,7 +9467,7 @@
 - Alamat: JL. CITAYAM II BLOK Q/I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan RAWA BARAT: RT 007/RW 001
+    - Kelurahan RAWA BARAT: RW 001 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan PETOGOGAN
@@ -9482,7 +9482,7 @@
 - Alamat: JL. KEMANG TIMUR XVIII
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan BANGKA: RT 001/RW 003
+    - Kelurahan BANGKA: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CIPETE SELATAN
@@ -9497,7 +9497,7 @@
 - Alamat: JL. KEMANG TIMUR XI NO. 1A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan BANGKA: RT 012/RW 003
+    - Kelurahan BANGKA: RW 003 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9510,7 +9510,7 @@
 - Alamat: JL. KEMANG SELATAN I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan BANGKA: RT 005/RW 003
+    - Kelurahan BANGKA: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9522,7 +9522,7 @@
 - Alamat: JL. KEMANG TIMUR XI NO. I B
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan BANGKA: RT 012/RW 003
+    - Kelurahan BANGKA: RW 003 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9535,7 +9535,7 @@
 - Alamat: JL. PLN KUNINGAN BARAT I RT 004 RW 001
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan KUNINGAN BARAT: RT 004/RW 001
+    - Kelurahan KUNINGAN BARAT: RW 001 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan RAWA BARAT
@@ -9550,7 +9550,7 @@
 - Alamat: JL. TEGAL PARANG UTARA III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan MAMPANG PRAPATAN: RT 011/RW 004
+    - Kelurahan MAMPANG PRAPATAN: RW 004 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan KUNINGAN BARAT
@@ -9564,7 +9564,7 @@
 - Alamat: JL. MAMPANG PRAPATAN IV/5
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan MAMPANG PRAPATAN: RT 007/RW 005
+    - Kelurahan MAMPANG PRAPATAN: RW 005 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan KUNINGAN BARAT
@@ -9578,7 +9578,7 @@
 - Alamat: JL. KAPTEN TENDEAN GG. KAMBOJA NO. 44
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan MAMPANG PRAPATAN: RT 003/RW 002
+    - Kelurahan MAMPANG PRAPATAN: RW 002 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan KUNINGAN BARAT
@@ -9592,7 +9592,7 @@
 - Alamat: JL. BANGKA II GANG 5
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan PELA MAMPANG: RT 010/RW 002
+    - Kelurahan PELA MAMPANG: RW 002 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan PETOGOGAN
@@ -9604,7 +9604,7 @@
 - Alamat: JL. PONDOK KARYA IX NO. 9A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan PELA MAMPANG: RT 008/RW 004
+    - Kelurahan PELA MAMPANG: RW 004 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan KUNINGAN BARAT
@@ -9616,7 +9616,7 @@
 - Alamat: JL. PONDOK JAYA VI/ 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan PELA MAMPANG: RT 006/RW 006
+    - Kelurahan PELA MAMPANG: RW 006 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9627,7 +9627,7 @@
 - Alamat: JL. BANGKA IX/1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan PELA MAMPANG: RT 009/RW 010
+    - Kelurahan PELA MAMPANG: RW 010 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9640,7 +9640,7 @@
 - Alamat: JL. BANGKA VIII RT 007/012
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan PELA MAMPANG: RT 007/RW 012
+    - Kelurahan PELA MAMPANG: RW 012 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9653,7 +9653,7 @@
 - Alamat: JL. BANGKA VII BAWAH, RT.009 RW.011
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan PELA MAMPANG: RT 009/RW 011
+    - Kelurahan PELA MAMPANG: RW 011 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan PETOGOGAN
@@ -9665,7 +9665,7 @@
 - Alamat: JL. BANGKA X RT. 04 /07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan PELA MAMPANG: RT 004/RW 007
+    - Kelurahan PELA MAMPANG: RW 007 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan PETOGOGAN
@@ -9680,7 +9680,7 @@
 - Alamat: JL. MAMPANG PRAPATAN VIII
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan TEGAL PARANG: RT 003/RW 001
+    - Kelurahan TEGAL PARANG: RW 001 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan MAMPANG PRAPATAN
@@ -9694,7 +9694,7 @@
 - Alamat: JL. MAMPANG PRAPATAN SELATAN VI NO. 36
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan TEGAL PARANG: RT 007/RW 005
+    - Kelurahan TEGAL PARANG: RW 005 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan MAMPANG PRAPATAN
@@ -9708,7 +9708,7 @@
 - Alamat: JL. MAMPANG PRAPATAN XIII
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan TEGAL PARANG: RT 005/RW 003
+    - Kelurahan TEGAL PARANG: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9722,7 +9722,7 @@
 - Alamat: JL. CIKOKO BARAT IV
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan CIKOKO: RT 002/RW 005
+    - Kelurahan CIKOKO: RW 005 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BIDARA CINA
@@ -9741,7 +9741,7 @@
 - Alamat: JL. CIKOKO BARAT III NO. 44
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan CIKOKO: RT 005/RW 005
+    - Kelurahan CIKOKO: RW 005 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BIDARA CINA
@@ -9760,7 +9760,7 @@
 - Alamat: JL. RAYA PASAR MINGGU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan DUREN TIGA: RT 001/RW 007
+    - Kelurahan DUREN TIGA: RW 007 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9777,7 +9777,7 @@
 - Alamat: JL. GURU ALIP DUREN TIGA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan DUREN TIGA: RT 005/RW 006
+    - Kelurahan DUREN TIGA: RW 006 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9794,7 +9794,7 @@
 - Alamat: JL. DUREN TIGA BARAT NO 3
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan DUREN TIGA: RT 004/RW 001
+    - Kelurahan DUREN TIGA: RW 001 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9811,7 +9811,7 @@
 - Alamat: JL DEPAN TMPN KALIBATA RT.004/004 JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan DUREN TIGA: RT 004/RW 004
+    - Kelurahan DUREN TIGA: RW 004 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9828,7 +9828,7 @@
 - Alamat: JL. KH. ISMAIL NO. 121
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan DUREN TIGA: RT 009/RW 002
+    - Kelurahan DUREN TIGA: RW 002 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9845,7 +9845,7 @@
 - Alamat: JL. KALIBATA UTARA VI/28
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan DUREN TIGA: RT 009/RW 002
+    - Kelurahan DUREN TIGA: RW 002 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9862,7 +9862,7 @@
 - Alamat: JL. DHARMA KOMP. POMAD
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan KALIBATA: RT 019/RW 006
+    - Kelurahan KALIBATA: RW 006 (RT 019)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9878,7 +9878,7 @@
 - Alamat: JL. RAYA PASAR MINGGU KOMP. GARUDA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan KALIBATA: RT 013/RW 004
+    - Kelurahan KALIBATA: RW 004 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9894,7 +9894,7 @@
 - Alamat: JL. KALIBATA TIMUR IV/ E
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan KALIBATA: RT 010/RW 008
+    - Kelurahan KALIBATA: RW 008 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9910,7 +9910,7 @@
 - Alamat: JL. KALIBATA TIMUR IV
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan KALIBATA: RT 010/RW 008
+    - Kelurahan KALIBATA: RW 008 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9926,7 +9926,7 @@
 - Alamat: JL. KALIBATA TENGAH NO.8
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan KALIBATA: RT 001/RW 003
+    - Kelurahan KALIBATA: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -9942,7 +9942,7 @@
 - Alamat: JL. TRILOKA XII KOMP. TNI AU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan PANCORAN: RT 003/RW 004
+    - Kelurahan PANCORAN: RW 004 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan MAMPANG PRAPATAN
@@ -9962,7 +9962,7 @@
 - Alamat: JL. PANCORAN TIMUR II / B NO. 21
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan PENGADEGAN: RT 002/RW 008
+    - Kelurahan PENGADEGAN: RW 008 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CAWANG
@@ -9977,7 +9977,7 @@
 - Alamat: JL. PANCORAN TIMUR II B NO. 21
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan PENGADEGAN: RT 001/RW 008
+    - Kelurahan PENGADEGAN: RW 008 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CAWANG
@@ -9992,7 +9992,7 @@
 - Alamat: JL. PANCORAN BARAT VIII A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan PANCORAN: RT 009/RW 003
+    - Kelurahan PANCORAN: RW 003 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan MAMPANG PRAPATAN
@@ -10012,7 +10012,7 @@
 - Alamat: JL. PANCORAN BARAT VIII
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan PANCORAN: RT 010/RW 006
+    - Kelurahan PANCORAN: RW 006 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan MAMPANG PRAPATAN
@@ -10032,7 +10032,7 @@
 - Alamat: JL. PANCORAN BARAT VIIIA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan PANCORAN: RT 009/RW 003
+    - Kelurahan PANCORAN: RW 003 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan MAMPANG PRAPATAN
@@ -10052,7 +10052,7 @@
 - Alamat: JL. PENGADEGAN TIMUR I RT001 RW001 NO.2
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan PENGADEGAN: RT 001/RW 001
+    - Kelurahan PENGADEGAN: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CAWANG
@@ -10067,7 +10067,7 @@
 - Alamat: JL. PENGADEGAN BARAT XIII/47
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan PENGADEGAN: RT 007/RW 004
+    - Kelurahan PENGADEGAN: RW 004 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CAWANG
@@ -10082,7 +10082,7 @@
 - Alamat: JL. RAWAJATI BARAT II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan RAWAJATI: RT 005/RW 004
+    - Kelurahan RAWAJATI: RW 004 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CAWANG
@@ -10099,7 +10099,7 @@
 - Alamat: JALAN KOMPLEK ZENI AD VII
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan RAWAJATI: RT 002/RW 003
+    - Kelurahan RAWAJATI: RW 003 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CAWANG
@@ -10116,7 +10116,7 @@
 - Alamat: JL. KOMP. ZENI AD VII
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan RAWAJATI: RT 002/RW 003
+    - Kelurahan RAWAJATI: RW 003 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CAWANG
@@ -10133,7 +10133,7 @@
 - Alamat: JL. RAWAJATI BARAT II GG. A5
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan RAWAJATI: RT 006/RW 004
+    - Kelurahan RAWAJATI: RW 004 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CAWANG
@@ -10150,7 +10150,7 @@
 - Alamat: KOMPLEK ZENI AD, JL. SD RAWAJATI 07, RT. 001 RW.003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan RAWAJATI: RT 001/RW 003
+    - Kelurahan RAWAJATI: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CAWANG
@@ -10167,7 +10167,7 @@
 - Alamat: JL. SEMANGKA KOMPLEK KALIBATA INDAH RT.15 / RW.6
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan RAWAJATI: RT 015/RW 006
+    - Kelurahan RAWAJATI: RW 006 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CAWANG
@@ -10184,7 +10184,7 @@
 - Alamat: JL. RAYA CILANDAK KKO RT. 14/05 NO.70
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan CILANDAK TIMUR: RT 014/RW 005
+    - Kelurahan CILANDAK TIMUR: RW 005 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -10200,7 +10200,7 @@
 - Alamat: JL. MEMED I RT 014/RW 05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan CILANDAK TIMUR: RT 014/RW 005
+    - Kelurahan CILANDAK TIMUR: RW 005 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -10216,7 +10216,7 @@
 - Alamat: JL. JERUK PURUT RT. 007/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan CILANDAK TIMUR: RT 007/RW 003
+    - Kelurahan CILANDAK TIMUR: RW 003 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -10232,7 +10232,7 @@
 - Alamat: JL. BACANG NO.33 RT.006 RW.01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan JATI PADANG: RT 006/RW 001
+    - Kelurahan JATI PADANG: RW 001 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR MINGGU
     - Kelurahan JATI PADANG
@@ -10244,7 +10244,7 @@
 - Alamat: JL. RAYA RAGUNAN NO.40
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan JATI PADANG: RT 014/RW 002
+    - Kelurahan JATI PADANG: RW 002 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR MINGGU
     - Kelurahan JATI PADANG
@@ -10256,7 +10256,7 @@
 - Alamat: JL. RAYA KEBAGUSAN RT.004/07, KEBAGUSAN, PASAR MINGGU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan KEBAGUSAN: RT 004/RW 007
+    - Kelurahan KEBAGUSAN: RW 007 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -10271,7 +10271,7 @@
 - Alamat: JL. KEBAGUSAN BESAR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan KEBAGUSAN: RT 003/RW 006
+    - Kelurahan KEBAGUSAN: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -10286,7 +10286,7 @@
 - Alamat: JL. BAUNG NO. 31
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan KEBAGUSAN: RT 001/RW 003
+    - Kelurahan KEBAGUSAN: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -10301,7 +10301,7 @@
 - Alamat: JLN. KEBAGUSAN WATES 4 RT. 011/04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan KEBAGUSAN: RT 011/RW 004
+    - Kelurahan KEBAGUSAN: RW 004 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -10315,7 +10315,7 @@
 - Alamat: JL. MUJAIR I RAWA BAMBU NO. 5 RT 006/ RW 009
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PASAR MINGGU: RT 006/RW 009
+    - Kelurahan PASAR MINGGU: RW 009 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan TANJUNG BARAT
@@ -10329,7 +10329,7 @@
 - Alamat: JL. PALAPA RAYA NO. 4
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PASAR MINGGU: RT 015/RW 005
+    - Kelurahan PASAR MINGGU: RW 005 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan TANJUNG BARAT
@@ -10343,7 +10343,7 @@
 - Alamat: JL. MUJAIR I RAWA BAMBU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PASAR MINGGU: RT 006/RW 009
+    - Kelurahan PASAR MINGGU: RW 009 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan TANJUNG BARAT
@@ -10357,7 +10357,7 @@
 - Alamat: JL. RAWA BAMBU I RT. 008/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PASAR MINGGU: RT 008/RW 006
+    - Kelurahan PASAR MINGGU: RW 006 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -10373,7 +10373,7 @@
 - Alamat: JL. CONDET PEJATEN NO. 16
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN BARAT: RT 002/RW 007
+    - Kelurahan PEJATEN BARAT: RW 007 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -10389,7 +10389,7 @@
 - Alamat: JL. PEJATEN RAYA RT 06 RW 06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN BARAT: RT 006/RW 006
+    - Kelurahan PEJATEN BARAT: RW 006 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -10406,7 +10406,7 @@
 - Alamat: JL. RAMBUTAN NO. 20
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN BARAT: RT 003/RW 006
+    - Kelurahan PEJATEN BARAT: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -10423,7 +10423,7 @@
 - Alamat: JL. RAMBUTAN VII NO. 12
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN BARAT: RT 003/RW 006
+    - Kelurahan PEJATEN BARAT: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -10440,7 +10440,7 @@
 - Alamat: JL. AMIL PEJATEN BARAT RT.002/04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN BARAT: RT 002/RW 004
+    - Kelurahan PEJATEN BARAT: RW 004 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -10457,7 +10457,7 @@
 - Alamat: JL. H. AYUB GG. F RT.012/01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN BARAT: RT 012/RW 001
+    - Kelurahan PEJATEN BARAT: RW 001 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -10474,7 +10474,7 @@
 - Alamat: JL. POLTANGAN IV
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN TIMUR: RT 005/RW 010
+    - Kelurahan PEJATEN TIMUR: RW 010 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -10491,7 +10491,7 @@
 - Alamat: JL. POLTANGAN GG. GUNUK I, RT.001/03, NO.50
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN TIMUR: RT 001/RW 003
+    - Kelurahan PEJATEN TIMUR: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -10508,7 +10508,7 @@
 - Alamat: JL. KEMUNING IV
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN TIMUR: RT 014/RW 006
+    - Kelurahan PEJATEN TIMUR: RW 006 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
     - Kelurahan KALIBATA
@@ -10522,7 +10522,7 @@
 - Alamat: JL. PAGUJATEN RAYA, RT.016/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN TIMUR: RT 016/RW 006
+    - Kelurahan PEJATEN TIMUR: RW 006 (RT 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALE KAMBANG
@@ -10541,7 +10541,7 @@
 - Alamat: JL. SIAGA DHARMA VIII NO. 19
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN TIMUR: RT 013/RW 005
+    - Kelurahan PEJATEN TIMUR: RW 005 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
     - Kelurahan KALIBATA
@@ -10555,7 +10555,7 @@
 - Alamat: JL. MASJID BARU RT.007/01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN TIMUR: RT 007/RW 001
+    - Kelurahan PEJATEN TIMUR: RW 001 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
     - Kelurahan KALIBATA
@@ -10569,7 +10569,7 @@
 - Alamat: JL. KEMUNING DALAM I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN TIMUR: RT 005/RW 006
+    - Kelurahan PEJATEN TIMUR: RW 006 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALE KAMBANG
@@ -10585,7 +10585,7 @@
 - Alamat: JL. RUKUN RT. 005/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN TIMUR: RT 005/RW 005
+    - Kelurahan PEJATEN TIMUR: RW 005 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALE KAMBANG
@@ -10601,7 +10601,7 @@
 - Alamat: JL. WARUNG JATI RT 001/01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan RAGUNAN: RT 001/RW 001
+    - Kelurahan RAGUNAN: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -10616,7 +10616,7 @@
 - Alamat: JL. WARUNG JATI BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan RAGUNAN: RT 002/RW 001
+    - Kelurahan RAGUNAN: RW 001 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -10631,7 +10631,7 @@
 - Alamat: JL. SYARIDIN RT. 006/09 RAGUNAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan RAGUNAN: RT 006/RW 009
+    - Kelurahan RAGUNAN: RW 009 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR MINGGU
     - Kelurahan CILANDAK TIMUR
@@ -10644,7 +10644,7 @@
 - Alamat: JL. HARSONO RM, RAGUNAN PASAR MINGGU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan RAGUNAN: RT 007/RW 004
+    - Kelurahan RAGUNAN: RW 004 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -10659,7 +10659,7 @@
 - Alamat: JL. WARUNG JATI BARAT RT. 002/11
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan RAGUNAN: RT 002/RW 011
+    - Kelurahan RAGUNAN: RW 011 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR MINGGU
     - Kelurahan CILANDAK TIMUR
@@ -10671,7 +10671,7 @@
 - Alamat: JL. JABIR RT. 005/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan RAGUNAN: RT 005/RW 007
+    - Kelurahan RAGUNAN: RW 007 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -10686,7 +10686,7 @@
 - Alamat: JL. KEBAGUSAN RAYA RT. 01/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan RAGUNAN: RT 001/RW 007
+    - Kelurahan RAGUNAN: RW 007 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -10701,7 +10701,7 @@
 - Alamat: JL. SUMBING NO. 30
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIA BUDI
-    - Kelurahan GUNTUR: RT 003/RW 001
+    - Kelurahan GUNTUR: RW 001 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MENTENG
     - Kelurahan MENTENG
@@ -10714,7 +10714,7 @@
 - Alamat: JL. HALIMUN NO. 2 B
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIA BUDI
-    - Kelurahan GUNTUR: RT 001/RW 006
+    - Kelurahan GUNTUR: RW 006 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MENTENG
     - Kelurahan MENTENG
@@ -10727,7 +10727,7 @@
 - Alamat: JL. KARET BELAKANG NO. 2 RT013/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIA BUDI
-    - Kelurahan KARET: RT 013/RW 003
+    - Kelurahan KARET: RW 003 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
     - Kelurahan KARET
@@ -10740,7 +10740,7 @@
 - Alamat: JL. KARET BELAKANG
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIA BUDI
-    - Kelurahan KARET: RT 010/RW 003
+    - Kelurahan KARET: RW 003 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
     - Kelurahan KARET
@@ -10753,7 +10753,7 @@
 - Alamat: JL. GENTENG HIJAU NO.1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIA BUDI
-    - Kelurahan KARET KUNINGAN: RT 001/RW 007
+    - Kelurahan KARET KUNINGAN: RW 007 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
     - Kelurahan KARET
@@ -10764,7 +10764,7 @@
 - Alamat: JL. KH. GURU MUGHNI GG. SD RT. 003/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIA BUDI
-    - Kelurahan KUNINGAN TIMUR: RT 003/RW 003
+    - Kelurahan KUNINGAN TIMUR: RW 003 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan KUNINGAN BARAT
@@ -10778,7 +10778,7 @@
 - Alamat: JL. DR. SAHARJO NO. 121
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIA BUDI
-    - Kelurahan MENTENG ATAS: RT 001/RW 008
+    - Kelurahan MENTENG ATAS: RW 008 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
     - Kelurahan MENTENG ATAS
@@ -10791,7 +10791,7 @@
 - Alamat: JL. DR. SAHARJO NO. 121
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIA BUDI
-    - Kelurahan MENTENG ATAS: RT 001/RW 008
+    - Kelurahan MENTENG ATAS: RW 008 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
     - Kelurahan MENTENG ATAS
@@ -10804,7 +10804,7 @@
 - Alamat: JL. MURIA NO. 43
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIA BUDI
-    - Kelurahan MENTENG ATAS: RT 001/RW 002
+    - Kelurahan MENTENG ATAS: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
     - Kelurahan GUNTUR
@@ -10815,7 +10815,7 @@
 - Alamat: JL. MINANGKABAU DALAM
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIA BUDI
-    - Kelurahan MENTENG ATAS: RT 015/RW 006
+    - Kelurahan MENTENG ATAS: RW 006 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
     - Kelurahan GUNTUR
@@ -10828,7 +10828,7 @@
 - Alamat: JL. MINANGKABAU DALAM
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIA BUDI
-    - Kelurahan MENTENG ATAS: RT 015/RW 006
+    - Kelurahan MENTENG ATAS: RW 006 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
     - Kelurahan GUNTUR
@@ -10841,7 +10841,7 @@
 - Alamat: JL. MENTENG PULO UJUNG
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIA BUDI
-    - Kelurahan MENTENG ATAS: RT 016/RW 005
+    - Kelurahan MENTENG ATAS: RW 005 (RT 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
     - Kelurahan GUNTUR
@@ -10854,7 +10854,7 @@
 - Alamat: JL. MENTENG GRANIT VII/5
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIA BUDI
-    - Kelurahan PASAR MANGGIS: RT 015/RW 007
+    - Kelurahan PASAR MANGGIS: RW 007 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
     - Kelurahan GUNTUR
@@ -10865,7 +10865,7 @@
 - Alamat: JL. MENTENG WADAS V NO. 56
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIA BUDI
-    - Kelurahan PASAR MANGGIS: RT 010/RW 001
+    - Kelurahan PASAR MANGGIS: RW 001 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
     - Kelurahan GUNTUR
@@ -10876,7 +10876,7 @@
 - Alamat: JL. SETIABUDI BARAT NO.8K
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIA BUDI
-    - Kelurahan SETIA BUDI: RT 002/RW 002
+    - Kelurahan SETIA BUDI: RW 002 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
     - Kelurahan KARET
@@ -10889,7 +10889,7 @@
 - Alamat: JL. BUKIT DURI TANJAKAN GG. SD
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan BUKIT DURI: RT 001/RW 009
+    - Kelurahan BUKIT DURI: RW 009 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan KAMPUNG MELAYU
@@ -10903,7 +10903,7 @@
 - Alamat: JL. PERUK NO.32 BUKIT DURI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan BUKIT DURI: RT 007/RW 003
+    - Kelurahan BUKIT DURI: RW 003 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TEBET
     - Kelurahan BUKIT DURI
@@ -10916,7 +10916,7 @@
 - Alamat: JL. PERUK NO.32 RT 08/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan BUKIT DURI: RT 008/RW 003
+    - Kelurahan BUKIT DURI: RW 003 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TEBET
     - Kelurahan BUKIT DURI
@@ -10929,7 +10929,7 @@
 - Alamat: JL. KAMPUNG DALAM BARAT VI/3
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan KEBON BARU: RT 006/RW 014
+    - Kelurahan KEBON BARU: RW 014 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BIDARACINA
@@ -10945,7 +10945,7 @@
 - Alamat: JL. GUDANG PELURU BLOK F
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan KEBON BARU: RT 002/RW 003
+    - Kelurahan KEBON BARU: RW 003 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BIDARACINA
@@ -10959,7 +10959,7 @@
 - Alamat: JL. ASEM BARIS II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan KEBON BARU: RT 009/RW 005
+    - Kelurahan KEBON BARU: RW 005 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BIDARACINA
@@ -10976,7 +10976,7 @@
 - Alamat: JL. ASEM BARIS II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan KEBON BARU: RT 009/RW 005
+    - Kelurahan KEBON BARU: RW 005 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BIDARACINA
@@ -10993,7 +10993,7 @@
 - Alamat: JL. H NO. 40 A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan KEBON BARU: RT 003/RW 008
+    - Kelurahan KEBON BARU: RW 008 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BIDARACINA
@@ -11008,7 +11008,7 @@
 - Alamat: JL. MANGGARAI UTARA I/6
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan MANGGARAI: RT 001/RW 001
+    - Kelurahan MANGGARAI: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan KAMPUNG MELAYU
@@ -11027,7 +11027,7 @@
 - Alamat: JL. MANGGARAI UTARA V/6
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan MANGGARAI: RT 005/RW 001
+    - Kelurahan MANGGARAI: RW 001 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan KAMPUNG MELAYU
@@ -11044,7 +11044,7 @@
 - Alamat: JL. SWADAYA I RT 013 RW. 09
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan MANGGARAI: RT 013/RW 009
+    - Kelurahan MANGGARAI: RW 009 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MENTENG
     - Kelurahan PEGANGSAAN
@@ -11060,7 +11060,7 @@
 - Alamat: JL. MANGGARAI SELATAN II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan MANGGARAI: RT 015/RW 010
+    - Kelurahan MANGGARAI: RW 010 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan KAMPUNG MELAYU
@@ -11080,7 +11080,7 @@
 - Alamat: JL. RAMBUTAN DR. SAHARJO
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan MANGGARAI SELATAN: RT 003/RW 007
+    - Kelurahan MANGGARAI SELATAN: RW 007 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
     - Kelurahan MENTENG ATAS
@@ -11095,7 +11095,7 @@
 - Alamat: JL. SEDERHANA I RT.16/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan MANGGARAI SELATAN: RT 016/RW 002
+    - Kelurahan MANGGARAI SELATAN: RW 002 (RT 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
     - Kelurahan MENTENG ATAS
@@ -11110,7 +11110,7 @@
 - Alamat: JL. CASABLANCA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan MENTENG DALAM: RT 004/RW 012
+    - Kelurahan MENTENG DALAM: RW 012 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
     - Kelurahan KUNINGAN TIMUR
@@ -11124,7 +11124,7 @@
 - Alamat: JL. PROF. SOEPOMO, SH
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan MENTENG DALAM: RT 001/RW 001
+    - Kelurahan MENTENG DALAM: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
     - Kelurahan PANCORAN
@@ -11140,7 +11140,7 @@
 - Alamat: JL. FLAMBOYAN I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan MENTENG DALAM: RT 010/RW 009
+    - Kelurahan MENTENG DALAM: RW 009 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
     - Kelurahan PANCORAN
@@ -11156,7 +11156,7 @@
 - Alamat: JL. PROF. SUPOMO, SH
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan MENTENG DALAM: RT 001/RW 001
+    - Kelurahan MENTENG DALAM: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
     - Kelurahan PANCORAN
@@ -11171,7 +11171,7 @@
 - Alamat: JL. TEBET BARAT DALAM VI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan TEBET BARAT: RT 006/RW 004
+    - Kelurahan TEBET BARAT: RW 004 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
     - Kelurahan CIKOKO
@@ -11185,7 +11185,7 @@
 - Alamat: JL. TEBET DALAM III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan TEBET BARAT: RT 019/RW 001
+    - Kelurahan TEBET BARAT: RW 001 (RT 019)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
     - Kelurahan MENTENG ATAS
@@ -11199,7 +11199,7 @@
 - Alamat: JL. TEBET BARAT X/4 RT.012/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan TEBET BARAT: RT 012/RW 005
+    - Kelurahan TEBET BARAT: RW 005 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
     - Kelurahan CIKOKO
@@ -11216,7 +11216,7 @@
 - Alamat: JL. RAYA BEKASI KM. 23 RT. 001/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG BARAT: RT 001/RW 002
+    - Kelurahan CAKUNG BARAT: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11229,7 +11229,7 @@
 - Alamat: JL. RAYA BEKASI KM. 23
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG BARAT: RT 018/RW 004
+    - Kelurahan CAKUNG BARAT: RW 004 (RT 018)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11240,7 +11240,7 @@
 - Alamat: JL. RAYA BEKASI KM. 23
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG BARAT: RT 018/RW 004
+    - Kelurahan CAKUNG BARAT: RW 004 (RT 018)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11251,7 +11251,7 @@
 - Alamat: JL. TIPAR RT. 12/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG BARAT: RT 012/RW 007
+    - Kelurahan CAKUNG BARAT: RW 007 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11261,7 +11261,7 @@
 - Alamat: JL. RAYA BEKASI KM. 23 - HAMENGKUBUWONO IX
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG BARAT: RT 018/RW 004
+    - Kelurahan CAKUNG BARAT: RW 004 (RT 018)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11273,7 +11273,7 @@
 - Alamat: JL. PAHLAWAN KOMARUDIN RT.004/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG BARAT: RT 004/RW 003
+    - Kelurahan CAKUNG BARAT: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11285,7 +11285,7 @@
 - Alamat: JL. TIPAR CAKUNG NO.77 RT 001 RW 007
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG BARAT: RT 001/RW 007
+    - Kelurahan CAKUNG BARAT: RW 007 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11296,7 +11296,7 @@
 - Alamat: JL. TIPAR CAKUNG RT. 012/008
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG BARAT: RT 012/RW 008
+    - Kelurahan CAKUNG BARAT: RW 008 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11307,7 +11307,7 @@
 - Alamat: JL. RAYA BEKASI KM. 25 RT 002/001
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 002/RW 001
+    - Kelurahan CAKUNG TIMUR: RW 001 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11319,7 +11319,7 @@
 - Alamat: JL. TAMBUN RENGAS RT 02/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 002/RW 007
+    - Kelurahan CAKUNG TIMUR: RW 007 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11330,7 +11330,7 @@
 - Alamat: JL. KAYU TINGGI RT. 001/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 001/RW 006
+    - Kelurahan CAKUNG TIMUR: RW 006 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11342,7 +11342,7 @@
 - Alamat: JL. KAYU TINGGI RT 001/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 001/RW 006
+    - Kelurahan CAKUNG TIMUR: RW 006 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11354,7 +11354,7 @@
 - Alamat: JL. TAMBUN RENGAS RT 02/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 002/RW 007
+    - Kelurahan CAKUNG TIMUR: RW 007 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11365,7 +11365,7 @@
 - Alamat: JL. KAYU TINGGI RT 003/09
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 003/RW 009
+    - Kelurahan CAKUNG TIMUR: RW 009 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11377,7 +11377,7 @@
 - Alamat: JL KAYU TINGGI RT 001/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 001/RW 006
+    - Kelurahan CAKUNG TIMUR: RW 006 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11389,7 +11389,7 @@
 - Alamat: JL. SWADAYA IV PULO JAHE
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan JATINEGARA: RT 007/RW 010
+    - Kelurahan JATINEGARA: RW 010 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -11402,7 +11402,7 @@
 - Alamat: JL. RAYA BEKASI KM. 17
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan JATINEGARA: RT 005/RW 003
+    - Kelurahan JATINEGARA: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -11416,7 +11416,7 @@
 - Alamat: JL. RAYA BEKASI KM. 17
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan JATINEGARA: RT 005/RW 003
+    - Kelurahan JATINEGARA: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -11430,7 +11430,7 @@
 - Alamat: JL. RAJIMAN WIDYODININGRAT PULO JAHE RT 12/14
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan JATINEGARA: RT 012/RW 014
+    - Kelurahan JATINEGARA: RW 014 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -11443,7 +11443,7 @@
 - Alamat: JL. BUARAN I RT.006/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan JATINEGARA: RT 006/RW 008
+    - Kelurahan JATINEGARA: RW 008 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -11457,7 +11457,7 @@
 - Alamat: JL. BUARAN I RT. 006/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan JATINEGARA: RT 006/RW 008
+    - Kelurahan JATINEGARA: RW 008 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -11471,7 +11471,7 @@
 - Alamat: JL. RAYA BEKASI KM. 17
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan JATINEGARA: RT 012/RW 002
+    - Kelurahan JATINEGARA: RW 002 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -11485,7 +11485,7 @@
 - Alamat: JL. DR.KRT.RADJIMAN WIDYODININGRAT KP.RAWA BADUNG RT 007 RW 007
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan JATINEGARA: RT 007/RW 007
+    - Kelurahan JATINEGARA: RW 007 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -11498,7 +11498,7 @@
 - Alamat: JL. RAYA PENGGILINGAN RT 002/ 007
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PENGGILINGAN: RT 002/RW 007
+    - Kelurahan PENGGILINGAN: RW 007 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11512,7 +11512,7 @@
 - Alamat: JL. RAYA PENGGILINGAN RT 002/ 007
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PENGGILINGAN: RT 002/RW 007
+    - Kelurahan PENGGILINGAN: RW 007 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11526,7 +11526,7 @@
 - Alamat: JL. KOMPLEK PIK PENGGILINGAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PENGGILINGAN: RT 009/RW 010
+    - Kelurahan PENGGILINGAN: RW 010 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -11538,7 +11538,7 @@
 - Alamat: JLN. RAYA PENGGILINGAN KOMP. PIK
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PENGGILINGAN: RT 009/RW 010
+    - Kelurahan PENGGILINGAN: RW 010 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -11550,7 +11550,7 @@
 - Alamat: JL. MENTIBU PERUM ANEKA ELOK BLOK G
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PENGGILINGAN: RT 013/RW 009
+    - Kelurahan PENGGILINGAN: RW 009 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11564,7 +11564,7 @@
 - Alamat: JL. RAYA PULOGEBANG KM.2
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 003/RW 006
+    - Kelurahan PULO GEBANG: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -11578,7 +11578,7 @@
 - Alamat: JL. RAYA PULO GEBANG KM 2
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 003/RW 006
+    - Kelurahan PULO GEBANG: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -11592,7 +11592,7 @@
 - Alamat: JL. KOMARUDIN LAMA RT 006 RW 005
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 006/RW 005
+    - Kelurahan PULO GEBANG: RW 005 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11606,7 +11606,7 @@
 - Alamat: JL. RAWABEBEK
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 002/RW 001
+    - Kelurahan PULO GEBANG: RW 001 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -11619,7 +11619,7 @@
 - Alamat: JL. RAWABEBEK
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 002/RW 001
+    - Kelurahan PULO GEBANG: RW 001 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -11632,7 +11632,7 @@
 - Alamat: JL. PENDIDIKAN RT 009/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 009/RW 005
+    - Kelurahan PULO GEBANG: RW 005 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11645,7 +11645,7 @@
 - Alamat: JL. PENDIDIKAN RT.009/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 009/RW 005
+    - Kelurahan PULO GEBANG: RW 005 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11658,7 +11658,7 @@
 - Alamat: JL. PENDIDIKAN RT.009/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 009/RW 005
+    - Kelurahan PULO GEBANG: RW 005 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11671,7 +11671,7 @@
 - Alamat: JL. PENDIDIKAN RT.009/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 009/RW 005
+    - Kelurahan PULO GEBANG: RW 005 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11684,7 +11684,7 @@
 - Alamat: JLN. H. HASAN RT 013 RW 008
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 013/RW 008
+    - Kelurahan PULO GEBANG: RW 008 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -11698,7 +11698,7 @@
 - Alamat: JL RAWA KUNING
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 005/RW 002
+    - Kelurahan PULO GEBANG: RW 002 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11713,7 +11713,7 @@
 - Alamat: JL. PALAD RAWA KUNING RT 011 RW 007
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 011/RW 007
+    - Kelurahan PULO GEBANG: RW 007 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11727,7 +11727,7 @@
 - Alamat: JL. RAYA RAWA KUNING
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 008/RW 002
+    - Kelurahan PULO GEBANG: RW 002 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG TIMUR
@@ -11741,7 +11741,7 @@
 - Alamat: JL. RAYA PULOGEBANG KOMPLEK MAS NAGA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 010/RW 006
+    - Kelurahan PULO GEBANG: RW 006 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -11755,7 +11755,7 @@
 - Alamat: JL. DR. KRT. RAJIMAN WEDYODININGRAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan RAWA TERATE: RT 010/RW 004
+    - Kelurahan RAWA TERATE: RW 004 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11769,7 +11769,7 @@
 - Alamat: JL. DR. KRT. RAJIMAN WIDYODININGRAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan RAWA TERATE: RT 006/RW 006
+    - Kelurahan RAWA TERATE: RW 006 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -11783,7 +11783,7 @@
 - Alamat: JL. IRIGASI RT. 001/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan UJUNG MENTENG: RT 001/RW 008
+    - Kelurahan UJUNG MENTENG: RW 008 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG TIMUR
@@ -11794,7 +11794,7 @@
 - Alamat: JL. IRIGASI RT 001/008
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan UJUNG MENTENG: RT 001/RW 008
+    - Kelurahan UJUNG MENTENG: RW 008 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG TIMUR
@@ -11805,7 +11805,7 @@
 - Alamat: JL. IRIGASI RT. 001/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan UJUNG MENTENG: RT 001/RW 008
+    - Kelurahan UJUNG MENTENG: RW 008 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG TIMUR
@@ -11816,7 +11816,7 @@
 - Alamat: JL. IRIGASI RT. 001/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan UJUNG MENTENG: RT 001/RW 008
+    - Kelurahan UJUNG MENTENG: RW 008 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG TIMUR
@@ -11827,7 +11827,7 @@
 - Alamat: JL. IRIGASI RT. 001/08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan UJUNG MENTENG: RT 001/RW 008
+    - Kelurahan UJUNG MENTENG: RW 008 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG TIMUR
@@ -11838,7 +11838,7 @@
 - Alamat: JL. KELURAHAN I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 001/RW 004
+    - Kelurahan DUREN SAWIT: RW 004 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -11850,7 +11850,7 @@
 - Alamat: JL. LINGKAR TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 014/RW 008
+    - Kelurahan DUREN SAWIT: RW 008 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -11862,7 +11862,7 @@
 - Alamat: JL. PENDIDIKAN IX
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 001/RW 014
+    - Kelurahan DUREN SAWIT: RW 014 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -11874,7 +11874,7 @@
 - Alamat: JL. KAVLING AGRARIA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 002/RW 016
+    - Kelurahan DUREN SAWIT: RW 016 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -11887,7 +11887,7 @@
 - Alamat: JL. INSPEKSI SALURAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 002/RW 016
+    - Kelurahan DUREN SAWIT: RW 016 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -11900,7 +11900,7 @@
 - Alamat: JL. MADRASAH II CILUNGUP
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 012/RW 010
+    - Kelurahan DUREN SAWIT: RW 010 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -11914,7 +11914,7 @@
 - Alamat: JL. MUSHOLA AL IKHSAN NO. 13B
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 006/RW 007
+    - Kelurahan DUREN SAWIT: RW 007 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -11927,7 +11927,7 @@
 - Alamat: JL. MADRASAH II RT. 009/010, KEC. DUREN SAWIT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 009/RW 010
+    - Kelurahan DUREN SAWIT: RW 010 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -11944,7 +11944,7 @@
 - Alamat: JL. BULUH PERINDU RAYA NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 012/RW 011
+    - Kelurahan DUREN SAWIT: RW 011 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -11956,7 +11956,7 @@
 - Alamat: JL. MASJID AL FALAH
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 004/RW 005
+    - Kelurahan DUREN SAWIT: RW 005 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -11968,7 +11968,7 @@
 - Alamat: JL. LINGKAR DUREN SAWIT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 005/RW 008
+    - Kelurahan DUREN SAWIT: RW 008 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -11980,7 +11980,7 @@
 - Alamat: JL. PERTANIAN NO. 25 RT 07/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 007/RW 002
+    - Kelurahan KLENDER: RW 002 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -11994,7 +11994,7 @@
 - Alamat: JL. RADIN INTEN II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 006/RW 014
+    - Kelurahan KLENDER: RW 014 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -12009,7 +12009,7 @@
 - Alamat: JL. DUREN SAWIT BARAT III A
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 006/RW 011
+    - Kelurahan KLENDER: RW 011 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12021,7 +12021,7 @@
 - Alamat: JL. PERTANIAN TIMUR RT 015/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 015/RW 002
+    - Kelurahan KLENDER: RW 002 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12035,7 +12035,7 @@
 - Alamat: JL. RADIN INTEN II, TAMAN BUARAN INDAH
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 001/RW 014
+    - Kelurahan KLENDER: RW 014 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -12050,7 +12050,7 @@
 - Alamat: JL. PERTANIAN UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 004/RW 001
+    - Kelurahan KLENDER: RW 001 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -12068,7 +12068,7 @@
 - Alamat: JL. BULAK TIMUR I/9
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 003/RW 016
+    - Kelurahan KLENDER: RW 016 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12081,7 +12081,7 @@
 - Alamat: JL. DERMAGA BARU I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 008/RW 016
+    - Kelurahan KLENDER: RW 016 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12092,7 +12092,7 @@
 - Alamat: JL. DERMAGA BARU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 008/RW 016
+    - Kelurahan KLENDER: RW 016 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12103,7 +12103,7 @@
 - Alamat: JL. DERMAGA BARU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 008/RW 016
+    - Kelurahan KLENDER: RW 016 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12114,7 +12114,7 @@
 - Alamat: JL. BUARAN II NO. 49
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 005/RW 013
+    - Kelurahan KLENDER: RW 013 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -12128,7 +12128,7 @@
 - Alamat: JL. BUNGA RAMPAI NO. 21
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA JAYA: RT 002/RW 006
+    - Kelurahan MALAKA JAYA: RW 006 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan MALAKA JAYA
@@ -12140,7 +12140,7 @@
 - Alamat: JL. MAWAR MERAH VI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA JAYA: RT 011/RW 004
+    - Kelurahan MALAKA JAYA: RW 004 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -12155,7 +12155,7 @@
 - Alamat: JL. MAWAR MERAH VI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA JAYA: RT 013/RW 006
+    - Kelurahan MALAKA JAYA: RW 006 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -12170,7 +12170,7 @@
 - Alamat: JL. BUNGA RAMPAI VII
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA JAYA: RT 015/RW 006
+    - Kelurahan MALAKA JAYA: RW 006 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -12185,7 +12185,7 @@
 - Alamat: JL. RAYA BUNGA RAMPAI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA JAYA: RT 015/RW 006
+    - Kelurahan MALAKA JAYA: RW 006 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -12200,7 +12200,7 @@
 - Alamat: JL. NUSA INDAH III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA JAYA: RT 005/RW 005
+    - Kelurahan MALAKA JAYA: RW 005 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -12215,7 +12215,7 @@
 - Alamat: JL. NUSA INDAH IV
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA JAYA: RT 013/RW 006
+    - Kelurahan MALAKA JAYA: RW 006 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -12230,7 +12230,7 @@
 - Alamat: JL. NUSA INDAH IV NO. 40-41
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA JAYA: RT 009/RW 004
+    - Kelurahan MALAKA JAYA: RW 004 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -12244,7 +12244,7 @@
 - Alamat: JL. MALAKA III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA SARI: RT 001/RW 006
+    - Kelurahan MALAKA SARI: RW 006 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -12260,7 +12260,7 @@
 - Alamat: JL. MALAKA SARI II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA SARI: RT 009/RW 006
+    - Kelurahan MALAKA SARI: RW 006 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -12276,7 +12276,7 @@
 - Alamat: JL. DELIMA II NO. 47
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA SARI: RT 004/RW 003
+    - Kelurahan MALAKA SARI: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -12293,7 +12293,7 @@
 - Alamat: JL. MALAKA III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA SARI: RT 008/RW 006
+    - Kelurahan MALAKA SARI: RW 006 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -12310,7 +12310,7 @@
 - Alamat: JL. DELIMA II NO. 39 PRUMNAS KLENDER
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA SARI: RT 004/RW 003
+    - Kelurahan MALAKA SARI: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -12325,7 +12325,7 @@
 - Alamat: JL. DELIMA I NO. 37
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA SARI: RT 001/RW 004
+    - Kelurahan MALAKA SARI: RW 004 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -12340,7 +12340,7 @@
 - Alamat: JL. GADING RAYA II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 005/RW 011
+    - Kelurahan PONDOK BAMBU: RW 011 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12351,7 +12351,7 @@
 - Alamat: JL. PAHLAWAN REVOLUSI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 004/RW 003
+    - Kelurahan PONDOK BAMBU: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12366,7 +12366,7 @@
 - Alamat: JL. CIPINANG MUARA II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 005/RW 002
+    - Kelurahan PONDOK BAMBU: RW 002 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12379,7 +12379,7 @@
 - Alamat: JL. PAHLAWAN REVOLUSI RT 007 RW 004
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 007/RW 004
+    - Kelurahan PONDOK BAMBU: RW 004 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12394,7 +12394,7 @@
 - Alamat: JL. ORI RAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 001/RW 011
+    - Kelurahan PONDOK BAMBU: RW 011 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12405,7 +12405,7 @@
 - Alamat: JL. BULUH PERINDU RAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 016/RW 006
+    - Kelurahan PONDOK BAMBU: RW 006 (RT 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12418,7 +12418,7 @@
 - Alamat: JL. TARUNA PAHLAWAN REVOLUSI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 006/RW 004
+    - Kelurahan PONDOK BAMBU: RW 004 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan KLENDER
@@ -12432,7 +12432,7 @@
 - Alamat: JL. BALAI RAKYAT III NO. 13
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 001/RW 001
+    - Kelurahan PONDOK BAMBU: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12443,7 +12443,7 @@
 - Alamat: JL. BALAI RAKYAT III NO.14
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 001/RW 001
+    - Kelurahan PONDOK BAMBU: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12454,7 +12454,7 @@
 - Alamat: JL. BALAI RAKYAT III NO. 15
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 001/RW 001
+    - Kelurahan PONDOK BAMBU: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12465,7 +12465,7 @@
 - Alamat: JL. TIPAR KAVLING DKI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KELAPA: RT 012/RW 004
+    - Kelurahan PONDOK KELAPA: RW 004 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12478,7 +12478,7 @@
 - Alamat: JL. TIPAR KAV.DKI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KELAPA: RT 012/RW 004
+    - Kelurahan PONDOK KELAPA: RW 004 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12491,7 +12491,7 @@
 - Alamat: JL. TIPAR KAV.DKI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KELAPA: RT 012/RW 004
+    - Kelurahan PONDOK KELAPA: RW 004 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12504,7 +12504,7 @@
 - Alamat: JL. H. NAMAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KELAPA: RT 002/RW 002
+    - Kelurahan PONDOK KELAPA: RW 002 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -12516,7 +12516,7 @@
 - Alamat: JL. AD LAMPIRI PONDOK KELAPA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KELAPA: RT 004/RW 012
+    - Kelurahan PONDOK KELAPA: RW 012 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan PONDOK KELAPA
@@ -12528,7 +12528,7 @@
 - Alamat: KOMPLEK DKI RT.010 RW.002
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KELAPA: RT 010/RW 002
+    - Kelurahan PONDOK KELAPA: RW 002 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan MALAKA JAYA
@@ -12540,7 +12540,7 @@
 - Alamat: JL. RAYA PONDOK KELAPA GG. JAYA GAS
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KELAPA: RT 008/RW 001
+    - Kelurahan PONDOK KELAPA: RW 001 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan MALAKA JAYA
@@ -12552,7 +12552,7 @@
 - Alamat: JL. BINA KARYA I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KOPI: RT 005/RW 003
+    - Kelurahan PONDOK KOPI: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan MALAKA JAYA
@@ -12564,7 +12564,7 @@
 - Alamat: JL. RAWA JAYA RT. 06/04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KOPI: RT 006/RW 004
+    - Kelurahan PONDOK KOPI: RW 004 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan MALAKA JAYA
@@ -12576,7 +12576,7 @@
 - Alamat: JL. RAWAJAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KOPI: RT 006/RW 004
+    - Kelurahan PONDOK KOPI: RW 004 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan MALAKA JAYA
@@ -12588,7 +12588,7 @@
 - Alamat: JL. ROBUSTA RAYA BLOK P5
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KOPI: RT 001/RW 007
+    - Kelurahan PONDOK KOPI: RW 007 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -12602,7 +12602,7 @@
 - Alamat: JL. BINA KARYA I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KOPI: RT 005/RW 003
+    - Kelurahan PONDOK KOPI: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan MALAKA JAYA
@@ -12614,7 +12614,7 @@
 - Alamat: JL. ROBUSTA RAYA BLOK P5
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KOPI: RT 001/RW 007
+    - Kelurahan PONDOK KOPI: RW 007 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -12628,7 +12628,7 @@
 - Alamat: JL MATRAMAN RAYA NO 226
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan BALI MESTER: RT 004/RW 006
+    - Kelurahan BALI MESTER: RW 006 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BALIMESTER
@@ -12642,7 +12642,7 @@
 - Alamat: JL. JATINEGARA IV/12
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan BALI MESTER: RT 005/RW 003
+    - Kelurahan BALI MESTER: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BALIMESTER
@@ -12655,7 +12655,7 @@
 - Alamat: JL. SENSUS RAYA II NO. 2 RT. 04 RW. 004
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan BIDARA CINA: RT 004/RW 004
+    - Kelurahan BIDARA CINA: RW 004 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BALIMESTER
@@ -12666,7 +12666,7 @@
 - Alamat: JL. SETIA NO. 10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan BIDARA CINA: RT 008/RW 002
+    - Kelurahan BIDARA CINA: RW 002 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BIDARACINA
@@ -12678,7 +12678,7 @@
 - Alamat: JL TANJUNG LENGKONG NO. 51
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan BIDARA CINA: RT 017/RW 007
+    - Kelurahan BIDARA CINA: RW 007 (RT 017)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BALIMESTER
@@ -12690,7 +12690,7 @@
 - Alamat: JL. IPN RT 009/06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 009/RW 006
+    - Kelurahan CIPINANG BESAR SELATAN: RW 006 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12702,7 +12702,7 @@
 - Alamat: JALAN IPN, KAMPUNG JEMBATAN RT.002/006, CIPINANG BESAR SELATAN, KEC. JATINEGARA - JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 002/RW 006
+    - Kelurahan CIPINANG BESAR SELATAN: RW 006 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12714,7 +12714,7 @@
 - Alamat: JL. CIPINANG JAYA II/1 RT 010/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 010/RW 007
+    - Kelurahan CIPINANG BESAR SELATAN: RW 007 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12726,7 +12726,7 @@
 - Alamat: JL. PANCAWARGA IV NO.01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 007/RW 004
+    - Kelurahan CIPINANG BESAR SELATAN: RW 004 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12739,7 +12739,7 @@
 - Alamat: JL. JEND BASUKI RAHMAT NO.10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 005/RW 006
+    - Kelurahan CIPINANG BESAR SELATAN: RW 006 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12751,7 +12751,7 @@
 - Alamat: JL. PANCAWARGA IV NO.10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 007/RW 004
+    - Kelurahan CIPINANG BESAR SELATAN: RW 004 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12764,7 +12764,7 @@
 - Alamat: JL. GRIYA WARTAWAN NO.3
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 008/RW 005
+    - Kelurahan CIPINANG BESAR SELATAN: RW 005 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12775,7 +12775,7 @@
 - Alamat: JL. PERSATUAN II NO. 44
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 002/RW 006
+    - Kelurahan CIPINANG BESAR SELATAN: RW 006 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12787,7 +12787,7 @@
 - Alamat: JL. CIPINANG JAYA GG UJUNG NO. 15 RT. 4/8
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 004/RW 008
+    - Kelurahan CIPINANG BESAR SELATAN: RW 008 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12799,7 +12799,7 @@
 - Alamat: JL. PANCA WARGA IV/8 RT. 011 RW. 004
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 011/RW 004
+    - Kelurahan CIPINANG BESAR SELATAN: RW 004 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12813,7 +12813,7 @@
 - Alamat: JL. PANCAWARGA IV/8 N0. 27
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 011/RW 004
+    - Kelurahan CIPINANG BESAR SELATAN: RW 004 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12827,7 +12827,7 @@
 - Alamat: JL. PANCAWARGA I GG. 16
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 007/RW 003
+    - Kelurahan CIPINANG BESAR SELATAN: RW 003 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12840,7 +12840,7 @@
 - Alamat: JL. PANCAWARGA I/16
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 007/RW 003
+    - Kelurahan CIPINANG BESAR SELATAN: RW 003 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12853,7 +12853,7 @@
 - Alamat: JL. BEKASI TIMUR IV NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR UTARA: RT 001/RW 008
+    - Kelurahan CIPINANG BESAR UTARA: RW 008 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12868,7 +12868,7 @@
 - Alamat: JL. BEKASI TIMUR IV NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR UTARA: RT 001/RW 008
+    - Kelurahan CIPINANG BESAR UTARA: RW 008 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12883,7 +12883,7 @@
 - Alamat: JL. CIPINANG LATIHAN RT 03/010
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR UTARA: RT 003/RW 010
+    - Kelurahan CIPINANG BESAR UTARA: RW 010 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12895,7 +12895,7 @@
 - Alamat: JL. CIPINANG LATIHAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR UTARA: RT 003/RW 010
+    - Kelurahan CIPINANG BESAR UTARA: RW 010 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12907,7 +12907,7 @@
 - Alamat: JL. CIPINANG LATIHAN NO.6
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR UTARA: RT 015/RW 011
+    - Kelurahan CIPINANG BESAR UTARA: RW 011 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12919,7 +12919,7 @@
 - Alamat: JL. PRUMPUNG TENGAH RT. 008/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR UTARA: RT 008/RW 005
+    - Kelurahan CIPINANG BESAR UTARA: RW 005 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -12932,7 +12932,7 @@
 - Alamat: JL. OTTO ISKANDAR DINATA III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG CEMPEDAK: RT 001/RW 002
+    - Kelurahan CIPINANG CEMPEDAK: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BALIMESTER
@@ -12945,7 +12945,7 @@
 - Alamat: JL. PEDATI DALAM RT 014/007
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG CEMPEDAK: RT 014/RW 007
+    - Kelurahan CIPINANG CEMPEDAK: RW 007 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BALIMESTER
@@ -12958,7 +12958,7 @@
 - Alamat: JL. BHINEKA IV CAWANG KAPLING
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG CEMPEDAK: RT 008/RW 009
+    - Kelurahan CIPINANG CEMPEDAK: RW 009 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BIDARA CINA
@@ -12973,7 +12973,7 @@
 - Alamat: JL. PEDATI DALAM RT 14/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG CEMPEDAK: RT 014/RW 007
+    - Kelurahan CIPINANG CEMPEDAK: RW 007 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BALIMESTER
@@ -12986,7 +12986,7 @@
 - Alamat: JL. SD INPRES NO. 2
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG CEMPEDAK: RT 010/RW 009
+    - Kelurahan CIPINANG CEMPEDAK: RW 009 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BIDARACINA
@@ -12998,7 +12998,7 @@
 - Alamat: JL. CIPINANG LONTAR INDAH NO. 38 RT. 011 RW. 006
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 011/RW 006
+    - Kelurahan CIPINANG MUARA: RW 006 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan KLENDER
@@ -13011,7 +13011,7 @@
 - Alamat: JL. CIPINANG MUARA RAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 001/RW 002
+    - Kelurahan CIPINANG MUARA: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan PONDOK BAMBU
@@ -13026,7 +13026,7 @@
 - Alamat: JL. BB I CIPINANG MUARA III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 006/RW 015
+    - Kelurahan CIPINANG MUARA: RW 015 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan KLENDER
@@ -13038,7 +13038,7 @@
 - Alamat: JL. BULETIN KOMPLEK PWI CIPINANG MUARA KEC- JATINEGARA JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 006/RW 009
+    - Kelurahan CIPINANG MUARA: RW 009 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan PONDOK BAMBU
@@ -13052,7 +13052,7 @@
 - Alamat: JALAN CIPINANG ELOK II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 005/RW 010
+    - Kelurahan CIPINANG MUARA: RW 010 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan PONDOK BAMBU
@@ -13065,7 +13065,7 @@
 - Alamat: KOMP. CIPINANG ELOK II BLOK A V RT 003 RW 010
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 003/RW 010
+    - Kelurahan CIPINANG MUARA: RW 010 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -13076,7 +13076,7 @@
 - Alamat: JL. CIPINANG MUARA III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 012/RW 015
+    - Kelurahan CIPINANG MUARA: RW 015 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan KLENDER
@@ -13089,7 +13089,7 @@
 - Alamat: JL. CIPINANG MUARA III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 012/RW 015
+    - Kelurahan CIPINANG MUARA: RW 015 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan KLENDER
@@ -13102,7 +13102,7 @@
 - Alamat: JL. D. KOMPLEK CIPINANG INDAH
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 004/RW 001
+    - Kelurahan CIPINANG MUARA: RW 001 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan PONDOK BAMBU
@@ -13116,7 +13116,7 @@
 - Alamat: JL. CIPINANG INDAH RAYA NO. 51
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 004/RW 001
+    - Kelurahan CIPINANG MUARA: RW 001 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan PONDOK BAMBU
@@ -13130,7 +13130,7 @@
 - Alamat: JL. KEBON PALA I NO 34
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan KAMPUNG MELAYU: RT 003/RW 005
+    - Kelurahan KAMPUNG MELAYU: RW 005 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BALIMESTER
@@ -13144,7 +13144,7 @@
 - Alamat: JL. KEBON PALA I NO 34
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan KAMPUNG MELAYU: RT 003/RW 005
+    - Kelurahan KAMPUNG MELAYU: RW 005 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BALIMESTER
@@ -13158,7 +13158,7 @@
 - Alamat: JL. BEKASI TIMUR IX NO.4
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan RAWA BUNGA: RT 004/RW 003
+    - Kelurahan RAWA BUNGA: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BALIMESTER
@@ -13173,7 +13173,7 @@
 - Alamat: JL. JATINEGARA TIMUR IV
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan RAWA BUNGA: RT 008/RW 007
+    - Kelurahan RAWA BUNGA: RW 007 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BALIMESTER
@@ -13187,7 +13187,7 @@
 - Alamat: JL. JATINEGARA TIMUR IV
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan RAWA BUNGA: RT 008/RW 007
+    - Kelurahan RAWA BUNGA: RW 007 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan BALIMESTER
@@ -13201,7 +13201,7 @@
 - Alamat: JL. KAYUMANIS IV BARU NO. 20,
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan KAYU MANIS: RT 002/RW 004
+    - Kelurahan KAYU MANIS: RW 004 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -13215,7 +13215,7 @@
 - Alamat: JL. SLAMET RIYADI II/ 7B
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan KEBON MANGGIS: RT 007/RW 004
+    - Kelurahan KEBON MANGGIS: RW 004 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan KAMPUNG MELAYU
@@ -13229,7 +13229,7 @@
 - Alamat: JL. KB. MANGGIS 1 NO.28
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan KEBON MANGGIS: RT 003/RW 002
+    - Kelurahan KEBON MANGGIS: RW 002 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KEBON MANGGIS
@@ -13243,7 +13243,7 @@
 - Alamat: JL. KESATRIAN VIII NO. 28
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan KEBON MANGGIS: RT 025/RW 003
+    - Kelurahan KEBON MANGGIS: RW 003 (RT 025)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KEBON MANGGIS
@@ -13257,7 +13257,7 @@
 - Alamat: JL. KAYU MANIS I LAMA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan PALMERIAM: RT 016/RW 008
+    - Kelurahan PALMERIAM: RW 008 (RT 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -13271,7 +13271,7 @@
 - Alamat: JL. JENDRAL AHMAD YANI NO.30
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan PISANGAN BARU: RT 014/RW 014
+    - Kelurahan PISANGAN BARU: RW 014 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan PISANGAN BARU
@@ -13283,7 +13283,7 @@
 - Alamat: JL. PISANGAN BARU TENGAH
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan PISANGAN BARU: RT 014/RW 014
+    - Kelurahan PISANGAN BARU: RW 014 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -13296,7 +13296,7 @@
 - Alamat: JL. PISANGAN BARU TENGAH NO.36B
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan PISANGAN BARU: RT 006/RW 014
+    - Kelurahan PISANGAN BARU: RW 014 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -13307,7 +13307,7 @@
 - Alamat: JL. PISANGAN BARU I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan PISANGAN BARU: RT 010/RW 009
+    - Kelurahan PISANGAN BARU: RW 009 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -13318,7 +13318,7 @@
 - Alamat: JL. PISANGAN BARU UTARA NO.6
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan PISANGAN BARU: RT 007/RW 012
+    - Kelurahan PISANGAN BARU: RW 012 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -13329,7 +13329,7 @@
 - Alamat: JL. UTAN KAYU UTARA NO. 107
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU UTARA: RT 001/RW 009
+    - Kelurahan UTAN KAYU UTARA: RW 009 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan RAWASARI
@@ -13343,7 +13343,7 @@
 - Alamat: JL. GALUR SARI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU UTARA: RT 003/RW 007
+    - Kelurahan UTAN KAYU UTARA: RW 007 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -13354,7 +13354,7 @@
 - Alamat: JL. BALAI RAKYAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU UTARA: RT 014/RW 006
+    - Kelurahan UTAN KAYU UTARA: RW 006 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan RAWASARI
@@ -13366,7 +13366,7 @@
 - Alamat: JL. PANDAN RAYA NO. I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU SELATAN: RT 008/RW 012
+    - Kelurahan UTAN KAYU SELATAN: RW 012 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -13376,7 +13376,7 @@
 - Alamat: JL. KRAMAT ASEM RAYA NO.64
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU SELATAN: RT 011/RW 005
+    - Kelurahan UTAN KAYU SELATAN: RW 005 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -13388,7 +13388,7 @@
 - Alamat: JL. SKIP UJUNG
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU SELATAN: RT 010/RW 007
+    - Kelurahan UTAN KAYU SELATAN: RW 007 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan PISANGAN BARU
@@ -13400,7 +13400,7 @@
 - Alamat: JL. SKIP UJUNG NO.1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU SELATAN: RT 010/RW 007
+    - Kelurahan UTAN KAYU SELATAN: RW 007 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan PISANGAN BARU
@@ -13412,7 +13412,7 @@
 - Alamat: JL. GALUR SARI TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU SELATAN: RT 014/RW 001
+    - Kelurahan UTAN KAYU SELATAN: RW 001 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -13424,7 +13424,7 @@
 - Alamat: JL. GALUR SARI TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU SELATAN: RT 013/RW 001
+    - Kelurahan UTAN KAYU SELATAN: RW 001 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -13436,7 +13436,7 @@
 - Alamat: JL. KAYU MANIS TIMUR NO.19, UTAN KAYU SEL., KEC. MATRAMAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU SELATAN: RT 016/RW 013
+    - Kelurahan UTAN KAYU SELATAN: RW 013 (RT 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -13449,7 +13449,7 @@
 - Alamat: JL. KELAPA HIJAU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU SELATAN: RT 003/RW 014
+    - Kelurahan UTAN KAYU SELATAN: RW 014 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -13462,7 +13462,7 @@
 - Alamat: JL. GALUR SARI TIMUR NO. 38
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU SELATAN: RT 013/RW 001
+    - Kelurahan UTAN KAYU SELATAN: RW 001 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -13474,7 +13474,7 @@
 - Alamat: JL. GALUR SARI VIII
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU SELATAN: RT 009/RW 001
+    - Kelurahan UTAN KAYU SELATAN: RW 001 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -13486,7 +13486,7 @@
 - Alamat: JL. SKIP UJUNG
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU SELATAN: RT 009/RW 008
+    - Kelurahan UTAN KAYU SELATAN: RW 008 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan PISANGAN BARU
@@ -13498,7 +13498,7 @@
 - Alamat: JL. BUNYU KOMPLEK PERTAMINA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan CIPINANG: RT 001/RW 018
+    - Kelurahan CIPINANG: RW 018 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan CIPINANG
@@ -13510,7 +13510,7 @@
 - Alamat: JL. CIPINANG III NO. 3
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan CIPINANG: RT 005/RW 003
+    - Kelurahan CIPINANG: RW 003 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan CIPINANG
@@ -13522,7 +13522,7 @@
 - Alamat: JL. RAYA BEKASI TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan CIPINANG: RT 001/RW 008
+    - Kelurahan CIPINANG: RW 008 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG MUARA
@@ -13535,7 +13535,7 @@
 - Alamat: JL. KAKAP RAYA NO. 36
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan JATI: RT 004/RW 005
+    - Kelurahan JATI: RW 005 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan CIPINANG
@@ -13546,7 +13546,7 @@
 - Alamat: JL. TAMAN PULO ASEM UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan JATI: RT 007/RW 001
+    - Kelurahan JATI: RW 001 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan JATI
@@ -13557,7 +13557,7 @@
 - Alamat: JL. PERHUBUNGAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan JATI: RT 010/RW 007
+    - Kelurahan JATI: RW 007 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan CIPINANG
@@ -13569,7 +13569,7 @@
 - Alamat: JL. PERHUBUNGAN RAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan JATI: RT 001/RW 007
+    - Kelurahan JATI: RW 007 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan CIPINANG
@@ -13581,7 +13581,7 @@
 - Alamat: JL. LAYUR SELATAN NO.19
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan JATI: RT 016/RW 007
+    - Kelurahan JATI: RW 007 (RT 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan CIPINANG
@@ -13594,7 +13594,7 @@
 - Alamat: JL. RAYA BEKASI KM. 18
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan JATINEGARA KAUM: RT 002/RW 004
+    - Kelurahan JATINEGARA KAUM: RW 004 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -13607,7 +13607,7 @@
 - Alamat: JL. RAYA BEKASI KM. 18
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan JATINEGARA KAUM: RT 002/RW 004
+    - Kelurahan JATINEGARA KAUM: RW 004 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -13620,7 +13620,7 @@
 - Alamat: JL. TANAH KOJA II RT 09/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan JATINEGARA KAUM: RT 009/RW 002
+    - Kelurahan JATINEGARA KAUM: RW 002 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -13633,7 +13633,7 @@
 - Alamat: JL. TANAH KOJA II RT 09/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan JATINEGARA KAUM: RT 009/RW 002
+    - Kelurahan JATINEGARA KAUM: RW 002 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -13646,7 +13646,7 @@
 - Alamat: JL. TB. BADARUDDIN, TANAH KOJA RT.001/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan JATINEGARA KAUM: RT 001/RW 005
+    - Kelurahan JATINEGARA KAUM: RW 005 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -13661,7 +13661,7 @@
 - Alamat: JL. TB. BADARUDDIN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan JATINEGARA KAUM: RT 001/RW 005
+    - Kelurahan JATINEGARA KAUM: RW 005 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -13676,7 +13676,7 @@
 - Alamat: JL. JATINEGARA KAUM RT.10/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan JATINEGARA KAUM: RT 010/RW 003
+    - Kelurahan JATINEGARA KAUM: RW 003 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -13690,7 +13690,7 @@
 - Alamat: JL. JATINEGARA KAUM RAYA NO. 3
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan JATINEGARA KAUM: RT 006/RW 003
+    - Kelurahan JATINEGARA KAUM: RW 003 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -13703,7 +13703,7 @@
 - Alamat: JL. KUNCI NO. 28
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan KAYU PUTIH: RT 007/RW 002
+    - Kelurahan KAYU PUTIH: RW 002 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan JATI
@@ -13715,7 +13715,7 @@
 - Alamat: JL. PAPAN NO. 19
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan KAYU PUTIH: RT 006/RW 017
+    - Kelurahan KAYU PUTIH: RW 017 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan JATI
@@ -13727,7 +13727,7 @@
 - Alamat: JL. BATU SULAIMAN NO. 2
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan KAYU PUTIH: RT 002/RW 011
+    - Kelurahan KAYU PUTIH: RW 011 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan JATI
@@ -13739,7 +13739,7 @@
 - Alamat: JL. PULO MAS BARAT V NO. 4
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan KAYU PUTIH: RT 006/RW 013
+    - Kelurahan KAYU PUTIH: RW 013 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
     - Kelurahan KELAPA GADING TIMUR
@@ -13752,7 +13752,7 @@
 - Alamat: JL. PISANGAN DALAM LAMA I NO. 38
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan PISANGAN TIMUR: RT 006/RW 001
+    - Kelurahan PISANGAN TIMUR: RW 001 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan PISANGAN BARU
@@ -13766,7 +13766,7 @@
 - Alamat: JL. PISANGAN LAMA DALAM I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan PISANGAN TIMUR: RT 010/RW 001
+    - Kelurahan PISANGAN TIMUR: RW 001 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
     - Kelurahan PISANGAN BARU
@@ -13779,7 +13779,7 @@
 - Alamat: JL. GADING RAYA I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan PISANGAN TIMUR: RT 001/RW 014
+    - Kelurahan PISANGAN TIMUR: RW 014 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan CIPINANG
@@ -13791,7 +13791,7 @@
 - Alamat: JL. HAJI MUGENI II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan PISANGAN TIMUR: RT 010/RW 004
+    - Kelurahan PISANGAN TIMUR: RW 004 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan CIPINANG
@@ -13802,7 +13802,7 @@
 - Alamat: JL. HAJI MUGENI II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan PISANGAN TIMUR: RT 010/RW 004
+    - Kelurahan PISANGAN TIMUR: RW 004 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan CIPINANG
@@ -13813,7 +13813,7 @@
 - Alamat: JL. GADING RAYA I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan PISANGAN TIMUR: RT 001/RW 014
+    - Kelurahan PISANGAN TIMUR: RW 014 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan CIPINANG
@@ -13824,7 +13824,7 @@
 - Alamat: JL. KEMUNING II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan PULO GADUNG: RT 001/RW 002
+    - Kelurahan PULO GADUNG: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan RAWA TERATE
@@ -13839,7 +13839,7 @@
 - Alamat: JL. KEMUNING II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan PULO GADUNG: RT 010/RW 002
+    - Kelurahan PULO GADUNG: RW 002 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
     - Kelurahan RAWA TERATE
@@ -13854,7 +13854,7 @@
 - Alamat: JL. KAYU PUTIH IV NO. 3
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan PULO GADUNG: RT 008/RW 005
+    - Kelurahan PULO GADUNG: RW 005 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan JATI
@@ -13865,7 +13865,7 @@
 - Alamat: JL. KAYU PUTIH I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULOGADUNG
-    - Kelurahan PULOGADUNG: RT 003/RW 008
+    - Kelurahan PULOGADUNG: RW 008 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
     - Kelurahan KELAPA GADING TIMUR
@@ -13878,7 +13878,7 @@
 - Alamat: JL. TAMAN JELITA UTARA NO. 5
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan RAWAMANGUN: RT 004/RW 010
+    - Kelurahan RAWAMANGUN: RW 010 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan CIPINANG
@@ -13891,7 +13891,7 @@
 - Alamat: JL. HAJI TEN NO.4
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan RAWAMANGUN: RT 006/RW 003
+    - Kelurahan RAWAMANGUN: RW 003 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan RAWASARI
@@ -13905,7 +13905,7 @@
 - Alamat: JL. HAJI TEN IV
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan RAWAMANGUN: RT 006/RW 003
+    - Kelurahan RAWAMANGUN: RW 003 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan RAWASARI
@@ -13919,7 +13919,7 @@
 - Alamat: JALAN RAWAMANGUN MUKA BARAT 2 NO.2
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan RAWAMANGUN: RT 009/RW 012
+    - Kelurahan RAWAMANGUN: RW 012 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan CIPINANG
@@ -13932,7 +13932,7 @@
 - Alamat: JALAN PEMUDA NO 6
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan RAWAMANGUN: RT 006/RW 005
+    - Kelurahan RAWAMANGUN: RW 005 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan JATI
@@ -13944,7 +13944,7 @@
 - Alamat: JL. PEMUDA KOMP. UNJ
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULO GADUNG
-    - Kelurahan RAWAMANGUN: RT 001/RW 014
+    - Kelurahan RAWAMANGUN: RW 014 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
     - Kelurahan CIPINANG
@@ -13957,7 +13957,7 @@
 - Alamat: JL. R.A. FADILLAH RT.001/001 NO.001 KEL. BARU KEC. PASAR REBO
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 001/RW 001
+    - Kelurahan BARU: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan BARU
@@ -13967,7 +13967,7 @@
 - Alamat: JL. RA. FADILLAH CIJANTUNG III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 001/RW 001
+    - Kelurahan BARU: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan BARU
@@ -13977,7 +13977,7 @@
 - Alamat: JL. GOTONG ROYONG
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 007/RW 001
+    - Kelurahan BARU: RW 001 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan BARU
@@ -13987,7 +13987,7 @@
 - Alamat: JL. PUSKESMAS NO. 34
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 002/RW 001
+    - Kelurahan BARU: RW 001 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan BARU
@@ -13997,7 +13997,7 @@
 - Alamat: JL. PUSKESMAS RT 008/01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 008/RW 001
+    - Kelurahan BARU: RW 001 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan BARU
@@ -14007,7 +14007,7 @@
 - Alamat: JL. R A FADILAH
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 001/RW 001
+    - Kelurahan BARU: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan BARU
@@ -14017,7 +14017,7 @@
 - Alamat: JL. SAWO RT07/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 007/RW 002
+    - Kelurahan BARU: RW 002 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan BARU
@@ -14027,7 +14027,7 @@
 - Alamat: JL. PERTENGAHAN RT.06/07 KEL. CIJANTUNG KEC. PASAR REBO
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan CIJANTUNG: RT 006/RW 007
+    - Kelurahan CIJANTUNG: RW 007 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan BARU
@@ -14037,7 +14037,7 @@
 - Alamat: JL. PERTENGAHAN GG. KRAMAT I RT. 003 RW. 03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan CIJANTUNG: RT 003/RW 003
+    - Kelurahan CIJANTUNG: RW 003 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan BARU
@@ -14047,7 +14047,7 @@
 - Alamat: JL. R.A. FADILLAH NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan CIJANTUNG: RT 005/RW 005
+    - Kelurahan CIJANTUNG: RW 005 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan BARU
@@ -14057,7 +14057,7 @@
 - Alamat: JL. PERTENGAHAN N0 4
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan CIJANTUNG: RT 009/RW 007
+    - Kelurahan CIJANTUNG: RW 007 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan BARU
@@ -14067,7 +14067,7 @@
 - Alamat: JL. GONGSENG RAYA RT010/01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan CIJANTUNG: RT 010/RW 001
+    - Kelurahan CIJANTUNG: RW 001 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan BARU
@@ -14077,7 +14077,7 @@
 - Alamat: JL. GONGSENG RAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan CIJANTUNG: RT 010/RW 001
+    - Kelurahan CIJANTUNG: RW 001 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan BARU
@@ -14087,7 +14087,7 @@
 - Alamat: JL. TRIKORA NO. 67
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan GEDONG: RT 002/RW 009
+    - Kelurahan GEDONG: RW 009 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan TENGAH
@@ -14098,7 +14098,7 @@
 - Alamat: JL. RAYA CONDET
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan GEDONG: RT 012/RW 003
+    - Kelurahan GEDONG: RW 003 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14110,7 +14110,7 @@
 - Alamat: JL. SURILANG NO. 8
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan GEDONG: RT 005/RW 012
+    - Kelurahan GEDONG: RW 012 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan TENGAH
@@ -14121,7 +14121,7 @@
 - Alamat: JL. TRIKORA NO. 74
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan GEDONG: RT 003/RW 009
+    - Kelurahan GEDONG: RW 009 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan TENGAH
@@ -14132,7 +14132,7 @@
 - Alamat: JL. TAIMAN BARAT II NO. 8 RT 005/10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan GEDONG: RT 005/RW 010
+    - Kelurahan GEDONG: RW 010 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan TENGAH
@@ -14143,7 +14143,7 @@
 - Alamat: JL. H. TAIMAN BARAT II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan GEDONG: RT 005/RW 010
+    - Kelurahan GEDONG: RW 010 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan TENGAH
@@ -14154,7 +14154,7 @@
 - Alamat: JL. RAYA CONDET
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan GEDONG: RT 007/RW 001
+    - Kelurahan GEDONG: RW 001 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14165,7 +14165,7 @@
 - Alamat: JL. RAYA KALISARI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan KALISARI: RT 010/RW 001
+    - Kelurahan KALISARI: RW 001 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan CIJANTUNG
@@ -14176,7 +14176,7 @@
 - Alamat: JL. RAYA CIJANTUNG IV
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan KALISARI: RT 002/RW 004
+    - Kelurahan KALISARI: RW 004 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan BARU
@@ -14187,7 +14187,7 @@
 - Alamat: JL. ASRAMA YON KAV I, CIJANTUNG IV
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan KALISARI: RT 001/RW 004
+    - Kelurahan KALISARI: RW 004 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan BARU
@@ -14198,7 +14198,7 @@
 - Alamat: JL. RAYA KALISARI, RT. 06/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan KALISARI: RT 006/RW 002
+    - Kelurahan KALISARI: RW 002 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan CIJANTUNG
@@ -14209,7 +14209,7 @@
 - Alamat: JL. RAYA BOGOR KM. 27
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan PEKAYON: RT 001/RW 004
+    - Kelurahan PEKAYON: RW 004 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIBUBUR
@@ -14222,7 +14222,7 @@
 - Alamat: JL. GANDARIA I RT. 08/09
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan PEKAYON: RT 008/RW 009
+    - Kelurahan PEKAYON: RW 009 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan KALISARI
@@ -14232,7 +14232,7 @@
 - Alamat: JL. RAYA BOGOR KM 28,5
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan PEKAYON: RT 008/RW 007
+    - Kelurahan PEKAYON: RW 007 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIBUBUR
@@ -14243,7 +14243,7 @@
 - Alamat: JL. PENDIDIKAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan PEKAYON: RT 004/RW 009
+    - Kelurahan PEKAYON: RW 009 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan KALISARI
@@ -14253,7 +14253,7 @@
 - Alamat: JL. GANDARIA I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan PEKAYON: RT 008/RW 003
+    - Kelurahan PEKAYON: RW 003 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan KALISARI
@@ -14263,7 +14263,7 @@
 - Alamat: JL. TELAGA RT. 013/009
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan PEKAYON: RT 013/RW 009
+    - Kelurahan PEKAYON: RW 009 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan KALISARI
@@ -14273,7 +14273,7 @@
 - Alamat: JL. SWADAYA RT 08 RW 10 PEKAYON, KECAMATAN PASAR REBO
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan PEKAYON: RT 008/RW 010
+    - Kelurahan PEKAYON: RW 010 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
     - Kelurahan CIJANTUNG
@@ -14283,7 +14283,7 @@
 - Alamat: JL. TIPAR RT 01/07 NO.66
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan PEKAYON: RT 001/RW 007
+    - Kelurahan PEKAYON: RW 007 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIBUBUR
@@ -14294,7 +14294,7 @@
 - Alamat: JL. MUNGGANG GG. RAWA ELOK
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan BALE KAMBANG: RT 003/RW 001
+    - Kelurahan BALE KAMBANG: RW 001 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14309,7 +14309,7 @@
 - Alamat: JL. GARDU RT. 001/ 02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan BALE KAMBANG: RT 001/RW 002
+    - Kelurahan BALE KAMBANG: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14322,7 +14322,7 @@
 - Alamat: JL. RAYA BOGOR RT. 06/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan BATU AMPAR: RT 006/RW 002
+    - Kelurahan BATU AMPAR: RW 002 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BATU AMPAR
@@ -14333,7 +14333,7 @@
 - Alamat: JL. BATU AMPAR III NO.2
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan BATU AMPAR: RT 009/RW 003
+    - Kelurahan BATU AMPAR: RW 003 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14345,7 +14345,7 @@
 - Alamat: JL. SMPN 126
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan BATU AMPAR: RT 002/RW 003
+    - Kelurahan BATU AMPAR: RW 003 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14356,7 +14356,7 @@
 - Alamat: JL. BATU JAMRUT RT. 012/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan BATU AMPAR: RT 012/RW 002
+    - Kelurahan BATU AMPAR: RW 002 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14368,7 +14368,7 @@
 - Alamat: JL. SMPN 126
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan BATU AMPAR: RT 002/RW 003
+    - Kelurahan BATU AMPAR: RW 003 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14380,7 +14380,7 @@
 - Alamat: JL. DAMAI RT. 007/ 03 NO. 60
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan BATU AMPAR: RT 007/RW 003
+    - Kelurahan BATU AMPAR: RW 003 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14393,7 +14393,7 @@
 - Alamat: JL. DAMAI RT.007 RW.03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan BATU AMPAR: RT 007/RW 003
+    - Kelurahan BATU AMPAR: RW 003 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14406,7 +14406,7 @@
 - Alamat: JL. SMPN 126
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan BATU AMPAR: RT 010/RW 003
+    - Kelurahan BATU AMPAR: RW 003 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14417,7 +14417,7 @@
 - Alamat: JL. BATU AMPAR II NO. 88 RT.008/03
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan BATU AMPAR: RT 008/RW 003
+    - Kelurahan BATU AMPAR: RW 003 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14431,7 +14431,7 @@
 - Alamat: JL. BATU AMPAR III
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan BATU AMPAR: RT 009/RW 003
+    - Kelurahan BATU AMPAR: RW 003 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14444,7 +14444,7 @@
 - Alamat: JL. MASJID CONDET NO. 55
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan BATU AMPAR: RT 016/RW 003
+    - Kelurahan BATU AMPAR: RW 003 (RT 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14455,7 +14455,7 @@
 - Alamat: JL. DEWI SARTIKA NO. 200
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan CAWANG: RT 004/RW 003
+    - Kelurahan CAWANG: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CAWANG
@@ -14468,7 +14468,7 @@
 - Alamat: JL. JAANI NASIR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan CAWANG: RT 001/RW 010
+    - Kelurahan CAWANG: RW 010 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CAWANG
@@ -14479,7 +14479,7 @@
 - Alamat: JL. JAANI NASIR RT 005 RW 011
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan CAWANG: RT 005/RW 011
+    - Kelurahan CAWANG: RW 011 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CAWANG
@@ -14490,7 +14490,7 @@
 - Alamat: JL. MESJID BENDUNGAN NO. 64 RT. 003/07
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan CAWANG: RT 003/RW 007
+    - Kelurahan CAWANG: RW 007 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CAWANG
@@ -14501,7 +14501,7 @@
 - Alamat: JL. CAWANG III RT 007/11
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan CAWANG: RT 007/RW 011
+    - Kelurahan CAWANG: RW 011 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CAWANG
@@ -14512,7 +14512,7 @@
 - Alamat: JL. KUMBANG RT. 002/005 NO. 57
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan CILILITAN: RT 002/RW 005
+    - Kelurahan CILILITAN: RW 005 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14525,7 +14525,7 @@
 - Alamat: JL. RAYA CONDET GG. ANGGREK
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan CILILITAN: RT 005/RW 006
+    - Kelurahan CILILITAN: RW 006 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14538,7 +14538,7 @@
 - Alamat: JL. CILIWUNG RT. 08/ 016
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan CILILITAN: RT 008/RW 016
+    - Kelurahan CILILITAN: RW 016 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14551,7 +14551,7 @@
 - Alamat: JL. RAYA PONDOK GEDE NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan DUKUH: RT 001/RW 001
+    - Kelurahan DUKUH: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan CEGER
@@ -14568,7 +14568,7 @@
 - Alamat: JL. DUKUH V
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan DUKUH: RT 002/RW 004
+    - Kelurahan DUKUH: RW 004 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan RAMBUTAN
@@ -14581,7 +14581,7 @@
 - Alamat: JL. DUKUH V RT. 008/ 04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan DUKUH: RT 008/RW 004
+    - Kelurahan DUKUH: RW 004 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan RAMBUTAN
@@ -14594,7 +14594,7 @@
 - Alamat: JL. PENGGILINGAN BARU I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan DUKUH: RT 009/RW 003
+    - Kelurahan DUKUH: RW 003 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan RAMBUTAN
@@ -14607,7 +14607,7 @@
 - Alamat: KOMP. BHP RT. 005/ 06
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan DUKUH: RT 005/RW 006
+    - Kelurahan DUKUH: RW 006 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan RAMBUTAN
@@ -14620,7 +14620,7 @@
 - Alamat: JL. INPRES NO. 64 RT.03/02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan TENGAH: RT 003/RW 002
+    - Kelurahan TENGAH: RW 002 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14633,7 +14633,7 @@
 - Alamat: JL. RANTAI PERAK RT. 004/005
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan TENGAH: RT 004/RW 005
+    - Kelurahan TENGAH: RW 005 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BATU AMPAR
@@ -14645,7 +14645,7 @@
 - Alamat: JL. PELITA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan TENGAH: RT 003/RW 009
+    - Kelurahan TENGAH: RW 009 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BALEKAMBANG
@@ -14658,7 +14658,7 @@
 - Alamat: JL. H. ALI RT. 006/009
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan TENGAH: RT 006/RW 009
+    - Kelurahan TENGAH: RW 009 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BATU AMPAR
@@ -14670,7 +14670,7 @@
 - Alamat: JL. TRIKORA IV
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan TENGAH: RT 005/RW 007
+    - Kelurahan TENGAH: RW 007 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan RAMBUTAN
@@ -14684,7 +14684,7 @@
 - Alamat: JALAN H. ALI RT. 004/004
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan TENGAH: RT 004/RW 004
+    - Kelurahan TENGAH: RW 004 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BATU AMPAR
@@ -14696,7 +14696,7 @@
 - Alamat: JL. MESJID AL-AMIN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan KRAMAT JATI: RT 009/RW 006
+    - Kelurahan KRAMAT JATI: RW 006 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BATU AMPAR
@@ -14707,7 +14707,7 @@
 - Alamat: JL. MASJID AL-IHSAN RT.001/04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan KRAMAT JATI: RT 001/RW 004
+    - Kelurahan KRAMAT JATI: RW 004 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BATU AMPAR
@@ -14719,7 +14719,7 @@
 - Alamat: JL. R. S. SUKANTO RT 009 RW 04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan KRAMAT JATI: RT 009/RW 004
+    - Kelurahan KRAMAT JATI: RW 004 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BATU AMPAR
@@ -14731,7 +14731,7 @@
 - Alamat: JL. LANGGAR RT. 008/ 010
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan KRAMAT JATI: RT 008/RW 010
+    - Kelurahan KRAMAT JATI: RW 010 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BATU AMPAR
@@ -14743,7 +14743,7 @@
 - Alamat: JL. BB PASAR HEK RT. 013/ 011
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan KRAMAT JATI: RT 013/RW 011
+    - Kelurahan KRAMAT JATI: RW 011 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BATU AMPAR
@@ -14755,7 +14755,7 @@
 - Alamat: JL. BATU TUMBUH, KRAMAT JATI JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan KRAMAT JATI: RT 007/RW 009
+    - Kelurahan KRAMAT JATI: RW 009 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BATU AMPAR
@@ -14768,7 +14768,7 @@
 - Alamat: JL. NUSA I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan KRAMAT JATI: RT 009/RW 002
+    - Kelurahan KRAMAT JATI: RW 002 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BATU AMPAR
@@ -14779,7 +14779,7 @@
 - Alamat: JL. LANGGAR RT. 008/ 010
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan KRAMAT JATI: RT 008/RW 010
+    - Kelurahan KRAMAT JATI: RW 010 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BATU AMPAR
@@ -14793,7 +14793,7 @@
 - Alamat: JL. KERJA BAKTI RT 03/09 NO 40, KRAMATJATI JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan KRAMAT JATI: RT 003/RW 009
+    - Kelurahan KRAMAT JATI: RW 009 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BATU AMPAR
@@ -14806,7 +14806,7 @@
 - Alamat: JL. DATO TONGGARA, RT. 005/ 011
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMAT JATI
-    - Kelurahan KRAMAT JATI: RT 005/RW 011
+    - Kelurahan KRAMAT JATI: RW 011 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan BATU AMPAR
@@ -14818,7 +14818,7 @@
 - Alamat: Jl. BAMBU APUS Raya, BAMBU APUS, Kec. CIPAYUNG, Kota Jakarta Timur
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan BAMBU APUS: RT 010/RW 003
+    - Kelurahan BAMBU APUS: RW 003 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -14832,7 +14832,7 @@
 - Alamat: Jl. Al-Ikhlas No.1, RT.1/RW.2, BAMBU APUS, Kec. CIPAYUNG, Kota Jakarta Timur
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan BAMBU APUS: RT 001/RW 002
+    - Kelurahan BAMBU APUS: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -14846,7 +14846,7 @@
 - Alamat: Jl. Laksmana VIII Rt 015/04 Kom. Tmii, BAMBU APUS, CIPAYUNG, Jakarta Timur
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan BAMBU APUS: RT 015/RW 004
+    - Kelurahan BAMBU APUS: RW 004 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -14860,7 +14860,7 @@
 - Alamat: Jl. SMP 222 Rt 05 Rw 02 Kel. CEGER Kec. CIPAYUNG - Jakarta Timur
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan CEGER: RT 005/RW 002
+    - Kelurahan CEGER: RW 002 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -14879,7 +14879,7 @@
 - Alamat: Jl. SMP 160 No.1, RT.1/RW.3, CEGER, Kec. CIPAYUNG, Kota Jakarta Timur
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan CEGER: RT 001/RW 003
+    - Kelurahan CEGER: RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -14898,7 +14898,7 @@
 - Alamat: Jl. Mabes ABRI, CILANGKAP, Kec. CIPAYUNG, Kota Jakarta Timur Prov. D.K.I. Jakarta
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan CILANGKAP: RT 003/RW 006
+    - Kelurahan CILANGKAP: RW 006 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan CILANGKAP
@@ -14911,7 +14911,7 @@
 - Alamat: Jl. Mabes TNI Rt 007/01, CILANGKAP, Kec. CIPAYUNG, Kota Jakarta Timur
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan CILANGKAP: RT 007/RW 001
+    - Kelurahan CILANGKAP: RW 001 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan CILANGKAP
@@ -14924,7 +14924,7 @@
 - Alamat: Jl. Komplek Perwira TNI AD, CIPAYUNG, Kec. CIPAYUNG, Kota Jakarta Timur
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan CIPAYUNG: RT 005/RW 001
+    - Kelurahan CIPAYUNG: RW 001 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -14939,7 +14939,7 @@
 - Alamat: Jl. Komplek Perwira TNI AD, CIPAYUNG, Kec. CIPAYUNG, Kota Jakarta Timur
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan CIPAYUNG: RT 005/RW 001
+    - Kelurahan CIPAYUNG: RW 001 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -14954,7 +14954,7 @@
 - Alamat: Jl. Pelatnas PBSI Rt. 001 Rw. 08 Kel. CIPAYUNG Kec. CIPAYUNG Jakarta Timur
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan CIPAYUNG: RT 001/RW 008
+    - Kelurahan CIPAYUNG: RW 008 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -14969,7 +14969,7 @@
 - Alamat: Jl. SMAN 64, RT. 005, RW. 002, Kel. CIPAYUNG, Kec. CIPAYUNG
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan CIPAYUNG: RT 005/RW 002
+    - Kelurahan CIPAYUNG: RW 002 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -14984,7 +14984,7 @@
 - Alamat: Jl. Bambu Petung, CIPAYUNG, Kec. CIPAYUNG, Kota Jakarta Timur
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan CIPAYUNG: RT 004/RW 004
+    - Kelurahan CIPAYUNG: RW 004 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -14999,7 +14999,7 @@
 - Alamat: Jl. Yusufiah Rt. 10/ Rw. 01 Kel. LUBANG BUAYA, Kec. CIPAYUNG
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 010/RW 001
+    - Kelurahan LUBANG BUAYA: RW 001 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -15014,7 +15014,7 @@
 - Alamat: JL. ALBAIDHO II NO.1B, RT.04/06 Kel. LUBANG BUAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 004/RW 006
+    - Kelurahan LUBANG BUAYA: RW 006 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -15029,7 +15029,7 @@
 - Alamat: Jl. Monumen Pancasila Sakti No. 12 Rt. 001/ Rw. 002 Kel. LUBANG BUAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 001/RW 002
+    - Kelurahan LUBANG BUAYA: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -15044,7 +15044,7 @@
 - Alamat: Jl. Kramat IV Rt 002/03 Kel. LUBANG BUAYA, Kec. CIPAYUNG
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 002/RW 003
+    - Kelurahan LUBANG BUAYA: RW 003 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -15059,7 +15059,7 @@
 - Alamat: Jl. SPG 7 Rt.006 Rw.09 Kel. LUBANG BUAYA, Kec. CIPAYUNG
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 006/RW 009
+    - Kelurahan LUBANG BUAYA: RW 009 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -15074,7 +15074,7 @@
 - Alamat: Jl. Al Baidho Rt. 006/Rw, 006 Kel. LUBANG BUAYA, Kec. CIPAYUNG
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 006/RW 006
+    - Kelurahan LUBANG BUAYA: RW 006 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -15089,7 +15089,7 @@
 - Alamat: Jl. Raya Pondok Gede Rt.001/04 Kel. LUBANG BUAYA, Kec. CIPAYUNG
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 001/RW 004
+    - Kelurahan LUBANG BUAYA: RW 004 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -15104,7 +15104,7 @@
 - Alamat: Jl. Dalang RT.008/005, MUNJUL, Kecamatan CIPAYUNG, Kota Jakarta Timur
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan MUNJUL: RT 008/RW 005
+    - Kelurahan MUNJUL: RW 005 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan CILANGKAP
@@ -15119,7 +15119,7 @@
 - Alamat: Jl. Kramat Ganceng No.13, RT.5/RW.1, Pd. Ranggon, Kec. CIPAYUNG, Kota Jakarta Timur
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan PONDOK RANGGON: RT 005/RW 001
+    - Kelurahan PONDOK RANGGON: RW 001 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan CILANGKAP
@@ -15132,7 +15132,7 @@
 - Alamat: Jl. Raya Pd. Ranggon No.2, RT.2/RW.2, Pd. Ranggon, Kec. CIPAYUNG, Kota Jakarta Timur
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan PONDOK RANGGON: RT 002/RW 002
+    - Kelurahan PONDOK RANGGON: RW 002 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan CILANGKAP
@@ -15145,7 +15145,7 @@
 - Alamat: Jl. TPU Pd. Ranggon, RT.1/RW.2, Pd. Ranggon, Kec. CIPAYUNG, Kota Jakarta Timur
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan PONDOK RANGGON: RT 001/RW 002
+    - Kelurahan PONDOK RANGGON: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan CILANGKAP
@@ -15158,7 +15158,7 @@
 - Alamat: Jl. Masjid Al-Akbar No.1, RT.1/RW.5, MUNJUL, Kec. CIPAYUNG, Kota Jakarta Timur
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan PONDOK RANGGON: RT 001/RW 005
+    - Kelurahan PONDOK RANGGON: RW 005 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan CILANGKAP
@@ -15171,7 +15171,7 @@
 - Alamat: Jl. Rukun Rt 006/02 Kel. SETU, Kec. CIPAYUNG
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan SETU: RT 006/RW 002
+    - Kelurahan SETU: RW 002 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -15184,7 +15184,7 @@
 - Alamat: Jl. Rukun Rt 006/02 Kel. SETU, Kec. CIPAYUNG
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan SETU: RT 006/RW 002
+    - Kelurahan SETU: RW 002 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -15197,7 +15197,7 @@
 - Alamat: JL. TRIKORA III HALIM PERDANA KUSUMA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 002/RW 016
+    - Kelurahan HALIM PERDANA KUSUMA: RW 016 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan PONDOK BAMBU
@@ -15212,7 +15212,7 @@
 - Alamat: JL. KARTIKA EKA PAKSI KPAD KODAM JATIWARINGIN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan CIPINANG MELAYU: RT 010/RW 006
+    - Kelurahan CIPINANG MELAYU: RW 006 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -15225,7 +15225,7 @@
 - Alamat: KOMPLEK KODAM CIPINANG MELAYU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan CIPINANG MELAYU: RT 010/RW 006
+    - Kelurahan CIPINANG MELAYU: RW 006 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -15238,7 +15238,7 @@
 - Alamat: JL. INSPEKSI TARUM BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan CIPINANG MELAYU: RT 001/RW 010
+    - Kelurahan CIPINANG MELAYU: RW 010 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -15252,7 +15252,7 @@
 - Alamat: JL. INSPEKSI TARUM BARAT NO.112
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan CIPINANG MELAYU: RT 001/RW 010
+    - Kelurahan CIPINANG MELAYU: RW 010 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -15266,7 +15266,7 @@
 - Alamat: JL. ELANG THAINESIA III KOMP. AURI RT.03 RW.08
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan CIPINANG MELAYU: RT 003/RW 008
+    - Kelurahan CIPINANG MELAYU: RW 008 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -15281,7 +15281,7 @@
 - Alamat: JL. SQUADRON RAYA RT 007/05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMAH: RT 007/RW 005
+    - Kelurahan HALIM PERDANA KUSUMAH: RW 005 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAKASAR
     - Kelurahan CIPINANG MELAYU
@@ -15293,7 +15293,7 @@
 - Alamat: JL. CAKRAWALA NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan KEBON PALA: RT 012/RW 001
+    - Kelurahan KEBON PALA: RW 001 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CILILITAN
@@ -15306,7 +15306,7 @@
 - Alamat: JL. JENGKI CIPINANG ASEM, NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan KEBON PALA: RT 007/RW 009
+    - Kelurahan KEBON PALA: RW 009 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CILILITAN
@@ -15319,7 +15319,7 @@
 - Alamat: JL. JENGKI NO. 3 CIPINANG ASEM
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan KEBON PALA: RT 007/RW 009
+    - Kelurahan KEBON PALA: RW 009 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CILILITAN
@@ -15332,7 +15332,7 @@
 - Alamat: JL. JENGKI CIPINANG ASEM NO. 2 RT. 007/009
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan KEBON PALA: RT 007/RW 009
+    - Kelurahan KEBON PALA: RW 009 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CILILITAN
@@ -15345,7 +15345,7 @@
 - Alamat: JL. PERMATA GG. SAMI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan KEBON PALA: RT 007/RW 005
+    - Kelurahan KEBON PALA: RW 005 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan CAWANG
@@ -15358,7 +15358,7 @@
 - Alamat: JL. SD INPRES NO.28
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan KEBON PALA: RT 014/RW 004
+    - Kelurahan KEBON PALA: RW 004 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAKASAR
     - Kelurahan HALIM PERDANA KUSUMAH
@@ -15369,7 +15369,7 @@
 - Alamat: JL. SD INPRES NO.48
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan KEBON PALA: RT 014/RW 004
+    - Kelurahan KEBON PALA: RW 004 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAKASAR
     - Kelurahan HALIM PERDANA KUSUMAH
@@ -15380,7 +15380,7 @@
 - Alamat: JL. SD INPRES NO.28
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan KEBON PALA: RT 014/RW 004
+    - Kelurahan KEBON PALA: RW 004 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAKASAR
     - Kelurahan HALIM PERDANA KUSUMAH
@@ -15391,7 +15391,7 @@
 - Alamat: JL. SD INPRES
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan KEBON PALA: RT 003/RW 004
+    - Kelurahan KEBON PALA: RW 004 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAKASAR
     - Kelurahan HALIM PERDANA KUSUMAH
@@ -15402,7 +15402,7 @@
 - Alamat: JL. KERJA BAKTI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan MAKASAR: RT 001/RW 002
+    - Kelurahan MAKASAR: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan KRAMAT JATI
@@ -15415,7 +15415,7 @@
 - Alamat: JL. KERJA BAKTI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan MAKASAR: RT 001/RW 002
+    - Kelurahan MAKASAR: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan KRAMAT JATI
@@ -15428,7 +15428,7 @@
 - Alamat: JL. KERJA BAKTI RT 001/002
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan MAKASAR: RT 001/RW 002
+    - Kelurahan MAKASAR: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan KRAMAT JATI
@@ -15441,7 +15441,7 @@
 - Alamat: JL. DEPNAKER RT. 10/ 05
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan MAKASAR: RT 010/RW 005
+    - Kelurahan MAKASAR: RW 005 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan KRAMAT JATI
@@ -15454,7 +15454,7 @@
 - Alamat: JL. PUSDIKLAT DEPNAKER NO. 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan MAKASAR: RT 006/RW 005
+    - Kelurahan MAKASAR: RW 005 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan KRAMAT JATI
@@ -15467,7 +15467,7 @@
 - Alamat: JL. PUSDIKLAT DEPNAKER
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan MAKASAR: RT 006/RW 005
+    - Kelurahan MAKASAR: RW 005 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan KRAMAT JATI
@@ -15480,7 +15480,7 @@
 - Alamat: JL. MASJID AL MUNIR RT. 013 RW. 02
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan MAKASAR: RT 013/RW 002
+    - Kelurahan MAKASAR: RW 002 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan KRAMAT JATI
@@ -15494,7 +15494,7 @@
 - Alamat: JL. TAMAN MINI PINTU II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan PINANG RANTI: RT 016/RW 002
+    - Kelurahan PINANG RANTI: RW 002 (RT 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan LUBANG BUAYA
@@ -15507,7 +15507,7 @@
 - Alamat: JL. PINANG RANTI I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan PINANG RANTI: RT 012/RW 002
+    - Kelurahan PINANG RANTI: RW 002 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan LUBANG BUAYA
@@ -15520,7 +15520,7 @@
 - Alamat: JL. SMA NEGERI 48
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan PINANG RANTI: RT 014/RW 001
+    - Kelurahan PINANG RANTI: RW 001 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan LUBANG BUAYA
@@ -15535,7 +15535,7 @@
 - Alamat: JL. KELURAHAN PINANG RANTI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan PINANG RANTI: RT 009/RW 001
+    - Kelurahan PINANG RANTI: RW 001 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan LUBANG BUAYA
@@ -15550,7 +15550,7 @@
 - Alamat: JL. PINANG RANTI II
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan PINANG RANTI: RT 014/RW 001
+    - Kelurahan PINANG RANTI: RW 001 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMAT JATI
     - Kelurahan DUKUH
@@ -15563,7 +15563,7 @@
 - Alamat: KP. PULO
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan PINANG RANTI: RT 003/RW 005
+    - Kelurahan PINANG RANTI: RW 005 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan LUBANG BUAYA
@@ -15576,7 +15576,7 @@
 - Alamat: JLN. MASJID FATKHUL GHOFUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIBUBUR: RT 002/RW 004
+    - Kelurahan CIBUBUR: RW 004 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan MUNJUL
@@ -15589,7 +15589,7 @@
 - Alamat: JL. CIBUBUR I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIBUBUR: RT 003/RW 001
+    - Kelurahan CIBUBUR: RW 001 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIBUBUR
@@ -15599,7 +15599,7 @@
 - Alamat: JL. CIBUBUR I
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIBUBUR: RT 003/RW 001
+    - Kelurahan CIBUBUR: RW 001 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIBUBUR
@@ -15609,7 +15609,7 @@
 - Alamat: JL. TARUNA JAYA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIBUBUR: RT 002/RW 014
+    - Kelurahan CIBUBUR: RW 014 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIBUBUR
@@ -15619,7 +15619,7 @@
 - Alamat: JL. BULAK RINGIN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIBUBUR: RT 006/RW 003
+    - Kelurahan CIBUBUR: RW 003 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIBUBUR
@@ -15630,7 +15630,7 @@
 - Alamat: JL. BULAK RINGIN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIBUBUR: RT 006/RW 003
+    - Kelurahan CIBUBUR: RW 003 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIBUBUR
@@ -15641,7 +15641,7 @@
 - Alamat: JL. CIBUBUR 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIBUBUR: RT 002/RW 012
+    - Kelurahan CIBUBUR: RW 012 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIBUBUR
@@ -15651,7 +15651,7 @@
 - Alamat: JLN. RAYA KELAPA DUA WETAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan KELAPA DUA WETAN: RT 005/RW 008
+    - Kelurahan KELAPA DUA WETAN: RW 008 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan MUNJUL
@@ -15662,7 +15662,7 @@
 - Alamat: JL. RAYA KELAPA DUA WETAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan KELAPA DUA WETAN: RT 006/RW 006
+    - Kelurahan KELAPA DUA WETAN: RW 006 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan MUNJUL
@@ -15675,7 +15675,7 @@
 - Alamat: JL. MASJID NURUL HIDAYAH
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan KELAPA DUA WETAN: RT 007/RW 012
+    - Kelurahan KELAPA DUA WETAN: RW 012 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIBUBUR
@@ -15686,7 +15686,7 @@
 - Alamat: JL. RAYA KELAPA DUA WETAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan KELAPA DUA WETAN: RT 001/RW 006
+    - Kelurahan KELAPA DUA WETAN: RW 006 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan MUNJUL
@@ -15698,7 +15698,7 @@
 - Alamat: JL. MASJID NURUL HIDAYAH
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan KELAPA DUA WETAN: RT 007/RW 012
+    - Kelurahan KELAPA DUA WETAN: RW 012 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIBUBUR
@@ -15709,7 +15709,7 @@
 - Alamat: JL. RAYA BOGOR KM.25
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 005/RW 001
+    - Kelurahan CIRACAS: RW 001 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -15719,7 +15719,7 @@
 - Alamat: JL. RAYA CENTEX
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 003/RW 003
+    - Kelurahan CIRACAS: RW 003 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -15730,7 +15730,7 @@
 - Alamat: Jl. H. Hanafi No. 35
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 012/RW 003
+    - Kelurahan CIRACAS: RW 003 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -15741,7 +15741,7 @@
 - Alamat: Jl. H. Hanafi No. 36
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 012/RW 003
+    - Kelurahan CIRACAS: RW 003 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -15752,7 +15752,7 @@
 - Alamat: JLN. RAYA CENTEX GG. KRAMAT RT.12 RW.10
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 012/RW 010
+    - Kelurahan CIRACAS: RW 010 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan CEGER
@@ -15769,7 +15769,7 @@
 - Alamat: JL. RAYA CENTEX
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 010/RW 003
+    - Kelurahan CIRACAS: RW 003 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -15779,7 +15779,7 @@
 - Alamat: JL RAYA CIRACAS
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 007/RW 003
+    - Kelurahan CIRACAS: RW 003 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -15789,7 +15789,7 @@
 - Alamat: JL. PENGANTEN ALI NO. 40
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 011/RW 006
+    - Kelurahan CIRACAS: RW 006 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan CEGER
@@ -15801,7 +15801,7 @@
 - Alamat: Jl. Poncol Gg. Asem No. 3
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 006/RW 009
+    - Kelurahan CIRACAS: RW 009 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -15812,7 +15812,7 @@
 - Alamat: Jl. Poncol Gg. Asem
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 006/RW 009
+    - Kelurahan CIRACAS: RW 009 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -15823,7 +15823,7 @@
 - Alamat: JL. PENGANTEN ALI NO. 40
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 011/RW 006
+    - Kelurahan CIRACAS: RW 006 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan CEGER
@@ -15835,7 +15835,7 @@
 - Alamat: JL. MAKMUR IV
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan SUSUKAN: RT 009/RW 002
+    - Kelurahan SUSUKAN: RW 002 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -15846,7 +15846,7 @@
 - Alamat: JL. H. BAPING
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan SUSUKAN: RT 010/RW 006
+    - Kelurahan SUSUKAN: RW 006 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -15857,7 +15857,7 @@
 - Alamat: JL. H. BAPING
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan SUSUKAN: RT 010/RW 006
+    - Kelurahan SUSUKAN: RW 006 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -15868,7 +15868,7 @@
 - Alamat: JL. TANAH MERDEKA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan SUSUKAN: RT 009/RW 005
+    - Kelurahan SUSUKAN: RW 005 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -15881,7 +15881,7 @@
 - Alamat: JL. TANAH MERDEKA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan SUSUKAN: RT 008/RW 005
+    - Kelurahan SUSUKAN: RW 005 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -15894,7 +15894,7 @@
 - Alamat: JL. H. BAPING
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan SUSUKAN: RT 010/RW 006
+    - Kelurahan SUSUKAN: RW 006 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -15905,7 +15905,7 @@
 - Alamat: JL. TANAH MERDEKA NO. 20
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan SUSUKAN: RT 009/RW 005
+    - Kelurahan SUSUKAN: RW 005 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -15918,7 +15918,7 @@
 - Alamat: JL. H. M. SABAR NO. 49
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan RAMBUTAN: RT 004/RW 001
+    - Kelurahan RAMBUTAN: RW 001 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIBUBUR
@@ -15929,7 +15929,7 @@
 - Alamat: JL. TANAH MERDEKA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan RAMBUTAN: RT 010/RW 004
+    - Kelurahan RAMBUTAN: RW 004 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -15940,7 +15940,7 @@
 - Alamat: JL. SD INPRES NO. 1-2
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan RAMBUTAN: RT 004/RW 003
+    - Kelurahan RAMBUTAN: RW 003 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
     - Kelurahan CEGER
@@ -15957,7 +15957,7 @@
 - Alamat: JL. SMP 188 RT 002 RW 04
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan RAMBUTAN: RT 002/RW 004
+    - Kelurahan RAMBUTAN: RW 004 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
     - Kelurahan RAMBUTAN
@@ -15972,16 +15972,16 @@
 - Alamat: JL. MARDANI RAYA, RT 001, RW 005, KEL. JOHAR BARU, KEC. JOHAR BARU, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 001/RW 005; RT 002/RW 005; RT 002/RW 009; RT 003/RW 009; RT 004/RW 009
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 005 (RT 001, 002); RW 009 (RT 002, 003, 004)
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 006/RW 005; RT 007/RW 005; RT 009/RW 003; RT 010/RW 003
-    - Kelurahan KAMPUNG RAWA: RT 005/RW 005
+    - Kelurahan JOHAR BARU: RW 003 (RT 009, 010); RW 005 (RT 001, 002, 003, 006, 007)
+    - Kelurahan KAMPUNG RAWA: RW 005 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 001/RW 009; RT 003/RW 005; RT 005/RW 009; RT 006/RW 005; RT 006/RW 009; RT 007/RW 005; RT 007/RW 009; RT 008/RW 005; RT 008/RW 009; RT 009/RW 005; RT 010/RW 005; RT 011/RW 005
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 005 (RT 003, 006, 007, 008, 009, 010, 011); RW 009 (RT 001, 005, 006, 007, 008)
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 004/RW 005; RT 005/RW 003; RT 005/RW 005; RT 006/RW 003; RT 007/RW 003; RT 008/RW 003; RT 008/RW 005; RT 009/RW 005; RT 010/RW 005; RT 011/RW 003; RT 011/RW 005; RT 013/RW 005; RT 013/RW 009; RT 014/RW 005; RT 014/RW 009; RT 017/RW 003
-    - Kelurahan KAMPUNG RAWA: RT 004/RW 005; RT 006/RW 005
+    - Kelurahan JOHAR BARU: RW 003 (RT 005, 006, 007, 008, 011, 017); RW 005 (RT 004, 005, 008, 009, 010, 011, 013, 014); RW 009 (RT 013, 014)
+    - Kelurahan KAMPUNG RAWA: RW 005 (RT 004, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -15998,15 +15998,15 @@
 - Alamat: JL. MANGGARAI UTARA IV / 6, RT 004, RW 001, KEL. MANGGARAI, KEC. TEBET, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan MANGGARAI: RT 001/RW 001; RT 003/RW 001; RT 004/RW 001; RT 005/RW 001; RT 009/RW 001; RT 011/RW 001
+    - Kelurahan MANGGARAI: RW 001 (RT 001, 003, 004, 005, 009, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
-    - Kelurahan KAMPUNG MELAYU: RT 008/RW 006
+    - Kelurahan KAMPUNG MELAYU: RW 006 (RT 008)
   - Kecamatan MATRAMAN
-    - Kelurahan KEBON MANGGIS: RT 001/RW 004; RT 005/RW 004; RT 007/RW 004; RT 008/RW 004; RT 009/RW 004; RT 010/RW 004; RT 011/RW 004; RT 012/RW 004
+    - Kelurahan KEBON MANGGIS: RW 004 (RT 001, 005, 007, 008, 009, 010, 011, 012)
   - Kecamatan TEBET
-    - Kelurahan BUKIT DURI: RT 011/RW 001; RT 012/RW 001
-    - Kelurahan MANGGARAI: RT 001/RW 004; RT 002/RW 004; RT 002/RW 010; RT 003/RW 004; RT 004/RW 004; RT 004/RW 010; RT 005/RW 004; RT 005/RW 010; RT 006/RW 010; RT 007/RW 001; RT 007/RW 010; RT 008/RW 001; RT 008/RW 010; RT 009/RW 010; RT 010/RW 001; RT 010/RW 010; RT 011/RW 010; RT 012/RW 001; RT 013/RW 010; RT 015/RW 010
+    - Kelurahan BUKIT DURI: RW 001 (RT 011, 012)
+    - Kelurahan MANGGARAI: RW 001 (RT 007, 008, 010, 012); RW 004 (RT 001, 002, 003, 004, 005); RW 010 (RT 002, 004, 005, 006, 007, 008, 009, 010, 011, 013, 015)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan KAMPUNG MELAYU
@@ -16026,18 +16026,18 @@
 - Alamat: JL. PERWIRA NO. 10, RT 002, RW 008, KEL. PASAR BARU, KEC. SAWAH BESAR, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan GAMBIR: RT 002/RW 001; RT 005/RW 002
-    - Kelurahan KEBON KELAPA: RT 014/RW 004
+    - Kelurahan GAMBIR: RW 001 (RT 002); RW 002 (RT 005)
+    - Kelurahan KEBON KELAPA: RW 004 (RT 014)
   - Kecamatan SAWAH BESAR
-    - Kelurahan PASAR BARU: RT 001/RW 008; RT 002/RW 001; RT 002/RW 008; RT 003/RW 008; RT 004/RW 008; RT 006/RW 008; RT 007/RW 001; RT 008/RW 001; RT 015/RW 004
+    - Kelurahan PASAR BARU: RW 001 (RT 002, 007, 008); RW 004 (RT 015); RW 008 (RT 001, 002, 003, 004, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
-    - Kelurahan GAMBIR: RT 001/RW 001; RT 003/RW 001; RT 004/RW 001; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001
-    - Kelurahan KEBON KELAPA: RT 004/RW 004; RT 005/RW 004; RT 006/RW 004; RT 007/RW 004; RT 008/RW 004; RT 009/RW 004; RT 010/RW 004; RT 011/RW 004; RT 012/RW 004; RT 013/RW 004
+    - Kelurahan GAMBIR: RW 001 (RT 001, 003, 004, 007, 008, 009)
+    - Kelurahan KEBON KELAPA: RW 004 (RT 004, 005, 006, 007, 008, 009, 010, 011, 012, 013)
   - Kecamatan SAWAH BESAR
-    - Kelurahan PASAR BARU: RT 001/RW 001; RT 001/RW 004; RT 002/RW 004; RT 003/RW 001; RT 004/RW 001; RT 005/RW 008; RT 006/RW 001; RT 006/RW 004; RT 007/RW 004; RT 008/RW 002; RT 009/RW 001; RT 011/RW 004; RT 012/RW 002; RT 012/RW 004; RT 013/RW 002; RT 013/RW 004; RT 014/RW 004
+    - Kelurahan PASAR BARU: RW 001 (RT 001, 003, 004, 006, 009); RW 002 (RT 008, 012, 013); RW 004 (RT 001, 002, 006, 007, 011, 012, 013, 014); RW 008 (RT 005)
   - Kecamatan SENEN
-    - Kelurahan SENEN: RT 005/RW 005; RT 006/RW 005; RT 009/RW 005; RT 010/RW 005
+    - Kelurahan SENEN: RW 005 (RT 005, 006, 009, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan GAMBIR
@@ -16060,14 +16060,14 @@
 - Alamat: JL. DR. SUTOMO NO. 5 PASAR BARU, RT 001, RW 008, KEL. PASAR BARU, KEC. SAWAH BESAR, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan GUNUNG SAHARI SELATAN: RT 003/RW 001; RT 004/RW 001
+    - Kelurahan GUNUNG SAHARI SELATAN: RW 001 (RT 003, 004)
   - Kecamatan SAWAH BESAR
-    - Kelurahan PASAR BARU: RT 001/RW 004; RT 001/RW 008; RT 002/RW 001; RT 002/RW 004; RT 002/RW 008; RT 003/RW 004; RT 004/RW 008; RT 015/RW 004
+    - Kelurahan PASAR BARU: RW 001 (RT 002); RW 004 (RT 001, 002, 003, 015); RW 008 (RT 001, 002, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
-    - Kelurahan GUNUNG SAHARI SELATAN: RT 001/RW 001; RT 006/RW 001; RT 007/RW 001; RT 014/RW 001; RT 015/RW 001
+    - Kelurahan GUNUNG SAHARI SELATAN: RW 001 (RT 001, 006, 007, 014, 015)
   - Kecamatan SAWAH BESAR
-    - Kelurahan PASAR BARU: RT 001/RW 001; RT 001/RW 003; RT 003/RW 001; RT 003/RW 008; RT 004/RW 001; RT 004/RW 002; RT 004/RW 003; RT 004/RW 004; RT 005/RW 002; RT 005/RW 004; RT 005/RW 008; RT 006/RW 001; RT 006/RW 004; RT 007/RW 001; RT 007/RW 004; RT 008/RW 001; RT 008/RW 003; RT 008/RW 004; RT 009/RW 001; RT 009/RW 004; RT 010/RW 004; RT 011/RW 002; RT 011/RW 004; RT 012/RW 004; RT 013/RW 002; RT 013/RW 004; RT 014/RW 004
+    - Kelurahan PASAR BARU: RW 001 (RT 001, 003, 004, 006, 007, 008, 009); RW 002 (RT 004, 005, 011, 013); RW 003 (RT 001, 004, 008); RW 004 (RT 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014); RW 008 (RT 003, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan GAMBIR
@@ -16091,10 +16091,10 @@
 - Alamat: JL. BULAK TIMUR I/7, RT 003, RW 016, KEL. KLENDER, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 001/RW 016; RT 001/RW 017; RT 002/RW 016; RT 003/RW 016; RT 004/RW 016; RT 006/RW 015; RT 007/RW 015; RT 009/RW 017; RT 015/RW 017
+    - Kelurahan KLENDER: RW 015 (RT 006, 007); RW 016 (RT 001, 002, 003, 004); RW 017 (RT 001, 009, 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 001/RW 015; RT 004/RW 007; RT 004/RW 015; RT 005/RW 007; RT 005/RW 015; RT 005/RW 016; RT 006/RW 007; RT 006/RW 016; RT 007/RW 017; RT 008/RW 007; RT 008/RW 016; RT 008/RW 017; RT 010/RW 017; RT 011/RW 007
+    - Kelurahan KLENDER: RW 007 (RT 004, 005, 006, 008, 011); RW 015 (RT 001, 004, 005); RW 016 (RT 005, 006, 008); RW 017 (RT 007, 008, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -16106,10 +16106,10 @@
 - Alamat: JL. BALAI RAKYAT, RT 009, RW 007, KEL. UTAN KAYU UTARA, KEC. MATRAMAN, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU UTARA: RT 001/RW 010; RT 007/RW 006; RT 007/RW 007; RT 008/RW 007; RT 009/RW 006; RT 009/RW 007; RT 010/RW 007; RT 011/RW 007; RT 014/RW 006
+    - Kelurahan UTAN KAYU UTARA: RW 006 (RT 007, 009, 014); RW 007 (RT 007, 008, 009, 010, 011); RW 010 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU UTARA: RT 002/RW 010; RT 003/RW 010; RT 004/RW 006; RT 004/RW 010; RT 005/RW 010; RT 006/RW 007; RT 006/RW 010; RT 007/RW 010; RT 008/RW 006; RT 008/RW 010; RT 009/RW 010; RT 010/RW 006; RT 012/RW 007; RT 013/RW 006; RT 013/RW 007; RT 014/RW 007
+    - Kelurahan UTAN KAYU UTARA: RW 006 (RT 004, 008, 010, 013); RW 007 (RT 006, 012, 013, 014); RW 010 (RT 002, 003, 004, 005, 006, 007, 008, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -16125,12 +16125,12 @@
 - Alamat: JL. PEGANGSAAN BARAT NO. 1, RT 001, RW 002, KEL. MENTENG, KEC. MENTENG, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MENTENG
-    - Kelurahan MENTENG: RT 001/RW 002; RT 001/RW 007; RT 002/RW 002; RT 003/RW 002; RT 003/RW 007; RT 004/RW 003; RT 004/RW 007; RT 005/RW 002; RT 007/RW 002; RT 008/RW 002; RT 010/RW 002; RT 015/RW 005; RT 016/RW 005
-    - Kelurahan PEGANGSAAN: RT 001/RW 001; RT 011/RW 002
+    - Kelurahan MENTENG: RW 002 (RT 001, 002, 003, 005, 007, 008, 010); RW 003 (RT 004); RW 005 (RT 015, 016); RW 007 (RT 001, 003, 004)
+    - Kelurahan PEGANGSAAN: RW 001 (RT 001); RW 002 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MENTENG
-    - Kelurahan MENTENG: RT 002/RW 007; RT 003/RW 003; RT 004/RW 002; RT 005/RW 003; RT 006/RW 002; RT 006/RW 003; RT 009/RW 002; RT 010/RW 003; RT 011/RW 002; RT 012/RW 002; RT 012/RW 005; RT 013/RW 002; RT 014/RW 002
-    - Kelurahan PEGANGSAAN: RT 002/RW 001; RT 009/RW 002; RT 010/RW 001; RT 011/RW 001; RT 012/RW 001; RT 013/RW 001; RT 014/RW 001; RT 015/RW 001; RT 016/RW 001
+    - Kelurahan MENTENG: RW 002 (RT 004, 006, 009, 011, 012, 013, 014); RW 003 (RT 003, 005, 006, 010); RW 005 (RT 012); RW 007 (RT 002)
+    - Kelurahan PEGANGSAAN: RW 001 (RT 002, 010, 011, 012, 013, 014, 015, 016); RW 002 (RT 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MATRAMAN
     - Kelurahan KEBON MANGGIS
@@ -16149,11 +16149,11 @@
 - Alamat: JL. USMAN NO.6, RT 002, RW 004, KEL. KELAPA DUA WETAN, KEC. CIRACAS, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan KELAPA DUA WETAN: RT 001/RW 004; RT 002/RW 004; RT 003/RW 004; RT 004/RW 004; RT 007/RW 011
+    - Kelurahan KELAPA DUA WETAN: RW 004 (RT 001, 002, 003, 004); RW 011 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 005/RW 006; RT 009/RW 006
-    - Kelurahan KELAPA DUA WETAN: RT 001/RW 011; RT 002/RW 011; RT 003/RW 011; RT 004/RW 011; RT 005/RW 004; RT 005/RW 011; RT 006/RW 004; RT 006/RW 011; RT 007/RW 004; RT 008/RW 004; RT 008/RW 011; RT 009/RW 004; RT 009/RW 011; RT 010/RW 004; RT 010/RW 011; RT 011/RW 004; RT 011/RW 011; RT 012/RW 004; RT 012/RW 011; RT 012/RW 012; RT 013/RW 011; RT 014/RW 011
+    - Kelurahan CIRACAS: RW 006 (RT 005, 009)
+    - Kelurahan KELAPA DUA WETAN: RW 004 (RT 005, 006, 007, 008, 009, 010, 011, 012); RW 011 (RT 001, 002, 003, 004, 005, 006, 008, 009, 010, 011, 012, 013, 014); RW 012 (RT 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan CILANGKAP
@@ -16168,12 +16168,12 @@
 - Alamat: JL. SUMUR BATU, RT 003, RW 001, KEL. SUMUR BATU, KEC. KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan SUMUR BATU: RT 001/RW 001; RT 001/RW 002; RT 003/RW 001; RT 004/RW 001; RT 005/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 011/RW 002
+    - Kelurahan SUMUR BATU: RW 001 (RT 001, 003, 004, 005, 006, 007, 008); RW 002 (RT 001, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
-    - Kelurahan CEMPAKA BARU: RT 002/RW 008; RT 003/RW 008; RT 004/RW 008; RT 005/RW 009; RT 006/RW 008; RT 012/RW 008
-    - Kelurahan SERDANG: RT 004/RW 004; RT 005/RW 004; RT 006/RW 004; RT 007/RW 004; RT 016/RW 004
-    - Kelurahan SUMUR BATU: RT 002/RW 001; RT 002/RW 002; RT 003/RW 002; RT 005/RW 002; RT 006/RW 002; RT 007/RW 002; RT 008/RW 002; RT 009/RW 001; RT 009/RW 002; RT 010/RW 001; RT 010/RW 002
+    - Kelurahan CEMPAKA BARU: RW 008 (RT 002, 003, 004, 006, 012); RW 009 (RT 005)
+    - Kelurahan SERDANG: RW 004 (RT 004, 005, 006, 007, 016)
+    - Kelurahan SUMUR BATU: RW 001 (RT 002, 009, 010); RW 002 (RT 002, 003, 005, 006, 007, 008, 009, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -16187,11 +16187,11 @@
 - Alamat: JL. KERINCI VII BLOK E, RT 013, RW 002, KEL. GUNUNG, KEC. KEBAYORAN BARU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GUNUNG: RT 001/RW 003; RT 002/RW 003; RT 003/RW 002; RT 004/RW 002; RT 008/RW 002; RT 012/RW 002; RT 013/RW 002
+    - Kelurahan GUNUNG: RW 002 (RT 003, 004, 008, 012, 013); RW 003 (RT 001, 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GUNUNG: RT 001/RW 002; RT 002/RW 002; RT 003/RW 001; RT 005/RW 002; RT 005/RW 003; RT 006/RW 002; RT 006/RW 003; RT 007/RW 002; RT 008/RW 003; RT 008/RW 008; RT 009/RW 002; RT 009/RW 003; RT 010/RW 002; RT 010/RW 003; RT 011/RW 002; RT 011/RW 008; RT 012/RW 003; RT 013/RW 003; RT 014/RW 003; RT 015/RW 003
-    - Kelurahan KRAMAT PELA: RT 001/RW 001; RT 002/RW 001; RT 004/RW 001; RT 005/RW 001; RT 005/RW 002; RT 006/RW 001; RT 006/RW 002; RT 007/RW 001; RT 007/RW 002; RT 008/RW 002; RT 009/RW 002; RT 011/RW 009; RT 012/RW 001; RT 013/RW 001; RT 013/RW 009; RT 014/RW 009; RT 015/RW 009
+    - Kelurahan GUNUNG: RW 001 (RT 003); RW 002 (RT 001, 002, 005, 006, 007, 009, 010, 011); RW 003 (RT 005, 006, 008, 009, 010, 012, 013, 014, 015); RW 008 (RT 008, 011)
+    - Kelurahan KRAMAT PELA: RW 001 (RT 001, 002, 004, 005, 006, 007, 012, 013); RW 002 (RT 005, 006, 007, 008, 009); RW 009 (RT 011, 013, 014, 015)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GANDARIA UTARA
@@ -16213,16 +16213,16 @@
 - Alamat: JL WIJAYA IX/50, RT 001, RW 004, KEL. MELAWAI, KEC. KEBAYORAN BARU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan MELAWAI: RT 001/RW 004; RT 002/RW 004; RT 003/RW 001; RT 003/RW 003; RT 004/RW 001; RT 004/RW 003; RT 004/RW 004; RT 005/RW 001; RT 006/RW 001; RT 008/RW 003
-    - Kelurahan PULO: RT 004/RW 002
+    - Kelurahan MELAWAI: RW 001 (RT 003, 004, 005, 006); RW 003 (RT 003, 004, 008); RW 004 (RT 001, 002, 004)
+    - Kelurahan PULO: RW 002 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan KRAMAT PELA: RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 004/RW 005; RT 005/RW 005; RT 006/RW 005; RT 007/RW 005
-    - Kelurahan MELAWAI: RT 001/RW 003; RT 002/RW 003; RT 003/RW 004; RT 005/RW 003; RT 005/RW 004; RT 006/RW 002; RT 006/RW 003; RT 006/RW 004; RT 007/RW 001; RT 007/RW 003; RT 007/RW 004
-    - Kelurahan PETOGOGAN: RT 001/RW 001; RT 001/RW 003; RT 002/RW 001; RT 002/RW 003; RT 003/RW 001; RT 003/RW 003; RT 004/RW 001; RT 004/RW 003; RT 005/RW 001; RT 005/RW 003; RT 006/RW 001; RT 007/RW 001; RT 010/RW 001; RT 011/RW 001; RT 013/RW 001
-    - Kelurahan PULO: RT 001/RW 001; RT 001/RW 002; RT 001/RW 003; RT 001/RW 004; RT 001/RW 005; RT 002/RW 002; RT 002/RW 003; RT 002/RW 004; RT 002/RW 005; RT 003/RW 001; RT 003/RW 002; RT 003/RW 003; RT 003/RW 004; RT 003/RW 005; RT 004/RW 001; RT 004/RW 003; RT 004/RW 004; RT 004/RW 005; RT 005/RW 002; RT 005/RW 003; RT 005/RW 005; RT 006/RW 002; RT 006/RW 004; RT 006/RW 005; RT 007/RW 001; RT 007/RW 005; RT 008/RW 001; RT 008/RW 004; RT 008/RW 005; RT 009/RW 004; RT 009/RW 005; RT 010/RW 001; RT 010/RW 004
+    - Kelurahan KRAMAT PELA: RW 005 (RT 001, 002, 003, 004, 005, 006, 007)
+    - Kelurahan MELAWAI: RW 001 (RT 007); RW 002 (RT 006); RW 003 (RT 001, 002, 005, 006, 007); RW 004 (RT 003, 005, 006, 007)
+    - Kelurahan PETOGOGAN: RW 001 (RT 001, 002, 003, 004, 005, 006, 007, 010, 011, 013); RW 003 (RT 001, 002, 003, 004, 005)
+    - Kelurahan PULO: RW 001 (RT 001, 003, 004, 007, 008, 010); RW 002 (RT 001, 002, 003, 005, 006); RW 003 (RT 001, 002, 003, 004, 005); RW 004 (RT 001, 002, 003, 004, 006, 008, 009, 010); RW 005 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009)
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan PELA MAMPANG: RT 001/RW 008; RT 001/RW 014; RT 002/RW 014; RT 005/RW 007; RT 006/RW 007
+    - Kelurahan PELA MAMPANG: RW 007 (RT 005, 006); RW 008 (RT 001); RW 014 (RT 001, 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan CIPETE UTARA
@@ -16238,14 +16238,14 @@
 - Alamat: JL. TIRTAYASA RAYA BLOK O/1, RT 001, RW 002, KEL. MELAWAI, KEC. KEBAYORAN BARU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan MELAWAI: RT 001/RW 002; RT 002/RW 002; RT 004/RW 002; RT 005/RW 002; RT 008/RW 002
-    - Kelurahan PETOGOGAN: RT 007/RW 005; RT 014/RW 006; RT 015/RW 006
+    - Kelurahan MELAWAI: RW 002 (RT 001, 002, 004, 005, 008)
+    - Kelurahan PETOGOGAN: RW 005 (RT 007); RW 006 (RT 014, 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan MELAWAI: RT 003/RW 002; RT 007/RW 002
-    - Kelurahan PETOGOGAN: RT 001/RW 001; RT 001/RW 002; RT 001/RW 003; RT 001/RW 005; RT 001/RW 006; RT 001/RW 007; RT 002/RW 001; RT 002/RW 002; RT 002/RW 003; RT 002/RW 005; RT 002/RW 006; RT 002/RW 007; RT 003/RW 001; RT 003/RW 002; RT 003/RW 003; RT 003/RW 005; RT 003/RW 006; RT 003/RW 007; RT 004/RW 001; RT 004/RW 003; RT 004/RW 005; RT 004/RW 006; RT 004/RW 007; RT 005/RW 001; RT 005/RW 002; RT 005/RW 003; RT 005/RW 005; RT 005/RW 006; RT 005/RW 007; RT 006/RW 001; RT 006/RW 002; RT 006/RW 003; RT 006/RW 005; RT 006/RW 006; RT 007/RW 001; RT 007/RW 003; RT 007/RW 006; RT 008/RW 001; RT 008/RW 002; RT 008/RW 003; RT 008/RW 005; RT 008/RW 006; RT 009/RW 001; RT 009/RW 003; RT 009/RW 005; RT 009/RW 006; RT 010/RW 001; RT 010/RW 003; RT 010/RW 005; RT 010/RW 006; RT 011/RW 001; RT 011/RW 003; RT 011/RW 005; RT 011/RW 006; RT 012/RW 003; RT 012/RW 005; RT 012/RW 006; RT 013/RW 001; RT 013/RW 003; RT 013/RW 006; RT 014/RW 003; RT 015/RW 003
-    - Kelurahan RAWA BARAT: RT 001/RW 007; RT 002/RW 007; RT 003/RW 007; RT 004/RW 007; RT 005/RW 007
-    - Kelurahan SELONG: RT 003/RW 002; RT 005/RW 002; RT 006/RW 001; RT 008/RW 002
+    - Kelurahan MELAWAI: RW 002 (RT 003, 007)
+    - Kelurahan PETOGOGAN: RW 001 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 013); RW 002 (RT 001, 002, 003, 005, 006, 008); RW 003 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015); RW 005 (RT 001, 002, 003, 004, 005, 006, 008, 009, 010, 011, 012); RW 006 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013); RW 007 (RT 001, 002, 003, 004, 005)
+    - Kelurahan RAWA BARAT: RW 007 (RT 001, 002, 003, 004, 005)
+    - Kelurahan SELONG: RW 001 (RT 006); RW 002 (RT 003, 005, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan CIPETE UTARA
@@ -16263,12 +16263,12 @@
 - Alamat: JL. JATINEGARA TIMUR NO. 61-65, RT 011, RW 002, KEL. BALI MESTER, KEC. JATINEGARA, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan BALI MESTER: RT 006/RW 003; RT 006/RW 004; RT 007/RW 002; RT 008/RW 004; RT 009/RW 002; RT 011/RW 002; RT 011/RW 003; RT 012/RW 003; RT 013/RW 003; RT 014/RW 003
-    - Kelurahan RAWA BUNGA: RT 002/RW 007; RT 003/RW 007; RT 004/RW 007; RT 010/RW 007; RT 012/RW 002; RT 012/RW 007; RT 013/RW 007
+    - Kelurahan BALI MESTER: RW 002 (RT 007, 009, 011); RW 003 (RT 006, 011, 012, 013, 014); RW 004 (RT 006, 008)
+    - Kelurahan RAWA BUNGA: RW 002 (RT 012); RW 007 (RT 002, 003, 004, 010, 012, 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
-    - Kelurahan BALI MESTER: RT 001/RW 002; RT 001/RW 003; RT 002/RW 002; RT 002/RW 004; RT 003/RW 003; RT 003/RW 004; RT 004/RW 002; RT 004/RW 003; RT 005/RW 002; RT 005/RW 003; RT 006/RW 002; RT 007/RW 003; RT 008/RW 002; RT 008/RW 003; RT 009/RW 003; RT 009/RW 004; RT 010/RW 003; RT 010/RW 004
-    - Kelurahan RAWA BUNGA: RT 001/RW 002; RT 001/RW 008; RT 001/RW 009; RT 002/RW 002; RT 002/RW 008; RT 002/RW 009; RT 003/RW 002; RT 003/RW 008; RT 004/RW 008; RT 005/RW 002; RT 005/RW 007; RT 006/RW 008; RT 008/RW 007; RT 009/RW 002; RT 011/RW 002; RT 011/RW 007
+    - Kelurahan BALI MESTER: RW 002 (RT 001, 002, 004, 005, 006, 008); RW 003 (RT 001, 003, 004, 005, 007, 008, 009, 010); RW 004 (RT 002, 003, 009, 010)
+    - Kelurahan RAWA BUNGA: RW 002 (RT 001, 002, 003, 005, 009, 011); RW 007 (RT 005, 008, 011); RW 008 (RT 001, 002, 003, 004, 006); RW 009 (RT 001, 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan BALI MESTER
@@ -16285,16 +16285,16 @@
 - Alamat: JL. PROF. SUPOMO SH, RT 001, RW 001, KEL. MENTENG DALAM, KEC. TEBET, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan PANCORAN: RT 001/RW 004
+    - Kelurahan PANCORAN: RW 004 (RT 001)
   - Kecamatan TEBET
-    - Kelurahan MENTENG DALAM: RT 001/RW 001; RT 001/RW 008; RT 002/RW 001; RT 002/RW 008; RT 003/RW 001; RT 004/RW 001; RT 005/RW 001; RT 007/RW 001
-    - Kelurahan TEBET BARAT: RT 001/RW 006; RT 005/RW 006; RT 009/RW 006; RT 010/RW 006; RT 014/RW 006
+    - Kelurahan MENTENG DALAM: RW 001 (RT 001, 002, 003, 004, 005, 007); RW 008 (RT 001, 002)
+    - Kelurahan TEBET BARAT: RW 006 (RT 001, 005, 009, 010, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
-    - Kelurahan PANCORAN: RT 002/RW 002
+    - Kelurahan PANCORAN: RW 002 (RT 002)
   - Kecamatan TEBET
-    - Kelurahan MENTENG DALAM: RT 003/RW 008; RT 004/RW 008; RT 006/RW 001; RT 006/RW 002; RT 008/RW 001; RT 008/RW 008; RT 009/RW 002; RT 009/RW 008; RT 010/RW 001; RT 010/RW 008; RT 012/RW 002
-    - Kelurahan TEBET BARAT: RT 001/RW 003; RT 001/RW 005; RT 002/RW 003; RT 002/RW 005; RT 002/RW 006; RT 003/RW 003; RT 003/RW 006; RT 004/RW 003; RT 004/RW 006; RT 005/RW 003; RT 006/RW 004; RT 006/RW 006; RT 007/RW 006; RT 008/RW 006; RT 011/RW 006; RT 012/RW 005; RT 012/RW 006; RT 013/RW 005; RT 013/RW 006; RT 014/RW 005; RT 015/RW 005; RT 015/RW 006; RT 016/RW 006; RT 017/RW 006
+    - Kelurahan MENTENG DALAM: RW 001 (RT 006, 008, 010); RW 002 (RT 006, 009, 012); RW 008 (RT 003, 004, 008, 009, 010)
+    - Kelurahan TEBET BARAT: RW 003 (RT 001, 002, 003, 004, 005); RW 004 (RT 006); RW 005 (RT 001, 002, 012, 013, 014, 015); RW 006 (RT 002, 003, 004, 006, 007, 008, 011, 012, 013, 015, 016, 017)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan MAMPANG PRAPATAN
@@ -16312,16 +16312,16 @@
 - Alamat: JL. PAL MERAH BARAT NO. 59, RT 002, RW 005, KEL. GROGOL UTARA, KEC. KEBAYORAN LAMA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL UTARA: RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 005/RW 005; RT 006/RW 005
+    - Kelurahan GROGOL UTARA: RW 005 (RT 001, 002, 003, 005, 006)
   - Kecamatan PAL MERAH
-    - Kelurahan PALMERAH: RT 002/RW 008
+    - Kelurahan PALMERAH: RW 008 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL UTARA: RT 001/RW 004; RT 001/RW 011; RT 001/RW 016; RT 004/RW 005; RT 007/RW 005; RT 008/RW 005; RT 009/RW 005; RT 010/RW 005; RT 013/RW 003
+    - Kelurahan GROGOL UTARA: RW 003 (RT 013); RW 004 (RT 001); RW 005 (RT 004, 007, 008, 009, 010); RW 011 (RT 001); RW 016 (RT 001)
   - Kecamatan PAL MERAH
-    - Kelurahan PALMERAH: RT 001/RW 014; RT 003/RW 008; RT 003/RW 009; RT 003/RW 014; RT 004/RW 008; RT 004/RW 014; RT 005/RW 008; RT 005/RW 014; RT 006/RW 008; RT 006/RW 014; RT 007/RW 007; RT 007/RW 008; RT 008/RW 008
+    - Kelurahan PALMERAH: RW 007 (RT 007); RW 008 (RT 003, 004, 005, 006, 007, 008); RW 009 (RT 003); RW 014 (RT 001, 003, 004, 005, 006)
   - Kecamatan TANAH ABANG
-    - Kelurahan GELORA: RT 001/RW 002; RT 008/RW 002
+    - Kelurahan GELORA: RW 002 (RT 001, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -16334,14 +16334,14 @@
 - Alamat: JL. KARANG ANYAR 9 - 14, RT 007, RW 010, KEL. KARANG ANYAR, KEC. SAWAH BESAR, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SAWAH BESAR
-    - Kelurahan KARANG ANYAR: RT 007/RW 010; RT 008/RW 010; RT 009/RW 010; RT 010/RW 009; RT 010/RW 010
+    - Kelurahan KARANG ANYAR: RW 009 (RT 010); RW 010 (RT 007, 008, 009, 010)
   - Kecamatan TAMAN SARI
-    - Kelurahan TAMAN SARI: RT 012/RW 001
+    - Kelurahan TAMAN SARI: RW 001 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
-    - Kelurahan KARANG ANYAR: RT 001/RW 009; RT 001/RW 010; RT 001/RW 013; RT 002/RW 009; RT 002/RW 010; RT 003/RW 009; RT 003/RW 010; RT 004/RW 009; RT 004/RW 010; RT 004/RW 013; RT 005/RW 008; RT 005/RW 009; RT 005/RW 010; RT 006/RW 008; RT 006/RW 009; RT 006/RW 010; RT 007/RW 008; RT 007/RW 009; RT 008/RW 008; RT 008/RW 009; RT 009/RW 008; RT 009/RW 009; RT 010/RW 008; RT 011/RW 008; RT 011/RW 009; RT 011/RW 010; RT 012/RW 008; RT 012/RW 010; RT 013/RW 008; RT 013/RW 010; RT 014/RW 008; RT 014/RW 009; RT 014/RW 010; RT 015/RW 008; RT 015/RW 009; RT 015/RW 010
+    - Kelurahan KARANG ANYAR: RW 008 (RT 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015); RW 009 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 011, 014, 015); RW 010 (RT 001, 002, 003, 004, 005, 006, 011, 012, 013, 014, 015); RW 013 (RT 001, 004)
   - Kecamatan TAMAN SARI
-    - Kelurahan TAMAN SARI: RT 001/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 011/RW 001; RT 013/RW 001
+    - Kelurahan TAMAN SARI: RW 001 (RT 001, 006, 007, 008, 011, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan KEBON KELAPA
@@ -16366,15 +16366,15 @@
 - Alamat: JL. MENTENG KECIL NO. 3, RT 012, RW 009, KEL. KEBON SIRIH, KEC. MENTENG, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MENTENG
-    - Kelurahan KEBON SIRIH: RT 001/RW 009; RT 003/RW 009; RT 005/RW 007; RT 009/RW 009; RT 010/RW 009; RT 012/RW 009
+    - Kelurahan KEBON SIRIH: RW 007 (RT 005); RW 009 (RT 001, 003, 009, 010, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
-    - Kelurahan GAMBIR: RT 008/RW 001
+    - Kelurahan GAMBIR: RW 001 (RT 008)
   - Kecamatan MENTENG
-    - Kelurahan CIKINI: RT 001/RW 005; RT 010/RW 005
-    - Kelurahan KEBON SIRIH: RT 001/RW 005; RT 001/RW 007; RT 001/RW 010; RT 002/RW 005; RT 002/RW 007; RT 002/RW 009; RT 002/RW 010; RT 003/RW 005; RT 003/RW 010; RT 004/RW 007; RT 004/RW 009; RT 005/RW 005; RT 005/RW 009; RT 006/RW 007; RT 006/RW 009; RT 007/RW 009; RT 008/RW 007; RT 008/RW 009; RT 009/RW 005; RT 011/RW 009; RT 011/RW 010; RT 012/RW 006; RT 012/RW 010; RT 014/RW 006; RT 015/RW 010; RT 016/RW 006
+    - Kelurahan CIKINI: RW 005 (RT 001, 010)
+    - Kelurahan KEBON SIRIH: RW 005 (RT 001, 002, 003, 005, 009); RW 006 (RT 012, 014, 016); RW 007 (RT 001, 002, 004, 006, 008); RW 009 (RT 002, 004, 005, 006, 007, 008, 011); RW 010 (RT 001, 002, 003, 011, 012, 015)
   - Kecamatan SENEN
-    - Kelurahan KWITANG: RT 001/RW 001; RT 001/RW 002; RT 001/RW 003; RT 002/RW 001; RT 002/RW 002; RT 002/RW 003; RT 003/RW 002; RT 003/RW 003; RT 004/RW 001; RT 004/RW 002; RT 004/RW 003; RT 005/RW 001; RT 005/RW 002; RT 005/RW 003; RT 006/RW 001; RT 006/RW 002; RT 007/RW 001; RT 007/RW 002; RT 007/RW 003; RT 008/RW 002; RT 009/RW 001; RT 009/RW 002
+    - Kelurahan KWITANG: RW 001 (RT 001, 002, 004, 005, 006, 007, 009); RW 002 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009); RW 003 (RT 001, 002, 003, 004, 005, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan GAMBIR
@@ -16393,11 +16393,11 @@
 - Alamat: JL BUMI BLOK E NO 21, RT 013, RW 002, KEL. GUNUNG, KEC. KEBAYORAN BARU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GUNUNG: RT 001/RW 003; RT 002/RW 003; RT 003/RW 002; RT 004/RW 002; RT 008/RW 002; RT 012/RW 002; RT 013/RW 002
+    - Kelurahan GUNUNG: RW 002 (RT 003, 004, 008, 012, 013); RW 003 (RT 001, 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GUNUNG: RT 001/RW 002; RT 002/RW 001; RT 002/RW 002; RT 003/RW 003; RT 004/RW 003; RT 004/RW 005; RT 004/RW 008; RT 005/RW 002; RT 005/RW 003; RT 006/RW 001; RT 006/RW 002; RT 006/RW 003; RT 006/RW 008; RT 007/RW 001; RT 007/RW 002; RT 007/RW 003; RT 007/RW 005; RT 007/RW 008; RT 008/RW 001; RT 008/RW 003; RT 008/RW 004; RT 009/RW 001; RT 009/RW 002; RT 009/RW 003; RT 009/RW 008; RT 010/RW 001; RT 010/RW 002; RT 010/RW 003; RT 010/RW 008; RT 011/RW 002; RT 011/RW 003; RT 015/RW 003
-    - Kelurahan KRAMAT PELA: RT 004/RW 001; RT 006/RW 002; RT 007/RW 001; RT 007/RW 002
+    - Kelurahan GUNUNG: RW 001 (RT 002, 006, 007, 008, 009, 010); RW 002 (RT 001, 002, 005, 006, 007, 009, 010, 011); RW 003 (RT 003, 004, 005, 006, 007, 008, 009, 010, 011, 015); RW 004 (RT 008); RW 005 (RT 004, 007); RW 008 (RT 004, 006, 007, 009, 010)
+    - Kelurahan KRAMAT PELA: RW 001 (RT 004, 007); RW 002 (RT 006, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GANDARIA UTARA
@@ -16415,14 +16415,14 @@
 - Alamat: JL. RANTAI MAS KPAD BULAK RANTAI, RT 004, RW 005, KEL. TENGAH, KEC. KRAMATJATI, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMATJATI
-    - Kelurahan TENGAH: RT 002/RW 001; RT 003/RW 005; RT 004/RW 005; RT 006/RW 002; RT 007/RW 002; RT 008/RW 002; RT 009/RW 001
+    - Kelurahan TENGAH: RW 001 (RT 002, 009); RW 002 (RT 006, 007, 008); RW 005 (RT 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan RAMBUTAN: RT 009/RW 005
+    - Kelurahan RAMBUTAN: RW 005 (RT 009)
   - Kecamatan KRAMATJATI
-    - Kelurahan BATU AMPAR: RT 011/RW 005; RT 012/RW 005
-    - Kelurahan KRAMATJATI: RT 006/RW 011; RT 007/RW 011; RT 010/RW 011; RT 011/RW 010; RT 011/RW 011; RT 012/RW 011; RT 013/RW 011; RT 014/RW 011; RT 015/RW 011; RT 018/RW 011
-    - Kelurahan TENGAH: RT 001/RW 001; RT 001/RW 002; RT 001/RW 003; RT 001/RW 005; RT 001/RW 008; RT 001/RW 010; RT 002/RW 002; RT 002/RW 003; RT 002/RW 005; RT 002/RW 008; RT 003/RW 001; RT 003/RW 002; RT 003/RW 003; RT 003/RW 008; RT 003/RW 010; RT 004/RW 001; RT 004/RW 002; RT 004/RW 003; RT 004/RW 008; RT 005/RW 001; RT 005/RW 002; RT 005/RW 008; RT 006/RW 001; RT 006/RW 003; RT 007/RW 001; RT 007/RW 003; RT 008/RW 001; RT 009/RW 002; RT 010/RW 001; RT 011/RW 001
+    - Kelurahan BATU AMPAR: RW 005 (RT 011, 012)
+    - Kelurahan KRAMATJATI: RW 010 (RT 011); RW 011 (RT 006, 007, 010, 011, 012, 013, 014, 015, 018)
+    - Kelurahan TENGAH: RW 001 (RT 001, 003, 004, 005, 006, 007, 008, 010, 011); RW 002 (RT 001, 002, 003, 004, 005, 009); RW 003 (RT 001, 002, 003, 004, 006, 007); RW 005 (RT 001, 002); RW 008 (RT 001, 002, 003, 004, 005); RW 010 (RT 001, 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIRACAS
     - Kelurahan RAMBUTAN
@@ -16440,10 +16440,10 @@
 - Alamat: JL. BANDENGAN UTARA 80, RT 013, RW 016, KEL. PENJARINGAN, KEC. PENJARINGAN, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan PENJARINGAN: RT 006/RW 016; RT 009/RW 016; RT 010/RW 016; RT 012/RW 012; RT 013/RW 016
+    - Kelurahan PENJARINGAN: RW 012 (RT 012); RW 016 (RT 006, 009, 010, 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PENJARINGAN
-    - Kelurahan PENJARINGAN: RT 001/RW 006; RT 002/RW 006; RT 002/RW 012; RT 003/RW 006; RT 003/RW 012; RT 004/RW 006; RT 004/RW 012; RT 004/RW 015; RT 004/RW 016; RT 005/RW 006; RT 005/RW 015; RT 006/RW 006; RT 006/RW 012; RT 006/RW 015; RT 007/RW 006; RT 007/RW 015; RT 007/RW 016; RT 008/RW 006; RT 008/RW 012; RT 008/RW 015; RT 009/RW 006; RT 009/RW 015; RT 010/RW 006; RT 010/RW 015; RT 011/RW 006; RT 011/RW 015; RT 011/RW 016; RT 012/RW 006; RT 012/RW 016; RT 013/RW 006; RT 014/RW 006; RT 015/RW 006
+    - Kelurahan PENJARINGAN: RW 006 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015); RW 012 (RT 002, 003, 004, 006, 008); RW 015 (RT 004, 005, 006, 007, 008, 009, 010, 011); RW 016 (RT 004, 007, 011, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PENJARINGAN
     - Kelurahan PEJAGALAN
@@ -16463,13 +16463,13 @@
 - Alamat: JL. JEMBATAN BATU NO.74, RT 002, RW 005, KEL. PINANGSIA, KEC. TAMAN SARI, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan PINANGSIA: RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 004/RW 005; RT 006/RW 006
+    - Kelurahan PINANGSIA: RW 005 (RT 001, 002, 003, 004); RW 006 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
-    - Kelurahan ANCOL: RT 002/RW 004
+    - Kelurahan ANCOL: RW 004 (RT 002)
   - Kecamatan TAMAN SARI
-    - Kelurahan MANGGA BESAR: RT 006/RW 001; RT 007/RW 001; RT 008/RW 001
-    - Kelurahan PINANGSIA: RT 001/RW 003; RT 001/RW 004; RT 001/RW 006; RT 002/RW 003; RT 002/RW 004; RT 002/RW 006; RT 003/RW 003; RT 003/RW 004; RT 003/RW 006; RT 004/RW 003; RT 004/RW 004; RT 004/RW 006; RT 005/RW 003; RT 005/RW 004; RT 005/RW 005; RT 005/RW 006; RT 006/RW 003; RT 006/RW 004; RT 006/RW 005; RT 007/RW 004; RT 007/RW 005; RT 008/RW 004; RT 008/RW 005; RT 009/RW 004; RT 009/RW 005; RT 010/RW 005; RT 011/RW 005; RT 012/RW 005
+    - Kelurahan MANGGA BESAR: RW 001 (RT 006, 007, 008)
+    - Kelurahan PINANGSIA: RW 003 (RT 001, 002, 003, 004, 005, 006); RW 004 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009); RW 005 (RT 005, 006, 007, 008, 009, 010, 011, 012); RW 006 (RT 001, 002, 003, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -16496,10 +16496,10 @@
 - Alamat: JL. PADEMANGAN TIMUR VI, RT 015, RW 001, KEL. PADEMANGAN TIMUR, KEC. PADEMANGAN, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN TIMUR: RT 001/RW 010; RT 003/RW 010; RT 004/RW 010; RT 005/RW 010; RT 013/RW 001; RT 014/RW 001; RT 014/RW 010; RT 015/RW 001; RT 016/RW 001; RT 017/RW 001
+    - Kelurahan PADEMANGAN TIMUR: RW 001 (RT 013, 014, 015, 016, 017); RW 010 (RT 001, 003, 004, 005, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN TIMUR: RT 002/RW 010; RT 011/RW 001; RT 012/RW 001; RT 016/RW 010; RT 018/RW 001
+    - Kelurahan PADEMANGAN TIMUR: RW 001 (RT 011, 012, 018); RW 010 (RT 002, 016)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -16510,10 +16510,10 @@
 - Alamat: JL. DUKUH V, RT 002, RW 005, KEL. DUKUH, KEC. KRAMATJATI, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMATJATI
-    - Kelurahan DUKUH: RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 003/RW 006; RT 004/RW 005; RT 004/RW 006; RT 007/RW 002; RT 008/RW 002; RT 009/RW 002
+    - Kelurahan DUKUH: RW 002 (RT 007, 008, 009); RW 005 (RT 001, 002, 003, 004); RW 006 (RT 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMATJATI
-    - Kelurahan DUKUH: RT 001/RW 006; RT 002/RW 006; RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 005/RW 005; RT 005/RW 006; RT 006/RW 002; RT 006/RW 005; RT 006/RW 006; RT 007/RW 005; RT 007/RW 006; RT 010/RW 002; RT 010/RW 005; RT 011/RW 005
+    - Kelurahan DUKUH: RW 002 (RT 003, 004, 005, 006, 010); RW 005 (RT 005, 006, 007, 010, 011); RW 006 (RT 001, 002, 005, 006, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIRACAS
     - Kelurahan RAMBUTAN
@@ -16528,14 +16528,14 @@
 - Alamat: JL. BB. I. RT 006, RW 015, KEL. CIPINANG MUARA, KEC. JATINEGARA, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 006/RW 003; RT 011/RW 004; RT 013/RW 004
+    - Kelurahan KLENDER: RW 003 (RT 006); RW 004 (RT 011, 013)
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 005/RW 015; RT 006/RW 015; RT 007/RW 015; RT 008/RW 008; RT 009/RW 015
+    - Kelurahan CIPINANG MUARA: RW 008 (RT 008); RW 015 (RT 005, 006, 007, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 004/RW 003; RT 012/RW 004; RT 017/RW 004
+    - Kelurahan KLENDER: RW 003 (RT 004); RW 004 (RT 012, 017)
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 003/RW 015; RT 004/RW 011; RT 004/RW 015; RT 005/RW 011; RT 007/RW 008; RT 008/RW 015; RT 010/RW 015; RT 011/RW 015; RT 013/RW 008
+    - Kelurahan CIPINANG MUARA: RW 008 (RT 007, 013); RW 011 (RT 004, 005); RW 015 (RT 003, 004, 008, 010, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan KLENDER
@@ -16547,10 +16547,10 @@
 - Alamat: JL. KEBON PALA 1, RT 003, RW 005, KEL. KAMPUNG MELAYU, KEC. JATINEGARA, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan KAMPUNG MELAYU: RT 002/RW 005; RT 002/RW 006; RT 003/RW 005; RT 004/RW 005; RT 004/RW 006; RT 005/RW 005; RT 006/RW 005; RT 009/RW 004; RT 010/RW 004
+    - Kelurahan KAMPUNG MELAYU: RW 004 (RT 009, 010); RW 005 (RT 002, 003, 004, 005, 006); RW 006 (RT 002, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
-    - Kelurahan KAMPUNG MELAYU: RT 001/RW 005; RT 001/RW 007; RT 002/RW 007; RT 005/RW 004; RT 005/RW 006; RT 006/RW 004; RT 006/RW 006; RT 006/RW 007; RT 007/RW 004; RT 007/RW 005; RT 007/RW 006; RT 007/RW 007; RT 008/RW 005; RT 010/RW 005; RT 010/RW 006; RT 011/RW 004; RT 011/RW 005; RT 012/RW 004; RT 012/RW 006; RT 012/RW 007; RT 013/RW 004; RT 018/RW 007
+    - Kelurahan KAMPUNG MELAYU: RW 004 (RT 005, 006, 007, 011, 012, 013); RW 005 (RT 001, 007, 008, 010, 011); RW 006 (RT 005, 006, 007, 010, 012); RW 007 (RT 001, 002, 006, 007, 012, 018)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan BALI MESTER
@@ -16570,11 +16570,11 @@
 - Alamat: JL. KOMP. PTB DUREN SAWIT, RT 014, RW 008, KEL. DUREN SAWIT, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 001/RW 004; RT 002/RW 004; RT 007/RW 008; RT 008/RW 008; RT 009/RW 008; RT 012/RW 008; RT 013/RW 008; RT 014/RW 008; RT 015/RW 008
+    - Kelurahan DUREN SAWIT: RW 004 (RT 001, 002); RW 008 (RT 007, 008, 009, 012, 013, 014, 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 001/RW 008; RT 001/RW 010; RT 001/RW 012; RT 002/RW 010; RT 002/RW 012; RT 003/RW 004; RT 003/RW 008; RT 003/RW 012; RT 004/RW 001; RT 004/RW 008; RT 004/RW 012; RT 005/RW 003; RT 005/RW 012; RT 008/RW 004; RT 008/RW 012; RT 010/RW 008; RT 011/RW 008; RT 016/RW 008
-    - Kelurahan KLENDER: RT 001/RW 018; RT 002/RW 018; RT 010/RW 011; RT 012/RW 011
+    - Kelurahan DUREN SAWIT: RW 001 (RT 004); RW 003 (RT 005); RW 004 (RT 003, 008); RW 008 (RT 001, 003, 004, 010, 011, 016); RW 010 (RT 001, 002); RW 012 (RT 001, 002, 003, 004, 005, 008)
+    - Kelurahan KLENDER: RW 011 (RT 010, 012); RW 018 (RT 001, 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -16585,16 +16585,16 @@
 - Alamat: JL. MARDANI NO.17, RT 001, RW 005, KEL. JOHAR BARU, KEC. JOHAR BARU, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 001/RW 005; RT 002/RW 005; RT 002/RW 009; RT 003/RW 009; RT 004/RW 009
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 005 (RT 001, 002); RW 009 (RT 002, 003, 004)
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 006/RW 005; RT 007/RW 005; RT 009/RW 003; RT 010/RW 003
-    - Kelurahan KAMPUNG RAWA: RT 005/RW 005
+    - Kelurahan JOHAR BARU: RW 003 (RT 009, 010); RW 005 (RT 001, 002, 003, 006, 007)
+    - Kelurahan KAMPUNG RAWA: RW 005 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 001/RW 009; RT 003/RW 005; RT 005/RW 009; RT 006/RW 005; RT 006/RW 009; RT 007/RW 005; RT 007/RW 009; RT 008/RW 005; RT 008/RW 009; RT 009/RW 005; RT 010/RW 005; RT 011/RW 005
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 005 (RT 003, 006, 007, 008, 009, 010, 011); RW 009 (RT 001, 005, 006, 007, 008)
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 004/RW 005; RT 005/RW 005; RT 006/RW 003; RT 007/RW 003; RT 008/RW 003; RT 008/RW 005; RT 009/RW 005; RT 010/RW 005; RT 011/RW 003; RT 011/RW 005; RT 013/RW 005; RT 013/RW 009; RT 014/RW 005; RT 014/RW 009; RT 017/RW 003
-    - Kelurahan KAMPUNG RAWA: RT 004/RW 005; RT 006/RW 005
+    - Kelurahan JOHAR BARU: RW 003 (RT 006, 007, 008, 011, 017); RW 005 (RT 004, 005, 008, 009, 010, 011, 013, 014); RW 009 (RT 013, 014)
+    - Kelurahan KAMPUNG RAWA: RW 005 (RT 004, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -16611,11 +16611,11 @@
 - Alamat: JL. BUMI BLOK E, RT 013, RW 002, KEL. GUNUNG, KEC. KEBAYORAN BARU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GUNUNG: RT 001/RW 003; RT 002/RW 003; RT 003/RW 002; RT 004/RW 002; RT 008/RW 002; RT 012/RW 002; RT 013/RW 002
+    - Kelurahan GUNUNG: RW 002 (RT 003, 004, 008, 012, 013); RW 003 (RT 001, 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GUNUNG: RT 001/RW 002; RT 002/RW 002; RT 005/RW 002; RT 005/RW 003; RT 006/RW 002; RT 006/RW 003; RT 007/RW 002; RT 008/RW 003; RT 009/RW 002; RT 009/RW 003; RT 010/RW 002; RT 010/RW 003; RT 011/RW 002; RT 015/RW 003
-    - Kelurahan KRAMAT PELA: RT 001/RW 002; RT 001/RW 009; RT 002/RW 002; RT 002/RW 009; RT 003/RW 002; RT 003/RW 009; RT 004/RW 001; RT 004/RW 002; RT 004/RW 009; RT 005/RW 009; RT 006/RW 002; RT 006/RW 009; RT 007/RW 001; RT 007/RW 002; RT 007/RW 009; RT 008/RW 001; RT 008/RW 009; RT 009/RW 001; RT 009/RW 009; RT 010/RW 001; RT 010/RW 009; RT 011/RW 001; RT 012/RW 001; RT 012/RW 009
+    - Kelurahan GUNUNG: RW 002 (RT 001, 002, 005, 006, 007, 009, 010, 011); RW 003 (RT 005, 006, 008, 009, 010, 015)
+    - Kelurahan KRAMAT PELA: RW 001 (RT 004, 007, 008, 009, 010, 011, 012); RW 002 (RT 001, 002, 003, 004, 006, 007); RW 009 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GANDARIA UTARA
@@ -16636,15 +16636,15 @@
 - Alamat: JL. ANGGREK NO. 4, RT 002, RW 012, KEL. RAWA BADAK UTARA, KEC. KOJA, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWA BADAK UTARA: RT 001/RW 012; RT 002/RW 012; RT 003/RW 012; RT 005/RW 012
+    - Kelurahan RAWA BADAK UTARA: RW 012 (RT 001, 002, 003, 005)
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan KEBON BAWANG: RT 005/RW 006; RT 006/RW 006
+    - Kelurahan KEBON BAWANG: RW 006 (RT 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
-    - Kelurahan KOJA: RT 008/RW 010; RT 009/RW 002; RT 009/RW 011; RT 014/RW 009
-    - Kelurahan RAWA BADAK UTARA: RT 001/RW 007; RT 002/RW 007; RT 004/RW 007; RT 004/RW 012; RT 005/RW 013; RT 006/RW 013; RT 007/RW 013; RT 009/RW 007; RT 011/RW 007; RT 011/RW 008; RT 011/RW 009; RT 012/RW 008
+    - Kelurahan KOJA: RW 002 (RT 009); RW 009 (RT 014); RW 010 (RT 008); RW 011 (RT 009)
+    - Kelurahan RAWA BADAK UTARA: RW 007 (RT 001, 002, 004, 009, 011); RW 008 (RT 011, 012); RW 009 (RT 011); RW 012 (RT 004); RW 013 (RT 005, 006, 007)
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan KEBON BAWANG: RT 001/RW 006; RT 002/RW 006; RT 003/RW 006; RT 004/RW 006; RT 007/RW 006; RT 008/RW 006; RT 009/RW 006; RT 010/RW 006; RT 011/RW 006; RT 012/RW 005; RT 012/RW 006; RT 013/RW 006; RT 014/RW 006; RT 015/RW 006; RT 016/RW 006; RT 017/RW 006; RT 018/RW 005
+    - Kelurahan KEBON BAWANG: RW 005 (RT 012, 018); RW 006 (RT 001, 002, 003, 004, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -16660,14 +16660,14 @@
 - Alamat: JL. PENINGGARAN BARAT III, RT 012, RW 011, KEL. KEBAYORAN LAMA UTARA, KEC. KEBAYORAN LAMA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA UTARA: RT 007/RW 011; RT 008/RW 011; RT 009/RW 011; RT 012/RW 011; RT 013/RW 011; RT 014/RW 011
+    - Kelurahan KEBAYORAN LAMA UTARA: RW 011 (RT 007, 008, 009, 012, 013, 014)
   - Kecamatan PESANGGRAHAN
-    - Kelurahan ULUJAMI: RT 008/RW 007; RT 009/RW 007
+    - Kelurahan ULUJAMI: RW 007 (RT 008, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA UTARA: RT 004/RW 011; RT 010/RW 011; RT 011/RW 011
+    - Kelurahan KEBAYORAN LAMA UTARA: RW 011 (RT 004, 010, 011)
   - Kecamatan PESANGGRAHAN
-    - Kelurahan ULUJAMI: RT 007/RW 007
+    - Kelurahan ULUJAMI: RW 007 (RT 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -16683,14 +16683,14 @@
 - Alamat: JL. PEJAGALAN NO. 51, RT 005, RW 004, KEL. PEKOJAN, KEC. TAMBORA, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMBORA
-    - Kelurahan PEKOJAN: RT 001/RW 002; RT 001/RW 004; RT 004/RW 004; RT 005/RW 004; RT 006/RW 004; RT 007/RW 004; RT 009/RW 004; RT 010/RW 002; RT 011/RW 002
-    - Kelurahan ROA MALAKA: RT 001/RW 002; RT 003/RW 002; RT 005/RW 002; RT 011/RW 001
+    - Kelurahan PEKOJAN: RW 002 (RT 001, 010, 011); RW 004 (RT 001, 004, 005, 006, 007, 009)
+    - Kelurahan ROA MALAKA: RW 001 (RT 011); RW 002 (RT 001, 003, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMBORA
-    - Kelurahan JEMBATAN LIMA: RT 002/RW 002; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002; RT 010/RW 002; RT 011/RW 002; RT 011/RW 003; RT 012/RW 002; RT 012/RW 003; RT 015/RW 002
-    - Kelurahan PEKOJAN: RT 001/RW 001; RT 001/RW 003; RT 001/RW 005; RT 002/RW 001; RT 002/RW 002; RT 002/RW 003; RT 002/RW 004; RT 002/RW 005; RT 003/RW 001; RT 003/RW 002; RT 003/RW 003; RT 003/RW 004; RT 003/RW 005; RT 004/RW 001; RT 004/RW 002; RT 004/RW 003; RT 004/RW 005; RT 005/RW 001; RT 005/RW 002; RT 005/RW 003; RT 005/RW 005; RT 006/RW 001; RT 006/RW 002; RT 006/RW 003; RT 006/RW 005; RT 007/RW 001; RT 007/RW 002; RT 007/RW 003; RT 007/RW 005; RT 008/RW 002; RT 008/RW 003; RT 008/RW 004; RT 008/RW 005; RT 009/RW 002; RT 009/RW 003; RT 009/RW 005; RT 010/RW 003; RT 010/RW 004; RT 010/RW 005; RT 011/RW 003; RT 011/RW 004; RT 011/RW 005; RT 012/RW 002; RT 012/RW 003; RT 012/RW 004; RT 012/RW 005; RT 013/RW 002; RT 013/RW 003; RT 013/RW 005; RT 014/RW 005
-    - Kelurahan ROA MALAKA: RT 002/RW 002; RT 004/RW 001; RT 004/RW 002; RT 005/RW 001; RT 006/RW 001; RT 006/RW 002; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 009/RW 003; RT 010/RW 001; RT 012/RW 001
-    - Kelurahan TAMBORA: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 004/RW 001; RT 005/RW 001; RT 007/RW 001; RT 009/RW 001; RT 010/RW 001; RT 011/RW 001
+    - Kelurahan JEMBATAN LIMA: RW 002 (RT 002, 004, 005, 006, 010, 011, 012, 015); RW 003 (RT 011, 012)
+    - Kelurahan PEKOJAN: RW 001 (RT 001, 002, 003, 004, 005, 006, 007); RW 002 (RT 002, 003, 004, 005, 006, 007, 008, 009, 012, 013); RW 003 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013); RW 004 (RT 002, 003, 008, 010, 011, 012); RW 005 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014)
+    - Kelurahan ROA MALAKA: RW 001 (RT 004, 005, 006, 007, 008, 009, 010, 012); RW 002 (RT 002, 004, 006); RW 003 (RT 009)
+    - Kelurahan TAMBORA: RW 001 (RT 001, 002, 003, 004, 005, 007, 009, 010, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PENJARINGAN
     - Kelurahan PEJAGALAN
@@ -16716,13 +16716,13 @@
 - Alamat: JL. MENARA AIR I, RT 007, RW 011, KEL. MANGGARAI, KEC. TEBET, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan MANGGARAI: RT 001/RW 011; RT 003/RW 011; RT 005/RW 011; RT 006/RW 011; RT 007/RW 011; RT 008/RW 011
-    - Kelurahan MANGGARAI SELATAN: RT 001/RW 005; RT 002/RW 005; RT 007/RW 006; RT 008/RW 006; RT 014/RW 005
+    - Kelurahan MANGGARAI: RW 011 (RT 001, 003, 005, 006, 007, 008)
+    - Kelurahan MANGGARAI SELATAN: RW 005 (RT 001, 002, 014); RW 006 (RT 007, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TEBET
-    - Kelurahan BUKIT DURI: RT 009/RW 003
-    - Kelurahan MANGGARAI: RT 002/RW 011; RT 003/RW 003; RT 004/RW 003; RT 004/RW 011; RT 005/RW 003; RT 007/RW 003; RT 008/RW 003; RT 009/RW 003; RT 010/RW 003
-    - Kelurahan MANGGARAI SELATAN: RT 001/RW 006; RT 002/RW 006; RT 003/RW 005; RT 004/RW 005; RT 006/RW 006; RT 006/RW 008; RT 007/RW 005; RT 008/RW 008; RT 009/RW 006; RT 013/RW 008; RT 015/RW 005
+    - Kelurahan BUKIT DURI: RW 003 (RT 009)
+    - Kelurahan MANGGARAI: RW 003 (RT 003, 004, 005, 007, 008, 009, 010); RW 011 (RT 002, 004)
+    - Kelurahan MANGGARAI SELATAN: RW 005 (RT 003, 004, 007, 015); RW 006 (RT 001, 002, 006, 009); RW 008 (RT 006, 008, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan KAMPUNG MELAYU
@@ -16741,10 +16741,10 @@
 - Alamat: JL. PADEMANGAN TIMUR 7, RT 004, RW 010, KEL. PADEMANGAN TIMUR, KEC. PADEMANGAN, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN TIMUR: RT 003/RW 010; RT 004/RW 010; RT 005/RW 010; RT 007/RW 010; RT 009/RW 012; RT 015/RW 001
+    - Kelurahan PADEMANGAN TIMUR: RW 001 (RT 015); RW 010 (RT 003, 004, 005, 007); RW 012 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN TIMUR: RT 001/RW 010; RT 001/RW 012; RT 002/RW 010; RT 003/RW 012; RT 004/RW 012; RT 005/RW 012; RT 008/RW 012; RT 009/RW 010; RT 010/RW 012; RT 011/RW 010; RT 012/RW 010; RT 013/RW 001; RT 013/RW 010; RT 014/RW 001; RT 014/RW 010; RT 015/RW 010; RT 016/RW 001; RT 016/RW 010; RT 017/RW 001; RT 018/RW 001
+    - Kelurahan PADEMANGAN TIMUR: RW 001 (RT 013, 014, 016, 017, 018); RW 010 (RT 001, 002, 009, 011, 012, 013, 014, 015, 016); RW 012 (RT 001, 003, 004, 005, 008, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -16757,15 +16757,15 @@
 - Alamat: JL.KAYU MANIS GG.KH.RAIMAN 71B CONDET, RT 006, RW 003, KEL. BALEKAMBANG, KEC. KRAMATJATI, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMATJATI
-    - Kelurahan BALEKAMBANG: RT 001/RW 003; RT 005/RW 003; RT 006/RW 003; RT 006/RW 005; RT 008/RW 003; RT 009/RW 005; RT 010/RW 003; RT 012/RW 003
+    - Kelurahan BALEKAMBANG: RW 003 (RT 001, 005, 006, 008, 010, 012); RW 005 (RT 006, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMATJATI
-    - Kelurahan BALEKAMBANG: RT 001/RW 002; RT 001/RW 005; RT 002/RW 002; RT 002/RW 003; RT 002/RW 005; RT 003/RW 003; RT 003/RW 005; RT 004/RW 003; RT 004/RW 005; RT 005/RW 005; RT 006/RW 002; RT 007/RW 002; RT 007/RW 003; RT 007/RW 005; RT 008/RW 002; RT 008/RW 005; RT 009/RW 002; RT 009/RW 003; RT 010/RW 002; RT 011/RW 003
-    - Kelurahan BATU AMPAR: RT 001/RW 003; RT 003/RW 003; RT 008/RW 003; RT 011/RW 003; RT 013/RW 003
+    - Kelurahan BALEKAMBANG: RW 002 (RT 001, 002, 006, 007, 008, 009, 010); RW 003 (RT 002, 003, 004, 007, 009, 011); RW 005 (RT 001, 002, 003, 004, 005, 007, 008)
+    - Kelurahan BATU AMPAR: RW 003 (RT 001, 003, 008, 011, 013)
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN TIMUR: RT 009/RW 003; RT 010/RW 003; RT 015/RW 009; RT 016/RW 009
+    - Kelurahan PEJATEN TIMUR: RW 003 (RT 009, 010); RW 009 (RT 015, 016)
   - Kecamatan PASAR REBO
-    - Kelurahan GEDONG: RT 001/RW 003; RT 002/RW 003; RT 011/RW 003; RT 012/RW 003
+    - Kelurahan GEDONG: RW 003 (RT 001, 002, 011, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KRAMATJATI
     - Kelurahan BALEKAMBANG
@@ -16780,14 +16780,14 @@
 - Alamat: JL. PEDATI, RT 014, RW 007, KEL. CIPINANG CEMPEDAK, KEC. JATINEGARA, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG CEMPEDAK: RT 012/RW 004; RT 012/RW 007; RT 013/RW 004; RT 013/RW 007; RT 014/RW 007; RT 015/RW 007
-    - Kelurahan RAWA BUNGA: RT 007/RW 009; RT 008/RW 009
+    - Kelurahan CIPINANG CEMPEDAK: RW 004 (RT 012, 013); RW 007 (RT 012, 013, 014, 015)
+    - Kelurahan RAWA BUNGA: RW 009 (RT 007, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
-    - Kelurahan BALI MESTER: RT 004/RW 001; RT 008/RW 001; RT 017/RW 001
-    - Kelurahan BIDARA CINA: RT 004/RW 010; RT 005/RW 010
-    - Kelurahan CIPINANG CEMPEDAK: RT 006/RW 007; RT 007/RW 007; RT 008/RW 007; RT 009/RW 004; RT 010/RW 004; RT 010/RW 007; RT 011/RW 004; RT 011/RW 007; RT 012/RW 001; RT 013/RW 001; RT 014/RW 001
-    - Kelurahan RAWA BUNGA: RT 004/RW 009; RT 005/RW 009; RT 006/RW 009; RT 009/RW 009; RT 012/RW 009; RT 013/RW 009
+    - Kelurahan BALI MESTER: RW 001 (RT 004, 008, 017)
+    - Kelurahan BIDARA CINA: RW 010 (RT 004, 005)
+    - Kelurahan CIPINANG CEMPEDAK: RW 001 (RT 012, 013, 014); RW 004 (RT 009, 010, 011); RW 007 (RT 006, 007, 008, 010, 011)
+    - Kelurahan RAWA BUNGA: RW 009 (RT 004, 005, 006, 009, 012, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan BALI MESTER
@@ -16802,12 +16802,12 @@
 - Alamat: JL. TAMAN WIJAYA KUSUMA, RT 008, RW 004, KEL. PONDOK LABU, KEC. CILANDAK, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan CILANDAK BARAT: RT 009/RW 002; RT 011/RW 002; RT 013/RW 002
-    - Kelurahan PONDOK LABU: RT 001/RW 004; RT 004/RW 004; RT 005/RW 004; RT 006/RW 004; RT 008/RW 004; RT 011/RW 009
+    - Kelurahan CILANDAK BARAT: RW 002 (RT 009, 011, 013)
+    - Kelurahan PONDOK LABU: RW 004 (RT 001, 004, 005, 006, 008); RW 009 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
-    - Kelurahan CILANDAK BARAT: RT 001/RW 002; RT 002/RW 002; RT 003/RW 002; RT 003/RW 009; RT 004/RW 002; RT 005/RW 002; RT 005/RW 009; RT 006/RW 002; RT 007/RW 002; RT 008/RW 002; RT 012/RW 002; RT 014/RW 002; RT 015/RW 002; RT 016/RW 002
-    - Kelurahan PONDOK LABU: RT 001/RW 001; RT 002/RW 004; RT 002/RW 008; RT 003/RW 004; RT 003/RW 009; RT 004/RW 009; RT 005/RW 008; RT 005/RW 009; RT 006/RW 009; RT 007/RW 004; RT 007/RW 009; RT 008/RW 009; RT 009/RW 004
+    - Kelurahan CILANDAK BARAT: RW 002 (RT 001, 002, 003, 004, 005, 006, 007, 008, 012, 014, 015, 016); RW 009 (RT 003, 005)
+    - Kelurahan PONDOK LABU: RW 001 (RT 001); RW 004 (RT 002, 003, 007, 009); RW 008 (RT 002, 005); RW 009 (RT 003, 004, 005, 006, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -16820,11 +16820,11 @@
 - Alamat: JL. KARET PASAR BARU BARAT I NO.14, RT 001, RW 006, KEL. KARET TENGSIN, KEC. TANAH ABANG, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan KARET TENGSIN: RT 001/RW 006; RT 002/RW 006; RT 007/RW 006; RT 008/RW 006; RT 008/RW 009; RT 010/RW 006
-    - Kelurahan KEBON MELATI: RT 015/RW 016
+    - Kelurahan KARET TENGSIN: RW 006 (RT 001, 002, 007, 008, 010); RW 009 (RT 008)
+    - Kelurahan KEBON MELATI: RW 016 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
-    - Kelurahan KARET TENGSIN: RT 003/RW 005; RT 003/RW 006; RT 004/RW 006; RT 004/RW 007; RT 005/RW 005; RT 005/RW 006; RT 005/RW 007; RT 006/RW 006; RT 006/RW 007; RT 007/RW 005; RT 007/RW 007; RT 008/RW 007; RT 009/RW 006; RT 010/RW 007; RT 010/RW 009; RT 011/RW 009
+    - Kelurahan KARET TENGSIN: RW 005 (RT 003, 005, 007); RW 006 (RT 003, 004, 005, 006, 009); RW 007 (RT 004, 005, 006, 007, 008, 010); RW 009 (RT 010, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan SETIABUDI
     - Kelurahan KARET SEMANGGI
@@ -16838,11 +16838,11 @@
 - Alamat: JL. GAJAH MADA NO. 3 - 5, RT 003, RW 008, KEL. PETOJO UTARA, KEC. GAMBIR, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan KEBON KELAPA: RT 006/RW 002; RT 007/RW 002
-    - Kelurahan PETOJO UTARA: RT 001/RW 008; RT 002/RW 008; RT 003/RW 008; RT 004/RW 008; RT 006/RW 008; RT 011/RW 008; RT 012/RW 008; RT 013/RW 008; RT 014/RW 008
+    - Kelurahan KEBON KELAPA: RW 002 (RT 006, 007)
+    - Kelurahan PETOJO UTARA: RW 008 (RT 001, 002, 003, 004, 006, 011, 012, 013, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
-    - Kelurahan PETOJO UTARA: RT 001/RW 002; RT 001/RW 007; RT 002/RW 002; RT 002/RW 007; RT 003/RW 007; RT 004/RW 007; RT 005/RW 007; RT 005/RW 008; RT 006/RW 007; RT 007/RW 007; RT 007/RW 008; RT 008/RW 007; RT 008/RW 008; RT 009/RW 007; RT 009/RW 008; RT 010/RW 007; RT 010/RW 008; RT 011/RW 007; RT 012/RW 007; RT 015/RW 003
+    - Kelurahan PETOJO UTARA: RW 002 (RT 001, 002); RW 003 (RT 015); RW 007 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012); RW 008 (RT 005, 007, 008, 009, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -16861,11 +16861,11 @@
 - Alamat: JL. DANAU LIMBOTO NO.4, RT 020, RW 004, KEL. BENDUNGAN HILIR, KEC. TANAH ABANG, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan BENDUNGAN HILIR: RT 001/RW 004; RT 003/RW 004; RT 011/RW 006; RT 013/RW 004; RT 013/RW 005; RT 016/RW 004; RT 020/RW 004; RT 021/RW 004
+    - Kelurahan BENDUNGAN HILIR: RW 004 (RT 001, 003, 013, 016, 020, 021); RW 005 (RT 013); RW 006 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
-    - Kelurahan BENDUNGAN HILIR: RT 001/RW 002; RT 002/RW 004; RT 003/RW 003; RT 003/RW 005; RT 004/RW 002; RT 004/RW 003; RT 004/RW 004; RT 004/RW 005; RT 005/RW 003; RT 005/RW 004; RT 005/RW 005; RT 006/RW 002; RT 006/RW 003; RT 006/RW 004; RT 006/RW 005; RT 007/RW 003; RT 007/RW 004; RT 007/RW 005; RT 007/RW 006; RT 008/RW 003; RT 008/RW 004; RT 008/RW 005; RT 008/RW 006; RT 009/RW 002; RT 009/RW 003; RT 009/RW 004; RT 009/RW 005; RT 009/RW 006; RT 010/RW 003; RT 010/RW 004; RT 010/RW 005; RT 010/RW 006; RT 011/RW 003; RT 011/RW 004; RT 011/RW 005; RT 012/RW 003; RT 012/RW 004; RT 012/RW 005; RT 012/RW 006; RT 013/RW 003; RT 013/RW 006; RT 014/RW 003; RT 014/RW 004; RT 014/RW 006; RT 015/RW 003; RT 015/RW 004; RT 015/RW 006; RT 017/RW 004; RT 018/RW 004; RT 019/RW 004
-    - Kelurahan KARET TENGSIN: RT 011/RW 007; RT 012/RW 007; RT 013/RW 007; RT 014/RW 007; RT 015/RW 007; RT 016/RW 007; RT 018/RW 007; RT 019/RW 007
+    - Kelurahan BENDUNGAN HILIR: RW 002 (RT 001, 004, 006, 009); RW 003 (RT 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015); RW 004 (RT 002, 004, 005, 006, 007, 008, 009, 010, 011, 012, 014, 015, 017, 018, 019); RW 005 (RT 003, 004, 005, 006, 007, 008, 009, 010, 011, 012); RW 006 (RT 007, 008, 009, 010, 012, 013, 014, 015)
+    - Kelurahan KARET TENGSIN: RW 007 (RT 011, 012, 013, 014, 015, 016, 018, 019)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan SENAYAN
@@ -16883,10 +16883,10 @@
 - Alamat: JL. HARSONO RM RAGUNAN, RT 007, RW 004, KEL. RAGUNAN, KEC. PASAR MINGGU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan RAGUNAN: RT 004/RW 007; RT 005/RW 004; RT 006/RW 004; RT 007/RW 004; RT 007/RW 007; RT 008/RW 004; RT 009/RW 004; RT 010/RW 004; RT 011/RW 004; RT 011/RW 005
+    - Kelurahan RAGUNAN: RW 004 (RT 005, 006, 007, 008, 009, 010, 011); RW 005 (RT 011); RW 007 (RT 004, 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR MINGGU
-    - Kelurahan RAGUNAN: RT 001/RW 004; RT 002/RW 004; RT 005/RW 007; RT 006/RW 007; RT 007/RW 005; RT 008/RW 007; RT 014/RW 005
+    - Kelurahan RAGUNAN: RW 004 (RT 001, 002); RW 005 (RT 007, 014); RW 007 (RT 005, 006, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -16900,10 +16900,10 @@
 - Alamat: JL. PADEMANGAN III, RT 004, RW 002, KEL. PADEMANGAN TIMUR, KEC. PADEMANGAN, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN TIMUR: RT 002/RW 002; RT 003/RW 002; RT 004/RW 001; RT 004/RW 002; RT 005/RW 001; RT 005/RW 002; RT 006/RW 001; RT 009/RW 002; RT 009/RW 007; RT 011/RW 002; RT 012/RW 003
+    - Kelurahan PADEMANGAN TIMUR: RW 001 (RT 004, 005, 006); RW 002 (RT 002, 003, 004, 005, 009, 011); RW 003 (RT 012); RW 007 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN TIMUR: RT 001/RW 001; RT 001/RW 002; RT 002/RW 001; RT 003/RW 001; RT 006/RW 002; RT 007/RW 001; RT 007/RW 002; RT 007/RW 007; RT 008/RW 001; RT 008/RW 002; RT 008/RW 003; RT 008/RW 007; RT 009/RW 001; RT 010/RW 003; RT 011/RW 003; RT 012/RW 002; RT 013/RW 002; RT 013/RW 003; RT 014/RW 002; RT 015/RW 002; RT 016/RW 002; RT 016/RW 008; RT 017/RW 008; RT 018/RW 008
+    - Kelurahan PADEMANGAN TIMUR: RW 001 (RT 001, 002, 003, 007, 008, 009); RW 002 (RT 001, 006, 007, 008, 012, 013, 014, 015, 016); RW 003 (RT 008, 010, 011, 013); RW 007 (RT 007, 008); RW 008 (RT 016, 017, 018)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PADEMANGAN
     - Kelurahan PADEMANGAN BARAT
@@ -16915,11 +16915,11 @@
 - Alamat: JL.KAPTEN PIERE TENDEAN NO. 11, RT 006, RW 003, KEL. MAMPANG PRAPATAN, KEC. MAMPANG PRAPATAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan KUNINGAN BARAT: RT 001/RW 002; RT 001/RW 003; RT 003/RW 002
-    - Kelurahan MAMPANG PRAPATAN: RT 001/RW 002; RT 001/RW 005; RT 005/RW 001; RT 005/RW 003; RT 005/RW 006; RT 006/RW 001; RT 006/RW 003; RT 006/RW 006; RT 007/RW 001; RT 007/RW 003; RT 008/RW 003; RT 009/RW 003; RT 010/RW 003
+    - Kelurahan KUNINGAN BARAT: RW 002 (RT 001, 003); RW 003 (RT 001)
+    - Kelurahan MAMPANG PRAPATAN: RW 001 (RT 005, 006, 007); RW 002 (RT 001); RW 003 (RT 005, 006, 007, 008, 009, 010); RW 005 (RT 001); RW 006 (RT 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan MAMPANG PRAPATAN: RT 002/RW 002; RT 003/RW 002; RT 004/RW 002; RT 004/RW 005; RT 004/RW 006; RT 005/RW 002; RT 006/RW 002; RT 006/RW 005; RT 007/RW 002; RT 007/RW 005; RT 007/RW 006; RT 008/RW 002; RT 008/RW 006; RT 009/RW 002; RT 010/RW 002; RT 010/RW 005; RT 011/RW 001; RT 011/RW 005; RT 012/RW 001; RT 013/RW 001
+    - Kelurahan MAMPANG PRAPATAN: RW 001 (RT 011, 012, 013); RW 002 (RT 002, 003, 004, 005, 006, 007, 008, 009, 010); RW 005 (RT 004, 006, 007, 010, 011); RW 006 (RT 004, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan KUNINGAN BARAT
@@ -16937,12 +16937,12 @@
 - Alamat: JL. GADING RAYA VII, RT 006 & RT 012, RW 010, KEL. PISANGAN TIMUR, KEC. PULO GADUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULOGADUNG
-    - Kelurahan PISANGAN TIMUR: RT 003/RW 010; RT 003/RW 013; RT 004/RW 010; RT 005/RW 010; RT 005/RW 013; RT 006/RW 010; RT 006/RW 013; RT 007/RW 010; RT 007/RW 013; RT 010/RW 010; RT 011/RW 010; RT 012/RW 010; RT 013/RW 010
+    - Kelurahan PISANGAN TIMUR: RW 010 (RT 003, 004, 005, 006, 007, 010, 011, 012, 013); RW 013 (RT 003, 005, 006, 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULO GADUNG
-    - Kelurahan PISANGAN TIMUR: RT 008/RW 013; RT 010/RW 013
+    - Kelurahan PISANGAN TIMUR: RW 013 (RT 008, 010)
   - Kecamatan PULOGADUNG
-    - Kelurahan PISANGAN TIMUR: RT 001/RW 010; RT 002/RW 010; RT 003/RW 014; RT 004/RW 013; RT 005/RW 007; RT 006/RW 007; RT 007/RW 007; RT 008/RW 010; RT 008/RW 012; RT 009/RW 010; RT 012/RW 012; RT 012/RW 014; RT 015/RW 013
+    - Kelurahan PISANGAN TIMUR: RW 007 (RT 005, 006, 007); RW 010 (RT 001, 002, 008, 009); RW 012 (RT 008, 012); RW 013 (RT 004, 015); RW 014 (RT 003, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR UTARA
@@ -16959,11 +16959,11 @@
 - Alamat: JL. UTAMA RAYA NO. 45, RT 009, RW 004, KEL. CENGKARENG BARAT, KEC. CENGKARENG, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 001/RW 001; RT 001/RW 004; RT 002/RW 004; RT 003/RW 003; RT 004/RW 003; RT 005/RW 002; RT 007/RW 004; RT 009/RW 004
+    - Kelurahan CENGKARENG BARAT: RW 001 (RT 001); RW 002 (RT 005); RW 003 (RT 003, 004); RW 004 (RT 001, 002, 007, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 001/RW 002; RT 001/RW 003; RT 002/RW 001; RT 002/RW 002; RT 002/RW 003; RT 003/RW 001; RT 003/RW 002; RT 003/RW 004; RT 004/RW 001; RT 004/RW 002; RT 004/RW 004; RT 005/RW 003; RT 005/RW 004; RT 006/RW 001; RT 006/RW 002; RT 006/RW 003; RT 006/RW 004; RT 007/RW 001; RT 008/RW 004; RT 009/RW 001; RT 010/RW 003; RT 010/RW 004; RT 011/RW 004; RT 012/RW 004; RT 015/RW 002; RT 016/RW 002
-    - Kelurahan DURI KOSAMBI: RT 001/RW 004; RT 002/RW 004
+    - Kelurahan CENGKARENG BARAT: RW 001 (RT 002, 003, 004, 006, 007, 009); RW 002 (RT 001, 002, 003, 004, 006, 015, 016); RW 003 (RT 001, 002, 005, 006, 010); RW 004 (RT 003, 004, 005, 006, 008, 010, 011, 012)
+    - Kelurahan DURI KOSAMBI: RW 004 (RT 001, 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -16982,12 +16982,12 @@
 - Alamat: JL. RUKUN PEJATEN TIMUR, RT 005, RW 005, KEL. PEJATEN TIMUR, KEC. PASAR MINGGU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMATJATI
-    - Kelurahan BALEKAMBANG: RT 002/RW 001; RT 008/RW 001
+    - Kelurahan BALEKAMBANG: RW 001 (RT 002, 008)
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN TIMUR: RT 004/RW 005; RT 005/RW 005; RT 006/RW 005
+    - Kelurahan PEJATEN TIMUR: RW 005 (RT 004, 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN TIMUR: RT 001/RW 006; RT 002/RW 005; RT 002/RW 006; RT 003/RW 005; RT 007/RW 005
+    - Kelurahan PEJATEN TIMUR: RW 005 (RT 002, 003, 007); RW 006 (RT 001, 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KRAMATJATI
     - Kelurahan BALEKAMBANG
@@ -16999,10 +16999,10 @@
 - Alamat: JL. RAWASARI TIMUR, RT 006, RW 002, KEL. CEMPAKA PUTIH TIMUR, KEC. CEMPAKA PUTIH, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH TIMUR: RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002; RT 007/RW 002; RT 008/RW 001; RT 008/RW 002; RT 009/RW 001; RT 009/RW 002; RT 010/RW 001; RT 016/RW 002; RT 017/RW 002
+    - Kelurahan CEMPAKA PUTIH TIMUR: RW 001 (RT 008, 009, 010); RW 002 (RT 003, 004, 005, 006, 007, 008, 009, 016, 017)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH TIMUR: RT 001/RW 001; RT 001/RW 002; RT 001/RW 003; RT 001/RW 004; RT 002/RW 001; RT 002/RW 002; RT 002/RW 003; RT 002/RW 004; RT 003/RW 001; RT 003/RW 003; RT 003/RW 004; RT 004/RW 001; RT 004/RW 003; RT 004/RW 004; RT 005/RW 001; RT 005/RW 003; RT 005/RW 004; RT 006/RW 001; RT 006/RW 004; RT 007/RW 001; RT 010/RW 002; RT 011/RW 001; RT 011/RW 002; RT 012/RW 002; RT 013/RW 002; RT 014/RW 003; RT 015/RW 002; RT 018/RW 002; RT 018/RW 003
+    - Kelurahan CEMPAKA PUTIH TIMUR: RW 001 (RT 001, 002, 003, 004, 005, 006, 007, 011); RW 002 (RT 001, 002, 010, 011, 012, 013, 015, 018); RW 003 (RT 001, 002, 003, 004, 005, 014, 018); RW 004 (RT 001, 002, 003, 004, 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -17015,12 +17015,12 @@
 - Alamat: JL. RAYA KEBAYORAN LAMA NO.192, RT 001, RW 003, KEL. CIPULIR, KEC. KEBAYORAN LAMA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan CIPULIR: RT 001/RW 003; RT 001/RW 007; RT 002/RW 003; RT 004/RW 003; RT 005/RW 003; RT 006/RW 003
-    - Kelurahan GROGOL SELATAN: RT 006/RW 001; RT 009/RW 001
+    - Kelurahan CIPULIR: RW 003 (RT 001, 002, 004, 005, 006); RW 007 (RT 001)
+    - Kelurahan GROGOL SELATAN: RW 001 (RT 006, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan CIPULIR: RT 001/RW 002; RT 002/RW 002; RT 002/RW 007; RT 003/RW 002; RT 003/RW 003; RT 003/RW 007; RT 004/RW 002; RT 004/RW 007; RT 005/RW 007; RT 006/RW 007; RT 007/RW 003; RT 008/RW 002; RT 008/RW 003; RT 009/RW 003; RT 010/RW 002; RT 010/RW 003; RT 011/RW 003; RT 012/RW 003
-    - Kelurahan GROGOL SELATAN: RT 001/RW 001; RT 001/RW 011; RT 002/RW 001; RT 003/RW 001; RT 004/RW 001; RT 005/RW 001; RT 008/RW 001; RT 010/RW 001; RT 011/RW 001; RT 012/RW 011
+    - Kelurahan CIPULIR: RW 002 (RT 001, 002, 003, 004, 008, 010); RW 003 (RT 003, 007, 008, 009, 010, 011, 012); RW 007 (RT 002, 003, 004, 005, 006)
+    - Kelurahan GROGOL SELATAN: RW 001 (RT 001, 002, 003, 004, 005, 008, 010, 011); RW 011 (RT 001, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -17033,15 +17033,15 @@
 - Alamat: JL. RAYA BOGOR KM. 20, RT 014 & RT 013, RW 011, KEL. KRAMATJATI, KEC. KRAMATJATI, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMATJATI
-    - Kelurahan KRAMATJATI: RT 007/RW 011; RT 010/RW 011; RT 012/RW 011; RT 013/RW 011; RT 014/RW 011; RT 015/RW 011; RT 018/RW 011
-    - Kelurahan TENGAH: RT 001/RW 008; RT 002/RW 001; RT 009/RW 001
+    - Kelurahan KRAMATJATI: RW 011 (RT 007, 010, 012, 013, 014, 015, 018)
+    - Kelurahan TENGAH: RW 001 (RT 002, 009); RW 008 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan RAMBUTAN: RT 009/RW 005
+    - Kelurahan RAMBUTAN: RW 005 (RT 009)
   - Kecamatan KRAMATJATI
-    - Kelurahan DUKUH: RT 001/RW 001; RT 001/RW 002; RT 002/RW 001; RT 007/RW 001
-    - Kelurahan KRAMATJATI: RT 004/RW 011; RT 005/RW 011; RT 006/RW 011; RT 008/RW 011; RT 009/RW 010; RT 009/RW 011; RT 010/RW 010; RT 011/RW 010; RT 011/RW 011; RT 017/RW 011
-    - Kelurahan TENGAH: RT 001/RW 001; RT 002/RW 005; RT 002/RW 008; RT 003/RW 001; RT 003/RW 005; RT 004/RW 005; RT 010/RW 001
+    - Kelurahan DUKUH: RW 001 (RT 001, 002, 007); RW 002 (RT 001)
+    - Kelurahan KRAMATJATI: RW 010 (RT 009, 010, 011); RW 011 (RT 004, 005, 006, 008, 009, 011, 017)
+    - Kelurahan TENGAH: RW 001 (RT 001, 003, 010); RW 005 (RT 002, 003, 004); RW 008 (RT 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIRACAS
     - Kelurahan RAMBUTAN
@@ -17058,10 +17058,10 @@
 - Alamat: KOMPLEK KODAM JAYA CILILITAN II, RT 008, RW 002, KEL. KRAMATJATI, KEC. KRAMATJATI, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMATJATI
-    - Kelurahan KRAMATJATI: RT 001/RW 003; RT 001/RW 005; RT 003/RW 002; RT 005/RW 002; RT 007/RW 002; RT 008/RW 002; RT 008/RW 004; RT 009/RW 002; RT 009/RW 004; RT 010/RW 002; RT 010/RW 004; RT 011/RW 003
+    - Kelurahan KRAMATJATI: RW 002 (RT 003, 005, 007, 008, 009, 010); RW 003 (RT 001, 011); RW 004 (RT 008, 009, 010); RW 005 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMATJATI
-    - Kelurahan KRAMATJATI: RT 001/RW 002; RT 001/RW 004; RT 002/RW 002; RT 002/RW 003; RT 002/RW 005; RT 003/RW 003; RT 003/RW 005; RT 004/RW 002; RT 004/RW 003; RT 004/RW 004; RT 006/RW 002; RT 007/RW 004; RT 009/RW 001; RT 010/RW 001; RT 010/RW 003; RT 011/RW 002; RT 011/RW 004; RT 012/RW 002
+    - Kelurahan KRAMATJATI: RW 001 (RT 009, 010); RW 002 (RT 001, 002, 004, 006, 011, 012); RW 003 (RT 002, 003, 004, 010); RW 004 (RT 001, 004, 007, 011); RW 005 (RT 002, 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KRAMATJATI
     - Kelurahan BATU AMPAR
@@ -17076,10 +17076,10 @@
 - Alamat: JL. KEJAKSAAN KAVLING, RT 002, RW 005, KEL. PONDOK BAMBU, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 001/RW 005; RT 001/RW 008; RT 002/RW 005; RT 003/RW 004; RT 003/RW 005; RT 005/RW 004; RT 013/RW 005; RT 015/RW 005; RT 016/RW 005; RT 017/RW 005
+    - Kelurahan PONDOK BAMBU: RW 004 (RT 003, 005); RW 005 (RT 001, 002, 003, 013, 015, 016, 017); RW 008 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 001/RW 007; RT 002/RW 007; RT 002/RW 008; RT 003/RW 008; RT 003/RW 012; RT 004/RW 005; RT 004/RW 008; RT 004/RW 012; RT 005/RW 008; RT 005/RW 012; RT 006/RW 008; RT 007/RW 008; RT 008/RW 008; RT 009/RW 008; RT 010/RW 005; RT 011/RW 005; RT 012/RW 005; RT 012/RW 011; RT 014/RW 005; RT 018/RW 005
+    - Kelurahan PONDOK BAMBU: RW 005 (RT 004, 010, 011, 012, 014, 018); RW 007 (RT 001, 002); RW 008 (RT 002, 003, 004, 005, 006, 007, 008, 009); RW 011 (RT 012); RW 012 (RT 003, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan PONDOK BAMBU
@@ -17090,11 +17090,11 @@
 - Alamat: JL. CIPINANG ELOK II, RT 003, RW 010, KEL. CIPINANG MUARA, KEC. JATINEGARA, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 002/RW 003; RT 003/RW 010; RT 006/RW 010; RT 008/RW 003; RT 009/RW 003; RT 010/RW 003; RT 011/RW 003; RT 012/RW 010; RT 013/RW 010
+    - Kelurahan CIPINANG MUARA: RW 003 (RT 002, 008, 009, 010, 011); RW 010 (RT 003, 006, 012, 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 001/RW 007; RT 002/RW 007; RT 003/RW 007; RT 004/RW 007; RT 005/RW 007
-    - Kelurahan CIPINANG MUARA: RT 001/RW 002; RT 001/RW 003; RT 001/RW 014; RT 003/RW 003; RT 003/RW 004; RT 004/RW 003; RT 004/RW 010; RT 004/RW 014; RT 005/RW 002; RT 005/RW 010; RT 007/RW 003; RT 007/RW 010; RT 008/RW 010; RT 009/RW 010; RT 010/RW 010; RT 011/RW 004; RT 011/RW 010; RT 012/RW 003; RT 013/RW 003; RT 014/RW 003; RT 014/RW 010; RT 015/RW 010; RT 017/RW 003; RT 018/RW 003
+    - Kelurahan CIPINANG BESAR SELATAN: RW 007 (RT 001, 002, 003, 004, 005)
+    - Kelurahan CIPINANG MUARA: RW 002 (RT 001, 005); RW 003 (RT 001, 003, 004, 007, 012, 013, 014, 017, 018); RW 004 (RT 003, 011); RW 010 (RT 004, 005, 007, 008, 009, 010, 011, 014, 015); RW 014 (RT 001, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -17105,10 +17105,10 @@
 - Alamat: JL. TANAH MERDEKA NO. 33, RT 010, RW 012, KEL. KALIBARU, KEC. CILINCING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan KALIBARU: RT 003/RW 012; RT 004/RW 012; RT 005/RW 012; RT 006/RW 012; RT 007/RW 012; RT 008/RW 007; RT 010/RW 012; RT 011/RW 007; RT 013/RW 007; RT 014/RW 012
+    - Kelurahan KALIBARU: RW 007 (RT 008, 011, 013); RW 012 (RT 003, 004, 005, 006, 007, 010, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
-    - Kelurahan KALIBARU: RT 001/RW 006; RT 001/RW 012; RT 002/RW 006; RT 002/RW 012; RT 003/RW 006; RT 005/RW 006; RT 005/RW 008; RT 006/RW 007; RT 007/RW 007; RT 008/RW 012; RT 009/RW 007; RT 009/RW 012; RT 010/RW 006; RT 011/RW 006; RT 011/RW 012; RT 012/RW 006; RT 012/RW 007; RT 012/RW 012; RT 013/RW 012; RT 014/RW 007
+    - Kelurahan KALIBARU: RW 006 (RT 001, 002, 003, 005, 010, 011, 012); RW 007 (RT 006, 007, 009, 012, 014); RW 008 (RT 005); RW 012 (RT 001, 002, 008, 009, 011, 012, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -17123,15 +17123,15 @@
 - Alamat: JL. BLANDONGAN NO. 37, RT 008, RW 003, KEL. GLODOK, KEC. TAMAN SARI, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan GLODOK: RT 005/RW 003; RT 006/RW 003; RT 007/RW 003; RT 008/RW 003
+    - Kelurahan GLODOK: RW 003 (RT 005, 006, 007, 008)
   - Kecamatan TAMBORA
-    - Kelurahan TAMBORA: RT 005/RW 002; RT 006/RW 001; RT 012/RW 002
+    - Kelurahan TAMBORA: RW 001 (RT 006); RW 002 (RT 005, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMAN SARI
-    - Kelurahan GLODOK: RT 001/RW 002; RT 001/RW 003; RT 002/RW 002; RT 002/RW 003; RT 002/RW 004; RT 003/RW 002; RT 003/RW 003; RT 004/RW 001; RT 004/RW 002; RT 004/RW 003; RT 005/RW 001; RT 005/RW 002; RT 005/RW 004; RT 006/RW 002; RT 006/RW 004; RT 007/RW 001; RT 007/RW 004; RT 008/RW 002; RT 008/RW 004; RT 009/RW 001; RT 009/RW 002; RT 009/RW 003; RT 009/RW 004; RT 010/RW 001; RT 010/RW 002; RT 010/RW 003; RT 011/RW 001; RT 011/RW 003; RT 012/RW 001; RT 012/RW 003; RT 013/RW 001
+    - Kelurahan GLODOK: RW 001 (RT 004, 005, 007, 009, 010, 011, 012, 013); RW 002 (RT 001, 002, 003, 004, 005, 006, 008, 009, 010); RW 003 (RT 001, 002, 003, 004, 009, 010, 011, 012); RW 004 (RT 002, 005, 006, 007, 008, 009)
   - Kecamatan TAMBORA
-    - Kelurahan ROA MALAKA: RT 003/RW 001; RT 009/RW 001
-    - Kelurahan TAMBORA: RT 001/RW 003; RT 002/RW 003; RT 003/RW 002; RT 003/RW 003; RT 004/RW 002; RT 004/RW 003; RT 005/RW 001; RT 005/RW 003; RT 006/RW 002; RT 006/RW 003; RT 006/RW 004; RT 007/RW 001; RT 007/RW 003; RT 007/RW 004; RT 008/RW 001; RT 009/RW 002; RT 010/RW 001; RT 010/RW 002; RT 011/RW 001; RT 011/RW 002
+    - Kelurahan ROA MALAKA: RW 001 (RT 003, 009)
+    - Kelurahan TAMBORA: RW 001 (RT 005, 007, 008, 010, 011); RW 002 (RT 003, 004, 006, 009, 010, 011); RW 003 (RT 001, 002, 003, 004, 005, 006, 007); RW 004 (RT 006, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -17160,13 +17160,13 @@
 - Alamat: JL. BAHARI IVA/11, RT 008, RW 003, KEL. TANJUNG PRIUK, KEC. TANJUNG PRIOK, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan PAPANGGO: RT 004/RW 008; RT 012/RW 008
-    - Kelurahan TANJUNG PRIOK: RT 002/RW 006; RT 004/RW 003; RT 004/RW 006; RT 005/RW 003; RT 006/RW 003; RT 006/RW 006; RT 008/RW 003
+    - Kelurahan PAPANGGO: RW 008 (RT 004, 012)
+    - Kelurahan TANJUNG PRIOK: RW 003 (RT 004, 005, 006, 008); RW 006 (RT 002, 004, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan PAPANGGO: RT 002/RW 008; RT 003/RW 008; RT 006/RW 008; RT 007/RW 008; RT 014/RW 008; RT 015/RW 008
-    - Kelurahan TANJUNG PRIOK: RT 001/RW 003; RT 001/RW 006; RT 002/RW 003; RT 003/RW 002; RT 003/RW 003; RT 003/RW 006; RT 004/RW 002; RT 005/RW 002; RT 005/RW 005; RT 005/RW 006; RT 006/RW 002; RT 006/RW 005; RT 007/RW 002; RT 007/RW 005; RT 007/RW 006; RT 008/RW 002; RT 008/RW 005; RT 008/RW 006; RT 009/RW 002; RT 009/RW 005; RT 009/RW 006; RT 010/RW 005; RT 010/RW 006; RT 011/RW 005; RT 012/RW 005
-    - Kelurahan WARAKAS: RT 001/RW 014; RT 013/RW 014; RT 016/RW 001
+    - Kelurahan PAPANGGO: RW 008 (RT 002, 003, 006, 007, 014, 015)
+    - Kelurahan TANJUNG PRIOK: RW 002 (RT 003, 004, 005, 006, 007, 008, 009); RW 003 (RT 001, 002, 003); RW 005 (RT 005, 006, 007, 008, 009, 010, 011, 012); RW 006 (RT 001, 003, 005, 007, 008, 009, 010)
+    - Kelurahan WARAKAS: RW 001 (RT 016); RW 014 (RT 001, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan KEBON BAWANG
@@ -17179,12 +17179,12 @@
 - Alamat: JL. JERUK PERUT I, RT 001, RW 003, KEL. CILANDAK TIMUR, KEC. PASAR MINGGU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan CILANDAK TIMUR: RT 001/RW 003; RT 002/RW 003; RT 003/RW 003; RT 005/RW 003; RT 009/RW 003; RT 010/RW 002; RT 010/RW 003; RT 011/RW 002
+    - Kelurahan CILANDAK TIMUR: RW 002 (RT 010, 011); RW 003 (RT 001, 002, 003, 005, 009, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
-    - Kelurahan CILANDAK BARAT: RT 010/RW 001; RT 011/RW 001; RT 012/RW 001; RT 012/RW 013
+    - Kelurahan CILANDAK BARAT: RW 001 (RT 010, 011, 012); RW 013 (RT 012)
   - Kecamatan PASAR MINGGU
-    - Kelurahan CILANDAK TIMUR: RT 001/RW 001; RT 001/RW 005; RT 002/RW 001; RT 002/RW 002; RT 003/RW 001; RT 003/RW 002; RT 004/RW 001; RT 004/RW 002; RT 004/RW 003; RT 005/RW 002; RT 006/RW 002; RT 006/RW 003; RT 007/RW 002; RT 007/RW 003; RT 010/RW 001; RT 012/RW 001
+    - Kelurahan CILANDAK TIMUR: RW 001 (RT 001, 002, 003, 004, 010, 012); RW 002 (RT 002, 003, 004, 005, 006, 007); RW 003 (RT 004, 006, 007); RW 005 (RT 001)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -17198,14 +17198,14 @@
 - Alamat: JL. HALIMUN RAYA NO. 2B, RT 001, RW 006, KEL. GUNTUR, KEC. SETIA BUDI, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIABUDI
-    - Kelurahan GUNTUR: RT 001/RW 006; RT 002/RW 001; RT 006/RW 002; RT 007/RW 002; RT 008/RW 006; RT 010/RW 006; RT 012/RW 006
-    - Kelurahan SETIA BUDI: RT 005/RW 001
+    - Kelurahan GUNTUR: RW 001 (RT 002); RW 002 (RT 006, 007); RW 006 (RT 001, 008, 010, 012)
+    - Kelurahan SETIA BUDI: RW 001 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIA BUDI
-    - Kelurahan GUNTUR: RT 001/RW 002; RT 006/RW 001; RT 007/RW 001; RT 014/RW 006
-    - Kelurahan PASAR MANGGIS: RT 001/RW 005; RT 002/RW 005; RT 004/RW 004; RT 005/RW 004; RT 006/RW 005; RT 007/RW 005; RT 008/RW 005; RT 009/RW 005; RT 010/RW 004; RT 011/RW 004; RT 011/RW 005; RT 012/RW 005; RT 013/RW 005
+    - Kelurahan GUNTUR: RW 001 (RT 006, 007); RW 002 (RT 001); RW 006 (RT 014)
+    - Kelurahan PASAR MANGGIS: RW 004 (RT 004, 005, 010, 011); RW 005 (RT 001, 002, 006, 007, 008, 009, 011, 012, 013)
   - Kecamatan SETIABUDI
-    - Kelurahan GUNTUR: RT 001/RW 001; RT 003/RW 001; RT 003/RW 002; RT 004/RW 001; RT 005/RW 001; RT 005/RW 002; RT 005/RW 006; RT 006/RW 006
+    - Kelurahan GUNTUR: RW 001 (RT 001, 003, 004, 005); RW 002 (RT 003, 005); RW 006 (RT 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MENTENG
     - Kelurahan MENTENG
@@ -17221,19 +17221,19 @@
 - Alamat: JL. SETIABUDI BARAT NO. 8 K, RT 002, RW 002, KEL. SETIA BUDI, KEC. SETIA BUDI, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIABUDI
-    - Kelurahan KARET: RT 001/RW 007; RT 003/RW 007; RT 005/RW 007; RT 012/RW 001
-    - Kelurahan SETIA BUDI: RT 001/RW 002; RT 002/RW 002; RT 003/RW 002; RT 003/RW 003; RT 004/RW 003; RT 005/RW 002; RT 006/RW 002
+    - Kelurahan KARET: RW 001 (RT 012); RW 007 (RT 001, 003, 005)
+    - Kelurahan SETIA BUDI: RW 002 (RT 001, 002, 003, 005, 006); RW 003 (RT 003, 004)
   - Kecamatan TANAH ABANG
-    - Kelurahan KARET TENGSIN: RT 014/RW 011
+    - Kelurahan KARET TENGSIN: RW 011 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIA BUDI
-    - Kelurahan KARET: RT 002/RW 001; RT 002/RW 005; RT 003/RW 001; RT 004/RW 001; RT 004/RW 002; RT 006/RW 001; RT 006/RW 005; RT 007/RW 005; RT 007/RW 007; RT 008/RW 002; RT 008/RW 005; RT 008/RW 007; RT 009/RW 002; RT 010/RW 001; RT 010/RW 002; RT 010/RW 007; RT 012/RW 004; RT 014/RW 002; RT 015/RW 002; RT 016/RW 002; RT 017/RW 002; RT 018/RW 001; RT 018/RW 002; RT 020/RW 002; RT 021/RW 002
-    - Kelurahan SETIA BUDI: RT 003/RW 001; RT 004/RW 002; RT 005/RW 001
+    - Kelurahan KARET: RW 001 (RT 002, 003, 004, 006, 010, 018); RW 002 (RT 004, 008, 009, 010, 014, 015, 016, 017, 018, 020, 021); RW 004 (RT 012); RW 005 (RT 002, 006, 007, 008); RW 007 (RT 007, 008, 010)
+    - Kelurahan SETIA BUDI: RW 001 (RT 003, 005); RW 002 (RT 004)
   - Kecamatan SETIABUDI
-    - Kelurahan KARET: RT 002/RW 007; RT 004/RW 007
-    - Kelurahan SETIA BUDI: RT 001/RW 001; RT 001/RW 003; RT 002/RW 001; RT 002/RW 003; RT 004/RW 001; RT 005/RW 003; RT 006/RW 003; RT 007/RW 003
+    - Kelurahan KARET: RW 007 (RT 002, 004)
+    - Kelurahan SETIA BUDI: RW 001 (RT 001, 002, 004); RW 003 (RT 001, 002, 005, 006, 007)
   - Kecamatan TANAH ABANG
-    - Kelurahan KARET TENGSIN: RT 009/RW 011; RT 010/RW 009; RT 013/RW 011
+    - Kelurahan KARET TENGSIN: RW 009 (RT 010); RW 011 (RT 009, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan SETIABUDI
     - Kelurahan GUNTUR
@@ -17250,12 +17250,12 @@
 - Alamat: JL. BENDUNGAN JAGO NO. 40, RT 005, RW 002, KEL. SERDANG, KEC. KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan SERDANG: RT 004/RW 002; RT 005/RW 002; RT 005/RW 003; RT 006/RW 002; RT 008/RW 002; RT 009/RW 002; RT 015/RW 003
-    - Kelurahan UTAN PANJANG: RT 007/RW 001; RT 008/RW 001
+    - Kelurahan SERDANG: RW 002 (RT 004, 005, 006, 008, 009); RW 003 (RT 005, 015)
+    - Kelurahan UTAN PANJANG: RW 001 (RT 007, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
-    - Kelurahan SERDANG: RT 003/RW 002; RT 004/RW 003; RT 006/RW 003; RT 007/RW 002; RT 010/RW 002; RT 012/RW 002; RT 013/RW 002; RT 013/RW 003; RT 014/RW 003; RT 018/RW 002; RT 019/RW 002
-    - Kelurahan UTAN PANJANG: RT 001/RW 001; RT 003/RW 001; RT 004/RW 001; RT 006/RW 001; RT 009/RW 001; RT 010/RW 001; RT 011/RW 001; RT 013/RW 001; RT 015/RW 001
+    - Kelurahan SERDANG: RW 002 (RT 003, 007, 010, 012, 013, 018, 019); RW 003 (RT 004, 006, 013, 014)
+    - Kelurahan UTAN PANJANG: RW 001 (RT 001, 003, 004, 006, 009, 010, 011, 013, 015)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -17272,20 +17272,20 @@
 - Alamat: JL KEBON SIRIH NO 98, RT 002, RW 004, KEL. GAMBIR, KEC. GAMBIR, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan GAMBIR: RT 002/RW 004; RT 003/RW 004; RT 005/RW 002; RT 011/RW 002
-    - Kelurahan PETOJO SELATAN: RT 001/RW 001; RT 001/RW 002; RT 001/RW 008; RT 002/RW 001; RT 002/RW 002; RT 002/RW 003; RT 003/RW 002; RT 003/RW 003; RT 003/RW 008; RT 004/RW 003; RT 006/RW 002; RT 007/RW 002; RT 008/RW 008; RT 015/RW 002
+    - Kelurahan GAMBIR: RW 002 (RT 005, 011); RW 004 (RT 002, 003)
+    - Kelurahan PETOJO SELATAN: RW 001 (RT 001, 002); RW 002 (RT 001, 002, 003, 006, 007, 015); RW 003 (RT 002, 003, 004); RW 008 (RT 001, 003, 008)
   - Kecamatan MENTENG
-    - Kelurahan KEBON SIRIH: RT 002/RW 001
+    - Kelurahan KEBON SIRIH: RW 001 (RT 002)
   - Kecamatan TANAH ABANG
-    - Kelurahan KAMPUNG BALI: RT 001/RW 008; RT 002/RW 007; RT 002/RW 008; RT 003/RW 008; RT 010/RW 010; RT 012/RW 005
+    - Kelurahan KAMPUNG BALI: RW 005 (RT 012); RW 007 (RT 002); RW 008 (RT 001, 002, 003); RW 010 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
-    - Kelurahan GAMBIR: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 004/RW 001; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001
-    - Kelurahan PETOJO SELATAN: RT 002/RW 008; RT 004/RW 008; RT 006/RW 008; RT 007/RW 008
+    - Kelurahan GAMBIR: RW 001 (RT 001, 002, 003, 004, 007, 008, 009)
+    - Kelurahan PETOJO SELATAN: RW 008 (RT 002, 004, 006, 007)
   - Kecamatan MENTENG
-    - Kelurahan KEBON SIRIH: RT 003/RW 001; RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002; RT 007/RW 002
+    - Kelurahan KEBON SIRIH: RW 001 (RT 003); RW 002 (RT 003, 004, 005, 006, 007)
   - Kecamatan TANAH ABANG
-    - Kelurahan KAMPUNG BALI: RT 001/RW 007; RT 005/RW 008; RT 006/RW 008; RT 008/RW 010; RT 009/RW 005; RT 009/RW 010; RT 010/RW 005; RT 011/RW 005
+    - Kelurahan KAMPUNG BALI: RW 005 (RT 009, 010, 011); RW 007 (RT 001); RW 008 (RT 005, 006); RW 010 (RT 008, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -17305,10 +17305,10 @@
 - Alamat: JL. Z. SLIPI DALAM, RT 011, RW 002, KEL. SLIPI, KEC. PAL MERAH, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PAL MERAH
-    - Kelurahan SLIPI: RT 001/RW 002; RT 002/RW 002; RT 005/RW 003; RT 006/RW 002; RT 007/RW 002; RT 008/RW 002; RT 011/RW 002; RT 011/RW 003
+    - Kelurahan SLIPI: RW 002 (RT 001, 002, 006, 007, 008, 011); RW 003 (RT 005, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PAL MERAH
-    - Kelurahan SLIPI: RT 001/RW 004; RT 002/RW 003; RT 003/RW 002; RT 003/RW 003; RT 004/RW 002; RT 004/RW 003; RT 005/RW 001; RT 005/RW 002; RT 009/RW 002; RT 010/RW 003; RT 012/RW 001; RT 012/RW 003
+    - Kelurahan SLIPI: RW 001 (RT 005, 012); RW 002 (RT 003, 004, 005, 009); RW 003 (RT 002, 003, 004, 010, 012); RW 004 (RT 001)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -17329,10 +17329,10 @@
 - Alamat: JL. JATINEGARA TIMUR IV, RT 001, RW 007, KEL. RAWA BUNGA, KEC. JATINEGARA, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan RAWA BUNGA: RT 001/RW 007; RT 007/RW 005; RT 007/RW 007; RT 008/RW 007; RT 009/RW 005; RT 009/RW 007; RT 010/RW 005
+    - Kelurahan RAWA BUNGA: RW 005 (RT 007, 009, 010); RW 007 (RT 001, 007, 008, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
-    - Kelurahan RAWA BUNGA: RT 001/RW 005; RT 001/RW 006; RT 001/RW 008; RT 002/RW 005; RT 002/RW 006; RT 002/RW 007; RT 002/RW 008; RT 003/RW 006; RT 003/RW 008; RT 004/RW 004; RT 004/RW 005; RT 004/RW 008; RT 005/RW 007; RT 005/RW 008; RT 006/RW 005; RT 006/RW 006; RT 006/RW 007; RT 006/RW 008; RT 007/RW 006; RT 007/RW 008; RT 008/RW 005; RT 008/RW 006; RT 008/RW 008; RT 009/RW 004; RT 009/RW 006; RT 010/RW 004; RT 010/RW 006; RT 011/RW 005; RT 012/RW 005
+    - Kelurahan RAWA BUNGA: RW 004 (RT 004, 009, 010); RW 005 (RT 001, 002, 004, 006, 008, 011, 012); RW 006 (RT 001, 002, 003, 006, 007, 008, 009, 010); RW 007 (RT 002, 005, 006); RW 008 (RT 001, 002, 003, 004, 005, 006, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan BALI MESTER
@@ -17348,18 +17348,18 @@
 - Alamat: JL. PERNIAGAAN NO. 31, RT 007, RW 001, KEL. TAMBORA, KEC. TAMBORA, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan GLODOK: RT 007/RW 003; RT 009/RW 003
+    - Kelurahan GLODOK: RW 003 (RT 007, 009)
   - Kecamatan TAMBORA
-    - Kelurahan ROA MALAKA: RT 009/RW 001
-    - Kelurahan TAMBORA: RT 005/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 010/RW 001; RT 011/RW 001
+    - Kelurahan ROA MALAKA: RW 001 (RT 009)
+    - Kelurahan TAMBORA: RW 001 (RT 005, 006, 007, 008, 009, 010, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMAN SARI
-    - Kelurahan GLODOK: RT 003/RW 003; RT 004/RW 003; RT 005/RW 003; RT 006/RW 003; RT 008/RW 003; RT 010/RW 002; RT 010/RW 003; RT 011/RW 003; RT 012/RW 003
+    - Kelurahan GLODOK: RW 002 (RT 010); RW 003 (RT 003, 004, 005, 006, 008, 010, 011, 012)
   - Kecamatan TAMBORA
-    - Kelurahan JEMBATAN LIMA: RT 001/RW 002; RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002; RT 007/RW 002; RT 008/RW 002; RT 009/RW 001; RT 009/RW 002; RT 010/RW 001; RT 010/RW 002; RT 011/RW 001; RT 011/RW 002
-    - Kelurahan PEKOJAN: RT 001/RW 001; RT 001/RW 002; RT 002/RW 001; RT 002/RW 002; RT 005/RW 002; RT 006/RW 002; RT 010/RW 002
-    - Kelurahan ROA MALAKA: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 004/RW 001; RT 005/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 010/RW 001; RT 011/RW 001; RT 012/RW 001
-    - Kelurahan TAMBORA: RT 001/RW 001; RT 001/RW 002; RT 002/RW 001; RT 002/RW 002; RT 003/RW 001; RT 003/RW 002; RT 004/RW 001; RT 004/RW 002; RT 004/RW 003; RT 005/RW 002; RT 006/RW 002; RT 007/RW 002; RT 008/RW 002; RT 009/RW 002; RT 010/RW 002; RT 011/RW 002; RT 012/RW 002
+    - Kelurahan JEMBATAN LIMA: RW 001 (RT 009, 010, 011); RW 002 (RT 001, 003, 004, 005, 006, 007, 008, 009, 010, 011)
+    - Kelurahan PEKOJAN: RW 001 (RT 001, 002); RW 002 (RT 001, 002, 005, 006, 010)
+    - Kelurahan ROA MALAKA: RW 001 (RT 001, 002, 003, 004, 005, 006, 007, 008, 010, 011, 012)
+    - Kelurahan TAMBORA: RW 001 (RT 001, 002, 003, 004); RW 002 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012); RW 003 (RT 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -17390,14 +17390,14 @@
 - Alamat: JL. KARANG ANYAR 11 - 12, RT 007, RW 010, KEL. KARANG ANYAR, KEC. SAWAH BESAR, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SAWAH BESAR
-    - Kelurahan KARANG ANYAR: RT 007/RW 010; RT 008/RW 010; RT 009/RW 010; RT 010/RW 009; RT 010/RW 010
+    - Kelurahan KARANG ANYAR: RW 009 (RT 010); RW 010 (RT 007, 008, 009, 010)
   - Kecamatan TAMAN SARI
-    - Kelurahan TAMAN SARI: RT 012/RW 001
+    - Kelurahan TAMAN SARI: RW 001 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
-    - Kelurahan KARANG ANYAR: RT 001/RW 009; RT 001/RW 010; RT 001/RW 013; RT 002/RW 009; RT 002/RW 010; RT 003/RW 009; RT 003/RW 010; RT 004/RW 009; RT 004/RW 010; RT 004/RW 013; RT 005/RW 008; RT 005/RW 009; RT 005/RW 010; RT 006/RW 008; RT 006/RW 009; RT 006/RW 010; RT 007/RW 008; RT 007/RW 009; RT 008/RW 008; RT 008/RW 009; RT 009/RW 008; RT 009/RW 009; RT 010/RW 008; RT 011/RW 008; RT 011/RW 009; RT 011/RW 010; RT 012/RW 008; RT 012/RW 010; RT 013/RW 008; RT 013/RW 010; RT 014/RW 008; RT 014/RW 009; RT 014/RW 010; RT 015/RW 008; RT 015/RW 009; RT 015/RW 010
+    - Kelurahan KARANG ANYAR: RW 008 (RT 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015); RW 009 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 011, 014, 015); RW 010 (RT 001, 002, 003, 004, 005, 006, 011, 012, 013, 014, 015); RW 013 (RT 001, 004)
   - Kecamatan TAMAN SARI
-    - Kelurahan TAMAN SARI: RT 001/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 011/RW 001; RT 013/RW 001
+    - Kelurahan TAMAN SARI: RW 001 (RT 001, 006, 007, 008, 011, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan KEBON KELAPA
@@ -17422,12 +17422,12 @@
 - Alamat: JL. METRO KENCANA RAYA, SUNTER, RT 010, RW 004, KEL. PAPANGO, KEC. TANJUNG PRIOK, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan PAPANGGO: RT 001/RW 011; RT 002/RW 011; RT 003/RW 011; RT 004/RW 011; RT 006/RW 004; RT 010/RW 004
-    - Kelurahan SUNTER AGUNG: RT 002/RW 015; RT 004/RW 017; RT 010/RW 014; RT 014/RW 013
+    - Kelurahan PAPANGGO: RW 004 (RT 006, 010); RW 011 (RT 001, 002, 003, 004)
+    - Kelurahan SUNTER AGUNG: RW 013 (RT 014); RW 014 (RT 010); RW 015 (RT 002); RW 017 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan PAPANGGO: RT 001/RW 006; RT 001/RW 009; RT 002/RW 006; RT 003/RW 006; RT 004/RW 006; RT 005/RW 006; RT 006/RW 005; RT 006/RW 006; RT 007/RW 004; RT 007/RW 005; RT 007/RW 006; RT 008/RW 006; RT 008/RW 009; RT 009/RW 004; RT 009/RW 006; RT 010/RW 006; RT 011/RW 006; RT 012/RW 006; RT 013/RW 006
-    - Kelurahan SUNTER AGUNG: RT 001/RW 017; RT 002/RW 017; RT 003/RW 017; RT 005/RW 017; RT 006/RW 017; RT 007/RW 015; RT 007/RW 017; RT 008/RW 017; RT 009/RW 017; RT 010/RW 017; RT 011/RW 017
+    - Kelurahan PAPANGGO: RW 004 (RT 007, 009); RW 005 (RT 006, 007); RW 006 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013); RW 009 (RT 001, 008)
+    - Kelurahan SUNTER AGUNG: RW 015 (RT 007); RW 017 (RT 001, 002, 003, 005, 006, 007, 008, 009, 010, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan KEBON BAWANG
@@ -17440,10 +17440,10 @@
 - Alamat: JL. MASJID AN NUR, RT 013, RW 001, KEL. GROGOL SELATAN, KEC. KEBAYORAN LAMA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL SELATAN: RT 007/RW 001; RT 008/RW 001; RT 010/RW 001; RT 011/RW 001; RT 013/RW 001; RT 014/RW 001; RT 015/RW 001
+    - Kelurahan GROGOL SELATAN: RW 001 (RT 007, 008, 010, 011, 013, 014, 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL SELATAN: RT 001/RW 011; RT 002/RW 011; RT 004/RW 001; RT 005/RW 001; RT 006/RW 001; RT 009/RW 001; RT 009/RW 009; RT 009/RW 010; RT 010/RW 010; RT 011/RW 009; RT 012/RW 001
+    - Kelurahan GROGOL SELATAN: RW 001 (RT 004, 005, 006, 009, 012); RW 009 (RT 009, 011); RW 010 (RT 009, 010); RW 011 (RT 001, 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GUNUNG
@@ -17458,12 +17458,12 @@
 - Alamat: JL. MINANGKABAU DALAM NO.3, RT 015, RW 006, KEL. MENTENG ATAS,
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIABUDI
-    - Kelurahan MENTENG ATAS: RT 001/RW 013; RT 003/RW 014; RT 004/RW 014; RT 005/RW 014; RT 006/RW 014; RT 007/RW 006; RT 007/RW 014; RT 008/RW 014; RT 009/RW 013; RT 010/RW 004; RT 011/RW 006; RT 012/RW 006; RT 013/RW 006; RT 014/RW 006; RT 015/RW 006
+    - Kelurahan MENTENG ATAS: RW 004 (RT 010); RW 006 (RT 007, 011, 012, 013, 014, 015); RW 013 (RT 001, 009); RW 014 (RT 003, 004, 005, 006, 007, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIA BUDI
-    - Kelurahan MENTENG ATAS: RT 003/RW 012; RT 008/RW 007; RT 009/RW 004; RT 012/RW 005
+    - Kelurahan MENTENG ATAS: RW 004 (RT 009); RW 005 (RT 012); RW 007 (RT 008); RW 012 (RT 003)
   - Kecamatan SETIABUDI
-    - Kelurahan MENTENG ATAS: RT 002/RW 013; RT 002/RW 014; RT 006/RW 006; RT 007/RW 004; RT 007/RW 007; RT 008/RW 004; RT 008/RW 006; RT 008/RW 013; RT 009/RW 007; RT 009/RW 014; RT 010/RW 006; RT 011/RW 007; RT 011/RW 015; RT 012/RW 007; RT 016/RW 007
+    - Kelurahan MENTENG ATAS: RW 004 (RT 007, 008); RW 006 (RT 006, 008, 010); RW 007 (RT 007, 009, 011, 012, 016); RW 013 (RT 002, 008); RW 014 (RT 002, 009); RW 015 (RT 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan SETIABUDI
     - Kelurahan GUNTUR
@@ -17481,13 +17481,13 @@
 - Alamat: JL. CIPETE III NO. 4, RT 006, RW 004, KEL. CIPETE SELATAN, KEC. CILANDAK, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan CILANDAK BARAT: RT 004/RW 011; RT 010/RW 011
-    - Kelurahan CIPETE SELATAN: RT 003/RW 004; RT 005/RW 004; RT 006/RW 003; RT 006/RW 004; RT 007/RW 003; RT 008/RW 003
+    - Kelurahan CILANDAK BARAT: RW 011 (RT 004, 010)
+    - Kelurahan CIPETE SELATAN: RW 003 (RT 006, 007, 008); RW 004 (RT 003, 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
-    - Kelurahan CILANDAK BARAT: RT 001/RW 011; RT 002/RW 011; RT 003/RW 010; RT 003/RW 011; RT 005/RW 011; RT 006/RW 003; RT 007/RW 011; RT 007/RW 013; RT 008/RW 013; RT 014/RW 013
-    - Kelurahan CIPETE SELATAN: RT 001/RW 004; RT 002/RW 003; RT 002/RW 004; RT 003/RW 003; RT 004/RW 003; RT 004/RW 004; RT 005/RW 003; RT 008/RW 006; RT 009/RW 003; RT 009/RW 006; RT 010/RW 003; RT 010/RW 006; RT 011/RW 003; RT 011/RW 006; RT 012/RW 003; RT 012/RW 006; RT 013/RW 003; RT 014/RW 003; RT 015/RW 003
-    - Kelurahan GANDARIA SELATAN: RT 001/RW 006; RT 003/RW 006; RT 004/RW 006; RT 007/RW 006; RT 010/RW 007; RT 011/RW 006; RT 011/RW 007
+    - Kelurahan CILANDAK BARAT: RW 003 (RT 006); RW 010 (RT 003); RW 011 (RT 001, 002, 003, 005, 007); RW 013 (RT 007, 008, 014)
+    - Kelurahan CIPETE SELATAN: RW 003 (RT 002, 003, 004, 005, 009, 010, 011, 012, 013, 014, 015); RW 004 (RT 001, 002, 004); RW 006 (RT 008, 009, 010, 011, 012)
+    - Kelurahan GANDARIA SELATAN: RW 006 (RT 001, 003, 004, 007, 011); RW 007 (RT 010, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -17501,11 +17501,11 @@
 - Alamat: JL. TANJUNG DUREN TIMUR NO. 16, RT 015, RW 005, KEL. TANJUNG DUREN SELATAN, KEC. GROGOL PETAMBURAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TANJUNG DUREN SELATAN: RT 001/RW 008; RT 003/RW 005; RT 004/RW 005; RT 006/RW 006; RT 007/RW 008; RT 008/RW 008; RT 009/RW 005; RT 010/RW 005; RT 015/RW 005; RT 018/RW 005
+    - Kelurahan TANJUNG DUREN SELATAN: RW 005 (RT 003, 004, 009, 010, 015, 018); RW 006 (RT 006); RW 008 (RT 001, 007, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TANJUNG DUREN SELATAN: RT 001/RW 005; RT 001/RW 006; RT 002/RW 006; RT 002/RW 008; RT 003/RW 006; RT 003/RW 008; RT 004/RW 006; RT 004/RW 008; RT 005/RW 005; RT 005/RW 006; RT 005/RW 008; RT 006/RW 008; RT 007/RW 005; RT 008/RW 005; RT 008/RW 006; RT 009/RW 001; RT 009/RW 006; RT 010/RW 001; RT 010/RW 006; RT 011/RW 001; RT 011/RW 005; RT 011/RW 006; RT 012/RW 004; RT 012/RW 005; RT 014/RW 005; RT 016/RW 005; RT 017/RW 005
-    - Kelurahan TANJUNG DUREN UTARA: RT 003/RW 002; RT 004/RW 002; RT 004/RW 003; RT 005/RW 002; RT 005/RW 003; RT 006/RW 002; RT 006/RW 003; RT 007/RW 002; RT 007/RW 003; RT 008/RW 002; RT 008/RW 003; RT 009/RW 002; RT 009/RW 003; RT 010/RW 002; RT 011/RW 002
+    - Kelurahan TANJUNG DUREN SELATAN: RW 001 (RT 009, 010, 011); RW 004 (RT 012); RW 005 (RT 001, 005, 007, 008, 011, 012, 014, 016, 017); RW 006 (RT 001, 002, 003, 004, 005, 008, 009, 010, 011); RW 008 (RT 002, 003, 004, 005, 006)
+    - Kelurahan TANJUNG DUREN UTARA: RW 002 (RT 003, 004, 005, 006, 007, 008, 009, 010, 011); RW 003 (RT 004, 005, 006, 007, 008, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan GROGOL
@@ -17521,10 +17521,10 @@
 - Alamat: JL. KH. MAS MANSYUR GG. H. AWALUDIN IV, RT 002, RW 017, KEL. KEBON MELATI, KEC. TANAH ABANG, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan KEBON MELATI: RT 001/RW 017; RT 002/RW 017; RT 003/RW 017; RT 004/RW 017
+    - Kelurahan KEBON MELATI: RW 017 (RT 001, 002, 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
-    - Kelurahan KEBON MELATI: RT 001/RW 005; RT 001/RW 006; RT 002/RW 006; RT 003/RW 006; RT 004/RW 006; RT 005/RW 006; RT 005/RW 017; RT 006/RW 005; RT 006/RW 006; RT 006/RW 017; RT 007/RW 005; RT 007/RW 006; RT 007/RW 017; RT 008/RW 005; RT 008/RW 017; RT 009/RW 005; RT 009/RW 017; RT 010/RW 005; RT 010/RW 017; RT 011/RW 017; RT 012/RW 017; RT 013/RW 017; RT 014/RW 017; RT 015/RW 005; RT 015/RW 016; RT 015/RW 017; RT 016/RW 017; RT 017/RW 017
+    - Kelurahan KEBON MELATI: RW 005 (RT 001, 006, 007, 008, 009, 010, 015); RW 006 (RT 001, 002, 003, 004, 005, 006, 007); RW 016 (RT 015); RW 017 (RT 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MENTENG
     - Kelurahan GONDANGDIA
@@ -17545,17 +17545,17 @@
 - Alamat: JL. RAWASARI SELATAN, RT 011, RW 002, KEL. CEMPAKA PUTIH TIMUR, KEC. CEMPAKA PUTIH, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH TIMUR: RT 007/RW 002; RT 008/RW 002; RT 009/RW 002; RT 010/RW 002; RT 011/RW 002; RT 013/RW 002
+    - Kelurahan CEMPAKA PUTIH TIMUR: RW 002 (RT 007, 008, 009, 010, 011, 013)
   - Kecamatan PULOGADUNG
-    - Kelurahan KAYU PUTIH: RT 004/RW 007; RT 016/RW 007
+    - Kelurahan KAYU PUTIH: RW 007 (RT 004, 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH TIMUR: RT 001/RW 001; RT 002/RW 001; RT 002/RW 002; RT 003/RW 001; RT 003/RW 002; RT 004/RW 001; RT 004/RW 002; RT 004/RW 003; RT 005/RW 001; RT 005/RW 002; RT 006/RW 002; RT 008/RW 001; RT 009/RW 001; RT 010/RW 001; RT 012/RW 002; RT 014/RW 002; RT 014/RW 003; RT 015/RW 002; RT 016/RW 002; RT 017/RW 002; RT 018/RW 002
-    - Kelurahan RAWASARI: RT 012/RW 009; RT 014/RW 009; RT 015/RW 009; RT 017/RW 009
+    - Kelurahan CEMPAKA PUTIH TIMUR: RW 001 (RT 001, 002, 003, 004, 005, 008, 009, 010); RW 002 (RT 002, 003, 004, 005, 006, 012, 014, 015, 016, 017, 018); RW 003 (RT 004, 014)
+    - Kelurahan RAWASARI: RW 009 (RT 012, 014, 015, 017)
   - Kecamatan PULO GADUNG
-    - Kelurahan KAYU PUTIH: RT 001/RW 009; RT 002/RW 009; RT 003/RW 007; RT 003/RW 009; RT 011/RW 007; RT 015/RW 007
+    - Kelurahan KAYU PUTIH: RW 007 (RT 003, 011, 015); RW 009 (RT 001, 002, 003)
   - Kecamatan PULOGADUNG
-    - Kelurahan KAYU PUTIH: RT 005/RW 007; RT 006/RW 009
+    - Kelurahan KAYU PUTIH: RW 007 (RT 005); RW 009 (RT 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -17571,15 +17571,15 @@
 - Alamat: JL. PETOJO BINATU NO. 2, RT 004, RW 008, KEL. PETOJO UTARA, KEC. GAMBIR, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan KEBON KELAPA: RT 007/RW 002
-    - Kelurahan PETOJO SELATAN: RT 007/RW 007
-    - Kelurahan PETOJO UTARA: RT 001/RW 007; RT 002/RW 007; RT 003/RW 008; RT 004/RW 008; RT 005/RW 008; RT 006/RW 008; RT 007/RW 008
+    - Kelurahan KEBON KELAPA: RW 002 (RT 007)
+    - Kelurahan PETOJO SELATAN: RW 007 (RT 007)
+    - Kelurahan PETOJO UTARA: RW 007 (RT 001, 002); RW 008 (RT 003, 004, 005, 006, 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
-    - Kelurahan GAMBIR: RT 005/RW 002
-    - Kelurahan KEBON KELAPA: RT 006/RW 002
-    - Kelurahan PETOJO SELATAN: RT 007/RW 008; RT 008/RW 008
-    - Kelurahan PETOJO UTARA: RT 001/RW 008; RT 002/RW 008; RT 003/RW 007; RT 004/RW 007; RT 005/RW 007; RT 006/RW 007; RT 007/RW 007; RT 008/RW 007; RT 008/RW 008; RT 009/RW 007; RT 009/RW 008; RT 010/RW 007; RT 010/RW 008; RT 011/RW 007; RT 011/RW 008; RT 012/RW 007; RT 012/RW 008; RT 013/RW 008; RT 014/RW 008
+    - Kelurahan GAMBIR: RW 002 (RT 005)
+    - Kelurahan KEBON KELAPA: RW 002 (RT 006)
+    - Kelurahan PETOJO SELATAN: RW 008 (RT 007, 008)
+    - Kelurahan PETOJO UTARA: RW 007 (RT 003, 004, 005, 006, 007, 008, 009, 010, 011, 012); RW 008 (RT 001, 002, 008, 009, 010, 011, 012, 013, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan GAMBIR
@@ -17591,11 +17591,11 @@
 - Alamat: JL. TEBET TIMUR II NO. 1, RT 007, RW 007, KEL. TEBET TIMUR, KEC. TEBET, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan TEBET TIMUR: RT 002/RW 006; RT 003/RW 006; RT 004/RW 007; RT 005/RW 007; RT 006/RW 005; RT 006/RW 007; RT 007/RW 005; RT 007/RW 007; RT 008/RW 007; RT 011/RW 007
+    - Kelurahan TEBET TIMUR: RW 005 (RT 006, 007); RW 006 (RT 002, 003); RW 007 (RT 004, 005, 006, 007, 008, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TEBET
-    - Kelurahan KEBON BARU: RT 001/RW 006; RT 001/RW 012; RT 002/RW 006; RT 003/RW 006; RT 003/RW 012; RT 005/RW 012; RT 006/RW 006; RT 007/RW 012; RT 009/RW 006; RT 009/RW 012; RT 010/RW 006; RT 011/RW 006
-    - Kelurahan TEBET TIMUR: RT 001/RW 005; RT 001/RW 006; RT 001/RW 007; RT 001/RW 008; RT 001/RW 009; RT 001/RW 011; RT 002/RW 005; RT 002/RW 007; RT 002/RW 008; RT 003/RW 005; RT 003/RW 007; RT 003/RW 008; RT 004/RW 005; RT 004/RW 006; RT 004/RW 008; RT 005/RW 005; RT 005/RW 006; RT 005/RW 008; RT 006/RW 006; RT 006/RW 008; RT 006/RW 011; RT 007/RW 006; RT 007/RW 008; RT 007/RW 011; RT 008/RW 005; RT 008/RW 008; RT 008/RW 011; RT 009/RW 005; RT 009/RW 007; RT 009/RW 008; RT 010/RW 005; RT 010/RW 007; RT 010/RW 010; RT 011/RW 005; RT 012/RW 005; RT 013/RW 005
+    - Kelurahan KEBON BARU: RW 006 (RT 001, 002, 003, 006, 009, 010, 011); RW 012 (RT 001, 003, 005, 007, 009)
+    - Kelurahan TEBET TIMUR: RW 005 (RT 001, 002, 003, 004, 005, 008, 009, 010, 011, 012, 013); RW 006 (RT 001, 004, 005, 006, 007); RW 007 (RT 001, 002, 003, 009, 010); RW 008 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009); RW 009 (RT 001); RW 010 (RT 010); RW 011 (RT 001, 006, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PANCORAN
     - Kelurahan CIKOKO
@@ -17612,13 +17612,13 @@
 - Alamat: JL. PEMUDA NO.6 RT 006, RW 005, DAN JL.MUSTIKA JAYA RT 008 RW 010, KEL. RAWAMANGUN, KEC. PULO GADUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULOGADUNG
-    - Kelurahan RAWAMANGUN: RT 002/RW 005; RT 002/RW 006; RT 002/RW 007; RT 002/RW 011; RT 003/RW 005; RT 003/RW 011; RT 005/RW 005; RT 006/RW 005; RT 006/RW 010; RT 007/RW 007; RT 007/RW 010; RT 008/RW 006; RT 008/RW 010; RT 009/RW 005; RT 009/RW 010; RT 010/RW 005; RT 010/RW 010
+    - Kelurahan RAWAMANGUN: RW 005 (RT 002, 003, 005, 006, 009, 010); RW 006 (RT 002, 008); RW 007 (RT 002, 007); RW 010 (RT 006, 007, 008, 009, 010); RW 011 (RT 002, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULO GADUNG
-    - Kelurahan JATI: RT 003/RW 001; RT 011/RW 001; RT 012/RW 001; RT 015/RW 001
-    - Kelurahan RAWAMANGUN: RT 001/RW 007; RT 001/RW 010; RT 002/RW 010; RT 003/RW 007; RT 003/RW 010; RT 003/RW 015; RT 004/RW 004; RT 004/RW 007; RT 004/RW 015; RT 005/RW 004; RT 005/RW 007; RT 005/RW 010; RT 005/RW 011; RT 005/RW 015; RT 006/RW 006; RT 006/RW 007; RT 007/RW 006; RT 009/RW 011; RT 011/RW 010
+    - Kelurahan JATI: RW 001 (RT 003, 011, 012, 015)
+    - Kelurahan RAWAMANGUN: RW 004 (RT 004, 005); RW 006 (RT 006, 007); RW 007 (RT 001, 003, 004, 005, 006); RW 010 (RT 001, 002, 003, 005, 011); RW 011 (RT 005, 009); RW 015 (RT 003, 004, 005)
   - Kecamatan PULOGADUNG
-    - Kelurahan RAWAMANGUN: RT 001/RW 004; RT 001/RW 011; RT 002/RW 015; RT 003/RW 004; RT 004/RW 005; RT 004/RW 010; RT 004/RW 011; RT 006/RW 004; RT 007/RW 004; RT 007/RW 011; RT 008/RW 004; RT 008/RW 011; RT 009/RW 004; RT 010/RW 004; RT 011/RW 004; RT 011/RW 005; RT 012/RW 004
+    - Kelurahan RAWAMANGUN: RW 004 (RT 001, 003, 006, 007, 008, 009, 010, 011, 012); RW 005 (RT 004, 011); RW 010 (RT 004); RW 011 (RT 001, 004, 007, 008); RW 015 (RT 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PULOGADUNG
     - Kelurahan CIPINANG
@@ -17633,13 +17633,13 @@
 - Alamat: JL. RAYA KEBON JERUK NO.19, RT 006, RW 001, KEL. KEBON JERUK, KEC. KEBON JERUK, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 002/RW 010; RT 003/RW 010; RT 005/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 010/RW 001; RT 012/RW 007
+    - Kelurahan KEBON JERUK: RW 001 (RT 005, 006, 007, 008, 009, 010); RW 007 (RT 012); RW 010 (RT 002, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 001/RW 001; RT 001/RW 010; RT 001/RW 011; RT 001/RW 013; RT 002/RW 001; RT 002/RW 013; RT 003/RW 001; RT 003/RW 013; RT 004/RW 001; RT 004/RW 010; RT 005/RW 010; RT 006/RW 010; RT 010/RW 007; RT 011/RW 001; RT 012/RW 001
+    - Kelurahan KEBON JERUK: RW 001 (RT 001, 002, 003, 004, 011, 012); RW 007 (RT 010); RW 010 (RT 001, 004, 005, 006); RW 011 (RT 001); RW 013 (RT 001, 002, 003)
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA UTARA: RT 001/RW 005
-    - Kelurahan SRENGSENG: RT 008/RW 007
+    - Kelurahan MERUYA UTARA: RW 005 (RT 001)
+    - Kelurahan SRENGSENG: RW 007 (RT 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -17655,12 +17655,12 @@
 - Alamat: JL. PERCETAKAN NEGARA II, RT 020, RW 007, KEL. JOHAR BARU, KEC. JOHAR BARU, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 008/RW 006; RT 010/RW 006; RT 012/RW 006; RT 013/RW 006; RT 015/RW 007; RT 017/RW 007; RT 018/RW 007; RT 020/RW 007; RT 021/RW 007; RT 022/RW 007; RT 023/RW 007
+    - Kelurahan JOHAR BARU: RW 006 (RT 008, 010, 012, 013); RW 007 (RT 015, 017, 018, 020, 021, 022, 023)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan RAWASARI: RT 002/RW 003; RT 003/RW 001; RT 004/RW 001; RT 005/RW 001; RT 006/RW 001; RT 007/RW 001
+    - Kelurahan RAWASARI: RW 001 (RT 003, 004, 005, 006, 007); RW 003 (RT 002)
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 001/RW 006; RT 001/RW 011; RT 002/RW 006; RT 003/RW 006; RT 003/RW 011; RT 004/RW 006; RT 004/RW 007; RT 004/RW 011; RT 005/RW 006; RT 005/RW 007; RT 006/RW 006; RT 006/RW 007; RT 007/RW 006; RT 007/RW 007; RT 007/RW 011; RT 008/RW 007; RT 008/RW 011; RT 009/RW 006; RT 009/RW 007; RT 009/RW 011; RT 010/RW 007; RT 011/RW 006; RT 011/RW 007; RT 011/RW 011; RT 012/RW 007; RT 012/RW 011; RT 013/RW 007; RT 013/RW 011; RT 014/RW 006; RT 014/RW 007; RT 014/RW 011; RT 015/RW 006; RT 016/RW 007
+    - Kelurahan JOHAR BARU: RW 006 (RT 001, 002, 003, 004, 005, 006, 007, 009, 011, 014, 015); RW 007 (RT 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 016); RW 011 (RT 001, 003, 004, 007, 008, 009, 011, 012, 013, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan RAWASARI
@@ -17679,11 +17679,11 @@
 - Alamat: JL. CEMP. PUTIH TENGAH, RT 003, RW 008, KEL. CEMPAKA PUTIH TIMUR, KEC. CEMPAKA PUTIH, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH TIMUR: RT 001/RW 005; RT 001/RW 008; RT 002/RW 006; RT 002/RW 008; RT 003/RW 008; RT 004/RW 008; RT 005/RW 008; RT 006/RW 008; RT 007/RW 005; RT 007/RW 008
+    - Kelurahan CEMPAKA PUTIH TIMUR: RW 005 (RT 001, 007); RW 006 (RT 002); RW 008 (RT 001, 002, 003, 004, 005, 006, 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 001/RW 003; RT 002/RW 003; RT 003/RW 003; RT 004/RW 003; RT 005/RW 003; RT 005/RW 012; RT 006/RW 003; RT 007/RW 003; RT 008/RW 003; RT 009/RW 003; RT 009/RW 008; RT 010/RW 003; RT 010/RW 004; RT 010/RW 008; RT 011/RW 004; RT 011/RW 008; RT 012/RW 004; RT 012/RW 008
-    - Kelurahan CEMPAKA PUTIH TIMUR: RT 001/RW 006; RT 002/RW 005; RT 003/RW 005; RT 003/RW 006; RT 004/RW 005; RT 004/RW 006; RT 005/RW 005; RT 005/RW 006; RT 006/RW 005; RT 006/RW 007; RT 007/RW 006; RT 007/RW 007; RT 008/RW 005; RT 009/RW 005; RT 010/RW 005; RT 011/RW 005; RT 012/RW 005
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 003 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010); RW 004 (RT 010, 011, 012); RW 008 (RT 009, 010, 011, 012); RW 012 (RT 005)
+    - Kelurahan CEMPAKA PUTIH TIMUR: RW 005 (RT 002, 003, 004, 005, 006, 008, 009, 010, 011, 012); RW 006 (RT 001, 003, 004, 005, 007); RW 007 (RT 006, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -17700,17 +17700,17 @@
 - Alamat: JL. PERUNGGU NO.56, RT 004, RW 002, KEL. HARAPAN MULIA, KEC. KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan HARAPAN MULIA: RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002; RT 007/RW 002; RT 012/RW 003; RT 015/RW 003
+    - Kelurahan HARAPAN MULIA: RW 002 (RT 003, 004, 005, 006, 007); RW 003 (RT 012, 015)
   - Kecamatan SENEN
-    - Kelurahan BUNGUR: RT 005/RW 010; RT 012/RW 010
+    - Kelurahan BUNGUR: RW 010 (RT 005, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JOHAR BARU
-    - Kelurahan GALUR: RT 001/RW 002; RT 001/RW 003; RT 001/RW 004; RT 001/RW 005; RT 002/RW 002; RT 002/RW 003; RT 002/RW 004; RT 003/RW 002; RT 003/RW 003; RT 004/RW 002
-    - Kelurahan TANAH TINGGI: RT 009/RW 004; RT 010/RW 004
+    - Kelurahan GALUR: RW 002 (RT 001, 002, 003, 004); RW 003 (RT 001, 002, 003); RW 004 (RT 001, 002); RW 005 (RT 001)
+    - Kelurahan TANAH TINGGI: RW 004 (RT 009, 010)
   - Kecamatan KEMAYORAN
-    - Kelurahan HARAPAN MULIA: RT 001/RW 001; RT 001/RW 002; RT 001/RW 003; RT 002/RW 001; RT 002/RW 002; RT 003/RW 001; RT 003/RW 003; RT 004/RW 001; RT 004/RW 003; RT 005/RW 003; RT 006/RW 004; RT 008/RW 003; RT 008/RW 004; RT 009/RW 003; RT 010/RW 003; RT 011/RW 003; RT 013/RW 001; RT 013/RW 003; RT 014/RW 001; RT 014/RW 003
+    - Kelurahan HARAPAN MULIA: RW 001 (RT 001, 002, 003, 004, 013, 014); RW 002 (RT 001, 002); RW 003 (RT 001, 003, 004, 005, 008, 009, 010, 011, 013, 014); RW 004 (RT 006, 008)
   - Kecamatan SENEN
-    - Kelurahan BUNGUR: RT 001/RW 008; RT 001/RW 010; RT 003/RW 010; RT 004/RW 010; RT 006/RW 010; RT 007/RW 010; RT 009/RW 010; RT 010/RW 010; RT 011/RW 010
+    - Kelurahan BUNGUR: RW 008 (RT 001); RW 010 (RT 001, 003, 004, 006, 007, 009, 010, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JOHAR BARU
     - Kelurahan GALUR
@@ -17728,12 +17728,12 @@
 - Alamat: JL. DAKOTA RAYA KEMAYORAN, RT 008, RW 008, KEL. KEBON KOSONG, KEC. KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEBON KOSONG: RT 001/RW 006; RT 001/RW 008; RT 004/RW 007; RT 005/RW 007; RT 007/RW 007; RT 007/RW 008; RT 008/RW 007; RT 008/RW 008; RT 009/RW 008; RT 010/RW 008; RT 013/RW 007
-    - Kelurahan SERDANG: RT 001/RW 002
+    - Kelurahan KEBON KOSONG: RW 006 (RT 001); RW 007 (RT 004, 005, 007, 008, 013); RW 008 (RT 001, 007, 008, 009, 010)
+    - Kelurahan SERDANG: RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEBON KOSONG: RT 001/RW 007; RT 002/RW 006; RT 002/RW 007; RT 002/RW 008; RT 003/RW 006; RT 003/RW 007; RT 003/RW 008; RT 004/RW 006; RT 004/RW 008; RT 005/RW 008; RT 006/RW 007; RT 006/RW 008; RT 009/RW 007; RT 011/RW 007
-    - Kelurahan SERDANG: RT 009/RW 001; RT 015/RW 002; RT 016/RW 002
+    - Kelurahan KEBON KOSONG: RW 006 (RT 002, 003, 004); RW 007 (RT 001, 002, 003, 006, 009, 011); RW 008 (RT 002, 003, 004, 005, 006)
+    - Kelurahan SERDANG: RW 001 (RT 009); RW 002 (RT 015, 016)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMAYORAN
     - Kelurahan GUNUNG SAHARI SELATAN
@@ -17745,10 +17745,10 @@
 - Alamat: JL. KAYATUN TRIKORA, RT 001, RW 014, KEL. HALIM PERDANA KUSUMA, KEC. MAKASAR, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 001/RW 012; RT 001/RW 013; RT 001/RW 014; RT 002/RW 013; RT 002/RW 014; RT 003/RW 011; RT 003/RW 013; RT 004/RW 013; RT 005/RW 016; RT 007/RW 010; RT 010/RW 010
+    - Kelurahan HALIM PERDANA KUSUMA: RW 010 (RT 007, 010); RW 011 (RT 003); RW 012 (RT 001); RW 013 (RT 001, 002, 003, 004); RW 014 (RT 001, 002); RW 016 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 001/RW 010; RT 001/RW 011; RT 001/RW 015; RT 001/RW 016; RT 002/RW 010; RT 002/RW 011; RT 002/RW 012; RT 002/RW 015; RT 002/RW 016; RT 003/RW 010; RT 003/RW 012; RT 003/RW 015; RT 003/RW 016; RT 004/RW 010; RT 004/RW 011; RT 004/RW 012; RT 004/RW 015; RT 004/RW 016; RT 005/RW 010; RT 005/RW 011; RT 005/RW 012; RT 005/RW 013; RT 005/RW 015; RT 006/RW 010; RT 006/RW 012; RT 006/RW 013; RT 006/RW 015; RT 007/RW 012; RT 007/RW 013; RT 007/RW 015; RT 008/RW 012; RT 008/RW 013; RT 008/RW 015; RT 009/RW 010; RT 009/RW 012; RT 009/RW 013; RT 009/RW 015; RT 010/RW 013; RT 011/RW 010; RT 011/RW 013; RT 012/RW 010; RT 012/RW 013; RT 013/RW 013
+    - Kelurahan HALIM PERDANA KUSUMA: RW 010 (RT 001, 002, 003, 004, 005, 006, 009, 011, 012); RW 011 (RT 001, 002, 004, 005); RW 012 (RT 002, 003, 004, 005, 006, 007, 008, 009); RW 013 (RT 005, 006, 007, 008, 009, 010, 011, 012, 013); RW 015 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009); RW 016 (RT 001, 002, 003, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KRAMATJATI
     - Kelurahan CAWANG
@@ -17762,12 +17762,12 @@
 - Alamat: JL. MONUMEN PANCASILA SAKTI, RT 005, RW 009, KEL. LUBANG BUAYA, KEC. CIPAYUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 001/RW 012; RT 002/RW 008; RT 004/RW 009; RT 005/RW 009; RT 006/RW 008; RT 006/RW 009; RT 007/RW 008; RT 007/RW 009; RT 008/RW 008; RT 009/RW 001; RT 010/RW 001; RT 011/RW 009; RT 013/RW 009
+    - Kelurahan LUBANG BUAYA: RW 001 (RT 009, 010); RW 008 (RT 002, 006, 007, 008); RW 009 (RT 004, 005, 006, 007, 011, 013); RW 012 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 001/RW 008; RT 001/RW 009; RT 002/RW 009; RT 002/RW 012; RT 003/RW 008; RT 003/RW 009; RT 004/RW 008; RT 005/RW 008; RT 007/RW 012; RT 008/RW 012
+    - Kelurahan LUBANG BUAYA: RW 008 (RT 001, 003, 004, 005); RW 009 (RT 001, 002, 003); RW 012 (RT 002, 007, 008)
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 004/RW 003; RT 006/RW 003; RT 007/RW 003; RT 010/RW 003
+    - Kelurahan HALIM PERDANA KUSUMA: RW 003 (RT 004, 006, 007, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan LUBANG BUAYA
@@ -17779,12 +17779,12 @@
 - Alamat: JL. DAAN MOGOT KOMP. BANK MANDIRI PESING, RT 001, RW 004, KEL. WIJAYA KESUMA, KEC. GROGOL PETAMBURAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan WIJAYA KUSUMA: RT 001/RW 004; RT 002/RW 004; RT 003/RW 008; RT 005/RW 006; RT 006/RW 004; RT 006/RW 006; RT 006/RW 008; RT 007/RW 004; RT 007/RW 008; RT 008/RW 004; RT 009/RW 003; RT 009/RW 008; RT 010/RW 003; RT 010/RW 008; RT 015/RW 003; RT 016/RW 003
+    - Kelurahan WIJAYA KUSUMA: RW 003 (RT 009, 010, 015, 016); RW 004 (RT 001, 002, 006, 007, 008); RW 006 (RT 005, 006); RW 008 (RT 003, 006, 007, 009, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan WIJAYA KUSUMA: RT 001/RW 003; RT 001/RW 006; RT 001/RW 008; RT 002/RW 003; RT 002/RW 006; RT 003/RW 003; RT 003/RW 006; RT 004/RW 003; RT 004/RW 006; RT 004/RW 008; RT 004/RW 010; RT 005/RW 003; RT 005/RW 008; RT 005/RW 010; RT 006/RW 003; RT 006/RW 010; RT 007/RW 003; RT 007/RW 006; RT 007/RW 010; RT 008/RW 003; RT 008/RW 006; RT 008/RW 008; RT 008/RW 010; RT 009/RW 002; RT 009/RW 006; RT 009/RW 010; RT 010/RW 004; RT 011/RW 002; RT 011/RW 003; RT 012/RW 003; RT 013/RW 002; RT 013/RW 003; RT 014/RW 002; RT 014/RW 003; RT 015/RW 002; RT 016/RW 002
+    - Kelurahan WIJAYA KUSUMA: RW 002 (RT 009, 011, 013, 014, 015, 016); RW 003 (RT 001, 002, 003, 004, 005, 006, 007, 008, 011, 012, 013, 014); RW 004 (RT 010); RW 006 (RT 001, 002, 003, 004, 007, 008, 009); RW 008 (RT 001, 004, 005, 008); RW 010 (RT 004, 005, 006, 007, 008, 009)
   - Kecamatan KEBON JERUK
-    - Kelurahan KEDOYA UTARA: RT 001/RW 002; RT 004/RW 002; RT 005/RW 002
+    - Kelurahan KEDOYA UTARA: RW 002 (RT 001, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -17800,10 +17800,10 @@
 - Alamat: JL. EMPANG BAHAGIA IV C, RT 005, RW 010, KEL. JELAMBAR, KEC. GROGOL PETAMBURAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan JELAMBAR: RT 001/RW 011; RT 002/RW 010; RT 003/RW 010; RT 004/RW 010; RT 005/RW 010; RT 005/RW 011; RT 010/RW 006; RT 011/RW 006; RT 012/RW 006
+    - Kelurahan JELAMBAR: RW 006 (RT 010, 011, 012); RW 010 (RT 002, 003, 004, 005); RW 011 (RT 001, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan JELAMBAR: RT 001/RW 010; RT 002/RW 011; RT 004/RW 011; RT 005/RW 009; RT 006/RW 006; RT 006/RW 009; RT 006/RW 010; RT 006/RW 011; RT 007/RW 006; RT 007/RW 009; RT 007/RW 010; RT 008/RW 006; RT 008/RW 009; RT 008/RW 010; RT 009/RW 006; RT 010/RW 007; RT 012/RW 005; RT 012/RW 007; RT 012/RW 009; RT 013/RW 007; RT 015/RW 007
+    - Kelurahan JELAMBAR: RW 005 (RT 012); RW 006 (RT 006, 007, 008, 009); RW 007 (RT 010, 012, 013, 015); RW 009 (RT 005, 006, 007, 008, 012); RW 010 (RT 001, 006, 007, 008); RW 011 (RT 002, 004, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -17825,10 +17825,10 @@
 - Alamat: JL. SEMANGKA NO 1, RT 014, RW 009, KEL. LAGOA, KEC. KOJA, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan LAGOA: RT 001/RW 010; RT 006/RW 014; RT 013/RW 009; RT 014/RW 008; RT 014/RW 009
+    - Kelurahan LAGOA: RW 008 (RT 014); RW 009 (RT 013, 014); RW 010 (RT 001); RW 014 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
-    - Kelurahan LAGOA: RT 001/RW 009; RT 001/RW 013; RT 001/RW 014; RT 001/RW 015; RT 002/RW 009; RT 002/RW 010; RT 002/RW 013; RT 002/RW 014; RT 003/RW 009; RT 003/RW 010; RT 003/RW 013; RT 003/RW 014; RT 004/RW 008; RT 004/RW 009; RT 004/RW 013; RT 004/RW 014; RT 005/RW 009; RT 005/RW 013; RT 005/RW 014; RT 006/RW 008; RT 006/RW 009; RT 007/RW 009; RT 008/RW 008; RT 008/RW 009; RT 008/RW 014; RT 009/RW 009; RT 010/RW 008; RT 010/RW 009; RT 011/RW 009; RT 012/RW 008; RT 012/RW 009; RT 015/RW 008; RT 016/RW 008
+    - Kelurahan LAGOA: RW 008 (RT 004, 006, 008, 010, 012, 015, 016); RW 009 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012); RW 010 (RT 002, 003); RW 013 (RT 001, 002, 003, 004, 005); RW 014 (RT 001, 002, 003, 004, 005, 008); RW 015 (RT 001)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan KALIBARU
@@ -17844,10 +17844,10 @@
 - Alamat: JL. MARGASATWA NO. 8, RT 001, RW 005, KEL. PONDOK LABU, KEC. CILANDAK, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 001/RW 002; RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 004/RW 001; RT 004/RW 005; RT 005/RW 001; RT 007/RW 005; RT 014/RW 001
+    - Kelurahan PONDOK LABU: RW 001 (RT 004, 005, 014); RW 002 (RT 001); RW 005 (RT 001, 002, 003, 004, 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 002/RW 001; RT 002/RW 002; RT 003/RW 001; RT 003/RW 002; RT 004/RW 002; RT 005/RW 005; RT 006/RW 001; RT 006/RW 005; RT 006/RW 006; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 009/RW 002; RT 010/RW 001; RT 010/RW 002; RT 011/RW 001; RT 013/RW 001
+    - Kelurahan PONDOK LABU: RW 001 (RT 002, 003, 006, 007, 008, 009, 010, 011, 013); RW 002 (RT 002, 003, 004, 009, 010); RW 005 (RT 005, 006); RW 006 (RT 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -17858,10 +17858,10 @@
 - Alamat: JL. RS. FATMAWATI KOMP. BNI 1946, RT 004, RW 005, KEL. CILANDAK BARAT, KEC. CILANDAK, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan CILANDAK BARAT: RT 001/RW 005; RT 004/RW 005; RT 005/RW 005; RT 006/RW 005; RT 011/RW 005; RT 015/RW 006; RT 015/RW 010; RT 017/RW 006
+    - Kelurahan CILANDAK BARAT: RW 005 (RT 001, 004, 005, 006, 011); RW 006 (RT 015, 017); RW 010 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
-    - Kelurahan CILANDAK BARAT: RT 001/RW 003; RT 001/RW 006; RT 001/RW 009; RT 001/RW 010; RT 002/RW 005; RT 002/RW 006; RT 002/RW 008; RT 002/RW 010; RT 003/RW 005; RT 003/RW 006; RT 003/RW 008; RT 004/RW 006; RT 004/RW 008; RT 005/RW 003; RT 005/RW 006; RT 005/RW 008; RT 006/RW 006; RT 006/RW 008; RT 006/RW 010; RT 007/RW 003; RT 007/RW 005; RT 007/RW 006; RT 007/RW 008; RT 007/RW 010; RT 008/RW 005; RT 008/RW 006; RT 008/RW 008; RT 008/RW 010; RT 009/RW 005; RT 009/RW 006; RT 009/RW 010; RT 010/RW 005; RT 010/RW 006; RT 011/RW 006; RT 011/RW 010; RT 012/RW 006; RT 012/RW 010; RT 013/RW 006; RT 013/RW 010; RT 014/RW 006; RT 016/RW 006
+    - Kelurahan CILANDAK BARAT: RW 003 (RT 001, 005, 007); RW 005 (RT 002, 003, 007, 008, 009, 010); RW 006 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 016); RW 008 (RT 002, 003, 004, 005, 006, 007, 008); RW 009 (RT 001); RW 010 (RT 001, 002, 006, 007, 008, 009, 011, 012, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -17878,10 +17878,10 @@
 - Alamat: JL. CIPUTAT RAYA POND. PINANG, RT 004, RW 011, KEL. PONDOK PINANG, KEC. KEBAYORAN LAMA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan PONDOK PINANG: RT 001/RW 012; RT 003/RW 011; RT 003/RW 012; RT 004/RW 011; RT 005/RW 011; RT 006/RW 011; RT 009/RW 002; RT 010/RW 002; RT 010/RW 011
+    - Kelurahan PONDOK PINANG: RW 002 (RT 009, 010); RW 011 (RT 003, 004, 005, 006, 010); RW 012 (RT 001, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan PONDOK PINANG: RT 001/RW 006; RT 001/RW 011; RT 002/RW 011; RT 002/RW 012; RT 004/RW 012; RT 006/RW 006; RT 006/RW 012; RT 007/RW 002; RT 007/RW 011; RT 008/RW 002; RT 008/RW 012; RT 011/RW 011
+    - Kelurahan PONDOK PINANG: RW 002 (RT 007, 008); RW 006 (RT 001, 006); RW 011 (RT 001, 002, 007, 011); RW 012 (RT 002, 004, 006, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan GANDARIA SELATAN
@@ -17895,11 +17895,11 @@
 - Alamat: JL. ANGGREK GARUDA, RT 005, RW 002, KEL. KEMANGGISAN, KEC. PAL MERAH, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PAL MERAH
-    - Kelurahan KEMANGGISAN: RT 001/RW 005; RT 002/RW 002; RT 004/RW 002; RT 004/RW 005; RT 005/RW 002; RT 005/RW 005; RT 006/RW 002; RT 006/RW 005; RT 007/RW 005; RT 008/RW 002; RT 010/RW 005; RT 012/RW 002; RT 013/RW 002
+    - Kelurahan KEMANGGISAN: RW 002 (RT 002, 004, 005, 006, 008, 012, 013); RW 005 (RT 001, 004, 005, 006, 007, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PAL MERAH
-    - Kelurahan KEMANGGISAN: RT 001/RW 002; RT 001/RW 006; RT 002/RW 005; RT 002/RW 006; RT 003/RW 002; RT 003/RW 003; RT 003/RW 005; RT 004/RW 003; RT 006/RW 003; RT 007/RW 002; RT 008/RW 003; RT 008/RW 005; RT 009/RW 002; RT 009/RW 003; RT 009/RW 005; RT 010/RW 002; RT 010/RW 003; RT 011/RW 003; RT 011/RW 006; RT 012/RW 003; RT 013/RW 006; RT 014/RW 002
-    - Kelurahan PALMERAH: RT 001/RW 002; RT 002/RW 002; RT 003/RW 002; RT 008/RW 002
+    - Kelurahan KEMANGGISAN: RW 002 (RT 001, 003, 007, 009, 010, 014); RW 003 (RT 003, 004, 006, 008, 009, 010, 011, 012); RW 005 (RT 002, 003, 008, 009); RW 006 (RT 001, 002, 011, 013)
+    - Kelurahan PALMERAH: RW 002 (RT 001, 002, 003, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN SELATAN
@@ -17918,12 +17918,12 @@
 - Alamat: JL. TANJUNG DUREN BARAT IV, RT 007, RW 005, KEL. TANJUNG DUREN UTARA, KEC. GROGOL PETAMBURAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TANJUNG DUREN SELATAN: RT 006/RW 005; RT 013/RW 005; RT 014/RW 005
-    - Kelurahan TANJUNG DUREN UTARA: RT 001/RW 005; RT 001/RW 006; RT 002/RW 005; RT 002/RW 006; RT 003/RW 005; RT 004/RW 005; RT 005/RW 005; RT 006/RW 005; RT 007/RW 005; RT 009/RW 005; RT 010/RW 006; RT 011/RW 006
+    - Kelurahan TANJUNG DUREN SELATAN: RW 005 (RT 006, 013, 014)
+    - Kelurahan TANJUNG DUREN UTARA: RW 005 (RT 001, 002, 003, 004, 005, 006, 007, 009); RW 006 (RT 001, 002, 010, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TANJUNG DUREN SELATAN: RT 001/RW 003; RT 001/RW 004; RT 002/RW 004; RT 003/RW 004; RT 004/RW 004; RT 004/RW 005; RT 005/RW 004; RT 005/RW 005; RT 005/RW 006; RT 006/RW 004; RT 007/RW 004; RT 007/RW 005; RT 008/RW 005; RT 009/RW 005; RT 010/RW 005; RT 011/RW 005; RT 012/RW 004; RT 012/RW 005; RT 016/RW 005
-    - Kelurahan TANJUNG DUREN UTARA: RT 002/RW 007; RT 003/RW 006; RT 004/RW 006; RT 005/RW 004; RT 005/RW 006; RT 006/RW 004; RT 006/RW 006; RT 007/RW 004; RT 007/RW 006; RT 008/RW 004; RT 008/RW 005; RT 008/RW 006; RT 008/RW 007; RT 009/RW 006; RT 009/RW 007; RT 010/RW 005; RT 010/RW 007; RT 011/RW 005; RT 012/RW 005; RT 012/RW 006; RT 013/RW 005; RT 013/RW 006; RT 014/RW 005; RT 014/RW 006; RT 015/RW 006; RT 016/RW 006; RT 017/RW 006
+    - Kelurahan TANJUNG DUREN SELATAN: RW 003 (RT 001); RW 004 (RT 001, 002, 003, 004, 005, 006, 007, 012); RW 005 (RT 004, 005, 007, 008, 009, 010, 011, 012, 016); RW 006 (RT 005)
+    - Kelurahan TANJUNG DUREN UTARA: RW 004 (RT 005, 006, 007, 008); RW 005 (RT 008, 010, 011, 012, 013, 014); RW 006 (RT 003, 004, 005, 006, 007, 008, 009, 012, 013, 014, 015, 016, 017); RW 007 (RT 002, 008, 009, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan GROGOL
@@ -17937,12 +17937,12 @@
 - Alamat: JL. RAYA BEKASI KM. 18, RT 001, RW 011, KEL. JATINEGARA, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan JATINEGARA: RT 001/RW 004; RT 001/RW 011; RT 002/RW 004; RT 002/RW 011; RT 004/RW 011; RT 007/RW 004; RT 008/RW 004
+    - Kelurahan JATINEGARA: RW 004 (RT 001, 002, 007, 008); RW 011 (RT 001, 002, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan JATINEGARA: RT 003/RW 004; RT 003/RW 011; RT 004/RW 004; RT 005/RW 004; RT 005/RW 011; RT 006/RW 004; RT 006/RW 011; RT 009/RW 004; RT 011/RW 003; RT 012/RW 003; RT 013/RW 003; RT 015/RW 003; RT 016/RW 003
+    - Kelurahan JATINEGARA: RW 003 (RT 011, 012, 013, 015, 016); RW 004 (RT 003, 004, 005, 006, 009); RW 011 (RT 003, 005, 006)
   - Kecamatan PULO GADUNG
-    - Kelurahan JATINEGARA KAUM: RT 001/RW 004; RT 002/RW 004; RT 005/RW 004; RT 007/RW 003
+    - Kelurahan JATINEGARA KAUM: RW 003 (RT 007); RW 004 (RT 001, 002, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -17957,10 +17957,10 @@
 - Alamat: JL. RAYA BOGOR KM. 28 PEKAYON, RT 008, RW 007, KEL. PEKAYON, KEC. PASAR REBO, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan PEKAYON: RT 001/RW 003; RT 001/RW 005; RT 004/RW 007; RT 006/RW 002; RT 006/RW 007; RT 008/RW 007; RT 012/RW 005
+    - Kelurahan PEKAYON: RW 002 (RT 006); RW 003 (RT 001); RW 005 (RT 001, 012); RW 007 (RT 004, 006, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
-    - Kelurahan PEKAYON: RT 002/RW 003; RT 002/RW 005; RT 003/RW 003; RT 005/RW 005; RT 005/RW 007; RT 006/RW 005; RT 007/RW 005; RT 007/RW 007; RT 008/RW 005; RT 009/RW 005; RT 009/RW 007; RT 010/RW 005; RT 010/RW 007; RT 011/RW 005
+    - Kelurahan PEKAYON: RW 003 (RT 002, 003); RW 005 (RT 002, 005, 006, 007, 008, 009, 010, 011); RW 007 (RT 005, 007, 009, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIRACAS
     - Kelurahan CIBUBUR
@@ -17972,10 +17972,10 @@
 - Alamat: JL. PERHUBUNGAN XII RAWAMANGUN, RT 001, RW 007, KEL. JATI, KEC. PULO GADUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULOGADUNG
-    - Kelurahan JATI: RT 001/RW 007; RT 001/RW 011; RT 006/RW 011; RT 007/RW 011; RT 008/RW 011; RT 009/RW 011; RT 010/RW 007; RT 015/RW 007; RT 016/RW 005; RT 016/RW 007; RT 017/RW 007
+    - Kelurahan JATI: RW 005 (RT 016); RW 007 (RT 001, 010, 015, 016, 017); RW 011 (RT 001, 006, 007, 008, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
-    - Kelurahan JATI: RT 001/RW 009; RT 002/RW 009; RT 002/RW 011; RT 004/RW 011; RT 005/RW 011; RT 012/RW 005; RT 013/RW 005; RT 014/RW 007; RT 017/RW 005
+    - Kelurahan JATI: RW 005 (RT 012, 013, 017); RW 007 (RT 014); RW 009 (RT 001, 002); RW 011 (RT 002, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -17991,15 +17991,15 @@
 - Alamat: JL. GUNUNG SAHARI RAYA NO. 81, RT 010, RW 007, KEL. GUNUNG SAHARI SELATAN, KEC. KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan GUNUNG SAHARI SELATAN: RT 007/RW 007; RT 009/RW 007; RT 010/RW 007; RT 011/RW 007
+    - Kelurahan GUNUNG SAHARI SELATAN: RW 007 (RT 007, 009, 010, 011)
   - Kecamatan SAWAH BESAR
-    - Kelurahan PASAR BARU: RT 004/RW 008; RT 005/RW 008
+    - Kelurahan PASAR BARU: RW 008 (RT 004, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
-    - Kelurahan GUNUNG SAHARI SELATAN: RT 001/RW 007; RT 001/RW 008; RT 002/RW 008; RT 003/RW 001; RT 003/RW 008; RT 004/RW 001; RT 004/RW 008; RT 005/RW 007; RT 005/RW 008; RT 006/RW 007; RT 006/RW 008; RT 007/RW 008; RT 008/RW 007; RT 008/RW 008; RT 009/RW 008; RT 010/RW 008; RT 011/RW 008; RT 012/RW 007; RT 012/RW 008; RT 013/RW 008; RT 014/RW 001; RT 014/RW 007; RT 014/RW 008; RT 015/RW 001
-    - Kelurahan KEMAYORAN: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 004/RW 001; RT 005/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 010/RW 001; RT 011/RW 001; RT 012/RW 001
+    - Kelurahan GUNUNG SAHARI SELATAN: RW 001 (RT 003, 004, 014, 015); RW 007 (RT 001, 005, 006, 008, 012, 014); RW 008 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014)
+    - Kelurahan KEMAYORAN: RW 001 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012)
   - Kecamatan SAWAH BESAR
-    - Kelurahan PASAR BARU: RT 001/RW 008; RT 003/RW 008; RT 006/RW 008
+    - Kelurahan PASAR BARU: RW 008 (RT 001, 003, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMAYORAN
     - Kelurahan GUNUNG SAHARI SELATAN
@@ -18018,10 +18018,10 @@
 - Alamat: JL. TANAH ABANG V/29, RT 010, RW 002, KEL. PETOJO SELATAN, KEC. GAMBIR, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan PETOJO SELATAN: RT 008/RW 002; RT 009/RW 002; RT 010/RW 002; RT 011/RW 002; RT 012/RW 002; RT 012/RW 004; RT 013/RW 004; RT 014/RW 004
+    - Kelurahan PETOJO SELATAN: RW 002 (RT 008, 009, 010, 011, 012); RW 004 (RT 012, 013, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
-    - Kelurahan PETOJO SELATAN: RT 001/RW 002; RT 002/RW 002; RT 002/RW 004; RT 003/RW 002; RT 004/RW 002; RT 004/RW 003; RT 004/RW 004; RT 005/RW 002; RT 005/RW 004; RT 006/RW 004; RT 007/RW 002; RT 007/RW 004; RT 008/RW 004; RT 009/RW 004; RT 010/RW 004; RT 011/RW 004; RT 013/RW 002; RT 014/RW 002; RT 015/RW 002; RT 015/RW 004
+    - Kelurahan PETOJO SELATAN: RW 002 (RT 001, 002, 003, 004, 005, 007, 013, 014, 015); RW 003 (RT 004); RW 004 (RT 002, 004, 005, 006, 007, 008, 009, 010, 011, 015)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -18041,12 +18041,12 @@
 - Alamat: JL. GANGGENG III NO. 3, RT 004, RW 001, KEL. SUNGAI BAMBU, KEC. TANJUNG PRIOK, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNGAI BAMBU: RT 004/RW 001; RT 006/RW 001; RT 007/RW 001; RT 009/RW 001; RT 012/RW 001; RT 013/RW 001
+    - Kelurahan SUNGAI BAMBU: RW 001 (RT 004, 006, 007, 009, 012, 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNGAI BAMBU: RT 001/RW 001; RT 001/RW 003; RT 002/RW 001; RT 002/RW 007; RT 003/RW 001; RT 003/RW 007; RT 004/RW 007; RT 005/RW 001; RT 005/RW 007; RT 008/RW 001; RT 009/RW 002; RT 010/RW 001; RT 010/RW 002; RT 011/RW 001; RT 014/RW 001; RT 015/RW 001
-    - Kelurahan TANJUNG PRIOK: RT 001/RW 009; RT 001/RW 010; RT 002/RW 008; RT 003/RW 008; RT 004/RW 008
-    - Kelurahan WARAKAS: RT 001/RW 001; RT 001/RW 002; RT 001/RW 003; RT 002/RW 001; RT 002/RW 002; RT 002/RW 003; RT 003/RW 001; RT 003/RW 002; RT 005/RW 002; RT 008/RW 002; RT 009/RW 002
+    - Kelurahan SUNGAI BAMBU: RW 001 (RT 001, 002, 003, 005, 008, 010, 011, 014, 015); RW 002 (RT 009, 010); RW 003 (RT 001); RW 007 (RT 002, 003, 004, 005)
+    - Kelurahan TANJUNG PRIOK: RW 008 (RT 002, 003, 004); RW 009 (RT 001); RW 010 (RT 001)
+    - Kelurahan WARAKAS: RW 001 (RT 001, 002, 003); RW 002 (RT 001, 002, 003, 005, 008, 009); RW 003 (RT 001, 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KOJA
     - Kelurahan RAWA BADAK UTARA
@@ -18061,10 +18061,10 @@
 - Alamat: JL. MARGASATWA KOMPLEK TIMAH PONDOK LABU, RT 001, RW 003, KEL. PONDOK LABU, KEC. CILANDAK, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 001/RW 003; RT 002/RW 003; RT 004/RW 003; RT 005/RW 003; RT 008/RW 002; RT 010/RW 002; RT 011/RW 002
+    - Kelurahan PONDOK LABU: RW 002 (RT 008, 010, 011); RW 003 (RT 001, 002, 004, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 003/RW 003; RT 006/RW 002; RT 006/RW 003; RT 007/RW 002; RT 009/RW 002
+    - Kelurahan PONDOK LABU: RW 002 (RT 006, 007, 009); RW 003 (RT 003, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -18075,11 +18075,11 @@
 - Alamat: JL. GALUR SARI RAYA, RT 015 & RT 014, RW 001, KEL. UTAN KAYU SELATAN, KEC. MATRAMAN, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU SELATAN: RT 001/RW 002; RT 001/RW 012; RT 002/RW 012; RT 006/RW 002; RT 007/RW 002; RT 008/RW 002; RT 009/RW 001; RT 010/RW 001; RT 011/RW 001; RT 012/RW 001; RT 013/RW 001; RT 014/RW 001; RT 015/RW 001
+    - Kelurahan UTAN KAYU SELATAN: RW 001 (RT 009, 010, 011, 012, 013, 014, 015); RW 002 (RT 001, 006, 007, 008); RW 012 (RT 001, 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU SELATAN: RT 001/RW 001; RT 001/RW 005; RT 001/RW 013; RT 002/RW 001; RT 002/RW 013; RT 003/RW 001; RT 003/RW 012; RT 003/RW 013; RT 003/RW 014; RT 004/RW 001; RT 004/RW 002; RT 004/RW 012; RT 004/RW 013; RT 004/RW 014; RT 005/RW 001; RT 005/RW 002; RT 005/RW 014; RT 006/RW 001; RT 006/RW 013; RT 006/RW 014; RT 007/RW 001; RT 007/RW 013; RT 007/RW 014; RT 008/RW 001; RT 010/RW 003; RT 011/RW 003; RT 012/RW 003; RT 013/RW 012; RT 015/RW 012; RT 016/RW 001
-    - Kelurahan UTAN KAYU UTARA: RT 006/RW 007; RT 010/RW 007; RT 012/RW 007; RT 014/RW 007
+    - Kelurahan UTAN KAYU SELATAN: RW 001 (RT 001, 002, 003, 004, 005, 006, 007, 008, 016); RW 002 (RT 004, 005); RW 003 (RT 010, 011, 012); RW 005 (RT 001); RW 012 (RT 003, 004, 013, 015); RW 013 (RT 001, 002, 003, 004, 006, 007); RW 014 (RT 003, 004, 005, 006, 007)
+    - Kelurahan UTAN KAYU UTARA: RW 007 (RT 006, 010, 012, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MATRAMAN
     - Kelurahan KAYU MANIS
@@ -18095,10 +18095,10 @@
 - Alamat: JL. RAYA DEPOK LT AGUNG, RT 002, RW 008, KEL. LENTENG AGUNG, KEC. JAGAKARSA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan LENTENG AGUNG: RT 001/RW 008; RT 002/RW 008; RT 003/RW 008; RT 004/RW 008; RT 005/RW 008; RT 010/RW 008
+    - Kelurahan LENTENG AGUNG: RW 008 (RT 001, 002, 003, 004, 005, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
-    - Kelurahan LENTENG AGUNG: RT 001/RW 007; RT 002/RW 007; RT 003/RW 007; RT 004/RW 007; RT 005/RW 007; RT 006/RW 007; RT 007/RW 008; RT 008/RW 008; RT 011/RW 008; RT 014/RW 007
+    - Kelurahan LENTENG AGUNG: RW 007 (RT 001, 002, 003, 004, 005, 006, 014); RW 008 (RT 007, 008, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -18114,12 +18114,12 @@
 - Alamat: JL. SIRAP, RT 003, RW 001, KEL. KAYU PUTIH, KEC. PULO GADUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULOGADUNG
-    - Kelurahan KAYU PUTIH: RT 001/RW 001; RT 001/RW 003; RT 003/RW 001; RT 003/RW 002; RT 003/RW 003; RT 003/RW 016; RT 004/RW 002; RT 004/RW 016; RT 007/RW 002; RT 008/RW 002; RT 013/RW 002; RT 017/RW 003
+    - Kelurahan KAYU PUTIH: RW 001 (RT 001, 003); RW 002 (RT 003, 004, 007, 008, 013); RW 003 (RT 001, 003, 017); RW 016 (RT 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
-    - Kelurahan KAYU PUTIH: RT 001/RW 002; RT 001/RW 004; RT 001/RW 011; RT 001/RW 017; RT 002/RW 001; RT 002/RW 002; RT 002/RW 003; RT 002/RW 004; RT 002/RW 011; RT 002/RW 017; RT 003/RW 004; RT 003/RW 011; RT 003/RW 017; RT 004/RW 001; RT 004/RW 003; RT 004/RW 017; RT 005/RW 002; RT 005/RW 003; RT 005/RW 017; RT 006/RW 002; RT 006/RW 003; RT 006/RW 017; RT 007/RW 003; RT 007/RW 017; RT 008/RW 003; RT 008/RW 017; RT 009/RW 002; RT 009/RW 003; RT 009/RW 017; RT 010/RW 002; RT 010/RW 003; RT 010/RW 010; RT 010/RW 017; RT 011/RW 002; RT 011/RW 003; RT 011/RW 011; RT 012/RW 002; RT 012/RW 003; RT 012/RW 011; RT 013/RW 003; RT 014/RW 003; RT 015/RW 003; RT 016/RW 003
-    - Kelurahan PULOGADUNG: RT 005/RW 006; RT 006/RW 006; RT 009/RW 006; RT 009/RW 007
-    - Kelurahan RAWAMANGUN: RT 001/RW 005; RT 001/RW 006; RT 002/RW 004; RT 003/RW 006; RT 004/RW 006; RT 005/RW 006; RT 013/RW 004
+    - Kelurahan KAYU PUTIH: RW 001 (RT 002, 004); RW 002 (RT 001, 002, 005, 006, 009, 010, 011, 012); RW 003 (RT 002, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016); RW 004 (RT 001, 002, 003); RW 010 (RT 010); RW 011 (RT 001, 002, 003, 011, 012); RW 017 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010)
+    - Kelurahan PULOGADUNG: RW 006 (RT 005, 006, 009); RW 007 (RT 009)
+    - Kelurahan RAWAMANGUN: RW 004 (RT 002, 013); RW 005 (RT 001); RW 006 (RT 001, 003, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH TIMUR
@@ -18136,10 +18136,10 @@
 - Alamat: JL. OBSIDIAN NO. 1, RT 003, RW 008, KEL. KAPUK, KEC. CENGKARENG, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KAPUK: RT 002/RW 008; RT 003/RW 008; RT 004/RW 008; RT 008/RW 008
+    - Kelurahan KAPUK: RW 008 (RT 002, 003, 004, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
-    - Kelurahan KAPUK: RT 001/RW 008; RT 005/RW 008; RT 006/RW 008; RT 007/RW 008; RT 013/RW 016; RT 014/RW 016
+    - Kelurahan KAPUK: RW 008 (RT 001, 005, 006, 007); RW 016 (RT 013, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -18153,10 +18153,10 @@
 - Alamat: JL. PAL MERAH UTARA II NO. 210 C, RT 008, RW 016, KEL. PAL MERAH, KEC. PAL MERAH, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PAL MERAH
-    - Kelurahan PALMERAH: RT 004/RW 003; RT 005/RW 003; RT 005/RW 006; RT 005/RW 016; RT 006/RW 006; RT 007/RW 006; RT 007/RW 016; RT 008/RW 006; RT 008/RW 016; RT 009/RW 003; RT 009/RW 016; RT 011/RW 016
+    - Kelurahan PALMERAH: RW 003 (RT 004, 005, 009); RW 006 (RT 005, 006, 007, 008); RW 016 (RT 005, 007, 008, 009, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PAL MERAH
-    - Kelurahan PALMERAH: RT 001/RW 003; RT 001/RW 006; RT 001/RW 008; RT 001/RW 016; RT 002/RW 003; RT 002/RW 005; RT 002/RW 006; RT 002/RW 016; RT 003/RW 003; RT 003/RW 005; RT 003/RW 006; RT 003/RW 016; RT 004/RW 005; RT 004/RW 006; RT 004/RW 016; RT 005/RW 005; RT 006/RW 003; RT 006/RW 005; RT 006/RW 016; RT 007/RW 003; RT 007/RW 005; RT 008/RW 003; RT 008/RW 005; RT 009/RW 006; RT 010/RW 003; RT 010/RW 006; RT 010/RW 016; RT 011/RW 003; RT 011/RW 006; RT 012/RW 003; RT 012/RW 006; RT 012/RW 016; RT 013/RW 003; RT 013/RW 006; RT 013/RW 008; RT 014/RW 006; RT 014/RW 008; RT 015/RW 006; RT 015/RW 008; RT 016/RW 006
+    - Kelurahan PALMERAH: RW 003 (RT 001, 002, 003, 006, 007, 008, 010, 011, 012, 013); RW 005 (RT 002, 003, 004, 005, 006, 007, 008); RW 006 (RT 001, 002, 003, 004, 009, 010, 011, 012, 013, 014, 015, 016); RW 008 (RT 001, 013, 014, 015); RW 016 (RT 001, 002, 003, 004, 006, 010, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -18172,14 +18172,14 @@
 - Alamat: JL. SEDERHANA RAYA-CIJANTUNG II, RT 002, RW 006, KEL. GEDONG, KEC. PASAR REBO, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan TANJUNG BARAT: RT 003/RW 003; RT 004/RW 003
+    - Kelurahan TANJUNG BARAT: RW 003 (RT 003, 004)
   - Kecamatan PASAR REBO
-    - Kelurahan GEDONG: RT 001/RW 006; RT 002/RW 006; RT 003/RW 006; RT 004/RW 006; RT 005/RW 004
+    - Kelurahan GEDONG: RW 004 (RT 005); RW 006 (RT 001, 002, 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
-    - Kelurahan TANJUNG BARAT: RT 001/RW 003; RT 002/RW 003; RT 006/RW 003; RT 007/RW 003
+    - Kelurahan TANJUNG BARAT: RW 003 (RT 001, 002, 006, 007)
   - Kecamatan PASAR REBO
-    - Kelurahan GEDONG: RT 001/RW 004; RT 002/RW 004; RT 002/RW 011; RT 003/RW 004; RT 004/RW 004; RT 004/RW 011; RT 005/RW 006; RT 005/RW 011; RT 006/RW 004; RT 006/RW 006; RT 007/RW 004; RT 007/RW 006; RT 008/RW 004; RT 009/RW 004; RT 010/RW 004; RT 011/RW 004; RT 012/RW 004; RT 013/RW 004; RT 014/RW 004; RT 015/RW 004; RT 016/RW 004; RT 017/RW 004
+    - Kelurahan GEDONG: RW 004 (RT 001, 002, 003, 004, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017); RW 006 (RT 005, 006, 007); RW 011 (RT 002, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan TANJUNG BARAT
@@ -18193,12 +18193,12 @@
 - Alamat: JL. RA. FADILLAH KOMPLEK KOPASSUS, RT 005, RW 005, KEL. CIJANTUNG, KEC. PASAR REBO, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 001/RW 001
-    - Kelurahan CIJANTUNG: RT 001/RW 002; RT 001/RW 005; RT 002/RW 002; RT 003/RW 002; RT 004/RW 002; RT 004/RW 005; RT 005/RW 002; RT 005/RW 005; RT 006/RW 002
+    - Kelurahan BARU: RW 001 (RT 001)
+    - Kelurahan CIJANTUNG: RW 002 (RT 001, 002, 003, 004, 005, 006); RW 005 (RT 001, 004, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 007/RW 008; RT 008/RW 001; RT 008/RW 008; RT 013/RW 008
-    - Kelurahan CIJANTUNG: RT 002/RW 003; RT 003/RW 003; RT 003/RW 005; RT 004/RW 003; RT 007/RW 002; RT 008/RW 002
+    - Kelurahan BARU: RW 001 (RT 008); RW 008 (RT 007, 008, 013)
+    - Kelurahan CIJANTUNG: RW 002 (RT 007, 008); RW 003 (RT 002, 003, 004); RW 005 (RT 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan TANJUNG BARAT
@@ -18210,12 +18210,12 @@
 - Alamat: JL. MAMPANG PRAPATAN XIII, RT 005, RW 003, KEL. TEGAL PARANG, KEC. MAMPANG PRAPATAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan PELA MAMPANG: RT 010/RW 006
-    - Kelurahan TEGAL PARANG: RT 003/RW 003; RT 004/RW 003; RT 005/RW 003; RT 006/RW 003; RT 007/RW 001; RT 008/RW 001; RT 009/RW 003
+    - Kelurahan PELA MAMPANG: RW 006 (RT 010)
+    - Kelurahan TEGAL PARANG: RW 001 (RT 007, 008); RW 003 (RT 003, 004, 005, 006, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan PELA MAMPANG: RT 008/RW 010; RT 009/RW 006; RT 011/RW 012
-    - Kelurahan TEGAL PARANG: RT 001/RW 003; RT 002/RW 003; RT 007/RW 003; RT 008/RW 003
+    - Kelurahan PELA MAMPANG: RW 006 (RT 009); RW 010 (RT 008); RW 012 (RT 011)
+    - Kelurahan TEGAL PARANG: RW 003 (RT 001, 002, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -18231,12 +18231,12 @@
 - Alamat: JL. RAYA KEMBANGAN SELATAN NO. 54, RT 007, RW 001, KEL. KEMBANGAN SELATAN, KEC. KEMBANGAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan KEMBANGAN SELATAN: RT 004/RW 001; RT 005/RW 001; RT 007/RW 001; RT 008/RW 001
-    - Kelurahan MERUYA UTARA: RT 001/RW 011
+    - Kelurahan KEMBANGAN SELATAN: RW 001 (RT 004, 005, 007, 008)
+    - Kelurahan MERUYA UTARA: RW 011 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
-    - Kelurahan KEMBANGAN SELATAN: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 006/RW 001; RT 009/RW 001; RT 010/RW 001
-    - Kelurahan MERUYA UTARA: RT 002/RW 011; RT 003/RW 011; RT 004/RW 001; RT 004/RW 011; RT 005/RW 001; RT 006/RW 011
+    - Kelurahan KEMBANGAN SELATAN: RW 001 (RT 001, 002, 003, 006, 009, 010)
+    - Kelurahan MERUYA UTARA: RW 001 (RT 004, 005); RW 011 (RT 002, 003, 004, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan DURI KOSAMBI
@@ -18250,13 +18250,13 @@
 - Alamat: JL.H. BAPING NO.28, RT 017, RW 009, KEL. CIRACAS, KEC. CIRACAS, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 001/RW 009; RT 013/RW 010; RT 014/RW 010; RT 016/RW 009; RT 017/RW 009
-    - Kelurahan RAMBUTAN: RT 008/RW 004; RT 013/RW 004
-    - Kelurahan SUSUKAN: RT 010/RW 006; RT 012/RW 004
+    - Kelurahan CIRACAS: RW 009 (RT 001, 016, 017); RW 010 (RT 013, 014)
+    - Kelurahan RAMBUTAN: RW 004 (RT 008, 013)
+    - Kelurahan SUSUKAN: RW 004 (RT 012); RW 006 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 002/RW 009; RT 003/RW 009; RT 004/RW 009; RT 011/RW 010
-    - Kelurahan SUSUKAN: RT 001/RW 006; RT 010/RW 007; RT 014/RW 004; RT 016/RW 004; RT 017/RW 004
+    - Kelurahan CIRACAS: RW 009 (RT 002, 003, 004); RW 010 (RT 011)
+    - Kelurahan SUSUKAN: RW 004 (RT 014, 016, 017); RW 006 (RT 001); RW 007 (RT 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -18270,13 +18270,13 @@
 - Alamat: JL. PEJATEN RAYA, RT 006, RW 006, KEL. PEJATEN BARAT, KEC. PASAR MINGGU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan JATI PADANG: RT 007/RW 010; RT 008/RW 010
-    - Kelurahan PEJATEN BARAT: RT 005/RW 006; RT 006/RW 006; RT 006/RW 007; RT 007/RW 006
+    - Kelurahan JATI PADANG: RW 010 (RT 007, 008)
+    - Kelurahan PEJATEN BARAT: RW 006 (RT 005, 006, 007); RW 007 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR MINGGU
-    - Kelurahan JATI PADANG: RT 001/RW 010; RT 002/RW 010; RT 003/RW 001; RT 003/RW 010; RT 004/RW 010; RT 005/RW 001; RT 005/RW 010; RT 006/RW 010; RT 009/RW 010
-    - Kelurahan PASAR MINGGU: RT 006/RW 002; RT 007/RW 002; RT 008/RW 002; RT 009/RW 002; RT 010/RW 002; RT 014/RW 003
-    - Kelurahan PEJATEN BARAT: RT 001/RW 006; RT 002/RW 006; RT 003/RW 006; RT 003/RW 007; RT 004/RW 006; RT 004/RW 007; RT 005/RW 007; RT 006/RW 005; RT 007/RW 007; RT 008/RW 005; RT 008/RW 007; RT 009/RW 007
+    - Kelurahan JATI PADANG: RW 001 (RT 003, 005); RW 010 (RT 001, 002, 003, 004, 005, 006, 009)
+    - Kelurahan PASAR MINGGU: RW 002 (RT 006, 007, 008, 009, 010); RW 003 (RT 014)
+    - Kelurahan PEJATEN BARAT: RW 005 (RT 006, 008); RW 006 (RT 001, 002, 003, 004); RW 007 (RT 003, 004, 005, 007, 008, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PANCORAN
     - Kelurahan KALIBATA
@@ -18289,10 +18289,10 @@
 - Alamat: JL. FLAMBOYAN NO. 53, RT 004, RW 008, KEL. CENGKARENG BARAT, KEC. CENGKARENG, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 001/RW 010; RT 001/RW 014; RT 002/RW 008; RT 002/RW 014; RT 004/RW 008; RT 006/RW 008; RT 006/RW 014; RT 010/RW 008; RT 012/RW 010; RT 013/RW 008
+    - Kelurahan CENGKARENG BARAT: RW 008 (RT 002, 004, 006, 010, 013); RW 010 (RT 001, 012); RW 014 (RT 001, 002, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 001/RW 011; RT 002/RW 011; RT 005/RW 008; RT 007/RW 008; RT 009/RW 008; RT 011/RW 010; RT 012/RW 008; RT 014/RW 010; RT 015/RW 010; RT 016/RW 010; RT 017/RW 010; RT 018/RW 010; RT 019/RW 010
+    - Kelurahan CENGKARENG BARAT: RW 008 (RT 005, 007, 009, 012); RW 010 (RT 011, 014, 015, 016, 017, 018, 019); RW 011 (RT 001, 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -18305,10 +18305,10 @@
 - Alamat: JL. KESEHATAN NO.105, RT 001, RW 006, KEL. CIPINANG MELAYU, KEC. MAKASAR, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan CIPINANG MELAYU: RT 001/RW 006; RT 002/RW 006; RT 003/RW 008; RT 007/RW 007; RT 008/RW 008
+    - Kelurahan CIPINANG MELAYU: RW 006 (RT 001, 002); RW 007 (RT 007); RW 008 (RT 003, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAKASAR
-    - Kelurahan CIPINANG MELAYU: RT 001/RW 008; RT 002/RW 007; RT 002/RW 008; RT 003/RW 006; RT 003/RW 007; RT 004/RW 006; RT 004/RW 007; RT 004/RW 008; RT 005/RW 006; RT 005/RW 007; RT 005/RW 008; RT 006/RW 006; RT 006/RW 007; RT 006/RW 008; RT 007/RW 006; RT 007/RW 008; RT 008/RW 006; RT 009/RW 006; RT 009/RW 007; RT 009/RW 008; RT 010/RW 006; RT 010/RW 007; RT 011/RW 006; RT 011/RW 007
+    - Kelurahan CIPINANG MELAYU: RW 006 (RT 003, 004, 005, 006, 007, 008, 009, 010, 011); RW 007 (RT 002, 003, 004, 005, 006, 009, 010, 011); RW 008 (RT 001, 002, 004, 005, 006, 007, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -18322,10 +18322,10 @@
 - Alamat: JL. KEMAJUAN, RT 006, RW 004, KEL. PETUKANGAN SELATAN, KEC. PESANGGRAHAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN SELATAN: RT 006/RW 004; RT 006/RW 005; RT 007/RW 002; RT 007/RW 004; RT 008/RW 004; RT 009/RW 004; RT 011/RW 005
+    - Kelurahan PETUKANGAN SELATAN: RW 002 (RT 007); RW 004 (RT 006, 007, 008, 009); RW 005 (RT 006, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN SELATAN: RT 002/RW 003; RT 004/RW 004; RT 004/RW 006; RT 005/RW 001; RT 005/RW 003; RT 005/RW 004; RT 007/RW 003; RT 007/RW 005; RT 008/RW 002; RT 008/RW 003; RT 008/RW 005; RT 008/RW 007; RT 009/RW 001; RT 010/RW 003; RT 010/RW 006; RT 015/RW 002
+    - Kelurahan PETUKANGAN SELATAN: RW 001 (RT 005, 009); RW 002 (RT 008, 015); RW 003 (RT 002, 005, 007, 008, 010); RW 004 (RT 004, 005); RW 005 (RT 007, 008); RW 006 (RT 004, 010); RW 007 (RT 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PESANGGRAHAN
     - Kelurahan PESANGGRAHAN
@@ -18336,16 +18336,16 @@
 - Alamat: JL. BHAKTI VII/2, RT 001, RW 009, KEL. KEMANGGISAN, KEC. PAL MERAH, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 001/RW 005; RT 015/RW 005
+    - Kelurahan KEBON JERUK: RW 005 (RT 001, 015)
   - Kecamatan PAL MERAH
-    - Kelurahan KEMANGGISAN: RT 001/RW 009; RT 002/RW 009; RT 003/RW 009; RT 004/RW 009; RT 007/RW 009
-    - Kelurahan PALMERAH: RT 005/RW 013
+    - Kelurahan KEMANGGISAN: RW 009 (RT 001, 002, 003, 004, 007)
+    - Kelurahan PALMERAH: RW 013 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 002/RW 005; RT 003/RW 005; RT 004/RW 012; RT 005/RW 005; RT 006/RW 005; RT 011/RW 004; RT 011/RW 005; RT 015/RW 004; RT 016/RW 004
+    - Kelurahan KEBON JERUK: RW 004 (RT 011, 015, 016); RW 005 (RT 002, 003, 005, 006, 011); RW 012 (RT 004)
   - Kecamatan PAL MERAH
-    - Kelurahan KEMANGGISAN: RT 002/RW 007; RT 003/RW 007; RT 004/RW 007; RT 005/RW 007; RT 005/RW 009; RT 006/RW 007; RT 006/RW 009; RT 007/RW 007; RT 008/RW 009; RT 009/RW 009; RT 012/RW 009
-    - Kelurahan PALMERAH: RT 003/RW 013; RT 004/RW 013; RT 006/RW 013; RT 007/RW 013; RT 008/RW 013
+    - Kelurahan KEMANGGISAN: RW 007 (RT 002, 003, 004, 005, 006, 007); RW 009 (RT 005, 006, 008, 009, 012)
+    - Kelurahan PALMERAH: RW 013 (RT 003, 004, 006, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN SELATAN
@@ -18361,10 +18361,10 @@
 - Alamat: JL. A1 TELUK GONG, RT 012, RW 008, KEL. PEJAGALAN, KEC. PENJARINGAN, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan PEJAGALAN: RT 007/RW 008; RT 008/RW 010; RT 011/RW 008; RT 012/RW 008; RT 013/RW 008; RT 013/RW 010; RT 014/RW 010; RT 015/RW 008
+    - Kelurahan PEJAGALAN: RW 008 (RT 007, 011, 012, 013, 015); RW 010 (RT 008, 013, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PENJARINGAN
-    - Kelurahan PEJAGALAN: RT 001/RW 008; RT 001/RW 010; RT 001/RW 012; RT 002/RW 008; RT 002/RW 010; RT 002/RW 012; RT 003/RW 008; RT 003/RW 010; RT 003/RW 012; RT 004/RW 008; RT 004/RW 010; RT 005/RW 008; RT 005/RW 009; RT 005/RW 010; RT 006/RW 007; RT 006/RW 008; RT 006/RW 009; RT 006/RW 010; RT 007/RW 009; RT 007/RW 010; RT 007/RW 012; RT 008/RW 008; RT 008/RW 009; RT 008/RW 012; RT 009/RW 007; RT 009/RW 008; RT 009/RW 009; RT 009/RW 010; RT 010/RW 007; RT 010/RW 008; RT 010/RW 009; RT 010/RW 010; RT 011/RW 010; RT 012/RW 009; RT 012/RW 010; RT 014/RW 008
+    - Kelurahan PEJAGALAN: RW 007 (RT 006, 009, 010); RW 008 (RT 001, 002, 003, 004, 005, 006, 008, 009, 010, 014); RW 009 (RT 005, 006, 007, 008, 009, 010, 012); RW 010 (RT 001, 002, 003, 004, 005, 006, 007, 009, 010, 011, 012); RW 012 (RT 001, 002, 003, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -18385,10 +18385,10 @@
 - Alamat: JL. SMPN 113, RT 005, RW 004, KEL. ANCOL, KEC. PADEMANGAN, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan ANCOL: RT 001/RW 004; RT 002/RW 004; RT 003/RW 004; RT 004/RW 004; RT 005/RW 004; RT 006/RW 004; RT 009/RW 004
+    - Kelurahan ANCOL: RW 004 (RT 001, 002, 003, 004, 005, 006, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
-    - Kelurahan ANCOL: RT 005/RW 002; RT 007/RW 002; RT 009/RW 002
+    - Kelurahan ANCOL: RW 002 (RT 005, 007, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PADEMANGAN
     - Kelurahan ANCOL
@@ -18401,12 +18401,12 @@
 - Alamat: JL. H.M DARPI NO. 2, PLUMPANG SEMPER, RT 001, RW 013, KEL. TUGU UTARA, KEC. KOJA, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU SELATAN: RT 001/RW 004; RT 002/RW 004; RT 003/RW 004; RT 004/RW 003; RT 005/RW 003
-    - Kelurahan TUGU UTARA: RT 001/RW 013; RT 002/RW 013; RT 004/RW 016; RT 006/RW 016; RT 011/RW 002
+    - Kelurahan TUGU SELATAN: RW 003 (RT 004, 005); RW 004 (RT 001, 002, 003)
+    - Kelurahan TUGU UTARA: RW 002 (RT 011); RW 013 (RT 001, 002); RW 016 (RT 004, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
-    - Kelurahan TUGU SELATAN: RT 010/RW 002
-    - Kelurahan TUGU UTARA: RT 001/RW 016; RT 002/RW 016; RT 003/RW 013; RT 003/RW 016; RT 004/RW 013; RT 005/RW 013; RT 005/RW 016; RT 006/RW 013; RT 007/RW 013; RT 007/RW 016; RT 008/RW 016; RT 009/RW 016; RT 010/RW 016; RT 012/RW 002; RT 013/RW 002
+    - Kelurahan TUGU SELATAN: RW 002 (RT 010)
+    - Kelurahan TUGU UTARA: RW 002 (RT 012, 013); RW 013 (RT 003, 004, 005, 006, 007); RW 016 (RT 001, 002, 003, 005, 007, 008, 009, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -18418,13 +18418,13 @@
 - Alamat: JL. K.H ABDULLAH SYAFEI, RT 008, RW 002, KEL. TEBET TIMUR, KEC. TEBET, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan BUKIT DURI: RT 012/RW 005; RT 013/RW 005; RT 015/RW 005
-    - Kelurahan TEBET TIMUR: RT 001/RW 010; RT 002/RW 010; RT 003/RW 010; RT 004/RW 010; RT 005/RW 001; RT 005/RW 002; RT 007/RW 002; RT 008/RW 002
+    - Kelurahan BUKIT DURI: RW 005 (RT 012, 013, 015)
+    - Kelurahan TEBET TIMUR: RW 001 (RT 005); RW 002 (RT 005, 007, 008); RW 010 (RT 001, 002, 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TEBET
-    - Kelurahan BUKIT DURI: RT 004/RW 006; RT 005/RW 006; RT 006/RW 005; RT 006/RW 006; RT 007/RW 006; RT 008/RW 006; RT 009/RW 005; RT 009/RW 006; RT 010/RW 005; RT 011/RW 005; RT 012/RW 007; RT 014/RW 005; RT 016/RW 005; RT 018/RW 005
-    - Kelurahan TEBET BARAT: RT 012/RW 001; RT 015/RW 001; RT 016/RW 001; RT 017/RW 001; RT 018/RW 001; RT 019/RW 001
-    - Kelurahan TEBET TIMUR: RT 001/RW 002; RT 002/RW 001; RT 002/RW 002; RT 003/RW 001; RT 003/RW 002; RT 004/RW 001; RT 004/RW 002; RT 005/RW 010; RT 006/RW 001; RT 006/RW 002; RT 006/RW 010; RT 007/RW 001; RT 007/RW 010; RT 008/RW 001; RT 009/RW 001; RT 010/RW 001
+    - Kelurahan BUKIT DURI: RW 005 (RT 006, 009, 010, 011, 014, 016, 018); RW 006 (RT 004, 005, 006, 007, 008, 009); RW 007 (RT 012)
+    - Kelurahan TEBET BARAT: RW 001 (RT 012, 015, 016, 017, 018, 019)
+    - Kelurahan TEBET TIMUR: RW 001 (RT 002, 003, 004, 006, 007, 008, 009, 010); RW 002 (RT 001, 002, 003, 004, 006); RW 010 (RT 005, 006, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan KAMPUNG MELAYU
@@ -18443,11 +18443,11 @@
 - Alamat: JL.SUNTER PERMAI RAYA, RT 015, RW 006, KEL. SUNTER AGUNG, KEC. TANJUNG PRIOK, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan PAPANGGO: RT 001/RW 012; RT 002/RW 012
-    - Kelurahan SUNTER AGUNG: RT 003/RW 006; RT 006/RW 006; RT 009/RW 006; RT 010/RW 006; RT 012/RW 006; RT 013/RW 006; RT 015/RW 006
+    - Kelurahan PAPANGGO: RW 012 (RT 001, 002)
+    - Kelurahan SUNTER AGUNG: RW 006 (RT 003, 006, 009, 010, 012, 013, 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 001/RW 006; RT 001/RW 007; RT 002/RW 006; RT 002/RW 007; RT 003/RW 007; RT 004/RW 006; RT 005/RW 006; RT 007/RW 006; RT 008/RW 006; RT 011/RW 006; RT 014/RW 006
+    - Kelurahan SUNTER AGUNG: RW 006 (RT 001, 002, 004, 005, 007, 008, 011, 014); RW 007 (RT 001, 002, 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PADEMANGAN
     - Kelurahan PADEMANGAN TIMUR
@@ -18459,10 +18459,10 @@
 - Alamat: JL. PAHLAWAN REVOLUSI, RT 006, RW 004, KEL. PONDOK BAMBU, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 002/RW 004; RT 004/RW 004; RT 006/RW 004; RT 007/RW 004; RT 008/RW 004; RT 010/RW 004; RT 011/RW 004; RT 012/RW 004
+    - Kelurahan PONDOK BAMBU: RW 004 (RT 002, 004, 006, 007, 008, 010, 011, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 001/RW 004; RT 003/RW 004; RT 004/RW 005; RT 005/RW 005; RT 006/RW 005; RT 007/RW 005; RT 009/RW 004; RT 009/RW 005; RT 017/RW 003; RT 018/RW 003
+    - Kelurahan PONDOK BAMBU: RW 003 (RT 017, 018); RW 004 (RT 001, 003, 009); RW 005 (RT 004, 005, 006, 007, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan PONDOK BAMBU
@@ -18475,10 +18475,10 @@
 - Alamat: JL. PRAMUKASARI I NO. 19, RT 010, RW 008, KEL. RAWASARI, KEC. CEMPAKA PUTIH, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan RAWASARI: RT 004/RW 008; RT 005/RW 008; RT 008/RW 008; RT 009/RW 008; RT 010/RW 008; RT 011/RW 008; RT 014/RW 008
+    - Kelurahan RAWASARI: RW 008 (RT 004, 005, 008, 009, 010, 011, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan RAWASARI: RT 001/RW 008; RT 002/RW 008; RT 003/RW 008; RT 004/RW 009; RT 006/RW 009; RT 007/RW 007; RT 008/RW 007; RT 008/RW 009; RT 009/RW 007; RT 009/RW 009; RT 010/RW 007; RT 010/RW 009; RT 011/RW 009; RT 012/RW 008; RT 013/RW 007; RT 013/RW 008; RT 013/RW 009; RT 014/RW 007
+    - Kelurahan RAWASARI: RW 007 (RT 007, 008, 009, 010, 013, 014); RW 008 (RT 001, 002, 003, 012, 013); RW 009 (RT 004, 006, 008, 009, 010, 011, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -18495,10 +18495,10 @@
 - Alamat: JL. HARAPAN JAYA 9/5, RT 008, RW 004, KEL. CEMPAKA BARU, KEC. KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan CEMPAKA BARU: RT 004/RW 004; RT 006/RW 004; RT 007/RW 004; RT 008/RW 004; RT 009/RW 004; RT 010/RW 004; RT 014/RW 008; RT 015/RW 004; RT 015/RW 008; RT 016/RW 004
+    - Kelurahan CEMPAKA BARU: RW 004 (RT 004, 006, 007, 008, 009, 010, 015, 016); RW 008 (RT 014, 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
-    - Kelurahan CEMPAKA BARU: RT 001/RW 004; RT 001/RW 007; RT 001/RW 008; RT 002/RW 004; RT 002/RW 007; RT 002/RW 008; RT 003/RW 004; RT 003/RW 007; RT 003/RW 008; RT 004/RW 007; RT 005/RW 004; RT 005/RW 007; RT 005/RW 008; RT 006/RW 008; RT 007/RW 008; RT 008/RW 007; RT 008/RW 008; RT 009/RW 007; RT 009/RW 008; RT 010/RW 008; RT 011/RW 004; RT 011/RW 005; RT 011/RW 007; RT 011/RW 008; RT 012/RW 004; RT 012/RW 008; RT 013/RW 004; RT 013/RW 008; RT 014/RW 003; RT 014/RW 004; RT 014/RW 006; RT 015/RW 003; RT 015/RW 005; RT 016/RW 005
+    - Kelurahan CEMPAKA BARU: RW 003 (RT 014, 015); RW 004 (RT 001, 002, 003, 005, 011, 012, 013, 014); RW 005 (RT 011, 015, 016); RW 006 (RT 014); RW 007 (RT 001, 002, 003, 004, 005, 008, 009, 011); RW 008 (RT 001, 002, 003, 005, 006, 007, 008, 009, 010, 011, 012, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -18518,15 +18518,15 @@
 - Alamat: JL. KAMAL MUARA RAYA NO. 9, RT 007, RW 001, KEL. KAMAL MUARA, KEC. PENJARINGAN, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KAMAL: RT 001/RW 001
-    - Kelurahan TEGAL ALUR: RT 001/RW 001; RT 003/RW 001; RT 006/RW 001; RT 008/RW 001; RT 009/RW 001; RT 010/RW 001; RT 011/RW 001
+    - Kelurahan KAMAL: RW 001 (RT 001)
+    - Kelurahan TEGAL ALUR: RW 001 (RT 001, 003, 006, 008, 009, 010, 011)
   - Kecamatan PENJARINGAN
-    - Kelurahan KAMAL MUARA: RT 004/RW 002; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 009/RW 004; RT 011/RW 001; RT 012/RW 001
+    - Kelurahan KAMAL MUARA: RW 001 (RT 006, 007, 008, 011, 012); RW 002 (RT 004); RW 004 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
-    - Kelurahan TEGAL ALUR: RT 002/RW 001; RT 007/RW 001
+    - Kelurahan TEGAL ALUR: RW 001 (RT 002, 007)
   - Kecamatan PENJARINGAN
-    - Kelurahan KAMAL MUARA: RT 001/RW 001; RT 001/RW 004; RT 002/RW 001; RT 002/RW 004; RT 003/RW 001; RT 003/RW 004; RT 004/RW 001; RT 004/RW 004; RT 005/RW 001; RT 005/RW 004; RT 006/RW 004; RT 007/RW 004; RT 008/RW 004; RT 009/RW 001; RT 010/RW 001
+    - Kelurahan KAMAL MUARA: RW 001 (RT 001, 002, 003, 004, 005, 009, 010); RW 004 (RT 001, 002, 003, 004, 005, 006, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KALIDERES
     - Kelurahan KAMAL
@@ -18538,12 +18538,12 @@
 - Alamat: JL.PLUMPANG SEMPER NO.20, RT 001, RW 004, KEL. TUGU SELATAN, KEC. KOJA, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU SELATAN: RT 001/RW 004; RT 002/RW 004; RT 005/RW 003; RT 007/RW 003; RT 015/RW 003
-    - Kelurahan TUGU UTARA: RT 001/RW 013
+    - Kelurahan TUGU SELATAN: RW 003 (RT 005, 007, 015); RW 004 (RT 001, 002)
+    - Kelurahan TUGU UTARA: RW 013 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
-    - Kelurahan TUGU SELATAN: RT 001/RW 003; RT 002/RW 003; RT 003/RW 003; RT 003/RW 004; RT 004/RW 003; RT 004/RW 004; RT 005/RW 004; RT 006/RW 003; RT 008/RW 003; RT 009/RW 003; RT 010/RW 002; RT 010/RW 003; RT 011/RW 003; RT 012/RW 003; RT 013/RW 003; RT 014/RW 003; RT 016/RW 003; RT 017/RW 003
-    - Kelurahan TUGU UTARA: RT 011/RW 002
+    - Kelurahan TUGU SELATAN: RW 002 (RT 010); RW 003 (RT 001, 002, 003, 004, 006, 008, 009, 010, 011, 012, 013, 014, 016, 017); RW 004 (RT 003, 004, 005)
+    - Kelurahan TUGU UTARA: RW 002 (RT 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -18556,12 +18556,12 @@
 - Alamat: JL. SMP 122 KAPUK NO. 26, RT 001, RW 003, KEL. KAPUK MUARA, KEC. PENJARINGAN, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KAPUK: RT 002/RW 002; RT 003/RW 002; RT 004/RW 002; RT 005/RW 001; RT 005/RW 002; RT 006/RW 002; RT 007/RW 002; RT 008/RW 002
+    - Kelurahan KAPUK: RW 001 (RT 005); RW 002 (RT 002, 003, 004, 005, 006, 007, 008)
   - Kecamatan PENJARINGAN
-    - Kelurahan KAPUK MUARA: RT 001/RW 003; RT 001/RW 009; RT 002/RW 003; RT 002/RW 009; RT 003/RW 009; RT 004/RW 009; RT 005/RW 009; RT 006/RW 002; RT 006/RW 003; RT 006/RW 009; RT 007/RW 002; RT 011/RW 005; RT 014/RW 005; RT 016/RW 004; RT 017/RW 004
+    - Kelurahan KAPUK MUARA: RW 002 (RT 006, 007); RW 003 (RT 001, 002, 006); RW 004 (RT 016, 017); RW 005 (RT 011, 014); RW 009 (RT 001, 002, 003, 004, 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
-    - Kelurahan KAPUK: RT 001/RW 005; RT 003/RW 005; RT 004/RW 005; RT 005/RW 005; RT 006/RW 005; RT 007/RW 005
+    - Kelurahan KAPUK: RW 005 (RT 001, 003, 004, 005, 006, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -18574,12 +18574,12 @@
 - Alamat: JL. KELAPA GADING I KOMP. PT. HII, RT 007, RW 006, KEL. KELAPA GADING TIMUR, KEC. KELAPA GADING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KELAPA GADING
-    - Kelurahan KELAPA GADING TIMUR: RT 004/RW 005; RT 004/RW 021; RT 005/RW 006; RT 005/RW 021; RT 006/RW 006; RT 006/RW 014; RT 007/RW 006
-    - Kelurahan PEGANGSAAN DUA: RT 001/RW 006; RT 003/RW 006; RT 004/RW 006; RT 005/RW 006
+    - Kelurahan KELAPA GADING TIMUR: RW 005 (RT 004); RW 006 (RT 005, 006, 007); RW 014 (RT 006); RW 021 (RT 004, 005)
+    - Kelurahan PEGANGSAAN DUA: RW 006 (RT 001, 003, 004, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
-    - Kelurahan KELAPA GADING TIMUR: RT 001/RW 005; RT 001/RW 006; RT 001/RW 014; RT 002/RW 005; RT 002/RW 006; RT 002/RW 014; RT 002/RW 019; RT 002/RW 021; RT 003/RW 005; RT 003/RW 006; RT 003/RW 014; RT 003/RW 019; RT 003/RW 021; RT 004/RW 006; RT 004/RW 014; RT 004/RW 019; RT 005/RW 014
-    - Kelurahan PEGANGSAAN DUA: RT 001/RW 005; RT 002/RW 005; RT 004/RW 005; RT 005/RW 005
+    - Kelurahan KELAPA GADING TIMUR: RW 005 (RT 001, 002, 003); RW 006 (RT 001, 002, 003, 004); RW 014 (RT 001, 002, 003, 004, 005); RW 019 (RT 002, 003, 004); RW 021 (RT 002, 003)
+    - Kelurahan PEGANGSAAN DUA: RW 005 (RT 001, 002, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KELAPA GADING
     - Kelurahan KELAPA GADING BARAT
@@ -18592,15 +18592,15 @@
 - Alamat: JL. KEMANG TIMUR I/5, RT 006, RW 004, KEL. BANGKA, KEC. MAMPANG PRAPATAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan BANGKA: RT 002/RW 004; RT 003/RW 004; RT 005/RW 004; RT 006/RW 004; RT 009/RW 004; RT 010/RW 004; RT 013/RW 004
+    - Kelurahan BANGKA: RW 004 (RT 002, 003, 005, 006, 009, 010, 013)
   - Kecamatan PANCORAN
-    - Kelurahan DUREN TIGA: RT 001/RW 002; RT 002/RW 002; RT 014/RW 002
-    - Kelurahan KALIBATA: RT 007/RW 003; RT 012/RW 003; RT 012/RW 009
+    - Kelurahan DUREN TIGA: RW 002 (RT 001, 002, 014)
+    - Kelurahan KALIBATA: RW 003 (RT 007, 012); RW 009 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan BANGKA: RT 001/RW 004; RT 001/RW 005; RT 004/RW 004; RT 011/RW 004; RT 012/RW 004
+    - Kelurahan BANGKA: RW 004 (RT 001, 004, 011, 012); RW 005 (RT 001)
   - Kecamatan PANCORAN
-    - Kelurahan DUREN TIGA: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002; RT 007/RW 002; RT 009/RW 001; RT 010/RW 002; RT 011/RW 002
+    - Kelurahan DUREN TIGA: RW 001 (RT 001, 002, 003, 009); RW 002 (RT 003, 004, 005, 006, 007, 010, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan CIPETE UTARA
@@ -18618,10 +18618,10 @@
 - Alamat: JL. UTAN JATI, RT 008, RW 011, KEL. PEGADUNGAN, KEC. KALIDERES, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan PEGADUNGAN: RT 004/RW 011; RT 005/RW 011; RT 005/RW 012; RT 006/RW 012; RT 008/RW 011; RT 009/RW 011
+    - Kelurahan PEGADUNGAN: RW 011 (RT 004, 005, 008, 009); RW 012 (RT 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
-    - Kelurahan PEGADUNGAN: RT 001/RW 011; RT 002/RW 011; RT 003/RW 011; RT 006/RW 011; RT 007/RW 011; RT 011/RW 011
+    - Kelurahan PEGADUNGAN: RW 011 (RT 001, 002, 003, 006, 007, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -18633,12 +18633,12 @@
 - Alamat: JL. SMPN 126, RT 002, RW 003, KEL. BATU AMPAR, KEC. KRAMATJATI, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMATJATI
-    - Kelurahan BATU AMPAR: RT 002/RW 003; RT 010/RW 003; RT 012/RW 003
-    - Kelurahan TENGAH: RT 001/RW 003; RT 002/RW 003; RT 003/RW 003; RT 005/RW 003; RT 005/RW 009; RT 009/RW 009
+    - Kelurahan BATU AMPAR: RW 003 (RT 002, 010, 012)
+    - Kelurahan TENGAH: RW 003 (RT 001, 002, 003, 005); RW 009 (RT 005, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMATJATI
-    - Kelurahan BATU AMPAR: RT 006/RW 003; RT 007/RW 005; RT 008/RW 005; RT 009/RW 003; RT 010/RW 005; RT 011/RW 005; RT 012/RW 005; RT 014/RW 003; RT 016/RW 005; RT 017/RW 005
-    - Kelurahan TENGAH: RT 001/RW 010; RT 004/RW 003; RT 004/RW 010; RT 006/RW 003; RT 007/RW 003
+    - Kelurahan BATU AMPAR: RW 003 (RT 006, 009, 014); RW 005 (RT 007, 008, 010, 011, 012, 016, 017)
+    - Kelurahan TENGAH: RW 003 (RT 004, 006, 007); RW 010 (RT 001, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KRAMATJATI
     - Kelurahan BATU AMPAR
@@ -18648,10 +18648,10 @@
 - Alamat: JL. RAYA KEBON JERUK NO. 126A, RT 010, RW 005, KEL. KEBON JERUK, KEC. KEBON JERUK, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 001/RW 003; RT 003/RW 009; RT 004/RW 009; RT 005/RW 009; RT 008/RW 002; RT 008/RW 009; RT 009/RW 005; RT 010/RW 005; RT 012/RW 005; RT 014/RW 005
+    - Kelurahan KEBON JERUK: RW 002 (RT 008); RW 003 (RT 001); RW 005 (RT 009, 010, 012, 014); RW 009 (RT 003, 004, 005, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 001/RW 002; RT 002/RW 003; RT 003/RW 002; RT 003/RW 003; RT 004/RW 002; RT 006/RW 005; RT 007/RW 002; RT 007/RW 003; RT 008/RW 005; RT 013/RW 005
+    - Kelurahan KEBON JERUK: RW 002 (RT 001, 003, 004, 007); RW 003 (RT 002, 003, 007); RW 005 (RT 006, 008, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -18662,11 +18662,11 @@
 - Alamat: JL. HERCULES KOMPLEK SKADRON HALIM PERDANAKUSUMA, RT 007, RW 004, KEL. HALIM PERDANA KUSUMA, KEC. MAKASAR, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 003/RW 004; RT 004/RW 004; RT 005/RW 004; RT 006/RW 002; RT 006/RW 004; RT 007/RW 004; RT 008/RW 004; RT 014/RW 004; RT 015/RW 004; RT 019/RW 003
+    - Kelurahan HALIM PERDANA KUSUMA: RW 002 (RT 006); RW 003 (RT 019); RW 004 (RT 003, 004, 005, 006, 007, 008, 014, 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 001/RW 001; RT 001/RW 002; RT 001/RW 003; RT 001/RW 004; RT 002/RW 001; RT 002/RW 002; RT 002/RW 003; RT 002/RW 004; RT 003/RW 001; RT 003/RW 002; RT 003/RW 003; RT 004/RW 001; RT 004/RW 002; RT 004/RW 003; RT 005/RW 001; RT 005/RW 002; RT 005/RW 003; RT 006/RW 001; RT 006/RW 003; RT 007/RW 001; RT 007/RW 003; RT 008/RW 001; RT 008/RW 003; RT 009/RW 001; RT 009/RW 003; RT 009/RW 004; RT 010/RW 003; RT 010/RW 004; RT 011/RW 003; RT 011/RW 004; RT 012/RW 003; RT 012/RW 004; RT 013/RW 003; RT 013/RW 004; RT 014/RW 003; RT 015/RW 003; RT 016/RW 003; RT 016/RW 004; RT 017/RW 003; RT 018/RW 003
-    - Kelurahan PINANGRANTI: RT 001/RW 004; RT 003/RW 004; RT 003/RW 005; RT 004/RW 004; RT 004/RW 005; RT 005/RW 004; RT 005/RW 005; RT 006/RW 004; RT 006/RW 005; RT 008/RW 004
+    - Kelurahan HALIM PERDANA KUSUMA: RW 001 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009); RW 002 (RT 001, 002, 003, 004, 005); RW 003 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017, 018); RW 004 (RT 001, 002, 009, 010, 011, 012, 013, 016)
+    - Kelurahan PINANGRANTI: RW 004 (RT 001, 003, 004, 005, 006, 008); RW 005 (RT 003, 004, 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MAKASAR
     - Kelurahan HALIM PERDANA KUSUMA
@@ -18678,12 +18678,12 @@
 - Alamat: JL. WARAKAS IV/48A, RT 005, RW 005, KEL. PAPANGO, KEC. TANJUNG PRIOK, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan PAPANGGO: RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 004/RW 003; RT 005/RW 005; RT 008/RW 003; RT 011/RW 005; RT 013/RW 003
-    - Kelurahan WARAKAS: RT 006/RW 012; RT 007/RW 012; RT 008/RW 012
+    - Kelurahan PAPANGGO: RW 003 (RT 004, 008, 013); RW 005 (RT 001, 002, 003, 005, 011)
+    - Kelurahan WARAKAS: RW 012 (RT 006, 007, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan PAPANGGO: RT 001/RW 003; RT 001/RW 006; RT 002/RW 003; RT 002/RW 006; RT 003/RW 003; RT 003/RW 006; RT 004/RW 005; RT 005/RW 003; RT 006/RW 003; RT 006/RW 005; RT 007/RW 003; RT 007/RW 005; RT 008/RW 005; RT 008/RW 006; RT 009/RW 005; RT 010/RW 003; RT 010/RW 005; RT 011/RW 003; RT 012/RW 003; RT 012/RW 005; RT 013/RW 005; RT 014/RW 003; RT 015/RW 003
-    - Kelurahan WARAKAS: RT 001/RW 012; RT 002/RW 012; RT 003/RW 012; RT 004/RW 012; RT 005/RW 012; RT 009/RW 012; RT 010/RW 012; RT 011/RW 010; RT 011/RW 012; RT 012/RW 010
+    - Kelurahan PAPANGGO: RW 003 (RT 001, 002, 003, 005, 006, 007, 010, 011, 012, 014, 015); RW 005 (RT 004, 006, 007, 008, 009, 010, 012, 013); RW 006 (RT 001, 002, 003, 008)
+    - Kelurahan WARAKAS: RW 010 (RT 011, 012); RW 012 (RT 001, 002, 003, 004, 005, 009, 010, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan PAPANGGO
@@ -18695,16 +18695,16 @@
 - Alamat: JL. KS TUBUN I, RT 003, RW 001, KEL. KOTA BAMBU UTARA, KEC. PAL MERAH, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan CIDENG: RT 017/RW 001
+    - Kelurahan CIDENG: RW 001 (RT 017)
   - Kecamatan PAL MERAH
-    - Kelurahan JATIPULO: RT 001/RW 010; RT 002/RW 010; RT 009/RW 010
-    - Kelurahan KOTA BAMBU UTARA: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 004/RW 001; RT 005/RW 001; RT 013/RW 002; RT 014/RW 002
+    - Kelurahan JATIPULO: RW 010 (RT 001, 002, 009)
+    - Kelurahan KOTA BAMBU UTARA: RW 001 (RT 001, 002, 003, 004, 005); RW 002 (RT 013, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
-    - Kelurahan CIDENG: RT 014/RW 001
+    - Kelurahan CIDENG: RW 001 (RT 014)
   - Kecamatan PAL MERAH
-    - Kelurahan JATIPULO: RT 003/RW 010; RT 004/RW 010; RT 005/RW 010; RT 006/RW 010; RT 007/RW 010; RT 008/RW 010; RT 010/RW 010
-    - Kelurahan KOTA BAMBU UTARA: RT 005/RW 009; RT 006/RW 001; RT 006/RW 009; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 010/RW 001; RT 010/RW 002; RT 011/RW 001; RT 011/RW 002; RT 012/RW 001; RT 012/RW 002; RT 013/RW 001; RT 013/RW 003; RT 015/RW 002
+    - Kelurahan JATIPULO: RW 010 (RT 003, 004, 005, 006, 007, 008, 010)
+    - Kelurahan KOTA BAMBU UTARA: RW 001 (RT 006, 007, 008, 009, 010, 011, 012, 013); RW 002 (RT 010, 011, 012, 015); RW 003 (RT 013); RW 009 (RT 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -18727,10 +18727,10 @@
 - Alamat: JL. R.M. KAHFI I, RT 004, RW 002, KEL. CIPEDAK, KEC. JAGAKARSA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan CIPEDAK: RT 001/RW 002; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002; RT 008/RW 002; RT 009/RW 002
+    - Kelurahan CIPEDAK: RW 002 (RT 001, 004, 005, 006, 008, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
-    - Kelurahan CIPEDAK: RT 002/RW 002; RT 003/RW 002; RT 007/RW 002; RT 010/RW 002; RT 011/RW 002
+    - Kelurahan CIPEDAK: RW 002 (RT 002, 003, 007, 010, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -18740,10 +18740,10 @@
 - Alamat: JL. TAWANGMANGU NO. 2, RT 002, RW 006, KEL. KEDAUNG KALI ANGKE, KEC. CENGKARENG, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan KEDAUNG KALI ANGKE: RT 001/RW 006; RT 002/RW 006; RT 003/RW 006; RT 007/RW 006; RT 009/RW 006; RT 011/RW 003; RT 012/RW 003
+    - Kelurahan KEDAUNG KALI ANGKE: RW 003 (RT 011, 012); RW 006 (RT 001, 002, 003, 007, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
-    - Kelurahan KEDAUNG KALI ANGKE: RT 001/RW 002; RT 001/RW 003; RT 001/RW 008; RT 001/RW 010; RT 002/RW 001; RT 002/RW 002; RT 002/RW 003; RT 002/RW 010; RT 003/RW 002; RT 003/RW 003; RT 003/RW 010; RT 004/RW 002; RT 004/RW 003; RT 004/RW 005; RT 004/RW 006; RT 004/RW 010; RT 005/RW 002; RT 005/RW 003; RT 005/RW 005; RT 005/RW 006; RT 005/RW 009; RT 005/RW 010; RT 006/RW 001; RT 006/RW 002; RT 006/RW 003; RT 006/RW 005; RT 006/RW 006; RT 006/RW 009; RT 006/RW 010; RT 007/RW 001; RT 007/RW 002; RT 007/RW 003; RT 007/RW 005; RT 007/RW 009; RT 007/RW 010; RT 008/RW 002; RT 008/RW 003; RT 008/RW 005; RT 008/RW 006; RT 008/RW 009; RT 008/RW 010; RT 009/RW 002; RT 009/RW 005; RT 009/RW 009; RT 010/RW 002; RT 010/RW 003; RT 011/RW 009; RT 013/RW 003; RT 014/RW 003; RT 015/RW 003; RT 016/RW 003
+    - Kelurahan KEDAUNG KALI ANGKE: RW 001 (RT 002, 006, 007); RW 002 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010); RW 003 (RT 001, 002, 003, 004, 005, 006, 007, 008, 010, 013, 014, 015, 016); RW 005 (RT 004, 005, 006, 007, 008, 009); RW 006 (RT 004, 005, 006, 008); RW 008 (RT 001); RW 009 (RT 005, 006, 007, 008, 009, 011); RW 010 (RT 001, 002, 003, 004, 005, 006, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -18760,10 +18760,10 @@
 - Alamat: JL. PULAU PRAMUKA, RT 003, RW 005, KEL. PULAU PANGGANG, KEC. KEPULAUAN SERIBU UTARA, KAB. KEPULAUAN SERIBU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEPULAUAN SERIBU UTARA
-    - Kelurahan PULAU PANGGANG: RT 002/RW 005; RT 003/RW 005; RT 004/RW 004; RT 004/RW 005
+    - Kelurahan PULAU PANGGANG: RW 004 (RT 004); RW 005 (RT 002, 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEPULAUAN SERIBU UTARA
-    - Kelurahan PULAU PANGGANG: RT 001/RW 004; RT 001/RW 005; RT 002/RW 004; RT 003/RW 004
+    - Kelurahan PULAU PANGGANG: RW 004 (RT 001, 002, 003); RW 005 (RT 001)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEPULAUAN SERIBU UTARA
     - Kelurahan PULAU PANGGANG
@@ -18772,11 +18772,11 @@
 - Alamat: TAMAN MERUYA ILIR BLOK A-18, RT 018, RW 004, KEL. MERUYA UTARA, KEC. KEMBANGAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA UTARA: RT 001/RW 004; RT 005/RW 004; RT 006/RW 004; RT 007/RW 004; RT 008/RW 004; RT 009/RW 002; RT 015/RW 004; RT 016/RW 004; RT 018/RW 004; RT 019/RW 004; RT 020/RW 004; RT 021/RW 004
+    - Kelurahan MERUYA UTARA: RW 002 (RT 009); RW 004 (RT 001, 005, 006, 007, 008, 015, 016, 018, 019, 020, 021)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA SELATAN: RT 002/RW 007; RT 003/RW 007; RT 009/RW 007
-    - Kelurahan MERUYA UTARA: RT 001/RW 002; RT 002/RW 002; RT 004/RW 004; RT 005/RW 007; RT 006/RW 001; RT 007/RW 011; RT 008/RW 011; RT 009/RW 004; RT 010/RW 002; RT 010/RW 004; RT 012/RW 004; RT 013/RW 004; RT 014/RW 004; RT 015/RW 007; RT 022/RW 004
+    - Kelurahan MERUYA SELATAN: RW 007 (RT 002, 003, 009)
+    - Kelurahan MERUYA UTARA: RW 001 (RT 006); RW 002 (RT 001, 002, 010); RW 004 (RT 004, 009, 010, 012, 013, 014, 022); RW 007 (RT 005, 015); RW 011 (RT 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMBANGAN
     - Kelurahan KEMBANGAN SELATAN
@@ -18789,11 +18789,11 @@
 - Alamat: JL. TELUK PALU NO. 35, RT 015, RW 007, KEL. PONDOK BAMBU, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 007/RW 007; RT 011/RW 011; RT 012/RW 007; RT 013/RW 007; RT 013/RW 011; RT 014/RW 007; RT 015/RW 007; RT 016/RW 007
+    - Kelurahan PONDOK BAMBU: RW 007 (RT 007, 012, 013, 014, 015, 016); RW 011 (RT 011, 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 006/RW 016; RT 006/RW 017; RT 007/RW 016
-    - Kelurahan PONDOK BAMBU: RT 001/RW 011; RT 003/RW 007; RT 004/RW 007; RT 005/RW 007; RT 006/RW 007; RT 008/RW 007; RT 009/RW 007; RT 009/RW 011; RT 010/RW 007; RT 010/RW 011; RT 011/RW 007; RT 017/RW 007; RT 018/RW 007
+    - Kelurahan DUREN SAWIT: RW 016 (RT 006, 007); RW 017 (RT 006)
+    - Kelurahan PONDOK BAMBU: RW 007 (RT 003, 004, 005, 006, 008, 009, 010, 011, 017, 018); RW 011 (RT 001, 009, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -18805,11 +18805,11 @@
 - Alamat: JL. BENDUNGAN MELAYU NO. 80, RT 009, RW 005, KEL. TUGU SELATAN, KEC. KOJA, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU SELATAN: RT 001/RW 001; RT 002/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 005; RT 009/RW 005; RT 010/RW 001; RT 011/RW 005; RT 012/RW 005
+    - Kelurahan TUGU SELATAN: RW 001 (RT 001, 002, 006, 007, 010); RW 005 (RT 008, 009, 011, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
-    - Kelurahan RAWA BADAK SELATAN: RT 004/RW 001; RT 011/RW 001
-    - Kelurahan TUGU SELATAN: RT 001/RW 002; RT 001/RW 005; RT 002/RW 002; RT 002/RW 005; RT 003/RW 001; RT 003/RW 002; RT 003/RW 005; RT 004/RW 001; RT 004/RW 002; RT 004/RW 005; RT 005/RW 001; RT 006/RW 005; RT 007/RW 005; RT 008/RW 001; RT 009/RW 001; RT 010/RW 005; RT 011/RW 001; RT 013/RW 002; RT 013/RW 005; RT 014/RW 005
+    - Kelurahan RAWA BADAK SELATAN: RW 001 (RT 004, 011)
+    - Kelurahan TUGU SELATAN: RW 001 (RT 003, 004, 005, 008, 009, 011); RW 002 (RT 001, 002, 003, 004, 013); RW 005 (RT 001, 002, 003, 004, 006, 007, 010, 013, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -18826,12 +18826,12 @@
 - Alamat: JL. CEMPAKA PUTIH BARAT 15/26, RT 006, RW 012, KEL. CEMPAKA PUTIH BARAT, KEC. CEMPAKA PUTIH, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 004/RW 012; RT 005/RW 012; RT 006/RW 012; RT 007/RW 012; RT 009/RW 007
-    - Kelurahan CEMPAKA PUTIH TIMUR: RT 010/RW 004
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 007 (RT 009); RW 012 (RT 004, 005, 006, 007)
+    - Kelurahan CEMPAKA PUTIH TIMUR: RW 004 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 001/RW 012; RT 002/RW 007; RT 002/RW 012; RT 003/RW 007; RT 003/RW 012; RT 004/RW 007; RT 005/RW 007; RT 006/RW 007; RT 006/RW 008; RT 006/RW 011; RT 007/RW 007; RT 007/RW 008; RT 008/RW 007; RT 008/RW 008; RT 008/RW 012; RT 009/RW 008; RT 009/RW 012; RT 010/RW 012
-    - Kelurahan CEMPAKA PUTIH TIMUR: RT 001/RW 006; RT 003/RW 006; RT 004/RW 004; RT 008/RW 004; RT 009/RW 004; RT 011/RW 004; RT 018/RW 004
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 007 (RT 002, 003, 004, 005, 006, 007, 008); RW 008 (RT 006, 007, 008, 009); RW 011 (RT 006); RW 012 (RT 001, 002, 003, 008, 009, 010)
+    - Kelurahan CEMPAKA PUTIH TIMUR: RW 004 (RT 004, 008, 009, 011, 018); RW 006 (RT 001, 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -18845,12 +18845,12 @@
 - Alamat: JL. P KOMARUDIN, RT 009, RW 005, KEL. PULO GEBANG, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PENGGILINGAN: RT 012/RW 005; RT 015/RW 005; RT 017/RW 005; RT 019/RW 005
-    - Kelurahan PULO GEBANG: RT 009/RW 005; RT 010/RW 005; RT 015/RW 005
+    - Kelurahan PENGGILINGAN: RW 005 (RT 012, 015, 017, 019)
+    - Kelurahan PULO GEBANG: RW 005 (RT 009, 010, 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan PENGGILINGAN: RT 005/RW 005; RT 008/RW 005; RT 011/RW 005; RT 016/RW 005; RT 018/RW 005
-    - Kelurahan PULO GEBANG: RT 006/RW 005; RT 007/RW 005; RT 008/RW 005; RT 012/RW 005; RT 013/RW 005
+    - Kelurahan PENGGILINGAN: RW 005 (RT 005, 008, 011, 016, 018)
+    - Kelurahan PULO GEBANG: RW 005 (RT 006, 007, 008, 012, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -18860,11 +18860,11 @@
 - Alamat: JL BUNGA RAMPAI X PERUMNAS KLENDER, RT 012, RW 006, KEL. MALAKA JAYA, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA JAYA: RT 005/RW 005; RT 008/RW 006; RT 009/RW 006; RT 010/RW 006; RT 011/RW 006; RT 012/RW 006; RT 013/RW 006; RT 014/RW 006
+    - Kelurahan MALAKA JAYA: RW 005 (RT 005); RW 006 (RT 008, 009, 010, 011, 012, 013, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA JAYA: RT 001/RW 004; RT 001/RW 005; RT 001/RW 006; RT 001/RW 007; RT 001/RW 013; RT 002/RW 004; RT 002/RW 005; RT 002/RW 006; RT 002/RW 007; RT 002/RW 013; RT 003/RW 004; RT 003/RW 005; RT 003/RW 006; RT 003/RW 007; RT 003/RW 013; RT 004/RW 004; RT 004/RW 005; RT 004/RW 006; RT 004/RW 013; RT 005/RW 004; RT 005/RW 006; RT 005/RW 013; RT 006/RW 004; RT 006/RW 005; RT 006/RW 006; RT 006/RW 013; RT 007/RW 004; RT 007/RW 005; RT 007/RW 006; RT 007/RW 013; RT 008/RW 004; RT 008/RW 005; RT 008/RW 013; RT 009/RW 004; RT 009/RW 005; RT 009/RW 013; RT 010/RW 004; RT 010/RW 005; RT 010/RW 013; RT 011/RW 004; RT 012/RW 004; RT 013/RW 004; RT 015/RW 006; RT 016/RW 006
-    - Kelurahan MALAKA SARI: RT 001/RW 007; RT 002/RW 007; RT 013/RW 004; RT 014/RW 004; RT 015/RW 004; RT 016/RW 004
+    - Kelurahan MALAKA JAYA: RW 004 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013); RW 005 (RT 001, 002, 003, 004, 006, 007, 008, 009, 010); RW 006 (RT 001, 002, 003, 004, 005, 006, 007, 015, 016); RW 007 (RT 001, 002, 003); RW 013 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010)
+    - Kelurahan MALAKA SARI: RW 004 (RT 013, 014, 015, 016); RW 007 (RT 001, 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -18879,10 +18879,10 @@
 - Alamat: KOMP. SETNEG BLOK A, RT 003, RW 009, KEL. SUNTER AGUNG, KEC. TANJUNG PRIOK, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 001/RW 008; RT 001/RW 009; RT 002/RW 008; RT 002/RW 009; RT 003/RW 008; RT 003/RW 009; RT 004/RW 008; RT 004/RW 009; RT 006/RW 008; RT 010/RW 007; RT 011/RW 007; RT 013/RW 009
+    - Kelurahan SUNTER AGUNG: RW 007 (RT 010, 011); RW 008 (RT 001, 002, 003, 004, 006); RW 009 (RT 001, 002, 003, 004, 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 005/RW 008; RT 005/RW 009; RT 006/RW 009; RT 007/RW 008; RT 008/RW 007; RT 008/RW 008; RT 009/RW 007; RT 009/RW 008; RT 009/RW 009; RT 010/RW 008; RT 011/RW 008; RT 012/RW 007; RT 012/RW 008; RT 014/RW 007; RT 015/RW 008
+    - Kelurahan SUNTER AGUNG: RW 007 (RT 008, 009, 012, 014); RW 008 (RT 005, 007, 008, 009, 010, 011, 012, 015); RW 009 (RT 005, 006, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PADEMANGAN
     - Kelurahan PADEMANGAN TIMUR
@@ -18896,11 +18896,11 @@
 - Alamat: JL. PONDOK JAYA VIII/15 B, RT 008, RW 006, KEL. PELA MAMPANG, KEC. MAMPANG PRAPATAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan PELA MAMPANG: RT 001/RW 006; RT 002/RW 006; RT 003/RW 006; RT 005/RW 006; RT 006/RW 006; RT 007/RW 006; RT 008/RW 006; RT 008/RW 012; RT 009/RW 006
+    - Kelurahan PELA MAMPANG: RW 006 (RT 001, 002, 003, 005, 006, 007, 008, 009); RW 012 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan PELA MAMPANG: RT 003/RW 003; RT 003/RW 013; RT 004/RW 003; RT 004/RW 006; RT 005/RW 003; RT 007/RW 012; RT 009/RW 012; RT 010/RW 006; RT 010/RW 012; RT 011/RW 004; RT 019/RW 003
-    - Kelurahan TEGAL PARANG: RT 003/RW 006; RT 004/RW 006; RT 005/RW 006; RT 006/RW 006; RT 007/RW 006; RT 008/RW 006; RT 010/RW 003
+    - Kelurahan PELA MAMPANG: RW 003 (RT 003, 004, 005, 019); RW 004 (RT 011); RW 006 (RT 004, 010); RW 012 (RT 007, 009, 010); RW 013 (RT 003)
+    - Kelurahan TEGAL PARANG: RW 003 (RT 010); RW 006 (RT 003, 004, 005, 006, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan PETOGOGAN
@@ -18919,18 +18919,18 @@
 - Alamat: JL. JOGLO RAYA, RT 008, RW 003, KEL. JOGLO, KEC. KEMBANGAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 007/RW 003; RT 008/RW 003; RT 012/RW 003; RT 012/RW 005
-    - Kelurahan SRENGSENG: RT 004/RW 003; RT 007/RW 003
+    - Kelurahan JOGLO: RW 003 (RT 007, 008, 012); RW 005 (RT 012)
+    - Kelurahan SRENGSENG: RW 003 (RT 004, 007)
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN UTARA: RT 001/RW 008; RT 015/RW 007
-    - Kelurahan ULUJAMI: RT 009/RW 002
+    - Kelurahan PETUKANGAN UTARA: RW 007 (RT 015); RW 008 (RT 001)
+    - Kelurahan ULUJAMI: RW 002 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 004/RW 003; RT 005/RW 003; RT 006/RW 003; RT 008/RW 005; RT 009/RW 003; RT 009/RW 005; RT 010/RW 005; RT 011/RW 003; RT 011/RW 005; RT 013/RW 005
-    - Kelurahan SRENGSENG: RT 005/RW 003; RT 008/RW 003; RT 011/RW 003; RT 012/RW 003
+    - Kelurahan JOGLO: RW 003 (RT 004, 005, 006, 009, 011); RW 005 (RT 008, 009, 010, 011, 013)
+    - Kelurahan SRENGSENG: RW 003 (RT 005, 008, 011, 012)
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN UTARA: RT 002/RW 008; RT 011/RW 007
-    - Kelurahan ULUJAMI: RT 001/RW 001; RT 007/RW 002; RT 010/RW 008
+    - Kelurahan PETUKANGAN UTARA: RW 007 (RT 011); RW 008 (RT 002)
+    - Kelurahan ULUJAMI: RW 001 (RT 001); RW 002 (RT 007); RW 008 (RT 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -18944,12 +18944,12 @@
 - Alamat: JL. BAKTI IX NO.1, RT 001, RW 006, KEL. CILINCING, KEC. CILINCING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan CILINCING: RT 001/RW 006; RT 002/RW 006; RT 003/RW 006; RT 003/RW 009; RT 004/RW 006; RT 005/RW 009
-    - Kelurahan SEMPER TIMUR: RT 002/RW 006; RT 005/RW 003
+    - Kelurahan CILINCING: RW 006 (RT 001, 002, 003, 004); RW 009 (RT 003, 005)
+    - Kelurahan SEMPER TIMUR: RW 003 (RT 005); RW 006 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
-    - Kelurahan CILINCING: RT 004/RW 009; RT 005/RW 006; RT 006/RW 005; RT 006/RW 006; RT 007/RW 005; RT 007/RW 006; RT 008/RW 005; RT 009/RW 005; RT 010/RW 005
-    - Kelurahan SEMPER TIMUR: RT 001/RW 006; RT 002/RW 007; RT 003/RW 006; RT 004/RW 006
+    - Kelurahan CILINCING: RW 005 (RT 006, 007, 008, 009, 010); RW 006 (RT 005, 006, 007); RW 009 (RT 004)
+    - Kelurahan SEMPER TIMUR: RW 006 (RT 001, 003, 004); RW 007 (RT 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -18960,10 +18960,10 @@
 - Alamat: JL. RAYA BEKASI KM. 23, RT 018, RW 004, & RT 002 RW 005, KEL. CAKUNG BARAT, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG BARAT: RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 008/RW 005; RT 010/RW 004; RT 011/RW 004; RT 012/RW 004; RT 013/RW 004; RT 014/RW 004; RT 018/RW 004
+    - Kelurahan CAKUNG BARAT: RW 004 (RT 010, 011, 012, 013, 014, 018); RW 005 (RT 001, 002, 003, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG BARAT: RT 001/RW 004; RT 002/RW 002; RT 002/RW 004; RT 003/RW 001; RT 003/RW 004; RT 004/RW 004; RT 004/RW 005; RT 005/RW 002; RT 005/RW 004; RT 005/RW 005; RT 006/RW 004; RT 006/RW 005; RT 007/RW 004; RT 007/RW 005; RT 008/RW 004; RT 009/RW 004; RT 009/RW 005; RT 015/RW 004; RT 016/RW 004; RT 017/RW 004
+    - Kelurahan CAKUNG BARAT: RW 001 (RT 003); RW 002 (RT 002, 005); RW 004 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 015, 016, 017); RW 005 (RT 004, 005, 006, 007, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -18979,14 +18979,14 @@
 - Alamat: JL. MENTENG PULO UJUNG, RT 002, RW 010, KEL. MENTENG ATAS, KEC. SETIA BUDI, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIABUDI
-    - Kelurahan MENTENG ATAS: RT 001/RW 010; RT 002/RW 005; RT 002/RW 010; RT 003/RW 005; RT 004/RW 005; RT 005/RW 005; RT 006/RW 005; RT 015/RW 005; RT 016/RW 005
+    - Kelurahan MENTENG ATAS: RW 005 (RT 002, 003, 004, 005, 006, 015, 016); RW 010 (RT 001, 002)
   - Kecamatan TEBET
-    - Kelurahan MENTENG DALAM: RT 003/RW 012; RT 004/RW 012; RT 009/RW 010
+    - Kelurahan MENTENG DALAM: RW 010 (RT 009); RW 012 (RT 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
-    - Kelurahan MENTENG ATAS: RT 001/RW 004; RT 001/RW 005; RT 001/RW 013; RT 002/RW 004; RT 002/RW 013; RT 003/RW 010; RT 003/RW 013; RT 004/RW 013; RT 005/RW 013; RT 007/RW 005; RT 008/RW 005; RT 009/RW 005; RT 010/RW 005; RT 011/RW 004; RT 011/RW 005; RT 012/RW 005; RT 013/RW 005; RT 014/RW 005
+    - Kelurahan MENTENG ATAS: RW 004 (RT 001, 002, 011); RW 005 (RT 001, 007, 008, 009, 010, 011, 012, 013, 014); RW 010 (RT 003); RW 013 (RT 001, 002, 003, 004, 005)
   - Kecamatan TEBET
-    - Kelurahan MENTENG DALAM: RT 001/RW 012; RT 002/RW 012; RT 005/RW 012; RT 007/RW 011; RT 008/RW 011; RT 009/RW 011; RT 014/RW 011; RT 015/RW 011
+    - Kelurahan MENTENG DALAM: RW 011 (RT 007, 008, 009, 014, 015); RW 012 (RT 001, 002, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan SETIABUDI
     - Kelurahan GUNTUR
@@ -19003,12 +19003,12 @@
 - Alamat: JL.BALAI RAKYAT, RT 001, RW 008, KEL. UJUNG MENTENG, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 008/RW 014; RT 012/RW 001; RT 016/RW 001
-    - Kelurahan UJUNG MENTENG: RT 001/RW 008; RT 001/RW 009; RT 002/RW 008; RT 003/RW 001; RT 003/RW 002; RT 005/RW 001; RT 006/RW 001; RT 009/RW 002; RT 009/RW 007; RT 010/RW 001; RT 011/RW 001; RT 013/RW 001
+    - Kelurahan CAKUNG TIMUR: RW 001 (RT 012, 016); RW 014 (RT 008)
+    - Kelurahan UJUNG MENTENG: RW 001 (RT 003, 005, 006, 010, 011, 013); RW 002 (RT 003, 009); RW 007 (RT 009); RW 008 (RT 001, 002); RW 009 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 011/RW 001
-    - Kelurahan UJUNG MENTENG: RT 002/RW 001; RT 003/RW 008; RT 004/RW 001; RT 004/RW 008; RT 005/RW 008; RT 007/RW 001; RT 009/RW 001
+    - Kelurahan CAKUNG TIMUR: RW 001 (RT 011)
+    - Kelurahan UJUNG MENTENG: RW 001 (RT 002, 004, 007, 009); RW 008 (RT 003, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG TIMUR
@@ -19018,10 +19018,10 @@
 - Alamat: JL. JAMBORE CIBUBUR, RT 004, RW 013, KEL. CIBUBUR, KEC. CIRACAS, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIBUBUR: RT 001/RW 014; RT 002/RW 014; RT 003/RW 013; RT 004/RW 013; RT 005/RW 013; RT 006/RW 013; RT 009/RW 005
+    - Kelurahan CIBUBUR: RW 005 (RT 009); RW 013 (RT 003, 004, 005, 006); RW 014 (RT 001, 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan CIBUBUR: RT 001/RW 007; RT 001/RW 008; RT 001/RW 013; RT 002/RW 007; RT 002/RW 008; RT 002/RW 013; RT 003/RW 008; RT 003/RW 014; RT 004/RW 008; RT 004/RW 011; RT 004/RW 014; RT 005/RW 008; RT 006/RW 005; RT 006/RW 007; RT 006/RW 008; RT 006/RW 011; RT 007/RW 005; RT 007/RW 007; RT 007/RW 008; RT 007/RW 013; RT 008/RW 005; RT 008/RW 008; RT 009/RW 007; RT 009/RW 008; RT 010/RW 005; RT 010/RW 008; RT 011/RW 008; RT 013/RW 005; RT 014/RW 005; RT 017/RW 005
+    - Kelurahan CIBUBUR: RW 005 (RT 006, 007, 008, 010, 013, 014, 017); RW 007 (RT 001, 002, 006, 007, 009); RW 008 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011); RW 011 (RT 004, 006); RW 013 (RT 001, 002, 007); RW 014 (RT 003, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan MUNJUL
@@ -19034,14 +19034,14 @@
 - Alamat: JL. BB I, RT 006, RW 015, KEL. CIPINANG MUARA, KEC. JATINEGARA, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 006/RW 003; RT 011/RW 004; RT 013/RW 004
+    - Kelurahan KLENDER: RW 003 (RT 006); RW 004 (RT 011, 013)
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 005/RW 015; RT 006/RW 015; RT 007/RW 015; RT 008/RW 008; RT 009/RW 015
+    - Kelurahan CIPINANG MUARA: RW 008 (RT 008); RW 015 (RT 005, 006, 007, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 004/RW 003; RT 012/RW 004; RT 017/RW 004
+    - Kelurahan KLENDER: RW 003 (RT 004); RW 004 (RT 012, 017)
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 003/RW 015; RT 004/RW 011; RT 004/RW 015; RT 005/RW 011; RT 007/RW 008; RT 008/RW 015; RT 010/RW 015; RT 011/RW 015; RT 013/RW 008
+    - Kelurahan CIPINANG MUARA: RW 008 (RT 007, 013); RW 011 (RT 004, 005); RW 015 (RT 003, 004, 008, 010, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan KLENDER
@@ -19053,12 +19053,12 @@
 - Alamat: JL. CIPINANG BESAR SELATAN, RT 002, RW 006, KEL. CIPINANG BESAR SELATAN, KEC. JATINEGARA, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 001/RW 006; RT 002/RW 005; RT 002/RW 006; RT 003/RW 006; RT 005/RW 006; RT 006/RW 006; RT 018/RW 005; RT 019/RW 005
-    - Kelurahan CIPINANG MUARA: RT 001/RW 002; RT 012/RW 002; RT 015/RW 002; RT 018/RW 002
+    - Kelurahan CIPINANG BESAR SELATAN: RW 005 (RT 002, 018, 019); RW 006 (RT 001, 002, 003, 005, 006)
+    - Kelurahan CIPINANG MUARA: RW 002 (RT 001, 012, 015, 018)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 001/RW 005; RT 015/RW 005; RT 016/RW 005; RT 017/RW 005
-    - Kelurahan CIPINANG MUARA: RT 013/RW 001; RT 013/RW 002; RT 014/RW 001; RT 014/RW 002; RT 016/RW 002
+    - Kelurahan CIPINANG BESAR SELATAN: RW 005 (RT 001, 015, 016, 017)
+    - Kelurahan CIPINANG MUARA: RW 001 (RT 013, 014); RW 002 (RT 013, 014, 016)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -19071,10 +19071,10 @@
 - Alamat: JL. BATU TUMBUH VII, RT 007, RW 006, KEL. KRAMATJATI, KEC. KRAMATJATI, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMATJATI
-    - Kelurahan KRAMATJATI: RT 003/RW 006; RT 004/RW 006; RT 005/RW 006; RT 006/RW 006; RT 007/RW 006; RT 008/RW 006; RT 009/RW 006; RT 009/RW 009
+    - Kelurahan KRAMATJATI: RW 006 (RT 003, 004, 005, 006, 007, 008, 009); RW 009 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMATJATI
-    - Kelurahan KRAMATJATI: RT 001/RW 006; RT 002/RW 006; RT 004/RW 008; RT 007/RW 009; RT 008/RW 009; RT 010/RW 006; RT 010/RW 009; RT 011/RW 006; RT 011/RW 009; RT 012/RW 006; RT 012/RW 009; RT 013/RW 006
+    - Kelurahan KRAMATJATI: RW 006 (RT 001, 002, 010, 011, 012, 013); RW 008 (RT 004); RW 009 (RT 007, 008, 010, 011, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KRAMATJATI
     - Kelurahan CILILITAN
@@ -19086,14 +19086,14 @@
 - Alamat: JL. KEPIL NO. 1, RT 005, RW 007, KEL. RAWA BADAK SELATAN, KEC. KOJA, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWA BADAK SELATAN: RT 003/RW 007; RT 004/RW 007; RT 005/RW 006; RT 005/RW 007
-    - Kelurahan RAWA BADAK UTARA: RT 006/RW 001
-    - Kelurahan TUGU UTARA: RT 004/RW 007; RT 009/RW 007; RT 010/RW 015
+    - Kelurahan RAWA BADAK SELATAN: RW 006 (RT 005); RW 007 (RT 003, 004, 005)
+    - Kelurahan RAWA BADAK UTARA: RW 001 (RT 006)
+    - Kelurahan TUGU UTARA: RW 007 (RT 004, 009); RW 015 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
-    - Kelurahan RAWA BADAK SELATAN: RT 001/RW 006; RT 001/RW 007; RT 002/RW 006; RT 002/RW 007; RT 003/RW 006; RT 004/RW 006; RT 006/RW 006; RT 006/RW 007; RT 007/RW 007; RT 008/RW 007; RT 009/RW 003; RT 010/RW 003
-    - Kelurahan RAWA BADAK UTARA: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 004/RW 001; RT 004/RW 006; RT 005/RW 001; RT 007/RW 006; RT 008/RW 006
-    - Kelurahan TUGU UTARA: RT 001/RW 007; RT 002/RW 007; RT 003/RW 007; RT 003/RW 012; RT 004/RW 012; RT 006/RW 015; RT 007/RW 007; RT 007/RW 015; RT 008/RW 007; RT 008/RW 015; RT 009/RW 015; RT 010/RW 007; RT 011/RW 007; RT 011/RW 015; RT 013/RW 015
+    - Kelurahan RAWA BADAK SELATAN: RW 003 (RT 009, 010); RW 006 (RT 001, 002, 003, 004, 006); RW 007 (RT 001, 002, 006, 007, 008)
+    - Kelurahan RAWA BADAK UTARA: RW 001 (RT 001, 002, 003, 004, 005); RW 006 (RT 004, 007, 008)
+    - Kelurahan TUGU UTARA: RW 007 (RT 001, 002, 003, 007, 008, 010, 011); RW 012 (RT 003, 004); RW 015 (RT 006, 007, 008, 009, 011, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KOJA
     - Kelurahan LAGOA
@@ -19110,10 +19110,10 @@
 - Alamat: JL. SUNTER JAYA IV, RT 008, RW 003, KEL. SUNTER JAYA, KEC. TANJUNG PRIOK, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER JAYA: RT 002/RW 003; RT 004/RW 003; RT 005/RW 003; RT 006/RW 003; RT 008/RW 003; RT 008/RW 004; RT 012/RW 003; RT 013/RW 003
+    - Kelurahan SUNTER JAYA: RW 003 (RT 002, 004, 005, 006, 008, 012, 013); RW 004 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER JAYA: RT 001/RW 003; RT 003/RW 003; RT 005/RW 007; RT 006/RW 004; RT 007/RW 004; RT 007/RW 007; RT 009/RW 003; RT 009/RW 004; RT 009/RW 007; RT 010/RW 003; RT 010/RW 004; RT 011/RW 002; RT 011/RW 007; RT 014/RW 003; RT 015/RW 003; RT 016/RW 003; RT 017/RW 003; RT 018/RW 003
+    - Kelurahan SUNTER JAYA: RW 002 (RT 011); RW 003 (RT 001, 003, 009, 010, 014, 015, 016, 017, 018); RW 004 (RT 006, 007, 009, 010); RW 007 (RT 005, 007, 009, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -19125,12 +19125,12 @@
 - Alamat: JL. PANJANG CIDODOL NO. 1, RT 001, RW 013, KEL. GROGOL SELATAN, KEC. KEBAYORAN LAMA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan CIPULIR: RT 016/RW 009
-    - Kelurahan GROGOL SELATAN: RT 001/RW 006; RT 001/RW 013; RT 003/RW 013; RT 004/RW 013; RT 006/RW 013; RT 007/RW 013
+    - Kelurahan CIPULIR: RW 009 (RT 016)
+    - Kelurahan GROGOL SELATAN: RW 006 (RT 001); RW 013 (RT 001, 003, 004, 006, 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan CIPULIR: RT 001/RW 008; RT 001/RW 009; RT 002/RW 008; RT 007/RW 008; RT 008/RW 008; RT 008/RW 009; RT 010/RW 008; RT 011/RW 008; RT 012/RW 009; RT 013/RW 008; RT 014/RW 008
-    - Kelurahan GROGOL SELATAN: RT 002/RW 006; RT 002/RW 013; RT 004/RW 006; RT 005/RW 006; RT 005/RW 013; RT 006/RW 006; RT 007/RW 006; RT 008/RW 013; RT 012/RW 006; RT 013/RW 006; RT 015/RW 006
+    - Kelurahan CIPULIR: RW 008 (RT 001, 002, 007, 008, 010, 011, 013, 014); RW 009 (RT 001, 008, 012)
+    - Kelurahan GROGOL SELATAN: RW 006 (RT 002, 004, 005, 006, 007, 012, 013, 015); RW 013 (RT 002, 005, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -19144,12 +19144,12 @@
 - Alamat: JL. PENGADEGAN BARAT XIII/46, RT 007, RW 004, KEL. PENGADEGAN, KEC. PANCORAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan PENGADEGAN: RT 001/RW 005; RT 002/RW 005; RT 003/RW 003; RT 004/RW 004; RT 005/RW 004; RT 006/RW 004; RT 007/RW 004; RT 008/RW 004
-    - Kelurahan RAWA JATI: RT 007/RW 005; RT 010/RW 005
+    - Kelurahan PENGADEGAN: RW 003 (RT 003); RW 004 (RT 004, 005, 006, 007, 008); RW 005 (RT 001, 002)
+    - Kelurahan RAWA JATI: RW 005 (RT 007, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
-    - Kelurahan PENGADEGAN: RT 001/RW 004; RT 001/RW 006; RT 002/RW 004; RT 002/RW 006; RT 003/RW 004; RT 003/RW 005; RT 003/RW 006; RT 004/RW 003; RT 004/RW 005; RT 004/RW 006; RT 005/RW 003; RT 005/RW 005; RT 005/RW 006; RT 006/RW 008; RT 009/RW 004; RT 009/RW 007; RT 010/RW 004; RT 010/RW 007; RT 011/RW 004; RT 011/RW 007; RT 012/RW 007
-    - Kelurahan RAWA JATI: RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 004/RW 005; RT 005/RW 005; RT 006/RW 005; RT 008/RW 005; RT 009/RW 005; RT 011/RW 005
+    - Kelurahan PENGADEGAN: RW 003 (RT 004, 005); RW 004 (RT 001, 002, 003, 009, 010, 011); RW 005 (RT 003, 004, 005); RW 006 (RT 001, 002, 003, 004, 005); RW 007 (RT 009, 010, 011, 012); RW 008 (RT 006)
+    - Kelurahan RAWA JATI: RW 005 (RT 001, 002, 003, 004, 005, 006, 008, 009, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KRAMATJATI
     - Kelurahan CAWANG
@@ -19165,12 +19165,12 @@
 - Alamat: JL. CIKOKO BARAT IV, RT 004, RW 005, KEL. CIKOKO, KEC. PANCORAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan CIKOKO: RT 002/RW 005; RT 003/RW 005; RT 004/RW 005; RT 005/RW 002; RT 005/RW 005; RT 008/RW 002; RT 012/RW 002
-    - Kelurahan PENGADEGAN: RT 007/RW 007
+    - Kelurahan CIKOKO: RW 002 (RT 005, 008, 012); RW 005 (RT 002, 003, 004, 005)
+    - Kelurahan PENGADEGAN: RW 007 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
-    - Kelurahan CIKOKO: RT 001/RW 002; RT 001/RW 003; RT 001/RW 005; RT 002/RW 002; RT 002/RW 003; RT 003/RW 002; RT 003/RW 003; RT 004/RW 002; RT 004/RW 003; RT 005/RW 003; RT 006/RW 002; RT 006/RW 003; RT 006/RW 005; RT 007/RW 002; RT 007/RW 003; RT 007/RW 005; RT 008/RW 003; RT 008/RW 005; RT 009/RW 002; RT 009/RW 003; RT 010/RW 002; RT 011/RW 002
-    - Kelurahan PENGADEGAN: RT 001/RW 007; RT 002/RW 003; RT 002/RW 007; RT 003/RW 007; RT 004/RW 007; RT 005/RW 007; RT 006/RW 006; RT 006/RW 007; RT 007/RW 006; RT 008/RW 006; RT 008/RW 007; RT 009/RW 006
+    - Kelurahan CIKOKO: RW 002 (RT 001, 002, 003, 004, 006, 007, 009, 010, 011); RW 003 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009); RW 005 (RT 001, 006, 007, 008)
+    - Kelurahan PENGADEGAN: RW 003 (RT 002); RW 006 (RT 006, 007, 008, 009); RW 007 (RT 001, 002, 003, 004, 005, 006, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KRAMATJATI
     - Kelurahan CAWANG
@@ -19188,12 +19188,12 @@
 - Alamat: JL. KRAMAT PULO GUNDUL IV, NO. 4, RT 014, RW 009, KEL. TANAH TINGGI, KEC. JOHAR BARU, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 012/RW 001
-    - Kelurahan TANAH TINGGI: RT 004/RW 009; RT 005/RW 009; RT 006/RW 009; RT 009/RW 009; RT 010/RW 009; RT 012/RW 009; RT 013/RW 009; RT 014/RW 009; RT 015/RW 009
+    - Kelurahan JOHAR BARU: RW 001 (RT 012)
+    - Kelurahan TANAH TINGGI: RW 009 (RT 004, 005, 006, 009, 010, 012, 013, 014, 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 011/RW 001; RT 013/RW 001
-    - Kelurahan TANAH TINGGI: RT 001/RW 008; RT 001/RW 012; RT 001/RW 013; RT 002/RW 008; RT 002/RW 009; RT 002/RW 012; RT 002/RW 013; RT 003/RW 009; RT 003/RW 012; RT 003/RW 013; RT 004/RW 012; RT 004/RW 013; RT 005/RW 013; RT 006/RW 013; RT 007/RW 009; RT 007/RW 012; RT 008/RW 009; RT 010/RW 013; RT 011/RW 009; RT 011/RW 013; RT 016/RW 009
+    - Kelurahan JOHAR BARU: RW 001 (RT 011, 013)
+    - Kelurahan TANAH TINGGI: RW 008 (RT 001, 002); RW 009 (RT 002, 003, 007, 008, 011, 016); RW 012 (RT 001, 002, 003, 004, 007); RW 013 (RT 001, 002, 003, 004, 005, 006, 010, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JOHAR BARU
     - Kelurahan GALUR
@@ -19211,10 +19211,10 @@
 - Alamat: JL. AL-BAIDHO, RT 006, RW 006, KEL. LUBANG BUAYA, KEC. CIPAYUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 001/RW 005; RT 002/RW 006; RT 003/RW 006; RT 004/RW 006; RT 005/RW 006; RT 006/RW 006; RT 007/RW 006; RT 008/RW 006; RT 008/RW 009; RT 009/RW 006; RT 010/RW 009; RT 012/RW 009
+    - Kelurahan LUBANG BUAYA: RW 005 (RT 001); RW 006 (RT 002, 003, 004, 005, 006, 007, 008, 009); RW 009 (RT 008, 010, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 001/RW 006; RT 002/RW 005; RT 002/RW 011; RT 003/RW 011; RT 004/RW 011; RT 010/RW 006
+    - Kelurahan LUBANG BUAYA: RW 005 (RT 002); RW 006 (RT 001, 010); RW 011 (RT 002, 003, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -19226,12 +19226,12 @@
 - Alamat: JL. TB.BADARUDIN, RT 001, RW 005, KEL. JATINEGARA KAUM, KEC. PULO GADUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULOGADUNG
-    - Kelurahan CIPINANG: RT 006/RW 004; RT 007/RW 004; RT 008/RW 004
-    - Kelurahan JATINEGARA KAUM: RT 001/RW 001; RT 001/RW 005; RT 002/RW 001; RT 002/RW 005; RT 003/RW 005; RT 004/RW 001; RT 008/RW 002; RT 009/RW 002
+    - Kelurahan CIPINANG: RW 004 (RT 006, 007, 008)
+    - Kelurahan JATINEGARA KAUM: RW 001 (RT 001, 002, 004); RW 002 (RT 008, 009); RW 005 (RT 001, 002, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
-    - Kelurahan CIPINANG: RT 002/RW 004; RT 003/RW 004; RT 004/RW 004; RT 005/RW 004; RT 009/RW 004
-    - Kelurahan JATINEGARA KAUM: RT 003/RW 002; RT 004/RW 005; RT 005/RW 005; RT 006/RW 002; RT 007/RW 002; RT 009/RW 001; RT 010/RW 001; RT 010/RW 002; RT 011/RW 002
+    - Kelurahan CIPINANG: RW 004 (RT 002, 003, 004, 005, 009)
+    - Kelurahan JATINEGARA KAUM: RW 001 (RT 009, 010); RW 002 (RT 003, 006, 007, 010, 011); RW 005 (RT 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -19244,14 +19244,14 @@
 - Alamat: JL. JEMBATAN BESI RAYA NO. 24, RT 001, RW 005, KEL. JEMBATAN BESI, KEC. TAMBORA, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan GROGOL: RT 007/RW 010; RT 008/RW 010; RT 009/RW 010
+    - Kelurahan GROGOL: RW 010 (RT 007, 008, 009)
   - Kecamatan TAMBORA
-    - Kelurahan JEMBATAN BESI: RT 001/RW 001; RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 004/RW 005; RT 005/RW 005; RT 007/RW 005; RT 008/RW 005; RT 009/RW 005; RT 010/RW 001; RT 012/RW 001; RT 012/RW 003; RT 014/RW 003
+    - Kelurahan JEMBATAN BESI: RW 001 (RT 001, 010, 012); RW 003 (RT 012, 014); RW 005 (RT 001, 002, 003, 004, 005, 007, 008, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan GROGOL: RT 006/RW 010
+    - Kelurahan GROGOL: RW 010 (RT 006)
   - Kecamatan TAMBORA
-    - Kelurahan JEMBATAN BESI: RT 002/RW 001; RT 003/RW 001; RT 004/RW 003; RT 006/RW 005; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 011/RW 001; RT 011/RW 003; RT 012/RW 006
+    - Kelurahan JEMBATAN BESI: RW 001 (RT 002, 003, 007, 008, 009, 011); RW 003 (RT 004, 011); RW 005 (RT 006); RW 006 (RT 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -19274,10 +19274,10 @@
 - Alamat: JL. SMP 160 TMII, RT 001, RW 003, KEL. CEGER, KEC. CIPAYUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan CEGER: RT 001/RW 003; RT 002/RW 003; RT 002/RW 005; RT 003/RW 003; RT 005/RW 003; RT 006/RW 003; RT 007/RW 003
+    - Kelurahan CEGER: RW 003 (RT 001, 002, 003, 005, 006, 007); RW 005 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
-    - Kelurahan CEGER: RT 001/RW 004; RT 001/RW 005; RT 003/RW 001; RT 003/RW 005; RT 004/RW 001; RT 004/RW 003; RT 008/RW 003; RT 009/RW 002; RT 010/RW 002
+    - Kelurahan CEGER: RW 001 (RT 003, 004); RW 002 (RT 009, 010); RW 003 (RT 004, 008); RW 004 (RT 001); RW 005 (RT 001, 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -19289,10 +19289,10 @@
 - Alamat: JL. DELMAN UTAMA I, RT 001, RW 011, KEL. KEBAYORAN LAMA UTARA, KEC. KEBAYORAN LAMA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA UTARA: RT 001/RW 011; RT 002/RW 011; RT 005/RW 011; RT 006/RW 010; RT 006/RW 011; RT 008/RW 011; RT 010/RW 009; RT 011/RW 010; RT 012/RW 009; RT 013/RW 009
+    - Kelurahan KEBAYORAN LAMA UTARA: RW 009 (RT 010, 012, 013); RW 010 (RT 006, 011); RW 011 (RT 001, 002, 005, 006, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA UTARA: RT 003/RW 009; RT 003/RW 011; RT 004/RW 011; RT 005/RW 009; RT 005/RW 010; RT 007/RW 010; RT 007/RW 011; RT 008/RW 010; RT 009/RW 009; RT 009/RW 010; RT 009/RW 011; RT 012/RW 011; RT 014/RW 011; RT 015/RW 009
+    - Kelurahan KEBAYORAN LAMA UTARA: RW 009 (RT 003, 005, 009, 015); RW 010 (RT 005, 007, 008, 009); RW 011 (RT 003, 004, 007, 009, 012, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -19308,10 +19308,10 @@
 - Alamat: JL. MARUNDA BARU IV NO. 1, RT 012, RW 003, KEL. MARUNDA, KEC. CILINCING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan MARUNDA: RT 001/RW 003; RT 005/RW 003; RT 007/RW 006; RT 008/RW 006; RT 009/RW 005; RT 010/RW 003; RT 011/RW 003; RT 012/RW 003; RT 013/RW 003; RT 015/RW 003
+    - Kelurahan MARUNDA: RW 003 (RT 001, 005, 010, 011, 012, 013, 015); RW 005 (RT 009); RW 006 (RT 007, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
-    - Kelurahan MARUNDA: RT 001/RW 006; RT 002/RW 003; RT 002/RW 006; RT 003/RW 003; RT 003/RW 005; RT 004/RW 003; RT 004/RW 004; RT 004/RW 005; RT 004/RW 006; RT 005/RW 005; RT 005/RW 006; RT 006/RW 003; RT 006/RW 005; RT 006/RW 006; RT 007/RW 003; RT 007/RW 005; RT 008/RW 003; RT 008/RW 004; RT 008/RW 005; RT 009/RW 003; RT 009/RW 006; RT 014/RW 003
+    - Kelurahan MARUNDA: RW 003 (RT 002, 003, 004, 006, 007, 008, 009, 014); RW 004 (RT 004, 008); RW 005 (RT 003, 004, 005, 006, 007, 008); RW 006 (RT 001, 002, 004, 005, 006, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -19322,16 +19322,16 @@
 - Alamat: JL. EMPANG TIGA, RT 008, RW 002, KEL. PEJATEN TIMUR, KEC. PASAR MINGGU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan KALIBATA: RT 002/RW 010; RT 003/RW 010; RT 004/RW 010; RT 005/RW 010
-    - Kelurahan Rawa Jati: RT 001/RW 006; RT 007/RW 006; RT 013/RW 006
+    - Kelurahan KALIBATA: RW 010 (RT 002, 003, 004, 005)
+    - Kelurahan Rawa Jati: RW 006 (RT 001, 007, 013)
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN TIMUR: RT 007/RW 002; RT 008/RW 002; RT 009/RW 002
+    - Kelurahan PEJATEN TIMUR: RW 002 (RT 007, 008, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
-    - Kelurahan KALIBATA: RT 001/RW 010; RT 006/RW 010; RT 007/RW 010; RT 008/RW 010; RT 009/RW 010; RT 010/RW 010; RT 011/RW 010
-    - Kelurahan Rawa Jati: RT 004/RW 004; RT 005/RW 004; RT 006/RW 004; RT 007/RW 004
+    - Kelurahan KALIBATA: RW 010 (RT 001, 006, 007, 008, 009, 010, 011)
+    - Kelurahan Rawa Jati: RW 004 (RT 004, 005, 006, 007)
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN TIMUR: RT 001/RW 002; RT 002/RW 002; RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002
+    - Kelurahan PEJATEN TIMUR: RW 002 (RT 001, 002, 003, 004, 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PANCORAN
     - Kelurahan KALIBATA
@@ -19344,10 +19344,10 @@
 - Alamat: JL. DARMA PUTRA RAYA NO. 10, RT 002, RW 007, KEL. KEBAYORAN LAMA SELATAN, KEC. KEBAYORAN LAMA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA SELATAN: RT 001/RW 007; RT 001/RW 008; RT 001/RW 011; RT 002/RW 007; RT 003/RW 007; RT 004/RW 007; RT 007/RW 008; RT 009/RW 009; RT 010/RW 009
+    - Kelurahan KEBAYORAN LAMA SELATAN: RW 007 (RT 001, 002, 003, 004); RW 008 (RT 001, 007); RW 009 (RT 009, 010); RW 011 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA SELATAN: RT 001/RW 009; RT 002/RW 005; RT 002/RW 008; RT 002/RW 011; RT 003/RW 005; RT 003/RW 008; RT 003/RW 011; RT 004/RW 005; RT 004/RW 011; RT 005/RW 005; RT 005/RW 007; RT 005/RW 008; RT 006/RW 007; RT 006/RW 008; RT 007/RW 005; RT 007/RW 009; RT 008/RW 005; RT 008/RW 006; RT 009/RW 001; RT 009/RW 006; RT 009/RW 011; RT 011/RW 011; RT 012/RW 011
+    - Kelurahan KEBAYORAN LAMA SELATAN: RW 001 (RT 009); RW 005 (RT 002, 003, 004, 005, 007, 008); RW 006 (RT 008, 009); RW 007 (RT 005, 006); RW 008 (RT 002, 003, 005, 006); RW 009 (RT 001, 007); RW 011 (RT 002, 003, 004, 009, 011, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GANDARIA UTARA
@@ -19363,12 +19363,12 @@
 - Alamat: JL. BALAI RAKYAT III NO.16, RT 001, RW 001, KEL. PONDOK BAMBU, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 006/RW 009; RT 011/RW 009
-    - Kelurahan PONDOK BAMBU: RT 001/RW 001; RT 002/RW 001; RT 011/RW 001; RT 012/RW 001; RT 013/RW 001; RT 014/RW 001
+    - Kelurahan KLENDER: RW 009 (RT 006, 011)
+    - Kelurahan PONDOK BAMBU: RW 001 (RT 001, 002, 011, 012, 013, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 007/RW 009
-    - Kelurahan PONDOK BAMBU: RT 004/RW 001; RT 005/RW 001; RT 006/RW 001; RT 007/RW 001; RT 009/RW 001; RT 010/RW 001
+    - Kelurahan KLENDER: RW 009 (RT 007)
+    - Kelurahan PONDOK BAMBU: RW 001 (RT 004, 005, 006, 007, 009, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -19379,10 +19379,10 @@
 - Alamat: JL. KEDONDONG NO. 5, RT 002, RW 005, KEL. JAGAKARSA, KEC. JAGAKARSA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 001/RW 005; RT 002/RW 005; RT 002/RW 007; RT 003/RW 005; RT 004/RW 002; RT 004/RW 004; RT 005/RW 002; RT 006/RW 002; RT 008/RW 005; RT 009/RW 005; RT 013/RW 002
+    - Kelurahan JAGAKARSA: RW 002 (RT 004, 005, 006, 013); RW 004 (RT 004); RW 005 (RT 001, 002, 003, 008, 009); RW 007 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 004/RW 005; RT 005/RW 005; RT 006/RW 004; RT 013/RW 005
+    - Kelurahan JAGAKARSA: RW 004 (RT 006); RW 005 (RT 004, 005, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan JAGAKARSA
@@ -19391,11 +19391,11 @@
 - Alamat: JL. LINGKAR DUREN SAWIT TIMUR, RT 005, RW 008, KEL. DUREN SAWIT, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 002/RW 008; RT 003/RW 010; RT 003/RW 015; RT 004/RW 015; RT 005/RW 008; RT 006/RW 008; RT 016/RW 008
+    - Kelurahan DUREN SAWIT: RW 008 (RT 002, 005, 006, 016); RW 010 (RT 003); RW 015 (RT 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 001/RW 008; RT 001/RW 010; RT 001/RW 015; RT 002/RW 010; RT 002/RW 012; RT 002/RW 015; RT 003/RW 008; RT 004/RW 008; RT 005/RW 010; RT 005/RW 015; RT 006/RW 010; RT 006/RW 015; RT 008/RW 012; RT 010/RW 008; RT 010/RW 010; RT 011/RW 008; RT 012/RW 008; RT 012/RW 010; RT 013/RW 008
-    - Kelurahan KLENDER: RT 001/RW 012; RT 004/RW 012
+    - Kelurahan DUREN SAWIT: RW 008 (RT 001, 003, 004, 010, 011, 012, 013); RW 010 (RT 001, 002, 005, 006, 010, 012); RW 012 (RT 002, 008); RW 015 (RT 001, 002, 005, 006)
+    - Kelurahan KLENDER: RW 012 (RT 001, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -19407,15 +19407,15 @@
 - Alamat: JL. P. KOMARUDIN BUARAN CAKUNG, RT 004, RW 003, KEL. CAKUNG BARAT, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG BARAT: RT 003/RW 003; RT 004/RW 003; RT 005/RW 003
-    - Kelurahan CAKUNG TIMUR: RT 011/RW 002
-    - Kelurahan PULO GEBANG: RT 001/RW 005
+    - Kelurahan CAKUNG BARAT: RW 003 (RT 003, 004, 005)
+    - Kelurahan CAKUNG TIMUR: RW 002 (RT 011)
+    - Kelurahan PULO GEBANG: RW 005 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG BARAT: RT 001/RW 003; RT 002/RW 003
-    - Kelurahan CAKUNG TIMUR: RT 008/RW 002; RT 009/RW 002; RT 010/RW 002; RT 014/RW 002
-    - Kelurahan PENGGILINGAN: RT 002/RW 015
-    - Kelurahan PULO GEBANG: RT 002/RW 005
+    - Kelurahan CAKUNG BARAT: RW 003 (RT 001, 002)
+    - Kelurahan CAKUNG TIMUR: RW 002 (RT 008, 009, 010, 014)
+    - Kelurahan PENGGILINGAN: RW 015 (RT 002)
+    - Kelurahan PULO GEBANG: RW 005 (RT 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -19430,12 +19430,12 @@
 - Alamat: JL. PETA UTARA NO.11, RT 001, RW 007, KEL. PEGADUNGAN, KEC. KALIDERES, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 007/RW 011
-    - Kelurahan PEGADUNGAN: RT 001/RW 006; RT 001/RW 007; RT 002/RW 006; RT 002/RW 007; RT 003/RW 014; RT 006/RW 006
+    - Kelurahan KALIDERES: RW 011 (RT 007)
+    - Kelurahan PEGADUNGAN: RW 006 (RT 001, 002, 006); RW 007 (RT 001, 002); RW 014 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 006/RW 011; RT 011/RW 001
-    - Kelurahan PEGADUNGAN: RT 001/RW 010; RT 001/RW 014; RT 002/RW 010; RT 002/RW 014; RT 003/RW 006; RT 003/RW 010; RT 004/RW 006; RT 004/RW 014; RT 005/RW 006; RT 005/RW 010
+    - Kelurahan KALIDERES: RW 001 (RT 011); RW 011 (RT 006)
+    - Kelurahan PEGADUNGAN: RW 006 (RT 003, 004, 005); RW 010 (RT 001, 002, 003, 005); RW 014 (RT 001, 002, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KALIDERES
     - Kelurahan KALIDERES
@@ -19445,10 +19445,10 @@
 - Alamat: JL. KEPU NO. 17, RT 001, RW 001, KEL. PEGANGSAAN DUA, KEC. KELAPA GADING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KELAPA GADING
-    - Kelurahan PEGANGSAAN DUA: RT 001/RW 001; RT 001/RW 013; RT 004/RW 001; RT 005/RW 013; RT 005/RW 026; RT 006/RW 001; RT 006/RW 005; RT 006/RW 026
+    - Kelurahan PEGANGSAAN DUA: RW 001 (RT 001, 004, 006); RW 005 (RT 006); RW 013 (RT 001, 005); RW 026 (RT 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
-    - Kelurahan PEGANGSAAN DUA: RT 001/RW 004; RT 001/RW 020; RT 001/RW 026; RT 002/RW 001; RT 002/RW 004; RT 002/RW 026; RT 003/RW 001; RT 003/RW 007; RT 003/RW 026; RT 004/RW 007; RT 004/RW 026; RT 005/RW 001; RT 007/RW 020; RT 009/RW 026; RT 014/RW 007
+    - Kelurahan PEGANGSAAN DUA: RW 001 (RT 002, 003, 005); RW 004 (RT 001, 002); RW 007 (RT 003, 004, 014); RW 020 (RT 001, 007); RW 026 (RT 001, 002, 003, 004, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan RAWA TERATE
@@ -19463,14 +19463,14 @@
 - Alamat: JL. H. BAPING, RT 013, RW 004, KEL. RAMBUTAN, KEC. CIRACAS, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 014/RW 010; RT 017/RW 009
-    - Kelurahan RAMBUTAN: RT 007/RW 004; RT 008/RW 004; RT 009/RW 004; RT 013/RW 004; RT 014/RW 004
-    - Kelurahan SUSUKAN: RT 010/RW 006; RT 012/RW 004
+    - Kelurahan CIRACAS: RW 009 (RT 017); RW 010 (RT 014)
+    - Kelurahan RAMBUTAN: RW 004 (RT 007, 008, 009, 013, 014)
+    - Kelurahan SUSUKAN: RW 004 (RT 012); RW 006 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 002/RW 009; RT 013/RW 010; RT 016/RW 009
-    - Kelurahan RAMBUTAN: RT 005/RW 004; RT 006/RW 004; RT 010/RW 004; RT 012/RW 004
-    - Kelurahan SUSUKAN: RT 001/RW 006; RT 005/RW 006; RT 007/RW 006; RT 009/RW 006
+    - Kelurahan CIRACAS: RW 009 (RT 002, 016); RW 010 (RT 013)
+    - Kelurahan RAMBUTAN: RW 004 (RT 005, 006, 010, 012)
+    - Kelurahan SUSUKAN: RW 006 (RT 001, 005, 007, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan CEGER
@@ -19484,10 +19484,10 @@
 - Alamat: JL. RAYA STASIUN CAKUNG, RT 010, RW 003, KEL. PULO GEBANG, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 007/RW 003; RT 009/RW 003; RT 010/RW 003; RT 014/RW 003; RT 015/RW 003
+    - Kelurahan PULO GEBANG: RW 003 (RT 007, 009, 010, 014, 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 001/RW 003; RT 001/RW 008; RT 002/RW 003; RT 002/RW 008; RT 003/RW 003; RT 003/RW 008; RT 004/RW 003; RT 004/RW 008; RT 005/RW 003; RT 005/RW 007; RT 005/RW 008; RT 006/RW 003; RT 006/RW 007; RT 008/RW 003; RT 008/RW 008; RT 009/RW 008; RT 010/RW 007; RT 010/RW 008; RT 011/RW 003; RT 011/RW 008; RT 012/RW 007; RT 012/RW 008; RT 013/RW 003; RT 014/RW 007; RT 015/RW 008; RT 016/RW 003; RT 016/RW 008; RT 017/RW 003; RT 017/RW 008; RT 018/RW 003
+    - Kelurahan PULO GEBANG: RW 003 (RT 001, 002, 003, 004, 005, 006, 008, 011, 013, 016, 017, 018); RW 007 (RT 005, 006, 010, 012, 014); RW 008 (RT 001, 002, 003, 004, 005, 008, 009, 010, 011, 012, 015, 016, 017)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -19499,10 +19499,10 @@
 - Alamat: JL. ALUR LAUT NO. 57, RT 003, RW 009, KEL. RAWA BADAK UTARA, KEC. KOJA, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWA BADAK UTARA: RT 001/RW 008; RT 002/RW 008; RT 002/RW 009; RT 003/RW 004; RT 003/RW 009; RT 004/RW 003; RT 004/RW 009; RT 005/RW 009; RT 006/RW 008; RT 006/RW 009; RT 006/RW 011; RT 007/RW 005; RT 007/RW 009; RT 008/RW 008; RT 008/RW 009; RT 009/RW 009; RT 010/RW 009
+    - Kelurahan RAWA BADAK UTARA: RW 003 (RT 004); RW 004 (RT 003); RW 005 (RT 007); RW 008 (RT 001, 002, 006, 008); RW 009 (RT 002, 003, 004, 005, 006, 007, 008, 009, 010); RW 011 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
-    - Kelurahan RAWA BADAK UTARA: RT 001/RW 003; RT 001/RW 006; RT 001/RW 009; RT 001/RW 010; RT 002/RW 003; RT 002/RW 005; RT 002/RW 006; RT 002/RW 010; RT 002/RW 011; RT 003/RW 003; RT 003/RW 005; RT 003/RW 006; RT 003/RW 008; RT 003/RW 011; RT 004/RW 004; RT 004/RW 005; RT 004/RW 006; RT 004/RW 011; RT 005/RW 004; RT 005/RW 005; RT 005/RW 006; RT 005/RW 008; RT 005/RW 011; RT 006/RW 004; RT 006/RW 005; RT 006/RW 006; RT 007/RW 006; RT 007/RW 008; RT 007/RW 011; RT 008/RW 005; RT 009/RW 008; RT 010/RW 008; RT 011/RW 008; RT 011/RW 009; RT 012/RW 009
+    - Kelurahan RAWA BADAK UTARA: RW 003 (RT 001, 002, 003); RW 004 (RT 004, 005, 006); RW 005 (RT 002, 003, 004, 005, 006, 008); RW 006 (RT 001, 002, 003, 004, 005, 006, 007); RW 008 (RT 003, 005, 007, 009, 010, 011); RW 009 (RT 001, 011, 012); RW 010 (RT 001, 002); RW 011 (RT 002, 003, 004, 005, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -19516,12 +19516,12 @@
 - Alamat: JL. H. BAPING, RT 010, RW 006, KEL. SUSUKAN, KEC. CIRACAS, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 017/RW 009
-    - Kelurahan RAMBUTAN: RT 007/RW 004; RT 013/RW 004
-    - Kelurahan SUSUKAN: RT 001/RW 006; RT 006/RW 006; RT 007/RW 006; RT 009/RW 006; RT 010/RW 006; RT 011/RW 006; RT 012/RW 004
+    - Kelurahan CIRACAS: RW 009 (RT 017)
+    - Kelurahan RAMBUTAN: RW 004 (RT 007, 013)
+    - Kelurahan SUSUKAN: RW 004 (RT 012); RW 006 (RT 001, 006, 007, 009, 010, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan SUSUKAN: RT 001/RW 003; RT 002/RW 003; RT 005/RW 006; RT 008/RW 006
+    - Kelurahan SUSUKAN: RW 003 (RT 001, 002); RW 006 (RT 005, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -19532,16 +19532,16 @@
 - Alamat: JL. RAYA JATIPADANG KEBAGUSAN WATES, RT 010, RW 005, KEL. JAGAKARSA, KEC. JAGAKARSA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 006/RW 005; RT 010/RW 005; RT 011/RW 005
+    - Kelurahan JAGAKARSA: RW 005 (RT 006, 010, 011)
   - Kecamatan PASAR MINGGU
-    - Kelurahan KEBAGUSAN: RT 002/RW 004; RT 003/RW 004; RT 004/RW 004
-    - Kelurahan RAGUNAN: RT 009/RW 007
+    - Kelurahan KEBAGUSAN: RW 004 (RT 002, 003, 004)
+    - Kelurahan RAGUNAN: RW 007 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 005/RW 005; RT 007/RW 005; RT 012/RW 005; RT 013/RW 005
+    - Kelurahan JAGAKARSA: RW 005 (RT 005, 007, 012, 013)
   - Kecamatan PASAR MINGGU
-    - Kelurahan KEBAGUSAN: RT 005/RW 004; RT 006/RW 004
-    - Kelurahan RAGUNAN: RT 010/RW 007
+    - Kelurahan KEBAGUSAN: RW 004 (RT 005, 006)
+    - Kelurahan RAGUNAN: RW 007 (RT 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -19555,10 +19555,10 @@
 - Alamat: JL. DURI KOSAMBI RAYA, RT 010, RW 002, KEL. DURI KOSAMBI, KEC. CENGKARENG, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan DURI KOSAMBI: RT 001/RW 002; RT 002/RW 008; RT 008/RW 002; RT 008/RW 008; RT 009/RW 002; RT 010/RW 002; RT 011/RW 002; RT 014/RW 002
+    - Kelurahan DURI KOSAMBI: RW 002 (RT 001, 008, 009, 010, 011, 014); RW 008 (RT 002, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
-    - Kelurahan DURI KOSAMBI: RT 001/RW 008; RT 003/RW 008; RT 004/RW 008; RT 005/RW 008; RT 007/RW 002; RT 009/RW 008; RT 010/RW 008
+    - Kelurahan DURI KOSAMBI: RW 002 (RT 007); RW 008 (RT 001, 003, 004, 005, 009, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan DURI KOSAMBI
@@ -19570,11 +19570,11 @@
 - Alamat: JL. RAYA KODAM BINTARO, RT 006, RW 003, KEL. PESANGGRAHAN, KEC. PESANGGRAHAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PESANGGRAHAN: RT 001/RW 004; RT 002/RW 004; RT 003/RW 004; RT 004/RW 003; RT 004/RW 004; RT 005/RW 003; RT 005/RW 004; RT 006/RW 003; RT 008/RW 002; RT 009/RW 002; RT 010/RW 008
+    - Kelurahan PESANGGRAHAN: RW 002 (RT 008, 009); RW 003 (RT 004, 005, 006); RW 004 (RT 001, 002, 003, 004, 005); RW 008 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 005/RW 009; RT 008/RW 009; RT 009/RW 009; RT 010/RW 008; RT 010/RW 009; RT 013/RW 006; RT 014/RW 006; RT 014/RW 009
-    - Kelurahan PESANGGRAHAN: RT 001/RW 008; RT 002/RW 008; RT 003/RW 003; RT 003/RW 008; RT 004/RW 002; RT 004/RW 008; RT 005/RW 008; RT 006/RW 002; RT 006/RW 008; RT 007/RW 002; RT 009/RW 008; RT 011/RW 005; RT 011/RW 008; RT 012/RW 005; RT 012/RW 008; RT 013/RW 005; RT 013/RW 008
+    - Kelurahan BINTARO: RW 006 (RT 013, 014); RW 008 (RT 010); RW 009 (RT 005, 008, 009, 010, 014)
+    - Kelurahan PESANGGRAHAN: RW 002 (RT 004, 006, 007); RW 003 (RT 003); RW 005 (RT 011, 012, 013); RW 008 (RT 001, 002, 003, 004, 005, 006, 009, 011, 012, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PESANGGRAHAN
     - Kelurahan BINTARO
@@ -19585,10 +19585,10 @@
 - Alamat: JL. MAWAR NO. 6A, RT 003, RW 013, KEL. BINTARO, KEC. PESANGGRAHAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 001/RW 014; RT 002/RW 005; RT 002/RW 013; RT 002/RW 014; RT 003/RW 013; RT 004/RW 013; RT 008/RW 013
+    - Kelurahan BINTARO: RW 005 (RT 002); RW 013 (RT 002, 003, 004, 008); RW 014 (RT 001, 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 001/RW 005; RT 001/RW 013; RT 003/RW 014; RT 004/RW 005; RT 004/RW 014; RT 005/RW 013; RT 005/RW 014; RT 006/RW 013; RT 006/RW 014; RT 007/RW 013
+    - Kelurahan BINTARO: RW 005 (RT 001, 004); RW 013 (RT 001, 005, 006, 007); RW 014 (RT 003, 004, 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan LEBAK BULUS
@@ -19601,12 +19601,12 @@
 - Alamat: JL. RAYA KALISARI, RT 002, RW 003, KEL. KALISARI, KEC. PASAR REBO, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 001/RW 010; RT 003/RW 009; RT 007/RW 009
-    - Kelurahan KALISARI: RT 001/RW 003; RT 002/RW 003; RT 007/RW 010; RT 008/RW 003; RT 008/RW 010; RT 009/RW 003; RT 013/RW 010
+    - Kelurahan BARU: RW 009 (RT 003, 007); RW 010 (RT 001)
+    - Kelurahan KALISARI: RW 003 (RT 001, 002, 008, 009); RW 010 (RT 007, 008, 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 002/RW 009; RT 002/RW 010; RT 004/RW 009; RT 005/RW 009; RT 005/RW 010; RT 006/RW 009; RT 009/RW 009
-    - Kelurahan KALISARI: RT 001/RW 010; RT 002/RW 010; RT 003/RW 003; RT 003/RW 010; RT 004/RW 003; RT 004/RW 010; RT 005/RW 003; RT 006/RW 003; RT 006/RW 010; RT 009/RW 010; RT 011/RW 003; RT 011/RW 010; RT 012/RW 010
+    - Kelurahan BARU: RW 009 (RT 002, 004, 005, 006, 009); RW 010 (RT 002, 005)
+    - Kelurahan KALISARI: RW 003 (RT 003, 004, 005, 006, 011); RW 010 (RT 001, 002, 003, 004, 006, 009, 011, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan TANJUNG BARAT
@@ -19620,11 +19620,11 @@
 - Alamat: JL. BAMBU WULUNG, RT 006, RW 005, KEL. BAMBU APUS, KEC. CIPAYUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan BAMBU APUS: RT 001/RW 005; RT 003/RW 001; RT 003/RW 005; RT 005/RW 005; RT 006/RW 005; RT 007/RW 005; RT 008/RW 005; RT 009/RW 001; RT 010/RW 005
+    - Kelurahan BAMBU APUS: RW 001 (RT 003, 009); RW 005 (RT 001, 003, 005, 006, 007, 008, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
-    - Kelurahan BAMBU APUS: RT 001/RW 003; RT 002/RW 005; RT 004/RW 005; RT 009/RW 005; RT 013/RW 003
-    - Kelurahan CIPAYUNG: RT 005/RW 004
+    - Kelurahan BAMBU APUS: RW 003 (RT 001, 013); RW 005 (RT 002, 004, 009)
+    - Kelurahan CIPAYUNG: RW 004 (RT 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -19636,11 +19636,11 @@
 - Alamat: JL. MASJID I/5, RT 009, RW 003, KEL. KARET TENGSIN, KEC. TANAH ABANG, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan KARET TENGSIN: RT 003/RW 002; RT 006/RW 004; RT 009/RW 002; RT 009/RW 003; RT 009/RW 004; RT 011/RW 003; RT 013/RW 011
+    - Kelurahan KARET TENGSIN: RW 002 (RT 003, 009); RW 003 (RT 009, 011); RW 004 (RT 006, 009); RW 011 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
-    - Kelurahan BENDUNGAN HILIR: RT 005/RW 001; RT 005/RW 003; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 013/RW 006
-    - Kelurahan KARET TENGSIN: RT 007/RW 004; RT 008/RW 004; RT 009/RW 011; RT 012/RW 004; RT 013/RW 002; RT 013/RW 003; RT 013/RW 005; RT 014/RW 005; RT 015/RW 004; RT 015/RW 005; RT 017/RW 005; RT 018/RW 005
+    - Kelurahan BENDUNGAN HILIR: RW 001 (RT 005, 006, 007, 008, 009); RW 003 (RT 005); RW 006 (RT 013)
+    - Kelurahan KARET TENGSIN: RW 002 (RT 013); RW 003 (RT 013); RW 004 (RT 007, 008, 012, 015); RW 005 (RT 013, 014, 015, 017, 018); RW 011 (RT 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan SENAYAN
@@ -19659,10 +19659,10 @@
 - Alamat: JL. KALIBATA TIMUR 1, RT 010, RW 008, KEL. KALIBATA, KEC. PANCORAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan KALIBATA: RT 001/RW 008; RT 002/RW 008; RT 003/RW 008; RT 004/RW 008; RT 005/RW 008; RT 006/RW 008; RT 008/RW 001; RT 009/RW 001; RT 010/RW 008; RT 011/RW 008
+    - Kelurahan KALIBATA: RW 001 (RT 008, 009); RW 008 (RT 001, 002, 003, 004, 005, 006, 010, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
-    - Kelurahan KALIBATA: RT 001/RW 010; RT 002/RW 010; RT 004/RW 001; RT 005/RW 001; RT 005/RW 010; RT 006/RW 001; RT 007/RW 001; RT 007/RW 008; RT 007/RW 010; RT 008/RW 008; RT 009/RW 008; RT 009/RW 010; RT 010/RW 001; RT 010/RW 010; RT 011/RW 001; RT 011/RW 010
+    - Kelurahan KALIBATA: RW 001 (RT 004, 005, 006, 007, 010, 011); RW 008 (RT 007, 008, 009); RW 010 (RT 001, 002, 005, 007, 009, 010, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PANCORAN
     - Kelurahan DUREN TIGA
@@ -19677,16 +19677,16 @@
 - Alamat: JL. SUMUR BATU RAYA NO.2, RT 014, RW 001, KEL. SUMUR BATU, KEC. KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan SERDANG: RT 016/RW 005
-    - Kelurahan SUMUR BATU: RT 013/RW 001; RT 014/RW 001; RT 016/RW 002
+    - Kelurahan SERDANG: RW 005 (RT 016)
+    - Kelurahan SUMUR BATU: RW 001 (RT 013, 014); RW 002 (RT 016)
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER JAYA: RT 002/RW 003; RT 003/RW 003; RT 005/RW 007
+    - Kelurahan SUNTER JAYA: RW 003 (RT 002, 003); RW 007 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
-    - Kelurahan SERDANG: RT 018/RW 005
-    - Kelurahan SUMUR BATU: RT 012/RW 001; RT 012/RW 002; RT 017/RW 002
+    - Kelurahan SERDANG: RW 005 (RT 018)
+    - Kelurahan SUMUR BATU: RW 001 (RT 012); RW 002 (RT 012, 017)
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER JAYA: RT 001/RW 003; RT 004/RW 007; RT 005/RW 003; RT 007/RW 007
+    - Kelurahan SUNTER JAYA: RW 003 (RT 001, 005); RW 007 (RT 004, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH TIMUR
@@ -19701,11 +19701,11 @@
 - Alamat: JL. LAPAN, RT 009, RW 001, KEL. PEKAYON, KEC. PASAR REBO, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan PEKAYON: RT 001/RW 010; RT 006/RW 001; RT 008/RW 001; RT 009/RW 001; RT 010/RW 001; RT 014/RW 001
+    - Kelurahan PEKAYON: RW 001 (RT 006, 008, 009, 010, 014); RW 010 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
-    - Kelurahan KALISARI: RT 001/RW 001; RT 005/RW 008
-    - Kelurahan PEKAYON: RT 002/RW 001; RT 002/RW 009; RT 002/RW 010; RT 003/RW 009; RT 003/RW 010; RT 004/RW 001; RT 004/RW 009; RT 004/RW 010; RT 005/RW 001; RT 005/RW 010; RT 007/RW 001; RT 011/RW 001; RT 011/RW 010; RT 012/RW 001; RT 012/RW 010; RT 014/RW 009
+    - Kelurahan KALISARI: RW 001 (RT 001); RW 008 (RT 005)
+    - Kelurahan PEKAYON: RW 001 (RT 002, 004, 005, 007, 011, 012); RW 009 (RT 002, 003, 004, 014); RW 010 (RT 002, 003, 004, 005, 011, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIRACAS
     - Kelurahan CIBUBUR
@@ -19721,10 +19721,10 @@
 - Alamat: JL. KEMANDORAN I, RT 004, RW 011, KEL. GROGOL UTARA, KEC. KEBAYORAN LAMA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL UTARA: RT 002/RW 011; RT 003/RW 011; RT 004/RW 004; RT 004/RW 011; RT 005/RW 011; RT 007/RW 011; RT 009/RW 004
+    - Kelurahan GROGOL UTARA: RW 004 (RT 004, 009); RW 011 (RT 002, 003, 004, 005, 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL UTARA: RT 005/RW 004; RT 006/RW 004; RT 006/RW 011; RT 007/RW 004; RT 010/RW 004
+    - Kelurahan GROGOL UTARA: RW 004 (RT 005, 006, 007, 010); RW 011 (RT 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -19733,12 +19733,12 @@
 - Alamat: JL. PETA BARAT, RT 005, RW 013, KEL. KALIDERES, KEC. KALIDERES, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 002/RW 013; RT 003/RW 013; RT 005/RW 013; RT 006/RW 013; RT 007/RW 013
-    - Kelurahan PEGADUNGAN: RT 002/RW 020; RT 003/RW 020; RT 004/RW 008; RT 006/RW 008
+    - Kelurahan KALIDERES: RW 013 (RT 002, 003, 005, 006, 007)
+    - Kelurahan PEGADUNGAN: RW 008 (RT 004, 006); RW 020 (RT 002, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 001/RW 010; RT 001/RW 013; RT 004/RW 013; RT 008/RW 013; RT 009/RW 013; RT 010/RW 013; RT 011/RW 013
-    - Kelurahan PEGADUNGAN: RT 001/RW 008; RT 001/RW 020; RT 002/RW 008; RT 003/RW 008; RT 004/RW 020; RT 005/RW 001; RT 005/RW 008; RT 005/RW 020; RT 006/RW 001; RT 007/RW 008; RT 008/RW 001
+    - Kelurahan KALIDERES: RW 010 (RT 001); RW 013 (RT 001, 004, 008, 009, 010, 011)
+    - Kelurahan PEGADUNGAN: RW 001 (RT 005, 006, 008); RW 008 (RT 001, 002, 003, 005, 007); RW 020 (RT 001, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -19751,10 +19751,10 @@
 - Alamat: JL. GAGA UTAMA, RT 004, RW 009, KEL. SEMANAN, KEC. KALIDERES, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan SEMANAN: RT 001/RW 003; RT 002/RW 009; RT 004/RW 009; RT 005/RW 009; RT 006/RW 009; RT 007/RW 003
+    - Kelurahan SEMANAN: RW 003 (RT 001, 007); RW 009 (RT 002, 004, 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
-    - Kelurahan SEMANAN: RT 001/RW 011; RT 003/RW 009; RT 006/RW 003; RT 006/RW 004
+    - Kelurahan SEMANAN: RW 003 (RT 006); RW 004 (RT 006); RW 009 (RT 003); RW 011 (RT 001)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KALIDERES
     - Kelurahan SEMANAN
@@ -19763,12 +19763,12 @@
 - Alamat: JL. TANAH MERDEKA, RT 002, RW 004, KEL. RAMBUTAN, KEC. CIRACAS, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan RAMBUTAN: RT 002/RW 004; RT 003/RW 004; RT 004/RW 004; RT 005/RW 004; RT 007/RW 003; RT 010/RW 004; RT 011/RW 004
-    - Kelurahan SUSUKAN: RT 005/RW 006
+    - Kelurahan RAMBUTAN: RW 003 (RT 007); RW 004 (RT 002, 003, 004, 005, 010, 011)
+    - Kelurahan SUSUKAN: RW 006 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan RAMBUTAN: RT 001/RW 004; RT 001/RW 006; RT 006/RW 004; RT 007/RW 004
-    - Kelurahan SUSUKAN: RT 008/RW 006
+    - Kelurahan RAMBUTAN: RW 004 (RT 001, 006, 007); RW 006 (RT 001)
+    - Kelurahan SUSUKAN: RW 006 (RT 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan CEGER
@@ -19781,10 +19781,10 @@
 - Alamat: JL. H. RAUSIN, RT 002, RW 008, KEL. KELAPA DUA, KEC. KEBON JERUK, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KELAPA DUA: RT 001/RW 002; RT 001/RW 008; RT 002/RW 002; RT 002/RW 008; RT 004/RW 008; RT 005/RW 008; RT 006/RW 008; RT 007/RW 008; RT 008/RW 008
+    - Kelurahan KELAPA DUA: RW 002 (RT 001, 002); RW 008 (RT 001, 002, 004, 005, 006, 007, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
-    - Kelurahan KELAPA DUA: RT 003/RW 002; RT 003/RW 003; RT 003/RW 008; RT 004/RW 002
+    - Kelurahan KELAPA DUA: RW 002 (RT 003, 004); RW 003 (RT 003); RW 008 (RT 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -19797,12 +19797,12 @@
 - Alamat: JL. PREPEDAN KAMAL, RT 004, RW 007, KEL. KAMAL, KEC. KALIDERES, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KAMAL: RT 001/RW 007; RT 003/RW 007; RT 004/RW 007; RT 005/RW 007
-    - Kelurahan TEGAL ALUR: RT 006/RW 013
+    - Kelurahan KAMAL: RW 007 (RT 001, 003, 004, 005)
+    - Kelurahan TEGAL ALUR: RW 013 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
-    - Kelurahan KAMAL: RT 001/RW 005; RT 003/RW 005; RT 006/RW 007; RT 007/RW 007; RT 008/RW 007; RT 010/RW 007; RT 012/RW 007; RT 013/RW 007
-    - Kelurahan TEGAL ALUR: RT 005/RW 013
+    - Kelurahan KAMAL: RW 005 (RT 001, 003); RW 007 (RT 006, 007, 008, 010, 012, 013)
+    - Kelurahan TEGAL ALUR: RW 013 (RT 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KALIDERES
     - Kelurahan KAMAL
@@ -19815,11 +19815,11 @@
 - Alamat: JL. DUTA RAYA NO. 2, RT 002, RW 007, KEL. DURI KEPA, KEC. KEBON JERUK, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan DURI KEPA: RT 001/RW 001; RT 001/RW 007; RT 002/RW 001; RT 002/RW 007; RT 003/RW 001; RT 003/RW 007; RT 004/RW 001; RT 004/RW 007; RT 005/RW 001; RT 013/RW 007; RT 016/RW 007
+    - Kelurahan DURI KEPA: RW 001 (RT 001, 002, 003, 004, 005); RW 007 (RT 001, 002, 003, 004, 013, 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
-    - Kelurahan DURI KEPA: RT 003/RW 008; RT 003/RW 011; RT 005/RW 007; RT 006/RW 001; RT 006/RW 006; RT 006/RW 007; RT 007/RW 001; RT 007/RW 007; RT 008/RW 001; RT 008/RW 007; RT 009/RW 001; RT 009/RW 007; RT 010/RW 007; RT 011/RW 007; RT 012/RW 007; RT 015/RW 007
-    - Kelurahan KEDOYA SELATAN: RT 007/RW 001
+    - Kelurahan DURI KEPA: RW 001 (RT 006, 007, 008, 009); RW 006 (RT 006); RW 007 (RT 005, 006, 007, 008, 009, 010, 011, 012, 015); RW 008 (RT 003); RW 011 (RT 003)
+    - Kelurahan KEDOYA SELATAN: RW 001 (RT 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN UTARA
@@ -19833,11 +19833,11 @@
 - Alamat: JL. KRAMAT IV NO.100, RT 002, RW 003, KEL. LUBANG BUAYA, KEC. CIPAYUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan BAMBU APUS: RT 005/RW 003
-    - Kelurahan LUBANG BUAYA: RT 001/RW 003; RT 002/RW 003; RT 003/RW 003; RT 003/RW 010; RT 005/RW 003; RT 006/RW 003; RT 008/RW 010; RT 009/RW 010
+    - Kelurahan BAMBU APUS: RW 003 (RT 005)
+    - Kelurahan LUBANG BUAYA: RW 003 (RT 001, 002, 003, 005, 006); RW 010 (RT 003, 008, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 004/RW 003; RT 005/RW 010; RT 007/RW 003; RT 007/RW 010; RT 008/RW 003
+    - Kelurahan LUBANG BUAYA: RW 003 (RT 004, 007, 008); RW 010 (RT 005, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -19848,11 +19848,11 @@
 - Alamat: JL. IRIGASI, RT 001, RW 008, KEL. UJUNG MENTENG, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 008/RW 014; RT 012/RW 001; RT 016/RW 001
-    - Kelurahan UJUNG MENTENG: RT 001/RW 008; RT 001/RW 009; RT 002/RW 008; RT 002/RW 009; RT 003/RW 001; RT 003/RW 002; RT 003/RW 009; RT 004/RW 008; RT 005/RW 001; RT 006/RW 001; RT 009/RW 002; RT 009/RW 007; RT 010/RW 001; RT 011/RW 001; RT 013/RW 001
+    - Kelurahan CAKUNG TIMUR: RW 001 (RT 012, 016); RW 014 (RT 008)
+    - Kelurahan UJUNG MENTENG: RW 001 (RT 003, 005, 006, 010, 011, 013); RW 002 (RT 003, 009); RW 007 (RT 009); RW 008 (RT 001, 002, 004); RW 009 (RT 001, 002, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan UJUNG MENTENG: RT 001/RW 001; RT 002/RW 001; RT 002/RW 002; RT 003/RW 008; RT 004/RW 001; RT 005/RW 008; RT 007/RW 001; RT 008/RW 001; RT 008/RW 002; RT 009/RW 001; RT 012/RW 007; RT 015/RW 001
+    - Kelurahan UJUNG MENTENG: RW 001 (RT 001, 002, 004, 007, 008, 009, 015); RW 002 (RT 002, 008); RW 007 (RT 012); RW 008 (RT 003, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG TIMUR
@@ -19862,12 +19862,12 @@
 - Alamat: JL. PENDIDIKAN RAYA IX KOMP. IKIP, RT 008, RW 005, KEL. DUREN SAWIT, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 001/RW 014; RT 003/RW 005; RT 007/RW 005; RT 007/RW 014; RT 008/RW 005; RT 008/RW 014; RT 009/RW 005; RT 009/RW 014
-    - Kelurahan PONDOK KELAPA: RT 001/RW 013; RT 003/RW 013
+    - Kelurahan DUREN SAWIT: RW 005 (RT 003, 007, 008, 009); RW 014 (RT 001, 007, 008, 009)
+    - Kelurahan PONDOK KELAPA: RW 013 (RT 001, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 001/RW 005; RT 002/RW 001; RT 002/RW 005; RT 002/RW 014; RT 003/RW 014; RT 003/RW 017; RT 004/RW 005; RT 004/RW 014; RT 004/RW 017; RT 005/RW 001; RT 005/RW 005; RT 005/RW 007; RT 005/RW 014; RT 006/RW 005; RT 006/RW 014; RT 007/RW 017; RT 008/RW 001; RT 013/RW 001
-    - Kelurahan PONDOK KELAPA: RT 006/RW 007; RT 014/RW 007
+    - Kelurahan DUREN SAWIT: RW 001 (RT 002, 005, 008, 013); RW 005 (RT 001, 002, 004, 005, 006); RW 007 (RT 005); RW 014 (RT 002, 003, 004, 005, 006); RW 017 (RT 003, 004, 007)
+    - Kelurahan PONDOK KELAPA: RW 007 (RT 006, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -19877,12 +19877,12 @@
 - Alamat: JL. SAWAH BARAT NO. 48, RT 012, RW 011, KEL. DUREN SAWIT, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 001/RW 003; RT 001/RW 011; RT 002/RW 003; RT 004/RW 011; RT 005/RW 011; RT 008/RW 011; RT 009/RW 004; RT 009/RW 011; RT 012/RW 011; RT 014/RW 006; RT 014/RW 009
-    - Kelurahan PONDOK BAMBU: RT 017/RW 006; RT 018/RW 006
+    - Kelurahan DUREN SAWIT: RW 003 (RT 001, 002); RW 004 (RT 009); RW 006 (RT 014); RW 009 (RT 014); RW 011 (RT 001, 004, 005, 008, 009, 012)
+    - Kelurahan PONDOK BAMBU: RW 006 (RT 017, 018)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 001/RW 001; RT 002/RW 011; RT 004/RW 004; RT 005/RW 004; RT 006/RW 001; RT 006/RW 011; RT 007/RW 001; RT 007/RW 004; RT 007/RW 011; RT 008/RW 003; RT 009/RW 003; RT 010/RW 011; RT 011/RW 001; RT 011/RW 006; RT 012/RW 009; RT 013/RW 006
-    - Kelurahan PONDOK BAMBU: RT 001/RW 006; RT 002/RW 006; RT 006/RW 006; RT 015/RW 006; RT 016/RW 006
+    - Kelurahan DUREN SAWIT: RW 001 (RT 001, 006, 007, 011); RW 003 (RT 008, 009); RW 004 (RT 004, 005, 007); RW 006 (RT 011, 013); RW 009 (RT 012); RW 011 (RT 002, 006, 007, 010)
+    - Kelurahan PONDOK BAMBU: RW 006 (RT 001, 002, 006, 015, 016)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -19893,12 +19893,12 @@
 - Alamat: JL. MABES TNI, RT 004, RW 006, KEL. PONDOK RANGGON, KEC. CIPAYUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan CILANGKAP: RT 002/RW 006; RT 003/RW 006
-    - Kelurahan PONDOK RANGGON: RT 003/RW 006; RT 004/RW 006; RT 005/RW 006; RT 006/RW 006
+    - Kelurahan CILANGKAP: RW 006 (RT 002, 003)
+    - Kelurahan PONDOK RANGGON: RW 006 (RT 003, 004, 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
-    - Kelurahan CILANGKAP: RT 001/RW 006
-    - Kelurahan PONDOK RANGGON: RT 002/RW 006; RT 007/RW 006; RT 008/RW 006; RT 009/RW 006; RT 010/RW 006; RT 011/RW 006; RT 012/RW 006
+    - Kelurahan CILANGKAP: RW 006 (RT 001)
+    - Kelurahan PONDOK RANGGON: RW 006 (RT 002, 007, 008, 009, 010, 011, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan CILANGKAP
@@ -19909,10 +19909,10 @@
 - Alamat: JL. RAYA KEDOYA NO.100, RT 011, RW 007, KEL. KEDOYA UTARA, KEC. KEBON JERUK, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEDOYA UTARA: RT 002/RW 004; RT 003/RW 004; RT 003/RW 007; RT 004/RW 004; RT 004/RW 007; RT 008/RW 004; RT 008/RW 007; RT 010/RW 004; RT 010/RW 007; RT 011/RW 007; RT 012/RW 004
+    - Kelurahan KEDOYA UTARA: RW 004 (RT 002, 003, 004, 008, 010, 012); RW 007 (RT 003, 004, 008, 010, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEDOYA UTARA: RT 001/RW 004; RT 001/RW 006; RT 001/RW 009; RT 002/RW 006; RT 003/RW 005; RT 004/RW 005; RT 005/RW 004; RT 005/RW 005; RT 005/RW 007; RT 005/RW 009; RT 006/RW 004; RT 006/RW 006; RT 006/RW 009; RT 007/RW 004; RT 007/RW 006; RT 007/RW 009; RT 008/RW 006; RT 009/RW 007; RT 011/RW 004
+    - Kelurahan KEDOYA UTARA: RW 004 (RT 001, 005, 006, 007, 011); RW 005 (RT 003, 004, 005); RW 006 (RT 001, 002, 006, 007, 008); RW 007 (RT 005, 009); RW 009 (RT 001, 005, 006, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan KEDAUNG KALI ANGKE
@@ -19929,14 +19929,14 @@
 - Alamat: JL. PERTANIAN, RT 006, RW 001, KEL. KLENDER, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 004/RW 001; RT 005/RW 001; RT 006/RW 001; RT 008/RW 001; RT 010/RW 001; RT 012/RW 001
+    - Kelurahan KLENDER: RW 001 (RT 004, 005, 006, 008, 010, 012)
   - Kecamatan PULOGADUNG
-    - Kelurahan JATINEGARA KAUM: RT 004/RW 008; RT 005/RW 008
+    - Kelurahan JATINEGARA KAUM: RW 008 (RT 004, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 001/RW 001; RT 001/RW 002; RT 002/RW 001; RT 002/RW 002; RT 003/RW 001; RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 005/RW 003; RT 006/RW 002; RT 007/RW 001; RT 007/RW 002; RT 008/RW 002; RT 009/RW 001; RT 009/RW 002; RT 009/RW 003; RT 010/RW 002; RT 010/RW 003; RT 011/RW 001; RT 015/RW 002; RT 015/RW 003
+    - Kelurahan KLENDER: RW 001 (RT 001, 002, 003, 007, 009, 011); RW 002 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 015); RW 003 (RT 005, 009, 010, 015)
   - Kecamatan PULO GADUNG
-    - Kelurahan JATINEGARA KAUM: RT 001/RW 008; RT 002/RW 008; RT 003/RW 008; RT 006/RW 008
+    - Kelurahan JATINEGARA KAUM: RW 008 (RT 001, 002, 003, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -19952,10 +19952,10 @@
 - Alamat: JL. ARABIKA VIII BLOK AC3, RT 006, RW 004, KEL. PONDOK KOPI, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KOPI: RT 001/RW 005; RT 002/RW 004; RT 002/RW 005; RT 003/RW 005; RT 006/RW 004; RT 007/RW 004; RT 007/RW 005; RT 011/RW 006
+    - Kelurahan PONDOK KOPI: RW 004 (RT 002, 006, 007); RW 005 (RT 001, 002, 003, 007); RW 006 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KOPI: RT 001/RW 004; RT 003/RW 004; RT 004/RW 005; RT 005/RW 005; RT 006/RW 005; RT 006/RW 007; RT 007/RW 006; RT 007/RW 007; RT 008/RW 004; RT 008/RW 005; RT 008/RW 006; RT 009/RW 005; RT 009/RW 006; RT 010/RW 005; RT 010/RW 006; RT 011/RW 005; RT 012/RW 005
+    - Kelurahan PONDOK KOPI: RW 004 (RT 001, 003, 008); RW 005 (RT 004, 005, 006, 008, 009, 010, 011, 012); RW 006 (RT 007, 008, 009, 010); RW 007 (RT 006, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan MALAKA JAYA
@@ -19966,14 +19966,14 @@
 - Alamat: JL. ROROTAN IX NO. 2, RT 011, RW 010, KEL. ROROTAN, KEC. CILINCING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 001/RW 010
+    - Kelurahan CAKUNG TIMUR: RW 010 (RT 001)
   - Kecamatan CILINCING
-    - Kelurahan ROROTAN: RT 001/RW 007; RT 004/RW 010; RT 010/RW 010; RT 011/RW 010; RT 020/RW 007
+    - Kelurahan ROROTAN: RW 007 (RT 001, 020); RW 010 (RT 004, 010, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 002/RW 010; RT 003/RW 010; RT 005/RW 010
+    - Kelurahan CAKUNG TIMUR: RW 010 (RT 002, 003, 005)
   - Kecamatan CILINCING
-    - Kelurahan ROROTAN: RT 001/RW 010; RT 001/RW 014; RT 002/RW 007; RT 002/RW 010; RT 002/RW 014; RT 003/RW 007; RT 003/RW 010; RT 003/RW 014; RT 004/RW 007; RT 005/RW 007; RT 005/RW 010; RT 006/RW 007; RT 006/RW 010; RT 008/RW 004; RT 008/RW 010; RT 009/RW 010; RT 010/RW 006; RT 010/RW 007; RT 012/RW 007; RT 013/RW 007; RT 014/RW 007; RT 019/RW 007
+    - Kelurahan ROROTAN: RW 004 (RT 008); RW 006 (RT 010); RW 007 (RT 002, 003, 004, 005, 006, 010, 012, 013, 014, 019); RW 010 (RT 001, 002, 003, 005, 006, 008, 009); RW 014 (RT 001, 002, 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG TIMUR
@@ -19986,12 +19986,12 @@
 - Alamat: JL. KAYU BESAR, RT 002, RW 011, KEL. CENGKARENG TIMUR, KEC. CENGKARENG, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 001/RW 011; RT 002/RW 011; RT 003/RW 011; RT 004/RW 011; RT 004/RW 018; RT 005/RW 011; RT 006/RW 018; RT 007/RW 011; RT 009/RW 014
-    - Kelurahan KAPUK: RT 007/RW 011
+    - Kelurahan CENGKARENG TIMUR: RW 011 (RT 001, 002, 003, 004, 005, 007); RW 014 (RT 009); RW 018 (RT 004, 006)
+    - Kelurahan KAPUK: RW 011 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 006/RW 011; RT 008/RW 011; RT 009/RW 011
-    - Kelurahan KAPUK: RT 008/RW 011; RT 013/RW 011
+    - Kelurahan CENGKARENG TIMUR: RW 011 (RT 006, 008, 009)
+    - Kelurahan KAPUK: RW 011 (RT 008, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -20001,12 +20001,12 @@
 - Alamat: JL. BULUH PERINDU IV/1, RT 016, RW 006, KEL. PONDOK BAMBU, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 004/RW 011; RT 010/RW 011
-    - Kelurahan PONDOK BAMBU: RT 005/RW 010; RT 006/RW 006; RT 006/RW 010; RT 016/RW 006; RT 017/RW 006
+    - Kelurahan DUREN SAWIT: RW 011 (RT 004, 010)
+    - Kelurahan PONDOK BAMBU: RW 006 (RT 006, 016, 017); RW 010 (RT 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 002/RW 011; RT 005/RW 011; RT 006/RW 011; RT 007/RW 011; RT 009/RW 017; RT 010/RW 017; RT 011/RW 017; RT 012/RW 011
-    - Kelurahan PONDOK BAMBU: RT 001/RW 006; RT 001/RW 010; RT 002/RW 010; RT 003/RW 010; RT 004/RW 010; RT 007/RW 010; RT 008/RW 010; RT 009/RW 006; RT 009/RW 010; RT 010/RW 010; RT 014/RW 010; RT 015/RW 006; RT 018/RW 006
+    - Kelurahan DUREN SAWIT: RW 011 (RT 002, 005, 006, 007, 012); RW 017 (RT 009, 010, 011)
+    - Kelurahan PONDOK BAMBU: RW 006 (RT 001, 009, 015, 018); RW 010 (RT 001, 002, 003, 004, 007, 008, 009, 010, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -20017,10 +20017,10 @@
 - Alamat: JL. KALISARI RAYA, RT 006, RW 002, KEL. KALISARI, KEC. PASAR REBO, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan KALISARI: RT 001/RW 002; RT 003/RW 003; RT 003/RW 011; RT 004/RW 011; RT 006/RW 002; RT 009/RW 001; RT 010/RW 001; RT 011/RW 001; RT 011/RW 002; RT 012/RW 011
+    - Kelurahan KALISARI: RW 001 (RT 009, 010, 011); RW 002 (RT 001, 006, 011); RW 003 (RT 003); RW 011 (RT 003, 004, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
-    - Kelurahan KALISARI: RT 002/RW 002; RT 002/RW 011; RT 003/RW 002; RT 007/RW 011; RT 008/RW 001; RT 009/RW 011
+    - Kelurahan KALISARI: RW 001 (RT 008); RW 002 (RT 002, 003); RW 011 (RT 002, 007, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PASAR REBO
     - Kelurahan KALISARI
@@ -20029,10 +20029,10 @@
 - Alamat: JL. PETA UTARA, RT 002, RW 006, KEL. PEGADUNGAN, KEC. KALIDERES, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan PEGADUNGAN: RT 001/RW 007; RT 001/RW 010; RT 001/RW 019; RT 002/RW 006; RT 002/RW 010; RT 003/RW 006; RT 003/RW 010; RT 003/RW 014; RT 003/RW 019; RT 005/RW 010; RT 006/RW 006
+    - Kelurahan PEGADUNGAN: RW 006 (RT 002, 003, 006); RW 007 (RT 001); RW 010 (RT 001, 002, 003, 005); RW 014 (RT 003); RW 019 (RT 001, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
-    - Kelurahan PEGADUNGAN: RT 001/RW 001; RT 001/RW 006; RT 002/RW 007; RT 002/RW 014; RT 004/RW 006; RT 004/RW 010; RT 004/RW 014; RT 005/RW 002; RT 006/RW 010; RT 006/RW 019; RT 007/RW 019; RT 008/RW 019; RT 009/RW 001; RT 009/RW 002; RT 010/RW 001
+    - Kelurahan PEGADUNGAN: RW 001 (RT 001, 009, 010); RW 002 (RT 005, 009); RW 006 (RT 001, 004); RW 007 (RT 002); RW 010 (RT 004, 006); RW 014 (RT 002, 004); RW 019 (RT 006, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KALIDERES
     - Kelurahan KALIDERES
@@ -20042,10 +20042,10 @@
 - Alamat: JL. SEMANAN RAYA NO.2, RT 004, RW 008, KEL. SEMANAN, KEC. KALIDERES, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan SEMANAN: RT 002/RW 008; RT 003/RW 008; RT 004/RW 008; RT 005/RW 008; RT 008/RW 008; RT 009/RW 008; RT 010/RW 008; RT 011/RW 008; RT 013/RW 012
+    - Kelurahan SEMANAN: RW 008 (RT 002, 003, 004, 005, 008, 009, 010, 011); RW 012 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
-    - Kelurahan SEMANAN: RT 001/RW 008; RT 006/RW 008; RT 007/RW 008
+    - Kelurahan SEMANAN: RW 008 (RT 001, 006, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KALIDERES
     - Kelurahan SEMANAN
@@ -20054,12 +20054,12 @@
 - Alamat: JL. MERUYA SELATAN, RT 002, RW 002, KEL. MERUYA SELATAN, KEC. KEMBANGAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 004/RW 001
-    - Kelurahan MERUYA SELATAN: RT 002/RW 002; RT 006/RW 002; RT 009/RW 002; RT 010/RW 002; RT 012/RW 002; RT 013/RW 002
+    - Kelurahan JOGLO: RW 001 (RT 004)
+    - Kelurahan MERUYA SELATAN: RW 002 (RT 002, 006, 009, 010, 012, 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 005/RW 001; RT 011/RW 001; RT 013/RW 001; RT 016/RW 001
-    - Kelurahan MERUYA SELATAN: RT 001/RW 002; RT 003/RW 002; RT 004/RW 002; RT 004/RW 008; RT 005/RW 002; RT 007/RW 002; RT 008/RW 002; RT 008/RW 008; RT 011/RW 002; RT 014/RW 002
+    - Kelurahan JOGLO: RW 001 (RT 005, 011, 013, 016)
+    - Kelurahan MERUYA SELATAN: RW 002 (RT 001, 003, 004, 005, 007, 008, 011, 014); RW 008 (RT 004, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -20070,10 +20070,10 @@
 - Alamat: JL. RAYA MARUYA UTARA , RT 007, RW 002, KEL. SRENGSENG, KEC. KEMBANGAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan SRENGSENG: RT 001/RW 011; RT 002/RW 011; RT 004/RW 002; RT 004/RW 008; RT 005/RW 008; RT 005/RW 011; RT 006/RW 002; RT 006/RW 008; RT 007/RW 002
+    - Kelurahan SRENGSENG: RW 002 (RT 004, 006, 007); RW 008 (RT 004, 005, 006); RW 011 (RT 001, 002, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
-    - Kelurahan SRENGSENG: RT 001/RW 008; RT 002/RW 002; RT 003/RW 002; RT 003/RW 008; RT 005/RW 002; RT 006/RW 001
+    - Kelurahan SRENGSENG: RW 001 (RT 006); RW 002 (RT 002, 003, 005); RW 008 (RT 001, 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBON JERUK
     - Kelurahan KELAPA DUA
@@ -20087,10 +20087,10 @@
 - Alamat: JL. RAYA CENTEX, RT 010, RW 003, KEL. CIRACAS, KEC. CIRACAS, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 006/RW 003; RT 008/RW 003; RT 008/RW 006; RT 010/RW 003; RT 014/RW 003; RT 015/RW 003; RT 016/RW 003
+    - Kelurahan CIRACAS: RW 003 (RT 006, 008, 010, 014, 015, 016); RW 006 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 001/RW 003; RT 003/RW 003; RT 006/RW 010; RT 007/RW 010; RT 008/RW 010; RT 010/RW 010; RT 011/RW 003; RT 012/RW 003; RT 012/RW 010; RT 013/RW 003
+    - Kelurahan CIRACAS: RW 003 (RT 001, 003, 011, 012, 013); RW 010 (RT 006, 007, 008, 010, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan CIPAYUNG
@@ -20103,14 +20103,14 @@
 - Alamat: JL. INPRES, RT 003, RW 009, KEL. TENGAH, KEC. KRAMATJATI, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMATJATI
-    - Kelurahan BATU AMPAR: RT 007/RW 003
-    - Kelurahan TENGAH: RT 002/RW 009; RT 002/RW 010; RT 003/RW 009; RT 004/RW 009; RT 004/RW 010; RT 007/RW 009; RT 008/RW 009; RT 009/RW 009
+    - Kelurahan BATU AMPAR: RW 003 (RT 007)
+    - Kelurahan TENGAH: RW 009 (RT 002, 003, 004, 007, 008, 009); RW 010 (RT 002, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMATJATI
-    - Kelurahan BATU AMPAR: RT 002/RW 003; RT 012/RW 003; RT 017/RW 003
-    - Kelurahan TENGAH: RT 001/RW 004; RT 001/RW 009; RT 001/RW 010; RT 002/RW 004; RT 003/RW 003; RT 003/RW 010; RT 004/RW 004; RT 005/RW 003; RT 005/RW 004; RT 005/RW 009; RT 005/RW 010; RT 006/RW 009; RT 006/RW 010; RT 007/RW 003; RT 007/RW 010; RT 008/RW 004; RT 008/RW 010; RT 009/RW 004; RT 010/RW 004; RT 011/RW 004; RT 012/RW 004
+    - Kelurahan BATU AMPAR: RW 003 (RT 002, 012, 017)
+    - Kelurahan TENGAH: RW 003 (RT 003, 005, 007); RW 004 (RT 001, 002, 004, 005, 008, 009, 010, 011, 012); RW 009 (RT 001, 005, 006); RW 010 (RT 001, 003, 005, 006, 007, 008)
   - Kecamatan PASAR REBO
-    - Kelurahan GEDONG: RT 009/RW 003
+    - Kelurahan GEDONG: RW 003 (RT 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KRAMATJATI
     - Kelurahan BATU AMPAR
@@ -20122,11 +20122,11 @@
 - Alamat: JL. RAYA CENTEX, RT 016, RW 003, KEL. CIRACAS, KEC. CIRACAS, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 001/RW 003; RT 010/RW 003; RT 014/RW 003; RT 016/RW 003
+    - Kelurahan CIRACAS: RW 003 (RT 001, 010, 014, 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 006/RW 003; RT 007/RW 006; RT 008/RW 003; RT 008/RW 006; RT 010/RW 006; RT 010/RW 010; RT 011/RW 003; RT 012/RW 003; RT 012/RW 010; RT 013/RW 010; RT 015/RW 003
-    - Kelurahan RAMBUTAN: RT 008/RW 006; RT 009/RW 006; RT 014/RW 006; RT 017/RW 006
+    - Kelurahan CIRACAS: RW 003 (RT 006, 008, 011, 012, 015); RW 006 (RT 007, 008, 010); RW 010 (RT 010, 012, 013)
+    - Kelurahan RAMBUTAN: RW 006 (RT 008, 009, 014, 017)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan CIPAYUNG
@@ -20139,10 +20139,10 @@
 - Alamat: JL. SMP 211, RT 008, RW 007, KEL. SRENGSENG SAWAH, KEC. JAGAKARSA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan SRENGSENG SAWAH: RT 005/RW 007; RT 007/RW 007; RT 008/RW 007; RT 009/RW 007
+    - Kelurahan SRENGSENG SAWAH: RW 007 (RT 005, 007, 008, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
-    - Kelurahan SRENGSENG SAWAH: RT 001/RW 009; RT 002/RW 007; RT 003/RW 007; RT 004/RW 007; RT 005/RW 016; RT 006/RW 007; RT 006/RW 016; RT 007/RW 016; RT 010/RW 007; RT 011/RW 007; RT 011/RW 009; RT 012/RW 007
+    - Kelurahan SRENGSENG SAWAH: RW 007 (RT 002, 003, 004, 006, 010, 011, 012); RW 009 (RT 001, 011); RW 016 (RT 005, 006, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -20155,13 +20155,13 @@
 - Alamat: JL. BENDA ATAS, JERUK PERUT, RT 006, RW 003, KEL. CILANDAK TIMUR, KEC. PASAR MINGGU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan CILANDAK TIMUR: RT 003/RW 006; RT 004/RW 003; RT 004/RW 006; RT 005/RW 003; RT 006/RW 003; RT 007/RW 002; RT 007/RW 003
+    - Kelurahan CILANDAK TIMUR: RW 002 (RT 007); RW 003 (RT 004, 005, 006, 007); RW 006 (RT 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
-    - Kelurahan CILANDAK BARAT: RT 005/RW 013; RT 006/RW 011; RT 008/RW 011; RT 009/RW 011; RT 010/RW 001; RT 012/RW 013
-    - Kelurahan CIPETE SELATAN: RT 004/RW 001
+    - Kelurahan CILANDAK BARAT: RW 001 (RT 010); RW 011 (RT 006, 008, 009); RW 013 (RT 005, 012)
+    - Kelurahan CIPETE SELATAN: RW 001 (RT 004)
   - Kecamatan PASAR MINGGU
-    - Kelurahan CILANDAK TIMUR: RT 001/RW 003; RT 001/RW 004; RT 001/RW 006; RT 002/RW 004; RT 002/RW 006; RT 003/RW 003; RT 005/RW 002; RT 005/RW 006; RT 006/RW 002; RT 008/RW 002; RT 009/RW 004; RT 010/RW 003; RT 010/RW 004; RT 012/RW 002
+    - Kelurahan CILANDAK TIMUR: RW 002 (RT 005, 006, 008, 012); RW 003 (RT 001, 003, 010); RW 004 (RT 001, 002, 009, 010); RW 006 (RT 001, 002, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -20175,11 +20175,11 @@
 - Alamat: JL. MALAKA I PERUMNAS KLENDER, RT 009, RW 006, KEL. MALAKA SARI, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA SARI: RT 006/RW 007; RT 007/RW 007; RT 008/RW 006; RT 008/RW 007; RT 009/RW 006; RT 010/RW 006; RT 014/RW 007; RT 015/RW 005; RT 015/RW 007; RT 016/RW 004; RT 016/RW 005
+    - Kelurahan MALAKA SARI: RW 004 (RT 016); RW 005 (RT 015, 016); RW 006 (RT 008, 009, 010); RW 007 (RT 006, 007, 008, 014, 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA JAYA: RT 001/RW 005; RT 008/RW 006
-    - Kelurahan MALAKA SARI: RT 001/RW 006; RT 001/RW 007; RT 002/RW 006; RT 002/RW 007; RT 003/RW 006; RT 003/RW 007; RT 004/RW 006; RT 004/RW 007; RT 005/RW 005; RT 005/RW 006; RT 005/RW 007; RT 006/RW 005; RT 006/RW 006; RT 007/RW 005; RT 007/RW 006; RT 008/RW 004; RT 008/RW 005; RT 009/RW 004; RT 009/RW 005; RT 009/RW 007; RT 010/RW 004; RT 010/RW 005; RT 010/RW 007; RT 011/RW 005; RT 011/RW 006; RT 011/RW 007; RT 012/RW 005; RT 012/RW 006; RT 012/RW 007; RT 013/RW 003; RT 013/RW 004; RT 013/RW 005; RT 013/RW 007; RT 014/RW 003; RT 014/RW 004; RT 014/RW 005; RT 015/RW 003; RT 015/RW 004; RT 016/RW 003; RT 016/RW 007; RT 017/RW 003; RT 017/RW 004; RT 017/RW 007; RT 018/RW 003; RT 018/RW 007; RT 019/RW 007
+    - Kelurahan MALAKA JAYA: RW 005 (RT 001); RW 006 (RT 008)
+    - Kelurahan MALAKA SARI: RW 003 (RT 013, 014, 015, 016, 017, 018); RW 004 (RT 008, 009, 010, 013, 014, 015, 017); RW 005 (RT 005, 006, 007, 008, 009, 010, 011, 012, 013, 014); RW 006 (RT 001, 002, 003, 004, 005, 006, 007, 011, 012); RW 007 (RT 001, 002, 003, 004, 005, 009, 010, 011, 012, 013, 016, 017, 018, 019)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan MALAKA JAYA
@@ -20191,10 +20191,10 @@
 - Alamat: JL. RAJAWALI RAYA, RT 003, RW 011, KEL. HALIM PERDANA KUSUMA, KEC. MAKASAR, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 001/RW 011; RT 001/RW 012; RT 001/RW 014; RT 003/RW 011; RT 003/RW 012; RT 004/RW 011; RT 005/RW 011; RT 005/RW 012; RT 006/RW 012; RT 008/RW 012; RT 010/RW 010
+    - Kelurahan HALIM PERDANA KUSUMA: RW 010 (RT 010); RW 011 (RT 001, 003, 004, 005); RW 012 (RT 001, 003, 005, 006, 008); RW 014 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 001/RW 009; RT 001/RW 010; RT 001/RW 013; RT 001/RW 015; RT 001/RW 016; RT 002/RW 009; RT 002/RW 010; RT 002/RW 011; RT 002/RW 012; RT 002/RW 013; RT 002/RW 014; RT 002/RW 015; RT 002/RW 016; RT 003/RW 009; RT 003/RW 010; RT 003/RW 013; RT 003/RW 015; RT 003/RW 016; RT 004/RW 009; RT 004/RW 010; RT 004/RW 012; RT 004/RW 013; RT 004/RW 015; RT 004/RW 016; RT 005/RW 009; RT 005/RW 010; RT 005/RW 013; RT 005/RW 015; RT 005/RW 016; RT 006/RW 009; RT 006/RW 010; RT 006/RW 013; RT 006/RW 015; RT 006/RW 016; RT 007/RW 009; RT 007/RW 010; RT 007/RW 012; RT 007/RW 013; RT 007/RW 015; RT 008/RW 009; RT 008/RW 013; RT 008/RW 015; RT 009/RW 009; RT 009/RW 010; RT 009/RW 012; RT 009/RW 013; RT 009/RW 015; RT 010/RW 013; RT 011/RW 010; RT 011/RW 013; RT 012/RW 010; RT 012/RW 013; RT 013/RW 013
+    - Kelurahan HALIM PERDANA KUSUMA: RW 009 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009); RW 010 (RT 001, 002, 003, 004, 005, 006, 007, 009, 011, 012); RW 011 (RT 002); RW 012 (RT 002, 004, 007, 009); RW 013 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013); RW 014 (RT 002); RW 015 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009); RW 016 (RT 001, 002, 003, 004, 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MAKASAR
     - Kelurahan CIPINANG MELAYU
@@ -20205,11 +20205,11 @@
 - Alamat: JL. MELATI TAMAN MARUYA ILIR BLOK B, RT 017, RW 004, KEL. MERUYA UTARA, KEC. KEMBANGAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA UTARA: RT 001/RW 004; RT 001/RW 010; RT 002/RW 004; RT 003/RW 004; RT 006/RW 001; RT 009/RW 004; RT 010/RW 004; RT 011/RW 004; RT 012/RW 004; RT 017/RW 004
+    - Kelurahan MERUYA UTARA: RW 001 (RT 006); RW 004 (RT 001, 002, 003, 009, 010, 011, 012, 017); RW 010 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
-    - Kelurahan MERUYA SELATAN: RT 001/RW 001; RT 003/RW 004; RT 008/RW 004
-    - Kelurahan MERUYA UTARA: RT 004/RW 004; RT 005/RW 004; RT 006/RW 004; RT 007/RW 004; RT 007/RW 011; RT 008/RW 004; RT 008/RW 011; RT 013/RW 004; RT 014/RW 004; RT 015/RW 004; RT 016/RW 004; RT 018/RW 004; RT 021/RW 004
+    - Kelurahan MERUYA SELATAN: RW 001 (RT 001); RW 004 (RT 003, 008)
+    - Kelurahan MERUYA UTARA: RW 004 (RT 004, 005, 006, 007, 008, 013, 014, 015, 016, 018, 021); RW 011 (RT 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -20222,19 +20222,19 @@
 - Alamat: JL. SALEMBA RAYA NO. 18, RT 003, RW 006, KEL. KENARI, KEC. SENEN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MENTENG
-    - Kelurahan PEGANGSAAN: RT 001/RW 002; RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002; RT 010/RW 001
+    - Kelurahan PEGANGSAAN: RW 001 (RT 010); RW 002 (RT 001, 003, 004, 005, 006)
   - Kecamatan SENEN
-    - Kelurahan KENARI: RT 003/RW 006; RT 006/RW 006; RT 007/RW 005
-    - Kelurahan PASEBAN: RT 001/RW 005; RT 003/RW 005; RT 004/RW 005; RT 011/RW 005
+    - Kelurahan KENARI: RW 005 (RT 007); RW 006 (RT 003, 006)
+    - Kelurahan PASEBAN: RW 005 (RT 001, 003, 004, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
-    - Kelurahan KEBON MANGGIS: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001
-    - Kelurahan PALMERIAM: RT 001/RW 001
+    - Kelurahan KEBON MANGGIS: RW 001 (RT 001, 002, 003)
+    - Kelurahan PALMERIAM: RW 001 (RT 001)
   - Kecamatan MENTENG
-    - Kelurahan PEGANGSAAN: RT 001/RW 003; RT 002/RW 003; RT 003/RW 003; RT 004/RW 003; RT 004/RW 008; RT 005/RW 003; RT 007/RW 001; RT 007/RW 002; RT 008/RW 002; RT 009/RW 002; RT 011/RW 002; RT 015/RW 001; RT 016/RW 001
+    - Kelurahan PEGANGSAAN: RW 001 (RT 007, 015, 016); RW 002 (RT 007, 008, 009, 011); RW 003 (RT 001, 002, 003, 004, 005); RW 008 (RT 004)
   - Kecamatan SENEN
-    - Kelurahan KENARI: RT 001/RW 004; RT 002/RW 004; RT 003/RW 004; RT 004/RW 004; RT 004/RW 005; RT 005/RW 005; RT 006/RW 005
-    - Kelurahan PASEBAN: RT 001/RW 003; RT 001/RW 004; RT 002/RW 003; RT 002/RW 006; RT 005/RW 005; RT 005/RW 006; RT 006/RW 005; RT 008/RW 005; RT 009/RW 003; RT 010/RW 004; RT 012/RW 005; RT 013/RW 004; RT 013/RW 005; RT 014/RW 004; RT 014/RW 005; RT 015/RW 005
+    - Kelurahan KENARI: RW 004 (RT 001, 002, 003, 004); RW 005 (RT 004, 005, 006)
+    - Kelurahan PASEBAN: RW 003 (RT 001, 002, 009); RW 004 (RT 001, 010, 013, 014); RW 005 (RT 005, 006, 008, 012, 013, 014, 015); RW 006 (RT 002, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MATRAMAN
     - Kelurahan KEBON MANGGIS
@@ -20253,13 +20253,13 @@
 - Alamat: JL. GONGSENG RAYA CIJANTUNG III, RT 007, RW 001, KEL. BARU, KEC. PASAR REBO, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 005/RW 001; RT 005/RW 009; RT 006/RW 001; RT 006/RW 009; RT 007/RW 001
-    - Kelurahan CIJANTUNG: RT 004/RW 007; RT 006/RW 007; RT 009/RW 002
+    - Kelurahan BARU: RW 001 (RT 005, 006, 007); RW 009 (RT 005, 006)
+    - Kelurahan CIJANTUNG: RW 002 (RT 009); RW 007 (RT 004, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 002/RW 001; RT 003/RW 001; RT 003/RW 009; RT 004/RW 001; RT 004/RW 009; RT 007/RW 009; RT 008/RW 001; RT 008/RW 009; RT 009/RW 009
-    - Kelurahan CIJANTUNG: RT 003/RW 007; RT 004/RW 011; RT 005/RW 003; RT 005/RW 011; RT 006/RW 002; RT 006/RW 003; RT 006/RW 011; RT 007/RW 002; RT 007/RW 003; RT 009/RW 007
-    - Kelurahan KALISARI: RT 012/RW 010
+    - Kelurahan BARU: RW 001 (RT 002, 003, 004, 008); RW 009 (RT 003, 004, 007, 008, 009)
+    - Kelurahan CIJANTUNG: RW 002 (RT 006, 007); RW 003 (RT 005, 006, 007); RW 007 (RT 003, 009); RW 011 (RT 004, 005, 006)
+    - Kelurahan KALISARI: RW 010 (RT 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PASAR REBO
     - Kelurahan BARU
@@ -20270,11 +20270,11 @@
 - Alamat: JL. MANARA JATI PADANG, RT 006, RW 008, KEL. JATI PADANG, KEC. PASAR MINGGU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan JATI PADANG: RT 003/RW 004; RT 004/RW 004; RT 004/RW 008; RT 005/RW 008; RT 006/RW 008; RT 006/RW 009; RT 011/RW 006
+    - Kelurahan JATI PADANG: RW 004 (RT 003, 004); RW 006 (RT 011); RW 008 (RT 004, 005, 006); RW 009 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR MINGGU
-    - Kelurahan JATI PADANG: RT 001/RW 004; RT 001/RW 006; RT 001/RW 008; RT 002/RW 004; RT 002/RW 006; RT 002/RW 008; RT 003/RW 006; RT 003/RW 008; RT 004/RW 006; RT 005/RW 004; RT 005/RW 009; RT 006/RW 004; RT 008/RW 003; RT 009/RW 006; RT 014/RW 006
-    - Kelurahan PASAR MINGGU: RT 002/RW 010; RT 003/RW 010
+    - Kelurahan JATI PADANG: RW 003 (RT 008); RW 004 (RT 001, 002, 005, 006); RW 006 (RT 001, 002, 003, 004, 009, 014); RW 008 (RT 001, 002, 003); RW 009 (RT 005)
+    - Kelurahan PASAR MINGGU: RW 010 (RT 002, 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PASAR MINGGU
     - Kelurahan JATI PADANG
@@ -20286,12 +20286,12 @@
 - Alamat: JL. RAYA JOGLO KOMPLEK PEMADAM KEBAKARAN, RT 006, RW 006, KEL. JOGLO, KEC. KEMBANGAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 005/RW 006; RT 006/RW 006; RT 010/RW 002; RT 011/RW 002; RT 012/RW 002; RT 013/RW 002
-    - Kelurahan MERUYA SELATAN: RT 001/RW 003; RT 006/RW 003; RT 009/RW 003
+    - Kelurahan JOGLO: RW 002 (RT 010, 011, 012, 013); RW 006 (RT 005, 006)
+    - Kelurahan MERUYA SELATAN: RW 003 (RT 001, 006, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 006/RW 002; RT 009/RW 002
-    - Kelurahan MERUYA SELATAN: RT 007/RW 003
+    - Kelurahan JOGLO: RW 002 (RT 006, 009)
+    - Kelurahan MERUYA SELATAN: RW 003 (RT 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -20305,14 +20305,14 @@
 - Alamat: JL. MANGGA I, RT 008, RW 003, KEL. DURI KEPA, KEC. KEBON JERUK, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TANJUNG DUREN UTARA: RT 007/RW 004; RT 008/RW 004; RT 009/RW 004; RT 010/RW 004; RT 012/RW 004; RT 014/RW 005
+    - Kelurahan TANJUNG DUREN UTARA: RW 004 (RT 007, 008, 009, 010, 012); RW 005 (RT 014)
   - Kecamatan KEBON JERUK
-    - Kelurahan DURI KEPA: RT 001/RW 009; RT 001/RW 012; RT 002/RW 008; RT 002/RW 009; RT 004/RW 003; RT 008/RW 003; RT 008/RW 008
+    - Kelurahan DURI KEPA: RW 003 (RT 004, 008); RW 008 (RT 002, 008); RW 009 (RT 001, 002); RW 012 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TANJUNG DUREN UTARA: RT 009/RW 005; RT 010/RW 005; RT 011/RW 004; RT 011/RW 005; RT 012/RW 005; RT 013/RW 005
+    - Kelurahan TANJUNG DUREN UTARA: RW 004 (RT 011); RW 005 (RT 009, 010, 011, 012, 013)
   - Kecamatan KEBON JERUK
-    - Kelurahan DURI KEPA: RT 003/RW 003; RT 003/RW 008; RT 007/RW 008; RT 009/RW 008
+    - Kelurahan DURI KEPA: RW 003 (RT 003); RW 008 (RT 003, 007, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN UTARA
@@ -20326,10 +20326,10 @@
 - Alamat: JL. SUNTER KARYA SELATAN V, RT 001, RW 013, KEL. SUNTER AGUNG, KEC. TANJUNG PRIOK, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 001/RW 013; RT 002/RW 013; RT 003/RW 013; RT 004/RW 013; RT 006/RW 013; RT 008/RW 013; RT 009/RW 013; RT 010/RW 013; RT 012/RW 013; RT 017/RW 013; RT 018/RW 013
+    - Kelurahan SUNTER AGUNG: RW 013 (RT 001, 002, 003, 004, 006, 008, 009, 010, 012, 017, 018)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 001/RW 012; RT 001/RW 014; RT 002/RW 012; RT 002/RW 014; RT 003/RW 012; RT 003/RW 014; RT 004/RW 012; RT 004/RW 014; RT 005/RW 012; RT 005/RW 013; RT 005/RW 014; RT 006/RW 014; RT 007/RW 012; RT 007/RW 013; RT 008/RW 012; RT 008/RW 014; RT 009/RW 012; RT 009/RW 014; RT 010/RW 012; RT 010/RW 014; RT 010/RW 016; RT 011/RW 012; RT 011/RW 013; RT 012/RW 012; RT 012/RW 016; RT 013/RW 013; RT 014/RW 013; RT 015/RW 013; RT 016/RW 013
+    - Kelurahan SUNTER AGUNG: RW 012 (RT 001, 002, 003, 004, 005, 007, 008, 009, 010, 011, 012); RW 013 (RT 005, 007, 011, 013, 014, 015, 016); RW 014 (RT 001, 002, 003, 004, 005, 006, 008, 009, 010); RW 016 (RT 010, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan PAPANGGO
@@ -20342,10 +20342,10 @@
 - Alamat: Jl. SMP 222 NO. 45C , RT 008, RW 002, KEL. CEGER, KEC. CIPAYUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan CEGER: RT 002/RW 002; RT 003/RW 002; RT 005/RW 002; RT 006/RW 002; RT 008/RW 002; RT 009/RW 002; RT 011/RW 002
+    - Kelurahan CEGER: RW 002 (RT 002, 003, 005, 006, 008, 009, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
-    - Kelurahan CEGER: RT 001/RW 002; RT 002/RW 001; RT 004/RW 002; RT 005/RW 001; RT 007/RW 002; RT 010/RW 002
+    - Kelurahan CEGER: RW 001 (RT 002, 005); RW 002 (RT 001, 004, 007, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan CEGER
@@ -20356,10 +20356,10 @@
 - Alamat: JL. SURILANG NO. 6 , RT 005, RW 012, KEL. GEDONG, KEC. PASAR REBO, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan GEDONG: RT 003/RW 001; RT 003/RW 012; RT 004/RW 012; RT 005/RW 012; RT 007/RW 012; RT 008/RW 008; RT 009/RW 001; RT 009/RW 012
+    - Kelurahan GEDONG: RW 001 (RT 003, 009); RW 008 (RT 008); RW 012 (RT 003, 004, 005, 007, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
-    - Kelurahan GEDONG: RT 001/RW 001; RT 002/RW 001; RT 002/RW 012; RT 004/RW 003; RT 005/RW 003; RT 006/RW 012; RT 007/RW 008; RT 008/RW 001; RT 008/RW 012; RT 009/RW 008; RT 010/RW 008
+    - Kelurahan GEDONG: RW 001 (RT 001, 002, 008); RW 003 (RT 004, 005); RW 008 (RT 007, 009, 010); RW 012 (RT 002, 006, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan TANJUNG BARAT
@@ -20375,10 +20375,10 @@
 - Alamat: JL. SMP 224, RT 005, RW 006, KEL. KAMAL, KEC. KALIDERES, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KAMAL: RT 001/RW 006; RT 002/RW 003; RT 002/RW 006; RT 003/RW 003; RT 003/RW 006; RT 004/RW 003; RT 004/RW 006; RT 005/RW 006; RT 008/RW 006
+    - Kelurahan KAMAL: RW 003 (RT 002, 003, 004); RW 006 (RT 001, 002, 003, 004, 005, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
-    - Kelurahan KAMAL: RT 001/RW 003; RT 005/RW 003; RT 006/RW 003
+    - Kelurahan KAMAL: RW 003 (RT 001, 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KALIDERES
     - Kelurahan KAMAL
@@ -20389,10 +20389,10 @@
 - Alamat: JL. WARUNG GANTUNG KP. KOJAN, RT 007, RW 006, KEL. KALIDERES, KEC. KALIDERES, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 005/RW 008; RT 006/RW 006; RT 007/RW 006; RT 012/RW 006; RT 013/RW 006; RT 016/RW 006
+    - Kelurahan KALIDERES: RW 006 (RT 006, 007, 012, 013, 016); RW 008 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 001/RW 006; RT 002/RW 006; RT 002/RW 008; RT 003/RW 006; RT 003/RW 008; RT 004/RW 006; RT 004/RW 008; RT 005/RW 006; RT 005/RW 010; RT 008/RW 006; RT 009/RW 006; RT 010/RW 006; RT 011/RW 006; RT 011/RW 009; RT 013/RW 009; RT 014/RW 006; RT 014/RW 009; RT 015/RW 006; RT 015/RW 009; RT 016/RW 009
+    - Kelurahan KALIDERES: RW 006 (RT 001, 002, 003, 004, 005, 008, 009, 010, 011, 014, 015); RW 008 (RT 002, 003, 004); RW 009 (RT 011, 013, 014, 015, 016); RW 010 (RT 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KALIDERES
     - Kelurahan KALIDERES
@@ -20402,12 +20402,12 @@
 - Alamat: JL. KAYU KAPUR NO. 2, RT 007, RW 006, KEL. PONDOK LABU, KEC. CILANDAK, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan LEBAK BULUS: RT 002/RW 003; RT 003/RW 003; RT 004/RW 003; RT 006/RW 003
-    - Kelurahan PONDOK LABU: RT 001/RW 006; RT 003/RW 006; RT 005/RW 006; RT 007/RW 006; RT 008/RW 006
+    - Kelurahan LEBAK BULUS: RW 003 (RT 002, 003, 004, 006)
+    - Kelurahan PONDOK LABU: RW 006 (RT 001, 003, 005, 007, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
-    - Kelurahan LEBAK BULUS: RT 001/RW 003; RT 001/RW 008; RT 002/RW 008; RT 003/RW 008; RT 004/RW 008; RT 005/RW 003; RT 005/RW 008; RT 006/RW 008; RT 007/RW 003; RT 014/RW 003
-    - Kelurahan PONDOK LABU: RT 002/RW 006; RT 004/RW 006; RT 006/RW 006; RT 011/RW 001; RT 012/RW 001
+    - Kelurahan LEBAK BULUS: RW 003 (RT 001, 005, 007, 014); RW 008 (RT 001, 002, 003, 004, 005, 006)
+    - Kelurahan PONDOK LABU: RW 001 (RT 011, 012); RW 006 (RT 002, 004, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan LEBAK BULUS
@@ -20417,10 +20417,10 @@
 - Alamat: JL. MESJID AL FAJRI, RT 012, RW 001, KEL. PEJATEN BARAT, KEC. PASAR MINGGU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN BARAT: RT 005/RW 001; RT 009/RW 001; RT 010/RW 003; RT 011/RW 001; RT 011/RW 003; RT 012/RW 001; RT 015/RW 001; RT 016/RW 001; RT 018/RW 001
+    - Kelurahan PEJATEN BARAT: RW 001 (RT 005, 009, 011, 012, 015, 016, 018); RW 003 (RT 010, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR MINGGU
-    - Kelurahan PEJATEN BARAT: RT 001/RW 001; RT 001/RW 002; RT 002/RW 001; RT 002/RW 002; RT 003/RW 001; RT 003/RW 002; RT 004/RW 001; RT 004/RW 002; RT 005/RW 002; RT 006/RW 001; RT 006/RW 002; RT 007/RW 001; RT 007/RW 002; RT 008/RW 001; RT 008/RW 003; RT 010/RW 001; RT 012/RW 003; RT 013/RW 001; RT 013/RW 003; RT 014/RW 001; RT 015/RW 003; RT 016/RW 003
+    - Kelurahan PEJATEN BARAT: RW 001 (RT 001, 002, 003, 004, 006, 007, 008, 010, 013, 014); RW 002 (RT 001, 002, 003, 004, 005, 006, 007); RW 003 (RT 008, 012, 013, 015, 016)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PANCORAN
     - Kelurahan KALIBATA
@@ -20433,12 +20433,12 @@
 - Alamat: JL. SUMUR BATU RAYA NO. 6, RT 011, RW 001, KEL. SUMUR BATU, KEC. KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan SERDANG: RT 005/RW 005; RT 016/RW 004
-    - Kelurahan SUMUR BATU: RT 009/RW 001; RT 010/RW 001; RT 011/RW 001; RT 011/RW 002; RT 012/RW 001; RT 012/RW 002
+    - Kelurahan SERDANG: RW 004 (RT 016); RW 005 (RT 005)
+    - Kelurahan SUMUR BATU: RW 001 (RT 009, 010, 011, 012); RW 002 (RT 011, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
-    - Kelurahan SERDANG: RT 004/RW 005; RT 006/RW 004; RT 007/RW 004; RT 010/RW 004; RT 010/RW 005; RT 011/RW 005; RT 012/RW 005; RT 013/RW 005; RT 015/RW 004; RT 015/RW 005; RT 016/RW 005; RT 018/RW 005
-    - Kelurahan SUMUR BATU: RT 003/RW 001; RT 005/RW 001; RT 005/RW 002; RT 006/RW 001; RT 006/RW 002; RT 007/RW 001; RT 007/RW 002; RT 008/RW 001; RT 008/RW 002; RT 009/RW 002; RT 010/RW 002; RT 013/RW 001; RT 013/RW 002; RT 014/RW 002; RT 015/RW 002; RT 016/RW 002
+    - Kelurahan SERDANG: RW 004 (RT 006, 007, 010, 015); RW 005 (RT 004, 010, 011, 012, 013, 015, 016, 018)
+    - Kelurahan SUMUR BATU: RW 001 (RT 003, 005, 006, 007, 008, 013); RW 002 (RT 005, 006, 007, 008, 009, 010, 013, 014, 015, 016)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMAYORAN
     - Kelurahan CEMPAKA BARU
@@ -20452,10 +20452,10 @@
 - Alamat: JL. KEBON JERUK RAYA NO. 39, RT 004, RW 003, KEL. KEBON JERUK, KEC. KEBON JERUK, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 001/RW 006; RT 002/RW 006; RT 003/RW 013; RT 004/RW 003; RT 004/RW 013; RT 005/RW 003; RT 006/RW 006; RT 011/RW 002; RT 011/RW 003
+    - Kelurahan KEBON JERUK: RW 002 (RT 011); RW 003 (RT 004, 005, 011); RW 006 (RT 001, 002, 006); RW 013 (RT 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 001/RW 008; RT 001/RW 011; RT 001/RW 013; RT 002/RW 011; RT 002/RW 013; RT 003/RW 006; RT 003/RW 011; RT 004/RW 006; RT 004/RW 011; RT 005/RW 006; RT 005/RW 011; RT 005/RW 013; RT 006/RW 003; RT 006/RW 013; RT 009/RW 002; RT 009/RW 011; RT 010/RW 002; RT 010/RW 003; RT 012/RW 002; RT 012/RW 003; RT 013/RW 003
+    - Kelurahan KEBON JERUK: RW 002 (RT 009, 010, 012); RW 003 (RT 006, 010, 012, 013); RW 006 (RT 003, 004, 005); RW 008 (RT 001); RW 011 (RT 001, 002, 003, 004, 005, 009); RW 013 (RT 001, 002, 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBON JERUK
     - Kelurahan KEBON JERUK
@@ -20467,10 +20467,10 @@
 - Alamat: JL. TPU PONDOK RANGGON, RT 001, RW 002, KEL. PONDOK RANGGON, KEC. CIPAYUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan PONDOK RANGGON: RT 001/RW 002; RT 001/RW 005; RT 002/RW 002; RT 003/RW 002; RT 006/RW 004; RT 007/RW 004
+    - Kelurahan PONDOK RANGGON: RW 002 (RT 001, 002, 003); RW 004 (RT 006, 007); RW 005 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
-    - Kelurahan PONDOK RANGGON: RT 002/RW 005; RT 003/RW 005; RT 004/RW 002; RT 004/RW 004; RT 004/RW 005; RT 005/RW 002; RT 005/RW 004; RT 005/RW 005; RT 006/RW 005; RT 007/RW 005; RT 008/RW 005; RT 009/RW 004; RT 009/RW 005; RT 010/RW 005
+    - Kelurahan PONDOK RANGGON: RW 002 (RT 004, 005); RW 004 (RT 004, 005, 009); RW 005 (RT 002, 003, 004, 005, 006, 007, 008, 009, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan CILANGKAP
@@ -20481,10 +20481,10 @@
 - Alamat: JL. RAYA TUGU, RT 008, RW 006, KEL. SEMPER BARAT, KEC. CILINCING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 001/RW 017; RT 002/RW 017; RT 007/RW 006; RT 008/RW 006; RT 009/RW 006; RT 010/RW 006; RT 011/RW 006; RT 012/RW 006
+    - Kelurahan SEMPER BARAT: RW 006 (RT 007, 008, 009, 010, 011, 012); RW 017 (RT 001, 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 001/RW 006; RT 002/RW 006; RT 003/RW 006; RT 003/RW 017; RT 004/RW 006; RT 004/RW 017; RT 005/RW 006; RT 005/RW 017; RT 006/RW 006; RT 006/RW 017; RT 010/RW 001; RT 012/RW 001; RT 013/RW 001; RT 015/RW 001; RT 022/RW 001
+    - Kelurahan SEMPER BARAT: RW 001 (RT 010, 012, 013, 015, 022); RW 006 (RT 001, 002, 003, 004, 005, 006); RW 017 (RT 003, 004, 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -20498,12 +20498,12 @@
 - Alamat: JL. GADING RAYA NO. 16, RT 001, RW 014, KEL. PISANGAN TIMUR, KEC. PULO GADUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULOGADUNG
-    - Kelurahan PISANGAN TIMUR: RT 001/RW 013; RT 001/RW 014; RT 002/RW 014; RT 004/RW 014; RT 005/RW 014; RT 006/RW 014; RT 007/RW 015; RT 009/RW 015; RT 010/RW 015; RT 011/RW 014; RT 016/RW 013
+    - Kelurahan PISANGAN TIMUR: RW 013 (RT 001, 016); RW 014 (RT 001, 002, 004, 005, 006, 011); RW 015 (RT 007, 009, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
-    - Kelurahan CIPINANG: RT 007/RW 001; RT 012/RW 018; RT 013/RW 018
-    - Kelurahan PISANGAN TIMUR: RT 003/RW 014; RT 005/RW 015; RT 006/RW 015; RT 007/RW 014; RT 008/RW 014; RT 008/RW 015; RT 009/RW 014
-    - Kelurahan RAWAMANGUN: RT 003/RW 012; RT 004/RW 012; RT 006/RW 011; RT 007/RW 012; RT 008/RW 012; RT 016/RW 012
+    - Kelurahan CIPINANG: RW 001 (RT 007); RW 018 (RT 012, 013)
+    - Kelurahan PISANGAN TIMUR: RW 014 (RT 003, 007, 008, 009); RW 015 (RT 005, 006, 008)
+    - Kelurahan RAWAMANGUN: RW 011 (RT 006); RW 012 (RT 003, 004, 007, 008, 016)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MATRAMAN
     - Kelurahan PISANGAN BARU
@@ -20519,10 +20519,10 @@
 - Alamat: JL. H. ABDUR RACHMAN NO. 68, RT 001, RW 014, KEL. CIBUBUR, KEC. CIRACAS, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIBUBUR: RT 001/RW 014; RT 002/RW 014; RT 003/RW 014; RT 004/RW 013; RT 007/RW 005; RT 009/RW 005; RT 010/RW 005; RT 013/RW 005; RT 014/RW 005; RT 017/RW 005
+    - Kelurahan CIBUBUR: RW 005 (RT 007, 009, 010, 013, 014, 017); RW 013 (RT 004); RW 014 (RT 001, 002, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan CIBUBUR: RT 002/RW 013; RT 003/RW 013; RT 005/RW 013; RT 006/RW 005; RT 008/RW 005; RT 012/RW 005; RT 016/RW 005; RT 018/RW 005
+    - Kelurahan CIBUBUR: RW 005 (RT 006, 008, 012, 016, 018); RW 013 (RT 002, 003, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan MUNJUL
@@ -20535,10 +20535,10 @@
 - Alamat: JL. KAYU TINGGI, CEMPAKA IV, RT 005, RW 009, KEL. CAKUNG TIMUR, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 001/RW 012; RT 002/RW 012; RT 004/RW 009; RT 005/RW 009; RT 006/RW 009
+    - Kelurahan CAKUNG TIMUR: RW 009 (RT 004, 005, 006); RW 012 (RT 001, 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 001/RW 009; RT 002/RW 009; RT 003/RW 009; RT 003/RW 012; RT 004/RW 012; RT 005/RW 012; RT 007/RW 009; RT 007/RW 012; RT 008/RW 009; RT 009/RW 009; RT 010/RW 009; RT 011/RW 009; RT 012/RW 009; RT 013/RW 009
+    - Kelurahan CAKUNG TIMUR: RW 009 (RT 001, 002, 003, 007, 008, 009, 010, 011, 012, 013); RW 012 (RT 003, 004, 005, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -20551,10 +20551,10 @@
 - Alamat: JL. PONDOK INDAH, RT 012, RW 006, KEL. PESANGGRAHAN, KEC. PESANGGRAHAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PESANGGRAHAN: RT 001/RW 003; RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 005/RW 003; RT 011/RW 006; RT 012/RW 006; RT 013/RW 006
+    - Kelurahan PESANGGRAHAN: RW 003 (RT 001, 005); RW 005 (RT 001, 002, 003); RW 006 (RT 011, 012, 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PESANGGRAHAN: RT 001/RW 007; RT 002/RW 003; RT 002/RW 007; RT 004/RW 005; RT 004/RW 006; RT 005/RW 005; RT 006/RW 005; RT 006/RW 006; RT 007/RW 006; RT 008/RW 006; RT 009/RW 006; RT 010/RW 006; RT 014/RW 006; RT 015/RW 006
+    - Kelurahan PESANGGRAHAN: RW 003 (RT 002); RW 005 (RT 004, 005, 006); RW 006 (RT 004, 006, 007, 008, 009, 010, 014, 015); RW 007 (RT 001, 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PESANGGRAHAN
     - Kelurahan BINTARO
@@ -20565,12 +20565,12 @@
 - Alamat: JL. RAYA PENGGILINGAN KOMPLEK PIK, RT 009, RW 010, KEL. PENGGILINGAN, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan JATINEGARA: RT 011/RW 007
-    - Kelurahan PENGGILINGAN: RT 001/RW 020; RT 002/RW 010; RT 002/RW 020; RT 003/RW 020; RT 004/RW 020; RT 008/RW 010; RT 009/RW 010; RT 009/RW 014; RT 010/RW 014
+    - Kelurahan JATINEGARA: RW 007 (RT 011)
+    - Kelurahan PENGGILINGAN: RW 010 (RT 002, 008, 009); RW 014 (RT 009, 010); RW 020 (RT 001, 002, 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan JATINEGARA: RT 008/RW 007
-    - Kelurahan PENGGILINGAN: RT 001/RW 010; RT 003/RW 010; RT 005/RW 020; RT 006/RW 010; RT 006/RW 016; RT 006/RW 020; RT 008/RW 014; RT 011/RW 006
+    - Kelurahan JATINEGARA: RW 007 (RT 008)
+    - Kelurahan PENGGILINGAN: RW 006 (RT 011); RW 010 (RT 001, 003, 006); RW 014 (RT 008); RW 016 (RT 006); RW 020 (RT 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -20580,12 +20580,12 @@
 - Alamat: JL. BAMBU PETUNG, RT 004, RW 004, KEL. CIPAYUNG, KEC. CIPAYUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan BAMBU APUS: RT 004/RW 005; RT 005/RW 005
-    - Kelurahan CIPAYUNG: RT 002/RW 004; RT 003/RW 004; RT 003/RW 007; RT 004/RW 004; RT 005/RW 004; RT 006/RW 004; RT 009/RW 004; RT 010/RW 004
+    - Kelurahan BAMBU APUS: RW 005 (RT 004, 005)
+    - Kelurahan CIPAYUNG: RW 004 (RT 002, 003, 004, 005, 006, 009, 010); RW 007 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
-    - Kelurahan BAMBU APUS: RT 003/RW 005; RT 006/RW 005; RT 009/RW 005; RT 010/RW 005
-    - Kelurahan CIPAYUNG: RT 001/RW 004; RT 001/RW 007; RT 002/RW 007; RT 008/RW 004
+    - Kelurahan BAMBU APUS: RW 005 (RT 003, 006, 009, 010)
+    - Kelurahan CIPAYUNG: RW 004 (RT 001, 008); RW 007 (RT 001, 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -20597,12 +20597,12 @@
 - Alamat: JL. KALIBATA UTARA VI NO. 2, RT 009, RW 002, KEL. DUREN TIGA, KEC. PANCORAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan DUREN TIGA: RT 008/RW 002; RT 009/RW 002; RT 011/RW 001; RT 011/RW 003; RT 012/RW 001; RT 012/RW 002; RT 013/RW 002
-    - Kelurahan KALIBATA: RT 009/RW 002; RT 012/RW 002; RT 014/RW 002
+    - Kelurahan DUREN TIGA: RW 001 (RT 011, 012); RW 002 (RT 008, 009, 012, 013); RW 003 (RT 011)
+    - Kelurahan KALIBATA: RW 002 (RT 009, 012, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
-    - Kelurahan DUREN TIGA: RT 002/RW 003; RT 003/RW 002; RT 003/RW 003; RT 003/RW 006; RT 004/RW 002; RT 004/RW 003; RT 004/RW 006; RT 006/RW 001; RT 006/RW 003; RT 007/RW 001; RT 008/RW 003; RT 009/RW 003; RT 009/RW 006; RT 010/RW 001; RT 010/RW 003
-    - Kelurahan KALIBATA: RT 001/RW 002; RT 002/RW 002; RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002; RT 006/RW 007; RT 007/RW 002; RT 007/RW 007; RT 008/RW 002; RT 008/RW 007; RT 009/RW 007; RT 010/RW 002; RT 010/RW 007; RT 011/RW 002; RT 012/RW 007; RT 013/RW 002
+    - Kelurahan DUREN TIGA: RW 001 (RT 006, 007, 010); RW 002 (RT 003, 004); RW 003 (RT 002, 003, 004, 006, 008, 009, 010); RW 006 (RT 003, 004, 009)
+    - Kelurahan KALIBATA: RW 002 (RT 001, 002, 003, 004, 005, 006, 007, 008, 010, 011, 013); RW 007 (RT 006, 007, 008, 009, 010, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -20618,12 +20618,12 @@
 - Alamat: JL. NANGKA NO.58, RT 005, RW 005, KEL. TANJUNG BARAT, KEC. JAGAKARSA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan TANJUNG BARAT: RT 001/RW 002; RT 003/RW 002; RT 004/RW 005; RT 005/RW 005; RT 006/RW 003; RT 006/RW 005; RT 007/RW 005; RT 009/RW 005; RT 010/RW 003; RT 011/RW 005; RT 012/RW 005
+    - Kelurahan TANJUNG BARAT: RW 002 (RT 001, 003); RW 003 (RT 006, 010); RW 005 (RT 004, 005, 006, 007, 009, 011, 012)
   - Kecamatan PASAR REBO
-    - Kelurahan GEDONG: RT 013/RW 003
+    - Kelurahan GEDONG: RW 003 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
-    - Kelurahan TANJUNG BARAT: RT 002/RW 002; RT 003/RW 005; RT 004/RW 002; RT 008/RW 003; RT 008/RW 005; RT 010/RW 005; RT 013/RW 002
+    - Kelurahan TANJUNG BARAT: RW 002 (RT 002, 004, 013); RW 003 (RT 008); RW 005 (RT 003, 008, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -20641,10 +20641,10 @@
 - Alamat: JL. HAJI RAYA NO. 16B, RT 002, RW 010, KEL. GANDARIA UTARA, KEC. KEBAYORAN BARU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GANDARIA UTARA: RT 002/RW 010; RT 003/RW 010; RT 004/RW 010; RT 005/RW 010; RT 006/RW 010; RT 008/RW 010; RT 009/RW 010; RT 010/RW 010; RT 011/RW 010
+    - Kelurahan GANDARIA UTARA: RW 010 (RT 002, 003, 004, 005, 006, 008, 009, 010, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GANDARIA UTARA: RT 001/RW 010; RT 003/RW 014; RT 004/RW 014; RT 005/RW 014; RT 006/RW 007; RT 007/RW 007; RT 007/RW 010; RT 009/RW 003; RT 009/RW 007; RT 010/RW 003; RT 010/RW 007; RT 011/RW 003; RT 011/RW 006; RT 011/RW 007; RT 012/RW 003; RT 012/RW 010; RT 013/RW 003
+    - Kelurahan GANDARIA UTARA: RW 003 (RT 009, 010, 011, 012, 013); RW 006 (RT 011); RW 007 (RT 006, 007, 009, 010, 011); RW 010 (RT 001, 007, 012); RW 014 (RT 003, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CIPETE SELATAN
@@ -20663,10 +20663,10 @@
 - Alamat: JL. PENDIDIKAN, RT 004, RW 002, KEL. PULAU TIDUNG, KEC. KEPULAUAN SERIBU SELATAN, KAB. KEPULAUAN SERIBU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEPULAUAN SERIBU SELATAN
-    - Kelurahan PULAU TIDUNG: RT 003/RW 002; RT 004/RW 002; RT 005/RW 002
+    - Kelurahan PULAU TIDUNG: RW 002 (RT 003, 004, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEPULAUAN SERIBU SELATAN
-    - Kelurahan PULAU TIDUNG: RT 001/RW 002; RT 001/RW 004; RT 002/RW 002; RT 002/RW 004; RT 003/RW 004; RT 004/RW 004; RT 005/RW 004; RT 006/RW 002; RT 007/RW 001; RT 007/RW 002
+    - Kelurahan PULAU TIDUNG: RW 001 (RT 007); RW 002 (RT 001, 002, 006, 007); RW 004 (RT 001, 002, 003, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEPULAUAN SERIBU SELATAN
     - Kelurahan PULAU TIDUNG
@@ -20675,10 +20675,10 @@
 - Alamat: JL. SUBUR LENTENG AGUNG, RT 009, RW 008, KEL. LENTENG AGUNG, KEC. JAGAKARSA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan LENTENG AGUNG: RT 005/RW 008; RT 006/RW 008; RT 007/RW 008; RT 008/RW 008; RT 009/RW 008; RT 014/RW 008
+    - Kelurahan LENTENG AGUNG: RW 008 (RT 005, 006, 007, 008, 009, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
-    - Kelurahan LENTENG AGUNG: RT 001/RW 009; RT 001/RW 010; RT 002/RW 009; RT 002/RW 010; RT 003/RW 009; RT 003/RW 010; RT 004/RW 009; RT 004/RW 010; RT 005/RW 009; RT 006/RW 009; RT 007/RW 009; RT 011/RW 008; RT 012/RW 008; RT 013/RW 008
+    - Kelurahan LENTENG AGUNG: RW 008 (RT 011, 012, 013); RW 009 (RT 001, 002, 003, 004, 005, 006, 007); RW 010 (RT 001, 002, 003, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -20688,12 +20688,12 @@
 - Alamat: JL. CIPINANG JAYA II, RT 012, RW 012, KEL. CIPINANG BESAR UTARA, KEC. JATINEGARA, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 008/RW 007; RT 009/RW 007; RT 010/RW 007
-    - Kelurahan CIPINANG BESAR UTARA: RT 001/RW 014; RT 004/RW 014; RT 007/RW 014; RT 008/RW 012; RT 009/RW 014; RT 010/RW 014; RT 011/RW 012; RT 011/RW 014; RT 012/RW 012; RT 013/RW 012; RT 015/RW 012
+    - Kelurahan CIPINANG BESAR SELATAN: RW 007 (RT 008, 009, 010)
+    - Kelurahan CIPINANG BESAR UTARA: RW 012 (RT 008, 011, 012, 013, 015); RW 014 (RT 001, 004, 007, 009, 010, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 007/RW 007
-    - Kelurahan CIPINANG BESAR UTARA: RT 002/RW 014; RT 005/RW 012; RT 005/RW 014; RT 006/RW 012; RT 006/RW 014; RT 007/RW 012; RT 009/RW 012; RT 010/RW 012; RT 012/RW 014; RT 013/RW 014; RT 014/RW 012
+    - Kelurahan CIPINANG BESAR SELATAN: RW 007 (RT 007)
+    - Kelurahan CIPINANG BESAR UTARA: RW 012 (RT 005, 006, 007, 009, 010, 014); RW 014 (RT 002, 005, 006, 012, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG BESAR SELATAN
@@ -20706,10 +20706,10 @@
 - Alamat: JL. CILINCING BHAKTI VI NO. 28, RT 004, RW 009, KEL. CILINCING, KEC. CILINCING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan CILINCING: RT 001/RW 010; RT 002/RW 010; RT 003/RW 009; RT 003/RW 010; RT 004/RW 009; RT 004/RW 010; RT 005/RW 009; RT 005/RW 010; RT 006/RW 009; RT 008/RW 009
+    - Kelurahan CILINCING: RW 009 (RT 003, 004, 005, 006, 008); RW 010 (RT 001, 002, 003, 004, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
-    - Kelurahan CILINCING: RT 001/RW 006; RT 002/RW 009; RT 004/RW 006; RT 005/RW 006; RT 006/RW 006; RT 006/RW 010; RT 007/RW 006; RT 007/RW 009; RT 008/RW 006; RT 009/RW 006; RT 010/RW 006; RT 013/RW 009; RT 014/RW 009
+    - Kelurahan CILINCING: RW 006 (RT 001, 004, 005, 006, 007, 008, 009, 010); RW 009 (RT 002, 007, 013, 014); RW 010 (RT 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -20721,14 +20721,14 @@
 - Alamat: JL. H. MUCHTAR RAYA, RT 011, RW 011, KEL. PETUKANGAN UTARA, KEC. PESANGGRAHAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 009/RW 008
+    - Kelurahan JOGLO: RW 008 (RT 009)
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN UTARA: RT 010/RW 011; RT 011/RW 011; RT 013/RW 001; RT 013/RW 011
+    - Kelurahan PETUKANGAN UTARA: RW 001 (RT 013); RW 011 (RT 010, 011, 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 007/RW 008
+    - Kelurahan JOGLO: RW 008 (RT 007)
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN UTARA: RT 007/RW 011; RT 008/RW 011; RT 009/RW 001; RT 009/RW 011; RT 010/RW 001; RT 012/RW 011; RT 014/RW 011
+    - Kelurahan PETUKANGAN UTARA: RW 001 (RT 009, 010); RW 011 (RT 007, 008, 009, 012, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -20740,10 +20740,10 @@
 - Alamat: JL. SPG 7, RT 006, RW 009, KEL. LUBANG BUAYA, KEC. CIPAYUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 003/RW 009; RT 005/RW 009; RT 006/RW 009; RT 007/RW 009; RT 010/RW 009; RT 013/RW 009
+    - Kelurahan LUBANG BUAYA: RW 009 (RT 003, 005, 006, 007, 010, 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 001/RW 009; RT 002/RW 002; RT 002/RW 009; RT 004/RW 009; RT 008/RW 001; RT 008/RW 009; RT 009/RW 001; RT 009/RW 009; RT 010/RW 001; RT 011/RW 009; RT 012/RW 009; RT 014/RW 009
+    - Kelurahan LUBANG BUAYA: RW 001 (RT 008, 009, 010); RW 002 (RT 002); RW 009 (RT 001, 002, 004, 008, 009, 011, 012, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -20754,12 +20754,12 @@
 - Alamat: JL. MAMPANG PRAPATAN XIII, RT 005, RW 003, KEL. TEGAL PARANG, KEC. MAMPANG PRAPATAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan PELA MAMPANG: RT 010/RW 006
-    - Kelurahan TEGAL PARANG: RT 003/RW 003; RT 004/RW 003; RT 005/RW 003; RT 006/RW 003; RT 007/RW 001; RT 008/RW 001; RT 009/RW 003
+    - Kelurahan PELA MAMPANG: RW 006 (RT 010)
+    - Kelurahan TEGAL PARANG: RW 001 (RT 007, 008); RW 003 (RT 003, 004, 005, 006, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan PELA MAMPANG: RT 008/RW 010; RT 009/RW 006; RT 011/RW 012
-    - Kelurahan TEGAL PARANG: RT 001/RW 003; RT 002/RW 003; RT 007/RW 003; RT 008/RW 003
+    - Kelurahan PELA MAMPANG: RW 006 (RT 009); RW 010 (RT 008); RW 012 (RT 011)
+    - Kelurahan TEGAL PARANG: RW 003 (RT 001, 002, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan BANGKA
@@ -20775,12 +20775,12 @@
 - Alamat: JL. KAMAL RAYA, RT 008, RW 002, KEL. CENGKARENG TIMUR, KEC. CENGKARENG, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 006/RW 003
-    - Kelurahan CENGKARENG TIMUR: RT 002/RW 002; RT 002/RW 006; RT 003/RW 006; RT 004/RW 002; RT 005/RW 002; RT 005/RW 005; RT 006/RW 006; RT 007/RW 002; RT 007/RW 006; RT 008/RW 002; RT 016/RW 006
+    - Kelurahan CENGKARENG BARAT: RW 003 (RT 006)
+    - Kelurahan CENGKARENG TIMUR: RW 002 (RT 002, 004, 005, 007, 008); RW 005 (RT 005); RW 006 (RT 002, 003, 006, 007, 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 001/RW 003
-    - Kelurahan CENGKARENG TIMUR: RT 001/RW 001; RT 001/RW 002; RT 003/RW 001; RT 003/RW 002; RT 006/RW 002; RT 008/RW 001
+    - Kelurahan CENGKARENG BARAT: RW 003 (RT 001)
+    - Kelurahan CENGKARENG TIMUR: RW 001 (RT 001, 003, 008); RW 002 (RT 001, 003, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -20796,10 +20796,10 @@
 - Alamat: JL. JAYA 25 NO.41, RT 001, RW 010, KEL. CENGKARENG BARAT, KEC. CENGKARENG, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 001/RW 010; RT 002/RW 010; RT 002/RW 014; RT 004/RW 008; RT 005/RW 009; RT 005/RW 014; RT 009/RW 010; RT 012/RW 010; RT 014/RW 010; RT 015/RW 010
+    - Kelurahan CENGKARENG BARAT: RW 008 (RT 004); RW 009 (RT 005); RW 010 (RT 001, 002, 009, 012, 014, 015); RW 014 (RT 002, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 003/RW 009; RT 003/RW 010; RT 003/RW 014; RT 004/RW 009; RT 004/RW 014; RT 006/RW 009; RT 006/RW 010
+    - Kelurahan CENGKARENG BARAT: RW 009 (RT 003, 004, 006); RW 010 (RT 003, 006); RW 014 (RT 003, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -20816,12 +20816,12 @@
 - Alamat: JL. KHM. NAIM III, RT 006, RW 009, KEL. CIPETE UTARA, KEC. KEBAYORAN BARU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan CIPETE UTARA: RT 002/RW 010; RT 003/RW 009; RT 005/RW 009; RT 006/RW 009; RT 007/RW 009; RT 011/RW 006; RT 012/RW 006; RT 013/RW 006
+    - Kelurahan CIPETE UTARA: RW 006 (RT 011, 012, 013); RW 009 (RT 003, 005, 006, 007); RW 010 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan CIPETE UTARA: RT 001/RW 009; RT 001/RW 010; RT 001/RW 011; RT 002/RW 006; RT 002/RW 009; RT 002/RW 011; RT 003/RW 006; RT 003/RW 010; RT 003/RW 011; RT 004/RW 006; RT 004/RW 009; RT 004/RW 011; RT 005/RW 006; RT 005/RW 011; RT 006/RW 006; RT 007/RW 006; RT 008/RW 006; RT 009/RW 006; RT 010/RW 006
+    - Kelurahan CIPETE UTARA: RW 006 (RT 002, 003, 004, 005, 006, 007, 008, 009, 010); RW 009 (RT 001, 002, 004); RW 010 (RT 001, 003); RW 011 (RT 001, 002, 003, 004, 005)
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan BANGKA: RT 009/RW 002; RT 012/RW 002
+    - Kelurahan BANGKA: RW 002 (RT 009, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CIPETE SELATAN
@@ -20836,10 +20836,10 @@
 - Alamat: JL. MAWAR KAMP. ASEM, RT 010, RW 001, KEL. CIJANTUNG, KEC. PASAR REBO, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan CIJANTUNG: RT 005/RW 001; RT 006/RW 001; RT 007/RW 001; RT 010/RW 001; RT 010/RW 011; RT 013/RW 001; RT 014/RW 001
+    - Kelurahan CIJANTUNG: RW 001 (RT 005, 006, 007, 010, 013, 014); RW 011 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
-    - Kelurahan CIJANTUNG: RT 001/RW 001; RT 001/RW 011; RT 002/RW 001; RT 002/RW 011; RT 003/RW 001; RT 004/RW 001; RT 008/RW 001; RT 009/RW 001; RT 011/RW 001; RT 012/RW 001
+    - Kelurahan CIJANTUNG: RW 001 (RT 001, 002, 003, 004, 008, 009, 011, 012); RW 011 (RT 001, 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIRACAS
     - Kelurahan CIRACAS
@@ -20853,11 +20853,11 @@
 - Alamat: JL. HAJI NAMAN, RT 002, RW 002, KEL. PONDOK KELAPA, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KELAPA: RT 001/RW 015; RT 002/RW 002; RT 002/RW 015; RT 003/RW 002; RT 003/RW 015; RT 004/RW 015; RT 005/RW 015; RT 006/RW 002; RT 007/RW 002; RT 009/RW 002; RT 014/RW 002; RT 015/RW 002
-    - Kelurahan PONDOK KOPI: RT 004/RW 004
+    - Kelurahan PONDOK KELAPA: RW 002 (RT 002, 003, 006, 007, 009, 014, 015); RW 015 (RT 001, 002, 003, 004, 005)
+    - Kelurahan PONDOK KOPI: RW 004 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KELAPA: RT 001/RW 002; RT 004/RW 002; RT 005/RW 002; RT 008/RW 002; RT 010/RW 002; RT 011/RW 002; RT 012/RW 002; RT 013/RW 002; RT 013/RW 003; RT 016/RW 002; RT 017/RW 002; RT 018/RW 002; RT 019/RW 002; RT 020/RW 002; RT 021/RW 002
+    - Kelurahan PONDOK KELAPA: RW 002 (RT 001, 004, 005, 008, 010, 011, 012, 013, 016, 017, 018, 019, 020, 021); RW 003 (RT 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan MALAKA JAYA
@@ -20868,10 +20868,10 @@
 - Alamat: JL. ANTARIKSA KP. ALANG-ALANG , RT 009, RW 002, KEL. CIPEDAK, KEC. JAGAKARSA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan CIPEDAK: RT 001/RW 002; RT 004/RW 002; RT 009/RW 001; RT 009/RW 002; RT 012/RW 001
+    - Kelurahan CIPEDAK: RW 001 (RT 009, 012); RW 002 (RT 001, 004, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
-    - Kelurahan CIPEDAK: RT 002/RW 002; RT 003/RW 002; RT 005/RW 002; RT 006/RW 002; RT 007/RW 002; RT 008/RW 001; RT 008/RW 002; RT 009/RW 004; RT 010/RW 002
+    - Kelurahan CIPEDAK: RW 001 (RT 008); RW 002 (RT 002, 003, 005, 006, 007, 008, 010); RW 004 (RT 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -20882,10 +20882,10 @@
 - Alamat: JL. GANDARIA V, JAGAKARSA, RT 012, RW 002, KEL. JAGAKARSA, KEC. JAGAKARSA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 002/RW 002; RT 003/RW 002; RT 007/RW 002; RT 009/RW 002; RT 012/RW 002; RT 013/RW 002
+    - Kelurahan JAGAKARSA: RW 002 (RT 002, 003, 007, 009, 012, 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 001/RW 002; RT 004/RW 002; RT 006/RW 002; RT 008/RW 002; RT 010/RW 002
+    - Kelurahan JAGAKARSA: RW 002 (RT 001, 004, 006, 008, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -20897,13 +20897,13 @@
 - Alamat: JL. RADIN INTEN II DUREN SAWIT, RT 009, RW 010, KEL. DUREN SAWIT, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 006/RW 015; RT 008/RW 010; RT 008/RW 015; RT 009/RW 010; RT 010/RW 010
-    - Kelurahan MALAKA SARI: RT 004/RW 010
+    - Kelurahan DUREN SAWIT: RW 010 (RT 008, 009, 010); RW 015 (RT 006, 008)
+    - Kelurahan MALAKA SARI: RW 010 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 002/RW 015; RT 004/RW 010; RT 004/RW 015; RT 005/RW 010; RT 005/RW 015; RT 006/RW 010; RT 007/RW 010; RT 007/RW 015; RT 011/RW 010; RT 012/RW 010
-    - Kelurahan KLENDER: RT 001/RW 013; RT 001/RW 014; RT 002/RW 013
-    - Kelurahan MALAKA SARI: RT 001/RW 010; RT 002/RW 010; RT 003/RW 010; RT 005/RW 010; RT 006/RW 010; RT 009/RW 002
+    - Kelurahan DUREN SAWIT: RW 010 (RT 004, 005, 006, 007, 011, 012); RW 015 (RT 002, 004, 005, 007)
+    - Kelurahan KLENDER: RW 013 (RT 001, 002); RW 014 (RT 001)
+    - Kelurahan MALAKA SARI: RW 002 (RT 009); RW 010 (RT 001, 002, 003, 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -20915,11 +20915,11 @@
 - Alamat: JL. BALAI RAKYAT, RT 015, RW 001, KEL. CAKUNG TIMUR, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 004/RW 001; RT 005/RW 014; RT 010/RW 014; RT 012/RW 001; RT 015/RW 001
+    - Kelurahan CAKUNG TIMUR: RW 001 (RT 004, 012, 015); RW 014 (RT 005, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 005/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 009/RW 014; RT 010/RW 001; RT 011/RW 001; RT 013/RW 001; RT 014/RW 001; RT 016/RW 001
-    - Kelurahan UJUNG MENTENG: RT 001/RW 001; RT 002/RW 001; RT 006/RW 001; RT 009/RW 001; RT 011/RW 001
+    - Kelurahan CAKUNG TIMUR: RW 001 (RT 001, 002, 003, 005, 006, 007, 008, 009, 010, 011, 013, 014, 016); RW 014 (RT 009)
+    - Kelurahan UJUNG MENTENG: RW 001 (RT 001, 002, 006, 009, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -20931,14 +20931,14 @@
 - Alamat: JL. KEL RAMBUTAN, RT 004, RW 003, KEL. RAMBUTAN, KEC. CIRACAS, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan RAMBUTAN: RT 003/RW 003; RT 004/RW 002; RT 004/RW 003; RT 005/RW 003; RT 012/RW 003; RT 013/RW 003; RT 014/RW 003; RT 015/RW 003; RT 016/RW 003
+    - Kelurahan RAMBUTAN: RW 002 (RT 004); RW 003 (RT 003, 004, 005, 012, 013, 014, 015, 016)
   - Kecamatan KRAMATJATI
-    - Kelurahan DUKUH: RT 011/RW 003; RT 011/RW 004
+    - Kelurahan DUKUH: RW 003 (RT 011); RW 004 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan RAMBUTAN: RT 001/RW 003; RT 002/RW 003; RT 003/RW 002; RT 005/RW 002; RT 006/RW 003; RT 007/RW 003; RT 008/RW 003; RT 009/RW 003; RT 010/RW 003; RT 011/RW 002; RT 011/RW 003; RT 012/RW 002
+    - Kelurahan RAMBUTAN: RW 002 (RT 003, 005, 011, 012); RW 003 (RT 001, 002, 006, 007, 008, 009, 010, 011)
   - Kecamatan KRAMATJATI
-    - Kelurahan DUKUH: RT 009/RW 003; RT 009/RW 004; RT 010/RW 003; RT 010/RW 004
+    - Kelurahan DUKUH: RW 003 (RT 009, 010); RW 004 (RT 009, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan CEGER
@@ -20952,10 +20952,10 @@
 - Alamat: JL. CIBUBUR 2 BLOK DUKU, RT 015, RW 010, KEL. CIBUBUR, KEC. CIRACAS, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIBUBUR: RT 006/RW 010; RT 008/RW 010; RT 014/RW 010; RT 015/RW 010
+    - Kelurahan CIBUBUR: RW 010 (RT 006, 008, 014, 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan CIBUBUR: RT 001/RW 004; RT 001/RW 010; RT 002/RW 004; RT 002/RW 010; RT 003/RW 010; RT 004/RW 010; RT 005/RW 010; RT 006/RW 003; RT 007/RW 003; RT 007/RW 010; RT 008/RW 003; RT 009/RW 010; RT 010/RW 004; RT 010/RW 010; RT 011/RW 004; RT 011/RW 010; RT 012/RW 003; RT 012/RW 004; RT 012/RW 010; RT 013/RW 004; RT 013/RW 010
+    - Kelurahan CIBUBUR: RW 003 (RT 006, 007, 008, 012); RW 004 (RT 001, 002, 010, 011, 012, 013); RW 010 (RT 001, 002, 003, 004, 005, 007, 009, 010, 011, 012, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan PONDOK RANGGON
@@ -20968,10 +20968,10 @@
 - Alamat: JL. LAKSMANA VIII KOMPLEK KARYAWAN TMII, RT 012, RW 003, & RT 015 RW 004 KEL. BAMBU APUS, KEC. CIPAYUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan BAMBU APUS: RT 003/RW 003; RT 004/RW 003; RT 005/RW 003; RT 012/RW 003; RT 013/RW 004; RT 014/RW 004; RT 015/RW 004; RT 016/RW 004
+    - Kelurahan BAMBU APUS: RW 003 (RT 003, 004, 005, 012); RW 004 (RT 013, 014, 015, 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
-    - Kelurahan BAMBU APUS: RT 001/RW 004; RT 002/RW 004; RT 003/RW 004; RT 004/RW 004; RT 005/RW 004; RT 006/RW 004; RT 007/RW 003; RT 007/RW 004; RT 008/RW 004; RT 009/RW 004; RT 010/RW 004; RT 011/RW 004; RT 012/RW 004; RT 017/RW 004
+    - Kelurahan BAMBU APUS: RW 003 (RT 007); RW 004 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 017)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -20982,10 +20982,10 @@
 - Alamat: JL. H. MUJAR, RT 005, RW 002, KEL. PULAU HARAPAN, KEC. KEPULAUAN SERIBU UTARA, KAB. KEPULAUAN SERIBU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEPULAUAN SERIBU UTARA
-    - Kelurahan PULAU HARAPAN: RT 001/RW 002; RT 002/RW 002; RT 004/RW 002; RT 005/RW 002
+    - Kelurahan PULAU HARAPAN: RW 002 (RT 001, 002, 004, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEPULAUAN SERIBU UTARA
-    - Kelurahan PULAU HARAPAN: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 003/RW 002; RT 004/RW 001; RT 005/RW 001; RT 006/RW 001
+    - Kelurahan PULAU HARAPAN: RW 001 (RT 001, 002, 003, 004, 005, 006); RW 002 (RT 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEPULAUAN SERIBU UTARA
     - Kelurahan PULAU HARAPAN
@@ -20995,10 +20995,10 @@
 - Alamat: JL. MUARA ANGKE, RT 009, RW 021, KEL. PLUIT, KEC. PENJARINGAN, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan PLUIT: RT 007/RW 001; RT 008/RW 021; RT 009/RW 021; RT 011/RW 011; RT 012/RW 011; RT 013/RW 011
+    - Kelurahan PLUIT: RW 001 (RT 007); RW 011 (RT 011, 012, 013); RW 021 (RT 008, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PENJARINGAN
-    - Kelurahan PLUIT: RT 001/RW 020; RT 001/RW 021; RT 002/RW 001; RT 002/RW 020; RT 002/RW 021; RT 003/RW 001; RT 003/RW 020; RT 003/RW 021; RT 004/RW 001; RT 004/RW 020; RT 004/RW 021; RT 005/RW 001; RT 005/RW 020; RT 005/RW 021; RT 006/RW 001; RT 006/RW 011; RT 006/RW 020; RT 007/RW 011; RT 007/RW 020; RT 007/RW 021; RT 008/RW 011; RT 008/RW 020; RT 009/RW 011; RT 009/RW 020; RT 010/RW 011; RT 010/RW 020; RT 011/RW 020; RT 012/RW 020
+    - Kelurahan PLUIT: RW 001 (RT 002, 003, 004, 005, 006); RW 011 (RT 006, 007, 008, 009, 010); RW 020 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012); RW 021 (RT 001, 002, 003, 004, 005, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan PENJARINGAN
     - Kelurahan KAPUK MUARA
@@ -21009,12 +21009,12 @@
 - Alamat: JL. KAYU TINGGI CAKUNG TIMUR, RT 009, RW 006, KEL. CAKUNG TIMUR, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 002/RW 006; RT 003/RW 006; RT 009/RW 006; RT 010/RW 006; RT 012/RW 006
+    - Kelurahan CAKUNG TIMUR: RW 006 (RT 002, 003, 009, 010, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 004/RW 006; RT 005/RW 006; RT 006/RW 006; RT 007/RW 006; RT 008/RW 006; RT 011/RW 006; RT 013/RW 006
+    - Kelurahan CAKUNG TIMUR: RW 006 (RT 004, 005, 006, 007, 008, 011, 013)
   - Kecamatan CILINCING
-    - Kelurahan ROROTAN: RT 002/RW 004; RT 003/RW 004; RT 009/RW 004
+    - Kelurahan ROROTAN: RW 004 (RT 002, 003, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -21027,10 +21027,10 @@
 - Alamat: JL. DUKUH V, RT 006, RW 005, KEL. DUKUH, KEC. KRAMATJATI, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMATJATI
-    - Kelurahan DUKUH: RT 001/RW 003; RT 001/RW 004; RT 002/RW 004; RT 004/RW 005; RT 005/RW 005; RT 006/RW 005; RT 007/RW 005; RT 008/RW 005; RT 009/RW 005; RT 010/RW 005
+    - Kelurahan DUKUH: RW 003 (RT 001); RW 004 (RT 001, 002); RW 005 (RT 004, 005, 006, 007, 008, 009, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMATJATI
-    - Kelurahan DUKUH: RT 002/RW 003; RT 003/RW 004; RT 003/RW 005; RT 004/RW 004; RT 004/RW 006; RT 006/RW 006; RT 007/RW 006; RT 008/RW 002; RT 008/RW 006; RT 011/RW 005; RT 015/RW 004
+    - Kelurahan DUKUH: RW 002 (RT 008); RW 003 (RT 002); RW 004 (RT 003, 004, 015); RW 005 (RT 003, 011); RW 006 (RT 004, 006, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIRACAS
     - Kelurahan RAMBUTAN
@@ -21045,12 +21045,12 @@
 - Alamat: JL. BARKAH I, RT 001, RW 003, KEL. RAWA BUAYA, KEC. CENGKARENG, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan DURI KOSAMBI: RT 002/RW 002; RT 003/RW 007; RT 009/RW 007; RT 010/RW 007; RT 013/RW 007
-    - Kelurahan RAWA BUAYA: RT 001/RW 003; RT 002/RW 003; RT 003/RW 003; RT 004/RW 003; RT 014/RW 004
+    - Kelurahan DURI KOSAMBI: RW 002 (RT 002); RW 007 (RT 003, 009, 010, 013)
+    - Kelurahan RAWA BUAYA: RW 003 (RT 001, 002, 003, 004); RW 004 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
-    - Kelurahan DURI KOSAMBI: RT 001/RW 007; RT 002/RW 007; RT 004/RW 007; RT 005/RW 001; RT 006/RW 001; RT 012/RW 007; RT 015/RW 011
-    - Kelurahan RAWA BUAYA: RT 001/RW 004; RT 002/RW 004; RT 005/RW 003; RT 006/RW 004; RT 009/RW 003; RT 009/RW 004; RT 011/RW 003; RT 013/RW 004
+    - Kelurahan DURI KOSAMBI: RW 001 (RT 005, 006); RW 007 (RT 001, 002, 004, 012); RW 011 (RT 015)
+    - Kelurahan RAWA BUAYA: RW 003 (RT 005, 009, 011); RW 004 (RT 001, 002, 006, 009, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -21063,12 +21063,12 @@
 - Alamat: JL. ASEM BARIS II NO. 10, RT 009, RW 005, KEL. KEBON BARU, KEC. TEBET, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan KEBON BARU: RT 001/RW 004; RT 001/RW 006; RT 001/RW 007; RT 002/RW 004; RT 004/RW 004; RT 006/RW 004; RT 008/RW 005; RT 009/RW 005
-    - Kelurahan TEBET TIMUR: RT 005/RW 011; RT 006/RW 011
+    - Kelurahan KEBON BARU: RW 004 (RT 001, 002, 004, 006); RW 005 (RT 008, 009); RW 006 (RT 001); RW 007 (RT 001)
+    - Kelurahan TEBET TIMUR: RW 011 (RT 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TEBET
-    - Kelurahan KEBON BARU: RT 002/RW 006; RT 002/RW 007; RT 003/RW 004; RT 003/RW 006; RT 003/RW 007; RT 004/RW 005; RT 004/RW 006; RT 004/RW 007; RT 005/RW 004; RT 005/RW 005; RT 005/RW 006; RT 006/RW 005; RT 006/RW 006; RT 007/RW 004; RT 007/RW 005; RT 007/RW 007; RT 008/RW 003; RT 008/RW 004; RT 008/RW 007; RT 009/RW 004; RT 009/RW 007; RT 010/RW 003; RT 010/RW 004
-    - Kelurahan TEBET TIMUR: RT 001/RW 011; RT 004/RW 003; RT 004/RW 011; RT 006/RW 003; RT 007/RW 011
+    - Kelurahan KEBON BARU: RW 003 (RT 008, 010); RW 004 (RT 003, 005, 007, 008, 009, 010); RW 005 (RT 004, 005, 006, 007); RW 006 (RT 002, 003, 004, 005, 006); RW 007 (RT 002, 003, 004, 007, 008, 009)
+    - Kelurahan TEBET TIMUR: RW 003 (RT 004, 006); RW 011 (RT 001, 004, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan BALI MESTER
@@ -21087,10 +21087,10 @@
 - Alamat: JL. CILINCING BAKTI NO. 29, RT 005, RW 009, KEL. CILINCING, KEC. CILINCING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan CILINCING: RT 001/RW 006; RT 003/RW 009; RT 004/RW 006; RT 004/RW 009; RT 005/RW 009; RT 006/RW 006; RT 006/RW 009; RT 007/RW 006
+    - Kelurahan CILINCING: RW 006 (RT 001, 004, 006, 007); RW 009 (RT 003, 004, 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
-    - Kelurahan CILINCING: RT 001/RW 009; RT 001/RW 010; RT 002/RW 009; RT 003/RW 006; RT 005/RW 006; RT 008/RW 009; RT 011/RW 009; RT 012/RW 009; RT 013/RW 009; RT 014/RW 009
+    - Kelurahan CILINCING: RW 006 (RT 003, 005); RW 009 (RT 001, 002, 008, 011, 012, 013, 014); RW 010 (RT 001)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -21102,12 +21102,12 @@
 - Alamat: JL. MAIRIN SWADARMA RAYA, RT 019, RW 003, KEL. ULUJAMI, KEC. PESANGGRAHAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL SELATAN: RT 003/RW 012; RT 005/RW 012; RT 008/RW 012; RT 010/RW 012; RT 011/RW 012
+    - Kelurahan GROGOL SELATAN: RW 012 (RT 003, 005, 008, 010, 011)
   - Kecamatan PESANGGRAHAN
-    - Kelurahan ULUJAMI: RT 009/RW 003; RT 017/RW 003; RT 019/RW 003
+    - Kelurahan ULUJAMI: RW 003 (RT 009, 017, 019)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan ULUJAMI: RT 007/RW 003; RT 008/RW 003; RT 010/RW 003; RT 011/RW 003; RT 016/RW 003
+    - Kelurahan ULUJAMI: RW 003 (RT 007, 008, 010, 011, 016)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -21123,12 +21123,12 @@
 - Alamat: JL. SD INPRES, RT 013, RW 004, KEL. KEBON PALA, KEC. MAKASAR, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 007/RW 009
-    - Kelurahan KEBON PALA: RT 002/RW 004; RT 007/RW 010; RT 008/RW 010; RT 012/RW 004; RT 013/RW 004; RT 014/RW 004
+    - Kelurahan HALIM PERDANA KUSUMA: RW 009 (RT 007)
+    - Kelurahan KEBON PALA: RW 004 (RT 002, 012, 013, 014); RW 010 (RT 007, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 005/RW 009; RT 006/RW 009; RT 008/RW 009; RT 009/RW 009
-    - Kelurahan KEBON PALA: RT 001/RW 004; RT 001/RW 009; RT 002/RW 009; RT 003/RW 004; RT 003/RW 009; RT 004/RW 004; RT 004/RW 005; RT 005/RW 004; RT 005/RW 009; RT 006/RW 004; RT 006/RW 010; RT 007/RW 004; RT 008/RW 004; RT 009/RW 004; RT 009/RW 010; RT 010/RW 004; RT 010/RW 010; RT 011/RW 004; RT 012/RW 009; RT 015/RW 009
+    - Kelurahan HALIM PERDANA KUSUMA: RW 009 (RT 005, 006, 008, 009)
+    - Kelurahan KEBON PALA: RW 004 (RT 001, 003, 004, 005, 006, 007, 008, 009, 010, 011); RW 005 (RT 004); RW 009 (RT 001, 002, 003, 005, 012, 015); RW 010 (RT 006, 009, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KRAMATJATI
     - Kelurahan CAWANG
@@ -21142,11 +21142,11 @@
 - Alamat: JL. HARAPAN MULIA, RT 004, RW 004, KEL. HARAPAN MULIA, KEC. KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan HARAPAN MULIA: RT 001/RW 004; RT 003/RW 004; RT 004/RW 004; RT 005/RW 001; RT 005/RW 004; RT 006/RW 004; RT 007/RW 005; RT 008/RW 005; RT 009/RW 005; RT 010/RW 005; RT 015/RW 001
+    - Kelurahan HARAPAN MULIA: RW 001 (RT 005, 015); RW 004 (RT 001, 003, 004, 005, 006); RW 005 (RT 007, 008, 009, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
-    - Kelurahan HARAPAN MULIA: RT 001/RW 005; RT 001/RW 008; RT 001/RW 009; RT 002/RW 004; RT 002/RW 005; RT 002/RW 008; RT 003/RW 001; RT 003/RW 005; RT 004/RW 001; RT 004/RW 005; RT 004/RW 006; RT 005/RW 005; RT 005/RW 006; RT 006/RW 001; RT 006/RW 005; RT 006/RW 006; RT 007/RW 001; RT 007/RW 004; RT 007/RW 006; RT 008/RW 001; RT 008/RW 004; RT 008/RW 006; RT 008/RW 008; RT 009/RW 004; RT 009/RW 006; RT 009/RW 008; RT 010/RW 004; RT 010/RW 006; RT 010/RW 008; RT 011/RW 004; RT 011/RW 005; RT 011/RW 008; RT 012/RW 005; RT 013/RW 005; RT 013/RW 006; RT 014/RW 006; RT 018/RW 008; RT 019/RW 008
-    - Kelurahan UTAN PANJANG: RT 006/RW 007; RT 007/RW 007; RT 008/RW 007
+    - Kelurahan HARAPAN MULIA: RW 001 (RT 003, 004, 006, 007, 008); RW 004 (RT 002, 007, 008, 009, 010, 011); RW 005 (RT 001, 002, 003, 004, 005, 006, 011, 012, 013); RW 006 (RT 004, 005, 006, 007, 008, 009, 010, 013, 014); RW 008 (RT 001, 002, 008, 009, 010, 011, 018, 019); RW 009 (RT 001)
+    - Kelurahan UTAN PANJANG: RW 007 (RT 006, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JOHAR BARU
     - Kelurahan GALUR
@@ -21163,10 +21163,10 @@
 - Alamat: JL. KOMPI UDIN, RT 001, RW 001, KEL. PEGANGSAAN DUA, KEC. KELAPA GADING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KELAPA GADING
-    - Kelurahan PEGANGSAAN DUA: RT 001/RW 001; RT 003/RW 007; RT 004/RW 007; RT 006/RW 001; RT 006/RW 005; RT 006/RW 026; RT 007/RW 020; RT 009/RW 026; RT 014/RW 007
+    - Kelurahan PEGANGSAAN DUA: RW 001 (RT 001, 006); RW 005 (RT 006); RW 007 (RT 003, 004, 014); RW 020 (RT 007); RW 026 (RT 006, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
-    - Kelurahan PEGANGSAAN DUA: RT 001/RW 007; RT 001/RW 013; RT 001/RW 020; RT 002/RW 005; RT 002/RW 007; RT 002/RW 020; RT 003/RW 005; RT 003/RW 020; RT 004/RW 001; RT 004/RW 005; RT 005/RW 005; RT 005/RW 007; RT 005/RW 013; RT 005/RW 026; RT 006/RW 020
+    - Kelurahan PEGANGSAAN DUA: RW 001 (RT 004); RW 005 (RT 002, 003, 004, 005); RW 007 (RT 001, 002, 005); RW 013 (RT 001, 005); RW 020 (RT 001, 002, 003, 006); RW 026 (RT 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan RAWA TERATE
@@ -21181,10 +21181,10 @@
 - Alamat: JL. PAHLAWAN VI/F1, RT 002, RW 005, KEL. SUKABUMI SELATAN, KEC. KEBON JERUK, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan SUKABUMI SELATAN: RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 004/RW 007; RT 007/RW 007; RT 010/RW 005; RT 012/RW 005
+    - Kelurahan SUKABUMI SELATAN: RW 005 (RT 001, 002, 003, 010, 012); RW 007 (RT 004, 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
-    - Kelurahan SUKABUMI SELATAN: RT 003/RW 004; RT 003/RW 007; RT 004/RW 005; RT 005/RW 004; RT 005/RW 005; RT 005/RW 007; RT 006/RW 004; RT 006/RW 005; RT 006/RW 007; RT 007/RW 004; RT 007/RW 005; RT 008/RW 005; RT 009/RW 005; RT 011/RW 004; RT 011/RW 005
+    - Kelurahan SUKABUMI SELATAN: RW 004 (RT 003, 005, 006, 007, 011); RW 005 (RT 004, 005, 006, 007, 008, 009, 011); RW 007 (RT 003, 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL SELATAN
@@ -21202,10 +21202,10 @@
 - Alamat: JL. AL BAIDHO 1, RT 010, RW 009, KEL. LUBANG BUAYA, KEC. CIPAYUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 002/RW 006; RT 003/RW 009; RT 006/RW 006; RT 006/RW 009; RT 007/RW 009; RT 008/RW 009; RT 010/RW 009; RT 014/RW 009
+    - Kelurahan LUBANG BUAYA: RW 006 (RT 002, 006); RW 009 (RT 003, 006, 007, 008, 010, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 001/RW 006; RT 005/RW 002; RT 005/RW 006; RT 007/RW 002; RT 007/RW 006; RT 012/RW 009
+    - Kelurahan LUBANG BUAYA: RW 002 (RT 005, 007); RW 006 (RT 001, 005, 007); RW 009 (RT 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan LUBANG BUAYA
@@ -21216,12 +21216,12 @@
 - Alamat: JL. KAMPUNG BALI XXIV NO. 1, RT 009, RW 007, KEL. KAMPUNG BALI, KEC. TANAH ABANG, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan KAMPUNG BALI: RT 006/RW 007; RT 007/RW 007; RT 008/RW 007; RT 009/RW 007; RT 009/RW 008; RT 010/RW 007; RT 011/RW 008
-    - Kelurahan KEBON KACANG: RT 003/RW 005; RT 004/RW 005; RT 013/RW 006
+    - Kelurahan KAMPUNG BALI: RW 007 (RT 006, 007, 008, 009, 010); RW 008 (RT 009, 011)
+    - Kelurahan KEBON KACANG: RW 005 (RT 003, 004); RW 006 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
-    - Kelurahan KAMPUNG BALI: RT 001/RW 007; RT 001/RW 008; RT 001/RW 009; RT 002/RW 006; RT 002/RW 007; RT 002/RW 008; RT 002/RW 009; RT 002/RW 010; RT 003/RW 007; RT 003/RW 008; RT 003/RW 009; RT 003/RW 010; RT 004/RW 007; RT 004/RW 008; RT 004/RW 009; RT 004/RW 010; RT 005/RW 007; RT 005/RW 008; RT 005/RW 009; RT 005/RW 010; RT 006/RW 008; RT 006/RW 009; RT 006/RW 010; RT 007/RW 008; RT 007/RW 009; RT 007/RW 010; RT 008/RW 008; RT 008/RW 009; RT 008/RW 010; RT 009/RW 009; RT 009/RW 010; RT 010/RW 008
-    - Kelurahan KEBON KACANG: RT 001/RW 002; RT 001/RW 005; RT 002/RW 002; RT 002/RW 005; RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 005/RW 005; RT 006/RW 002; RT 006/RW 005; RT 007/RW 002; RT 007/RW 005; RT 008/RW 002; RT 009/RW 002; RT 010/RW 002; RT 010/RW 006; RT 011/RW 002; RT 011/RW 006; RT 012/RW 002; RT 012/RW 006; RT 014/RW 006; RT 015/RW 006
+    - Kelurahan KAMPUNG BALI: RW 006 (RT 002); RW 007 (RT 001, 002, 003, 004, 005); RW 008 (RT 001, 002, 003, 004, 005, 006, 007, 008, 010); RW 009 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009); RW 010 (RT 002, 003, 004, 005, 006, 007, 008, 009)
+    - Kelurahan KEBON KACANG: RW 002 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012); RW 005 (RT 001, 002, 005, 006, 007); RW 006 (RT 010, 011, 012, 014, 015)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -21244,12 +21244,12 @@
 - Alamat: JL. EMPANG BAHAGIA RAYA NO. 4 B, RT 001, RW 006, KEL. JELAMBAR, KEC. GROGOL PETAMBURAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan GROGOL: RT 005/RW 006
-    - Kelurahan JELAMBAR: RT 001/RW 006; RT 002/RW 006; RT 003/RW 006; RT 004/RW 006; RT 005/RW 006; RT 006/RW 005; RT 006/RW 006; RT 013/RW 005; RT 014/RW 005
+    - Kelurahan GROGOL: RW 006 (RT 005)
+    - Kelurahan JELAMBAR: RW 005 (RT 006, 013, 014); RW 006 (RT 001, 002, 003, 004, 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan GROGOL: RT 002/RW 006; RT 003/RW 006; RT 004/RW 006; RT 006/RW 006
-    - Kelurahan JELAMBAR: RT 001/RW 007; RT 005/RW 005; RT 007/RW 005; RT 007/RW 006; RT 008/RW 005; RT 008/RW 006; RT 009/RW 005; RT 009/RW 006; RT 010/RW 005; RT 010/RW 006; RT 010/RW 007; RT 011/RW 005; RT 012/RW 005; RT 015/RW 005
+    - Kelurahan GROGOL: RW 006 (RT 002, 003, 004, 006)
+    - Kelurahan JELAMBAR: RW 005 (RT 005, 007, 008, 009, 010, 011, 012, 015); RW 006 (RT 007, 008, 009, 010); RW 007 (RT 001, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -21268,10 +21268,10 @@
 - Alamat: JL. JENGKI CIPINANG ASEM, RT 009, RW 009, KEL. KEBON PALA, KEC. MAKASAR, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan KEBON PALA: RT 001/RW 002; RT 003/RW 002; RT 004/RW 002; RT 008/RW 009; RT 009/RW 009; RT 010/RW 009; RT 013/RW 009; RT 015/RW 002
+    - Kelurahan KEBON PALA: RW 002 (RT 001, 003, 004, 015); RW 009 (RT 008, 009, 010, 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAKASAR
-    - Kelurahan KEBON PALA: RT 001/RW 005; RT 001/RW 009; RT 001/RW 011; RT 001/RW 012; RT 002/RW 002; RT 003/RW 009; RT 003/RW 011; RT 004/RW 009; RT 004/RW 011; RT 005/RW 002; RT 005/RW 009; RT 006/RW 002; RT 006/RW 009; RT 007/RW 009; RT 008/RW 012; RT 009/RW 012; RT 011/RW 004; RT 011/RW 009; RT 014/RW 009; RT 016/RW 009
+    - Kelurahan KEBON PALA: RW 002 (RT 002, 005, 006); RW 004 (RT 011); RW 005 (RT 001); RW 009 (RT 001, 003, 004, 005, 006, 007, 011, 014, 016); RW 011 (RT 001, 003, 004); RW 012 (RT 001, 008, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KRAMATJATI
     - Kelurahan CAWANG
@@ -21284,10 +21284,10 @@
 - Alamat: JL. SEROJA, RT 011, RW 003, KEL. SRENGSENG SAWAH, KEC. JAGAKARSA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan SRENGSENG SAWAH: RT 001/RW 012; RT 004/RW 013; RT 005/RW 013; RT 008/RW 003; RT 009/RW 003; RT 010/RW 003; RT 011/RW 003; RT 012/RW 003; RT 014/RW 003
+    - Kelurahan SRENGSENG SAWAH: RW 003 (RT 008, 009, 010, 011, 012, 014); RW 012 (RT 001); RW 013 (RT 004, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
-    - Kelurahan SRENGSENG SAWAH: RT 001/RW 003; RT 001/RW 013; RT 002/RW 003; RT 002/RW 012; RT 002/RW 013; RT 003/RW 003; RT 003/RW 012; RT 003/RW 013; RT 003/RW 015; RT 004/RW 003; RT 004/RW 012; RT 005/RW 003; RT 005/RW 012; RT 006/RW 003; RT 006/RW 013; RT 007/RW 003; RT 007/RW 013; RT 013/RW 003; RT 013/RW 005; RT 015/RW 003
+    - Kelurahan SRENGSENG SAWAH: RW 003 (RT 001, 002, 003, 004, 005, 006, 007, 013, 015); RW 005 (RT 013); RW 012 (RT 002, 003, 004, 005); RW 013 (RT 001, 002, 003, 006, 007); RW 015 (RT 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -21299,13 +21299,13 @@
 - Alamat: JL. SINDANG TERUSAN NO. 34 A, RT 003, RW 013, KEL. RAWA BADAK UTARA, KEC. KOJA, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWA BADAK UTARA: RT 001/RW 013; RT 001/RW 014; RT 002/RW 013; RT 003/RW 003; RT 003/RW 013; RT 004/RW 013; RT 005/RW 003; RT 005/RW 014; RT 006/RW 013; RT 007/RW 003; RT 009/RW 003; RT 012/RW 009
+    - Kelurahan RAWA BADAK UTARA: RW 003 (RT 003, 005, 007, 009); RW 009 (RT 012); RW 013 (RT 001, 002, 003, 004, 006); RW 014 (RT 001, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
-    - Kelurahan RAWA BADAK SELATAN: RT 007/RW 005
-    - Kelurahan RAWA BADAK UTARA: RT 001/RW 003; RT 001/RW 012; RT 002/RW 003; RT 002/RW 014; RT 003/RW 010; RT 003/RW 014; RT 004/RW 003; RT 004/RW 010; RT 004/RW 014; RT 005/RW 010; RT 005/RW 012; RT 005/RW 013; RT 006/RW 003; RT 006/RW 014; RT 007/RW 013; RT 007/RW 014; RT 008/RW 003; RT 008/RW 009; RT 008/RW 014; RT 009/RW 009; RT 010/RW 003; RT 010/RW 009; RT 011/RW 007; RT 011/RW 008; RT 011/RW 009; RT 012/RW 008
+    - Kelurahan RAWA BADAK SELATAN: RW 005 (RT 007)
+    - Kelurahan RAWA BADAK UTARA: RW 003 (RT 001, 002, 004, 006, 008, 010); RW 007 (RT 011); RW 008 (RT 011, 012); RW 009 (RT 008, 009, 010, 011); RW 010 (RT 003, 004, 005); RW 012 (RT 001, 005); RW 013 (RT 005, 007); RW 014 (RT 002, 003, 004, 006, 007, 008)
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan KEBON BAWANG: RT 003/RW 005; RT 004/RW 005; RT 009/RW 006; RT 011/RW 005; RT 012/RW 005
+    - Kelurahan KEBON BAWANG: RW 005 (RT 003, 004, 011, 012); RW 006 (RT 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -21318,10 +21318,10 @@
 - Alamat: JL. KAMAL BENDA RAYA NO.16, RT 007, RW 005, KEL. KAMAL, KEC. KALIDERES, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KAMAL: RT 001/RW 008; RT 002/RW 007; RT 003/RW 008; RT 005/RW 005; RT 007/RW 004; RT 007/RW 005; RT 008/RW 003; RT 008/RW 005; RT 013/RW 007
+    - Kelurahan KAMAL: RW 003 (RT 008); RW 004 (RT 007); RW 005 (RT 005, 007, 008); RW 007 (RT 002, 013); RW 008 (RT 001, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
-    - Kelurahan KAMAL: RT 002/RW 004; RT 002/RW 008; RT 003/RW 005; RT 004/RW 005; RT 004/RW 008; RT 007/RW 007; RT 009/RW 005; RT 009/RW 007; RT 013/RW 003
+    - Kelurahan KAMAL: RW 003 (RT 013); RW 004 (RT 002); RW 005 (RT 003, 004, 009); RW 007 (RT 007, 009); RW 008 (RT 002, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KALIDERES
     - Kelurahan KAMAL
@@ -21333,10 +21333,10 @@
 - Alamat: JL. MAHONI NO. 44, RT 003, RW 010, KEL. LAGOA, KEC. KOJA, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan LAGOA: RT 001/RW 010; RT 001/RW 015; RT 002/RW 010; RT 002/RW 015; RT 003/RW 010; RT 003/RW 015; RT 004/RW 010; RT 004/RW 015; RT 005/RW 010
+    - Kelurahan LAGOA: RW 010 (RT 001, 002, 003, 004, 005); RW 015 (RT 001, 002, 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
-    - Kelurahan LAGOA: RT 001/RW 013; RT 001/RW 016; RT 002/RW 013; RT 002/RW 016; RT 003/RW 016; RT 004/RW 013; RT 004/RW 016; RT 005/RW 013; RT 005/RW 015; RT 005/RW 016; RT 006/RW 010; RT 006/RW 015; RT 006/RW 016; RT 007/RW 010; RT 007/RW 014; RT 007/RW 015; RT 007/RW 016; RT 008/RW 010; RT 008/RW 015; RT 008/RW 016; RT 009/RW 010; RT 009/RW 015; RT 009/RW 016; RT 010/RW 010; RT 010/RW 015; RT 010/RW 016; RT 011/RW 010; RT 011/RW 015; RT 011/RW 016; RT 012/RW 010; RT 012/RW 015; RT 012/RW 016
+    - Kelurahan LAGOA: RW 010 (RT 006, 007, 008, 009, 010, 011, 012); RW 013 (RT 001, 002, 004, 005); RW 014 (RT 007); RW 015 (RT 005, 006, 007, 008, 009, 010, 011, 012); RW 016 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan KALIBARU
@@ -21352,14 +21352,14 @@
 - Alamat: JL. CILACAP NO. 5, RT 011, RW 005, KEL. MENTENG, KEC. MENTENG, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MENTENG
-    - Kelurahan GONDANGDIA: RT 001/RW 002; RT 011/RW 002
-    - Kelurahan MENTENG: RT 007/RW 005; RT 010/RW 005; RT 011/RW 005; RT 012/RW 005; RT 013/RW 005; RT 014/RW 005; RT 015/RW 005; RT 016/RW 005
+    - Kelurahan GONDANGDIA: RW 002 (RT 001, 011)
+    - Kelurahan MENTENG: RW 005 (RT 007, 010, 011, 012, 013, 014, 015, 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MENTENG
-    - Kelurahan CIKINI: RT 001/RW 002; RT 006/RW 004; RT 008/RW 004; RT 009/RW 004; RT 010/RW 004; RT 014/RW 005; RT 015/RW 005
-    - Kelurahan GONDANGDIA: RT 002/RW 002; RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 007/RW 002; RT 008/RW 002; RT 009/RW 002; RT 010/RW 002
-    - Kelurahan MENTENG: RT 001/RW 002; RT 001/RW 007; RT 005/RW 005; RT 006/RW 005; RT 006/RW 007; RT 008/RW 005; RT 009/RW 005; RT 009/RW 007
-    - Kelurahan PEGANGSAAN: RT 001/RW 001; RT 002/RW 001; RT 004/RW 001; RT 005/RW 001; RT 013/RW 001; RT 014/RW 001; RT 015/RW 001; RT 016/RW 001
+    - Kelurahan CIKINI: RW 002 (RT 001); RW 004 (RT 006, 008, 009, 010); RW 005 (RT 014, 015)
+    - Kelurahan GONDANGDIA: RW 002 (RT 002, 003, 004, 005, 007, 008, 009, 010)
+    - Kelurahan MENTENG: RW 002 (RT 001); RW 005 (RT 005, 006, 008, 009); RW 007 (RT 001, 006, 009)
+    - Kelurahan PEGANGSAAN: RW 001 (RT 001, 002, 004, 005, 013, 014, 015, 016)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MENTENG
     - Kelurahan CIKINI
@@ -21378,12 +21378,12 @@
 - Alamat: JL. KERJA BAKTI, RT 003, RW 009, KEL. KRAMATJATI, KEC. KRAMATJATI, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMATJATI
-    - Kelurahan KRAMATJATI: RT 001/RW 010; RT 002/RW 008; RT 002/RW 010; RT 003/RW 009; RT 004/RW 008; RT 004/RW 009; RT 005/RW 009; RT 007/RW 009
+    - Kelurahan KRAMATJATI: RW 008 (RT 002, 004); RW 009 (RT 003, 004, 005, 007); RW 010 (RT 001, 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMATJATI
-    - Kelurahan KRAMATJATI: RT 001/RW 006; RT 001/RW 008; RT 001/RW 009; RT 002/RW 009; RT 003/RW 008; RT 004/RW 006; RT 004/RW 010; RT 006/RW 009; RT 006/RW 010; RT 008/RW 009; RT 009/RW 009; RT 010/RW 009; RT 011/RW 009; RT 012/RW 009
+    - Kelurahan KRAMATJATI: RW 006 (RT 001, 004); RW 008 (RT 001, 003); RW 009 (RT 001, 002, 006, 008, 009, 010, 011, 012); RW 010 (RT 004, 006)
   - Kecamatan MAKASAR
-    - Kelurahan MAKASAR: RT 001/RW 002; RT 002/RW 002; RT 002/RW 004
+    - Kelurahan MAKASAR: RW 002 (RT 001, 002); RW 004 (RT 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KRAMATJATI
     - Kelurahan BATU AMPAR
@@ -21396,12 +21396,12 @@
 - Alamat: JL. NUSANTARA KOMPLEK SACNA, RT 004, RW 017, KEL. SUNTER AGUNG, KEC. TANJUNG PRIOK, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan PAPANGGO: RT 001/RW 011; RT 003/RW 011
-    - Kelurahan SUNTER AGUNG: RT 001/RW 015; RT 001/RW 017; RT 002/RW 015; RT 003/RW 017; RT 004/RW 017; RT 005/RW 017; RT 007/RW 015
+    - Kelurahan PAPANGGO: RW 011 (RT 001, 003)
+    - Kelurahan SUNTER AGUNG: RW 015 (RT 001, 002, 007); RW 017 (RT 001, 003, 004, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan PAPANGGO: RT 002/RW 006; RT 002/RW 011; RT 003/RW 006; RT 004/RW 006; RT 004/RW 011; RT 005/RW 006; RT 006/RW 005; RT 006/RW 006; RT 007/RW 005; RT 007/RW 006; RT 008/RW 006; RT 009/RW 006; RT 010/RW 006; RT 012/RW 003
-    - Kelurahan SUNTER AGUNG: RT 002/RW 017; RT 003/RW 015; RT 004/RW 015; RT 005/RW 015; RT 006/RW 015; RT 006/RW 017; RT 007/RW 017; RT 008/RW 017; RT 009/RW 017; RT 010/RW 017; RT 011/RW 017; RT 011/RW 019
+    - Kelurahan PAPANGGO: RW 003 (RT 012); RW 005 (RT 006, 007); RW 006 (RT 002, 003, 004, 005, 006, 007, 008, 009, 010); RW 011 (RT 002, 004)
+    - Kelurahan SUNTER AGUNG: RW 015 (RT 003, 004, 005, 006); RW 017 (RT 002, 006, 007, 008, 009, 010, 011); RW 019 (RT 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan PAPANGGO
@@ -21414,12 +21414,12 @@
 - Alamat: JL. BAMBU HITAM, RT 004, RW 001, KEL. BAMBU APUS, KEC. CIPAYUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan BAMBU APUS: RT 003/RW 001; RT 004/RW 001; RT 006/RW 001; RT 010/RW 001; RT 011/RW 001
-    - Kelurahan CIPAYUNG: RT 003/RW 004; RT 005/RW 004; RT 010/RW 004
+    - Kelurahan BAMBU APUS: RW 001 (RT 003, 004, 006, 010, 011)
+    - Kelurahan CIPAYUNG: RW 004 (RT 003, 005, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
-    - Kelurahan BAMBU APUS: RT 001/RW 001; RT 002/RW 001; RT 005/RW 001; RT 005/RW 005; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001
-    - Kelurahan CIPAYUNG: RT 004/RW 004; RT 008/RW 004
+    - Kelurahan BAMBU APUS: RW 001 (RT 001, 002, 005, 007, 008, 009); RW 005 (RT 005)
+    - Kelurahan CIPAYUNG: RW 004 (RT 004, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -21431,10 +21431,10 @@
 - Alamat: JL. RAWA BEBEK, RT 005, RW 001, KEL. PULO GEBANG, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 005/RW 001; RT 006/RW 001; RT 011/RW 001; RT 012/RW 001
+    - Kelurahan PULO GEBANG: RW 001 (RT 005, 006, 011, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan PULO GEBANG: RT 001/RW 017; RT 002/RW 017; RT 003/RW 017; RT 004/RW 001; RT 006/RW 017; RT 007/RW 001; RT 008/RW 017; RT 010/RW 017; RT 011/RW 017; RT 012/RW 017; RT 013/RW 017; RT 014/RW 017
+    - Kelurahan PULO GEBANG: RW 001 (RT 004, 007); RW 017 (RT 001, 002, 003, 006, 008, 010, 011, 012, 013, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -21445,10 +21445,10 @@
 - Alamat: JL. PULAU EDAM, RT 003, RW 003, KEL. PULAU UNTUNG JAWA, KEC. KEPULAUAN SERIBU SELATAN, KAB. KEPULAUAN SERIBU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEPULAUAN SERIBU SELATAN
-    - Kelurahan PULAU UNTUNG JAWA: RT 001/RW 003; RT 002/RW 003; RT 003/RW 002; RT 003/RW 003
+    - Kelurahan PULAU UNTUNG JAWA: RW 002 (RT 003); RW 003 (RT 001, 002, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEPULAUAN SERIBU SELATAN
-    - Kelurahan PULAU UNTUNG JAWA: RT 001/RW 001; RT 001/RW 002; RT 002/RW 001; RT 002/RW 002; RT 003/RW 001
+    - Kelurahan PULAU UNTUNG JAWA: RW 001 (RT 001, 002, 003); RW 002 (RT 001, 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEPULAUAN SERIBU SELATAN
     - Kelurahan PULAU UNTUNG JAWA
@@ -21457,12 +21457,12 @@
 - Alamat: JL. RAWA KEPA VIII NO. 1 TOMANG, RT 008, RW 012, KEL. TOMANG, KEC. GROGOL PETAMBURAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan CIDENG: RT 007/RW 007
+    - Kelurahan CIDENG: RW 007 (RT 007)
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TOMANG: RT 001/RW 013; RT 003/RW 005; RT 003/RW 015; RT 004/RW 012; RT 005/RW 012; RT 006/RW 012; RT 007/RW 012; RT 008/RW 012; RT 009/RW 012; RT 009/RW 014; RT 009/RW 015
+    - Kelurahan TOMANG: RW 005 (RT 003); RW 012 (RT 004, 005, 006, 007, 008, 009); RW 013 (RT 001); RW 014 (RT 009); RW 015 (RT 003, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TOMANG: RT 001/RW 012; RT 002/RW 005; RT 002/RW 012; RT 002/RW 013; RT 003/RW 012; RT 003/RW 013; RT 004/RW 005; RT 004/RW 013; RT 004/RW 015; RT 005/RW 005; RT 005/RW 013; RT 006/RW 005; RT 006/RW 013; RT 006/RW 014; RT 007/RW 005; RT 007/RW 013; RT 007/RW 014; RT 008/RW 005; RT 008/RW 013; RT 008/RW 014; RT 008/RW 015; RT 010/RW 015; RT 011/RW 004; RT 012/RW 004
+    - Kelurahan TOMANG: RW 004 (RT 011, 012); RW 005 (RT 002, 004, 005, 006, 007, 008); RW 012 (RT 001, 002, 003); RW 013 (RT 002, 003, 004, 005, 006, 007, 008); RW 014 (RT 006, 007, 008); RW 015 (RT 004, 008, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -21485,12 +21485,12 @@
 - Alamat: JL. SARBINI I, RT 008, RW 005, KEL. PINANGRANTI, KEC. MAKASAR, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 001/RW 001
-    - Kelurahan MAKASAR: RT 003/RW 006; RT 004/RW 006; RT 005/RW 006; RT 007/RW 005; RT 008/RW 005; RT 008/RW 006; RT 009/RW 005; RT 014/RW 006
-    - Kelurahan PINANGRANTI: RT 001/RW 001; RT 001/RW 005; RT 002/RW 005; RT 006/RW 005; RT 008/RW 005; RT 011/RW 001; RT 012/RW 001; RT 013/RW 001; RT 016/RW 001
+    - Kelurahan HALIM PERDANA KUSUMA: RW 001 (RT 001)
+    - Kelurahan MAKASAR: RW 005 (RT 007, 008, 009); RW 006 (RT 003, 004, 005, 008, 014)
+    - Kelurahan PINANGRANTI: RW 001 (RT 001, 011, 012, 013, 016); RW 005 (RT 001, 002, 006, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAKASAR
-    - Kelurahan MAKASAR: RT 002/RW 006; RT 005/RW 005; RT 006/RW 005; RT 006/RW 006; RT 007/RW 006; RT 010/RW 005
+    - Kelurahan MAKASAR: RW 005 (RT 005, 006, 010); RW 006 (RT 002, 006, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MAKASAR
     - Kelurahan HALIM PERDANA KUSUMA
@@ -21501,10 +21501,10 @@
 - Alamat: PULAU LANCANG, RT 003, RW 003, KEL. PULAU PARI, KEC. KEPULAUAN SERIBU SELATAN, KAB. KEPULAUAN SERIBU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEPULAUAN SERIBU SELATAN
-    - Kelurahan PULAU PARI: RT 002/RW 003; RT 003/RW 003
+    - Kelurahan PULAU PARI: RW 003 (RT 002, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEPULAUAN SERIBU SELATAN
-    - Kelurahan PULAU PARI: RT 001/RW 001; RT 001/RW 002; RT 001/RW 003; RT 002/RW 001; RT 002/RW 002; RT 003/RW 001; RT 003/RW 002; RT 004/RW 001
+    - Kelurahan PULAU PARI: RW 001 (RT 001, 002, 003, 004); RW 002 (RT 001, 002, 003); RW 003 (RT 001)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEPULAUAN SERIBU SELATAN
     - Kelurahan PULAU PARI
@@ -21513,12 +21513,12 @@
 - Alamat: JL. RAYA TIPAR CAKUNG, DESA SUKAPURA, RT 001, RW 005, KEL. SUKAPURA, KEC. CILINCING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 001/RW 004; RT 006/RW 004
-    - Kelurahan SUKAPURA: RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 004/RW 005; RT 005/RW 005; RT 006/RW 005; RT 007/RW 012
+    - Kelurahan SEMPER BARAT: RW 004 (RT 001, 006)
+    - Kelurahan SUKAPURA: RW 005 (RT 001, 002, 003, 004, 005, 006); RW 012 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 002/RW 004; RT 007/RW 004; RT 009/RW 005; RT 010/RW 005; RT 015/RW 005
-    - Kelurahan SUKAPURA: RT 001/RW 001; RT 001/RW 009; RT 001/RW 010; RT 001/RW 012; RT 002/RW 001; RT 002/RW 010; RT 002/RW 012; RT 003/RW 001; RT 003/RW 009; RT 003/RW 012; RT 004/RW 001; RT 004/RW 009; RT 004/RW 012; RT 005/RW 001; RT 005/RW 009; RT 005/RW 012; RT 006/RW 001; RT 006/RW 009; RT 006/RW 012; RT 007/RW 001; RT 007/RW 009; RT 008/RW 012; RT 009/RW 009; RT 009/RW 012; RT 010/RW 012; RT 011/RW 012
+    - Kelurahan SEMPER BARAT: RW 004 (RT 002, 007); RW 005 (RT 009, 010, 015)
+    - Kelurahan SUKAPURA: RW 001 (RT 001, 002, 003, 004, 005, 006, 007); RW 009 (RT 001, 003, 004, 005, 006, 007, 009); RW 010 (RT 001, 002); RW 012 (RT 001, 002, 003, 004, 005, 006, 008, 009, 010, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan ROROTAN
@@ -21534,10 +21534,10 @@
 - Alamat: JL. RUMAH SUSUN MARUNDA, RT 001, RW 007, KEL. MARUNDA, KEC. CILINCING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan MARUNDA: RT 001/RW 007; RT 002/RW 007; RT 003/RW 007; RT 004/RW 007; RT 005/RW 007; RT 006/RW 007; RT 008/RW 012
+    - Kelurahan MARUNDA: RW 007 (RT 001, 002, 003, 004, 005, 006); RW 012 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
-    - Kelurahan MARUNDA: RT 001/RW 011; RT 002/RW 010; RT 002/RW 011; RT 003/RW 011; RT 004/RW 010; RT 004/RW 011; RT 006/RW 012; RT 007/RW 011; RT 007/RW 012; RT 008/RW 010; RT 008/RW 011; RT 009/RW 011; RT 011/RW 011; RT 012/RW 007; RT 015/RW 007; RT 016/RW 007
+    - Kelurahan MARUNDA: RW 007 (RT 012, 015, 016); RW 010 (RT 002, 004, 008); RW 011 (RT 001, 002, 003, 004, 007, 008, 009, 011); RW 012 (RT 006, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan MARUNDA
@@ -21546,7 +21546,7 @@
 - Alamat: JL. PENDIDIKAN, RT 002, RW 004, KEL. PULAU PARI, KEC. KEPULAUAN SERIBU SELATAN, KAB. KEPULAUAN SERIBU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEPULAUAN SERIBU SELATAN
-    - Kelurahan PULAU PARI: RT 001/RW 004; RT 002/RW 004; RT 003/RW 004; RT 004/RW 004
+    - Kelurahan PULAU PARI: RW 004 (RT 001, 002, 003, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEPULAUAN SERIBU SELATAN
     - Kelurahan PULAU PARI
@@ -21555,10 +21555,10 @@
 - Alamat: PULAU SABIRA, RT 001, RW 003, KEL. PULAU HARAPAN, KEC. KEPULAUAN SERIBU UTARA, KAB. KEPULAUAN SERIB
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEPULAUAN SERIBU UTARA
-    - Kelurahan PULAU HARAPAN: RT 001/RW 003; RT 002/RW 003
+    - Kelurahan PULAU HARAPAN: RW 003 (RT 001, 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEPULAUAN SERIBU UTARA
-    - Kelurahan PULAU HARAPAN: RT 003/RW 003; RT 004/RW 003
+    - Kelurahan PULAU HARAPAN: RW 003 (RT 003, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEPULAUAN SERIBU UTARA
     - Kelurahan PULAU HARAPAN
@@ -21567,12 +21567,12 @@
 - Alamat: Jl. RAYA KEMBANGAN RT. 001/ 003
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan KEMBANGAN SELATAN: RT 001/RW 003; RT 010/RW 002; RT 010/RW 003
-    - Kelurahan KEMBANGAN UTARA: RT 001/RW 003; RT 002/RW 003; RT 003/RW 009; RT 004/RW 009; RT 005/RW 002; RT 006/RW 009
+    - Kelurahan KEMBANGAN SELATAN: RW 002 (RT 010); RW 003 (RT 001, 010)
+    - Kelurahan KEMBANGAN UTARA: RW 002 (RT 005); RW 003 (RT 001, 002); RW 009 (RT 003, 004, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
-    - Kelurahan KEMBANGAN SELATAN: RT 001/RW 005; RT 002/RW 003; RT 002/RW 005; RT 003/RW 003; RT 004/RW 003; RT 009/RW 002; RT 011/RW 003
-    - Kelurahan KEMBANGAN UTARA: RT 001/RW 009; RT 002/RW 009; RT 003/RW 002; RT 003/RW 003; RT 005/RW 009; RT 006/RW 008; RT 007/RW 009; RT 008/RW 009; RT 009/RW 009; RT 010/RW 009
+    - Kelurahan KEMBANGAN SELATAN: RW 002 (RT 009); RW 003 (RT 002, 003, 004, 011); RW 005 (RT 001, 002)
+    - Kelurahan KEMBANGAN UTARA: RW 002 (RT 003); RW 003 (RT 003); RW 008 (RT 006); RW 009 (RT 001, 002, 005, 007, 008, 009, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMBANGAN
     - Kelurahan KEMBANGAN SELATAN
@@ -21582,14 +21582,14 @@
 - Alamat: Jl. SEMERU RAYA NO.1, RT.11/RW.7
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan GROGOL: RT 005/RW 007; RT 008/RW 007; RT 010/RW 007; RT 011/RW 007; RT 012/RW 007; RT 013/RW 007
-    - Kelurahan KALIANYAR: RT 002/RW 004; RT 010/RW 004
+    - Kelurahan GROGOL: RW 007 (RT 005, 008, 010, 011, 012, 013)
+    - Kelurahan KALIANYAR: RW 004 (RT 002, 010)
   - Kecamatan TAMBORA
-    - Kelurahan GROGOL: RT 007/RW 007; RT 009/RW 007
-    - Kelurahan KALIANYAR: RT 001/RW 004; RT 003/RW 004; RT 011/RW 004; RT 011/RW 008
+    - Kelurahan GROGOL: RW 007 (RT 007, 009)
+    - Kelurahan KALIANYAR: RW 004 (RT 001, 003, 011); RW 008 (RT 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan GROGOL: RT 001/RW 007; RT 001/RW 009; RT 002/RW 007; RT 003/RW 007; RT 004/RW 007; RT 006/RW 007; RT 010/RW 008; RT 010/RW 010; RT 012/RW 002; RT 013/RW 002; RT 014/RW 001; RT 014/RW 007; RT 015/RW 007
+    - Kelurahan GROGOL: RW 001 (RT 014); RW 002 (RT 012, 013); RW 007 (RT 001, 002, 003, 004, 006, 014, 015); RW 008 (RT 010); RW 009 (RT 001); RW 010 (RT 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan GROGOL
@@ -21600,12 +21600,12 @@
 - Alamat: JL. ANGSANA RAYA NO. 26 JAKARTA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 004/RW 012; RT 005/RW 012; RT 006/RW 012; RT 007/RW 012; RT 008/RW 012; RT 009/RW 012; RT 014/RW 012
-    - Kelurahan KAPUK: RT 011/RW 013; RT 017/RW 013
+    - Kelurahan CENGKARENG TIMUR: RW 012 (RT 004, 005, 006, 007, 008, 009, 014)
+    - Kelurahan KAPUK: RW 013 (RT 011, 017)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 001/RW 012; RT 002/RW 012; RT 003/RW 012; RT 010/RW 004; RT 010/RW 012; RT 011/RW 012; RT 011/RW 015; RT 012/RW 012; RT 013/RW 012; RT 015/RW 012
-    - Kelurahan KAPUK: RT 002/RW 015; RT 007/RW 013; RT 010/RW 013; RT 012/RW 013; RT 014/RW 013; RT 015/RW 013; RT 016/RW 013
+    - Kelurahan CENGKARENG TIMUR: RW 004 (RT 010); RW 012 (RT 001, 002, 003, 010, 011, 012, 013, 015); RW 015 (RT 011)
+    - Kelurahan KAPUK: RW 013 (RT 007, 010, 012, 014, 015, 016); RW 015 (RT 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -21615,13 +21615,13 @@
 - Alamat: Jl. BEK MURAD NOMOR 14A RT 09 RW 01
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIABUDI
-    - Kelurahan KARET: RT 008/RW 003
-    - Kelurahan KARET KUNINGAN: RT 001/RW 001; RT 003/RW 001; RT 006/RW 001; RT 007/RW 001; RT 009/RW 001
+    - Kelurahan KARET: RW 003 (RT 008)
+    - Kelurahan KARET KUNINGAN: RW 001 (RT 001, 003, 006, 007, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
-    - Kelurahan KARET: RT 004/RW 002; RT 013/RW 003
-    - Kelurahan KARET KUNINGAN: RT 001/RW 002; RT 002/RW 001; RT 004/RW 001; RT 005/RW 001; RT 010/RW 001; RT 011/RW 001; RT 012/RW 001
-    - Kelurahan KARET SEMANGGI: RT 003/RW 004
+    - Kelurahan KARET: RW 002 (RT 004); RW 003 (RT 013)
+    - Kelurahan KARET KUNINGAN: RW 001 (RT 002, 004, 005, 010, 011, 012); RW 002 (RT 001)
+    - Kelurahan KARET SEMANGGI: RW 004 (RT 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan SETIABUDI
     - Kelurahan KARET
@@ -21633,10 +21633,10 @@
 - Alamat: Jl. KEBON BAWANG XIII NO. 5, RT 9/RW 1
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan KEBON BAWANG: RT 003/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 011/RW 001; RT 016/RW 002
+    - Kelurahan KEBON BAWANG: RW 001 (RT 003, 006, 007, 008, 009, 011); RW 002 (RT 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan KEBON BAWANG: RT 001/RW 001; RT 001/RW 011; RT 002/RW 001; RT 003/RW 015; RT 004/RW 001; RT 005/RW 001; RT 006/RW 015; RT 010/RW 001; RT 012/RW 001; RT 013/RW 001; RT 014/RW 001; RT 015/RW 001; RT 016/RW 001; RT 017/RW 001; RT 018/RW 001; RT 018/RW 002; RT 019/RW 001
+    - Kelurahan KEBON BAWANG: RW 001 (RT 001, 002, 004, 005, 010, 012, 013, 014, 015, 016, 017, 018, 019); RW 002 (RT 018); RW 011 (RT 001); RW 015 (RT 003, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan TANJUNG PRIOK
     - Kelurahan KEBON BAWANG
@@ -21645,10 +21645,10 @@
 - Alamat: JL. JAANI NASIR RT 005 RW 011, CAWANG, KRAMAT JATI
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMATJATI
-    - Kelurahan CAWANG: RT 001/RW 010; RT 005/RW 011; RT 006/RW 011; RT 008/RW 006; RT 008/RW 011; RT 009/RW 006
+    - Kelurahan CAWANG: RW 006 (RT 008, 009); RW 010 (RT 001); RW 011 (RT 005, 006, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMATJATI
-    - Kelurahan CAWANG: RT 002/RW 010; RT 004/RW 010; RT 004/RW 011; RT 005/RW 006; RT 007/RW 006; RT 007/RW 010; RT 007/RW 011; RT 008/RW 004; RT 009/RW 004; RT 009/RW 011; RT 010/RW 011; RT 012/RW 006
+    - Kelurahan CAWANG: RW 004 (RT 008, 009); RW 006 (RT 005, 007, 012); RW 010 (RT 002, 004, 007); RW 011 (RT 004, 007, 009, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KRAMATJATI
     - Kelurahan CAWANG
@@ -21658,12 +21658,12 @@
 - Alamat: JALAN MENCENG RAYA RT.03/11, TEGAL ALUR, KALIDERAS
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALI DERES
-    - Kelurahan KAMAL: RT 001/RW 009
-    - Kelurahan TEGAL ALUR: RT 001/RW 002; RT 001/RW 011; RT 001/RW 013; RT 002/RW 011; RT 003/RW 003; RT 003/RW 011; RT 004/RW 011; RT 005/RW 003; RT 009/RW 002
+    - Kelurahan KAMAL: RW 009 (RT 001)
+    - Kelurahan TEGAL ALUR: RW 002 (RT 001, 009); RW 003 (RT 003, 005); RW 011 (RT 001, 002, 003, 004); RW 013 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALI DERES
-    - Kelurahan KAMAL: RT 003/RW 009
-    - Kelurahan TEGAL ALUR: RT 001/RW 007; RT 002/RW 013; RT 002/RW 015; RT 004/RW 003; RT 005/RW 011; RT 006/RW 011; RT 007/RW 002; RT 007/RW 015; RT 008/RW 002; RT 010/RW 002; RT 015/RW 003; RT 016/RW 003
+    - Kelurahan KAMAL: RW 009 (RT 003)
+    - Kelurahan TEGAL ALUR: RW 002 (RT 007, 008, 010); RW 003 (RT 004, 015, 016); RW 007 (RT 001); RW 011 (RT 005, 006); RW 013 (RT 002); RW 015 (RT 002, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -21676,14 +21676,14 @@
 - Alamat: JALAN SEROJA RT 004/01, JATI PULO, PALMERAH
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PAL MERAH
-    - Kelurahan JATIPULO: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 004/RW 001; RT 005/RW 001; RT 006/RW 001; RT 008/RW 001; RT 013/RW 001; RT 014/RW 001; RT 015/RW 001; RT 016/RW 001
-    - Kelurahan KOTA BAMBU UTARA: RT 006/RW 008; RT 012/RW 007
+    - Kelurahan JATIPULO: RW 001 (RT 001, 002, 003, 004, 005, 006, 008, 013, 014, 015, 016)
+    - Kelurahan KOTA BAMBU UTARA: RW 007 (RT 012); RW 008 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TOMANG: RT 001/RW 001; RT 001/RW 005; RT 003/RW 001; RT 005/RW 001
+    - Kelurahan TOMANG: RW 001 (RT 001, 003, 005); RW 005 (RT 001)
   - Kecamatan PAL MERAH
-    - Kelurahan JATIPULO: RT 001/RW 003; RT 002/RW 003; RT 007/RW 001; RT 009/RW 001; RT 010/RW 001; RT 011/RW 001; RT 012/RW 001; RT 017/RW 001
-    - Kelurahan KOTA BAMBU UTARA: RT 001/RW 008; RT 002/RW 008; RT 005/RW 008; RT 006/RW 007; RT 007/RW 008; RT 008/RW 006; RT 008/RW 007; RT 010/RW 007; RT 011/RW 007
+    - Kelurahan JATIPULO: RW 001 (RT 007, 009, 010, 011, 012, 017); RW 003 (RT 001, 002)
+    - Kelurahan KOTA BAMBU UTARA: RW 006 (RT 008); RW 007 (RT 006, 008, 010, 011); RW 008 (RT 001, 002, 005, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TOMANG
@@ -21702,22 +21702,22 @@
 - Alamat: JL. BUDI UTOMO NO 7, RT 004, RW 008, KEL. PASAR BARU, KEC. SAWAH BESAR, JAKARTA PUSAT
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
-    - Kelurahan KEMAYORAN: RT 005/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 010/RW 001; RT 011/RW 001; RT 012/RW 001
+    - Kelurahan KEMAYORAN: RW 001 (RT 005, 006, 007, 008, 009, 010, 011, 012)
   - Kecamatan SAWAH BESAR
-    - Kelurahan PASAR BARU: RT 001/RW 001; RT 001/RW 004; RT 002/RW 001; RT 002/RW 004; RT 003/RW 001; RT 003/RW 004; RT 004/RW 001; RT 004/RW 004; RT 005/RW 004; RT 006/RW 001; RT 006/RW 004; RT 006/RW 008; RT 007/RW 001; RT 007/RW 004; RT 008/RW 001; RT 008/RW 004; RT 009/RW 004; RT 010/RW 004; RT 011/RW 004; RT 012/RW 004; RT 013/RW 004; RT 014/RW 004; RT 015/RW 004
+    - Kelurahan PASAR BARU: RW 001 (RT 001, 002, 003, 004, 006, 007, 008); RW 004 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015); RW 008 (RT 006)
 
 #### 2. SMA NEGERI 2 JAKARTA
 - Alamat: JL. GAJAH MADA 175, RT 001, RW 005, KEL. KEAGUNGAN, KEC. TAMAN SARI, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan GLODOK: RT 010/RW 005
-    - Kelurahan KEAGUNGAN: RT 001/RW 004; RT 001/RW 005; RT 002/RW 005; RT 009/RW 005
-    - Kelurahan MANGGA BESAR: RT 004/RW 006
+    - Kelurahan GLODOK: RW 005 (RT 010)
+    - Kelurahan KEAGUNGAN: RW 004 (RT 001); RW 005 (RT 001, 002, 009)
+    - Kelurahan MANGGA BESAR: RW 006 (RT 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMAN SARI
-    - Kelurahan GLODOK: RT 004/RW 005; RT 008/RW 005; RT 009/RW 005
-    - Kelurahan KEAGUNGAN: RT 001/RW 002; RT 002/RW 002; RT 002/RW 004; RT 003/RW 002; RT 003/RW 004; RT 003/RW 005; RT 004/RW 002; RT 004/RW 003; RT 004/RW 004; RT 004/RW 005; RT 005/RW 002; RT 005/RW 003; RT 005/RW 004; RT 005/RW 005; RT 006/RW 002; RT 006/RW 003; RT 006/RW 004; RT 006/RW 005; RT 007/RW 002; RT 007/RW 003; RT 007/RW 004; RT 007/RW 005; RT 008/RW 002; RT 008/RW 003; RT 008/RW 004; RT 008/RW 005; RT 009/RW 002; RT 009/RW 003; RT 009/RW 004; RT 010/RW 001; RT 010/RW 003
-    - Kelurahan MANGGA BESAR: RT 005/RW 006
+    - Kelurahan GLODOK: RW 005 (RT 004, 008, 009)
+    - Kelurahan KEAGUNGAN: RW 001 (RT 010); RW 002 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009); RW 003 (RT 004, 005, 006, 007, 008, 009, 010); RW 004 (RT 002, 003, 004, 005, 006, 007, 008, 009); RW 005 (RT 003, 004, 005, 006, 007, 008)
+    - Kelurahan MANGGA BESAR: RW 006 (RT 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -21761,17 +21761,17 @@
 - Alamat: JL. SETIA BUDI II, RT 002, RW 002, KEL. SETIA BUDI, KEC. SETIA BUDI, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIABUDI
-    - Kelurahan KARET: RT 001/RW 007; RT 003/RW 007; RT 005/RW 007; RT 012/RW 001
-    - Kelurahan SETIA BUDI: RT 001/RW 002; RT 002/RW 002; RT 003/RW 002; RT 003/RW 003; RT 004/RW 003; RT 005/RW 002; RT 006/RW 002
+    - Kelurahan KARET: RW 001 (RT 012); RW 007 (RT 001, 003, 005)
+    - Kelurahan SETIA BUDI: RW 002 (RT 001, 002, 003, 005, 006); RW 003 (RT 003, 004)
   - Kecamatan TANAH ABANG
-    - Kelurahan KARET TENGSIN: RT 014/RW 011
+    - Kelurahan KARET TENGSIN: RW 011 (RT 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
-    - Kelurahan KARET: RT 001/RW 005; RT 002/RW 001; RT 002/RW 004; RT 002/RW 005; RT 002/RW 007; RT 003/RW 001; RT 003/RW 004; RT 003/RW 005; RT 004/RW 001; RT 004/RW 002; RT 004/RW 004; RT 004/RW 005; RT 004/RW 007; RT 005/RW 004; RT 005/RW 005; RT 006/RW 001; RT 006/RW 004; RT 006/RW 005; RT 007/RW 004; RT 007/RW 005; RT 007/RW 007; RT 008/RW 002; RT 008/RW 003; RT 008/RW 004; RT 008/RW 005; RT 008/RW 007; RT 009/RW 002; RT 009/RW 003; RT 009/RW 004; RT 009/RW 005; RT 010/RW 001; RT 010/RW 002; RT 010/RW 003; RT 010/RW 007; RT 011/RW 002; RT 011/RW 003; RT 011/RW 004; RT 012/RW 002; RT 012/RW 003; RT 012/RW 004; RT 013/RW 002; RT 013/RW 003; RT 013/RW 004; RT 014/RW 002; RT 015/RW 002; RT 016/RW 002; RT 017/RW 002; RT 018/RW 001; RT 018/RW 002; RT 020/RW 002; RT 021/RW 002
-    - Kelurahan KARET KUNINGAN: RT 001/RW 001; RT 009/RW 001
-    - Kelurahan SETIA BUDI: RT 001/RW 001; RT 001/RW 003; RT 002/RW 001; RT 002/RW 003; RT 003/RW 001; RT 004/RW 001; RT 004/RW 002; RT 005/RW 001; RT 005/RW 003; RT 006/RW 003; RT 007/RW 003
+    - Kelurahan KARET: RW 001 (RT 002, 003, 004, 006, 010, 018); RW 002 (RT 004, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017, 018, 020, 021); RW 003 (RT 008, 009, 010, 011, 012, 013); RW 004 (RT 002, 003, 004, 005, 006, 007, 008, 009, 011, 012, 013); RW 005 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009); RW 007 (RT 002, 004, 007, 008, 010)
+    - Kelurahan KARET KUNINGAN: RW 001 (RT 001, 009)
+    - Kelurahan SETIA BUDI: RW 001 (RT 001, 002, 003, 004, 005); RW 002 (RT 004); RW 003 (RT 001, 002, 005, 006, 007)
   - Kecamatan TANAH ABANG
-    - Kelurahan KARET TENGSIN: RT 009/RW 011; RT 013/RW 011; RT 014/RW 009; RT 015/RW 009; RT 016/RW 009; RT 017/RW 009
+    - Kelurahan KARET TENGSIN: RW 009 (RT 014, 015, 016, 017); RW 011 (RT 009, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MENTENG
     - Kelurahan CIKINI
@@ -21801,17 +21801,17 @@
 - Alamat: JL. BATU 3 GAMBIR, RT 007, RW 001, KEL. GAMBIR, KEC. GAMBIR, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan GAMBIR: RT 003/RW 001; RT 005/RW 001; RT 005/RW 002; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001
+    - Kelurahan GAMBIR: RW 001 (RT 003, 005, 007, 008, 009); RW 002 (RT 005)
   - Kecamatan SENEN
-    - Kelurahan SENEN: RT 010/RW 005
+    - Kelurahan SENEN: RW 005 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
-    - Kelurahan GAMBIR: RT 001/RW 001; RT 002/RW 001; RT 004/RW 001; RT 011/RW 002
+    - Kelurahan GAMBIR: RW 001 (RT 001, 002, 004); RW 002 (RT 011)
   - Kecamatan MENTENG
-    - Kelurahan KEBON SIRIH: RT 001/RW 005; RT 001/RW 007; RT 001/RW 009; RT 002/RW 005; RT 002/RW 007; RT 004/RW 007; RT 005/RW 005; RT 005/RW 007; RT 006/RW 007; RT 008/RW 007; RT 009/RW 005; RT 009/RW 009; RT 010/RW 009; RT 012/RW 006; RT 012/RW 009; RT 014/RW 006; RT 015/RW 010
+    - Kelurahan KEBON SIRIH: RW 005 (RT 001, 002, 005, 009); RW 006 (RT 012, 014); RW 007 (RT 001, 002, 004, 005, 006, 008); RW 009 (RT 001, 009, 010, 012); RW 010 (RT 015)
   - Kecamatan SENEN
-    - Kelurahan KWITANG: RT 001/RW 001; RT 001/RW 004; RT 002/RW 001; RT 003/RW 001; RT 004/RW 001; RT 004/RW 004; RT 005/RW 001; RT 005/RW 004; RT 006/RW 004; RT 007/RW 001; RT 007/RW 004
-    - Kelurahan SENEN: RT 001/RW 003; RT 001/RW 005; RT 002/RW 003; RT 002/RW 005; RT 003/RW 003; RT 003/RW 005; RT 004/RW 003; RT 004/RW 005; RT 005/RW 003; RT 005/RW 005; RT 006/RW 003; RT 006/RW 005; RT 007/RW 001; RT 009/RW 005
+    - Kelurahan KWITANG: RW 001 (RT 001, 002, 003, 004, 005, 007); RW 004 (RT 001, 004, 005, 006, 007)
+    - Kelurahan SENEN: RW 001 (RT 007); RW 003 (RT 001, 002, 003, 004, 005, 006); RW 005 (RT 001, 002, 003, 004, 005, 006, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -21846,16 +21846,16 @@
 - Alamat: JL. RAYA SUMUR BATU, RT 014, RW 001, KEL. SUMUR BATU, KEC. KEMAYORAN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMAYORAN
-    - Kelurahan SERDANG: RT 013/RW 005; RT 016/RW 005
-    - Kelurahan SUMUR BATU: RT 013/RW 001; RT 014/RW 001; RT 016/RW 002
+    - Kelurahan SERDANG: RW 005 (RT 013, 016)
+    - Kelurahan SUMUR BATU: RW 001 (RT 013, 014); RW 002 (RT 016)
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER JAYA: RT 002/RW 003; RT 003/RW 003; RT 005/RW 007
+    - Kelurahan SUNTER JAYA: RW 003 (RT 002, 003); RW 007 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMAYORAN
-    - Kelurahan SERDANG: RT 004/RW 005; RT 005/RW 005; RT 010/RW 005; RT 011/RW 005; RT 012/RW 005; RT 014/RW 005; RT 015/RW 004; RT 015/RW 005; RT 016/RW 004; RT 017/RW 005; RT 018/RW 005
-    - Kelurahan SUMUR BATU: RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 009/RW 002; RT 010/RW 001; RT 010/RW 002; RT 011/RW 001; RT 011/RW 002; RT 012/RW 001; RT 012/RW 002; RT 013/RW 002; RT 014/RW 002; RT 015/RW 002; RT 017/RW 002
+    - Kelurahan SERDANG: RW 004 (RT 015, 016); RW 005 (RT 004, 005, 010, 011, 012, 014, 015, 017, 018)
+    - Kelurahan SUMUR BATU: RW 001 (RT 007, 008, 009, 010, 011, 012); RW 002 (RT 009, 010, 011, 012, 013, 014, 015, 017)
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER JAYA: RT 001/RW 003; RT 004/RW 007; RT 005/RW 003; RT 007/RW 007
+    - Kelurahan SUNTER JAYA: RW 003 (RT 001, 005); RW 007 (RT 004, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -21880,18 +21880,18 @@
 - Alamat: JL. MAHAKAM I/2, BLOK C, RT 011, RW 007, KEL. KRAMAT PELA, KEC. KEBAYORAN BARU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GUNUNG: RT 002/RW 008; RT 003/RW 008
-    - Kelurahan KRAMAT PELA: RT 001/RW 007; RT 002/RW 006; RT 002/RW 007; RT 003/RW 006; RT 003/RW 007; RT 005/RW 007; RT 006/RW 007; RT 008/RW 007; RT 010/RW 007; RT 011/RW 007
-    - Kelurahan MELAWAI: RT 001/RW 001; RT 002/RW 001
-    - Kelurahan SELONG: RT 002/RW 001
+    - Kelurahan GUNUNG: RW 008 (RT 002, 003)
+    - Kelurahan KRAMAT PELA: RW 006 (RT 002, 003); RW 007 (RT 001, 002, 003, 005, 006, 008, 010, 011)
+    - Kelurahan MELAWAI: RW 001 (RT 001, 002)
+    - Kelurahan SELONG: RW 001 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GANDARIA UTARA: RT 001/RW 011
-    - Kelurahan GUNUNG: RT 001/RW 004; RT 003/RW 004; RT 004/RW 004; RT 004/RW 008; RT 005/RW 008; RT 008/RW 008; RT 011/RW 008
-    - Kelurahan KRAMAT PELA: RT 001/RW 001; RT 001/RW 004; RT 001/RW 005; RT 001/RW 006; RT 002/RW 001; RT 002/RW 004; RT 002/RW 005; RT 003/RW 001; RT 003/RW 004; RT 003/RW 005; RT 004/RW 004; RT 004/RW 005; RT 004/RW 006; RT 004/RW 007; RT 005/RW 004; RT 005/RW 005; RT 006/RW 005; RT 007/RW 005; RT 007/RW 007; RT 008/RW 005; RT 009/RW 007
-    - Kelurahan MELAWAI: RT 001/RW 004; RT 002/RW 004; RT 003/RW 001; RT 003/RW 004; RT 004/RW 001; RT 004/RW 004; RT 005/RW 001; RT 005/RW 002; RT 005/RW 004; RT 006/RW 001; RT 006/RW 004; RT 007/RW 001; RT 007/RW 004
-    - Kelurahan PULO: RT 006/RW 004; RT 008/RW 004; RT 011/RW 004
-    - Kelurahan SELONG: RT 004/RW 001; RT 006/RW 001
+    - Kelurahan GANDARIA UTARA: RW 011 (RT 001)
+    - Kelurahan GUNUNG: RW 004 (RT 001, 003, 004); RW 008 (RT 004, 005, 008, 011)
+    - Kelurahan KRAMAT PELA: RW 001 (RT 001, 002, 003); RW 004 (RT 001, 002, 003, 004, 005); RW 005 (RT 001, 002, 003, 004, 005, 006, 007, 008); RW 006 (RT 001, 004); RW 007 (RT 004, 007, 009)
+    - Kelurahan MELAWAI: RW 001 (RT 003, 004, 005, 006, 007); RW 002 (RT 005); RW 004 (RT 001, 002, 003, 004, 005, 006, 007)
+    - Kelurahan PULO: RW 004 (RT 006, 008, 011)
+    - Kelurahan SELONG: RW 001 (RT 004, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CIPETE SELATAN
@@ -21919,11 +21919,11 @@
 - Alamat: JL. KARET PASAR BARU BARAT V, RT 011, RW 003, KEL. KARET TENGSIN, KEC. TANAH ABANG, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan KARET TENGSIN: RT 006/RW 004; RT 009/RW 002; RT 009/RW 003; RT 009/RW 004; RT 011/RW 003; RT 012/RW 004; RT 013/RW 002; RT 013/RW 003
+    - Kelurahan KARET TENGSIN: RW 002 (RT 009, 013); RW 003 (RT 009, 011, 013); RW 004 (RT 006, 009, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
-    - Kelurahan BENDUNGAN HILIR: RT 001/RW 001; RT 001/RW 003; RT 002/RW 001; RT 002/RW 003; RT 003/RW 001; RT 003/RW 003; RT 004/RW 001; RT 005/RW 001; RT 005/RW 002; RT 005/RW 003; RT 006/RW 001; RT 007/RW 001; RT 007/RW 003; RT 008/RW 001; RT 009/RW 001; RT 010/RW 001; RT 011/RW 001; RT 012/RW 001; RT 013/RW 001
-    - Kelurahan KARET TENGSIN: RT 003/RW 002; RT 007/RW 004; RT 008/RW 004; RT 009/RW 011; RT 013/RW 011; RT 015/RW 004; RT 017/RW 005
+    - Kelurahan BENDUNGAN HILIR: RW 001 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013); RW 002 (RT 005); RW 003 (RT 001, 002, 003, 005, 007)
+    - Kelurahan KARET TENGSIN: RW 002 (RT 003); RW 004 (RT 007, 008, 015); RW 005 (RT 017); RW 011 (RT 009, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan SENAYAN
@@ -21953,15 +21953,15 @@
 - Alamat: JL. TAMAN BUKIT DURI, RT 002, RW 012, KEL. BUKIT DURI, KEC. TEBET, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan KAMPUNG MELAYU: RT 014/RW 004
+    - Kelurahan KAMPUNG MELAYU: RW 004 (RT 014)
   - Kecamatan TEBET
-    - Kelurahan BUKIT DURI: RT 001/RW 012; RT 002/RW 012; RT 003/RW 012; RT 006/RW 008; RT 007/RW 012; RT 008/RW 012; RT 011/RW 012
+    - Kelurahan BUKIT DURI: RW 008 (RT 006); RW 012 (RT 001, 002, 003, 007, 008, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
-    - Kelurahan BALI MESTER: RT 001/RW 006
-    - Kelurahan KAMPUNG MELAYU: RT 001/RW 003; RT 005/RW 003
+    - Kelurahan BALI MESTER: RW 006 (RT 001)
+    - Kelurahan KAMPUNG MELAYU: RW 003 (RT 001, 005)
   - Kecamatan TEBET
-    - Kelurahan BUKIT DURI: RT 001/RW 008; RT 001/RW 009; RT 001/RW 011; RT 002/RW 008; RT 002/RW 009; RT 002/RW 011; RT 003/RW 001; RT 003/RW 008; RT 003/RW 009; RT 003/RW 011; RT 004/RW 001; RT 004/RW 002; RT 004/RW 008; RT 004/RW 009; RT 004/RW 011; RT 004/RW 012; RT 005/RW 001; RT 005/RW 002; RT 005/RW 008; RT 005/RW 009; RT 005/RW 011; RT 006/RW 001; RT 006/RW 002; RT 007/RW 001; RT 007/RW 008; RT 008/RW 001; RT 008/RW 008; RT 009/RW 001; RT 009/RW 008; RT 009/RW 012; RT 010/RW 001; RT 010/RW 008; RT 011/RW 001; RT 011/RW 008; RT 011/RW 011; RT 012/RW 001; RT 012/RW 008; RT 012/RW 011; RT 012/RW 012; RT 013/RW 008; RT 013/RW 012; RT 014/RW 012; RT 015/RW 012
+    - Kelurahan BUKIT DURI: RW 001 (RT 003, 004, 005, 006, 007, 008, 009, 010, 011, 012); RW 002 (RT 004, 005, 006); RW 008 (RT 001, 002, 003, 004, 005, 007, 008, 009, 010, 011, 012, 013); RW 009 (RT 001, 002, 003, 004, 005); RW 011 (RT 001, 002, 003, 004, 005, 011, 012); RW 012 (RT 004, 009, 012, 013, 014, 015)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan BALI MESTER
@@ -21992,12 +21992,12 @@
 - Alamat: JL. SMU 9 HALIM PERDANA KUSUMA, RT 013, RW 004, KEL. KEBON PALA, KEC. MAKASAR, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 007/RW 009
-    - Kelurahan KEBON PALA: RT 002/RW 004; RT 007/RW 010; RT 008/RW 010; RT 012/RW 004; RT 013/RW 004; RT 014/RW 004
+    - Kelurahan HALIM PERDANA KUSUMA: RW 009 (RT 007)
+    - Kelurahan KEBON PALA: RW 004 (RT 002, 012, 013, 014); RW 010 (RT 007, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 005/RW 009; RT 006/RW 009; RT 008/RW 009; RT 009/RW 009
-    - Kelurahan KEBON PALA: RT 001/RW 004; RT 001/RW 009; RT 002/RW 009; RT 003/RW 004; RT 003/RW 009; RT 004/RW 004; RT 004/RW 009; RT 005/RW 004; RT 005/RW 009; RT 006/RW 004; RT 006/RW 010; RT 007/RW 004; RT 008/RW 004; RT 009/RW 004; RT 009/RW 009; RT 009/RW 010; RT 010/RW 004; RT 010/RW 009; RT 010/RW 010; RT 011/RW 004; RT 012/RW 009; RT 015/RW 009
+    - Kelurahan HALIM PERDANA KUSUMA: RW 009 (RT 005, 006, 008, 009)
+    - Kelurahan KEBON PALA: RW 004 (RT 001, 003, 004, 005, 006, 007, 008, 009, 010, 011); RW 009 (RT 001, 002, 003, 004, 005, 009, 010, 012, 015); RW 010 (RT 006, 009, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan CIPINANG CEMPEDAK
@@ -22018,12 +22018,12 @@
 - Alamat: JL. MANGGA BESAR XIII, RT 006, RW 001, KEL. MANGGA DUA SELATAN, KEC. SAWAH BESAR, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SAWAH BESAR
-    - Kelurahan MANGGA DUA SELATAN: RT 001/RW 003; RT 003/RW 001; RT 005/RW 001; RT 006/RW 001
+    - Kelurahan MANGGA DUA SELATAN: RW 001 (RT 003, 005, 006); RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
-    - Kelurahan MANGGA DUA SELATAN: RT 001/RW 001; RT 001/RW 002; RT 001/RW 004; RT 002/RW 001; RT 002/RW 002; RT 002/RW 003; RT 002/RW 004; RT 002/RW 008; RT 003/RW 002; RT 003/RW 003; RT 003/RW 004; RT 004/RW 001; RT 004/RW 002; RT 004/RW 003; RT 004/RW 004; RT 004/RW 008; RT 005/RW 002; RT 005/RW 003; RT 005/RW 008; RT 006/RW 002; RT 006/RW 003; RT 006/RW 008; RT 007/RW 001; RT 007/RW 002; RT 007/RW 003; RT 007/RW 005; RT 007/RW 008; RT 008/RW 001; RT 008/RW 002; RT 008/RW 003; RT 008/RW 005; RT 008/RW 008; RT 009/RW 001; RT 009/RW 002; RT 009/RW 003; RT 009/RW 005; RT 009/RW 008; RT 010/RW 002; RT 010/RW 003; RT 010/RW 005; RT 010/RW 008; RT 011/RW 001; RT 011/RW 002; RT 011/RW 003; RT 011/RW 005; RT 011/RW 008; RT 012/RW 001; RT 012/RW 008; RT 013/RW 001; RT 013/RW 008; RT 014/RW 001; RT 016/RW 001
+    - Kelurahan MANGGA DUA SELATAN: RW 001 (RT 001, 002, 004, 007, 008, 009, 011, 012, 013, 014, 016); RW 002 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011); RW 003 (RT 002, 003, 004, 005, 006, 007, 008, 009, 010, 011); RW 004 (RT 001, 002, 003, 004); RW 005 (RT 007, 008, 009, 010, 011); RW 008 (RT 002, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013)
   - Kecamatan TAMAN SARI
-    - Kelurahan TANGKI: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 004/RW 001; RT 005/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 010/RW 001; RT 011/RW 001; RT 013/RW 001; RT 014/RW 001; RT 015/RW 001
+    - Kelurahan TANGKI: RW 001 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 013, 014, 015)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMAYORAN
     - Kelurahan GUNUNG SAHARI SELATAN
@@ -22062,12 +22062,12 @@
 - Alamat: JL. PENDIDIKAN KOMARUDIN I KOMPLEK PENDIDIKAN, RT 009, RW 005, KEL. PULO GEBANG, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan PENGGILINGAN: RT 012/RW 005; RT 015/RW 005; RT 017/RW 005; RT 019/RW 005
-    - Kelurahan PULO GEBANG: RT 009/RW 005; RT 010/RW 005; RT 015/RW 005
+    - Kelurahan PENGGILINGAN: RW 005 (RT 012, 015, 017, 019)
+    - Kelurahan PULO GEBANG: RW 005 (RT 009, 010, 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan PENGGILINGAN: RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 004/RW 005; RT 005/RW 005; RT 008/RW 004; RT 008/RW 005; RT 010/RW 005; RT 011/RW 005; RT 013/RW 005; RT 014/RW 005; RT 016/RW 005; RT 018/RW 005
-    - Kelurahan PULO GEBANG: RT 003/RW 015; RT 004/RW 015; RT 007/RW 005; RT 008/RW 005
+    - Kelurahan PENGGILINGAN: RW 004 (RT 008); RW 005 (RT 001, 002, 003, 004, 005, 008, 010, 011, 013, 014, 016, 018)
+    - Kelurahan PULO GEBANG: RW 005 (RT 007, 008); RW 015 (RT 003, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -22081,14 +22081,14 @@
 - Alamat: JL. PERTANIAN, RT 008, RW 001, KEL. KLENDER, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 001/RW 002; RT 002/RW 002; RT 003/RW 002; RT 004/RW 001; RT 006/RW 001; RT 007/RW 002; RT 008/RW 001; RT 009/RW 001; RT 015/RW 002
+    - Kelurahan KLENDER: RW 001 (RT 004, 006, 008, 009); RW 002 (RT 001, 002, 003, 007, 015)
   - Kecamatan PULOGADUNG
-    - Kelurahan JATINEGARA KAUM: RT 005/RW 008; RT 006/RW 008
+    - Kelurahan JATINEGARA KAUM: RW 008 (RT 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 004/RW 002; RT 005/RW 001; RT 005/RW 002; RT 005/RW 003; RT 006/RW 002; RT 007/RW 001; RT 008/RW 002; RT 009/RW 002; RT 009/RW 003; RT 010/RW 001; RT 010/RW 002; RT 010/RW 003; RT 011/RW 001; RT 011/RW 003; RT 012/RW 001; RT 015/RW 003
+    - Kelurahan KLENDER: RW 001 (RT 001, 002, 003, 005, 007, 010, 011, 012); RW 002 (RT 004, 005, 006, 008, 009, 010); RW 003 (RT 005, 009, 010, 011, 015)
   - Kecamatan PULOGADUNG
-    - Kelurahan JATINEGARA KAUM: RT 001/RW 008; RT 002/RW 008; RT 003/RW 008; RT 004/RW 008
+    - Kelurahan JATINEGARA KAUM: RW 008 (RT 001, 002, 003, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -22107,15 +22107,15 @@
 - Alamat: JL. SEROJA NO. 1, RT 004, RW 013, KEL. RAWA BADAK UTARA, KEC. KOJA, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan RAWA BADAK UTARA: RT 002/RW 013; RT 003/RW 013; RT 004/RW 013; RT 006/RW 013
+    - Kelurahan RAWA BADAK UTARA: RW 013 (RT 002, 003, 004, 006)
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan KEBON BAWANG: RT 011/RW 005; RT 012/RW 005
+    - Kelurahan KEBON BAWANG: RW 005 (RT 011, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
-    - Kelurahan RAWA BADAK SELATAN: RT 007/RW 005
-    - Kelurahan RAWA BADAK UTARA: RT 001/RW 003; RT 001/RW 007; RT 001/RW 008; RT 001/RW 009; RT 001/RW 010; RT 001/RW 012; RT 001/RW 013; RT 001/RW 014; RT 002/RW 003; RT 002/RW 007; RT 002/RW 008; RT 002/RW 009; RT 002/RW 010; RT 002/RW 012; RT 002/RW 014; RT 003/RW 003; RT 003/RW 007; RT 003/RW 008; RT 003/RW 009; RT 003/RW 010; RT 003/RW 012; RT 003/RW 014; RT 004/RW 003; RT 004/RW 007; RT 004/RW 008; RT 004/RW 009; RT 004/RW 012; RT 004/RW 014; RT 005/RW 003; RT 005/RW 007; RT 005/RW 008; RT 005/RW 009; RT 005/RW 012; RT 005/RW 013; RT 005/RW 014; RT 006/RW 003; RT 006/RW 007; RT 006/RW 008; RT 006/RW 009; RT 006/RW 014; RT 007/RW 003; RT 007/RW 007; RT 007/RW 008; RT 007/RW 009; RT 007/RW 013; RT 007/RW 014; RT 008/RW 003; RT 008/RW 007; RT 008/RW 008; RT 008/RW 009; RT 008/RW 014; RT 009/RW 003; RT 009/RW 007; RT 009/RW 008; RT 009/RW 009; RT 010/RW 003; RT 010/RW 007; RT 010/RW 008; RT 010/RW 009; RT 011/RW 007; RT 011/RW 008; RT 011/RW 009; RT 012/RW 008; RT 012/RW 009
+    - Kelurahan RAWA BADAK SELATAN: RW 005 (RT 007)
+    - Kelurahan RAWA BADAK UTARA: RW 003 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010); RW 007 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011); RW 008 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012); RW 009 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012); RW 010 (RT 001, 002, 003); RW 012 (RT 001, 002, 003, 004, 005); RW 013 (RT 001, 005, 007); RW 014 (RT 001, 002, 003, 004, 005, 006, 007, 008)
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan KEBON BAWANG: RT 001/RW 005; RT 001/RW 006; RT 002/RW 005; RT 002/RW 006; RT 003/RW 005; RT 003/RW 006; RT 004/RW 005; RT 004/RW 006; RT 005/RW 005; RT 005/RW 006; RT 006/RW 005; RT 006/RW 006; RT 007/RW 005; RT 007/RW 006; RT 008/RW 005; RT 008/RW 006; RT 009/RW 005; RT 009/RW 006; RT 010/RW 005; RT 010/RW 006; RT 011/RW 006; RT 012/RW 006; RT 012/RW 010; RT 013/RW 005; RT 013/RW 006; RT 014/RW 005; RT 014/RW 006; RT 015/RW 005; RT 015/RW 006; RT 016/RW 005; RT 016/RW 006; RT 017/RW 005; RT 017/RW 006; RT 018/RW 005
+    - Kelurahan KEBON BAWANG: RW 005 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 013, 014, 015, 016, 017, 018); RW 006 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017); RW 010 (RT 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan KALIBARU
@@ -22138,12 +22138,12 @@
 - Alamat: JL. SMA XIV BARAT, RT 006, RW 004, KEL. CILILITAN, KEC. KRAMAT JATI, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMATJATI
-    - Kelurahan CAWANG: RT 006/RW 009; RT 007/RW 009; RT 009/RW 009; RT 010/RW 009
-    - Kelurahan CILILITAN: RT 002/RW 004; RT 003/RW 004; RT 005/RW 004; RT 006/RW 004
+    - Kelurahan CAWANG: RW 009 (RT 006, 007, 009, 010)
+    - Kelurahan CILILITAN: RW 004 (RT 002, 003, 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMATJATI
-    - Kelurahan CAWANG: RT 001/RW 007; RT 001/RW 009; RT 002/RW 007; RT 002/RW 009; RT 003/RW 009; RT 004/RW 007; RT 004/RW 009; RT 005/RW 005; RT 005/RW 007; RT 005/RW 009; RT 006/RW 005; RT 006/RW 007; RT 007/RW 005; RT 008/RW 005; RT 008/RW 007; RT 008/RW 009; RT 009/RW 007; RT 010/RW 007; RT 011/RW 007; RT 012/RW 007
-    - Kelurahan CILILITAN: RT 001/RW 004; RT 001/RW 012; RT 001/RW 014; RT 001/RW 017; RT 002/RW 012; RT 002/RW 014; RT 002/RW 017; RT 003/RW 011; RT 003/RW 014; RT 003/RW 017; RT 004/RW 004; RT 004/RW 011; RT 004/RW 014; RT 004/RW 017; RT 005/RW 013; RT 005/RW 014; RT 005/RW 017; RT 006/RW 013; RT 006/RW 014; RT 007/RW 013; RT 008/RW 013
+    - Kelurahan CAWANG: RW 005 (RT 005, 006, 007, 008); RW 007 (RT 001, 002, 004, 005, 006, 008, 009, 010, 011, 012); RW 009 (RT 001, 002, 003, 004, 005, 008)
+    - Kelurahan CILILITAN: RW 004 (RT 001, 004); RW 011 (RT 003, 004); RW 012 (RT 001, 002); RW 013 (RT 005, 006, 007, 008); RW 014 (RT 001, 002, 003, 004, 005, 006); RW 017 (RT 001, 002, 003, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KRAMATJATI
     - Kelurahan BALEKAMBANG
@@ -22171,10 +22171,10 @@
 - Alamat: JL. AGUNG UTARA STS BLOK A, RT 004, RW 018, KEL. SUNTER AGUNG, KEC. TANJUNG PRIOK, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 001/RW 018; RT 002/RW 018; RT 003/RW 018; RT 004/RW 018; RT 005/RW 018; RT 016/RW 011
+    - Kelurahan SUNTER AGUNG: RW 011 (RT 016); RW 018 (RT 001, 002, 003, 004, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 001/RW 008; RT 001/RW 009; RT 001/RW 011; RT 002/RW 008; RT 002/RW 009; RT 002/RW 010; RT 003/RW 008; RT 003/RW 009; RT 004/RW 008; RT 004/RW 009; RT 005/RW 008; RT 005/RW 009; RT 006/RW 008; RT 006/RW 009; RT 007/RW 008; RT 007/RW 009; RT 008/RW 008; RT 008/RW 009; RT 009/RW 008; RT 009/RW 009; RT 010/RW 007; RT 010/RW 008; RT 010/RW 009; RT 011/RW 007; RT 011/RW 008; RT 011/RW 009; RT 012/RW 007; RT 012/RW 008; RT 012/RW 009; RT 013/RW 007; RT 013/RW 008; RT 013/RW 009; RT 014/RW 007; RT 014/RW 008; RT 015/RW 007
+    - Kelurahan SUNTER AGUNG: RW 007 (RT 010, 011, 012, 013, 014, 015); RW 008 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014); RW 009 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013); RW 010 (RT 002); RW 011 (RT 001)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -22197,11 +22197,11 @@
 - Alamat: JL. BELIBIS TERUSAN, NO.16, RT 009, RW 003, KEL. PALMERAH, KEC. PALMERAH, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PAL MERAH
-    - Kelurahan PALMERAH: RT 003/RW 004; RT 003/RW 005; RT 004/RW 005; RT 005/RW 003; RT 006/RW 003; RT 007/RW 002; RT 008/RW 003; RT 008/RW 016; RT 009/RW 003; RT 010/RW 003; RT 011/RW 003; RT 011/RW 016; RT 012/RW 003; RT 012/RW 016
+    - Kelurahan PALMERAH: RW 002 (RT 007); RW 003 (RT 005, 006, 008, 009, 010, 011, 012); RW 004 (RT 003); RW 005 (RT 003, 004); RW 016 (RT 008, 011, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PAL MERAH
-    - Kelurahan KEMANGGISAN: RT 003/RW 004
-    - Kelurahan PALMERAH: RT 001/RW 003; RT 001/RW 017; RT 002/RW 003; RT 002/RW 005; RT 002/RW 017; RT 003/RW 003; RT 003/RW 017; RT 004/RW 002; RT 004/RW 003; RT 004/RW 004; RT 004/RW 017; RT 005/RW 002; RT 005/RW 004; RT 005/RW 017; RT 006/RW 002; RT 006/RW 005; RT 006/RW 009; RT 006/RW 017; RT 007/RW 003; RT 007/RW 004; RT 007/RW 006; RT 007/RW 016; RT 007/RW 017; RT 008/RW 006; RT 008/RW 017; RT 009/RW 016; RT 009/RW 017; RT 010/RW 016; RT 013/RW 003
+    - Kelurahan KEMANGGISAN: RW 004 (RT 003)
+    - Kelurahan PALMERAH: RW 002 (RT 004, 005, 006); RW 003 (RT 001, 002, 003, 004, 007, 013); RW 004 (RT 004, 005, 007); RW 005 (RT 002, 006); RW 006 (RT 007, 008); RW 009 (RT 006); RW 016 (RT 007, 009, 010); RW 017 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN SELATAN
@@ -22234,10 +22234,10 @@
 - Alamat: JL. MANGGA BESAR IV/I NO.27, RT 003, RW 001, KEL. TAMAN SARI, KEC. TAMAN SARI, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan TAMAN SARI: RT 001/RW 003; RT 002/RW 001; RT 002/RW 003; RT 003/RW 001; RT 003/RW 003; RT 004/RW 001; RT 004/RW 003; RT 009/RW 001; RT 015/RW 002
+    - Kelurahan TAMAN SARI: RW 001 (RT 002, 003, 004, 009); RW 002 (RT 015); RW 003 (RT 001, 002, 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMAN SARI
-    - Kelurahan TAMAN SARI: RT 001/RW 001; RT 002/RW 002; RT 002/RW 004; RT 003/RW 002; RT 004/RW 002; RT 005/RW 001; RT 005/RW 002; RT 005/RW 003; RT 005/RW 004; RT 006/RW 002; RT 006/RW 003; RT 007/RW 001; RT 007/RW 002; RT 007/RW 003; RT 008/RW 001; RT 008/RW 002; RT 008/RW 003; RT 009/RW 002; RT 009/RW 003; RT 009/RW 004; RT 010/RW 001; RT 010/RW 002; RT 010/RW 003; RT 011/RW 001; RT 011/RW 002; RT 011/RW 003; RT 011/RW 005; RT 012/RW 001; RT 012/RW 002; RT 013/RW 001; RT 013/RW 002; RT 014/RW 002
+    - Kelurahan TAMAN SARI: RW 001 (RT 001, 005, 007, 008, 010, 011, 012, 013); RW 002 (RT 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014); RW 003 (RT 005, 006, 007, 008, 009, 010, 011); RW 004 (RT 002, 005, 009); RW 005 (RT 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan GAMBIR
@@ -22282,13 +22282,13 @@
 - Alamat: JL. WARAKAS I, RT 001, RW 014, KEL. WARAKAS, KEC. TANJUNG PRIOK, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan PAPANGGO: RT 002/RW 008; RT 003/RW 008; RT 004/RW 008
-    - Kelurahan WARAKAS: RT 001/RW 014; RT 002/RW 014; RT 009/RW 014; RT 011/RW 014; RT 012/RW 014; RT 013/RW 014; RT 016/RW 001
+    - Kelurahan PAPANGGO: RW 008 (RT 002, 003, 004)
+    - Kelurahan WARAKAS: RW 001 (RT 016); RW 014 (RT 001, 002, 009, 011, 012, 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan PAPANGGO: RT 003/RW 007; RT 004/RW 007; RT 005/RW 007; RT 005/RW 008; RT 006/RW 007; RT 006/RW 008; RT 007/RW 008; RT 012/RW 008; RT 014/RW 008; RT 015/RW 008
-    - Kelurahan TANJUNG PRIOK: RT 001/RW 003; RT 002/RW 003; RT 003/RW 003; RT 003/RW 006; RT 004/RW 003; RT 004/RW 006; RT 005/RW 003; RT 005/RW 006; RT 006/RW 003; RT 006/RW 006; RT 007/RW 002; RT 007/RW 006; RT 008/RW 003; RT 009/RW 002
-    - Kelurahan WARAKAS: RT 001/RW 013; RT 002/RW 013; RT 003/RW 014; RT 005/RW 014; RT 006/RW 014; RT 007/RW 014; RT 008/RW 014; RT 010/RW 014; RT 012/RW 003; RT 013/RW 001; RT 014/RW 001; RT 014/RW 003; RT 015/RW 001
+    - Kelurahan PAPANGGO: RW 007 (RT 003, 004, 005, 006); RW 008 (RT 005, 006, 007, 012, 014, 015)
+    - Kelurahan TANJUNG PRIOK: RW 002 (RT 007, 009); RW 003 (RT 001, 002, 003, 004, 005, 006, 008); RW 006 (RT 003, 004, 005, 006, 007)
+    - Kelurahan WARAKAS: RW 001 (RT 013, 014, 015); RW 003 (RT 012, 014); RW 013 (RT 001, 002); RW 014 (RT 003, 005, 006, 007, 008, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KOJA
     - Kelurahan KOJA
@@ -22305,19 +22305,19 @@
 - Alamat: JL. PERNIAGAAN NO.31, RT 007, RW 001, KEL. TAMBORA, KEC. TAMBORA, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TAMAN SARI
-    - Kelurahan GLODOK: RT 007/RW 003; RT 009/RW 003
+    - Kelurahan GLODOK: RW 003 (RT 007, 009)
   - Kecamatan TAMBORA
-    - Kelurahan ROA MALAKA: RT 009/RW 001
-    - Kelurahan TAMBORA: RT 005/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 010/RW 001; RT 011/RW 001
+    - Kelurahan ROA MALAKA: RW 001 (RT 009)
+    - Kelurahan TAMBORA: RW 001 (RT 005, 006, 007, 008, 009, 010, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TAMAN SARI
-    - Kelurahan GLODOK: RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 005/RW 003; RT 006/RW 003; RT 008/RW 002; RT 008/RW 003; RT 009/RW 002; RT 010/RW 002; RT 010/RW 003; RT 011/RW 003; RT 012/RW 003
-    - Kelurahan PINANGSIA: RT 001/RW 006; RT 003/RW 006
+    - Kelurahan GLODOK: RW 002 (RT 003, 004, 005, 008, 009, 010); RW 003 (RT 005, 006, 008, 010, 011, 012)
+    - Kelurahan PINANGSIA: RW 006 (RT 001, 003)
   - Kecamatan TAMBORA
-    - Kelurahan JEMBATAN LIMA: RT 001/RW 002; RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002; RT 007/RW 002; RT 009/RW 002; RT 010/RW 002; RT 011/RW 001
-    - Kelurahan PEKOJAN: RT 001/RW 001; RT 001/RW 002; RT 002/RW 001; RT 002/RW 002; RT 005/RW 002; RT 005/RW 004; RT 010/RW 002
-    - Kelurahan ROA MALAKA: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 004/RW 001; RT 005/RW 001; RT 005/RW 002; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 010/RW 001; RT 011/RW 001; RT 012/RW 001
-    - Kelurahan TAMBORA: RT 001/RW 001; RT 001/RW 002; RT 002/RW 001; RT 002/RW 002; RT 003/RW 001; RT 003/RW 002; RT 004/RW 001; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002; RT 007/RW 002; RT 008/RW 002; RT 009/RW 002; RT 010/RW 002; RT 011/RW 002; RT 012/RW 002
+    - Kelurahan JEMBATAN LIMA: RW 001 (RT 011); RW 002 (RT 001, 003, 004, 005, 006, 007, 009, 010)
+    - Kelurahan PEKOJAN: RW 001 (RT 001, 002); RW 002 (RT 001, 002, 005, 010); RW 004 (RT 005)
+    - Kelurahan ROA MALAKA: RW 001 (RT 001, 002, 003, 004, 005, 006, 007, 008, 010, 011, 012); RW 002 (RT 005)
+    - Kelurahan TAMBORA: RW 001 (RT 001, 002, 003, 004); RW 002 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -22355,13 +22355,13 @@
 - Alamat: JL. KREKOT BUNDER III/1, RT 001, RW 005, KEL. PASAR BARU, KEC. SAWAH BESAR, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SAWAH BESAR
-    - Kelurahan KARTINI: RT 001/RW 006; RT 001/RW 007; RT 003/RW 005; RT 011/RW 007; RT 016/RW 007
-    - Kelurahan PASAR BARU: RT 001/RW 005; RT 002/RW 006; RT 003/RW 005; RT 003/RW 006; RT 004/RW 005; RT 012/RW 005; RT 014/RW 005
+    - Kelurahan KARTINI: RW 005 (RT 003); RW 006 (RT 001); RW 007 (RT 001, 011, 016)
+    - Kelurahan PASAR BARU: RW 005 (RT 001, 003, 004, 012, 014); RW 006 (RT 002, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SAWAH BESAR
-    - Kelurahan KARANG ANYAR: RT 012/RW 003; RT 014/RW 003
-    - Kelurahan KARTINI: RT 002/RW 006; RT 003/RW 006; RT 004/RW 006; RT 004/RW 007; RT 005/RW 006; RT 006/RW 006; RT 007/RW 006; RT 008/RW 006; RT 009/RW 006; RT 011/RW 006; RT 012/RW 007; RT 013/RW 007; RT 014/RW 007; RT 015/RW 007
-    - Kelurahan PASAR BARU: RT 001/RW 006; RT 002/RW 005; RT 004/RW 006; RT 006/RW 005; RT 007/RW 005; RT 010/RW 005
+    - Kelurahan KARANG ANYAR: RW 003 (RT 012, 014)
+    - Kelurahan KARTINI: RW 006 (RT 002, 003, 004, 005, 006, 007, 008, 009, 011); RW 007 (RT 004, 012, 013, 014, 015)
+    - Kelurahan PASAR BARU: RW 005 (RT 002, 006, 007, 010); RW 006 (RT 001, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan DURI PULO
@@ -22398,13 +22398,13 @@
 - Alamat: JL. TANAH MAS RAYA NO.1, RT 003, RW 001, KEL. KAYU PUTIH, KEC. PULO GADUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULOGADUNG
-    - Kelurahan KAYU PUTIH: RT 001/RW 001; RT 001/RW 003; RT 003/RW 001; RT 003/RW 002; RT 003/RW 003; RT 003/RW 016; RT 004/RW 002; RT 004/RW 016; RT 007/RW 002; RT 008/RW 002; RT 013/RW 002; RT 017/RW 003
+    - Kelurahan KAYU PUTIH: RW 001 (RT 001, 003); RW 002 (RT 003, 004, 007, 008, 013); RW 003 (RT 001, 003, 017); RW 016 (RT 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
-    - Kelurahan JATI: RT 010/RW 001
-    - Kelurahan KAYU PUTIH: RT 001/RW 002; RT 001/RW 004; RT 001/RW 011; RT 001/RW 017; RT 002/RW 001; RT 002/RW 002; RT 002/RW 003; RT 002/RW 004; RT 002/RW 017; RT 003/RW 004; RT 003/RW 011; RT 003/RW 017; RT 004/RW 001; RT 004/RW 003; RT 004/RW 017; RT 005/RW 002; RT 005/RW 003; RT 005/RW 017; RT 006/RW 002; RT 006/RW 003; RT 006/RW 017; RT 007/RW 003; RT 007/RW 017; RT 008/RW 003; RT 008/RW 017; RT 009/RW 002; RT 009/RW 003; RT 009/RW 017; RT 010/RW 002; RT 010/RW 003; RT 010/RW 010; RT 010/RW 017; RT 011/RW 002; RT 011/RW 003; RT 011/RW 011; RT 012/RW 002; RT 012/RW 003; RT 012/RW 011; RT 013/RW 003; RT 014/RW 003; RT 015/RW 003; RT 016/RW 003
-    - Kelurahan PULO GADUNG: RT 005/RW 006; RT 006/RW 006; RT 009/RW 007; RT 010/RW 007
-    - Kelurahan RAWAMANGUN: RT 001/RW 005; RT 001/RW 006; RT 002/RW 004; RT 002/RW 005; RT 002/RW 006; RT 003/RW 006; RT 004/RW 006; RT 005/RW 006; RT 013/RW 004
+    - Kelurahan JATI: RW 001 (RT 010)
+    - Kelurahan KAYU PUTIH: RW 001 (RT 002, 004); RW 002 (RT 001, 002, 005, 006, 009, 010, 011, 012); RW 003 (RT 002, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016); RW 004 (RT 001, 002, 003); RW 010 (RT 010); RW 011 (RT 001, 003, 011, 012); RW 017 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010)
+    - Kelurahan PULO GADUNG: RW 006 (RT 005, 006); RW 007 (RT 009, 010)
+    - Kelurahan RAWAMANGUN: RW 004 (RT 002, 013); RW 005 (RT 001, 002); RW 006 (RT 001, 002, 003, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -22428,10 +22428,10 @@
 - Alamat: JL. KRAMAT ASEM, RT 011, RW 005, KEL. UTAN KAYU SELATAN, KEC. MATRAMAN, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU SELATAN: RT 001/RW 005; RT 001/RW 006; RT 002/RW 006; RT 004/RW 012; RT 005/RW 012; RT 009/RW 005; RT 010/RW 005; RT 011/RW 005
+    - Kelurahan UTAN KAYU SELATAN: RW 005 (RT 001, 009, 010, 011); RW 006 (RT 001, 002); RW 012 (RT 004, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
-    - Kelurahan UTAN KAYU SELATAN: RT 001/RW 004; RT 001/RW 009; RT 001/RW 012; RT 002/RW 002; RT 002/RW 004; RT 002/RW 005; RT 002/RW 009; RT 002/RW 012; RT 003/RW 002; RT 003/RW 004; RT 003/RW 005; RT 003/RW 006; RT 003/RW 009; RT 003/RW 012; RT 004/RW 002; RT 004/RW 005; RT 004/RW 006; RT 004/RW 009; RT 005/RW 002; RT 005/RW 004; RT 005/RW 005; RT 005/RW 006; RT 006/RW 002; RT 006/RW 004; RT 006/RW 005; RT 006/RW 012; RT 007/RW 002; RT 007/RW 004; RT 007/RW 005; RT 007/RW 012; RT 008/RW 002; RT 008/RW 004; RT 008/RW 005; RT 008/RW 006; RT 008/RW 012; RT 009/RW 004; RT 009/RW 006; RT 009/RW 012; RT 010/RW 006; RT 010/RW 012; RT 011/RW 006; RT 011/RW 012; RT 012/RW 006; RT 012/RW 012; RT 013/RW 006; RT 013/RW 012; RT 014/RW 006; RT 014/RW 012; RT 015/RW 001; RT 015/RW 012
+    - Kelurahan UTAN KAYU SELATAN: RW 001 (RT 015); RW 002 (RT 002, 003, 004, 005, 006, 007, 008); RW 004 (RT 001, 002, 003, 005, 006, 007, 008, 009); RW 005 (RT 002, 003, 004, 005, 006, 007, 008); RW 006 (RT 003, 004, 005, 008, 009, 010, 011, 012, 013, 014); RW 009 (RT 001, 002, 003, 004); RW 012 (RT 001, 002, 003, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan RAWASARI
@@ -22455,10 +22455,10 @@
 - Alamat: JL. MANDALA UTARA NO.6, RT 006, RW 006, KEL. TOMANG, KEC. GROGOL PETAMBURAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TOMANG: RT 004/RW 006; RT 005/RW 006; RT 006/RW 006; RT 007/RW 004; RT 007/RW 007; RT 013/RW 006; RT 014/RW 006; RT 016/RW 004
+    - Kelurahan TOMANG: RW 004 (RT 007, 016); RW 006 (RT 004, 005, 006, 013, 014); RW 007 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GROGOL PETAMBURAN
-    - Kelurahan TOMANG: RT 001/RW 002; RT 001/RW 004; RT 001/RW 006; RT 001/RW 007; RT 002/RW 002; RT 002/RW 004; RT 002/RW 006; RT 002/RW 007; RT 003/RW 002; RT 003/RW 004; RT 003/RW 006; RT 003/RW 007; RT 004/RW 002; RT 004/RW 004; RT 004/RW 007; RT 005/RW 002; RT 005/RW 004; RT 005/RW 007; RT 006/RW 002; RT 006/RW 004; RT 006/RW 007; RT 007/RW 002; RT 007/RW 006; RT 008/RW 002; RT 008/RW 004; RT 008/RW 006; RT 008/RW 007; RT 009/RW 002; RT 009/RW 004; RT 009/RW 006; RT 009/RW 007; RT 010/RW 002; RT 010/RW 004; RT 010/RW 006; RT 010/RW 007; RT 011/RW 002; RT 011/RW 004; RT 011/RW 006; RT 011/RW 007; RT 012/RW 004; RT 012/RW 006; RT 012/RW 007; RT 013/RW 004; RT 013/RW 007; RT 014/RW 004; RT 014/RW 007; RT 015/RW 004; RT 015/RW 006; RT 015/RW 007; RT 016/RW 007
+    - Kelurahan TOMANG: RW 002 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011); RW 004 (RT 001, 002, 003, 004, 005, 006, 008, 009, 010, 011, 012, 013, 014, 015); RW 006 (RT 001, 002, 003, 007, 008, 009, 010, 011, 012, 015); RW 007 (RT 001, 002, 003, 004, 005, 006, 008, 009, 010, 011, 012, 013, 014, 015, 016)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -22492,25 +22492,25 @@
 - Alamat: JL. GELORA NO.1 RT 002, RW 001, KEL. GELORA, KEC. TANAH ABANG, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GUNUNG: RT 002/RW 006; RT 004/RW 006; RT 009/RW 006
-    - Kelurahan SENAYAN: RT 004/RW 003; RT 005/RW 001; RT 008/RW 002
+    - Kelurahan GUNUNG: RW 006 (RT 002, 004, 009)
+    - Kelurahan SENAYAN: RW 001 (RT 005); RW 002 (RT 008); RW 003 (RT 004)
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL SELATAN: RT 001/RW 008; RT 003/RW 008; RT 005/RW 008; RT 010/RW 008
-    - Kelurahan GROGOL UTARA: RT 007/RW 007; RT 009/RW 006; RT 009/RW 007; RT 010/RW 007
+    - Kelurahan GROGOL SELATAN: RW 008 (RT 001, 003, 005, 010)
+    - Kelurahan GROGOL UTARA: RW 006 (RT 009); RW 007 (RT 007, 009, 010)
   - Kecamatan PAL MERAH
-    - Kelurahan PALMERAH: RT 001/RW 006; RT 001/RW 007; RT 002/RW 006; RT 003/RW 006; RT 004/RW 006
+    - Kelurahan PALMERAH: RW 006 (RT 001, 002, 003, 004); RW 007 (RT 001)
   - Kecamatan SETIABUDI
-    - Kelurahan KARET SEMANGGI: RT 003/RW 004
+    - Kelurahan KARET SEMANGGI: RW 004 (RT 003)
   - Kecamatan TANAH ABANG
-    - Kelurahan BENDUNGAN HILIR: RT 002/RW 005; RT 005/RW 002; RT 006/RW 003; RT 006/RW 004; RT 007/RW 004; RT 009/RW 002; RT 010/RW 002; RT 011/RW 002; RT 011/RW 004; RT 012/RW 002; RT 013/RW 001; RT 014/RW 002
-    - Kelurahan GELORA: RT 001/RW 001; RT 002/RW 001; RT 002/RW 002; RT 003/RW 001; RT 004/RW 001
+    - Kelurahan BENDUNGAN HILIR: RW 001 (RT 013); RW 002 (RT 005, 009, 010, 011, 012, 014); RW 003 (RT 006); RW 004 (RT 006, 007, 011); RW 005 (RT 002)
+    - Kelurahan GELORA: RW 001 (RT 001, 002, 003, 004); RW 002 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL UTARA: RT 001/RW 005; RT 001/RW 014; RT 002/RW 014; RT 003/RW 014; RT 004/RW 014; RT 005/RW 014; RT 006/RW 005; RT 006/RW 014; RT 008/RW 006; RT 009/RW 005
+    - Kelurahan GROGOL UTARA: RW 005 (RT 001, 006, 009); RW 006 (RT 008); RW 014 (RT 001, 002, 003, 004, 005, 006)
   - Kecamatan PAL MERAH
-    - Kelurahan PALMERAH: RT 002/RW 007; RT 003/RW 007; RT 003/RW 008; RT 004/RW 007; RT 005/RW 007; RT 007/RW 007
+    - Kelurahan PALMERAH: RW 007 (RT 002, 003, 004, 005, 007); RW 008 (RT 003)
   - Kecamatan TANAH ABANG
-    - Kelurahan GELORA: RT 001/RW 002; RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002; RT 007/RW 002; RT 008/RW 002
+    - Kelurahan GELORA: RW 002 (RT 001, 003, 004, 005, 006, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GUNUNG
@@ -22536,10 +22536,10 @@
 - Alamat: JL. A.M.SANGAJI NO.22-24, RT 003, RW 005, KEL. PETOJO UTARA, KEC. GAMBIR, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan GAMBIR
-    - Kelurahan PETOJO UTARA: RT 001/RW 004; RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 004/RW 005; RT 005/RW 005; RT 006/RW 005; RT 009/RW 007; RT 010/RW 007; RT 015/RW 003; RT 015/RW 005; RT 017/RW 003
+    - Kelurahan PETOJO UTARA: RW 003 (RT 015, 017); RW 004 (RT 001); RW 005 (RT 001, 002, 003, 004, 005, 006, 015); RW 007 (RT 009, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan GAMBIR
-    - Kelurahan PETOJO UTARA: RT 001/RW 006; RT 001/RW 007; RT 002/RW 004; RT 002/RW 006; RT 002/RW 007; RT 002/RW 008; RT 003/RW 004; RT 003/RW 007; RT 003/RW 008; RT 004/RW 004; RT 004/RW 006; RT 004/RW 007; RT 004/RW 008; RT 005/RW 006; RT 005/RW 007; RT 005/RW 008; RT 006/RW 006; RT 006/RW 007; RT 006/RW 008; RT 007/RW 005; RT 007/RW 006; RT 007/RW 007; RT 007/RW 008; RT 008/RW 003; RT 008/RW 005; RT 008/RW 006; RT 008/RW 007; RT 008/RW 008; RT 009/RW 005; RT 009/RW 008; RT 010/RW 005; RT 010/RW 008; RT 011/RW 005; RT 011/RW 007; RT 011/RW 008; RT 012/RW 003; RT 012/RW 005; RT 012/RW 007; RT 012/RW 008; RT 013/RW 003; RT 013/RW 005; RT 013/RW 008; RT 014/RW 003; RT 014/RW 005; RT 014/RW 008; RT 016/RW 003; RT 016/RW 005; RT 017/RW 005
+    - Kelurahan PETOJO UTARA: RW 003 (RT 008, 012, 013, 014, 016); RW 004 (RT 002, 003, 004); RW 005 (RT 007, 008, 009, 010, 011, 012, 013, 014, 016, 017); RW 006 (RT 001, 002, 004, 005, 006, 007, 008); RW 007 (RT 001, 002, 003, 004, 005, 006, 007, 008, 011, 012); RW 008 (RT 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GAMBIR
     - Kelurahan CIDENG
@@ -22585,10 +22585,10 @@
 - Alamat: JL. TEBET BARAT IV, RT 007, RW 002, KEL. TEBET BARAT, KEC. TEBET, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan TEBET BARAT: RT 005/RW 002; RT 006/RW 002; RT 007/RW 002; RT 008/RW 002; RT 009/RW 002; RT 009/RW 003; RT 013/RW 007; RT 015/RW 004; RT 016/RW 004
+    - Kelurahan TEBET BARAT: RW 002 (RT 005, 006, 007, 008, 009); RW 003 (RT 009); RW 004 (RT 015, 016); RW 007 (RT 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TEBET
-    - Kelurahan TEBET BARAT: RT 001/RW 002; RT 001/RW 003; RT 001/RW 008; RT 002/RW 002; RT 002/RW 003; RT 002/RW 008; RT 003/RW 002; RT 003/RW 003; RT 003/RW 008; RT 004/RW 002; RT 004/RW 003; RT 004/RW 004; RT 004/RW 007; RT 004/RW 008; RT 005/RW 003; RT 005/RW 004; RT 005/RW 007; RT 006/RW 003; RT 006/RW 007; RT 007/RW 003; RT 007/RW 004; RT 007/RW 007; RT 008/RW 003; RT 008/RW 004; RT 008/RW 007; RT 009/RW 004; RT 009/RW 007; RT 010/RW 003; RT 010/RW 004; RT 010/RW 007; RT 011/RW 003; RT 011/RW 004; RT 011/RW 007; RT 012/RW 003; RT 012/RW 004; RT 012/RW 007; RT 013/RW 003; RT 013/RW 004; RT 014/RW 003; RT 014/RW 004
+    - Kelurahan TEBET BARAT: RW 002 (RT 001, 002, 003, 004); RW 003 (RT 001, 002, 003, 004, 005, 006, 007, 008, 010, 011, 012, 013, 014); RW 004 (RT 004, 005, 007, 008, 009, 010, 011, 012, 013, 014); RW 007 (RT 004, 005, 006, 007, 008, 009, 010, 011, 012); RW 008 (RT 001, 002, 003, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan KUNINGAN BARAT
@@ -22615,15 +22615,15 @@
 - Alamat: JL. MARDANI RAYA, RT 002, RW 005, KEL. JOHAR BARU, KEC. JOHAR BARU, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 001/RW 005; RT 002/RW 005; RT 003/RW 005
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 005 (RT 001, 002, 003)
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 013/RW 005; RT 014/RW 005
+    - Kelurahan JOHAR BARU: RW 005 (RT 001, 002, 003, 013, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 002/RW 009; RT 003/RW 009; RT 003/RW 013; RT 004/RW 005; RT 004/RW 009; RT 005/RW 005; RT 005/RW 009; RT 006/RW 005; RT 006/RW 009; RT 007/RW 005; RT 008/RW 005; RT 008/RW 009; RT 009/RW 005
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 005 (RT 004, 005, 006, 007, 008, 009); RW 009 (RT 002, 003, 004, 005, 006, 008); RW 013 (RT 003)
   - Kecamatan JOHAR BARU
-    - Kelurahan JOHAR BARU: RT 004/RW 005; RT 005/RW 005; RT 006/RW 005; RT 007/RW 003; RT 007/RW 005; RT 008/RW 003; RT 008/RW 005; RT 009/RW 003; RT 009/RW 005; RT 010/RW 003; RT 010/RW 005; RT 011/RW 003; RT 011/RW 005; RT 012/RW 005; RT 015/RW 005; RT 016/RW 005; RT 017/RW 003; RT 017/RW 005
-    - Kelurahan KAMPUNG RAWA: RT 005/RW 005; RT 006/RW 005
+    - Kelurahan JOHAR BARU: RW 003 (RT 007, 008, 009, 010, 011, 017); RW 005 (RT 004, 005, 006, 007, 008, 009, 010, 011, 012, 015, 016, 017)
+    - Kelurahan KAMPUNG RAWA: RW 005 (RT 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -22655,10 +22655,10 @@
 - Alamat: JL. RAYA RAGUNAN, RT 006, RW 007, KEL. JATI PADANG, KEC. PASAR MINGGU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR MINGGU
-    - Kelurahan JATI PADANG: RT 001/RW 002; RT 001/RW 003; RT 002/RW 003; RT 006/RW 007; RT 009/RW 007; RT 014/RW 002
+    - Kelurahan JATI PADANG: RW 002 (RT 001, 014); RW 003 (RT 001, 002); RW 007 (RT 006, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR MINGGU
-    - Kelurahan JATI PADANG: RT 001/RW 001; RT 001/RW 009; RT 002/RW 001; RT 002/RW 002; RT 002/RW 007; RT 002/RW 009; RT 003/RW 002; RT 003/RW 003; RT 003/RW 007; RT 003/RW 009; RT 004/RW 001; RT 004/RW 002; RT 004/RW 003; RT 004/RW 007; RT 005/RW 001; RT 005/RW 002; RT 005/RW 007; RT 006/RW 001; RT 007/RW 001; RT 007/RW 002; RT 007/RW 006; RT 007/RW 009; RT 008/RW 001; RT 008/RW 002; RT 008/RW 006; RT 009/RW 001; RT 009/RW 009; RT 010/RW 001; RT 012/RW 002; RT 012/RW 006; RT 013/RW 006; RT 015/RW 006
+    - Kelurahan JATI PADANG: RW 001 (RT 001, 002, 004, 005, 006, 007, 008, 009, 010); RW 002 (RT 002, 003, 004, 005, 007, 008, 012); RW 003 (RT 003, 004); RW 006 (RT 007, 008, 012, 013, 015); RW 007 (RT 002, 003, 004, 005); RW 009 (RT 001, 002, 003, 007, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -22679,17 +22679,17 @@
 - Alamat: JL. KRAMAT NO. 6, RT 009, RW 001, KEL. KEBAYORAN LAMA UTARA, KEC. KEBAYORAN LAMA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GUNUNG: RT 003/RW 001
-    - Kelurahan KRAMAT PELA: RT 006/RW 002
+    - Kelurahan GUNUNG: RW 001 (RT 003)
+    - Kelurahan KRAMAT PELA: RW 002 (RT 006)
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA UTARA: RT 001/RW 002; RT 005/RW 001; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 010/RW 001; RT 010/RW 003
+    - Kelurahan KEBAYORAN LAMA UTARA: RW 001 (RT 005, 007, 008, 009, 010); RW 002 (RT 001); RW 003 (RT 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GUNUNG: RT 004/RW 005; RT 006/RW 001; RT 007/RW 001; RT 011/RW 002; RT 012/RW 002
-    - Kelurahan KRAMAT PELA: RT 001/RW 002; RT 002/RW 002; RT 004/RW 002; RT 007/RW 002; RT 008/RW 002; RT 009/RW 002
+    - Kelurahan GUNUNG: RW 001 (RT 006, 007); RW 002 (RT 011, 012); RW 005 (RT 004)
+    - Kelurahan KRAMAT PELA: RW 002 (RT 001, 002, 004, 007, 008, 009)
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL SELATAN: RT 001/RW 001; RT 001/RW 002; RT 002/RW 001; RT 003/RW 001; RT 003/RW 002; RT 004/RW 001; RT 004/RW 002; RT 005/RW 001; RT 005/RW 002; RT 006/RW 001; RT 014/RW 001
-    - Kelurahan KEBAYORAN LAMA UTARA: RT 001/RW 001; RT 001/RW 003; RT 002/RW 001; RT 002/RW 002; RT 003/RW 001; RT 003/RW 002; RT 004/RW 002; RT 006/RW 001
+    - Kelurahan GROGOL SELATAN: RW 001 (RT 001, 002, 003, 004, 005, 006, 014); RW 002 (RT 001, 003, 004, 005)
+    - Kelurahan KEBAYORAN LAMA UTARA: RW 001 (RT 001, 002, 003, 006); RW 002 (RT 002, 003, 004); RW 003 (RT 001)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan GANDARIA SELATAN
@@ -22713,17 +22713,17 @@
 - Alamat: JL. JENDERAL AHMAD YANI, RT 014, RW 002, KEL. CEMPAKA PUTIH TIMUR, KEC. CEMPAKA PUTIH, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH TIMUR: RT 013/RW 002; RT 014/RW 002; RT 015/RW 002
-    - Kelurahan RAWASARI: RT 014/RW 009; RT 015/RW 009
+    - Kelurahan CEMPAKA PUTIH TIMUR: RW 002 (RT 013, 014, 015)
+    - Kelurahan RAWASARI: RW 009 (RT 014, 015)
   - Kecamatan PULOGADUNG
-    - Kelurahan KAYU PUTIH: RT 001/RW 006; RT 015/RW 007
+    - Kelurahan KAYU PUTIH: RW 006 (RT 001); RW 007 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH TIMUR: RT 001/RW 001; RT 001/RW 003; RT 002/RW 001; RT 002/RW 002; RT 003/RW 001; RT 003/RW 002; RT 004/RW 001; RT 004/RW 002; RT 004/RW 003; RT 005/RW 001; RT 005/RW 002; RT 006/RW 002; RT 007/RW 002; RT 008/RW 001; RT 008/RW 002; RT 009/RW 001; RT 009/RW 002; RT 010/RW 001; RT 010/RW 002; RT 011/RW 002; RT 014/RW 003; RT 016/RW 002; RT 017/RW 002; RT 018/RW 002
-    - Kelurahan RAWASARI: RT 012/RW 009; RT 013/RW 009; RT 017/RW 009
+    - Kelurahan CEMPAKA PUTIH TIMUR: RW 001 (RT 001, 002, 003, 004, 005, 008, 009, 010); RW 002 (RT 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 016, 017, 018); RW 003 (RT 001, 004, 014)
+    - Kelurahan RAWASARI: RW 009 (RT 012, 013, 017)
   - Kecamatan PULOGADUNG
-    - Kelurahan KAYU PUTIH: RT 002/RW 006; RT 003/RW 006; RT 004/RW 007; RT 005/RW 007; RT 007/RW 007; RT 008/RW 007; RT 009/RW 007; RT 010/RW 007; RT 011/RW 007; RT 012/RW 007; RT 013/RW 007; RT 014/RW 007; RT 016/RW 007
-    - Kelurahan RAWAMANGUN: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 004/RW 001; RT 005/RW 001; RT 008/RW 001; RT 009/RW 001; RT 010/RW 001; RT 011/RW 001; RT 012/RW 001
+    - Kelurahan KAYU PUTIH: RW 006 (RT 002, 003); RW 007 (RT 004, 005, 007, 008, 009, 010, 011, 012, 013, 014, 016)
+    - Kelurahan RAWAMANGUN: RW 001 (RT 001, 002, 003, 004, 005, 008, 009, 010, 011, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -22756,12 +22756,12 @@
 - Alamat: JL. KAYUMANIS TIMUR NO.17, RT 003, RW 014, KEL. UTAN KAYU SELATAN, KEC. MATRAMAN, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MATRAMAN
-    - Kelurahan KAYU MANIS: RT 005/RW 005; RT 014/RW 004; RT 015/RW 004
-    - Kelurahan UTAN KAYU SELATAN: RT 001/RW 013; RT 003/RW 014; RT 004/RW 014; RT 005/RW 013; RT 005/RW 014; RT 006/RW 014; RT 016/RW 013; RT 017/RW 013
+    - Kelurahan KAYU MANIS: RW 004 (RT 014, 015); RW 005 (RT 005)
+    - Kelurahan UTAN KAYU SELATAN: RW 013 (RT 001, 005, 016, 017); RW 014 (RT 003, 004, 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
-    - Kelurahan KAYU MANIS: RT 001/RW 004; RT 001/RW 005; RT 001/RW 006; RT 002/RW 004; RT 002/RW 005; RT 002/RW 006; RT 003/RW 004; RT 003/RW 005; RT 003/RW 006; RT 004/RW 004; RT 004/RW 005; RT 004/RW 006; RT 004/RW 007; RT 005/RW 004; RT 005/RW 006; RT 006/RW 004; RT 006/RW 005; RT 006/RW 006; RT 007/RW 004; RT 007/RW 005; RT 007/RW 006; RT 008/RW 004; RT 008/RW 005; RT 008/RW 006; RT 008/RW 007; RT 009/RW 004; RT 009/RW 005; RT 009/RW 006; RT 009/RW 007; RT 010/RW 003; RT 010/RW 004; RT 010/RW 005; RT 010/RW 006; RT 011/RW 004; RT 011/RW 005; RT 011/RW 006; RT 012/RW 004; RT 012/RW 006; RT 013/RW 004; RT 013/RW 006; RT 013/RW 007; RT 014/RW 006; RT 014/RW 007
-    - Kelurahan UTAN KAYU SELATAN: RT 001/RW 001; RT 001/RW 014; RT 002/RW 013; RT 002/RW 014; RT 003/RW 013; RT 004/RW 013; RT 006/RW 013; RT 007/RW 013; RT 007/RW 014; RT 008/RW 013; RT 009/RW 013; RT 010/RW 013; RT 011/RW 013; RT 012/RW 013; RT 013/RW 013; RT 014/RW 013; RT 015/RW 013; RT 016/RW 001
+    - Kelurahan KAYU MANIS: RW 003 (RT 010); RW 004 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013); RW 005 (RT 001, 002, 003, 004, 006, 007, 008, 009, 010, 011); RW 006 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014); RW 007 (RT 004, 008, 009, 013, 014)
+    - Kelurahan UTAN KAYU SELATAN: RW 001 (RT 001, 016); RW 013 (RT 002, 003, 004, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015); RW 014 (RT 001, 002, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan RAWASARI
@@ -22784,12 +22784,12 @@
 - Alamat: JL. PANJANG KOMPLEKS SETNEG BARU CIDODOL, RT 001, RW 006, KEL. GROGOL SELATAN, KEC. KEBAYORAN LAMA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan CIPULIR: RT 007/RW 008; RT 011/RW 008; RT 014/RW 008; RT 016/RW 009
-    - Kelurahan GROGOL SELATAN: RT 001/RW 006; RT 001/RW 013; RT 002/RW 006; RT 003/RW 013; RT 004/RW 006; RT 005/RW 006; RT 012/RW 006; RT 013/RW 006; RT 013/RW 011; RT 015/RW 006
+    - Kelurahan CIPULIR: RW 008 (RT 007, 011, 014); RW 009 (RT 016)
+    - Kelurahan GROGOL SELATAN: RW 006 (RT 001, 002, 004, 005, 012, 013, 015); RW 011 (RT 013); RW 013 (RT 001, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan CIPULIR: RT 001/RW 008; RT 002/RW 008; RT 003/RW 008; RT 008/RW 008; RT 008/RW 009; RT 009/RW 007; RT 009/RW 008; RT 010/RW 008; RT 011/RW 007; RT 012/RW 007; RT 012/RW 008; RT 012/RW 009; RT 013/RW 008
-    - Kelurahan GROGOL SELATAN: RT 002/RW 013; RT 003/RW 006; RT 004/RW 013; RT 005/RW 013; RT 006/RW 006; RT 006/RW 011; RT 006/RW 013; RT 007/RW 006; RT 007/RW 011; RT 007/RW 013; RT 008/RW 006; RT 008/RW 011; RT 008/RW 013; RT 009/RW 011; RT 009/RW 012; RT 014/RW 011; RT 015/RW 011
+    - Kelurahan CIPULIR: RW 007 (RT 009, 011, 012); RW 008 (RT 001, 002, 003, 008, 009, 010, 012, 013); RW 009 (RT 008, 012)
+    - Kelurahan GROGOL SELATAN: RW 006 (RT 003, 006, 007, 008); RW 011 (RT 006, 007, 008, 009, 014, 015); RW 012 (RT 009); RW 013 (RT 002, 004, 005, 006, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GUNUNG
@@ -22814,12 +22814,12 @@
 - Alamat: JL. KAMAL RAYA NO.54, RT 006, RW 003, KEL. CENGKARENG BARAT, KEC. CENGKARENG, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 001/RW 003; RT 001/RW 006; RT 003/RW 006; RT 004/RW 003; RT 005/RW 003; RT 006/RW 003; RT 007/RW 003; RT 008/RW 003; RT 009/RW 003; RT 011/RW 003
-    - Kelurahan CENGKARENG TIMUR: RT 002/RW 002; RT 002/RW 006; RT 008/RW 002
+    - Kelurahan CENGKARENG BARAT: RW 003 (RT 001, 004, 005, 006, 007, 008, 009, 011); RW 006 (RT 001, 003)
+    - Kelurahan CENGKARENG TIMUR: RW 002 (RT 002, 008); RW 006 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG BARAT: RT 002/RW 001; RT 002/RW 003; RT 002/RW 006; RT 002/RW 007; RT 003/RW 001; RT 003/RW 003; RT 004/RW 001; RT 004/RW 006; RT 005/RW 001; RT 005/RW 006; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 008/RW 007; RT 009/RW 004; RT 009/RW 007; RT 010/RW 003; RT 010/RW 004; RT 011/RW 001; RT 012/RW 001; RT 012/RW 004; RT 013/RW 001; RT 014/RW 001
-    - Kelurahan CENGKARENG TIMUR: RT 001/RW 002; RT 003/RW 002; RT 003/RW 006; RT 004/RW 002; RT 005/RW 002; RT 005/RW 005; RT 006/RW 002; RT 006/RW 006; RT 007/RW 002; RT 007/RW 006; RT 016/RW 006
+    - Kelurahan CENGKARENG BARAT: RW 001 (RT 002, 003, 004, 005, 006, 007, 008, 011, 012, 013, 014); RW 003 (RT 002, 003, 010); RW 004 (RT 009, 010, 012); RW 006 (RT 002, 004, 005); RW 007 (RT 002, 008, 009)
+    - Kelurahan CENGKARENG TIMUR: RW 002 (RT 001, 003, 004, 005, 006, 007); RW 005 (RT 005); RW 006 (RT 003, 006, 007, 016)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -22844,10 +22844,10 @@
 - Alamat: JL. MARGASATWA RAYA NO.1, RT 001, RW 005, KEL. PONDOK LABU, KEC. CILANDAK, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 001/RW 002; RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 004/RW 001; RT 004/RW 005; RT 005/RW 001; RT 007/RW 005; RT 014/RW 001
+    - Kelurahan PONDOK LABU: RW 001 (RT 004, 005, 014); RW 002 (RT 001); RW 005 (RT 001, 002, 003, 004, 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 002/RW 001; RT 002/RW 002; RT 003/RW 001; RT 003/RW 002; RT 004/RW 002; RT 005/RW 005; RT 006/RW 001; RT 006/RW 005; RT 006/RW 006; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 009/RW 002; RT 010/RW 001; RT 010/RW 002; RT 011/RW 001; RT 013/RW 001
+    - Kelurahan PONDOK LABU: RW 001 (RT 002, 003, 006, 007, 008, 009, 010, 011, 013); RW 002 (RT 002, 003, 004, 009, 010); RW 005 (RT 005, 006); RW 006 (RT 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -22869,11 +22869,11 @@
 - Alamat: JL. MUTIARA, RT 018, RW 005, KEL. KARET TENGSIN, KEC. TANAH ABANG, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANAH ABANG
-    - Kelurahan KARET TENGSIN: RT 006/RW 005; RT 007/RW 004; RT 014/RW 005; RT 015/RW 005; RT 018/RW 005
+    - Kelurahan KARET TENGSIN: RW 004 (RT 007); RW 005 (RT 006, 014, 015, 018)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANAH ABANG
-    - Kelurahan BENDUNGAN HILIR: RT 005/RW 003; RT 011/RW 003; RT 012/RW 003; RT 013/RW 003; RT 013/RW 006; RT 014/RW 003
-    - Kelurahan KARET TENGSIN: RT 001/RW 005; RT 003/RW 005; RT 005/RW 005; RT 006/RW 004; RT 006/RW 006; RT 007/RW 005; RT 007/RW 007; RT 008/RW 004; RT 008/RW 005; RT 008/RW 007; RT 009/RW 004; RT 009/RW 005; RT 009/RW 007; RT 010/RW 005; RT 011/RW 005; RT 012/RW 004; RT 012/RW 005; RT 013/RW 005; RT 015/RW 004; RT 016/RW 005; RT 017/RW 005; RT 017/RW 007; RT 019/RW 005
+    - Kelurahan BENDUNGAN HILIR: RW 003 (RT 005, 011, 012, 013, 014); RW 006 (RT 013)
+    - Kelurahan KARET TENGSIN: RW 004 (RT 006, 008, 009, 012, 015); RW 005 (RT 001, 003, 005, 007, 008, 009, 010, 011, 012, 013, 016, 017, 019); RW 006 (RT 006); RW 007 (RT 007, 008, 009, 017)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MENTENG
     - Kelurahan GONDANGDIA
@@ -22903,11 +22903,11 @@
 - Alamat: JL. PERHUBUNGAN RAYA RAWAMANGUN, RT 001, RW 007, KEL. JATI, KEC. PULO GADUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PULOGADUNG
-    - Kelurahan JATI: RT 001/RW 007; RT 006/RW 011; RT 007/RW 011; RT 008/RW 011; RT 009/RW 011; RT 010/RW 007; RT 015/RW 007; RT 016/RW 005; RT 016/RW 007; RT 017/RW 007
+    - Kelurahan JATI: RW 005 (RT 016); RW 007 (RT 001, 010, 015, 016, 017); RW 011 (RT 006, 007, 008, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PULOGADUNG
-    - Kelurahan JATI: RT 001/RW 005; RT 001/RW 009; RT 001/RW 011; RT 002/RW 005; RT 002/RW 006; RT 002/RW 007; RT 002/RW 009; RT 002/RW 011; RT 003/RW 005; RT 003/RW 007; RT 003/RW 009; RT 003/RW 011; RT 004/RW 005; RT 004/RW 006; RT 004/RW 009; RT 004/RW 011; RT 005/RW 006; RT 005/RW 011; RT 009/RW 005; RT 011/RW 005; RT 012/RW 005; RT 013/RW 005; RT 014/RW 005; RT 014/RW 007; RT 015/RW 005; RT 017/RW 005
-    - Kelurahan JATINEGARA KAUM: RT 004/RW 003; RT 006/RW 003; RT 008/RW 003; RT 009/RW 003
+    - Kelurahan JATI: RW 005 (RT 001, 002, 003, 004, 009, 011, 012, 013, 014, 015, 017); RW 006 (RT 002, 004, 005); RW 007 (RT 002, 003, 014); RW 009 (RT 001, 002, 003, 004); RW 011 (RT 001, 002, 003, 004, 005)
+    - Kelurahan JATINEGARA KAUM: RW 003 (RT 004, 006, 008, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -22927,12 +22927,12 @@
 - Alamat: JL. H. NO 40, RT 006, RW 006, KEL. KEBON BARU, KEC. TEBET, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TEBET
-    - Kelurahan KEBON BARU: RT 003/RW 006; RT 004/RW 006; RT 005/RW 006; RT 006/RW 006; RT 007/RW 006; RT 009/RW 006
-    - Kelurahan TEBET TIMUR: RT 001/RW 006; RT 002/RW 006
+    - Kelurahan KEBON BARU: RW 006 (RT 003, 004, 005, 006, 007, 009)
+    - Kelurahan TEBET TIMUR: RW 006 (RT 001, 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TEBET
-    - Kelurahan KEBON BARU: RT 001/RW 006; RT 001/RW 007; RT 001/RW 009; RT 001/RW 012; RT 002/RW 006; RT 002/RW 007; RT 002/RW 012; RT 003/RW 007; RT 003/RW 012; RT 004/RW 007; RT 004/RW 009; RT 004/RW 012; RT 005/RW 007; RT 006/RW 007; RT 007/RW 007; RT 008/RW 006; RT 010/RW 006; RT 011/RW 006
-    - Kelurahan TEBET TIMUR: RT 003/RW 005; RT 003/RW 006; RT 004/RW 005; RT 004/RW 006; RT 005/RW 005; RT 005/RW 006; RT 006/RW 005; RT 006/RW 011; RT 007/RW 007; RT 007/RW 011; RT 008/RW 011; RT 011/RW 007
+    - Kelurahan KEBON BARU: RW 006 (RT 001, 002, 008, 010, 011); RW 007 (RT 001, 002, 003, 004, 005, 006, 007); RW 009 (RT 001, 004); RW 012 (RT 001, 002, 003, 004)
+    - Kelurahan TEBET TIMUR: RW 005 (RT 003, 004, 005, 006); RW 006 (RT 003, 004, 005); RW 007 (RT 007, 011); RW 011 (RT 006, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan BALI MESTER
@@ -22963,10 +22963,10 @@
 - Alamat: JL. RAYA LENTENG AGUNG NO. 67, RT 002, RW 008, KEL. LENTENG AGUNG, KEC. JAGAKARSA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan LENTENG AGUNG: RT 001/RW 008; RT 002/RW 008; RT 003/RW 008; RT 004/RW 008; RT 005/RW 008; RT 010/RW 008
+    - Kelurahan LENTENG AGUNG: RW 008 (RT 001, 002, 003, 004, 005, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
-    - Kelurahan LENTENG AGUNG: RT 001/RW 007; RT 001/RW 009; RT 001/RW 010; RT 002/RW 007; RT 002/RW 009; RT 002/RW 010; RT 003/RW 010; RT 004/RW 010; RT 006/RW 007; RT 006/RW 008; RT 007/RW 008; RT 008/RW 008; RT 009/RW 008; RT 011/RW 008; RT 012/RW 008; RT 013/RW 008; RT 014/RW 007; RT 014/RW 008
+    - Kelurahan LENTENG AGUNG: RW 007 (RT 001, 002, 006, 014); RW 008 (RT 006, 007, 008, 009, 011, 012, 013, 014); RW 009 (RT 001, 002); RW 010 (RT 001, 002, 003, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan PONDOK LABU
@@ -22985,12 +22985,12 @@
 - Alamat: JL. R.A. FADILAH CIJANTUNG, RT 001, RW 001, KEL. BARU, KEC. PASAR REBO, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 001/RW 001; RT 001/RW 002; RT 001/RW 008; RT 005/RW 008; RT 008/RW 001; RT 009/RW 002; RT 013/RW 008
-    - Kelurahan CIJANTUNG: RT 001/RW 005; RT 005/RW 002; RT 005/RW 005; RT 006/RW 002
+    - Kelurahan BARU: RW 001 (RT 001, 008); RW 002 (RT 001, 009); RW 008 (RT 001, 005, 013)
+    - Kelurahan CIJANTUNG: RW 002 (RT 005, 006); RW 005 (RT 001, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 002/RW 001; RT 002/RW 007; RT 002/RW 008; RT 003/RW 008; RT 004/RW 002; RT 004/RW 007; RT 005/RW 001; RT 005/RW 002; RT 006/RW 002; RT 006/RW 008; RT 007/RW 008; RT 008/RW 008
-    - Kelurahan CIJANTUNG: RT 003/RW 002; RT 004/RW 002; RT 007/RW 002; RT 008/RW 002
+    - Kelurahan BARU: RW 001 (RT 002, 005); RW 002 (RT 004, 005, 006); RW 007 (RT 002, 004); RW 008 (RT 002, 003, 006, 007, 008)
+    - Kelurahan CIJANTUNG: RW 002 (RT 003, 004, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIRACAS
     - Kelurahan SUSUKAN
@@ -23010,12 +23010,12 @@
 - Alamat: JL. BUDI MULIA RAYA, RT 004, RW 011, KEL. PADEMANGAN BARAT, KEC. PADEMANGAN, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN BARAT: RT 002/RW 011; RT 004/RW 011; RT 006/RW 011; RT 008/RW 011; RT 012/RW 011; RT 013/RW 011
-    - Kelurahan PADEMANGAN TIMUR: RT 014/RW 001; RT 018/RW 001
+    - Kelurahan PADEMANGAN BARAT: RW 011 (RT 002, 004, 006, 008, 012, 013)
+    - Kelurahan PADEMANGAN TIMUR: RW 001 (RT 014, 018)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PADEMANGAN
-    - Kelurahan PADEMANGAN BARAT: RT 001/RW 011; RT 003/RW 011; RT 005/RW 011; RT 007/RW 011; RT 009/RW 011; RT 009/RW 015; RT 010/RW 011; RT 010/RW 015; RT 011/RW 011; RT 012/RW 010; RT 013/RW 010; RT 014/RW 011; RT 015/RW 010; RT 015/RW 011; RT 016/RW 010
-    - Kelurahan PADEMANGAN TIMUR: RT 016/RW 001; RT 017/RW 001
+    - Kelurahan PADEMANGAN BARAT: RW 010 (RT 012, 013, 015, 016); RW 011 (RT 001, 003, 005, 007, 009, 010, 011, 014, 015); RW 015 (RT 009, 010)
+    - Kelurahan PADEMANGAN TIMUR: RW 001 (RT 016, 017)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMAYORAN
     - Kelurahan GUNUNG SAHARI SELATAN
@@ -23038,10 +23038,10 @@
 - Alamat: JL. LAKSAMANA RE. MARTADINATA, RT 012, RW 003, KEL. SUNTER AGUNG, KEC. TANJUNG PRIOK, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 004/RW 003; RT 005/RW 003; RT 008/RW 003; RT 010/RW 003; RT 011/RW 003; RT 012/RW 003; RT 013/RW 003; RT 014/RW 003; RT 015/RW 003; RT 016/RW 003
+    - Kelurahan SUNTER AGUNG: RW 003 (RT 004, 005, 008, 010, 011, 012, 013, 014, 015, 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 001/RW 001; RT 001/RW 002; RT 001/RW 003; RT 001/RW 004; RT 002/RW 003; RT 002/RW 004; RT 003/RW 003; RT 003/RW 004; RT 004/RW 001; RT 004/RW 004; RT 005/RW 004; RT 006/RW 003; RT 006/RW 004; RT 007/RW 003; RT 007/RW 004; RT 008/RW 004; RT 009/RW 003; RT 010/RW 001; RT 011/RW 001; RT 012/RW 001; RT 013/RW 001; RT 014/RW 001; RT 014/RW 002; RT 015/RW 001; RT 015/RW 002; RT 016/RW 001; RT 016/RW 002; RT 017/RW 002; RT 017/RW 003; RT 020/RW 001; RT 021/RW 001; RT 024/RW 001
+    - Kelurahan SUNTER AGUNG: RW 001 (RT 001, 004, 010, 011, 012, 013, 014, 015, 016, 020, 021, 024); RW 002 (RT 001, 014, 015, 016, 017); RW 003 (RT 001, 002, 003, 006, 007, 009, 017); RW 004 (RT 001, 002, 003, 004, 005, 006, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMAYORAN
     - Kelurahan KEBON KOSONG
@@ -23059,11 +23059,11 @@
 - Alamat: JL. RAJAWALI, RT 003, RW 011, KEL. HALIM PERDANA KUSUMAH, KEC. MAKASAR, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 001/RW 011; RT 001/RW 012; RT 001/RW 014; RT 003/RW 011; RT 003/RW 012; RT 004/RW 011; RT 005/RW 011; RT 005/RW 012; RT 006/RW 012; RT 008/RW 012; RT 010/RW 010
+    - Kelurahan HALIM PERDANA KUSUMA: RW 010 (RT 010); RW 011 (RT 001, 003, 004, 005); RW 012 (RT 001, 003, 005, 006, 008); RW 014 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 001/RW 009; RT 001/RW 010; RT 001/RW 013; RT 001/RW 015; RT 001/RW 016; RT 002/RW 009; RT 002/RW 010; RT 002/RW 011; RT 002/RW 012; RT 002/RW 013; RT 002/RW 014; RT 002/RW 015; RT 002/RW 016; RT 003/RW 009; RT 003/RW 010; RT 003/RW 013; RT 003/RW 015; RT 003/RW 016; RT 004/RW 009; RT 004/RW 010; RT 004/RW 012; RT 004/RW 013; RT 004/RW 015; RT 004/RW 016; RT 005/RW 009; RT 005/RW 010; RT 005/RW 013; RT 005/RW 015; RT 005/RW 016; RT 006/RW 009; RT 006/RW 010; RT 006/RW 013; RT 006/RW 015; RT 007/RW 010; RT 007/RW 012; RT 007/RW 013; RT 007/RW 015; RT 008/RW 009; RT 008/RW 013; RT 008/RW 015; RT 009/RW 009; RT 009/RW 010; RT 009/RW 012; RT 009/RW 013; RT 009/RW 015; RT 010/RW 004; RT 010/RW 013; RT 011/RW 010; RT 011/RW 013; RT 012/RW 003; RT 012/RW 010; RT 012/RW 013; RT 013/RW 013; RT 016/RW 004
-    - Kelurahan KEBON PALA: RT 001/RW 008; RT 008/RW 008; RT 011/RW 008; RT 012/RW 008
+    - Kelurahan HALIM PERDANA KUSUMA: RW 003 (RT 012); RW 004 (RT 010, 016); RW 009 (RT 001, 002, 003, 004, 005, 006, 008, 009); RW 010 (RT 001, 002, 003, 004, 005, 006, 007, 009, 011, 012); RW 011 (RT 002); RW 012 (RT 002, 004, 007, 009); RW 013 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013); RW 014 (RT 002); RW 015 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009); RW 016 (RT 001, 002, 003, 004, 005)
+    - Kelurahan KEBON PALA: RW 008 (RT 001, 008, 011, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan LUBANG BUAYA
@@ -23087,10 +23087,10 @@
 - Alamat: JL. MINANGKABAU DALAM, RT 015, RW 006, KEL. MENTENG ATAS, KEC. SETIA BUDI, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIABUDI
-    - Kelurahan MENTENG ATAS: RT 001/RW 013; RT 003/RW 014; RT 004/RW 014; RT 005/RW 014; RT 006/RW 014; RT 007/RW 006; RT 007/RW 014; RT 008/RW 014; RT 009/RW 013; RT 010/RW 004; RT 011/RW 006; RT 012/RW 006; RT 013/RW 006; RT 014/RW 006; RT 015/RW 006
+    - Kelurahan MENTENG ATAS: RW 004 (RT 010); RW 006 (RT 007, 011, 012, 013, 014, 015); RW 013 (RT 001, 009); RW 014 (RT 003, 004, 005, 006, 007, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
-    - Kelurahan MENTENG ATAS: RT 001/RW 014; RT 002/RW 012; RT 002/RW 014; RT 003/RW 007; RT 003/RW 012; RT 004/RW 004; RT 004/RW 012; RT 005/RW 007; RT 006/RW 004; RT 006/RW 006; RT 006/RW 007; RT 007/RW 004; RT 007/RW 007; RT 008/RW 004; RT 008/RW 006; RT 008/RW 007; RT 009/RW 006; RT 009/RW 007; RT 009/RW 012; RT 009/RW 014; RT 010/RW 006; RT 010/RW 007; RT 011/RW 007; RT 011/RW 015; RT 012/RW 007; RT 016/RW 007
+    - Kelurahan MENTENG ATAS: RW 004 (RT 004, 006, 007, 008); RW 006 (RT 006, 008, 009, 010); RW 007 (RT 003, 005, 006, 007, 008, 009, 010, 011, 012, 016); RW 012 (RT 002, 003, 004, 009); RW 014 (RT 001, 002, 009); RW 015 (RT 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MATRAMAN
     - Kelurahan KEBON MANGGIS
@@ -23120,11 +23120,11 @@
 - Alamat: JL. DELIMA IV PERUMNAS KLENDER, RT 013, RW 005, KEL. MALAKA SARI, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA SARI: RT 012/RW 005; RT 013/RW 005; RT 014/RW 005; RT 016/RW 003; RT 016/RW 004; RT 017/RW 003; RT 017/RW 004
+    - Kelurahan MALAKA SARI: RW 003 (RT 016, 017); RW 004 (RT 016, 017); RW 005 (RT 012, 013, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA JAYA: RT 001/RW 005; RT 008/RW 006
-    - Kelurahan MALAKA SARI: RT 001/RW 007; RT 002/RW 007; RT 003/RW 007; RT 004/RW 007; RT 005/RW 005; RT 005/RW 007; RT 006/RW 005; RT 006/RW 007; RT 007/RW 005; RT 007/RW 007; RT 008/RW 004; RT 008/RW 005; RT 008/RW 007; RT 009/RW 004; RT 009/RW 005; RT 009/RW 006; RT 009/RW 007; RT 010/RW 005; RT 011/RW 005; RT 013/RW 003; RT 013/RW 004; RT 014/RW 003; RT 014/RW 004; RT 015/RW 003; RT 015/RW 004; RT 015/RW 005; RT 015/RW 007; RT 016/RW 005; RT 018/RW 003
+    - Kelurahan MALAKA JAYA: RW 005 (RT 001); RW 006 (RT 008)
+    - Kelurahan MALAKA SARI: RW 003 (RT 013, 014, 015, 018); RW 004 (RT 008, 009, 013, 014, 015); RW 005 (RT 005, 006, 007, 008, 009, 010, 011, 015, 016); RW 006 (RT 009); RW 007 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 015)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -23143,12 +23143,12 @@
 - Alamat: JL. PERINTIS KEMERDEKAAN, RT 007, RW 006, KEL. KELAPA GADING TIMUR, KEC. KELAPA GADING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KELAPA GADING
-    - Kelurahan KELAPA GADING TIMUR: RT 004/RW 005; RT 004/RW 021; RT 005/RW 006; RT 005/RW 021; RT 006/RW 006; RT 006/RW 014; RT 007/RW 006
-    - Kelurahan PEGANGSAAN DUA: RT 001/RW 006; RT 003/RW 006; RT 004/RW 005; RT 004/RW 006; RT 005/RW 006
+    - Kelurahan KELAPA GADING TIMUR: RW 005 (RT 004); RW 006 (RT 005, 006, 007); RW 014 (RT 006); RW 021 (RT 004, 005)
+    - Kelurahan PEGANGSAAN DUA: RW 005 (RT 004); RW 006 (RT 001, 003, 004, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
-    - Kelurahan KELAPA GADING TIMUR: RT 001/RW 004; RT 001/RW 005; RT 001/RW 006; RT 001/RW 014; RT 001/RW 019; RT 001/RW 021; RT 002/RW 004; RT 002/RW 005; RT 002/RW 006; RT 002/RW 007; RT 002/RW 014; RT 002/RW 019; RT 002/RW 021; RT 003/RW 005; RT 003/RW 006; RT 003/RW 014; RT 003/RW 019; RT 003/RW 021; RT 004/RW 006; RT 004/RW 014; RT 004/RW 019; RT 005/RW 004; RT 005/RW 005; RT 005/RW 014; RT 005/RW 019; RT 006/RW 004; RT 007/RW 019; RT 009/RW 019; RT 011/RW 019; RT 013/RW 019; RT 015/RW 019
-    - Kelurahan PEGANGSAAN DUA: RT 001/RW 005; RT 002/RW 005; RT 002/RW 006; RT 005/RW 005; RT 006/RW 006
+    - Kelurahan KELAPA GADING TIMUR: RW 004 (RT 001, 002, 005, 006); RW 005 (RT 001, 002, 003, 005); RW 006 (RT 001, 002, 003, 004); RW 007 (RT 002); RW 014 (RT 001, 002, 003, 004, 005); RW 019 (RT 001, 002, 003, 004, 005, 007, 009, 011, 013, 015); RW 021 (RT 001, 002, 003)
+    - Kelurahan PEGANGSAAN DUA: RW 005 (RT 001, 002, 005); RW 006 (RT 002, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -23173,14 +23173,14 @@
 - Alamat: JL. MESJID DARUSSALAM KAV. 23-25 BLOK A, RT 001, RW 006, KEL. GANDARIA UTARA, KEC. KEBAYORAN BARU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan CIPETE UTARA: RT 002/RW 001
-    - Kelurahan GANDARIA UTARA: RT 001/RW 005; RT 001/RW 006; RT 002/RW 005; RT 002/RW 006; RT 003/RW 005; RT 003/RW 006; RT 004/RW 005; RT 004/RW 006; RT 005/RW 005; RT 005/RW 006
-    - Kelurahan PULO: RT 008/RW 001
+    - Kelurahan CIPETE UTARA: RW 001 (RT 002)
+    - Kelurahan GANDARIA UTARA: RW 005 (RT 001, 002, 003, 004, 005); RW 006 (RT 001, 002, 003, 004, 005)
+    - Kelurahan PULO: RW 001 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan CIPETE UTARA: RT 001/RW 001; RT 003/RW 001; RT 004/RW 001
-    - Kelurahan GANDARIA UTARA: RT 001/RW 003; RT 002/RW 003; RT 003/RW 003; RT 004/RW 003; RT 006/RW 003; RT 006/RW 005; RT 006/RW 006; RT 007/RW 003; RT 007/RW 005; RT 007/RW 006; RT 007/RW 012; RT 008/RW 003; RT 008/RW 005; RT 008/RW 006; RT 008/RW 012; RT 009/RW 003; RT 009/RW 006; RT 009/RW 012; RT 010/RW 003; RT 010/RW 006; RT 011/RW 003; RT 011/RW 006; RT 012/RW 003; RT 012/RW 006; RT 013/RW 003; RT 014/RW 003; RT 015/RW 003; RT 016/RW 003
-    - Kelurahan PULO: RT 001/RW 006; RT 002/RW 006; RT 003/RW 006; RT 004/RW 006; RT 005/RW 006; RT 006/RW 006; RT 007/RW 006
+    - Kelurahan CIPETE UTARA: RW 001 (RT 001, 003, 004)
+    - Kelurahan GANDARIA UTARA: RW 003 (RT 001, 002, 003, 004, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016); RW 005 (RT 006, 007, 008); RW 006 (RT 006, 007, 008, 009, 010, 011, 012); RW 012 (RT 007, 008, 009)
+    - Kelurahan PULO: RW 006 (RT 001, 002, 003, 004, 005, 006, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -23207,10 +23207,10 @@
 - Alamat: JL. DELMAN UTAMA I, RT 001, RW 011, KEL. KEBAYORAN LAMA UTARA, KEC. KEBAYORAN LAMA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA UTARA: RT 001/RW 011; RT 002/RW 011; RT 005/RW 011; RT 006/RW 010; RT 006/RW 011; RT 008/RW 011; RT 010/RW 009; RT 011/RW 010; RT 012/RW 009; RT 013/RW 009
+    - Kelurahan KEBAYORAN LAMA UTARA: RW 009 (RT 010, 012, 013); RW 010 (RT 006, 011); RW 011 (RT 001, 002, 005, 006, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA UTARA: RT 003/RW 009; RT 003/RW 011; RT 004/RW 011; RT 005/RW 009; RT 005/RW 010; RT 007/RW 010; RT 007/RW 011; RT 008/RW 010; RT 009/RW 009; RT 009/RW 010; RT 009/RW 011; RT 011/RW 009; RT 012/RW 010; RT 012/RW 011; RT 014/RW 008; RT 014/RW 011; RT 015/RW 008; RT 015/RW 009
+    - Kelurahan KEBAYORAN LAMA UTARA: RW 008 (RT 014, 015); RW 009 (RT 003, 005, 009, 011, 015); RW 010 (RT 005, 007, 008, 009, 012); RW 011 (RT 003, 004, 007, 009, 012, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CIPETE SELATAN
@@ -23236,10 +23236,10 @@
 - Alamat: JL. PINANG RANTI II TMII, RT 009, RW 001, KEL. PINANG RANTI, KEC. MAKASAR, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan PINANGRANTI: RT 005/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 010/RW 001; RT 012/RW 001; RT 013/RW 001; RT 014/RW 001; RT 015/RW 001
+    - Kelurahan PINANGRANTI: RW 001 (RT 005, 006, 007, 008, 009, 010, 012, 013, 014, 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAKASAR
-    - Kelurahan PINANGRANTI: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 003/RW 002; RT 004/RW 001; RT 005/RW 002; RT 008/RW 005; RT 011/RW 001; RT 016/RW 001; RT 017/RW 001; RT 018/RW 001
+    - Kelurahan PINANGRANTI: RW 001 (RT 001, 002, 003, 004, 011, 016, 017, 018); RW 002 (RT 003, 005); RW 005 (RT 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -23262,10 +23262,10 @@
 - Alamat: JL. PEPAYA NO 9, RT 002, RW 005, KEL. JAGAKARSA, KEC. JAGAKARSA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 001/RW 005; RT 002/RW 005; RT 002/RW 007; RT 003/RW 005; RT 004/RW 002; RT 004/RW 004; RT 005/RW 002; RT 006/RW 002; RT 008/RW 005; RT 009/RW 005; RT 013/RW 002
+    - Kelurahan JAGAKARSA: RW 002 (RT 004, 005, 006, 013); RW 004 (RT 004); RW 005 (RT 001, 002, 003, 008, 009); RW 007 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
-    - Kelurahan JAGAKARSA: RT 001/RW 007; RT 003/RW 007; RT 005/RW 005; RT 006/RW 005; RT 010/RW 002; RT 013/RW 005
+    - Kelurahan JAGAKARSA: RW 002 (RT 010); RW 005 (RT 005, 006, 013); RW 007 (RT 001, 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -23281,14 +23281,14 @@
 - Alamat: JL. PLN. CIPINANG MUARA III, RT 009, RW 015, KEL. CIPINANG MUARA, KEC. JATINEGARA, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 011/RW 004; RT 017/RW 004
+    - Kelurahan KLENDER: RW 004 (RT 011, 017)
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 006/RW 015; RT 007/RW 015; RT 008/RW 015; RT 009/RW 015; RT 010/RW 015; RT 011/RW 015; RT 012/RW 015
+    - Kelurahan CIPINANG MUARA: RW 015 (RT 006, 007, 008, 009, 010, 011, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 003/RW 004; RT 004/RW 004; RT 005/RW 004; RT 006/RW 003; RT 008/RW 004; RT 012/RW 004; RT 013/RW 004; RT 015/RW 004; RT 018/RW 004
+    - Kelurahan KLENDER: RW 003 (RT 006); RW 004 (RT 003, 004, 005, 008, 012, 013, 015, 018)
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 001/RW 015; RT 002/RW 015; RT 003/RW 015; RT 004/RW 015; RT 005/RW 015; RT 008/RW 008; RT 013/RW 008; RT 013/RW 015
+    - Kelurahan CIPINANG MUARA: RW 008 (RT 008, 013); RW 015 (RT 001, 002, 003, 004, 005, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan KLENDER
@@ -23307,10 +23307,10 @@
 - Alamat: JL. BATU AMPAR III, RT 012, RW 002, KEL. BATU AMPAR, KEC. KRAMAT JATI, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMATJATI
-    - Kelurahan BATU AMPAR: RT 004/RW 004; RT 007/RW 004; RT 009/RW 002; RT 010/RW 002; RT 011/RW 002; RT 011/RW 004; RT 012/RW 002; RT 014/RW 002; RT 015/RW 005
+    - Kelurahan BATU AMPAR: RW 002 (RT 009, 010, 011, 012, 014); RW 004 (RT 004, 007, 011); RW 005 (RT 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KRAMATJATI
-    - Kelurahan BATU AMPAR: RT 001/RW 004; RT 001/RW 006; RT 005/RW 004; RT 005/RW 005; RT 006/RW 004; RT 006/RW 005; RT 008/RW 002; RT 008/RW 004; RT 009/RW 003; RT 010/RW 004; RT 012/RW 004; RT 013/RW 004; RT 015/RW 002; RT 017/RW 002
+    - Kelurahan BATU AMPAR: RW 002 (RT 008, 015, 017); RW 003 (RT 009); RW 004 (RT 001, 005, 006, 008, 010, 012, 013); RW 005 (RT 005, 006); RW 006 (RT 001)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KRAMATJATI
     - Kelurahan BALEKAMBANG
@@ -23332,14 +23332,14 @@
 - Alamat: JL. RAYA TUGU SEMPER, RT 001, RW 009, KEL. SEMPER BARAT, KEC. CILINCING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 001/RW 009; RT 002/RW 009; RT 003/RW 009; RT 008/RW 009; RT 010/RW 006; RT 012/RW 009; RT 014/RW 009; RT 015/RW 009
+    - Kelurahan SEMPER BARAT: RW 006 (RT 010); RW 009 (RT 001, 002, 003, 008, 012, 014, 015)
   - Kecamatan KOJA
-    - Kelurahan TUGU UTARA: RT 007/RW 014; RT 008/RW 018
+    - Kelurahan TUGU UTARA: RW 014 (RT 007); RW 018 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 002/RW 006; RT 003/RW 006; RT 004/RW 006; RT 004/RW 009; RT 005/RW 006; RT 005/RW 009; RT 006/RW 006; RT 006/RW 009; RT 007/RW 006; RT 007/RW 009; RT 008/RW 006; RT 009/RW 006; RT 009/RW 009; RT 010/RW 009; RT 011/RW 006; RT 011/RW 009; RT 013/RW 009; RT 016/RW 009
+    - Kelurahan SEMPER BARAT: RW 006 (RT 002, 003, 004, 005, 006, 007, 008, 009, 011); RW 009 (RT 004, 005, 006, 007, 009, 010, 011, 013, 016)
   - Kecamatan KOJA
-    - Kelurahan TUGU UTARA: RT 003/RW 014; RT 003/RW 018; RT 004/RW 018; RT 005/RW 018; RT 006/RW 018
+    - Kelurahan TUGU UTARA: RW 014 (RT 003); RW 018 (RT 003, 004, 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -23360,11 +23360,11 @@
 - Alamat: JL. CIPINANG JAYA II B, RT 003, RW 009, KEL. CIPINANG BESAR SELATAN, KEC. JATINEGARA, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 002/RW 009; RT 003/RW 009; RT 006/RW 007; RT 007/RW 007; RT 008/RW 009; RT 009/RW 008; RT 009/RW 009
+    - Kelurahan CIPINANG BESAR SELATAN: RW 007 (RT 006, 007); RW 008 (RT 009); RW 009 (RT 002, 003, 008, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 001/RW 009; RT 004/RW 007; RT 004/RW 009; RT 005/RW 007; RT 005/RW 008; RT 005/RW 009; RT 006/RW 008; RT 006/RW 009; RT 007/RW 008; RT 007/RW 009; RT 008/RW 007; RT 008/RW 008; RT 010/RW 008; RT 010/RW 009; RT 011/RW 008; RT 011/RW 009; RT 012/RW 009
-    - Kelurahan CIPINANG BESAR UTARA: RT 005/RW 012; RT 006/RW 012; RT 010/RW 012
+    - Kelurahan CIPINANG BESAR SELATAN: RW 007 (RT 004, 005, 008); RW 008 (RT 005, 006, 007, 008, 010, 011); RW 009 (RT 001, 004, 005, 006, 007, 010, 011, 012)
+    - Kelurahan CIPINANG BESAR UTARA: RW 012 (RT 005, 006, 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan BALI MESTER
@@ -23385,11 +23385,11 @@
 - Alamat: JL. JATINEGARA TIMUR IV, RT 008, RW 007, KEL. RAWA BUNGA, KEC. JATINEGARA, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan RAWA BUNGA: RT 001/RW 007; RT 002/RW 007; RT 004/RW 008; RT 007/RW 006; RT 007/RW 007; RT 007/RW 008; RT 008/RW 007; RT 008/RW 008; RT 009/RW 005; RT 010/RW 005
+    - Kelurahan RAWA BUNGA: RW 005 (RT 009, 010); RW 006 (RT 007); RW 007 (RT 001, 002, 007, 008); RW 008 (RT 004, 007, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
-    - Kelurahan BALI MESTER: RT 001/RW 002; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002; RT 007/RW 002; RT 008/RW 002; RT 009/RW 002; RT 011/RW 002
-    - Kelurahan RAWA BUNGA: RT 001/RW 005; RT 001/RW 006; RT 001/RW 008; RT 001/RW 009; RT 002/RW 005; RT 002/RW 006; RT 002/RW 008; RT 002/RW 009; RT 003/RW 006; RT 003/RW 007; RT 003/RW 008; RT 004/RW 004; RT 004/RW 005; RT 004/RW 007; RT 005/RW 004; RT 005/RW 007; RT 005/RW 008; RT 006/RW 005; RT 006/RW 006; RT 006/RW 007; RT 006/RW 008; RT 007/RW 004; RT 007/RW 005; RT 008/RW 004; RT 008/RW 005; RT 008/RW 006; RT 009/RW 004; RT 009/RW 006; RT 009/RW 007; RT 010/RW 004; RT 010/RW 006; RT 010/RW 007; RT 011/RW 005; RT 011/RW 007; RT 012/RW 005; RT 012/RW 007; RT 013/RW 006; RT 013/RW 007; RT 014/RW 006; RT 016/RW 004
+    - Kelurahan BALI MESTER: RW 002 (RT 001, 004, 005, 006, 007, 008, 009, 011)
+    - Kelurahan RAWA BUNGA: RW 004 (RT 004, 005, 007, 008, 009, 010, 016); RW 005 (RT 001, 002, 004, 006, 007, 008, 011, 012); RW 006 (RT 001, 002, 003, 006, 008, 009, 010, 013, 014); RW 007 (RT 003, 004, 005, 006, 009, 010, 011, 012, 013); RW 008 (RT 001, 002, 003, 005, 006); RW 009 (RT 001, 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan BALI MESTER
@@ -23418,11 +23418,11 @@
 - Alamat: JL. POTLOT II, RT 002, RW 003, KEL. DUREN TIGA, KEC. PANCORAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PANCORAN
-    - Kelurahan DUREN TIGA: RT 001/RW 003; RT 001/RW 006; RT 002/RW 003; RT 003/RW 003; RT 003/RW 006; RT 004/RW 003; RT 006/RW 003
+    - Kelurahan DUREN TIGA: RW 003 (RT 001, 002, 003, 004, 006); RW 006 (RT 001, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PANCORAN
-    - Kelurahan DUREN TIGA: RT 001/RW 007; RT 002/RW 006; RT 002/RW 007; RT 003/RW 007; RT 004/RW 006; RT 004/RW 007; RT 005/RW 003; RT 005/RW 006; RT 005/RW 007; RT 006/RW 001; RT 006/RW 006; RT 006/RW 007; RT 007/RW 003; RT 007/RW 006; RT 008/RW 001; RT 008/RW 003; RT 008/RW 006; RT 009/RW 003; RT 009/RW 006; RT 009/RW 007; RT 010/RW 003; RT 011/RW 003; RT 011/RW 007
-    - Kelurahan PANCORAN: RT 001/RW 001; RT 007/RW 001; RT 008/RW 001; RT 010/RW 001; RT 012/RW 001; RT 013/RW 001; RT 015/RW 001
+    - Kelurahan DUREN TIGA: RW 001 (RT 006, 008); RW 003 (RT 005, 007, 008, 009, 010, 011); RW 006 (RT 002, 004, 005, 006, 007, 008, 009); RW 007 (RT 001, 002, 003, 004, 005, 006, 009, 011)
+    - Kelurahan PANCORAN: RW 001 (RT 001, 007, 008, 010, 012, 013, 015)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan RAWA BARAT
@@ -23449,10 +23449,10 @@
 - Alamat: JL. KAMAL RAYA, RT 001, RW 008, KEL. TEGAL ALUR, KEC. KALI DERES, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan TEGAL ALUR: RT 001/RW 002; RT 001/RW 006; RT 001/RW 008; RT 002/RW 006; RT 003/RW 006; RT 003/RW 008; RT 004/RW 007; RT 005/RW 014; RT 006/RW 002; RT 006/RW 007; RT 006/RW 014; RT 009/RW 006; RT 009/RW 007; RT 010/RW 006; RT 010/RW 007; RT 011/RW 006; RT 012/RW 007
+    - Kelurahan TEGAL ALUR: RW 002 (RT 001, 006); RW 006 (RT 001, 002, 003, 009, 010, 011); RW 007 (RT 004, 006, 009, 010, 012); RW 008 (RT 001, 003); RW 014 (RT 005, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
-    - Kelurahan TEGAL ALUR: RT 001/RW 007; RT 002/RW 007; RT 002/RW 008; RT 003/RW 007; RT 003/RW 014; RT 004/RW 006; RT 004/RW 008; RT 005/RW 002; RT 005/RW 007; RT 005/RW 008; RT 006/RW 006; RT 006/RW 008; RT 007/RW 002; RT 007/RW 006; RT 007/RW 007; RT 007/RW 008; RT 007/RW 012; RT 008/RW 002; RT 008/RW 006; RT 008/RW 007; RT 008/RW 008; RT 008/RW 012; RT 009/RW 002; RT 009/RW 012; RT 011/RW 002; RT 011/RW 007; RT 011/RW 012; RT 012/RW 006; RT 013/RW 007
+    - Kelurahan TEGAL ALUR: RW 002 (RT 005, 007, 008, 009, 011); RW 006 (RT 004, 006, 007, 008, 012); RW 007 (RT 001, 002, 003, 005, 007, 008, 011, 013); RW 008 (RT 002, 004, 005, 006, 007, 008); RW 012 (RT 007, 008, 009, 011); RW 014 (RT 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -23469,12 +23469,12 @@
 - Alamat: JL. KEDOYA RAYA, RT 012, RW 006, KEL. KEDOYA UTARA, KEC. KEBON JERUK, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEDOYA SELATAN: RT 003/RW 002
-    - Kelurahan KEDOYA UTARA: RT 004/RW 006; RT 009/RW 006; RT 011/RW 006; RT 012/RW 006; RT 013/RW 006
+    - Kelurahan KEDOYA SELATAN: RW 002 (RT 003)
+    - Kelurahan KEDOYA UTARA: RW 006 (RT 004, 009, 011, 012, 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEDOYA SELATAN: RT 001/RW 002; RT 001/RW 005; RT 012/RW 002; RT 013/RW 005
-    - Kelurahan KEDOYA UTARA: RT 002/RW 004; RT 002/RW 006; RT 003/RW 006; RT 005/RW 006; RT 006/RW 006; RT 007/RW 006; RT 008/RW 006; RT 010/RW 006; RT 014/RW 006
+    - Kelurahan KEDOYA SELATAN: RW 002 (RT 001, 012); RW 005 (RT 001, 013)
+    - Kelurahan KEDOYA UTARA: RW 004 (RT 002); RW 006 (RT 002, 003, 005, 006, 007, 008, 010, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG TIMUR
@@ -23496,11 +23496,11 @@
 - Alamat: JL. RAYA CIRACAS NO. 2, RT 007, RW 003, KEL. CIRACAS, KEC. CIRACAS, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 002/RW 003; RT 003/RW 005; RT 004/RW 003; RT 005/RW 003; RT 007/RW 002; RT 007/RW 003; RT 011/RW 002
+    - Kelurahan CIRACAS: RW 002 (RT 007, 011); RW 003 (RT 002, 004, 005, 007); RW 005 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 001/RW 005; RT 001/RW 006; RT 001/RW 010; RT 002/RW 005; RT 002/RW 010; RT 003/RW 002; RT 003/RW 003; RT 003/RW 006; RT 003/RW 010; RT 004/RW 002; RT 004/RW 005; RT 004/RW 010; RT 005/RW 002; RT 005/RW 005; RT 005/RW 010; RT 006/RW 002; RT 006/RW 003; RT 006/RW 005; RT 006/RW 006; RT 007/RW 005; RT 008/RW 002; RT 008/RW 005; RT 009/RW 003; RT 009/RW 005; RT 010/RW 005; RT 011/RW 006; RT 012/RW 002; RT 013/RW 002; RT 013/RW 003; RT 013/RW 006; RT 015/RW 010
-    - Kelurahan KELAPA DUA WETAN: RT 001/RW 011; RT 002/RW 002; RT 013/RW 002; RT 014/RW 011
+    - Kelurahan CIRACAS: RW 002 (RT 003, 004, 005, 006, 008, 012, 013); RW 003 (RT 003, 006, 009, 013); RW 005 (RT 001, 002, 004, 005, 006, 007, 008, 009, 010); RW 006 (RT 001, 003, 006, 011, 013); RW 010 (RT 001, 002, 003, 004, 005, 015)
+    - Kelurahan KELAPA DUA WETAN: RW 002 (RT 002, 013); RW 011 (RT 001, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -23524,10 +23524,10 @@
 - Alamat: JL. BULAK TIMUR I/10-11, RT 003 & RT 004, RW 016, KEL. KLENDER, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 001/RW 016; RT 001/RW 017; RT 002/RW 016; RT 003/RW 016; RT 004/RW 016; RT 005/RW 016; RT 006/RW 015; RT 007/RW 015; RT 008/RW 016; RT 009/RW 017; RT 015/RW 017
+    - Kelurahan KLENDER: RW 015 (RT 006, 007); RW 016 (RT 001, 002, 003, 004, 005, 008); RW 017 (RT 001, 009, 015)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan KLENDER: RT 001/RW 015; RT 004/RW 015; RT 005/RW 015; RT 006/RW 007; RT 006/RW 016; RT 007/RW 016; RT 007/RW 017; RT 008/RW 007; RT 008/RW 017; RT 010/RW 017; RT 011/RW 007; RT 014/RW 017
+    - Kelurahan KLENDER: RW 007 (RT 006, 008, 011); RW 015 (RT 001, 004, 005); RW 016 (RT 006, 007); RW 017 (RT 007, 008, 010, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -23546,16 +23546,16 @@
 - Alamat: JL. KEMANG TIMUR I NO 6, RT 006, RW 004, KEL. BANGKA, KEC. MAMPANG PRAPATAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan BANGKA: RT 002/RW 004; RT 003/RW 004; RT 005/RW 004; RT 006/RW 004; RT 009/RW 004; RT 010/RW 004; RT 013/RW 004
+    - Kelurahan BANGKA: RW 004 (RT 002, 003, 005, 006, 009, 010, 013)
   - Kecamatan PANCORAN
-    - Kelurahan DUREN TIGA: RT 001/RW 002; RT 002/RW 002; RT 014/RW 002
-    - Kelurahan KALIBATA: RT 007/RW 003; RT 012/RW 003; RT 012/RW 009
+    - Kelurahan DUREN TIGA: RW 002 (RT 001, 002, 014)
+    - Kelurahan KALIBATA: RW 003 (RT 007, 012); RW 009 (RT 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAMPANG PRAPATAN
-    - Kelurahan BANGKA: RT 001/RW 001; RT 001/RW 004; RT 001/RW 005; RT 002/RW 001; RT 003/RW 001; RT 004/RW 004; RT 004/RW 005; RT 005/RW 005; RT 009/RW 005; RT 010/RW 001; RT 011/RW 004; RT 012/RW 004
+    - Kelurahan BANGKA: RW 001 (RT 001, 002, 003, 010); RW 004 (RT 001, 004, 011, 012); RW 005 (RT 001, 004, 005, 009)
   - Kecamatan PANCORAN
-    - Kelurahan DUREN TIGA: RT 001/RW 001; RT 001/RW 005; RT 002/RW 001; RT 002/RW 005; RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002; RT 007/RW 002; RT 009/RW 001; RT 010/RW 002; RT 011/RW 002; RT 012/RW 002
-    - Kelurahan KALIBATA: RT 006/RW 003; RT 011/RW 007
+    - Kelurahan DUREN TIGA: RW 001 (RT 001, 002, 009); RW 002 (RT 003, 004, 005, 006, 007, 010, 011, 012); RW 005 (RT 001, 002)
+    - Kelurahan KALIBATA: RW 003 (RT 006); RW 007 (RT 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -23586,16 +23586,16 @@
 - Alamat: JL. TARUNA PAHLAWAN REVOLUSI, RT 006 & RT 002, RW 004, KEL. PONDOK BAMBU, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 001/RW 004; RT 002/RW 004; RT 003/RW 004; RT 003/RW 005; RT 004/RW 004; RT 004/RW 005; RT 006/RW 004; RT 006/RW 005; RT 007/RW 004; RT 008/RW 004; RT 010/RW 004; RT 011/RW 004; RT 012/RW 004
+    - Kelurahan PONDOK BAMBU: RW 004 (RT 001, 002, 003, 004, 006, 007, 008, 010, 011, 012); RW 005 (RT 003, 004, 006)
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 007/RW 013; RT 012/RW 013
+    - Kelurahan CIPINANG MUARA: RW 013 (RT 007, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK BAMBU: RT 001/RW 005; RT 001/RW 007; RT 001/RW 012; RT 002/RW 005; RT 003/RW 012; RT 004/RW 012; RT 005/RW 004; RT 005/RW 005; RT 005/RW 012; RT 007/RW 005; RT 008/RW 005; RT 009/RW 004; RT 009/RW 005; RT 010/RW 003; RT 012/RW 005; RT 013/RW 005; RT 015/RW 005; RT 016/RW 005; RT 017/RW 003; RT 018/RW 003
+    - Kelurahan PONDOK BAMBU: RW 003 (RT 010, 017, 018); RW 004 (RT 005, 009); RW 005 (RT 001, 002, 005, 007, 008, 009, 012, 013, 015, 016); RW 007 (RT 001); RW 012 (RT 001, 003, 004, 005)
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG MUARA: RT 001/RW 016; RT 005/RW 013; RT 005/RW 016; RT 006/RW 013
+    - Kelurahan CIPINANG MUARA: RW 013 (RT 005, 006); RW 016 (RT 001, 005)
   - Kecamatan MAKASAR
-    - Kelurahan CIPINANG MELAYU: RT 001/RW 004; RT 002/RW 004; RT 003/RW 004; RT 006/RW 004
+    - Kelurahan CIPINANG MELAYU: RW 004 (RT 001, 002, 003, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -23610,15 +23610,15 @@
 - Alamat: JL. RAYA BOGOR KM. 20, RT 013, RW 011, KEL. KRAMAT JATI, KEC. KRAMAT JATI, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KRAMATJATI
-    - Kelurahan DUKUH: RT 001/RW 001
-    - Kelurahan KRAMATJATI: RT 007/RW 011; RT 010/RW 011; RT 012/RW 011; RT 013/RW 011; RT 014/RW 011; RT 015/RW 011; RT 018/RW 011
+    - Kelurahan DUKUH: RW 001 (RT 001)
+    - Kelurahan KRAMATJATI: RW 011 (RT 007, 010, 012, 013, 014, 015, 018)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan RAMBUTAN: RT 008/RW 005; RT 009/RW 005; RT 011/RW 005
+    - Kelurahan RAMBUTAN: RW 005 (RT 008, 009, 011)
   - Kecamatan KRAMATJATI
-    - Kelurahan DUKUH: RT 001/RW 002; RT 002/RW 001; RT 007/RW 001
-    - Kelurahan KRAMATJATI: RT 001/RW 011; RT 002/RW 011; RT 003/RW 011; RT 004/RW 011; RT 005/RW 011; RT 006/RW 011; RT 008/RW 011; RT 009/RW 010; RT 009/RW 011; RT 010/RW 010; RT 011/RW 010; RT 011/RW 011; RT 016/RW 011; RT 017/RW 011
-    - Kelurahan TENGAH: RT 001/RW 005; RT 001/RW 008; RT 002/RW 001; RT 002/RW 005; RT 002/RW 008; RT 003/RW 005; RT 004/RW 005; RT 009/RW 001; RT 010/RW 001
+    - Kelurahan DUKUH: RW 001 (RT 002, 007); RW 002 (RT 001)
+    - Kelurahan KRAMATJATI: RW 010 (RT 009, 010, 011); RW 011 (RT 001, 002, 003, 004, 005, 006, 008, 009, 011, 016, 017)
+    - Kelurahan TENGAH: RW 001 (RT 002, 009, 010); RW 005 (RT 001, 002, 003, 004); RW 008 (RT 001, 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIRACAS
     - Kelurahan RAMBUTAN
@@ -23641,10 +23641,10 @@
 - Alamat: JL. AMD MANUNGGAL V/57, RT 001, RW 011, KEL. PETUKANGAN UTARA, KEC. PESANGGRAHAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN UTARA: RT 001/RW 011; RT 002/RW 011; RT 004/RW 011; RT 005/RW 011; RT 006/RW 001; RT 006/RW 010
+    - Kelurahan PETUKANGAN UTARA: RW 001 (RT 006); RW 010 (RT 006); RW 011 (RT 001, 002, 004, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN UTARA: RT 001/RW 010; RT 002/RW 010; RT 003/RW 010; RT 003/RW 011; RT 005/RW 001; RT 005/RW 010; RT 006/RW 011; RT 007/RW 001; RT 007/RW 010; RT 007/RW 011; RT 008/RW 001; RT 008/RW 010; RT 008/RW 011; RT 009/RW 001; RT 009/RW 011; RT 010/RW 001; RT 012/RW 001; RT 012/RW 011
+    - Kelurahan PETUKANGAN UTARA: RW 001 (RT 005, 007, 008, 009, 010, 012); RW 010 (RT 001, 002, 003, 005, 007, 008); RW 011 (RT 003, 006, 007, 008, 009, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL SELATAN
@@ -23664,12 +23664,12 @@
 - Alamat: JL. RAYA CIPAYUNG, RT 005, RW 002, KEL. CIPAYUNG, KEC. CIPAYUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan CIPAYUNG: RT 001/RW 003; RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002; RT 007/RW 002; RT 008/RW 002
+    - Kelurahan CIPAYUNG: RW 002 (RT 003, 004, 005, 006, 007, 008); RW 003 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
-    - Kelurahan CIPAYUNG: RT 001/RW 002; RT 001/RW 005; RT 001/RW 008; RT 002/RW 002; RT 002/RW 003; RT 003/RW 003; RT 003/RW 005; RT 005/RW 008; RT 006/RW 001; RT 007/RW 003; RT 010/RW 003
+    - Kelurahan CIPAYUNG: RW 001 (RT 006); RW 002 (RT 001, 002); RW 003 (RT 002, 003, 007, 010); RW 005 (RT 001, 003); RW 008 (RT 001, 005)
   - Kecamatan CIRACAS
-    - Kelurahan KELAPA DUA WETAN: RT 003/RW 004
+    - Kelurahan KELAPA DUA WETAN: RW 004 (RT 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -23688,11 +23688,11 @@
 - Alamat: JL. RAYA PANJANG, RT 003, RW 001, KEL. KEBON JERUK, KEC. KEBON JERUK, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 001/RW 001; RT 002/RW 001; RT 002/RW 013; RT 003/RW 001; RT 004/RW 001; RT 006/RW 013; RT 009/RW 001
+    - Kelurahan KEBON JERUK: RW 001 (RT 001, 002, 003, 004, 009); RW 013 (RT 002, 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 001/RW 013; RT 003/RW 013; RT 004/RW 013; RT 005/RW 001; RT 005/RW 002; RT 005/RW 013; RT 006/RW 001; RT 006/RW 002; RT 007/RW 001; RT 008/RW 001; RT 010/RW 001; RT 011/RW 001; RT 012/RW 001; RT 012/RW 002
-    - Kelurahan KELAPA DUA: RT 001/RW 003; RT 002/RW 003; RT 003/RW 003; RT 004/RW 003; RT 005/RW 003; RT 007/RW 002; RT 008/RW 002; RT 009/RW 002
+    - Kelurahan KEBON JERUK: RW 001 (RT 005, 006, 007, 008, 010, 011, 012); RW 002 (RT 005, 006, 012); RW 013 (RT 001, 003, 004, 005)
+    - Kelurahan KELAPA DUA: RW 002 (RT 007, 008, 009); RW 003 (RT 001, 002, 003, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan TANJUNG DUREN SELATAN
@@ -23720,12 +23720,12 @@
 - Alamat: JL. BANGO III, RT 007, RW 003, KEL. PONDOK LABU, KEC. CILANDAK, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 006/RW 003; RT 007/RW 003; RT 008/RW 003; RT 009/RW 003; RT 009/RW 009; RT 011/RW 009; RT 012/RW 003; RT 014/RW 003
+    - Kelurahan PONDOK LABU: RW 003 (RT 006, 007, 008, 009, 012, 014); RW 009 (RT 009, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILANDAK
-    - Kelurahan PONDOK LABU: RT 001/RW 003; RT 001/RW 008; RT 002/RW 008; RT 003/RW 003; RT 003/RW 008; RT 004/RW 003; RT 004/RW 008; RT 005/RW 002; RT 005/RW 003; RT 005/RW 008; RT 005/RW 009; RT 006/RW 002; RT 006/RW 009; RT 007/RW 009; RT 008/RW 009; RT 010/RW 003; RT 010/RW 009; RT 011/RW 003; RT 013/RW 003
+    - Kelurahan PONDOK LABU: RW 002 (RT 005, 006); RW 003 (RT 001, 003, 004, 005, 010, 011, 013); RW 008 (RT 001, 002, 003, 004, 005); RW 009 (RT 005, 006, 007, 008, 010)
   - Kecamatan PASAR MINGGU
-    - Kelurahan CILANDAK TIMUR: RT 003/RW 007; RT 004/RW 007; RT 005/RW 005; RT 005/RW 007
+    - Kelurahan CILANDAK TIMUR: RW 005 (RT 005); RW 007 (RT 003, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -23745,12 +23745,12 @@
 - Alamat: JL. SQUADRON NO. 35, RT 004, RW 004, KEL. HALIM PERDANA KUSUMA, KEC. MAKASAR, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 001/RW 004; RT 002/RW 004; RT 003/RW 004; RT 004/RW 004; RT 005/RW 004; RT 009/RW 004; RT 012/RW 004; RT 013/RW 004; RT 014/RW 004
+    - Kelurahan HALIM PERDANA KUSUMA: RW 004 (RT 001, 002, 003, 004, 005, 009, 012, 013, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MAKASAR
-    - Kelurahan HALIM PERDANA KUSUMA: RT 001/RW 001; RT 001/RW 002; RT 001/RW 003; RT 002/RW 001; RT 002/RW 002; RT 002/RW 003; RT 003/RW 001; RT 003/RW 002; RT 003/RW 003; RT 004/RW 001; RT 004/RW 002; RT 004/RW 003; RT 005/RW 001; RT 005/RW 002; RT 005/RW 003; RT 006/RW 001; RT 006/RW 002; RT 006/RW 003; RT 006/RW 004; RT 007/RW 001; RT 007/RW 003; RT 007/RW 004; RT 008/RW 001; RT 008/RW 003; RT 008/RW 004; RT 009/RW 001; RT 009/RW 003; RT 010/RW 003; RT 010/RW 004; RT 011/RW 003; RT 011/RW 004; RT 012/RW 003; RT 013/RW 003; RT 014/RW 003; RT 015/RW 003; RT 015/RW 004; RT 016/RW 003; RT 016/RW 004; RT 017/RW 003; RT 018/RW 003; RT 019/RW 003
-    - Kelurahan MAKASAR: RT 007/RW 007; RT 008/RW 007; RT 009/RW 007
-    - Kelurahan PINANGRANTI: RT 001/RW 004; RT 001/RW 005; RT 002/RW 004; RT 002/RW 005; RT 003/RW 004; RT 003/RW 005; RT 004/RW 004; RT 004/RW 005; RT 005/RW 004; RT 005/RW 005; RT 006/RW 004; RT 006/RW 005; RT 007/RW 004; RT 007/RW 005; RT 008/RW 004
+    - Kelurahan HALIM PERDANA KUSUMA: RW 001 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009); RW 002 (RT 001, 002, 003, 004, 005, 006); RW 003 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017, 018, 019); RW 004 (RT 006, 007, 008, 010, 011, 015, 016)
+    - Kelurahan MAKASAR: RW 007 (RT 007, 008, 009)
+    - Kelurahan PINANGRANTI: RW 004 (RT 001, 002, 003, 004, 005, 006, 007, 008); RW 005 (RT 001, 002, 003, 004, 005, 006, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -23767,19 +23767,19 @@
 - Alamat: JL. SALEMBA RAYA NO. 18, RT 003, RW 006, KEL. KENARI, KEC. SENEN, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan MENTENG
-    - Kelurahan PEGANGSAAN: RT 001/RW 002; RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 006/RW 002; RT 010/RW 001
+    - Kelurahan PEGANGSAAN: RW 001 (RT 010); RW 002 (RT 001, 003, 004, 005, 006)
   - Kecamatan SENEN
-    - Kelurahan KENARI: RT 003/RW 006; RT 006/RW 006; RT 007/RW 005
-    - Kelurahan PASEBAN: RT 001/RW 005; RT 003/RW 005; RT 004/RW 005; RT 011/RW 005
+    - Kelurahan KENARI: RW 005 (RT 007); RW 006 (RT 003, 006)
+    - Kelurahan PASEBAN: RW 005 (RT 001, 003, 004, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan MATRAMAN
-    - Kelurahan KEBON MANGGIS: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001
-    - Kelurahan PALMERIAM: RT 001/RW 001
+    - Kelurahan KEBON MANGGIS: RW 001 (RT 001, 002, 003)
+    - Kelurahan PALMERIAM: RW 001 (RT 001)
   - Kecamatan MENTENG
-    - Kelurahan PEGANGSAAN: RT 001/RW 003; RT 001/RW 004; RT 002/RW 003; RT 003/RW 003; RT 004/RW 003; RT 004/RW 008; RT 005/RW 003; RT 007/RW 001; RT 007/RW 002; RT 008/RW 002; RT 009/RW 002; RT 011/RW 001; RT 011/RW 002; RT 012/RW 001; RT 013/RW 001; RT 015/RW 001; RT 016/RW 001
+    - Kelurahan PEGANGSAAN: RW 001 (RT 007, 011, 012, 013, 015, 016); RW 002 (RT 007, 008, 009, 011); RW 003 (RT 001, 002, 003, 004, 005); RW 004 (RT 001); RW 008 (RT 004)
   - Kecamatan SENEN
-    - Kelurahan KENARI: RT 001/RW 004; RT 002/RW 004; RT 003/RW 004; RT 004/RW 004; RT 004/RW 005; RT 005/RW 005; RT 006/RW 005
-    - Kelurahan PASEBAN: RT 001/RW 003; RT 001/RW 004; RT 002/RW 003; RT 002/RW 006; RT 005/RW 005; RT 005/RW 006; RT 006/RW 005; RT 006/RW 006; RT 008/RW 005; RT 009/RW 003; RT 012/RW 005; RT 013/RW 005; RT 014/RW 004; RT 015/RW 005
+    - Kelurahan KENARI: RW 004 (RT 001, 002, 003, 004); RW 005 (RT 004, 005, 006)
+    - Kelurahan PASEBAN: RW 003 (RT 001, 002, 009); RW 004 (RT 001, 014); RW 005 (RT 005, 006, 008, 012, 013, 015); RW 006 (RT 002, 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan RAWASARI
@@ -23814,10 +23814,10 @@
 - Alamat: JL. PULAU PRAMUKA, RT 003, RW 005, KEL. PULAU PANGGANG, KEC. KEPULAUAN SERIBU UTARA, KAB. KEPULAUAN SERIBU
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEPULAUAN SERIBU UTARA
-    - Kelurahan PULAU PANGGANG: RT 002/RW 005; RT 003/RW 005; RT 004/RW 004; RT 004/RW 005
+    - Kelurahan PULAU PANGGANG: RW 004 (RT 004); RW 005 (RT 002, 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEPULAUAN SERIBU UTARA
-    - Kelurahan PULAU PANGGANG: RT 001/RW 004; RT 001/RW 005; RT 002/RW 004; RT 003/RW 004
+    - Kelurahan PULAU PANGGANG: RW 004 (RT 001, 002, 003); RW 005 (RT 001)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEPULAUAN SERIBU SELATAN
     - Kelurahan PULAU PARI
@@ -23832,16 +23832,16 @@
 - Alamat: JL. BULUNGAN BLOK C I, RT 011, RW 007, KEL. KRAMAT PELA, KEC. KEBAYORAN BARU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GUNUNG: RT 002/RW 008; RT 003/RW 008
-    - Kelurahan KRAMAT PELA: RT 001/RW 007; RT 002/RW 006; RT 002/RW 007; RT 003/RW 006; RT 003/RW 007; RT 005/RW 007; RT 006/RW 007; RT 008/RW 007; RT 010/RW 007; RT 011/RW 007
-    - Kelurahan MELAWAI: RT 001/RW 001; RT 002/RW 001
-    - Kelurahan SELONG: RT 002/RW 001
+    - Kelurahan GUNUNG: RW 008 (RT 002, 003)
+    - Kelurahan KRAMAT PELA: RW 006 (RT 002, 003); RW 007 (RT 001, 002, 003, 005, 006, 008, 010, 011)
+    - Kelurahan MELAWAI: RW 001 (RT 001, 002)
+    - Kelurahan SELONG: RW 001 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GUNUNG: RT 001/RW 004; RT 003/RW 004; RT 004/RW 004; RT 004/RW 008; RT 005/RW 008; RT 006/RW 008; RT 007/RW 008; RT 008/RW 008; RT 010/RW 008; RT 011/RW 008; RT 012/RW 003; RT 013/RW 003
-    - Kelurahan KRAMAT PELA: RT 001/RW 001; RT 001/RW 003; RT 001/RW 004; RT 001/RW 005; RT 001/RW 006; RT 002/RW 001; RT 002/RW 004; RT 002/RW 005; RT 003/RW 001; RT 003/RW 004; RT 003/RW 005; RT 004/RW 001; RT 004/RW 004; RT 004/RW 005; RT 004/RW 006; RT 004/RW 007; RT 005/RW 001; RT 005/RW 004; RT 005/RW 005; RT 006/RW 001; RT 006/RW 005; RT 007/RW 005; RT 007/RW 007; RT 008/RW 005; RT 009/RW 007; RT 013/RW 001; RT 014/RW 001
-    - Kelurahan MELAWAI: RT 001/RW 004; RT 002/RW 004; RT 003/RW 001; RT 003/RW 003; RT 003/RW 004; RT 004/RW 003; RT 004/RW 004; RT 005/RW 002; RT 005/RW 004; RT 006/RW 004; RT 007/RW 004
-    - Kelurahan SELONG: RT 004/RW 001; RT 006/RW 001
+    - Kelurahan GUNUNG: RW 003 (RT 012, 013); RW 004 (RT 001, 003, 004); RW 008 (RT 004, 005, 006, 007, 008, 010, 011)
+    - Kelurahan KRAMAT PELA: RW 001 (RT 001, 002, 003, 004, 005, 006, 013, 014); RW 003 (RT 001); RW 004 (RT 001, 002, 003, 004, 005); RW 005 (RT 001, 002, 003, 004, 005, 006, 007, 008); RW 006 (RT 001, 004); RW 007 (RT 004, 007, 009)
+    - Kelurahan MELAWAI: RW 001 (RT 003); RW 002 (RT 005); RW 003 (RT 003, 004); RW 004 (RT 001, 002, 003, 004, 005, 006, 007)
+    - Kelurahan SELONG: RW 001 (RT 004, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CIPETE SELATAN
@@ -23869,12 +23869,12 @@
 - Alamat: JL. KAVLING TNI ANGKATAN LAUT RT 007, RW 016, KEL. DUREN SAWIT, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 005/RW 017; RT 006/RW 016; RT 006/RW 017; RT 007/RW 016; RT 008/RW 016; RT 009/RW 016
-    - Kelurahan PONDOK BAMBU: RT 016/RW 007; RT 017/RW 007; RT 018/RW 007
+    - Kelurahan DUREN SAWIT: RW 016 (RT 006, 007, 008, 009); RW 017 (RT 005, 006)
+    - Kelurahan PONDOK BAMBU: RW 007 (RT 016, 017, 018)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 001/RW 016; RT 001/RW 017; RT 002/RW 016; RT 002/RW 017; RT 003/RW 016; RT 003/RW 017; RT 004/RW 016; RT 004/RW 017; RT 005/RW 016; RT 006/RW 007; RT 007/RW 007; RT 007/RW 017; RT 008/RW 007; RT 008/RW 017; RT 009/RW 007; RT 011/RW 017
-    - Kelurahan PONDOK BAMBU: RT 007/RW 007; RT 007/RW 010; RT 008/RW 007; RT 009/RW 007; RT 010/RW 007; RT 012/RW 007; RT 013/RW 007; RT 013/RW 011; RT 014/RW 007; RT 015/RW 007
+    - Kelurahan DUREN SAWIT: RW 007 (RT 006, 007, 008, 009); RW 016 (RT 001, 002, 003, 004, 005); RW 017 (RT 001, 002, 003, 004, 007, 008, 011)
+    - Kelurahan PONDOK BAMBU: RW 007 (RT 007, 008, 009, 010, 012, 013, 014, 015); RW 010 (RT 007); RW 011 (RT 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan PENGGILINGAN
@@ -23894,10 +23894,10 @@
 - Alamat: JL. PRIHATIN KOMPLEK TNI AL, RT 007, RW 002, KEL. KELAPA GADING BARAT, KEC. KELAPA GADING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KELAPA GADING
-    - Kelurahan KELAPA GADING BARAT: RT 005/RW 005; RT 006/RW 002; RT 006/RW 005; RT 007/RW 002; RT 008/RW 002; RT 008/RW 005; RT 009/RW 002; RT 011/RW 002
+    - Kelurahan KELAPA GADING BARAT: RW 002 (RT 006, 007, 008, 009, 011); RW 005 (RT 005, 006, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KELAPA GADING
-    - Kelurahan KELAPA GADING BARAT: RT 001/RW 001; RT 001/RW 002; RT 002/RW 001; RT 002/RW 002; RT 002/RW 004; RT 003/RW 001; RT 003/RW 002; RT 003/RW 004; RT 004/RW 001; RT 004/RW 002; RT 004/RW 004; RT 005/RW 001; RT 005/RW 002; RT 005/RW 004; RT 006/RW 001; RT 006/RW 004; RT 007/RW 001; RT 008/RW 001; RT 009/RW 001; RT 010/RW 001; RT 010/RW 002
+    - Kelurahan KELAPA GADING BARAT: RW 001 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010); RW 002 (RT 001, 002, 003, 004, 005, 010); RW 004 (RT 002, 003, 004, 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KELAPA GADING
     - Kelurahan KELAPA GADING BARAT
@@ -23920,12 +23920,12 @@
 - Alamat: JL. RAYA CAKUNG CILINCING NO 01, RT 010, RW 001, KEL. SEMPER TIMUR, KEC. CILINCING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 006/RW 011; RT 008/RW 011; RT 009/RW 011
-    - Kelurahan SEMPER TIMUR: RT 001/RW 002; RT 004/RW 001; RT 008/RW 001; RT 008/RW 002; RT 009/RW 001; RT 010/RW 001; RT 010/RW 002; RT 011/RW 001
+    - Kelurahan SEMPER BARAT: RW 011 (RT 006, 008, 009)
+    - Kelurahan SEMPER TIMUR: RW 001 (RT 004, 008, 009, 010, 011); RW 002 (RT 001, 008, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 002/RW 014; RT 003/RW 011; RT 004/RW 011; RT 005/RW 011; RT 007/RW 011; RT 009/RW 010; RT 010/RW 010; RT 010/RW 011; RT 011/RW 011
-    - Kelurahan SEMPER TIMUR: RT 001/RW 001; RT 001/RW 005; RT 002/RW 001; RT 002/RW 002; RT 003/RW 001; RT 003/RW 002; RT 004/RW 002; RT 004/RW 005; RT 005/RW 001; RT 005/RW 002; RT 006/RW 001; RT 006/RW 002; RT 006/RW 005; RT 007/RW 001; RT 007/RW 002; RT 008/RW 005; RT 009/RW 002; RT 009/RW 005; RT 010/RW 005; RT 010/RW 009; RT 011/RW 005
+    - Kelurahan SEMPER BARAT: RW 010 (RT 009, 010); RW 011 (RT 003, 004, 005, 007, 010, 011); RW 014 (RT 002)
+    - Kelurahan SEMPER TIMUR: RW 001 (RT 001, 002, 003, 005, 006, 007); RW 002 (RT 002, 003, 004, 005, 006, 007, 009); RW 005 (RT 001, 004, 006, 008, 009, 010, 011); RW 009 (RT 010)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -23942,11 +23942,11 @@
 - Alamat: JL. DARMA PUTRA XI, RT 010, RW 007, KEL. KEBAYORAN LAMA SELATAN, KEC. KEBAYORAN LAMA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA SELATAN: RT 001/RW 004; RT 001/RW 006; RT 001/RW 012; RT 002/RW 004; RT 002/RW 006; RT 002/RW 012; RT 003/RW 004; RT 005/RW 012; RT 006/RW 012; RT 009/RW 012; RT 010/RW 004; RT 010/RW 007; RT 011/RW 004; RT 011/RW 007; RT 012/RW 004; RT 012/RW 007; RT 013/RW 007; RT 014/RW 007
+    - Kelurahan KEBAYORAN LAMA SELATAN: RW 004 (RT 001, 002, 003, 010, 011, 012); RW 006 (RT 001, 002); RW 007 (RT 010, 011, 012, 013, 014); RW 012 (RT 001, 002, 005, 006, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan KEBAYORAN LAMA SELATAN: RT 001/RW 005; RT 002/RW 003; RT 003/RW 012; RT 004/RW 004; RT 004/RW 012; RT 005/RW 004; RT 006/RW 004; RT 007/RW 004; RT 007/RW 007; RT 007/RW 012; RT 008/RW 007; RT 008/RW 012; RT 009/RW 005; RT 009/RW 007; RT 010/RW 005; RT 010/RW 012; RT 011/RW 005; RT 011/RW 012; RT 012/RW 005; RT 013/RW 005; RT 014/RW 005
-    - Kelurahan KEBAYORAN LAMA UTARA: RT 009/RW 005
+    - Kelurahan KEBAYORAN LAMA SELATAN: RW 003 (RT 002); RW 004 (RT 004, 005, 006, 007); RW 005 (RT 001, 009, 010, 011, 012, 013, 014); RW 007 (RT 007, 008, 009); RW 012 (RT 003, 004, 007, 008, 010, 011)
+    - Kelurahan KEBAYORAN LAMA UTARA: RW 005 (RT 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan GANDARIA SELATAN
@@ -23964,10 +23964,10 @@
 - Alamat: JL. TIPAR CAKUNG, RT 013, RW 002, KEL. SEMPER BARAT, KEC. CILINCING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 003/RW 004; RT 004/RW 003; RT 004/RW 004; RT 005/RW 005; RT 006/RW 003; RT 010/RW 002; RT 011/RW 002; RT 012/RW 002; RT 013/RW 002; RT 014/RW 002; RT 015/RW 002
+    - Kelurahan SEMPER BARAT: RW 002 (RT 010, 011, 012, 013, 014, 015); RW 003 (RT 004, 006); RW 004 (RT 003, 004); RW 005 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 001/RW 003; RT 001/RW 004; RT 002/RW 003; RT 002/RW 004; RT 003/RW 003; RT 004/RW 002; RT 004/RW 005; RT 005/RW 003; RT 005/RW 004; RT 006/RW 004; RT 007/RW 004; RT 008/RW 002; RT 009/RW 002; RT 009/RW 004; RT 009/RW 005; RT 010/RW 003; RT 011/RW 005
+    - Kelurahan SEMPER BARAT: RW 002 (RT 004, 008, 009); RW 003 (RT 001, 002, 003, 005, 010); RW 004 (RT 001, 002, 005, 006, 007, 009); RW 005 (RT 004, 009, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -23985,10 +23985,10 @@
 - Alamat: JL. INSPEKSI PAM, RT 010, RW 007, KEL. CAKUNG BARAT, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG BARAT: RT 007/RW 007; RT 008/RW 007; RT 009/RW 007; RT 010/RW 007; RT 011/RW 007; RT 012/RW 007; RT 013/RW 007; RT 014/RW 007; RT 018/RW 007
+    - Kelurahan CAKUNG BARAT: RW 007 (RT 007, 008, 009, 010, 011, 012, 013, 014, 018)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG BARAT: RT 001/RW 007; RT 002/RW 007; RT 003/RW 007; RT 004/RW 004; RT 004/RW 007; RT 005/RW 007; RT 006/RW 007; RT 015/RW 007; RT 016/RW 007; RT 017/RW 004; RT 017/RW 007
+    - Kelurahan CAKUNG BARAT: RW 004 (RT 004, 017); RW 007 (RT 001, 002, 003, 004, 005, 006, 015, 016, 017)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -24004,11 +24004,11 @@
 - Alamat: JL. CEMPAKA PUTIH TENGAH 17, RT 002, RW 008, KEL. CEMPAKA PUTIH TIMUR, KEC. CEMPAKA PUTIH, JAKARTA PUSAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH TIMUR: RT 001/RW 006; RT 001/RW 008; RT 002/RW 006; RT 002/RW 008; RT 003/RW 008
+    - Kelurahan CEMPAKA PUTIH TIMUR: RW 006 (RT 001, 002); RW 008 (RT 001, 002, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CEMPAKA PUTIH
-    - Kelurahan CEMPAKA PUTIH BARAT: RT 001/RW 008; RT 001/RW 012; RT 002/RW 008; RT 003/RW 008; RT 004/RW 008; RT 005/RW 003; RT 005/RW 008; RT 005/RW 012; RT 006/RW 003; RT 006/RW 008; RT 006/RW 012; RT 007/RW 003; RT 007/RW 008; RT 008/RW 003; RT 009/RW 003; RT 009/RW 008; RT 010/RW 008; RT 011/RW 004; RT 011/RW 008; RT 012/RW 004; RT 012/RW 008; RT 013/RW 008
-    - Kelurahan CEMPAKA PUTIH TIMUR: RT 001/RW 005; RT 002/RW 005; RT 003/RW 005; RT 003/RW 006; RT 004/RW 006; RT 004/RW 008; RT 005/RW 005; RT 005/RW 006; RT 005/RW 008; RT 006/RW 006; RT 006/RW 008; RT 007/RW 005; RT 007/RW 008; RT 009/RW 004; RT 010/RW 004; RT 011/RW 004; RT 012/RW 004; RT 012/RW 005; RT 015/RW 004; RT 016/RW 004
+    - Kelurahan CEMPAKA PUTIH BARAT: RW 003 (RT 005, 006, 007, 008, 009); RW 004 (RT 011, 012); RW 008 (RT 001, 002, 003, 004, 005, 006, 007, 009, 010, 011, 012, 013); RW 012 (RT 001, 005, 006)
+    - Kelurahan CEMPAKA PUTIH TIMUR: RW 004 (RT 009, 010, 011, 012, 015, 016); RW 005 (RT 001, 002, 003, 005, 007, 012); RW 006 (RT 003, 004, 005, 006); RW 008 (RT 004, 005, 006, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CEMPAKA PUTIH
     - Kelurahan CEMPAKA PUTIH BARAT
@@ -24035,16 +24035,16 @@
 - Alamat: JL. BHAKTI IV NO.1, KOMPLEK PAJAK, RT 001, RW 009, KEL. KEMANGGISAN, KEC. PALMERAH, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 001/RW 005; RT 015/RW 005
+    - Kelurahan KEBON JERUK: RW 005 (RT 001, 015)
   - Kecamatan PAL MERAH
-    - Kelurahan KEMANGGISAN: RT 001/RW 009; RT 002/RW 009; RT 003/RW 009; RT 004/RW 009; RT 007/RW 009
-    - Kelurahan PALMERAH: RT 005/RW 013
+    - Kelurahan KEMANGGISAN: RW 009 (RT 001, 002, 003, 004, 007)
+    - Kelurahan PALMERAH: RW 013 (RT 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 002/RW 004; RT 002/RW 005; RT 003/RW 005; RT 004/RW 012; RT 005/RW 005; RT 006/RW 005; RT 008/RW 003; RT 011/RW 004; RT 011/RW 005; RT 015/RW 004; RT 016/RW 004
+    - Kelurahan KEBON JERUK: RW 003 (RT 008); RW 004 (RT 002, 011, 015, 016); RW 005 (RT 002, 003, 005, 006, 011); RW 012 (RT 004)
   - Kecamatan PAL MERAH
-    - Kelurahan KEMANGGISAN: RT 001/RW 007; RT 001/RW 008; RT 002/RW 007; RT 003/RW 007; RT 003/RW 008; RT 004/RW 007; RT 004/RW 008; RT 005/RW 007; RT 005/RW 008; RT 005/RW 009; RT 006/RW 007; RT 006/RW 009; RT 007/RW 007; RT 008/RW 009; RT 009/RW 009; RT 010/RW 009; RT 011/RW 009; RT 012/RW 006; RT 012/RW 009
-    - Kelurahan PALMERAH: RT 001/RW 013; RT 002/RW 013; RT 003/RW 013; RT 004/RW 013; RT 006/RW 013; RT 007/RW 013; RT 008/RW 013
+    - Kelurahan KEMANGGISAN: RW 006 (RT 012); RW 007 (RT 001, 002, 003, 004, 005, 006, 007); RW 008 (RT 001, 003, 004, 005); RW 009 (RT 005, 006, 008, 009, 010, 011, 012)
+    - Kelurahan PALMERAH: RW 013 (RT 001, 002, 003, 004, 006, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan GROGOL PETAMBURAN
     - Kelurahan GROGOL
@@ -24071,14 +24071,14 @@
 - Alamat: JL. MENTENG PULO UJUNG, RT 002, RW 010, KEL. MENTENG ATAS, KEC. SETIA BUDI, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan SETIABUDI
-    - Kelurahan MENTENG ATAS: RT 001/RW 005; RT 001/RW 010; RT 002/RW 005; RT 002/RW 010; RT 003/RW 005; RT 004/RW 005; RT 005/RW 005; RT 006/RW 005; RT 015/RW 005; RT 016/RW 005
+    - Kelurahan MENTENG ATAS: RW 005 (RT 001, 002, 003, 004, 005, 006, 015, 016); RW 010 (RT 001, 002)
   - Kecamatan TEBET
-    - Kelurahan MENTENG DALAM: RT 003/RW 012; RT 004/RW 012; RT 009/RW 010
+    - Kelurahan MENTENG DALAM: RW 010 (RT 009); RW 012 (RT 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan SETIABUDI
-    - Kelurahan MENTENG ATAS: RT 001/RW 013; RT 002/RW 013; RT 003/RW 010; RT 003/RW 013; RT 004/RW 013; RT 005/RW 013; RT 007/RW 005; RT 008/RW 005; RT 009/RW 005; RT 010/RW 005; RT 011/RW 005; RT 012/RW 005; RT 013/RW 005; RT 014/RW 005
+    - Kelurahan MENTENG ATAS: RW 005 (RT 007, 008, 009, 010, 011, 012, 013, 014); RW 010 (RT 003); RW 013 (RT 001, 002, 003, 004, 005)
   - Kecamatan TEBET
-    - Kelurahan MENTENG DALAM: RT 001/RW 012; RT 002/RW 012; RT 005/RW 012; RT 007/RW 011; RT 008/RW 011; RT 009/RW 011; RT 014/RW 011; RT 015/RW 011
+    - Kelurahan MENTENG DALAM: RW 011 (RT 007, 008, 009, 014, 015); RW 012 (RT 001, 002, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan MAMPANG PRAPATAN
     - Kelurahan KUNINGAN BARAT
@@ -24108,10 +24108,10 @@
 - Alamat: JL. SUNTER KARYA SELATAN V, RT 011, RW 013, KEL. SUNTER AGUNG, KEC. TANJUNG PRIOK, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 001/RW 013; RT 010/RW 013; RT 011/RW 013; RT 012/RW 013; RT 013/RW 013; RT 014/RW 013; RT 018/RW 013
+    - Kelurahan SUNTER AGUNG: RW 013 (RT 001, 010, 011, 012, 013, 014, 018)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan TANJUNG PRIOK
-    - Kelurahan SUNTER AGUNG: RT 001/RW 012; RT 001/RW 014; RT 001/RW 015; RT 001/RW 019; RT 002/RW 012; RT 002/RW 013; RT 002/RW 014; RT 002/RW 015; RT 003/RW 012; RT 003/RW 013; RT 003/RW 014; RT 003/RW 015; RT 004/RW 012; RT 004/RW 013; RT 004/RW 014; RT 004/RW 015; RT 005/RW 012; RT 005/RW 013; RT 005/RW 014; RT 005/RW 015; RT 006/RW 012; RT 006/RW 013; RT 006/RW 015; RT 007/RW 012; RT 007/RW 013; RT 007/RW 015; RT 008/RW 012; RT 008/RW 013; RT 008/RW 014; RT 009/RW 012; RT 009/RW 013; RT 010/RW 012; RT 011/RW 012; RT 012/RW 012; RT 014/RW 011; RT 015/RW 013; RT 016/RW 011; RT 016/RW 013; RT 017/RW 013
+    - Kelurahan SUNTER AGUNG: RW 011 (RT 014, 016); RW 012 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012); RW 013 (RT 002, 003, 004, 005, 006, 007, 008, 009, 015, 016, 017); RW 014 (RT 001, 002, 003, 004, 005, 008); RW 015 (RT 001, 002, 003, 004, 005, 006, 007); RW 019 (RT 001)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KELAPA GADING
     - Kelurahan KELAPA GADING BARAT
@@ -24135,16 +24135,16 @@
 - Alamat: JL. KARTIKA EKA PAKSI KPAD JATIWARINGIN, RT 011, RW 006, KEL. CIPINANG MELAYU, KEC. MAKASSAR, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 001/RW 007; RT 003/RW 016
-    - Kelurahan PONDOK KELAPA: RT 001/RW 008; RT 002/RW 008; RT 007/RW 008; RT 012/RW 008; RT 013/RW 007
+    - Kelurahan DUREN SAWIT: RW 007 (RT 001); RW 016 (RT 003)
+    - Kelurahan PONDOK KELAPA: RW 007 (RT 013); RW 008 (RT 001, 002, 007, 012)
   - Kecamatan MAKASAR
-    - Kelurahan CIPINANG MELAYU: RT 006/RW 006; RT 007/RW 006; RT 008/RW 006; RT 008/RW 008; RT 009/RW 008; RT 010/RW 006; RT 011/RW 006
+    - Kelurahan CIPINANG MELAYU: RW 006 (RT 006, 007, 008, 010, 011); RW 008 (RT 008, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan DUREN SAWIT: RT 002/RW 007; RT 002/RW 016; RT 004/RW 016; RT 008/RW 007; RT 009/RW 007
-    - Kelurahan PONDOK KELAPA: RT 003/RW 008; RT 004/RW 010; RT 011/RW 007; RT 012/RW 007; RT 015/RW 007; RT 016/RW 007
+    - Kelurahan DUREN SAWIT: RW 007 (RT 002, 008, 009); RW 016 (RT 002, 004)
+    - Kelurahan PONDOK KELAPA: RW 007 (RT 011, 012, 015, 016); RW 008 (RT 003); RW 010 (RT 004)
   - Kecamatan MAKASAR
-    - Kelurahan CIPINANG MELAYU: RT 001/RW 006; RT 001/RW 008; RT 002/RW 006; RT 002/RW 008; RT 003/RW 006; RT 003/RW 008; RT 004/RW 006; RT 004/RW 007; RT 004/RW 008; RT 005/RW 006; RT 005/RW 007; RT 005/RW 008; RT 006/RW 007; RT 006/RW 008; RT 007/RW 007; RT 007/RW 008; RT 009/RW 006; RT 011/RW 007; RT 012/RW 007
+    - Kelurahan CIPINANG MELAYU: RW 006 (RT 001, 002, 003, 004, 005, 009); RW 007 (RT 004, 005, 006, 007, 011, 012); RW 008 (RT 001, 002, 003, 004, 005, 006, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan DUREN SAWIT
     - Kelurahan DUREN SAWIT
@@ -24161,19 +24161,19 @@
 - Alamat: JL. DAHA II/15 A, RT 001, RW 001, KEL. SELONG, KEC. KEBAYORAN BARU, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GUNUNG: RT 002/RW 006; RT 003/RW 006
-    - Kelurahan SELONG: RT 001/RW 001; RT 002/RW 001; RT 003/RW 001; RT 005/RW 001
-    - Kelurahan SENAYAN: RT 008/RW 002
+    - Kelurahan GUNUNG: RW 006 (RT 002, 003)
+    - Kelurahan SELONG: RW 001 (RT 001, 002, 003, 005)
+    - Kelurahan SENAYAN: RW 002 (RT 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN BARU
-    - Kelurahan GUNUNG: RT 001/RW 004; RT 001/RW 005; RT 002/RW 004; RT 002/RW 005; RT 003/RW 004; RT 004/RW 004; RT 004/RW 006; RT 005/RW 004; RT 005/RW 005; RT 005/RW 006; RT 006/RW 004; RT 006/RW 005; RT 006/RW 006; RT 007/RW 004; RT 007/RW 006; RT 008/RW 004; RT 008/RW 005; RT 008/RW 006; RT 009/RW 006; RT 010/RW 006; RT 011/RW 006
-    - Kelurahan RAWA BARAT: RT 001/RW 007; RT 002/RW 007; RT 003/RW 007; RT 004/RW 007; RT 005/RW 007
-    - Kelurahan SELONG: RT 001/RW 002; RT 001/RW 003; RT 002/RW 002; RT 002/RW 003; RT 003/RW 002; RT 003/RW 003; RT 004/RW 001; RT 004/RW 002; RT 004/RW 003; RT 005/RW 002; RT 005/RW 003; RT 006/RW 001; RT 006/RW 002; RT 006/RW 003; RT 007/RW 001; RT 008/RW 001; RT 008/RW 002
-    - Kelurahan SENAYAN: RT 001/RW 002; RT 001/RW 003; RT 002/RW 002; RT 004/RW 003; RT 005/RW 003; RT 006/RW 003
+    - Kelurahan GUNUNG: RW 004 (RT 001, 002, 003, 004, 005, 006, 007, 008); RW 005 (RT 001, 002, 005, 006, 008); RW 006 (RT 004, 005, 006, 007, 008, 009, 010, 011)
+    - Kelurahan RAWA BARAT: RW 007 (RT 001, 002, 003, 004, 005)
+    - Kelurahan SELONG: RW 001 (RT 004, 006, 007, 008); RW 002 (RT 001, 002, 003, 004, 005, 006, 008); RW 003 (RT 001, 002, 003, 004, 005, 006)
+    - Kelurahan SENAYAN: RW 002 (RT 001, 002); RW 003 (RT 001, 004, 005, 006)
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan GROGOL SELATAN: RT 005/RW 008; RT 006/RW 008; RT 007/RW 008; RT 008/RW 008; RT 009/RW 008; RT 010/RW 008
+    - Kelurahan GROGOL SELATAN: RW 008 (RT 005, 006, 007, 008, 009, 010)
   - Kecamatan TANAH ABANG
-    - Kelurahan GELORA: RT 002/RW 001; RT 002/RW 002
+    - Kelurahan GELORA: RW 001 (RT 002); RW 002 (RT 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN BARU
     - Kelurahan GUNUNG
@@ -24201,12 +24201,12 @@
 - Alamat: JL. TIPAR CAKUNG, RT 004, RW 004, KEL. SUKAPURA, KEC. CILINCING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SUKAPURA: RT 003/RW 004; RT 003/RW 008; RT 004/RW 004; RT 005/RW 004; RT 005/RW 007; RT 006/RW 003; RT 007/RW 004; RT 007/RW 007; RT 008/RW 008; RT 013/RW 007; RT 014/RW 007; RT 015/RW 007
+    - Kelurahan SUKAPURA: RW 003 (RT 006); RW 004 (RT 003, 004, 005, 007); RW 007 (RT 005, 007, 013, 014, 015); RW 008 (RT 003, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG BARAT: RT 003/RW 009
+    - Kelurahan CAKUNG BARAT: RW 009 (RT 003)
   - Kecamatan CILINCING
-    - Kelurahan SUKAPURA: RT 001/RW 004; RT 001/RW 006; RT 001/RW 007; RT 001/RW 008; RT 002/RW 004; RT 002/RW 006; RT 002/RW 007; RT 002/RW 008; RT 003/RW 006; RT 003/RW 007; RT 004/RW 007; RT 004/RW 008; RT 005/RW 003; RT 006/RW 004; RT 006/RW 007; RT 007/RW 003; RT 008/RW 003; RT 008/RW 004; RT 009/RW 008; RT 010/RW 007; RT 014/RW 006; RT 015/RW 006; RT 016/RW 007
+    - Kelurahan SUKAPURA: RW 003 (RT 005, 007, 008); RW 004 (RT 001, 002, 006, 008); RW 006 (RT 001, 002, 003, 014, 015); RW 007 (RT 001, 002, 003, 004, 006, 010, 016); RW 008 (RT 001, 002, 004, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -24221,12 +24221,12 @@
 - Alamat: JL. PETA BARAT NO.42, RT 011, RW 001, KEL. KALIDERES, KEC. KALI DERES, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 001/RW 014; RT 007/RW 011; RT 008/RW 014; RT 009/RW 014; RT 010/RW 001; RT 011/RW 001
-    - Kelurahan PEGADUNGAN: RT 005/RW 006; RT 009/RW 019
+    - Kelurahan KALIDERES: RW 001 (RT 010, 011); RW 011 (RT 007); RW 014 (RT 001, 008, 009)
+    - Kelurahan PEGADUNGAN: RW 006 (RT 005); RW 019 (RT 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
-    - Kelurahan KALIDERES: RT 002/RW 001; RT 002/RW 014; RT 003/RW 001; RT 003/RW 014; RT 004/RW 001; RT 004/RW 014; RT 005/RW 001; RT 005/RW 014; RT 006/RW 001; RT 006/RW 011; RT 006/RW 014; RT 006/RW 017; RT 007/RW 001; RT 007/RW 014; RT 008/RW 001; RT 009/RW 001; RT 012/RW 001; RT 013/RW 001
-    - Kelurahan PEGADUNGAN: RT 001/RW 006; RT 001/RW 007; RT 001/RW 012; RT 002/RW 007
+    - Kelurahan KALIDERES: RW 001 (RT 002, 003, 004, 005, 006, 007, 008, 009, 012, 013); RW 011 (RT 006); RW 014 (RT 002, 003, 004, 005, 006, 007); RW 017 (RT 006)
+    - Kelurahan PEGADUNGAN: RW 006 (RT 001); RW 007 (RT 001, 002); RW 012 (RT 001)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -24246,12 +24246,12 @@
 - Alamat: JL. SRENGSENG RAYA, RT 004, RW 003, KEL. SRENGSENG, KEC. KEMBANGAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 008/RW 003; RT 012/RW 003
-    - Kelurahan SRENGSENG: RT 001/RW 003; RT 003/RW 003; RT 004/RW 003; RT 005/RW 003; RT 007/RW 003; RT 010/RW 003; RT 011/RW 003
+    - Kelurahan JOGLO: RW 003 (RT 008, 012)
+    - Kelurahan SRENGSENG: RW 003 (RT 001, 003, 004, 005, 007, 010, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 005/RW 003; RT 006/RW 003; RT 007/RW 003; RT 011/RW 003
-    - Kelurahan SRENGSENG: RT 002/RW 003; RT 003/RW 006; RT 004/RW 006; RT 006/RW 003; RT 007/RW 006; RT 008/RW 003; RT 009/RW 003; RT 012/RW 003; RT 013/RW 003; RT 014/RW 003; RT 015/RW 003; RT 016/RW 003
+    - Kelurahan JOGLO: RW 003 (RT 005, 006, 007, 011)
+    - Kelurahan SRENGSENG: RW 003 (RT 002, 006, 008, 009, 012, 013, 014, 015, 016); RW 006 (RT 003, 004, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan GROGOL UTARA
@@ -24275,12 +24275,12 @@
 - Alamat: JL. BINTARO PERMAI IV NO 36, RT 014, RW 009, KEL. BINTARO, KEC. PESANGGRAHAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 005/RW 009; RT 006/RW 002; RT 007/RW 002; RT 008/RW 002; RT 008/RW 009; RT 013/RW 009; RT 014/RW 009
-    - Kelurahan PESANGGRAHAN: RT 008/RW 002; RT 009/RW 002
+    - Kelurahan BINTARO: RW 002 (RT 006, 007, 008); RW 009 (RT 005, 008, 013, 014)
+    - Kelurahan PESANGGRAHAN: RW 002 (RT 008, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 001/RW 002; RT 001/RW 009; RT 002/RW 002; RT 002/RW 009; RT 003/RW 002; RT 003/RW 009; RT 004/RW 001; RT 004/RW 002; RT 004/RW 009; RT 005/RW 001; RT 005/RW 002; RT 006/RW 009; RT 007/RW 009; RT 009/RW 009; RT 010/RW 009; RT 011/RW 006; RT 011/RW 009; RT 012/RW 006; RT 013/RW 006; RT 014/RW 006; RT 015/RW 006; RT 016/RW 006
-    - Kelurahan PESANGGRAHAN: RT 003/RW 004; RT 004/RW 004; RT 005/RW 004; RT 006/RW 002; RT 006/RW 003; RT 007/RW 002; RT 010/RW 008; RT 013/RW 008
+    - Kelurahan BINTARO: RW 001 (RT 004, 005); RW 002 (RT 001, 002, 003, 004, 005); RW 006 (RT 011, 012, 013, 014, 015, 016); RW 009 (RT 001, 002, 003, 004, 006, 007, 009, 010, 011)
+    - Kelurahan PESANGGRAHAN: RW 002 (RT 006, 007); RW 003 (RT 006); RW 004 (RT 003, 004, 005); RW 008 (RT 010, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -24300,12 +24300,12 @@
 - Alamat: JL. MAWAR II, RT 001, RW 013, KEL. BINTARO, KEC. PESANGGRAHAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 001/RW 013; RT 002/RW 013; RT 004/RW 013
+    - Kelurahan BINTARO: RW 013 (RT 001, 002, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan PONDOK PINANG: RT 008/RW 009; RT 010/RW 009; RT 013/RW 008; RT 015/RW 008
+    - Kelurahan PONDOK PINANG: RW 008 (RT 013, 015); RW 009 (RT 008, 010)
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 001/RW 005; RT 001/RW 014; RT 002/RW 005; RT 002/RW 014; RT 003/RW 005; RT 003/RW 013; RT 003/RW 014; RT 004/RW 005; RT 004/RW 014; RT 005/RW 005; RT 005/RW 013; RT 005/RW 014; RT 006/RW 005; RT 006/RW 013; RT 006/RW 014; RT 007/RW 013; RT 008/RW 013
+    - Kelurahan BINTARO: RW 005 (RT 001, 002, 003, 004, 005, 006); RW 013 (RT 003, 005, 006, 007, 008); RW 014 (RT 001, 002, 003, 004, 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan CILANDAK BARAT
@@ -24324,10 +24324,10 @@
 - Alamat: JL. SAWO, RT 007, RW 002, KEL. BARU, KEC. PASAR REBO, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 001/RW 007; RT 003/RW 002; RT 003/RW 007; RT 003/RW 010; RT 004/RW 010; RT 005/RW 007; RT 006/RW 010; RT 007/RW 002; RT 008/RW 002; RT 008/RW 010
+    - Kelurahan BARU: RW 002 (RT 003, 007, 008); RW 007 (RT 001, 003, 005); RW 010 (RT 003, 004, 006, 008)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
-    - Kelurahan BARU: RT 001/RW 005; RT 001/RW 006; RT 002/RW 002; RT 002/RW 005; RT 002/RW 006; RT 002/RW 009; RT 002/RW 010; RT 005/RW 002; RT 005/RW 006; RT 005/RW 010; RT 006/RW 002; RT 007/RW 010
+    - Kelurahan BARU: RW 002 (RT 002, 005, 006); RW 005 (RT 001, 002); RW 006 (RT 001, 002, 005); RW 009 (RT 002); RW 010 (RT 002, 005, 007)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan LENTENG AGUNG
@@ -24342,10 +24342,10 @@
 - Alamat: JL. KAYU TINGGI, RT 006, RW 009, KEL. CAKUNG TIMUR, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 001/RW 014; RT 002/RW 012; RT 004/RW 009; RT 005/RW 009; RT 005/RW 014; RT 006/RW 009; RT 006/RW 014; RT 007/RW 009; RT 008/RW 009; RT 009/RW 009; RT 011/RW 014
+    - Kelurahan CAKUNG TIMUR: RW 009 (RT 004, 005, 006, 007, 008, 009); RW 012 (RT 002); RW 014 (RT 001, 005, 006, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 001/RW 009; RT 001/RW 012; RT 002/RW 009; RT 002/RW 014; RT 003/RW 009; RT 003/RW 012; RT 007/RW 012; RT 008/RW 005; RT 009/RW 001; RT 010/RW 009; RT 011/RW 009; RT 012/RW 009; RT 013/RW 001; RT 013/RW 009; RT 014/RW 001
+    - Kelurahan CAKUNG TIMUR: RW 001 (RT 009, 013, 014); RW 005 (RT 008); RW 009 (RT 001, 002, 003, 010, 011, 012, 013); RW 012 (RT 001, 003, 007); RW 014 (RT 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -24362,10 +24362,10 @@
 - Alamat: JL. SABAR, RT 014, RW 002, KEL. PETUKANGAN SELATAN, KEC. PESANGGRAHAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN SELATAN: RT 004/RW 002; RT 006/RW 002; RT 007/RW 003; RT 008/RW 002; RT 009/RW 002; RT 013/RW 002; RT 014/RW 002
+    - Kelurahan PETUKANGAN SELATAN: RW 002 (RT 004, 006, 008, 009, 013, 014); RW 003 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PETUKANGAN SELATAN: RT 001/RW 008; RT 003/RW 002; RT 003/RW 008; RT 004/RW 008; RT 005/RW 002; RT 005/RW 008; RT 006/RW 004; RT 007/RW 002; RT 008/RW 003; RT 008/RW 004; RT 009/RW 004; RT 010/RW 003; RT 011/RW 005; RT 015/RW 002
+    - Kelurahan PETUKANGAN SELATAN: RW 002 (RT 003, 005, 007, 015); RW 003 (RT 008, 010); RW 004 (RT 006, 008, 009); RW 005 (RT 011); RW 008 (RT 001, 003, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -24382,10 +24382,10 @@
 - Alamat: JL. TIPAR RAYA, RT 012, RW 004, KEL. PONDOK KELAPA, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KELAPA: RT 006/RW 010; RT 007/RW 009; RT 009/RW 004; RT 009/RW 010; RT 010/RW 004; RT 011/RW 004; RT 011/RW 009; RT 012/RW 004
+    - Kelurahan PONDOK KELAPA: RW 004 (RT 009, 010, 011, 012); RW 009 (RT 007, 011); RW 010 (RT 006, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan PONDOK KELAPA: RT 001/RW 001; RT 001/RW 006; RT 001/RW 014; RT 002/RW 001; RT 003/RW 007; RT 005/RW 009; RT 005/RW 010; RT 005/RW 013; RT 006/RW 004; RT 006/RW 009; RT 006/RW 013; RT 007/RW 004; RT 007/RW 007; RT 008/RW 004; RT 008/RW 007; RT 008/RW 009; RT 009/RW 007; RT 009/RW 009; RT 010/RW 001; RT 010/RW 010; RT 010/RW 011; RT 011/RW 001; RT 011/RW 011; RT 012/RW 009; RT 012/RW 011; RT 013/RW 002; RT 016/RW 002
+    - Kelurahan PONDOK KELAPA: RW 001 (RT 001, 002, 010, 011); RW 002 (RT 013, 016); RW 004 (RT 006, 007, 008); RW 006 (RT 001); RW 007 (RT 003, 007, 008, 009); RW 009 (RT 005, 006, 008, 009, 012); RW 010 (RT 005, 010); RW 011 (RT 010, 011, 012); RW 013 (RT 005, 006); RW 014 (RT 001)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan PULO GEBANG
@@ -24402,12 +24402,12 @@
 - Alamat: JL. KOMPLEKS PEMADAM KEBAKARAN, RT 017, RW 001, KEL. SEMPER BARAT, KEC. CILINCING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 002/RW 017; RT 004/RW 017; RT 005/RW 017; RT 006/RW 017; RT 009/RW 006; RT 011/RW 006; RT 013/RW 004; RT 017/RW 001; RT 019/RW 001; RT 020/RW 001; RT 021/RW 001; RT 022/RW 001
-    - Kelurahan SEMPER TIMUR: RT 001/RW 010; RT 005/RW 010
+    - Kelurahan SEMPER BARAT: RW 001 (RT 017, 019, 020, 021, 022); RW 004 (RT 013); RW 006 (RT 009, 011); RW 017 (RT 002, 004, 005, 006)
+    - Kelurahan SEMPER TIMUR: RW 010 (RT 001, 005)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
-    - Kelurahan SEMPER BARAT: RT 001/RW 017; RT 003/RW 017; RT 006/RW 001; RT 007/RW 001; RT 007/RW 006; RT 008/RW 001; RT 008/RW 006; RT 009/RW 001; RT 010/RW 001; RT 010/RW 006; RT 012/RW 001; RT 012/RW 004; RT 012/RW 006; RT 013/RW 001; RT 014/RW 001; RT 015/RW 001; RT 015/RW 004; RT 016/RW 001; RT 017/RW 004; RT 018/RW 001; RT 018/RW 004; RT 019/RW 004
-    - Kelurahan SEMPER TIMUR: RT 002/RW 010; RT 003/RW 010
+    - Kelurahan SEMPER BARAT: RW 001 (RT 006, 007, 008, 009, 010, 012, 013, 014, 015, 016, 018); RW 004 (RT 012, 015, 017, 018, 019); RW 006 (RT 007, 008, 010, 012); RW 017 (RT 001, 003)
+    - Kelurahan SEMPER TIMUR: RW 010 (RT 002, 003)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -24428,14 +24428,14 @@
 - Alamat: JL. RAYA BOGOR KOMP. PASPAMPRES, RT 006, RW 001, KEL. TENGAH, KEC. KRAMAT JATI, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan RAMBUTAN: RT 001/RW 005
+    - Kelurahan RAMBUTAN: RW 005 (RT 001)
   - Kecamatan KRAMATJATI
-    - Kelurahan TENGAH: RT 002/RW 006; RT 003/RW 006; RT 004/RW 006; RT 005/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 011/RW 001
+    - Kelurahan TENGAH: RW 001 (RT 005, 006, 007, 008, 011); RW 006 (RT 002, 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan RAMBUTAN: RT 002/RW 005; RT 003/RW 005; RT 006/RW 005; RT 007/RW 005; RT 010/RW 005
+    - Kelurahan RAMBUTAN: RW 005 (RT 002, 003, 006, 007, 010)
   - Kecamatan KRAMATJATI
-    - Kelurahan TENGAH: RT 001/RW 006; RT 002/RW 002; RT 002/RW 004; RT 003/RW 001; RT 004/RW 001; RT 005/RW 006; RT 006/RW 006; RT 007/RW 006; RT 008/RW 006; RT 009/RW 004; RT 009/RW 006; RT 010/RW 006; RT 011/RW 006; RT 012/RW 006; RT 013/RW 006
+    - Kelurahan TENGAH: RW 001 (RT 003, 004); RW 002 (RT 002); RW 004 (RT 002, 009); RW 006 (RT 001, 005, 006, 007, 008, 009, 010, 011, 012, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan LUBANG BUAYA
@@ -24460,10 +24460,10 @@
 - Alamat: JL. RAYA SEMANAN, RT 004, RW 003, KEL. SEMANAN, KEC. KALI DERES, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan SEMANAN: RT 003/RW 003; RT 004/RW 003; RT 005/RW 003; RT 005/RW 006; RT 009/RW 003; RT 009/RW 010; RT 010/RW 003; RT 010/RW 010
+    - Kelurahan SEMANAN: RW 003 (RT 003, 004, 005, 009, 010); RW 006 (RT 005); RW 010 (RT 009, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
-    - Kelurahan SEMANAN: RT 002/RW 003; RT 002/RW 011; RT 003/RW 011; RT 004/RW 006; RT 004/RW 011; RT 005/RW 008; RT 005/RW 011; RT 006/RW 003; RT 006/RW 006; RT 006/RW 008; RT 007/RW 006; RT 007/RW 008; RT 008/RW 008; RT 008/RW 010; RT 011/RW 008; RT 011/RW 010; RT 012/RW 010
+    - Kelurahan SEMANAN: RW 003 (RT 002, 006); RW 006 (RT 004, 006, 007); RW 008 (RT 005, 006, 007, 008, 011); RW 010 (RT 008, 011, 012); RW 011 (RT 002, 003, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -24477,10 +24477,10 @@
 - Alamat: JL. SATU MARET NO 49, RT 002, RW 004, KEL. PEGADUNGAN, KEC. KALI DERES, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KALIDERES
-    - Kelurahan PEGADUNGAN: RT 001/RW 004; RT 001/RW 013; RT 002/RW 004; RT 003/RW 004; RT 004/RW 004; RT 008/RW 004; RT 009/RW 004
+    - Kelurahan PEGADUNGAN: RW 004 (RT 001, 002, 003, 004, 008, 009); RW 013 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KALIDERES
-    - Kelurahan PEGADUNGAN: RT 001/RW 002; RT 001/RW 003; RT 002/RW 003; RT 002/RW 005; RT 002/RW 013; RT 003/RW 003; RT 003/RW 013; RT 004/RW 013; RT 005/RW 004; RT 005/RW 005; RT 005/RW 013; RT 005/RW 016; RT 006/RW 004; RT 006/RW 005; RT 006/RW 013; RT 006/RW 016; RT 007/RW 004; RT 007/RW 005; RT 007/RW 013; RT 008/RW 005; RT 008/RW 013; RT 009/RW 003; RT 009/RW 005; RT 009/RW 013; RT 010/RW 004; RT 010/RW 005; RT 011/RW 004; RT 011/RW 005; RT 012/RW 004; RT 012/RW 013; RT 013/RW 004; RT 014/RW 004
+    - Kelurahan PEGADUNGAN: RW 002 (RT 001); RW 003 (RT 001, 002, 003, 009); RW 004 (RT 005, 006, 007, 010, 011, 012, 013, 014); RW 005 (RT 002, 005, 006, 007, 008, 009, 010, 011); RW 013 (RT 002, 003, 004, 005, 006, 007, 008, 009, 012); RW 016 (RT 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -24500,12 +24500,12 @@
 - Alamat: JL. JATI RAYA NO. 40, RT 007, RW 012, KEL. CENGKARENG TIMUR, KEC. CENGKARENG, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 004/RW 012; RT 005/RW 012; RT 006/RW 012; RT 007/RW 012; RT 008/RW 012; RT 009/RW 012; RT 014/RW 012
-    - Kelurahan KAPUK: RT 011/RW 013; RT 017/RW 013
+    - Kelurahan CENGKARENG TIMUR: RW 012 (RT 004, 005, 006, 007, 008, 009, 014)
+    - Kelurahan KAPUK: RW 013 (RT 011, 017)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CENGKARENG
-    - Kelurahan CENGKARENG TIMUR: RT 001/RW 012; RT 002/RW 012; RT 003/RW 012; RT 010/RW 004; RT 010/RW 012; RT 011/RW 012; RT 011/RW 015; RT 012/RW 012; RT 013/RW 012; RT 015/RW 012
-    - Kelurahan KAPUK: RT 002/RW 015; RT 007/RW 013; RT 010/RW 013; RT 012/RW 013; RT 014/RW 013; RT 015/RW 013; RT 016/RW 013
+    - Kelurahan CENGKARENG TIMUR: RW 004 (RT 010); RW 012 (RT 001, 002, 003, 010, 011, 012, 013, 015); RW 015 (RT 011)
+    - Kelurahan KAPUK: RW 013 (RT 007, 010, 012, 014, 015, 016); RW 015 (RT 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan CENGKARENG BARAT
@@ -24530,12 +24530,12 @@
 - Alamat: JL. BRIGIF 2 CIGANJUR, RT 012, RW 006, KEL. CIGANJUR, KEC. JAGAKARSA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan CIGANJUR: RT 009/RW 006; RT 012/RW 006; RT 013/RW 006
-    - Kelurahan CIPEDAK: RT 001/RW 001
+    - Kelurahan CIGANJUR: RW 006 (RT 009, 012, 013)
+    - Kelurahan CIPEDAK: RW 001 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
-    - Kelurahan CIGANJUR: RT 003/RW 006; RT 004/RW 005; RT 005/RW 005; RT 005/RW 006; RT 006/RW 005; RT 006/RW 006; RT 007/RW 005; RT 007/RW 006; RT 008/RW 006; RT 010/RW 006; RT 011/RW 006
-    - Kelurahan CIPEDAK: RT 002/RW 001; RT 002/RW 004; RT 003/RW 004; RT 004/RW 001; RT 004/RW 004; RT 012/RW 004; RT 013/RW 001; RT 014/RW 001
+    - Kelurahan CIGANJUR: RW 005 (RT 004, 005, 006, 007); RW 006 (RT 003, 005, 006, 007, 008, 010, 011)
+    - Kelurahan CIPEDAK: RW 001 (RT 002, 004, 013, 014); RW 004 (RT 002, 003, 004, 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan LEBAK BULUS
@@ -24553,11 +24553,11 @@
 - Alamat: JL. JAHA NO. 1, RT 002, RW 009, KEL. KALISARI, KEC. PASAR REBO, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan KALISARI: RT 001/RW 009; RT 002/RW 009; RT 003/RW 009; RT 005/RW 010; RT 006/RW 005; RT 008/RW 005; RT 009/RW 010; RT 012/RW 001; RT 012/RW 009
+    - Kelurahan KALISARI: RW 001 (RT 012); RW 005 (RT 006, 008); RW 009 (RT 001, 002, 003, 012); RW 010 (RT 005, 009)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
-    - Kelurahan CIJANTUNG: RT 008/RW 011; RT 012/RW 011
-    - Kelurahan KALISARI: RT 001/RW 005; RT 001/RW 010; RT 002/RW 005; RT 002/RW 010; RT 003/RW 005; RT 003/RW 010; RT 004/RW 005; RT 004/RW 009; RT 004/RW 010; RT 005/RW 005; RT 005/RW 009; RT 006/RW 009; RT 006/RW 010; RT 007/RW 001; RT 007/RW 005; RT 007/RW 009; RT 007/RW 010; RT 008/RW 001; RT 008/RW 009; RT 008/RW 010; RT 009/RW 001; RT 009/RW 009; RT 010/RW 001; RT 010/RW 009; RT 010/RW 010; RT 011/RW 001; RT 011/RW 009; RT 011/RW 010; RT 013/RW 009; RT 013/RW 010; RT 014/RW 009; RT 015/RW 009
+    - Kelurahan CIJANTUNG: RW 011 (RT 008, 012)
+    - Kelurahan KALISARI: RW 001 (RT 007, 008, 009, 010, 011); RW 005 (RT 001, 002, 003, 004, 005, 007); RW 009 (RT 004, 005, 006, 007, 008, 009, 010, 011, 013, 014, 015); RW 010 (RT 001, 002, 003, 004, 006, 007, 008, 010, 011, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan CIPAYUNG
@@ -24578,14 +24578,14 @@
 - Alamat: JL. CIBUBUR II, RT 009, RW 003, KEL. CIBUBUR, KEC. CIRACAS, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan CIBUBUR: RT 003/RW 003; RT 004/RW 003; RT 005/RW 003; RT 009/RW 003; RT 011/RW 003
+    - Kelurahan CIBUBUR: RW 003 (RT 003, 004, 005, 009, 011)
   - Kecamatan PASAR REBO
-    - Kelurahan PEKAYON: RT 004/RW 007; RT 007/RW 007; RT 010/RW 007
+    - Kelurahan PEKAYON: RW 007 (RT 004, 007, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan CIBUBUR: RT 001/RW 003; RT 002/RW 003; RT 006/RW 003; RT 007/RW 003; RT 008/RW 003; RT 010/RW 003; RT 012/RW 003
+    - Kelurahan CIBUBUR: RW 003 (RT 001, 002, 006, 007, 008, 010, 012)
   - Kecamatan PASAR REBO
-    - Kelurahan PEKAYON: RT 002/RW 007; RT 005/RW 007; RT 006/RW 007; RT 009/RW 007
+    - Kelurahan PEKAYON: RW 007 (RT 002, 005, 006, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan CILANGKAP
@@ -24604,12 +24604,12 @@
 - Alamat: JL. PERSATUAN 2, RT 002, RW 006, KEL. CIPINANG BESAR SELATAN, KEC. JATINEGARA, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 001/RW 006; RT 002/RW 005; RT 002/RW 006; RT 003/RW 006; RT 005/RW 006; RT 006/RW 006; RT 018/RW 005; RT 019/RW 005
-    - Kelurahan CIPINANG MUARA: RT 001/RW 002; RT 012/RW 002; RT 015/RW 002; RT 018/RW 002
+    - Kelurahan CIPINANG BESAR SELATAN: RW 005 (RT 002, 018, 019); RW 006 (RT 001, 002, 003, 005, 006)
+    - Kelurahan CIPINANG MUARA: RW 002 (RT 001, 012, 015, 018)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JATINEGARA
-    - Kelurahan CIPINANG BESAR SELATAN: RT 001/RW 005; RT 001/RW 010; RT 006/RW 010; RT 007/RW 006; RT 008/RW 005; RT 008/RW 006; RT 009/RW 006; RT 014/RW 005; RT 015/RW 005; RT 016/RW 005; RT 017/RW 005
-    - Kelurahan CIPINANG MUARA: RT 013/RW 001; RT 013/RW 002; RT 014/RW 001; RT 014/RW 002; RT 016/RW 002
+    - Kelurahan CIPINANG BESAR SELATAN: RW 005 (RT 001, 008, 014, 015, 016, 017); RW 006 (RT 007, 008, 009); RW 010 (RT 001, 006)
+    - Kelurahan CIPINANG MUARA: RW 001 (RT 013, 014); RW 002 (RT 013, 014, 016)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JATINEGARA
     - Kelurahan BALI MESTER
@@ -24627,11 +24627,11 @@
 - Alamat: JL. JOGLO BARU, RT 012, RW 006, KEL. JOGLO, KEC. KEMBANGAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 004/RW 006; RT 005/RW 006; RT 007/RW 006; RT 011/RW 006; RT 012/RW 002; RT 012/RW 006
+    - Kelurahan JOGLO: RW 002 (RT 012); RW 006 (RT 004, 005, 007, 011, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEMBANGAN
-    - Kelurahan JOGLO: RT 001/RW 006; RT 002/RW 006; RT 003/RW 006; RT 006/RW 002; RT 006/RW 006; RT 008/RW 006; RT 009/RW 002; RT 009/RW 006; RT 010/RW 002; RT 010/RW 006; RT 011/RW 002; RT 015/RW 002
-    - Kelurahan MERUYA SELATAN: RT 001/RW 003; RT 009/RW 003
+    - Kelurahan JOGLO: RW 002 (RT 006, 009, 010, 011, 015); RW 006 (RT 001, 002, 003, 006, 008, 009, 010)
+    - Kelurahan MERUYA SELATAN: RW 003 (RT 001, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEMBANGAN
     - Kelurahan JOGLO
@@ -24646,12 +24646,12 @@
 - Alamat: JL. KAYU TINGGI, RT 009, RW 006, KEL. CAKUNG TIMUR, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 002/RW 006; RT 003/RW 006; RT 009/RW 006; RT 010/RW 006; RT 012/RW 006
+    - Kelurahan CAKUNG TIMUR: RW 006 (RT 002, 003, 009, 010, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan CAKUNG TIMUR: RT 001/RW 006; RT 004/RW 006; RT 004/RW 010; RT 005/RW 006; RT 006/RW 006; RT 007/RW 006; RT 008/RW 006; RT 011/RW 006; RT 013/RW 006
+    - Kelurahan CAKUNG TIMUR: RW 006 (RT 001, 004, 005, 006, 007, 008, 011, 013); RW 010 (RT 004)
   - Kecamatan CILINCING
-    - Kelurahan ROROTAN: RT 001/RW 004; RT 002/RW 004; RT 003/RW 004; RT 004/RW 004; RT 005/RW 004; RT 006/RW 004; RT 009/RW 004; RT 010/RW 004; RT 011/RW 004
+    - Kelurahan ROROTAN: RW 004 (RT 001, 002, 003, 004, 005, 006, 009, 010, 011)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG BARAT
@@ -24667,10 +24667,10 @@
 - Alamat: JL. MAWAR MERAH VI PERUMNAS KLENDER, RT 013, RW 004, KEL. MALAKA JAYA, KEC. DUREN SAWIT, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA JAYA: RT 001/RW 007; RT 004/RW 007; RT 005/RW 004; RT 006/RW 003; RT 007/RW 003; RT 007/RW 004; RT 008/RW 003; RT 011/RW 004; RT 012/RW 004; RT 013/RW 003; RT 013/RW 004
+    - Kelurahan MALAKA JAYA: RW 003 (RT 006, 007, 008, 013); RW 004 (RT 005, 007, 011, 012, 013); RW 007 (RT 001, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan DUREN SAWIT
-    - Kelurahan MALAKA JAYA: RT 001/RW 003; RT 001/RW 012; RT 002/RW 004; RT 002/RW 007; RT 002/RW 012; RT 003/RW 003; RT 003/RW 004; RT 003/RW 007; RT 003/RW 012; RT 004/RW 003; RT 004/RW 004; RT 004/RW 012; RT 005/RW 003; RT 005/RW 005; RT 005/RW 007; RT 005/RW 012; RT 006/RW 004; RT 006/RW 005; RT 006/RW 007; RT 007/RW 007; RT 008/RW 004; RT 008/RW 007; RT 009/RW 003; RT 009/RW 004; RT 009/RW 007; RT 010/RW 003; RT 010/RW 004; RT 011/RW 003; RT 012/RW 003; RT 013/RW 006; RT 014/RW 006; RT 015/RW 006
+    - Kelurahan MALAKA JAYA: RW 003 (RT 001, 003, 004, 005, 009, 010, 011, 012); RW 004 (RT 002, 003, 004, 006, 008, 009, 010); RW 005 (RT 005, 006); RW 006 (RT 013, 014, 015); RW 007 (RT 002, 003, 005, 006, 007, 008, 009); RW 012 (RT 001, 002, 003, 004, 005)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -24686,10 +24686,10 @@
 - Alamat: JL. H. TAIMAN BARAT, RT 001, RW 002, KEL. GEDONG, KEC. PASAR REBO, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan GEDONG: RT 001/RW 002; RT 001/RW 010; RT 002/RW 002; RT 003/RW 002; RT 003/RW 010; RT 004/RW 010; RT 010/RW 008; RT 010/RW 009; RT 011/RW 009
+    - Kelurahan GEDONG: RW 002 (RT 001, 002, 003); RW 008 (RT 010); RW 009 (RT 010, 011); RW 010 (RT 001, 003, 004)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
-    - Kelurahan GEDONG: RT 001/RW 008; RT 002/RW 010; RT 002/RW 012; RT 003/RW 009; RT 003/RW 012; RT 004/RW 002; RT 004/RW 012; RT 005/RW 010; RT 006/RW 008; RT 007/RW 009; RT 008/RW 002; RT 008/RW 009; RT 009/RW 008; RT 009/RW 009; RT 010/RW 002
+    - Kelurahan GEDONG: RW 002 (RT 004, 008, 010); RW 008 (RT 001, 006, 009); RW 009 (RT 003, 007, 008, 009); RW 010 (RT 002, 005); RW 012 (RT 002, 003, 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIRACAS
     - Kelurahan RAMBUTAN
@@ -24714,11 +24714,11 @@
 - Alamat: JL. USMAN KELAPA DUA WETAN, RT 002, RW 004, KEL. KELAPA DUA WETAN, KEC. CIRACAS, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIRACAS
-    - Kelurahan KELAPA DUA WETAN: RT 001/RW 004; RT 002/RW 004; RT 003/RW 004; RT 004/RW 004; RT 007/RW 011
+    - Kelurahan KELAPA DUA WETAN: RW 004 (RT 001, 002, 003, 004); RW 011 (RT 007)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIRACAS
-    - Kelurahan CIRACAS: RT 004/RW 006; RT 005/RW 006; RT 009/RW 006
-    - Kelurahan KELAPA DUA WETAN: RT 002/RW 011; RT 003/RW 011; RT 004/RW 011; RT 005/RW 004; RT 005/RW 011; RT 006/RW 004; RT 006/RW 011; RT 007/RW 004; RT 008/RW 004; RT 008/RW 011; RT 009/RW 004; RT 010/RW 004; RT 010/RW 011; RT 011/RW 004; RT 011/RW 011; RT 012/RW 004; RT 012/RW 011; RT 012/RW 012; RT 013/RW 011
+    - Kelurahan CIRACAS: RW 006 (RT 004, 005, 009)
+    - Kelurahan KELAPA DUA WETAN: RW 004 (RT 005, 006, 007, 008, 009, 010, 011, 012); RW 011 (RT 002, 003, 004, 005, 006, 008, 010, 011, 012, 013); RW 012 (RT 012)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -24739,11 +24739,11 @@
 - Alamat: JL. GANDARIA I PEKAYON, RT 012, RW 009, KEL. PEKAYON, KEC. PASAR REBO, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PASAR REBO
-    - Kelurahan PEKAYON: RT 007/RW 003; RT 007/RW 009; RT 008/RW 003; RT 011/RW 003; RT 011/RW 009; RT 012/RW 009; RT 013/RW 009; RT 016/RW 009
+    - Kelurahan PEKAYON: RW 003 (RT 007, 008, 011); RW 009 (RT 007, 011, 012, 013, 016)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PASAR REBO
-    - Kelurahan KALISARI: RT 013/RW 002
-    - Kelurahan PEKAYON: RT 001/RW 009; RT 002/RW 009; RT 003/RW 009; RT 004/RW 003; RT 004/RW 009; RT 005/RW 003; RT 005/RW 009; RT 006/RW 003; RT 006/RW 009; RT 008/RW 001; RT 008/RW 002; RT 008/RW 009; RT 009/RW 003; RT 009/RW 009; RT 010/RW 003; RT 010/RW 009; RT 011/RW 002; RT 012/RW 002; RT 013/RW 002; RT 014/RW 009; RT 015/RW 009
+    - Kelurahan KALISARI: RW 002 (RT 013)
+    - Kelurahan PEKAYON: RW 001 (RT 008); RW 002 (RT 008, 011, 012, 013); RW 003 (RT 004, 005, 006, 009, 010); RW 009 (RT 001, 002, 003, 004, 005, 006, 008, 009, 010, 014, 015)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan MUNJUL
@@ -24762,11 +24762,11 @@
 - Alamat: JL. RAWA BADUNG, RT 008, RW 007, KEL. JATINEGARA, KEC. CAKUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CAKUNG
-    - Kelurahan JATINEGARA: RT 002/RW 007; RT 003/RW 007; RT 007/RW 007; RT 008/RW 007; RT 010/RW 006; RT 011/RW 006; RT 011/RW 007
+    - Kelurahan JATINEGARA: RW 006 (RT 010, 011); RW 007 (RT 002, 003, 007, 008, 011)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CAKUNG
-    - Kelurahan JATINEGARA: RT 001/RW 007; RT 004/RW 007; RT 005/RW 007; RT 006/RW 007; RT 008/RW 006; RT 009/RW 006; RT 009/RW 007; RT 009/RW 009; RT 010/RW 007; RT 010/RW 009; RT 014/RW 012
-    - Kelurahan PENGGILINGAN: RT 001/RW 020; RT 002/RW 020; RT 003/RW 020; RT 004/RW 020; RT 005/RW 020; RT 006/RW 016; RT 006/RW 020; RT 008/RW 010; RT 009/RW 010
+    - Kelurahan JATINEGARA: RW 006 (RT 008, 009); RW 007 (RT 001, 004, 005, 006, 009, 010); RW 009 (RT 009, 010); RW 012 (RT 014)
+    - Kelurahan PENGGILINGAN: RW 010 (RT 008, 009); RW 016 (RT 006); RW 020 (RT 001, 002, 003, 004, 005, 006)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan JATINEGARA
@@ -24781,10 +24781,10 @@
 - Alamat: JL. KESADARAN ULUJAMI RAYA, RT 006, RW 001, KEL. PESANGGRAHAN, KEC. PESANGGRAHAN, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PESANGGRAHAN: RT 001/RW 002; RT 003/RW 001; RT 004/RW 001; RT 005/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 001; RT 014/RW 001
+    - Kelurahan PESANGGRAHAN: RW 001 (RT 003, 004, 005, 006, 007, 008, 014); RW 002 (RT 001)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PESANGGRAHAN
-    - Kelurahan PESANGGRAHAN: RT 001/RW 001; RT 001/RW 003; RT 002/RW 002; RT 003/RW 002; RT 004/RW 002; RT 005/RW 002; RT 009/RW 001; RT 010/RW 001; RT 011/RW 001; RT 012/RW 001; RT 013/RW 001; RT 015/RW 001
+    - Kelurahan PESANGGRAHAN: RW 001 (RT 001, 009, 010, 011, 012, 013, 015); RW 002 (RT 002, 003, 004, 005); RW 003 (RT 001)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan KEBAYORAN LAMA
     - Kelurahan CIPULIR
@@ -24801,11 +24801,11 @@
 - Alamat: JL. GARDU NO. 31, RT 010, RW 002, KEL. SRENGSENG SAWAH, KEC. JAGAKARSA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan JAGAKARSA
-    - Kelurahan LENTENG AGUNG: RT 004/RW 010; RT 013/RW 008
-    - Kelurahan SRENGSENG SAWAH: RT 006/RW 003; RT 007/RW 002; RT 008/RW 002; RT 009/RW 002; RT 010/RW 002; RT 011/RW 002; RT 012/RW 002; RT 013/RW 002
+    - Kelurahan LENTENG AGUNG: RW 008 (RT 013); RW 010 (RT 004)
+    - Kelurahan SRENGSENG SAWAH: RW 002 (RT 007, 008, 009, 010, 011, 012, 013); RW 003 (RT 006)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan JAGAKARSA
-    - Kelurahan SRENGSENG SAWAH: RT 001/RW 001; RT 001/RW 002; RT 002/RW 001; RT 002/RW 002; RT 002/RW 003; RT 003/RW 001; RT 003/RW 002; RT 003/RW 003; RT 004/RW 001; RT 004/RW 002; RT 004/RW 003; RT 005/RW 001; RT 005/RW 002; RT 005/RW 003; RT 006/RW 001; RT 006/RW 002; RT 007/RW 001; RT 007/RW 003; RT 008/RW 001; RT 008/RW 003; RT 009/RW 001
+    - Kelurahan SRENGSENG SAWAH: RW 001 (RT 001, 002, 003, 004, 005, 006, 007, 008, 009); RW 002 (RT 001, 002, 003, 004, 005, 006); RW 003 (RT 002, 003, 004, 005, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan JAGAKARSA
     - Kelurahan CIGANJUR
@@ -24818,11 +24818,11 @@
 - Alamat: JL. BENDUNGAN MELAYU NO. 80, RT 009, RW 005, KEL. TUGU SELATAN, KEC. KOJA, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KOJA
-    - Kelurahan TUGU SELATAN: RT 001/RW 001; RT 002/RW 001; RT 006/RW 001; RT 007/RW 001; RT 008/RW 005; RT 009/RW 005; RT 010/RW 001; RT 011/RW 005; RT 012/RW 005
+    - Kelurahan TUGU SELATAN: RW 001 (RT 001, 002, 006, 007, 010); RW 005 (RT 008, 009, 011, 012)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KOJA
-    - Kelurahan RAWA BADAK SELATAN: RT 004/RW 001; RT 011/RW 001
-    - Kelurahan TUGU SELATAN: RT 002/RW 002; RT 002/RW 005; RT 003/RW 001; RT 003/RW 002; RT 004/RW 001; RT 004/RW 002; RT 004/RW 005; RT 006/RW 005; RT 007/RW 005; RT 009/RW 001; RT 010/RW 005; RT 011/RW 001; RT 013/RW 005; RT 014/RW 005
+    - Kelurahan RAWA BADAK SELATAN: RW 001 (RT 004, 011)
+    - Kelurahan TUGU SELATAN: RW 001 (RT 003, 004, 009, 011); RW 002 (RT 002, 003, 004); RW 005 (RT 002, 004, 006, 007, 010, 013, 014)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan SEMPER BARAT
@@ -24845,10 +24845,10 @@
 - Alamat: JL. BANDENGAN UTARA NO.80, RT 010, RW 016, KEL. PENJARINGAN, KEC. PENJARINGAN, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan PENJARINGAN
-    - Kelurahan PENJARINGAN: RT 006/RW 016; RT 008/RW 015; RT 010/RW 016; RT 011/RW 016; RT 012/RW 012; RT 012/RW 016; RT 013/RW 016
+    - Kelurahan PENJARINGAN: RW 012 (RT 012); RW 015 (RT 008); RW 016 (RT 006, 010, 011, 012, 013)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan PENJARINGAN
-    - Kelurahan PENJARINGAN: RT 004/RW 012; RT 005/RW 006; RT 006/RW 006; RT 007/RW 006; RT 007/RW 015; RT 007/RW 016; RT 009/RW 015; RT 009/RW 016; RT 010/RW 015; RT 013/RW 006; RT 014/RW 006; RT 015/RW 006
+    - Kelurahan PENJARINGAN: RW 006 (RT 005, 006, 007, 013, 014, 015); RW 012 (RT 004); RW 015 (RT 007, 009, 010); RW 016 (RT 007, 009)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan KAPUK
@@ -24877,18 +24877,18 @@
 - Alamat: JL. SANGGRAHAN NO. 2, RT 010, RW 005, KEL. MERUYA UTARA, KEC. KEMBANGAN, JAKARTA BARAT
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 001/RW 007; RT 005/RW 007
-    - Kelurahan KEDOYA SELATAN: RT 005/RW 003
+    - Kelurahan KEBON JERUK: RW 007 (RT 001, 005)
+    - Kelurahan KEDOYA SELATAN: RW 003 (RT 005)
   - Kecamatan KEMBANGAN
-    - Kelurahan KEMBANGAN SELATAN: RT 001/RW 009; RT 002/RW 007
-    - Kelurahan MERUYA UTARA: RT 009/RW 005; RT 010/RW 005; RT 011/RW 003
+    - Kelurahan KEMBANGAN SELATAN: RW 007 (RT 002); RW 009 (RT 001)
+    - Kelurahan MERUYA UTARA: RW 003 (RT 011); RW 005 (RT 009, 010)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBON JERUK
-    - Kelurahan KEBON JERUK: RT 002/RW 007; RT 003/RW 007; RT 004/RW 007; RT 006/RW 007; RT 011/RW 007
-    - Kelurahan KEDOYA SELATAN: RT 007/RW 003
+    - Kelurahan KEBON JERUK: RW 007 (RT 002, 003, 004, 006, 011)
+    - Kelurahan KEDOYA SELATAN: RW 003 (RT 007)
   - Kecamatan KEMBANGAN
-    - Kelurahan KEMBANGAN SELATAN: RT 003/RW 007; RT 003/RW 009; RT 005/RW 009; RT 007/RW 007; RT 008/RW 007; RT 009/RW 007
-    - Kelurahan MERUYA UTARA: RT 001/RW 003; RT 003/RW 003; RT 004/RW 003; RT 004/RW 005; RT 005/RW 003; RT 006/RW 005; RT 007/RW 003; RT 007/RW 005; RT 008/RW 003; RT 008/RW 005; RT 009/RW 003; RT 010/RW 003; RT 012/RW 003
+    - Kelurahan KEMBANGAN SELATAN: RW 007 (RT 003, 007, 008, 009); RW 009 (RT 003, 005)
+    - Kelurahan MERUYA UTARA: RW 003 (RT 001, 003, 004, 005, 007, 008, 009, 010, 012); RW 005 (RT 004, 006, 007, 008)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CENGKARENG
     - Kelurahan RAWA BUAYA
@@ -24912,10 +24912,10 @@
 - Alamat: JL. ALBAIDHO I, RT 010, RW 009, KEL. LUBANG BUAYA, KEC. CIPAYUNG, JAKARTA TIMUR
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 002/RW 006; RT 003/RW 009; RT 006/RW 006; RT 006/RW 009; RT 007/RW 009; RT 008/RW 009; RT 010/RW 009; RT 014/RW 009
+    - Kelurahan LUBANG BUAYA: RW 006 (RT 002, 006); RW 009 (RT 003, 006, 007, 008, 010, 014)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CIPAYUNG
-    - Kelurahan LUBANG BUAYA: RT 001/RW 002; RT 001/RW 006; RT 001/RW 009; RT 002/RW 002; RT 002/RW 009; RT 003/RW 002; RT 003/RW 006; RT 004/RW 009; RT 005/RW 002; RT 005/RW 006; RT 005/RW 009; RT 006/RW 002; RT 007/RW 002; RT 007/RW 006; RT 008/RW 001; RT 008/RW 002; RT 008/RW 006; RT 009/RW 001; RT 009/RW 002; RT 009/RW 006; RT 009/RW 009; RT 011/RW 009; RT 012/RW 009; RT 013/RW 009
+    - Kelurahan LUBANG BUAYA: RW 001 (RT 008, 009); RW 002 (RT 001, 002, 003, 005, 006, 007, 008, 009); RW 006 (RT 001, 003, 005, 007, 008, 009); RW 009 (RT 001, 002, 004, 005, 009, 011, 012, 013)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CIPAYUNG
     - Kelurahan BAMBU APUS
@@ -24935,12 +24935,12 @@
 - Alamat: JL. PEDONGKELAN NO. 25, RT 001, RW 006, KEL. CILINCING, KEC. CILINCING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan CILINCING: RT 001/RW 006; RT 002/RW 006; RT 003/RW 006; RT 003/RW 009; RT 004/RW 006; RT 005/RW 009
-    - Kelurahan SEMPER TIMUR: RT 002/RW 006; RT 005/RW 003
+    - Kelurahan CILINCING: RW 006 (RT 001, 002, 003, 004); RW 009 (RT 003, 005)
+    - Kelurahan SEMPER TIMUR: RW 003 (RT 005); RW 006 (RT 002)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
-    - Kelurahan CILINCING: RT 001/RW 009; RT 001/RW 010; RT 002/RW 009; RT 004/RW 009; RT 005/RW 006; RT 006/RW 005; RT 006/RW 006; RT 006/RW 009; RT 007/RW 005; RT 007/RW 006; RT 008/RW 005; RT 008/RW 009; RT 009/RW 005; RT 011/RW 009; RT 012/RW 009; RT 013/RW 009; RT 014/RW 009
-    - Kelurahan SEMPER TIMUR: RT 001/RW 003; RT 001/RW 006; RT 002/RW 007; RT 003/RW 006; RT 004/RW 003; RT 004/RW 006; RT 006/RW 006; RT 007/RW 006; RT 010/RW 003
+    - Kelurahan CILINCING: RW 005 (RT 006, 007, 008, 009); RW 006 (RT 005, 006, 007); RW 009 (RT 001, 002, 004, 006, 008, 011, 012, 013, 014); RW 010 (RT 001)
+    - Kelurahan SEMPER TIMUR: RW 003 (RT 001, 004, 010); RW 006 (RT 001, 003, 004, 006, 007); RW 007 (RT 002)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILINCING
     - Kelurahan CILINCING
@@ -24953,10 +24953,10 @@
 - Alamat: JL. ROROTAN X, RT 010, RW 006, KEL. ROROTAN, KEC. CILINCING, JAKARTA UTARA
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan CILINCING
-    - Kelurahan ROROTAN: RT 001/RW 014; RT 002/RW 014; RT 003/RW 014; RT 004/RW 010; RT 007/RW 006; RT 009/RW 006; RT 009/RW 007; RT 010/RW 006; RT 011/RW 007; RT 013/RW 007; RT 014/RW 006; RT 015/RW 006
+    - Kelurahan ROROTAN: RW 006 (RT 007, 009, 010, 014, 015); RW 007 (RT 009, 011, 013); RW 010 (RT 004); RW 014 (RT 001, 002, 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan CILINCING
-    - Kelurahan ROROTAN: RT 001/RW 007; RT 002/RW 007; RT 003/RW 007; RT 003/RW 009; RT 003/RW 010; RT 004/RW 007; RT 004/RW 014; RT 005/RW 007; RT 005/RW 010; RT 006/RW 003; RT 007/RW 007; RT 007/RW 010; RT 008/RW 002; RT 008/RW 006; RT 008/RW 007; RT 008/RW 010; RT 010/RW 007; RT 011/RW 001; RT 011/RW 006; RT 011/RW 010; RT 012/RW 006; RT 012/RW 007; RT 012/RW 010; RT 013/RW 006; RT 014/RW 007; RT 015/RW 007; RT 016/RW 006; RT 016/RW 007; RT 019/RW 007
+    - Kelurahan ROROTAN: RW 001 (RT 011); RW 002 (RT 008); RW 003 (RT 006); RW 006 (RT 008, 011, 012, 013, 016); RW 007 (RT 001, 002, 003, 004, 005, 007, 008, 010, 012, 014, 015, 016, 019); RW 009 (RT 003); RW 010 (RT 003, 005, 007, 008, 011, 012); RW 014 (RT 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CAKUNG
     - Kelurahan CAKUNG TIMUR
@@ -24971,14 +24971,14 @@
 - Alamat: Jl. SD III, RT 02 RW 08, KEL. PONDOK PINANG, KEC. KEBAYORAN LAMA, JAKARTA SELATAN
 - Wilayah PMB Prioritas Pertama:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan PONDOK PINANG: RT 001/RW 007; RT 001/RW 008; RT 002/RW 007; RT 002/RW 008; RT 003/RW 008; RT 004/RW 008; RT 005/RW 008
+    - Kelurahan PONDOK PINANG: RW 007 (RT 001, 002); RW 008 (RT 001, 002, 003, 004, 005)
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 003/RW 015; RT 008/RW 007
+    - Kelurahan BINTARO: RW 007 (RT 008); RW 015 (RT 003)
 - Wilayah PMB Prioritas Kedua:
   - Kecamatan KEBAYORAN LAMA
-    - Kelurahan PONDOK PINANG: RT 003/RW 007; RT 004/RW 006; RT 006/RW 008; RT 006/RW 013; RT 006/RW 017; RT 007/RW 008; RT 007/RW 013; RT 007/RW 017; RT 009/RW 008; RT 010/RW 008; RT 011/RW 005; RT 012/RW 005
+    - Kelurahan PONDOK PINANG: RW 005 (RT 011, 012); RW 006 (RT 004); RW 007 (RT 003); RW 008 (RT 006, 007, 009, 010); RW 013 (RT 006, 007); RW 017 (RT 006, 007)
   - Kecamatan PESANGGRAHAN
-    - Kelurahan BINTARO: RT 004/RW 015; RT 007/RW 005; RT 007/RW 007
+    - Kelurahan BINTARO: RW 005 (RT 007); RW 007 (RT 007); RW 015 (RT 004)
 - Wilayah PMB Prioritas Ketiga:
   - Kecamatan CILANDAK
     - Kelurahan LEBAK BULUS
