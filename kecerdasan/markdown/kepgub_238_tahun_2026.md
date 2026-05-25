@@ -133,8 +133,15 @@
       b) Penyandang Disabilitas yang terdaftar dalam Data dan/atau dibuktikan dengan surat keterangan dari pihak yang berkompeten melalui fasilitas kesehatan atau lembaga lain; atau
       c) anak tenaga kesehatan yang meninggal dunia dalam penanganan Corona Virus Disease 2019 di wilayah Provinsi DKI Jakarta, berdasarkan dengan surat keterangan yang ditandatangani oleh Kepala Dinas Kesehatan.
     2) afirmasi prioritas kedua, dengan ketentuan:
-      a) calon murid baru pada Sekolah Dasar, sebagai berikut: (1) pemegang Kartu Anak Jakarta yang masih aktif; (2) terdaftar dalam Data sebagai anak dari pengemudi mitra Transjakarta yang mengemudikan bus kecil dan direkomendasikan oleh Kepala Dinas Perhubungan Provinsi DKI Jakarta; atau (3) terdaftar dalam Data sebagai anak dari pekerja/buruh yang tercatat dalam Kartu Keluarga, yang direkomendasikan oleh Kepala Dinas Ketenagakerjaan, Transmigrasi, dan Energi Provinsi DKI Jakarta.
-      b) calon murid baru pada Sekolah Menengah Pertama, Sekolah Menengah Atas, atau Sekolah Menengah Kejuruan, sebagai berikut: (1) pemegang Kartu Jakarta Pintar Plus yang masih aktif; (2) terdaftar dalam Data sebagai anak dari pengemudi mitra Transjakarta yang mengemudikan bus kecil dan direkomendasikan oleh Kepala Dinas Perhubungan Provinsi DKI Jakarta; (3) terdaftar dalam Data sebagai anak dari pekerja/buruh yang tercatat dalam Kartu Keluarga dan direkomendasikan oleh Kepala Dinas Ketenagakerjaan, Transmigrasi, dan Energi Provinsi DKI Jakarta; atau (4) terdaftar dalam Data sebagai penerima Program Indonesia Pintar.
+      a) calon murid baru pada Sekolah Dasar, sebagai berikut:
+          1) pemegang Kartu Anak Jakarta yang masih aktif;
+          2) terdaftar dalam Data sebagai anak dari pengemudi mitra Transjakarta yang mengemudikan bus kecil dan direkomendasikan oleh Kepala Dinas Perhubungan Provinsi DKI Jakarta;
+            3) terdaftar dalam Data sebagai anak dari pekerja/buruh yang tercatat dalam Kartu Keluarga, yang direkomendasikan oleh Kepala Dinas Ketenagakerjaan, Transmigrasi, dan Energi Provinsi DKI Jakarta.
+      b) calon murid baru pada Sekolah Menengah Pertama, Sekolah Menengah Atas, atau Sekolah Menengah Kejuruan, sebagai berikut:
+          1) pemegang Kartu Jakarta Pintar Plus yang masih aktif;
+          2) terdaftar dalam Data sebagai anak dari pengemudi mitra Transjakarta yang mengemudikan bus kecil dan direkomendasikan oleh Kepala Dinas Perhubungan Provinsi DKI Jakarta;
+          3) terdaftar dalam Data sebagai anak dari pekerja/buruh yang tercatat dalam Kartu Keluarga dan direkomendasikan oleh Kepala Dinas Ketenagakerjaan, Transmigrasi, dan Energi Provinsi DKI Jakarta;
+            4) terdaftar dalam Data sebagai penerima Program Indonesia Pintar.
   c. calon murid baru yang mendaftar pada jalur afirmasi prioritas pertama tidak dilakukan proses seleksi, kecuali bagi Penyandang Disabilitas.
 4. Jalur Domisili
   a. Jalur domisili berlaku pada satuan pendidikan, meliputi:
@@ -170,7 +177,9 @@
     4) Sekolah Menengah Kejuruan.
   b. Jalur mutasi diperuntukkan bagi calon murid baru, meliputi:
     1) anak yang orang tua/wali mendapatkan penugasan, dengan ketentuan:
-      a) perpindahan tugas orang tua/wali dibuktikan dengan surat keterangan pindah tugas yang memenuhi ketentuan: (1) ditandatangani paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru; dan (2) dikeluarkan oleh instansi, lembaga, kantor, atau perusahaan yang mempekerjakan orang tua/wali calon murid baru.
+      a) perpindahan tugas orang tua/wali dibuktikan dengan surat keterangan pindah tugas yang memenuhi ketentuan:
+          1) ditandatangani paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru;
+            2) dikeluarkan oleh instansi, lembaga, kantor, atau perusahaan yang mempekerjakan orang tua/wali calon murid baru.
       b) perpindahan domisili orang tua/wali dan calon murid baru dibuktikan dengan Kartu Keluarga yang dikeluarkan oleh Dinas Kependudukan dan Pencatatan Sipil Provinsi DKI Jakarta paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru.
     2) anak guru atau anak tenaga kependidikan, dengan ketentuan mendaftar pada satuan pendidikan sesuai dengan tempat orang tua bertugas.
 
@@ -461,7 +470,9 @@ Penerimaan murid baru dilaksanakan pada Satuan Pendidikan Dasar, meliputi:
       b) wilayah penerimaan murid baru prioritas kedua, diperuntukkan bagi calon murid baru yang didasarkan dengan kelurahan domisili calon murid baru yang sama dan/atau berdekatan dengan kelurahan lokasi sekolah.
   j. calon murid baru melalui jalur mutasi, sebagai berikut:
     1) calon murid baru merupakan anak dari orang tua/wali yang mengalami penugasan, dengan ketentuan:
-      a) perpindahan tugas orang tua/wali dibuktikan dengan surat keterangan pindah tugas yang memenuhi ketentuan: (1) ditandatangani paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru; dan (2) dikeluarkan oleh instansi, lembaga, kantor, atau perusahaan yang mempekerjakan orang tua/wali calon murid baru.
+      a) perpindahan tugas orang tua/wali dibuktikan dengan surat keterangan pindah tugas yang memenuhi ketentuan:
+          1) ditandatangani paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru;
+            2) dikeluarkan oleh instansi, lembaga, kantor, atau perusahaan yang mempekerjakan orang tua/wali calon murid baru.
       b) perpindahan domisili orang tua/wali dan calon murid baru dibuktikan dengan Kartu Keluarga yang dikeluarkan oleh Dinas Kependudukan dan Pencatatan Sipil paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru.
     2) anak guru atau anak tenaga kependidikan, dengan ketentuan:
       a) anak guru, memiliki surat pembagian tugas mengajar tahun pelajaran berjalan dari kepala satuan pendidikan sesuai dengan tempat tugas orang tua mengajar.
@@ -471,7 +482,10 @@ Penerimaan murid baru dilaksanakan pada Satuan Pendidikan Dasar, meliputi:
     1) penerima manfaat panti sosial tidak dilakukan proses seleksi.
     2) anak tenaga kesehatan yang meninggal dunia dalam penanganan Corona Virus Disease 2019 di wilayah Provinsi DKI Jakarta, tidak dilakukan proses seleksi.
     3) Penyandang Disabilitas diseleksi dengan ketentuan:
-      a) dalam hal jumlah pendaftar melebihi daya tampung, maka dilakukan seleksi berdasarkan urutan langkah sebagai berikut: (1) wilayah penerimaan murid baru prioritas yang ditetapkan oleh Kepala Dinas Pendidikan; (2) urutan pilihan sekolah; (3) usia dari yang tertua ke yang termuda; dan (4) waktu mendaftar.
+      a) dalam hal jumlah pendaftar melebihi daya tampung, maka dilakukan seleksi berdasarkan urutan langkah sebagai berikut:
+          1) wilayah penerimaan murid baru prioritas yang ditetapkan oleh Kepala Dinas Pendidikan;
+          2) urutan pilihan sekolah;
+          3) usia dari yang tertua ke yang termuda; dan (4) waktu mendaftar.
       b) dalam hal kuota untuk Penyandang Disabilitas tidak terpenuhi, maka sisa kuota dimaksud dilimpahkan kepada afirmasi prioritas kedua.
   b. terhadap calon murid baru melalui jalur afirmasi prioritas kedua, berlaku ketentuan:
     1) dalam hal jumlah pendaftar melebihi daya tampung, maka dilakukan seleksi berdasarkan urutan langkah sebagai berikut:
@@ -500,17 +514,32 @@ Penerimaan murid baru dilaksanakan pada Satuan Pendidikan Dasar, meliputi:
     1) Afirmasi Prioritas Pertama
       a) Dinas Pendidikan melalui Unit Pelaksana Teknis Pusat Data dan Teknologi Informasi Pendidikan melakukan pendaftaran penerima manfaat panti sosial dan anak tenaga kesehatan yang meninggal dunia dalam penanganan Corona Virus Disease 2019 di wilayah Provinsi DKI Jakarta, dengan cara memasukkan data ke dalam aplikasi penerimaan murid baru untuk Sekolah Dasar sesuai jadwal pelaksanaan yang telah ditetapkan oleh Kepala Dinas Pendidikan.
       b) penerima manfaat panti sosial dan anak tenaga kesehatan yang meninggal dunia dalam penanganan Corona Virus Disease 2019 di wilayah Provinsi DKI Jakarta hanya dapat memilih dan didaftarkan pada 1 (satu) sekolah.
-      c) penyandang disabilitas melakukan pendaftaran, dengan ketentuan: (1) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah Dasar dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta. (2) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Dasar. (3) mengunggah hasil pindai atau foto dokumen asli yang menjadi persyaratan pendaftaran penerimaan murid baru untuk Sekolah Dasar, berupa: (a) Kartu Keluarga; (b) Dokumen yang menunjukkan keterangan diri murid pada halaman depan rapor / keterangan tentang diri murid, atau ljazah atau Akta kelahiran; (c) surat keterangan anak berkebutuhan khusus dari pihak yang berkompeten; dan (d) surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen dari orang tua/wali calon murid baru bermeterai cukup. (4) calon murid baru dapat memilih sekolah tujuan, dengan ketentuan: (a) calon murid baru dapat memilih 3 (tiga) sekolah tujuan, sesuai dengan daftar penetapan wilayah penerimaan murid baru yang ditetapkan oleh Kepala Dinas Pendidikan. (b) sekolah tujuan piliban pertama calon murid baru menjadi tempat pelaksanaan verifikasi berkas pendaftaran calon murid baru yang bersangkutan. (c) calon murid baru yang belum diterima di sekolah tujuan, dapat mendaftar di sekolah lain selama jadwal pendaftaran penerimaan murid baru bagi Penyandang Disabilitas masih berlangsung. (d) calon murid baru yang sudah diterima sementara di sekolah tujuan, tidak dapat mengganti pilihan sekolah lain.
+      c) penyandang disabilitas melakukan pendaftaran, dengan ketentuan:
+          1) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah Dasar dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta.
+          2) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Dasar.
+          3) mengunggah hasil pindai atau foto dokumen asli yang menjadi persyaratan pendaftaran penerimaan murid baru untuk Sekolah Dasar, berupa:
+            a) Kartu Keluarga;
+            b) Dokumen yang menunjukkan keterangan diri murid pada halaman depan rapor / keterangan tentang diri murid, atau Ijazah atau Akta kelahiran;
+            c) surat keterangan anak berkebutuhan khusus dari pihak yang berkompeten;
+              d) surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen dari orang tua/wali calon murid baru bermeterai cukup.
+          4) calon murid baru dapat memilih sekolah tujuan, dengan ketentuan:
+            a) calon murid baru dapat memilih 3 (tiga) sekolah tujuan, sesuai dengan daftar penetapan wilayah penerimaan murid baru yang ditetapkan oleh Kepala Dinas Pendidikan.
+            b) sekolah tujuan pilihan pertama calon murid baru menjadi tempat pelaksanaan verifikasi berkas pendaftaran calon murid baru yang bersangkutan.
+            c) calon murid baru yang belum diterima di sekolah tujuan, dapat mendaftar di sekolah lain selama jadwal pendaftaran penerimaan murid baru bagi Penyandang Disabilitas masih berlangsung.
+            d) calon murid baru yang sudah diterima sementara di sekolah tujuan, tidak dapat mengganti pilihan sekolah lain.
     2) Afirmasi Prioritas Kedua
       a) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah Dasar dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta.
-      b) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau basil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Dasar.
-      c) calon murid baru dapat memilih sekolah tujuan, dengan ketentuan: (1) calon murid baru dapat memilih 3 (tiga) sekolah tujuan, sesuai dengan daftar penetapan wilayah penerimaan murid baru yang ditetapkan oleh Kepala Dinas Pendidikan. (2) calon murid baru yang belum diterima di sekolah tujuan, dapat mendaftar di sekolah lain selama jadwal pendaftaran penerimaan murid baru jalur afirmasi prioritas kedua masih berlangsung. (3) calon murid baru yang sudah diterima sementara di sekolah tujuan, tidak dapat mengganti pilihan sekolah lain.
+      b) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Dasar.
+      c) calon murid baru dapat memilih sekolah tujuan, dengan ketentuan:
+          1) calon murid baru dapat memilih 3 (tiga) sekolah tujuan, sesuai dengan daftar penetapan wilayah penerimaan murid baru yang ditetapkan oleh Kepala Dinas Pendidikan.
+          2) calon murid baru yang belum diterima di sekolah tujuan, dapat mendaftar di sekolah lain selama jadwal pendaftaran penerimaan murid baru jalur afirmasi prioritas kedua masih berlangsung.
+          3) calon murid baru yang sudah diterima sementara di sekolah tujuan, tidak dapat mengganti pilihan sekolah lain.
   d. terhadap calon murid baru melalui jalur domisili, berlaku ketentuan:
     1) calon murid baru melakukan pengajuan akun dan verifikasi Kartu Keluarga secara daring pada aplikasi penerimaan murid baru untuk Sekolah Dasar.
     2) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta.
-    3) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau basil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Dasar.
+    3) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Dasar.
     4) calon murid baru dapat memilih sekolah tujuan, dengan ketentuan:
-      a) calon murid baru dapat memilib 3 (tiga) sekolah tujuan, sesuai dengan daftar penetapan wilayah penerimaan murid baru yang ditetapkan oleh Kepala Dinas Pendidikan;
+      a) calon murid baru dapat memilih 3 (tiga) sekolah tujuan, sesuai dengan daftar penetapan wilayah penerimaan murid baru yang ditetapkan oleh Kepala Dinas Pendidikan;
       b) calon murid baru yang belum diterima di sekolah tujuan, dapat mendaftar di sekolah lain selama jadwal pendaftaran penerimaan murid baru jalur domisili masih berlangsung.
       c) calon murid baru yang sudah diterima sementara di sekolah tujuan, tidak dapat mengganti pilihan sekolah lain.
   e. terhadap calon murid baru melalui jalur mutasi, berlaku ketentuan:
@@ -519,7 +548,11 @@ Penerimaan murid baru dilaksanakan pada Satuan Pendidikan Dasar, meliputi:
     3) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Dasar.
     4) mengunggah hasil pindai atau foto dokumen asli yang menjadi persyaratan pendaftaran penerimaan murid baru untuk Sekolah Dasar, berupa:
       a) Kartu Keluarga, yang dikeluarkan oleh Dinas Kependudukan dan Pencatatan Sipil paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru;
-      b) dalam hal terdapat perbedaan nama orang tua/wali calon murid baru, Kartu Keluarga terbaru dapat digunakan jika: (1) orang tua/wali meninggal dunia yang dibuktikan dengan melampirkan surat kematian yang diterbitkan oleh instansi yang berwenang; (2) orang tua/wali bercerai sebelum tanggal penerbitan Kartu Keluarga terakhir, melampirkan akta cerai yang diterbitkan oleh instansi yang berwenang; (3) kepala keluarga sebagai kakek/nenek atau saudara kandung bapak/ibu dari calon murid baru, yang dibuktikan dengan Kartu Keluarga sebelumnya; atau (4) kepala keluarga sebagai wali calon murid baru yang dibuktikan Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Surat Putusan/Penetapan Pengadilan.
+      b) dalam hal terdapat perbedaan nama orang tua/wali calon murid baru, Kartu Keluarga terbaru dapat digunakan jika:
+          1) orang tua/wali meninggal dunia yang dibuktikan dengan melampirkan surat kematian yang diterbitkan oleh instansi yang berwenang;
+          2) orang tua/wali bercerai sebelum tanggal penerbitan Kartu Keluarga terakhir, melampirkan akta cerai yang diterbitkan oleh instansi yang berwenang;
+          3) kepala keluarga sebagai kakek/nenek atau saudara kandung bapak/ibu dari calon murid baru, yang dibuktikan dengan Kartu Keluarga sebelumnya;
+            4) kepala keluarga sebagai wali calon murid baru yang dibuktikan Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Surat Putusan/Penetapan Pengadilan.
       c) surat keterangan pindah tugas dari instansi asal, lembaga, kantor atau perusahaan yang mempekerjakan, yang ditandatangani paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru;
       d) bagi anak guru, mengunggah surat pembagian tugas mengajar tahun pelajaran berjalan dari kepala satuan pendidikan sesuai dengan tempat tugas orang tua mengajar;
       e) bagi anak tenaga kependidikan, mengunggah surat yang menunjukkan pembagian tugas tahun pelajaran berjalan dari kepala satuan pendidikan sesuai dengan tempat orang tua bertugas; dan
@@ -580,12 +613,16 @@ Penerimaan murid baru dilaksanakan pada Satuan Pendidikan Dasar, meliputi:
 1. calon murid baru melalui jalur domisili, sebagai berikut:
     1) domisili calon murid baru didasarkan alamat pada Kartu Keluarga yang diterbitkan paling singkat 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru pada Sekolah Menengah Pertama.
     2) pembagian wilayah domisili calon murid baru pada Sekolah Menengah Pertama, berlaku ketentuan:
-      a) wilayah penerimaan murid baru prioritas pertama, diperuntukkan bagi: ( 1) calon murid baru yang berdomisili pada rukun tetangga yang sama dengan rukun tetangga lokasi sekolah; dan (2) calon murid baru yang berdomisili pada rukun tetangga yang berbatasan langsung atau bersinggungan dengan rukun tetangga lokasi sekolah.
+      a) wilayah penerimaan murid baru prioritas pertama, diperuntukkan bagi:
+        1) calon murid baru yang berdomisili pada rukun tetangga yang sama dengan rukun tetangga lokasi sekolah;
+        2) calon murid baru yang berdomisili pada rukun tetangga yang berbatasan langsung atau bersinggungan dengan rukun tetangga lokasi sekolah.
       b) wilayah penerimaan murid baru prioritas kedua, diperuntukkan bagi calon murid baru yang berdomisili pada rukun tetangga sekitar sekolah berdasarkan pemetaan; dan
       c) wilayah penerimaan murid baru prioritas ketiga, diperuntukkan bagi calon murid baru yang berdomisili pada kelurahan yang sama dan/atau berdekatan dengan kelurahan lokasi sekolah.
   m. calon murid baru melalui jalur mutasi, sebagai berikut:
     1) calon murid baru melalui jalur mutasi merupakan anak dari orang tua/wali yang mengalami penugasan, dengan ketentuan:
-      a) perpindahan tugas orang tua/wali dibuktikan dengan surat keterangan pindah tugas yang memenuhi ketentuan: (1) ditandatangani paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru; dan (2) dikeluarkan oleh instansi, lembaga, kantor, atau perusahaan yang mempekerjakan orang tua/wali calon murid baru.
+      a) perpindahan tugas orang tua/wali dibuktikan dengan surat keterangan pindah tugas yang memenuhi ketentuan:
+          1) ditandatangani paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru;
+            2) dikeluarkan oleh instansi, lembaga, kantor, atau perusahaan yang mempekerjakan orang tua/wali calon murid baru.
       b) perpindahan domisili orang tua/wali dan calon murid baru dibuktikan dengan Kartu Keluarga yang dikeluarkan oleh Dinas Kependudukan dan Pencatatan Sipil paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru.
     2) anak guru atau anak tenaga kependidikan, dengan ketentuan:
       a) anak guru, memiliki surat pembagian tugas mengajar tahun pelajaran berjalan dari kepala satuan pendidikan sesuai dengan tempat tugas orang tua mengajar.
@@ -593,15 +630,18 @@ Penerimaan murid baru dilaksanakan pada Satuan Pendidikan Dasar, meliputi:
 3. Mekanisme Seleksi Calon Murid Baru pada Sekolah Menengah Pertama
   a. terhadap calon murid baru melalui jalur prestasi, berlaku ketentuan:
     1) prestasi calon murid diukur berdasarkan indikator dan pembobotan indeks prestasi akademik dan nonakademik, sebagai berikut:
-      a) rerata nilai rapor selama 5 (lima) semester yang sudah divalidasi, meliputi: (1) kelas 4 semester 1 dan semester 2; (2) kelas 5 semester 1 dan semester 2; dan (3) kelas 6 semester 1, Sekolah Dasar, Madrasah Ibtidaiyah, atau Paket A, atau surat keterangan yang berpenghargaan sama, khususnya pada mata pelajaran Pendidikan Kewarganegaraan atau Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam atau Ilmu Pengetahuan Alam dan Sosial untuk kurikulum yang berlaku nasional.
+      a) rerata nilai rapor selama 5 (lima) semester yang sudah divalidasi, meliputi:
+          1) kelas 4 semester 1 dan semester 2;
+          2) kelas 5 semester 1 dan semester 2;
+            3) kelas 6 semester 1, Sekolah Dasar, Madrasah Ibtidaiyah, atau Paket A, atau surat keterangan yang berpenghargaan sama, khususnya pada mata pelajaran Pendidikan Kewarganegaraan atau Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam atau Ilmu Pengetahuan Alam dan Sosial untuk kurikulum yang berlaku nasional.
       b) persentil nilai rapor merupakan peringkat rerata nilai rapor selama 5 (lima) semester yang dikelompokkan menjadi 100 (seratus) bagian yang sama setelah data diurutkan dari terbesar hingga terkecil dalam satu sekolah.
       c) memiliki nilai prestasi akademik yang berada pada 3 (tiga) peringkat teratas untuk tingkat internasional, nasional, provinsi, dan kota/kabupaten administrasi;
       d) memiliki nilai prestasi nonakademik yang berada pada 3 (tiga) peringkat teratas untuk tingkat internasional, nasional, provinsi, dan kota/kabupaten administrasi; dan/atau
       e) memiliki prestasi dalam seleksi ketat bukan perlombaan antara lain prestasi yang diperoleh dari kegiatan pramuka, paskibra, jumbara, dan Hafiz Quran.
-    2) dalam hal nilai Tes Kemampuan Akademik (TKA) digunakan dalam pelaksanaan SPMB padajalur prestasi, basil nilai TKA terakhir yang dilaksanakan Kementerian yang menyelenggarakan urusan pemerintahan bidang pendidikan dapat menjadi tambahan indikator dan pembobotan indeks prestasi akademik dan nonakademik
+    2) dalam hal nilai Tes Kemampuan Akademik (TKA) digunakan dalam pelaksanaan SPMB pada jalur prestasi, hasil nilai TKA terakhir yang dilaksanakan Kementerian yang menyelenggarakan urusan pemerintahan bidang pendidikan dapat menjadi tambahan indikator dan pembobotan indeks prestasi akademik dan nonakademik
     3) calon murid baru dapat menyertakan sertifikat yang dimiliki dari prestasi kejuaraan/perlombaan antara lain bidang olahraga, seni, budaya, keagamaan, sains dan teknologi, pramuka, dan palang merah remaja, yang diselenggarakan oleh instansi kedinasan dan/atau induk organisasi yang resmi;
     4) prestasi dan/atau kejuaraan diperoleh oleh calon murid baru selama 3 (tiga) tahun terakhir (kelas 4 sampai dengan kelas 6) paling lambat bulan Maret pada tahun berjalan.
-    5) memiliki prestasi berupa basil kejuaraan, dengan ketentuan:
+    5) memiliki prestasi berupa hasil kejuaraan, dengan ketentuan:
       a) diselenggarakan oleh instansi kedinasan atau induk organisasi resmi;
       b) kejuaraan yang diselenggarakan di luar instansi kedinasan atau induk organisasi resmi harus mendapatkan surat rekomendasi terlebih dahulu sebelum penyelenggaraan dari instansi kedinasan atau induk organisasi resmi yang menaungi;
       c) prestasi akademik dan nonakademik yang bersifat pemasalan, ekshibisi, undangan, dan festival yang dilaksanakan oleh instansi non kedinasan dan non induk organisasi resmi tidak dapat diinput sebagai prestasi kecuali sertifikatnya telah dikurasi oleh unit kerja di Kementerian yang menyelenggarakan urusan pemerintahan bidang pendidikan bagian talenta dan prestasi); dan
@@ -621,7 +661,10 @@ Penerimaan murid baru dilaksanakan pada Satuan Pendidikan Dasar, meliputi:
     1) penerima manfaat panti sosial tidak dilakukan proses seleksi.
     2) anak tenaga kesehatan yang meninggal dunia dalam penanganan Corona Virus Disease 2019 di wilayah Provinsi DKI Jakarta, tidak dilakukan proses seleksi.
     3) Penyandang Disabilitas diseleksi dengan ketentuan:
-      a) dalam hal jumlah pendaftar melebihi daya tampung, maka dilakukan seleksi berdasarkan urutan langkah sebagai berikut: (1) wilayah penerimaan murid baru prioritas yang ditetapkan oleh Kepala Dinas Pendidikan; (2) usia dari yang tertua ke yang termuda; (3) urutan pilihan sekolah; dan (4) waktu mendaftar.
+      a) dalam hal jumlah pendaftar melebihi daya tampung, maka dilakukan seleksi berdasarkan urutan langkah sebagai berikut:
+          1) wilayah penerimaan murid baru prioritas yang ditetapkan oleh Kepala Dinas Pendidikan;
+          2) usia dari yang tertua ke yang termuda;
+          3) urutan pilihan sekolah; dan (4) waktu mendaftar.
       b) dalam hal kuota untuk Penyandang Disabilitas tidak terpenuhi, maka sisa kuota dimaksud dilimpahkan kepada afirmasi prioritas kedua.
   c. terhadap calon murid baru melalui jalur afirmasi prioritas kedua, berlaku ketentuan:
     1) dalam hal jumlah pendaftar melebihi daya tampung, maka dilakukan seleksi berdasarkan urutan langkah sebagai berikut:
@@ -658,11 +701,26 @@ Penerimaan murid baru dilaksanakan pada Satuan Pendidikan Dasar, meliputi:
     1) Afirmasi Prioritas Pertama
       a) Dinas Pendidikan melalui Unit Pelaksana Teknis Pusat Data dan Teknologi Informasi Pendidikan melakukan pendaftaran penerima manfaat panti sosial dan anak tenaga kesehatan yang meninggal dunia dalam penanganan Corona Virus Disease 2019 di wilayah Provinsi DKI Jakarta, dengan cara memasukkan data ke dalam aplikasi penerimaan murid baru untuk Sekolah Menengah Pertama sesuai jadwal pelaksanaan yang telah ditetapkan oleh Kepala Dinas Pendidikan.
       b) penerima manfaat panti sosial dan anak tenaga kesehatan yang meninggal dunia dalam penanganan Corona Virus Disease 2019 di wilayah Provinsi DKI Jakarta hanya dapat memilih dan didaftarkan pada 1 (satu) sekolah.
-      c) Penyandang Disabilitas melakukan pendaftaran, dengan ketentuan: (1) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah Menengah Pertama dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta. (2) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Menengah Pertama. (3) mengunggah hasil pindai atau foto dokumen asli yang menjadi persyaratan pendaftaran penerimaan murid baru untuk Sekolah Menengah Pertama, berupa: (a) Kartu Keluarga; (b) dokumen yang menunjukkan keterangan diri murid pada halaman depan rapor/keterangan tentang diri murid, atau ijazah; (c) surat keterangan anak berkebutuhan khusus dari pihak yang berkompeten; dan (d) surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen dari orang tua/wali calon murid baru bermeterai cukup. (4) calon murid baru dapat memilih sekolah tujuan, dengan ketentuan: (a) calon murid baru dapat memilih 3 (tiga) sekolah tujuan, sesuai dengan daftar penetapan wilayah penerimaan murid baru yang ditetapkan oleh Kepala Dinas Pendidikan. (b) sekolah tujuan pilihan pertama calon murid baru menjadi tempat pelaksanaan verifikasi berkas pendaftaran calon murid baru yang bersangkutan. (c) calon murid baru yang belum diterima di sekolah tujuan, dapat mendaftar di sekolah lain selama jadwal pendaftaran penerimaan murid baru bagi Penyandang Disabilitas masih berlangsung. (d) calon murid baru yang sudah diterima sementara di sekolah tujuan, tidak dapat mengganti pilihan sekolah lain.
+      c) Penyandang Disabilitas melakukan pendaftaran, dengan ketentuan:
+          1) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah Menengah Pertama dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta.
+          2) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Menengah Pertama.
+          3) mengunggah hasil pindai atau foto dokumen asli yang menjadi persyaratan pendaftaran penerimaan murid baru untuk Sekolah Menengah Pertama, berupa:
+            a) Kartu Keluarga;
+            b) dokumen yang menunjukkan keterangan diri murid pada halaman depan rapor/keterangan tentang diri murid, atau ijazah;
+            c) surat keterangan anak berkebutuhan khusus dari pihak yang berkompeten;
+              d) surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen dari orang tua/wali calon murid baru bermeterai cukup.
+          4) calon murid baru dapat memilih sekolah tujuan, dengan ketentuan:
+            a) calon murid baru dapat memilih 3 (tiga) sekolah tujuan, sesuai dengan daftar penetapan wilayah penerimaan murid baru yang ditetapkan oleh Kepala Dinas Pendidikan.
+            b) sekolah tujuan pilihan pertama calon murid baru menjadi tempat pelaksanaan verifikasi berkas pendaftaran calon murid baru yang bersangkutan.
+            c) calon murid baru yang belum diterima di sekolah tujuan, dapat mendaftar di sekolah lain selama jadwal pendaftaran penerimaan murid baru bagi Penyandang Disabilitas masih berlangsung.
+            d) calon murid baru yang sudah diterima sementara di sekolah tujuan, tidak dapat mengganti pilihan sekolah lain.
     2) Afirmasi Prioritas Kedua
       a) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah Menengah Pertama dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta.
       b) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Menengah Pertama.
-      c) calon murid baru dapat memilih sekolah tujuan, dengan ketentuan: (1) calon murid baru dapat memilih 3 (tiga) sekolah tujuan, sesuai dengan daftar penetapan wilayah penerimaan murid baru yang ditetapkan oleh Kepala Dinas Pendidikan. (2) calon murid baru yang belum diterima di sekolah tujuan, dapat mendaftar di sekolah lain selama jadwal pendaftaran penerimaan murid baru jalur afirmasi prioritas kedua masih berlangsung. (3) calon murid baru yang sudah diterima sementara di sekolah tujuan, tidak dapat mengganti pilihan sekolah lain.
+      c) calon murid baru dapat memilih sekolah tujuan, dengan ketentuan:
+          1) calon murid baru dapat memilih 3 (tiga) sekolah tujuan, sesuai dengan daftar penetapan wilayah penerimaan murid baru yang ditetapkan oleh Kepala Dinas Pendidikan.
+          2) calon murid baru yang belum diterima di sekolah tujuan, dapat mendaftar di sekolah lain selama jadwal pendaftaran penerimaan murid baru jalur afirmasi prioritas kedua masih berlangsung.
+          3) calon murid baru yang sudah diterima sementara di sekolah tujuan, tidak dapat mengganti pilihan sekolah lain.
   e. terhadap calon murid baru melalui jalur domisili, berlaku ketentuan:
     1) calon murid baru melakukan pengajuan akun dan verifikasi Kartu Keluarga secara daring pada aplikasi penerimaan murid baru untuk Sekolah Menengah Pertama.
     2) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah Menengah Pertama dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta.
@@ -674,19 +732,27 @@ Penerimaan murid baru dilaksanakan pada Satuan Pendidikan Dasar, meliputi:
   f. terhadap calon murid baru melalui jalur mutasi, berlaku ketentuan:
     1) calon murid baru melakukan pengajuan akun dan verifikasi Kartu Keluarga secara daring pada aplikasi penerimaan murid baru untuk Sekolah Menengah Pertama.
     2) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah Menengah Pertama dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta.
-    3) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau basil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Menengah Pertama.
+    3) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Menengah Pertama.
     4) mengunggah hasil pindai atau foto dokumen asli yang menjadi persyaratan pendaftaran penerimaan murid baru untuk Sekolah Menengah Pertama, berupa:
-      a) Kartu Keluargayang dikeluarkan oleh Dinas Kependudukan dan Pencatatan Sipil paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru;
-      b) dalam hal terdapat perbedaan nama orang tua/wali calon murid baru, Kartu Keluarga terbaru dapat digunakan jika: (1) orang tua/wali meninggal dunia yang dibuktikan dengan melampirkan surat kematian yang diterbitkan oleh instansi yang berwenang; (2) orang tua/wali bercerai sebelum tanggal penerbitan Kartu Keluarga terakhir, melampirkan akta cerai yang diterbitkan oleh instansi yang berwenang; (3) kepala keluarga sebagai kakek/nenek atau saudara kandung bapak/ ibu dari calon murid baru, yang dibuktikan dengan Kartu Keluarga sebelumnya; atau (4) kepala keluarga sebagai wali calon murid baru yang dibuktikan Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Keluraban (PM1) atau Surat Putusan/Penetapan Pengadilan.
+      a) Kartu Keluarga yang dikeluarkan oleh Dinas Kependudukan dan Pencatatan Sipil paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru;
+      b) dalam hal terdapat perbedaan nama orang tua/wali calon murid baru, Kartu Keluarga terbaru dapat digunakan jika:
+          1) orang tua/wali meninggal dunia yang dibuktikan dengan melampirkan surat kematian yang diterbitkan oleh instansi yang berwenang;
+          2) orang tua/wali bercerai sebelum tanggal penerbitan Kartu Keluarga terakhir, melampirkan akta cerai yang diterbitkan oleh instansi yang berwenang;
+          3) kepala keluarga sebagai kakek/nenek atau saudara kandung bapak/ ibu dari calon murid baru, yang dibuktikan dengan Kartu Keluarga sebelumnya;
+            4) kepala keluarga sebagai wali calon murid baru yang dibuktikan Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Surat Putusan/Penetapan Pengadilan.
       c) surat keterangan pindah tugas dari instansi asal, lembaga, kantor atau perusahaan yang mempekerjakan, yang ditandatangani paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru;
       d) bagi anak guru, mengunggah surat pembagian tugas mengajar tahun pelajaran berjalan dari kepala satuan pendidikan sesuai dengan tempat tugas orang tua mengajar;
       e) bagi anak tenaga kependidikan, mengunggah surat yang menunjukkan pembagian tugas tahun pelajaran berjalan dari kepala satuan pendidikan sesuai dengan tempat orang tua bertugas;
       f) surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen terkait pindah tugas bermeterai cukup;
-      g) nilai rapor selama 5 (lima) semester, meliputi: (1) kelas 4 semester 1 dan semester 2; (2) kelas 5 semester 1 dan semester 2; dan (3) kelas 6 semester l, Sekolah Dasar, Madrasah Ibtidaiyah, atau Paket A, atau surat keterangan yang berpenghargaan sama khususnya pada mata pelajaran Pendidikan Kewarganegaraan atau Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam atau Ilmu Pengetahuan Alam dan Sosial untuk kurikulum yang berlaku nasional;
+      g) nilai rapor selama 5 (lima) semester, meliputi:
+          1) kelas 4 semester 1 dan semester 2;
+          2) kelas 5 semester 1 dan semester 2;
+            3) kelas 6 semester l, Sekolah Dasar, Madrasah Ibtidaiyah, atau Paket A, atau surat keterangan yang berpenghargaan sama khususnya pada mata pelajaran Pendidikan Kewarganegaraan atau Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam atau Ilmu Pengetahuan Alam dan Sosial untuk kurikulum yang berlaku nasional;
       h) surat keterangan perolehan nilai rapor pendidikan tahun sebelumnya dari satuan pendidikan asal yang ditandatangani oleh Kepala Satuan Pendidikan dengan melampirkan dokumen yang menunjukkan nilai rapor pendidikan;
       i) surat keterangan peringkat rerata nilai rapor dalam 1 (satu) sekolah dari sekolah asal;
       j) sertifikat prestasi akademik;
-      k) sertifikat prestasi nonakademik; I) sertifikat yang diperoleh dengan hasil seleksi ketat bukan perlombaan; dan
+      k) sertifikat prestasi nonakademik;
+      l) sertifikat yang diperoleh dengan hasil seleksi ketat bukan perlombaan; dan
       m) surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen dari orang tua/wali calon murid baru bermeterai cukup.
     5) calon murid baru dapat memilih sekolah tujuan, dengan ketentuan:
       a) calon murid baru dapat memilih 3 (tiga) sekolah tujuan, sesuai dengan daftar penetapan wilayah penerimaan murid baru yang ditetapkan oleh Kepala Dinas Pendidikan;
@@ -749,7 +815,8 @@ Penerimaan murid baru dilaksanakan pada Satuan pendidikan Menengah, meliputi:
   h. bagi penerima manfaat panti sosial:
     1) memiliki Nomor Induk Kependudukan yang tercatat dalam Kartu Keluarga Panti Sosial; dan
     2) melampirkan surat pernyataan tanggung jawab mutlak yang ditandatangani oleh Kepala Panti Sosial dari calon murid baru penerima manfaat panti sosial bermeterai cukup.
-1. bagi anak tenaga kesehatan yang meninggal dunia dalam penanganan Corona Virus Disease 2019 di wilayah Provinsi DKI Jakarta, dibuktikan dengan surat keterangan yang ditandatangani oleh Kepala Dinas Kesehatan. bagi Penyandang Disabilitas, berlaku ketentuan: j.
+  i. bagi anak tenaga kesehatan yang meninggal dunia dalam penanganan Corona Virus Disease 2019 di wilayah Provinsi DKI Jakarta, dibuktikan dengan surat keterangan yang ditandatangani oleh Kepala Dinas Kesehatan.
+  j. bagi Penyandang Disabilitas, berlaku ketentuan:
     1) memiliki surat keterangan dari fasilitas layanan kesehatan dan/atau pihak yang berkompeten yang menyatakan bahwa calon murid baru merupakan anak berkebutuhan khusus.
     2) memiliki ijazah/surat keterangan lulus dari satuan pendidikan sebelumnya.
     3) memenuhi persyaratan usia paling tinggi 24 (dua puluh empat) tahun pada tanggal 1 Juli tahun berjalan.
@@ -758,15 +825,20 @@ Penerimaan murid baru dilaksanakan pada Satuan pendidikan Menengah, meliputi:
     1) pemegang Kartu Jakarta Pintar Plus yang masih aktif;
     2) terdaftar dalam Data sebagai anak dari pengemudi mitra Transjakarta yang mengemudikan bus kecil dan direkomendasikan oleh Kepala Dinas Perhubungan Provinsi DKI Jakarta;
     3) terdaftar dalam Data sebagai anak dari pekerja/buruh yang tercatat dalam Kartu Keluarga dan direkomendasikan oleh Kepala Dinas Ketenagakerjaan, Transmigrasi, dan Energi Provinsi DKI Jakarta; atau
-    4) terdaftar dalam Data sebagai penerima Program Indonesia Pintar. I. calon murid baru melalui jalur domisili, sebagai berikut:
+    4) terdaftar dalam Data sebagai penerima Program Indonesia Pintar.
+  l. calon murid baru melalui jalur domisili, sebagai berikut:
     1) domisili calon murid baru didasarkan alamat pada Kartu Keluarga yang diterbitkan paling singkat 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru pada Sekolah Menengah Atas.
     2) pembagian wilayah domisili calon murid baru pada Sekolah Menengah Atas, berlaku ketentuan:
-      a) wilayah penerimaan murid baru prioritas pertama, diperuntukkan bagi: ( 1) calon murid baru yang berdomisili pada rukun tetangga yang sama dengan rukun tetangga lokasi sekolah; dan (2) calon murid baru yang berdomisili pada rukun tetangga yang berbatasan langsung atau bersinggungan dengan rukun tetangga lokasi sekolah.
+      a) wilayah penerimaan murid baru prioritas pertama, diperuntukkan bagi:
+        1) calon murid baru yang berdomisili pada rukun tetangga yang sama dengan rukun tetangga lokasi sekolah;
+        2) calon murid baru yang berdomisili pada rukun tetangga yang berbatasan langsung atau bersinggungan dengan rukun tetangga lokasi sekolah.
       b) wilayah penerimaan murid baru prioritas kedua, diperuntukkan bagi calon murid baru yang berdomisili pada rukun tetangga sekitar sekolah berdasarkan pemetaan.
       c) wilayah penerimaan murid baru prioritas ketiga, diperuntukkan bagi calon murid baru yang berdomisili pada kelurahan yang sama dan/atau berdekatan dengan kelurahan lokasi sekolah.
   m. calon murid baru melalui jalur mutasi, sebagai berikut:
     1) calon murid baru melalui jalur mutasi merupakan anak dari orang tua/wali yang mengalami penugasan, dengan ketentuan:
-      a) perpindahan tugas orang tua/wali dibuktikan dengan surat keterangan pindah tugas yang memenuhi ketentuan: (1) ditandatangani paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru; dan (2) dikeluarkan oleh instansi, lembaga, kantor, atau perusahaan yang mempekerjakan orang tua/wali calon murid baru.
+      a) perpindahan tugas orang tua/wali dibuktikan dengan surat keterangan pindah tugas yang memenuhi ketentuan:
+          1) ditandatangani paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru;
+            2) dikeluarkan oleh instansi, lembaga, kantor, atau perusahaan yang mempekerjakan orang tua/wali calon murid baru.
       b) perpindahan domisili orang tua/wali dan calon murid baru dibuktikan dengan Kartu Keluarga yang dikeluarkan oleh Dinas Kependudukan dan Pencatatan Sipil Provinsi DKI Jakarta paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru.
     2) anak guru atau anak tenaga kependidikan, dengan ketentuan:
       a) anak guru, memiliki surat pembagian tugas mengajar tahun pelajaran berjalan dari kepala satuan pendidikan sesuai dengan tempat tugas orang tua mengajar.
@@ -774,7 +846,10 @@ Penerimaan murid baru dilaksanakan pada Satuan pendidikan Menengah, meliputi:
 3. Mekanisme Seleksi Calon Murid Baru pada Sekolah Menengah Atas
   a. terhadap calon murid baru melalui jalur prestasi, berlaku ketentuan:
     1) prestasi calon murid diukur berdasarkan indikator dan pembobotan indeks prestasi akademik dan nonakademik, sebagai berikut:
-      a) rerata nilai rapor selama 5 (lima) semester yang sudah divalidasi, meliputi: (1) kelas 7 semester 1 dan semester 2; (2) kelas 8 semester 1 dan semester 2; dan (3) kelas 9 semester 1, Sekolah Menengah Pertama/Madrasah Tsanawiyah/Paket B, atau surat keterangan yang berpenghargaan sama, khususnya pada mata pelajaran Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam, Ilmu Pengetahuan Sosial, dan Bahasa Inggris.
+      a) rerata nilai rapor selama 5 (lima) semester yang sudah divalidasi, meliputi:
+          1) kelas 7 semester 1 dan semester 2;
+          2) kelas 8 semester 1 dan semester 2;
+            3) kelas 9 semester 1, Sekolah Menengah Pertama/Madrasah Tsanawiyah/Paket B, atau surat keterangan yang berpenghargaan sama, khususnya pada mata pelajaran Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam, Ilmu Pengetahuan Sosial, dan Bahasa Inggris.
       b) persentil nilai rapor merupakan peringkat rerata nilai rapor selama 5 (lima) semester yang dikelompokkan menjadi 100 (seratus) bagian yang sama setelah data diurutkan dari terbesar hingga ke terkecil dalam satu sekolah.
       c) memiliki nilai prestasi akademik yang berada pada 3 (tiga) peringkat teratas untuk tingkat internasional, nasional, provinsi, dan kota/kabupaten administrasi;
       d) memiliki nilai prestasi nonakademik yang berada pada 3 (tiga) peringkat teratas untuk tingkat internasional, nasional, provinsi, dan kota/kabupaten administrasi; dan/atau
@@ -803,7 +878,10 @@ Penerimaan murid baru dilaksanakan pada Satuan pendidikan Menengah, meliputi:
     1) penerima manfaat panti sosial tidak dilakukan proses seleksi.
     2) anak tenaga kesehatan yang meninggal dunia dalam penanganan Corona Virus Disease 2019 di wilayah Provinsi DKI Jakarta, tidak dilakukan proses seleksi.
     3) Penyandang Disabilitas diseleksi dengan ketentuan:
-      a) dalam hal jumlah pendaftar melebihi daya tampung, maka dilakukan seleksi berdasarkan urutan langkah sebagai berikut: (1) wilayah penerimaan murid baru prioritas yang ditetapkan oleh Kepala Dinas Pendidikan; (2) usia dari yang tertua ke yang termuda; (3) urutan pilihan sekolah; dan (4) waktu mendaftar.
+      a) dalam hal jumlah pendaftar melebihi daya tampung, maka dilakukan seleksi berdasarkan urutan langkah sebagai berikut:
+          1) wilayah penerimaan murid baru prioritas yang ditetapkan oleh Kepala Dinas Pendidikan;
+          2) usia dari yang tertua ke yang termuda;
+          3) urutan pilihan sekolah; dan (4) waktu mendaftar.
       b) dalam hal kuota untuk penyandang disabilitas tidak terpenuhi, maka sisa kuota dimaksud dilimpahkan kepada afirmasi prioritas kedua.
   c. terhadap calon murid baru melalui jalur afirmasi prioritas kedua, berlaku ketentuan:
     1) dalam hal jumlah pendaftar melebihi daya tampung, maka dilakukan seleksi berdasarkan urutan langkah sebagai berikut:
@@ -841,11 +919,26 @@ Penerimaan murid baru dilaksanakan pada Satuan pendidikan Menengah, meliputi:
     1) Afirmasi Prioritas Pertama
       a) Dinas Pendidikan melalui Unit Pelaksana Teknis Pusat Data dan Teknologi Informasi Pendidikan melakukan pendaftaran penerima manfaat panti sosial dan anak tenaga kesehatan yang meninggal dunia dalam penanganan Corona Virus Disease 2019 di wilayah Provinsi DKI Jakarta, dengan cara memasukkan data ke dalam aplikasi penerimaan murid baru untuk Sekolah Menengah Atas sesuai jadwal pelaksanaan yang telah ditetapkan oleh Kepala Dinas Pendidikan.
       b) penerima manfaat panti sosial dan anak tenaga kesehatan yang meninggal dunia dalam penanganan Corona Virus Disease 2019 di wilayah Provinsi DKI Jakarta hanya dapat memilih dan didaftarkan pada 1 (satu) sekolah.
-      c) Penyandang Disabilitas melakukan pendaftaran, dengan ketentuan: (1) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah Menengah Atas dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta. (2) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Menengah Atas. (3) mengunggah hasil pindai atau foto dokumen asli yang menjadi persyaratan pendaftaran penerimaan murid baru untuk Sekolah Menengah Atas, berupa: (a) Kartu Keluarga; (b) dokumen yang menunjukkan keterangan diri murid pada halaman depan rapor /keterangan tentang diri murid, atau ijazah; (c) surat keterangan anak berkebutuhan khusus dari pihak yang berkompeten; dan (d) surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen dari orang tua/wali calon murid baru bermeterai cukup. (4) calon murid baru dapat memilih sekolah tujuan, dengan ketentuan: (a) calon murid baru dapat memilih 3 (tiga) sekolah tujuan, sesuai dengan daftar penetapan wilayah penerimaan murid baru prioritas yang ditetapkan oleh Kepala Dinas Pendidikan. (b) sekolah tujuan pilihan pertama calon murid baru menjadi tempat pelaksanaan verifikasi berkas pendaftaran calon murid baru yang bersangkutan. (c) calon murid baru yang belum diterima di sekolah tujuan, dapat mendaftar di sekolah lain selama jadwal pendaftaran penerimaan murid baru bagi Penyandang Disabilitas masih berlangsung. (d) calon murid baru yang sudah diterima sementara di sekolah tujuan, tidak dapat mengganti pilihan sekolah lain.
+      c) Penyandang Disabilitas melakukan pendaftaran, dengan ketentuan:
+          1) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah Menengah Atas dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta.
+          2) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Menengah Atas.
+          3) mengunggah hasil pindai atau foto dokumen asli yang menjadi persyaratan pendaftaran penerimaan murid baru untuk Sekolah Menengah Atas, berupa:
+            a) Kartu Keluarga;
+            b) dokumen yang menunjukkan keterangan diri murid pada halaman depan rapor /keterangan tentang diri murid, atau ijazah;
+            c) surat keterangan anak berkebutuhan khusus dari pihak yang berkompeten;
+              d) surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen dari orang tua/wali calon murid baru bermeterai cukup.
+          4) calon murid baru dapat memilih sekolah tujuan, dengan ketentuan:
+            a) calon murid baru dapat memilih 3 (tiga) sekolah tujuan, sesuai dengan daftar penetapan wilayah penerimaan murid baru prioritas yang ditetapkan oleh Kepala Dinas Pendidikan.
+            b) sekolah tujuan pilihan pertama calon murid baru menjadi tempat pelaksanaan verifikasi berkas pendaftaran calon murid baru yang bersangkutan.
+            c) calon murid baru yang belum diterima di sekolah tujuan, dapat mendaftar di sekolah lain selama jadwal pendaftaran penerimaan murid baru bagi Penyandang Disabilitas masih berlangsung.
+            d) calon murid baru yang sudah diterima sementara di sekolah tujuan, tidak dapat mengganti pilihan sekolah lain.
     2) Afirmasi Prioritas Kedua
       a) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah Menengah Atas dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta.
       b) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Menengah Atas.
-      c) calon murid baru dapat memilih sekolah tujuan, dengan ketentuan: (1) calon murid baru dapat memilih 3 (tiga) sekolah tujuan, sesuai dengan daftar penetapan wilayah penerimaan murid baru prioritas yang ditetapkan oleh Kepala Dinas Pendidikan. (2) calon murid baru yang belum diterima di sekolah tujuan, dapat mendaftar di sekolah lain selama jadwal pendaftaran penerimaan murid baru jalur afirmasi prioritas kedua masih berlangsung. (3) calon murid baru yang sudah diterima sementara di sekolah tujuan, tidak dapat mengganti pilihan sekolah lain.
+      c) calon murid baru dapat memilih sekolah tujuan, dengan ketentuan:
+          1) calon murid baru dapat memilih 3 (tiga) sekolah tujuan, sesuai dengan daftar penetapan wilayah penerimaan murid baru prioritas yang ditetapkan oleh Kepala Dinas Pendidikan.
+          2) calon murid baru yang belum diterima di sekolah tujuan, dapat mendaftar di sekolah lain selama jadwal pendaftaran penerimaan murid baru jalur afirmasi prioritas kedua masih berlangsung.
+          3) calon murid baru yang sudah diterima sementara di sekolah tujuan, tidak dapat mengganti pilihan sekolah lain.
   e. terhadap calon murid baru melalui jalur domisili, berlaku ketentuan:
     1) calon murid baru melakukan pengajuan akun dan verifikasi Kartu Keluarga secara daring pada aplikasi penerimaan murid baru untuk Sekolah Menengah Atas.
     2) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah Menengah Atas dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta.
@@ -860,12 +953,19 @@ Penerimaan murid baru dilaksanakan pada Satuan pendidikan Menengah, meliputi:
     3) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Menengah Atas.
     4) mengunggah hasil pindai atau foto dokumen asli yang menjadi persyaratan pendaftaran penerimaan murid baru untuk Sekolah Menengah Atas, berupa:
       a) Kartu Keluarga, dengan ketentuan dikeluarkan oleh Dinas Kependudukan dan Pencatatan Sipil paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru;
-      b) dalam hal terdapat perbedaan nama orang tua/wali calon murid baru, Kartu Keluarga terbaru dapat digunakan jika: (1) orang tua/wali meninggal dunia yang dibuktikan dengan melampirkan surat kematian yang diterbitkan oleh instansi yang berwenang; (2) orang tua/wali bercerai sebelum tanggal penerbitan Kartu Keluarga terakhir, melampirkan akta cerai yang diterbitkan oleh instansi yang berwenang; (3) kepala keluarga sebagai kakek/nenek atau saudara kandung bapak/ibu dari calon murid baru, yang dibuktikan dengan Kartu Keluarga sebelumnya; atau (4) kepala keluarga sebagai wali calon murid baru yang dibuktikan Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Surat Putusan/Penetapan Pengadilan.
+      b) dalam hal terdapat perbedaan nama orang tua/wali calon murid baru, Kartu Keluarga terbaru dapat digunakan jika:
+          1) orang tua/wali meninggal dunia yang dibuktikan dengan melampirkan surat kematian yang diterbitkan oleh instansi yang berwenang;
+          2) orang tua/wali bercerai sebelum tanggal penerbitan Kartu Keluarga terakhir, melampirkan akta cerai yang diterbitkan oleh instansi yang berwenang;
+          3) kepala keluarga sebagai kakek/nenek atau saudara kandung bapak/ibu dari calon murid baru, yang dibuktikan dengan Kartu Keluarga sebelumnya;
+            4) kepala keluarga sebagai wali calon murid baru yang dibuktikan Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Surat Putusan/Penetapan Pengadilan.
       c) surat keterangan pindah tugas dari instansi asal, lembaga, kantor atau perusahaan yang mempekerjakan, yang ditandatangani paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru;
       d) bagi anak guru, mengunggah surat pembagian tugas mengajar tahun pelajaran berjalan dari kepala satuan pendidikan sesuai dengan tempat tugas orang tua mengajar;
       e) bagi anak tenaga kependidikan, mengunggah surat yang menunjukkan pembagian tugas tahun pelajaran berjalan dari kepala satuan pendidikan sesuai dengan tempat orang tua bertugas;
       f) surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen terkait pindah tugas bermeterai cukup;
-      g) nilai rapor selama 5 (lima) semester, meliputi: (1) kelas 7 semester 1 dan semester 2; (2) kelas 8 semester 1 dan semester 2; dan (3) kelas 9 semester l, Sekolah Menengah Pertama, Madrasah Tsanawiyah, Paket B, atau surat keterangan yang berpenghargaan sama, khususnya pada mata pelajaran Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam, Ilmu Pengetahuan Sosial, dan Bahasa Inggris;
+      g) nilai rapor selama 5 (lima) semester, meliputi:
+          1) kelas 7 semester 1 dan semester 2;
+          2) kelas 8 semester 1 dan semester 2;
+            3) kelas 9 semester l, Sekolah Menengah Pertama, Madrasah Tsanawiyah, Paket B, atau surat keterangan yang berpenghargaan sama, khususnya pada mata pelajaran Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam, Ilmu Pengetahuan Sosial, dan Bahasa Inggris;
       h) surat keterangan perolehan nilai rapor pendidikan tahun sebelumnya dari satuan pendidikan asal yang ditandatangani oleh Kepala Satuan Pendidikan dengan melampirkan dokumen yang menunjukkan nilai rapor pendidikan;
       i) surat keterangan peringkat rerata nilai rapor dalam 1 (satu) sekolah dari sekolah asal; dan
       j) surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen dari orang tua/wali calon murid baru bermeterai cukup.
@@ -934,14 +1034,17 @@ Penerimaan murid baru dilaksanakan pada Satuan pendidikan Menengah, meliputi:
     4) Penyandang Disabilitas tidak memiliki kendala fisik untuk mengikuti kegiatan belajar mengajar sesuai karakteristik konsentrasi keahlian yang dipilih, sesuai dengan daftar konsentrasi keahlian yang ditetapkan oleh Kepala Dinas Pendidikan.
     5) memiliki surat keterangan tidak buta warna dari instansi kesehatan pemerintah untuk pilihan konsentrasi keahlian tertentu.
     6) menyertakan surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen tidak buta warna dari orang tua/wali calon murid baru bermeterai cukup.
-    7) bagi calon murid baru yang diterima di Sekolah Menengah Kejuruan, Sekolah Menengah Kejuruan melakukan verifikasi terhadap surat keterangan tidak buta warna dan surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen tidak buta warna dari orang tua/wali sesuai jadwal daftar ulang yang ditetapkan. I. calon murid baru melalui jalur afirmasi prioritas kedua, sebagai berikut:
+    7) bagi calon murid baru yang diterima di Sekolah Menengah Kejuruan, Sekolah Menengah Kejuruan melakukan verifikasi terhadap surat keterangan tidak buta warna dan surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen tidak buta warna dari orang tua/wali sesuai jadwal daftar ulang yang ditetapkan.
+  l. calon murid baru melalui jalur afirmasi prioritas kedua, sebagai berikut:
     1) pemegang Kartu Jakarta Pintar Plus yang masih aktif;
     2) terdaftar dalam Data sebagai anak dari pengemudi mitra Transjakarta yang mengemudikan bus kecil dan direkomendasikan oleh Kepala Dinas Perhubungan Provinsi DKI Jakarta;
     3) terdaftar dalam Data sebagai anak dari pekerja/buruh yang tercatat dalam Kartu Keluarga dan direkomendasikan oleh Kepala Dinas Ketenagakerjaan, Transmigrasi, dan Energi Provinsi DKI Jakarta; atau
     4) terdaftar dalam Data sebagai penerima Program Indonesia Pintar.
   m. calon murid baru melalui jalur mutasi, sebagai berikut:
     1) calon murid baru melalui jalur mutasi merupakan anak dari orang tua/wali yang mengalami penugasan, dengan ketentuan:
-      a) perpindahan tugas orang tua/wali dibuktikan dengan surat keterangan pindah tugas yang memenuhi ketentuan: (1) ditandatangani paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru; dan (2) dikeluarkan oleh instansi, lembaga, kantor, atau perusahaan yang mempekerjakan orang tua/wali calon murid baru.
+      a) perpindahan tugas orang tua/wali dibuktikan dengan surat keterangan pindah tugas yang memenuhi ketentuan:
+          1) ditandatangani paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru;
+            2) dikeluarkan oleh instansi, lembaga, kantor, atau perusahaan yang mempekerjakan orang tua/wali calon murid baru.
       b) perpindahan domisili orang tua/wali dan calon murid baru dibuktikan dengan Kartu Keluarga yang dikeluarkan oleh Dinas Kependudukan dan Pencatatan Sipil paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru.
     2) anak guru atau anak tenaga kependidikan, dengan ketentuan:
       a) anak guru, memiliki surat pembagian tugas mengajar tahun pelajaran berjalan dari kepala satuan pendidikan sesuai dengan tempat tugas orang tua mengajar.
@@ -949,7 +1052,10 @@ Penerimaan murid baru dilaksanakan pada Satuan pendidikan Menengah, meliputi:
 3. Mekanisme Seleksi Calon Murid Baru pada Sekolah Menengah Kejuruan
   a. terhadap calon murid baru melalui jalur prestasi, berlaku ketentuan:
     1) prestasi calon murid diukur berdasarkan indikator dan pembobotan indeks prestasi akademik dan nonakademik, sebagai berikut:
-      a) rerata nilai rapor selama 5 (lima) semester yang sudah divalidasi, meliputi: (1) kelas 7 semester 1 dan semester 2; (2) kelas 8 semester 1 dan semester 2; dan (3) kelas 9 semester l, Sekolah Menengah Pertama/Madrasah Tsanawiyah/Paket B, atau surat keterangan yang berpenghargaan sama, khususnya pada mata pelajaran Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam, Ilmu Pengetahuan Sosial, dan Bahasa Inggris;
+      a) rerata nilai rapor selama 5 (lima) semester yang sudah divalidasi, meliputi:
+          1) kelas 7 semester 1 dan semester 2;
+          2) kelas 8 semester 1 dan semester 2;
+            3) kelas 9 semester l, Sekolah Menengah Pertama/Madrasah Tsanawiyah/Paket B, atau surat keterangan yang berpenghargaan sama, khususnya pada mata pelajaran Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam, Ilmu Pengetahuan Sosial, dan Bahasa Inggris;
       b) persentil nilai rapor merupakan peringkat rerata nilai rapor selama 5 (lima) semester yang dikelompokkan menjadi 100 (seratus) bagian yang sama setelah data diurutkan dari terbesar hingga ke terkecil dalam satu sekolah;
       c) memiliki nilai prestasi akademik yang berada pada 3 (tiga) peringkat teratas untuk tingkat internasional, nasional, provinsi, dan kota/kabupaten administrasi;
       d) memiliki nilai prestasi nonakademik yang berada pada 3 (tiga) peringkat teratas untuk tingkat internasional, nasional, provinsi, dan kota/kabupaten administrasi;
@@ -958,7 +1064,7 @@ Penerimaan murid baru dilaksanakan pada Satuan pendidikan Menengah, meliputi:
     2) dalam hal nilai Tes Kemampuan Akademik (TKA) digunakan dalam pelaksanaan SPMB pada jalur prestasi, hasil nilai TKA terakhir yang dilaksanakan Kementerian yang menyelenggarakan urusan pemerintahan bidang pendidikan dapat menjadi tambahan indikator dan pembobotan indeks prestasi akademik dan nonakademik;
     3) calon murid baru dapat menyertakan sertifikat yang dimiliki dari prestasi kejuaraan/perlombaan antara lain bidang olahraga, seni, budaya, keagamaan, sains dan teknologi, pramuka, dan palang merah remaja, yang diselenggarakan oleh instansi kedinasan dan/atau induk organisasi yang resmi;
     4) prestasi dan/atau kejuaraan diperoleh oleh calon murid baru selama 3 (tiga) tahun terakhir (kelas 7 sampai dengan kelas 9) paling lambat bulan Maret pada tahun berjalan.
-    5) memiliki prestasi berupa basil kejuaraan, dengan ketentuan:
+    5) memiliki prestasi berupa hasil kejuaraan, dengan ketentuan:
       a) diselenggarakan oleh instansi kedinasan atau induk organisasi resmi;
       b) kejuaraan yang diselenggarakan di luar instansi kedinasan atau induk organisasi resmi harus mendapatkan surat rekomendasi terlebih dahulu sebelum penyelenggaraan dari instansi kedinasan atau induk organisasi resmi yang menaungi;
       c) prestasi akademik dan nonakademik yang bersifat pemasalan, ekshibisi, undangan, dan festival yang dilaksanakan oleh instansi non kedinasan dan non induk organisasi resmi tidak dapat diinput sebagai prestasi kecuali sertifikatnya telah dikurasi oleh unit kerja di Kementerian yang menyelenggarakan urusan pemerintahan bidang pendidikan bagian talenta dan prestasi; dan
@@ -976,7 +1082,9 @@ Penerimaan murid baru dilaksanakan pada Satuan pendidikan Menengah, meliputi:
     1) penerima manfaat panti sosial tidak dilakukan proses seleksi.
     2) anak tenaga kesehatan yang meninggal dunia dalam penanganan Corona Virus Disease 2019 di wilayah Provinsi DKI Jakarta, tidak dilakukan proses seleksi.
     3) Penyandang Disabilitas diseleksi dengan ketentuan:
-      a) dalam hal jumlah pendaftar melebihi daya tampung, maka dilakukan seleksi berdasarkan urutan langkah sebagai berikut: (1) usia dari yang tertua ke yang termuda; (2) urutan pilihan sekolah; dan (3) waktu mendaftar.
+      a) dalam hal jumlah pendaftar melebihi daya tampung, maka dilakukan seleksi berdasarkan urutan langkah sebagai berikut:
+          1) usia dari yang tertua ke yang termuda;
+          2) urutan pilihan sekolah; dan (3) waktu mendaftar.
       b) dalam hal kuota untuk Penyandang Disabilitas tidak terpenuhi, maka sisa kuota dimaksud dilimpahkan kepada afirmasi prioritas kedua.
   c. terhadap calon murid baru melalui jalur afirmasi prioritas kedua, berlaku ketentuan:
     1) dalam hal jumlah pendaftar melebihi daya tampung, maka dilakukan seleksi berdasarkan urutan langkah sebagai berikut:
@@ -1003,27 +1111,52 @@ Penerimaan murid baru dilaksanakan pada Satuan pendidikan Menengah, meliputi:
     1) Afirmasi Prioritas Pertama
       a) Dinas Pendidikan melalui Unit Pelaksana Teknis Pusat Data dan Teknologi Informasi Pendidikan melakukan pendaftaran penerima manfaat panti sosial dan anak tenaga kesehatan yang meninggal dunia dalam penanganan Corona Virus Disease 2019 di wilayah Provinsi DKI Jakarta, dengan cara memasukkan data ke dalam aplikasi penerimaan murid baru untuk Sekolah Menengah Kejuruan sesuai jadwal pelaksanaan yang telah ditetapkan oleh Kepala Dinas Pendidikan.
       b) penerima manfaat panti sosial dan anak tenaga kesehatan yang meninggal dunia dalam penanganan Corona Virus Disease 2019 di wilayah Provinsi DKI Jakarta hanya dapat memilih dan didaftarkan pada 1 (satu) konsentrasi keahlian di sekolah tujuan.
-      c) Penyandang Disabilitas melakukan pendaftaran, dengan ketentuan: (1) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah Menengah Kejuruan dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta. (2) calon murid baru melakukan pemilihan konsentrasi keahlian disesuaikan dengan karakteristik tuntutan konsentrasi keahlian yang dipilih. (3) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Menengah Kejuruan. (4) mengunggah hasil pindai atau foto dokumen asli yang menjadi persyaratan pendaftaran penerimaan murid baru untuk Sekolah Menengah Kejuruan, berupa: (a) Kartu Keluarga; (b) dokumen yang menunjukkan keterangan diri murid pada halaman depan rapor/keterangan tentang diri murid, atau ijazah; (c) surat keterangan anak berkebutuhan khusus dari pihak yang berkompeten; dan (d) surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen dari orang tua/wali calon murid baru bermeterai cukup. (5) calon murid baru dapat memilih konsentrasi keahlian pada sekolah tujuan, dengan ketentuan: (a) calon murid baru dapat memilih paling banyak 3 (tiga) konsentrasi keahlian sesuai ketentuan, pada 1 (satu) sekolah atau pada sekolah yang berbeda. (b) pemilihan konsentrasi keahlian disesuaikan dengan kemampuan kondisi fisik calon murid baru. (c) sekolah tujuan pilihan pertama calon murid baru menjadi tempat pelaksanaan verifikasi berkas pendaftaran calon murid baru yang bersangkutan. (d) calon murid baru yang belum diterima di sekolah tujuan, dapat mendaftar di sekolah lain selama jadwal pendaftaran penerimaan murid baru jalur afirmasi prioritas pertama masih berlangsung. (e) calon murid baru yang sudah diterima sementara pada konsentrasi keahlian, tidak dapat mengganti pilihan konsentrasi keablian di sekolah yang sama maupun di sekolah yang lain.
+      c) Penyandang Disabilitas melakukan pendaftaran, dengan ketentuan:
+          1) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah Menengah Kejuruan dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta.
+          2) calon murid baru melakukan pemilihan konsentrasi keahlian disesuaikan dengan karakteristik tuntutan konsentrasi keahlian yang dipilih.
+          3) calon murid baru melakukan pendaftaran, pemilihan sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Menengah Kejuruan.
+          4) mengunggah hasil pindai atau foto dokumen asli yang menjadi persyaratan pendaftaran penerimaan murid baru untuk Sekolah Menengah Kejuruan, berupa:
+            a) Kartu Keluarga;
+            b) dokumen yang menunjukkan keterangan diri murid pada halaman depan rapor/keterangan tentang diri murid, atau ijazah;
+            c) surat keterangan anak berkebutuhan khusus dari pihak yang berkompeten;
+              d) surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen dari orang tua/wali calon murid baru bermeterai cukup.
+          5) calon murid baru dapat memilih konsentrasi keahlian pada sekolah tujuan, dengan ketentuan:
+            a) calon murid baru dapat memilih paling banyak 3 (tiga) konsentrasi keahlian sesuai ketentuan, pada 1 (satu) sekolah atau pada sekolah yang berbeda.
+            b) pemilihan konsentrasi keahlian disesuaikan dengan kemampuan kondisi fisik calon murid baru.
+            c) sekolah tujuan pilihan pertama calon murid baru menjadi tempat pelaksanaan verifikasi berkas pendaftaran calon murid baru yang bersangkutan.
+            d) calon murid baru yang belum diterima di sekolah tujuan, dapat mendaftar di sekolah lain selama jadwal pendaftaran penerimaan murid baru jalur afirmasi prioritas pertama masih berlangsung.
+            e) calon murid baru yang sudah diterima sementara pada konsentrasi keahlian, tidak dapat mengganti pilihan konsentrasi keahlian di sekolah yang sama maupun di sekolah yang lain.
     2) Afirmasi Prioritas Kedua
       a) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah Menengah Kejuruan dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta.
-      b) calon murid baru melakukan pendaftaran, pemilihan konsentrasi keablian pada sekolah tujuan, dan memantau basil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Menengah Kejuruan.
-      c) calon murid baru dapat memilih sekolah tujuan, dengan ketentuan, dengan ketentuan: (1) calon murid baru dapat memilih paling banyak 3 (tiga) konsentrasi keahlian pada 1 (satu) sekolah atau pada sekolah yang berbeda. (2) calon murid baru yang belum diterima pada konsentrasi keablian di sekolah tujuan, dapat mendaftar pada konsentrasi keablian di sekolah lain selama jadwal pendaftaran penerimaan murid baru jalur afirmasi prioritas kedua masih berlangsung. (3) calon murid baru yang sudah diterima sementara pada konsentrasi keahlian di sekolah tujuan, tidak dapat mengganti pilihan konsentrasi keablian di sekolah yang sama maupun di sekolah lain.
+      b) calon murid baru melakukan pendaftaran, pemilihan konsentrasi keahlian pada sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Menengah Kejuruan.
+      c) calon murid baru dapat memilih sekolah tujuan, dengan ketentuan:
+          1) calon murid baru dapat memilih paling banyak 3 (tiga) konsentrasi keahlian pada 1 (satu) sekolah atau pada sekolah yang berbeda.
+          2) calon murid baru yang belum diterima pada konsentrasi keahlian di sekolah tujuan, dapat mendaftar pada konsentrasi keahlian di sekolah lain selama jadwal pendaftaran penerimaan murid baru jalur afirmasi prioritas kedua masih berlangsung.
+          3) calon murid baru yang sudah diterima sementara pada konsentrasi keahlian di sekolah tujuan, tidak dapat mengganti pilihan konsentrasi keahlian di sekolah yang sama maupun di sekolah lain.
   e. terhadap calon murid baru melalui jalur mutasi, berlaku ketentuan:
     1) calon murid baru melakukan pengajuan akun dan verifikasi Kartu Keluarga secara daring pada aplikasi penerimaan murid baru untuk Sekolah Menengah Kejuruan.
     2) calon murid baru mendaftar secara daring melalui laman aplikasi penerimaan murid baru untuk Sekolah Menengah Kejuruan dengan cara memasukkan Nomor Induk Kependudukan dan nomor peserta.
-    3) calon murid baru melakukan pendaftaran, pemilihan konsentrasi keablian pada sekolah tujuan, dan memantau basil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Menengah Kejuruan.
+    3) calon murid baru melakukan pendaftaran, pemilihan konsentrasi keahlian pada sekolah tujuan, dan memantau hasil seleksi pada aplikasi penerimaan murid baru untuk Sekolah Menengah Kejuruan.
     4) mengunggah hasil pindai atau foto dokumen asli yang menjadi persyaratan pendaftaran penerimaan murid baru untuk Sekolah Menengah Kejuruan, berupa:
       a) Kartu Keluarga yang dikeluarkan oleh Dinas Kependudukan dan Pencatatan Sipil paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru;
-      b) dalam hal terdapat perbedaan nama orang tua/wali calon murid baru, Kartu Keluarga terbaru dapat digunakan jika: (1) orang tua/wali meninggal dunia yang dibuktikan dengan melampirkan surat kematian yang diterbitkan oleh instansi yang berwenang; (2) orang tua/wali bercerai sebelum tanggal penerbitan Kartu Keluarga terakhir, melampirkan akta cerai yang diterbitkan oleh instansi yang berwenang; (3) kepala keluarga sebagai kakek/nenek atau saudara kandung bapak/ibu dari calon murid baru, yang dibuktikan dengan Kartu Keluarga sebelumnya; atau (4) kepala keluarga sebagai wali calon murid baru yang dibuktikan Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Surat Putusan/Penetapan Pengadilan.
+      b) dalam hal terdapat perbedaan nama orang tua/wali calon murid baru, Kartu Keluarga terbaru dapat digunakan jika:
+          1) orang tua/wali meninggal dunia yang dibuktikan dengan melampirkan surat kematian yang diterbitkan oleh instansi yang berwenang;
+          2) orang tua/wali bercerai sebelum tanggal penerbitan Kartu Keluarga terakhir, melampirkan akta cerai yang diterbitkan oleh instansi yang berwenang;
+          3) kepala keluarga sebagai kakek/nenek atau saudara kandung bapak/ibu dari calon murid baru, yang dibuktikan dengan Kartu Keluarga sebelumnya;
+            4) kepala keluarga sebagai wali calon murid baru yang dibuktikan Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Surat Putusan/Penetapan Pengadilan.
       c) surat keterangan pindah tugas dari instansi asal, lembaga, kantor atau perusahaan yang mempekerjakan, yang ditandatangani paling lama 1 (satu) tahun sebelum tanggal pendaftaran penerimaan murid baru;
       d) bagi anak guru, mengunggah surat pembagian tugas mengajar tahun pelajaran berjalan dari kepala satuan pendidikan sesuai dengan tempat tugas orang tua mengajar;
       e) bagi anak tenaga kependidikan, mengunggah surat yang menunjukkan pembagian tugas tahun pelajaran berjalan dari kepala satuan pendidikan sesuai dengan tempat orang tua bertugas;
       f) surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen terkait pindah tugas bermeterai cukup;
-      g) nilai rapor selama 5 (lima) semester, meliputi: (1) kelas 7 semester 1 dan semester 2; (2) kelas 8 semester 1 dan semester 2; dan (3) kelas 9 semester l, Sekolah Menengah Pertama, Madrasah Tsanawiyah, Paket B, atau surat keterangan yang berpenghargaan sama, khususnya pada mata pelajaran Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam, Ilmu Pengetahuan Sosial, dan Bahasa Inggris;
+      g) nilai rapor selama 5 (lima) semester, meliputi:
+          1) kelas 7 semester 1 dan semester 2;
+          2) kelas 8 semester 1 dan semester 2;
+            3) kelas 9 semester l, Sekolah Menengah Pertama, Madrasah Tsanawiyah, Paket B, atau surat keterangan yang berpenghargaan sama, khususnya pada mata pelajaran Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam, Ilmu Pengetahuan Sosial, dan Bahasa Inggris;
       h) surat keterangan perolehan nilai rapor pendidikan tahun sebelumnya dari satuan pendidikan asal yang ditandatangani oleh Kepala Satuan Pendidikan dengan melampirkan dokumen yang menunjukkan nilai rapor pendidikan;
       i) surat keterangan peringkat rerata nilai rapor dalam 1 (satu) sekolah dari sekolah asal;
       j) sertifikat prestasi akademik;
-      k) sertifikat prestasi nonakademik; I) sertifikat yang diperoleh dengan hasil seleksi ketat bukan perlombaan;
+      k) sertifikat prestasi nonakademik;
+      l) sertifikat yang diperoleh dengan hasil seleksi ketat bukan perlombaan;
       m) bagi calon murid baru yang pernah menjadi pengurus Organisasi Siswa Intra Sekolah atau Majelis Perwakilan Kelas, menyertakan surat keputusan kepala sekolah tentang susunan pengurus Organisasi Siswa Intra Sekolah atau Majelis Perwakilan Kelas;
       n) bagi calon murid baru yang pernah menjadi pengurus ekstrakurikuler, menyertakan surat keputusan kepala sekolah tentang susunan pengurus ekstrakurikuler; dan
       o) surat pernyataan tanggung jawab mutlak tentang keabsahan dokumen dari orang tua/wali calon murid baru bermeterai cukup.
@@ -1074,13 +1207,13 @@ Penerimaan murid baru dilaksanakan pada Sekolah Luar Biasa, meliputi:
     3) waktu mendaftar.
 4. Mekanisme Pendaftaran Calon Murid Baru pada Taman Kanak-Kanak Luar Biasa
   a. mekanisme pendaftaran calon murid baru, terdiri atas:
-    1) dilaksanakan secara luring, dengan mendatangi Taman Kanak Kanak Luar Biasa yang dituju.
+    1) dilaksanakan secara luring, dengan mendatangi Taman Kanak-Kanak Luar Biasa yang dituju.
     2) dilaksanakan secara daring, melalui kanal pendaftaran Taman Kanak-Kanak Luar Biasa secara daring ditetapkan oleh Kepala Dinas Pendidikan.
   b. orang tua/wali calon murid baru mengisi formulir pendaftaran yang disediakan oleh Panitia Penerimaan Murid Baru tingkat Saluan pendidikan pada Taman Kanak-Kanak Luar Biasa.
   c. mengunggah hasil pindai foto dokumen asli persyaratan penerimaan murid baru pada laman daring aplikasi penerimaan murid baru untuk Taman Kanak-Kanak Luar Biasa yang dikelola oleh Dinas Pendidikan.
   d. tim verifikator melakukan proses verifikasi dokumen calon murid baru secara daring.
   e. Panitia Penerimaan Murid Baru tingkat Saluan pendidikan pada Taman Kanak-Kanak Luar Biasa memasukkan data calon murid baru yang telah diverifikasi ke dalam aplikasi penerimaan murid baru untuk Taman Kanak-Kanak Luar Biasa yang dikelola oleh Dinas Pendidikan.
-  f. pengumuman basil penerimaan murid baru pada Taman Kanak-Kanak Luar Biasa dilakukan secara luring dengan mendatangi Taman Kanak Kanak Luar Biasa tujuan dan daring melalui kanal resmi Dinas Pendidikan.
+  f. pengumuman hasil penerimaan murid baru pada Taman Kanak-Kanak Luar Biasa dilakukan secara luring dengan mendatangi Taman Kanak-Kanak Luar Biasa tujuan dan daring melalui kanal resmi Dinas Pendidikan.
   g. calon murid baru yang telah diterima pada Taman Kanak-Kanak Luar Biasa tujuan harus melakukan daftar ulang secara luring dengan mendatangi lokasi Taman Kanak-Kanak Luar Biasa tujuan.
   h. calon murid baru yang sudah dinyatakan diterima namun tidak melakukan daftar ulang, dinyatakan mengundurkan diri dan tidak dapat mengikuti penerimaan murid baru di Taman Kanak-Kanak Luar Biasa lainnya.
 
@@ -1115,7 +1248,7 @@ Penerimaan murid baru dilaksanakan pada Sekolah Luar Biasa, meliputi:
   c. mengunggah hasil pindai foto dokumen asli persyaratan penerimaan murid baru pada laman daring aplikasi penerimaan murid baru untuk Sekolah Dasar Luar Biasa yang dikelola oleh Dinas Pendidikan.
   d. tim verifikator melakukan proses verifikasi dokumen calon murid baru secara daring.
   e. Panitia Penerimaan Murid Baru tingkat Satuan pendidikan pada Sekolah Dasar Luar Biasa memasukkan data calon murid baru yang telah diverifikasi ke dalam aplikasi penerimaan murid baru untuk Sekolah Dasar Luar Biasa yang dikelola oleh Dinas Pendidikan.
-  f. pengumuman basil penerimaan murid baru pada Sekolah Dasar Luar Biasa dilakukan secara luring dengan mendatangi Sekolah Dasar Luar Biasa tujuan dan daring melalui kanal resmi Dinas Pendidikan.
+  f. pengumuman hasil penerimaan murid baru pada Sekolah Dasar Luar Biasa dilakukan secara luring dengan mendatangi Sekolah Dasar Luar Biasa tujuan dan daring melalui kanal resmi Dinas Pendidikan.
   g. calon murid baru yang telah diterima pada Sekolah Dasar Luar Biasa tujuan harus melakukan daftar ulang secara luring dengan mendatangi lokasi Sekolah Dasar Luar Biasa tujuan.
   h. calon murid baru yang sudah dinyatakan diterima namun tidak melakukan daftar ulang, dinyatakan mengundurkan diri dan tidak dapat mengikuti penerimaan murid baru di Sekolah Dasar Luar Biasa lainnya.
 
@@ -1184,10 +1317,10 @@ Penerimaan murid baru dilaksanakan pada Sekolah Luar Biasa, meliputi:
     1) dilaksanakan secara luring, dengan mendatangi Sekolah Menengah Atas Luar Biasa yang dituju.
     2) dilaksanakan secara daring, melalui kanal pendaftaran Sekolah Menengah Atas Luar Biasa secara daring ditetapkan oleh Kepala Dinas Pendidikan.
       a) orang tua/wali calon murid baru mengisi formulir pendaftaran yang disediakan oleh Panitia Penerimaan Murid Baru tingkat Satuan pendidikan pada Sekolah Menengah Atas Luar Biasa.
-      b) mengunggah basil pindai foto dokumen asli persyaratan penerimaan murid baru pada laman daring aplikasi penerimaan murid baru untuk Sekolah Menengah Atas Luar Biasa yang dikelola oleh Dinas Pendidikan.
+      b) mengunggah hasil pindai foto dokumen asli persyaratan penerimaan murid baru pada laman daring aplikasi penerimaan murid baru untuk Sekolah Menengah Atas Luar Biasa yang dikelola oleh Dinas Pendidikan.
       c) tim verifikator melakukan proses verifikasi dokumen calon murid baru secara daring.
       d) Panitia Penerimaan Murid Baru tingkat Satuan pendidikan pada Sekolah Menengah Atas Luar Biasa memasukkan data calon murid baru yang telah diverifikasi ke dalam aplikasi penerimaan murid baru untuk Sekolah Menengah Atas Luar Biasa yang dikelola oleh Dinas Pendidikan.
-      e) pengumuman basil penerimaan murid baru pada Sekolah Menengah Atas Luar Biasa dilakukan secara luring dengan mendatangi Sekolah Menengah Atas Luar Biasa tujuan dan daring melalui kanal resmi Dinas Pendidikan.
+      e) pengumuman hasil penerimaan murid baru pada Sekolah Menengah Atas Luar Biasa dilakukan secara luring dengan mendatangi Sekolah Menengah Atas Luar Biasa tujuan dan daring melalui kanal resmi Dinas Pendidikan.
       f) calon murid baru yang telah diterima pada Sekolah Menengah Atas Luar Biasa tujuan harus melakukan daftar ulang secara luring dengan mendatangi lokasi Sekolah Menengah Atas Luar Biasa tujuan.
       g) calon murid baru yang sudah dinyatakan diterima namun tidak melakukan daftar ulang, dinyatakan mengundurkan diri dan tidak dapat mengikuti penerimaan murid baru di Sekolah Menengah Atas Luar Biasa lainnya.
 

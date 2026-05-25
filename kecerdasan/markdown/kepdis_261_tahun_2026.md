@@ -1,4 +1,4 @@
-# (REVISI) Keputusan Kepala Dinas Pendidikan DKI Jakarta Nomor 261 Tahun 2026
+# Keputusan Kepala Dinas Pendidikan DKI Jakarta Nomor 261 Tahun 2026
 
 ## Metadata Dokumen
 - Judul: Alur Proses Pelaksanaan Penerimaan Murid Baru Tahun Ajaran 2026/2027

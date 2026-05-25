@@ -643,139 +643,206 @@
 - NPSN: 69774556
 - Suku Dinas: Wilayah I Kota Administrasi Jakarta Barat
 - Kategori: Umum
-- Konsentrasi keahlian: Akuntansi (Gelombang 1: 23, Gelombang 2: 10); Manajemen Perkantoran (Gelombang 1: 48, Gelombang 2: 20); Teknik Komputer dan Jaringan (Gelombang 1: 71, Gelombang 2: 31)
+- Konsentrasi keahlian:
+  - Akuntansi (Gelombang 1: 23, Gelombang 2: 10)
+  - Manajemen Perkantoran (Gelombang 1: 48, Gelombang 2: 20)
+  - Teknik Komputer dan Jaringan (Gelombang 1: 71, Gelombang 2: 31)
 
 #### 2. SMKS Maarif Jakarta
 - NPSN: 20101648
 - Suku Dinas: Wilayah II Kota Administrasi Jakarta Barat
 - Kategori: Umum
-- Konsentrasi keahlian: Desain Komunikasi Visual (Gelombang 1: 50, Gelombang 2: 22); Manajemen Perkantoran (Gelombang 1: 76, Gelombang 2: 32)
+- Konsentrasi keahlian:
+  - Desain Komunikasi Visual (Gelombang 1: 50, Gelombang 2: 22)
+  - Manajemen Perkantoran (Gelombang 1: 76, Gelombang 2: 32)
 
 #### 3. SMK YP IPPI Petojo
 - NPSN: 20100288
 - Suku Dinas: Wilayah I Kota Administrasi Jakarta Pusat
 - Kategori: Islam
-- Konsentrasi keahlian: Teknik Komputer dan Jaringan (Gelombang 1: 50, Gelombang 2: 22); Rekayasa Perangkat Lunak (Gelombang 1: 25, Gelombang 2: 11); Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Manajemen Perkantoran (Gelombang 1: 50, Gelombang 2: 22); Bisnis Retail (Gelombang 1: 50, Gelombang 2: 22)
+- Konsentrasi keahlian:
+  - Teknik Komputer dan Jaringan (Gelombang 1: 50, Gelombang 2: 22)
+  - Rekayasa Perangkat Lunak (Gelombang 1: 25, Gelombang 2: 11)
+  - Akuntansi (Gelombang 1: 25, Gelombang 2: 11)
+  - Manajemen Perkantoran (Gelombang 1: 50, Gelombang 2: 22)
+  - Bisnis Retail (Gelombang 1: 50, Gelombang 2: 22)
 
 #### 4. SMKS At Taqwa
 - NPSN: 20100131
 - Suku Dinas: Wilayah I Kota Administrasi Jakarta Pusat
 - Kategori: Umum
-- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Bisnis Retail (Gelombang 1: 25, Gelombang 2: 11)
+- Konsentrasi keahlian:
+  - Akuntansi (Gelombang 1: 25, Gelombang 2: 11)
+  - Bisnis Retail (Gelombang 1: 25, Gelombang 2: 11)
 
 #### 5. SMKS Tamansiswa 2
 - NPSN: 20100296
 - Suku Dinas: Wilayah II Kota Administrasi Jakarta Pusat
 - Kategori: Umum
-- Konsentrasi keahlian: Teknik Instalasi Tenaga Listrik (Gelombang 1: 50, Gelombang 2: 22); Teknik Pemesinan (Gelombang 1: 25, Gelombang 2: 11); Teknik Kendaraan Ringan (Gelombang 1: 50, Gelombang 2: 22); Teknik Komputer dan Jaringan (Gelombang 1: 50, Gelombang 2: 22); Rekayasa Perangkat Lunak (Gelombang 1: 50, Gelombang 2: 22); Teknik Sepeda Motor (Gelombang 1: 50, Gelombang 2: 22)
+- Konsentrasi keahlian:
+  - Teknik Instalasi Tenaga Listrik (Gelombang 1: 50, Gelombang 2: 22)
+  - Teknik Pemesinan (Gelombang 1: 25, Gelombang 2: 11)
+  - Teknik Kendaraan Ringan (Gelombang 1: 50, Gelombang 2: 22)
+  - Teknik Komputer dan Jaringan (Gelombang 1: 50, Gelombang 2: 22)
+  - Rekayasa Perangkat Lunak (Gelombang 1: 50, Gelombang 2: 22)
+  - Teknik Sepeda Motor (Gelombang 1: 50, Gelombang 2: 22)
 
 #### 6. SMK Katolik Sint Joseph
 - NPSN: 20100110
 - Suku Dinas: Wilayah II Kota Administrasi Jakarta Pusat
 - Kategori: Katolik
-- Konsentrasi keahlian: Desain Komunikasi Visual (Gelombang 1: 25, Gelombang 2: 11); Teknik Sepeda Motor (Gelombang 1: 25, Gelombang 2: 11)
+- Konsentrasi keahlian:
+  - Desain Komunikasi Visual (Gelombang 1: 25, Gelombang 2: 11)
+  - Teknik Sepeda Motor (Gelombang 1: 25, Gelombang 2: 11)
 
 #### 7. SMKS Gapura Merah Putih
 - NPSN: 69774854
 - Suku Dinas: Wilayah I Kota Administrasi Jakarta Selatan
 - Kategori: Umum
-- Konsentrasi keahlian: Layanan Penunjang Keperawatan dan Caregiving (Gelombang 1: 25, Gelombang 2: 11)
+- Konsentrasi keahlian:
+  - Layanan Penunjang Keperawatan dan Caregiving (Gelombang 1: 25, Gelombang 2: 11)
 
 #### 8. SMKS PGRI 15 Jakarta
 - NPSN: 20101511
 - Suku Dinas: Wilayah I Kota Administrasi Jakarta Selatan
 - Kategori: Umum
-- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Manajemen Perkantoran (Gelombang 1: 50, Gelombang 2: 22); Bisnis Retail (Gelombang 1: 50, Gelombang 2: 22); Perhotelan (Gelombang 1: 50, Gelombang 2: 22); Kuliner (Gelombang 1: 25, Gelombang 2: 11)
+- Konsentrasi keahlian:
+  - Akuntansi (Gelombang 1: 25, Gelombang 2: 11)
+  - Manajemen Perkantoran (Gelombang 1: 50, Gelombang 2: 22)
+  - Bisnis Retail (Gelombang 1: 50, Gelombang 2: 22)
+  - Perhotelan (Gelombang 1: 50, Gelombang 2: 22)
+  - Kuliner (Gelombang 1: 25, Gelombang 2: 11)
 
 #### 9. SMK Jagakarsa
 - NPSN: 70006225
 - Suku Dinas: Wilayah I Kota Administrasi Jakarta Selatan
 - Kategori: Umum
-- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Manajemen Perkantoran (Gelombang 1: 50, Gelombang 2: 22); Perhotelan (Gelombang 1: 50, Gelombang 2: 22); Teknik Komputer dan Jaringan (Gelombang 1: 25, Gelombang 2: 11)
+- Konsentrasi keahlian:
+  - Akuntansi (Gelombang 1: 25, Gelombang 2: 11)
+  - Manajemen Perkantoran (Gelombang 1: 50, Gelombang 2: 22)
+  - Perhotelan (Gelombang 1: 50, Gelombang 2: 22)
+  - Teknik Komputer dan Jaringan (Gelombang 1: 25, Gelombang 2: 11)
 
 #### 10. SMKS YPK Kesatuan Jakarta
 - NPSN: 20102433
 - Suku Dinas: Wilayah II Kota Administrasi Jakarta Selatan
 - Kategori: Umum
-- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Manajemen Perkantoran (Gelombang 1: 25, Gelombang 2: 11); Bisnis Retail (Gelombang 1: 25, Gelombang 2: 11); Desain Komunikasi Visual (Gelombang 1: 21, Gelombang 2: 9)
+- Konsentrasi keahlian:
+  - Akuntansi (Gelombang 1: 25, Gelombang 2: 11)
+  - Manajemen Perkantoran (Gelombang 1: 25, Gelombang 2: 11)
+  - Bisnis Retail (Gelombang 1: 25, Gelombang 2: 11)
+  - Desain Komunikasi Visual (Gelombang 1: 21, Gelombang 2: 9)
 
 #### 11. SMKS Cyber Media
 - NPSN: 20109265
 - Suku Dinas: Wilayah II Kota Administrasi Jakarta Selatan
 - Kategori: Umum
-- Konsentrasi keahlian: Teknik Komputer dan Jaringan (Gelombang 1: 76, Gelombang 2: 32); Desain Komunikasi Visual (Gelombang 1: 76, Gelombang 2: 32); Manajemen Perkantoran (Gelombang 1: 76, Gelombang 2: 32); Rekayasa Perangkat Lunak (Gelombang 1: 25, Gelombang 2: 11)
+- Konsentrasi keahlian:
+  - Teknik Komputer dan Jaringan (Gelombang 1: 76, Gelombang 2: 32)
+  - Desain Komunikasi Visual (Gelombang 1: 76, Gelombang 2: 32)
+  - Manajemen Perkantoran (Gelombang 1: 76, Gelombang 2: 32)
+  - Rekayasa Perangkat Lunak (Gelombang 1: 25, Gelombang 2: 11)
 
 #### 12. SMKS Cipta Karya Jakarta
 - NPSN: 20103709
 - Suku Dinas: Wilayah I Kota Administrasi Jakarta Timur
 - Kategori: Umum
-- Konsentrasi keahlian: Perhotelan (Gelombang 1: 76, Gelombang 2: 32)
+- Konsentrasi keahlian:
+  - Perhotelan (Gelombang 1: 76, Gelombang 2: 32)
 
 #### 13. SMKS Laboratorium Jakarta
 - NPSN: 20177921
 - Suku Dinas: Wilayah I Kota Administrasi Jakarta Timur
 - Kategori: Umum
-- Konsentrasi keahlian: Rekayasa Perangkat Lunak (Gelombang 1: 25, Gelombang 2: 11); Teknik Komputer dan Jaringan (Gelombang 1: 25, Gelombang 2: 11); Tata Kecantikan Kulit dan Rambut (Gelombang 1: 25, Gelombang 2: 11); Layanan Penunjang Keperawatan dan Caregiving (Gelombang 1: 25, Gelombang 2: 11)
+- Konsentrasi keahlian:
+  - Rekayasa Perangkat Lunak (Gelombang 1: 25, Gelombang 2: 11)
+  - Teknik Komputer dan Jaringan (Gelombang 1: 25, Gelombang 2: 11)
+  - Tata Kecantikan Kulit dan Rambut (Gelombang 1: 25, Gelombang 2: 11)
+  - Layanan Penunjang Keperawatan dan Caregiving (Gelombang 1: 25, Gelombang 2: 11)
 
 #### 14. SMK Bina Nusa Mandiri
 - NPSN: 69873590
 - Suku Dinas: Wilayah II Kota Administrasi Jakarta Timur
 - Kategori: Umum
-- Konsentrasi keahlian: Desain Komunikasi Visual (Gelombang 1: 71, Gelombang 2: 31); Teknik Komputer dan Jaringan (Gelombang 1: 48, Gelombang 2: 20); Perhotelan (Gelombang 1: 24, Gelombang 2: 10); Kuliner (Gelombang 1: 23, Gelombang 2: 10)
+- Konsentrasi keahlian:
+  - Desain Komunikasi Visual (Gelombang 1: 71, Gelombang 2: 31)
+  - Teknik Komputer dan Jaringan (Gelombang 1: 48, Gelombang 2: 20)
+  - Perhotelan (Gelombang 1: 24, Gelombang 2: 10)
+  - Kuliner (Gelombang 1: 23, Gelombang 2: 10)
 
 #### 15. SMKS Fajar Indah
 - NPSN: 20107417
 - Suku Dinas: Wilayah I Kota Administrasi Jakarta Utara
 - Kategori: Umum
-- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11)
+- Konsentrasi keahlian:
+  - Akuntansi (Gelombang 1: 25, Gelombang 2: 11)
 
 #### 16. SMKS Sari Putra
 - NPSN: 20107458
 - Suku Dinas: Wilayah II Kota Administrasi Jakarta Utara
 - Kategori: Umum
-- Konsentrasi keahlian: Manajemen Perkantoran (Gelombang 1: 25, Gelombang 2: 11); Manajemen Logistik (Gelombang 1: 25, Gelombang 2: 11)
+- Konsentrasi keahlian:
+  - Manajemen Perkantoran (Gelombang 1: 25, Gelombang 2: 11)
+  - Manajemen Logistik (Gelombang 1: 25, Gelombang 2: 11)
 
 #### 17. SMKS Permata Bunda I Jakarta
 - NPSN: 20101517
 - Suku Dinas: Wilayah I Kota Administrasi Jakarta Barat
 - Kategori: Umum
-- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Manajemen Perkantoran (Gelombang 1: 25, Gelombang 2: 11)
+- Konsentrasi keahlian:
+  - Akuntansi (Gelombang 1: 25, Gelombang 2: 11)
+  - Manajemen Perkantoran (Gelombang 1: 25, Gelombang 2: 11)
 
 #### 18. SMKS Benteng Gading Jakarta
 - NPSN: 20101597
 - Suku Dinas: Wilayah I Kota Administrasi Jakarta Barat
 - Kategori: Umum
-- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Teknik Komputer dan Jaringan (Gelombang 1: 25, Gelombang 2: 11)
+- Konsentrasi keahlian:
+  - Akuntansi (Gelombang 1: 25, Gelombang 2: 11)
+  - Teknik Komputer dan Jaringan (Gelombang 1: 25, Gelombang 2: 11)
 
 #### 19. SMKS Prima Wisata
 - NPSN: 20107268
 - Suku Dinas: Wilayah II Kota Administrasi Jakarta Barat
 - Kategori: Umum
-- Konsentrasi keahlian: Perhotelan (Gelombang 1: 50, Gelombang 2: 22); Kuliner (Gelombang 1: 25, Gelombang 2: 11); Usaha Layanan Wisata (Gelombang 1: 25, Gelombang 2: 11)
+- Konsentrasi keahlian:
+  - Perhotelan (Gelombang 1: 50, Gelombang 2: 22)
+  - Kuliner (Gelombang 1: 25, Gelombang 2: 11)
+  - Usaha Layanan Wisata (Gelombang 1: 25, Gelombang 2: 11)
 
 #### 20. SMKS Al Hamidiyah
 - NPSN: 20101600
 - Suku Dinas: Wilayah II Kota Administrasi Jakarta Barat
 - Kategori: Islam
-- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Bisnis Retail (Gelombang 1: 50, Gelombang 2: 22)
+- Konsentrasi keahlian:
+  - Akuntansi (Gelombang 1: 25, Gelombang 2: 11)
+  - Bisnis Retail (Gelombang 1: 50, Gelombang 2: 22)
 
 #### 21. SMKS Kebon Jeruk Jakarta
 - NPSN: 20101644
 - Suku Dinas: Wilayah II Kota Administrasi Jakarta Barat
 - Kategori: Umum
-- Konsentrasi keahlian: Teknik Kendaraan Ringan (Gelombang 1: 10, Gelombang 2: 5); Teknik Audio Vidio (Gelombang 1: 10, Gelombang 2: 5); Manajemen Perkantoran (Gelombang 1: 10, Gelombang 2: 5); Akuntansi (Gelombang 1: 10, Gelombang 2: 5)
+- Konsentrasi keahlian:
+  - Teknik Kendaraan Ringan (Gelombang 1: 10, Gelombang 2: 5)
+  - Teknik Audio Vidio (Gelombang 1: 10, Gelombang 2: 5)
+  - Manajemen Perkantoran (Gelombang 1: 10, Gelombang 2: 5)
+  - Akuntansi (Gelombang 1: 10, Gelombang 2: 5)
 
 #### 22. SMK Al-Ihsan
 - NPSN: 20100140
 - Suku Dinas: Wilayah I Kota Administrasi Jakarta Pusat
 - Kategori: Umum
-- Konsentrasi keahlian: Manajemen Perkantoran (Gelombang 1: 50, Gelombang 2: 22)
+- Konsentrasi keahlian:
+  - Manajemen Perkantoran (Gelombang 1: 50, Gelombang 2: 22)
 
 #### 23. SMKS Bina Putra Jakarta
 - NPSN: 20102530
 - Suku Dinas: Wilayah II Kota Administrasi Jakarta Selatan
 - Kategori: Umum
-- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Desain Komunikasi Visual (Gelombang 1: 50, Gelombang 2: 22); Manajemen Perkantoran (Gelombang 1: 50, Gelombang 2: 22)
+- Konsentrasi keahlian:
+  - Akuntansi (Gelombang 1: 25, Gelombang 2: 11)
+  - Desain Komunikasi Visual (Gelombang 1: 50, Gelombang 2: 22)
+  - Manajemen Perkantoran (Gelombang 1: 50, Gelombang 2: 22)
 
 - JUMLAH daya tampung gelombang 1 (SMK, akumulasi konsentrasi): 2.474
 - JUMLAH daya tampung gelombang 2 (SMK, akumulasi konsentrasi): 1.080

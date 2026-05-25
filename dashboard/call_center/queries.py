@@ -5,6 +5,8 @@ from __future__ import annotations
 import os
 import re
 import traceback
+import calendar
+from datetime import datetime
 from typing import Optional, List, Dict, Any
 
 from ..db_access import get_cursor
@@ -251,13 +253,15 @@ def get_cc_wa_routing(wa_user_id: str, *, bridge_key: Optional[str] = None) -> O
 def list_cc_wa_routing(
     search: Optional[str] = None,
     limit: int = 300,
+    offset: int = 0,
     *,
     bridge_key: Optional[str] = None,
-) -> list[dict]:
+) -> tuple[list[dict], int]:
     _ensure_cc_wa_routing_schema()
     key = _normalize_cc_bridge_filter(bridge_key)
     clean_limit = max(1, min(int(limit or 300), 1000))
-    params: dict[str, Any] = {"limit": clean_limit}
+    clean_offset = max(0, int(offset or 0))
+    params: dict[str, Any] = {"limit": clean_limit, "offset": clean_offset}
     where_parts: list[str] = []
     if key:
         where_parts.append("r.bridge_key = %(bridge_key)s")
@@ -268,6 +272,16 @@ def list_cc_wa_routing(
         params["search"] = f"%{clean_search}%"
     where = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
     with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT COUNT(*)::int AS total
+            FROM cc_wa_routing r
+            {where}
+            """,
+            params,
+        )
+        total = int((cur.fetchone() or {}).get("total") or 0)
+
         cur.execute(
             f"""
             SELECT r.id, r.bridge_key, r.wa_user_id, r.display_name, r.route_mode, r.is_active, r.notes,
@@ -288,12 +302,13 @@ def list_cc_wa_routing(
                 LIMIT 1
             ) c ON TRUE
             {where}
-            ORDER BY r.is_active DESC, r.updated_at DESC, r.id DESC
-            LIMIT %(limit)s
+            ORDER BY r.updated_at DESC NULLS LAST, r.created_at DESC NULLS LAST, r.id DESC
+            LIMIT %(limit)s OFFSET %(offset)s
             """,
             params,
         )
-        return [dict(r) for r in cur.fetchall()]
+        rows = [dict(r) for r in cur.fetchall()]
+    return rows, total
 
 
 def summarize_cc_wa_routing(*, bridge_key: Optional[str] = None) -> dict:
@@ -1012,6 +1027,19 @@ def fetch_cc_statistics(
     if mode not in {"daily", "monthly", "yearly", "all"}:
         mode = "daily"
 
+    history_cutoff_date: Optional[str] = None
+    if mode == "daily" and selected_date:
+        history_cutoff_date = selected_date
+    elif mode == "monthly" and selected_month:
+        try:
+            month_dt = datetime.strptime(f"{selected_month}-01", "%Y-%m-%d")
+            last_day = calendar.monthrange(month_dt.year, month_dt.month)[1]
+            history_cutoff_date = f"{month_dt.year:04d}-{month_dt.month:02d}-{last_day:02d}"
+        except Exception:
+            history_cutoff_date = None
+    elif mode == "yearly" and selected_year:
+        history_cutoff_date = f"{int(selected_year):04d}-12-31"
+
     msg_conditions = ["m.direction = 'inbound'"]
     conv_conditions: list[str] = []
     msg_params: dict[str, Any] = {}
@@ -1047,23 +1075,42 @@ def fetch_cc_statistics(
     where_msg = ("WHERE " + " AND ".join(msg_conditions)) if msg_conditions else ""
     where_conv = ("WHERE " + " AND ".join(conv_conditions)) if conv_conditions else ""
 
-    jenjang_case_sql = """
+    jenjang_case_template = """
         CASE
-            WHEN txt ~* '(^|[^a-z0-9])(smk|sekolah menengah kejuruan)([^a-z0-9]|$)' THEN 'SMK'
-            WHEN txt ~* '(^|[^a-z0-9])(sma|sekolah menengah atas|madrasah aliyah)([^a-z0-9]|$)' THEN 'SMA'
-            WHEN txt ~* '(^|[^a-z0-9])(smp|mts|sekolah menengah pertama|madrasah tsanawiyah)([^a-z0-9]|$)' THEN 'SMP'
-            WHEN txt ~* '(^|[^a-z0-9])(tk|paud|taman kanak|kelompok bermain|sekolah dasar|sd)([^a-z0-9]|$)' THEN 'TK/SD'
+            WHEN {col} ~* '(^|[^a-z0-9])(smk|sekolah menengah kejuruan|smk\\s*negeri|smk\\s*swasta|stm|smea|smkk|mak)([^a-z0-9]|$)'
+                OR {col} ~* '(^|[^a-z0-9])(kelas\\s*(10|11|12)|kelas\\s*x(i{{0,2}})?)([^a-z0-9]|$).*?(kejuruan|produktif|jurusan|pk|pkl)'
+                THEN 'SMK'
+            WHEN {col} ~* '(^|[^a-z0-9])(sma|sekolah menengah atas|madrasah aliyah|ma|sman|smas|smu|slta|smait|man)([^a-z0-9]|$)'
+                OR {col} ~* '(^|[^a-z0-9])(kelas\\s*(10|11|12)|kelas\\s*x(i{{0,2}})?)([^a-z0-9]|$)'
+                THEN 'SMA'
+            WHEN {col} ~* '(^|[^a-z0-9])(smp|sekolah menengah pertama|madrasah tsanawiyah|mts|mtsn|sltp|smpn|smps)([^a-z0-9]|$)'
+                OR {col} ~* '(^|[^a-z0-9])(kelas\\s*(7|8|9)|kelas\\s*ix|kelas\\s*viii|kelas\\s*vii)([^a-z0-9]|$)'
+                THEN 'SMP'
+            WHEN {col} ~* '(^|[^a-z0-9])(tk|paud|tpa|kb|ra|taman\\s*kanak|kelompok\\s*bermain|sekolah\\s*dasar|sd|mi|madrasah\\s*ibtidaiyah|sdit|sdn|sds|mi\\s*negeri|mi\\s*swasta)([^a-z0-9]|$)'
+                OR {col} ~* '(^|[^a-z0-9])(kelas\\s*(1|2|3|4|5|6)|kelas\\s*vi|kelas\\s*v|kelas\\s*iv|kelas\\s*iii|kelas\\s*ii|kelas\\s*i)([^a-z0-9]|$)'
+                THEN 'TK/SD'
             ELSE 'Tidak diketahui'
         END
     """
-    issue_case_sql = """
+    issue_case_template = """
         CASE
-            WHEN txt ~* '(nik|ktp|kk|kartu keluarga|akta lahir|akta kematian|domisili|pindah|penduduk|disdukcapil|capil)' THEN 'Kependudukan'
-            WHEN txt ~* '(error|gagal|tidak bisa|gabisa|nggak bisa|gangguan|bug|server|login|aplikasi|website|situs|otp|verifikasi|jaringan|timeout)' THEN 'Teknis'
-            WHEN txt ~* '(regulasi|aturan|peraturan|kebijakan|syarat|ketentuan|dasar hukum|payung hukum|pergub|perda|undang-undang|uu|juknis|sop)' THEN 'Regulasi'
+            WHEN {col} ~* '(nik|ktp|kk|kartu\\s*keluarga|kartu\\s*identitas|akta\\s*lahir|akta\\s*kematian|akta\\s*nikah|akta\\s*cerai|domisili|surat\\s*pindah|pindah\\s*datang|penduduk|kependudukan|disdukcapil|capil|biodata\\s*penduduk|no\\.?\\s*kk|no\\.?\\s*nik)'
+                THEN 'Kependudukan'
+            WHEN {col} ~* '(error|gagal|tidak\\s*bisa|gabisa|ga\\s*bisa|nggak\\s*bisa|gangguan|bug|server|internal\\s*server\\s*error|login|logout|akun\\s*terkunci|aplikasi|website|situs|web|halaman|otp|verifikasi|kode\\s*verifikasi|jaringan|koneksi|timeout|time\\s*out|lemot|lambat|down|maintenance|maintenance\\s*mode|upload|download|sinkron|sinkronisasi|integrasi|api|qr\\s*code|scan\\s*qr|captcha|token|session)'
+                THEN 'Teknis'
+            WHEN {col} ~* '(regulasi|aturan|peraturan|kebijakan|syarat|ketentuan|dasar\\s*hukum|payung\\s*hukum|pergub|perda|undang\\s*-?\\s*undang|uu\\s*\\d|juknis|sop|prosedur|mekanisme|surat\\s*edaran|se\\s*\\d|kepgub|keputusan|permendikbud|permendiknas|peraturan\\s*menteri)'
+                THEN 'Regulasi'
             ELSE 'Lainnya'
         END
     """
+    jenjang_case_sql = jenjang_case_template.format(col="txt")
+    issue_case_sql = issue_case_template.format(col="txt")
+    jenjang_case_hist_sql = jenjang_case_template.format(col="LOWER(COALESCE(hm.message_text, ''))")
+    issue_case_hist_sql = issue_case_template.format(col="LOWER(COALESCE(hm.message_text, ''))")
+    history_cutoff_clause = ""
+    if history_cutoff_date:
+        history_cutoff_clause = "AND timezone('Asia/Jakarta', hm.created_at)::date <= %(history_cutoff_date)s::date"
+        msg_params["history_cutoff_date"] = history_cutoff_date
 
     summary = {
         "total_messages": 0,
@@ -1166,7 +1213,7 @@ def fetch_cc_statistics(
                     {jenjang_case_sql} AS jenjang
                 FROM msg_base
             ),
-            dominant_per_number AS (
+            raw_dominant AS (
                 SELECT DISTINCT ON (wa_user_id)
                     wa_user_id,
                     jenjang
@@ -1187,6 +1234,39 @@ def fetch_cc_statistics(
                     GROUP BY wa_user_id, jenjang
                 ) score
                 ORDER BY wa_user_id, hit_count DESC, day_count DESC, priority_rank ASC, jenjang ASC
+            ),
+            history_fallback AS (
+                SELECT
+                    rd.wa_user_id,
+                    (
+                        SELECT hx.hist_label
+                        FROM (
+                            SELECT
+                                hm.created_at,
+                                hm.id,
+                                {jenjang_case_hist_sql} AS hist_label
+                            FROM cc_messages hm
+                            JOIN cc_conversations hc ON hc.id = hm.conversation_id
+                            WHERE hm.direction = 'inbound'
+                              AND hc.wa_user_id = rd.wa_user_id
+                              {history_cutoff_clause}
+                        ) hx
+                        WHERE hx.hist_label <> 'Tidak diketahui'
+                        ORDER BY hx.created_at DESC, hx.id DESC
+                        LIMIT 1
+                    ) AS fallback_label
+                FROM raw_dominant rd
+            ),
+            dominant_per_number AS (
+                SELECT
+                    rd.wa_user_id,
+                    CASE
+                        WHEN rd.jenjang <> 'Tidak diketahui' THEN rd.jenjang
+                        WHEN hf.fallback_label IS NOT NULL THEN hf.fallback_label
+                        ELSE 'Tidak diketahui'
+                    END AS jenjang
+                FROM raw_dominant rd
+                LEFT JOIN history_fallback hf ON hf.wa_user_id = rd.wa_user_id
             ),
             assigned_messages AS (
                 SELECT
@@ -1256,7 +1336,7 @@ def fetch_cc_statistics(
                     {issue_case_sql} AS issue_category
                 FROM msg_base
             ),
-            dominant_per_number AS (
+            raw_dominant AS (
                 SELECT DISTINCT ON (wa_user_id)
                     wa_user_id,
                     issue_category
@@ -1276,6 +1356,39 @@ def fetch_cc_statistics(
                     GROUP BY wa_user_id, issue_category
                 ) score
                 ORDER BY wa_user_id, hit_count DESC, day_count DESC, priority_rank ASC, issue_category ASC
+            ),
+            history_fallback AS (
+                SELECT
+                    rd.wa_user_id,
+                    (
+                        SELECT hx.hist_label
+                        FROM (
+                            SELECT
+                                hm.created_at,
+                                hm.id,
+                                {issue_case_hist_sql} AS hist_label
+                            FROM cc_messages hm
+                            JOIN cc_conversations hc ON hc.id = hm.conversation_id
+                            WHERE hm.direction = 'inbound'
+                              AND hc.wa_user_id = rd.wa_user_id
+                              {history_cutoff_clause}
+                        ) hx
+                        WHERE hx.hist_label <> 'Lainnya'
+                        ORDER BY hx.created_at DESC, hx.id DESC
+                        LIMIT 1
+                    ) AS fallback_label
+                FROM raw_dominant rd
+            ),
+            dominant_per_number AS (
+                SELECT
+                    rd.wa_user_id,
+                    CASE
+                        WHEN rd.issue_category <> 'Lainnya' THEN rd.issue_category
+                        WHEN hf.fallback_label IS NOT NULL THEN hf.fallback_label
+                        ELSE 'Lainnya'
+                    END AS issue_category
+                FROM raw_dominant rd
+                LEFT JOIN history_fallback hf ON hf.wa_user_id = rd.wa_user_id
             ),
             assigned_messages AS (
                 SELECT

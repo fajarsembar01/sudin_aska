@@ -381,6 +381,7 @@
             <div class="d-flex flex-wrap gap-2 small">
                 <span class="badge text-bg-info">Bridge: {{ 'semua' if route_bridge_filter == 'all' else route_bridge_filter }}</span>
                 <span class="badge text-bg-secondary">Total: {{ route_summary.total or 0 }}</span>
+                <span class="badge text-bg-light border">Hasil filter: {{ route_total or 0 }}</span>
                 <span class="badge text-bg-success">Aktif: {{ route_summary.active or 0 }}</span>
                 <span class="badge text-bg-danger">Nonaktif: {{ route_summary.inactive or 0 }}</span>
                 <span class="badge text-bg-primary">AI: {{ route_summary.ai or 0 }}</span>
@@ -551,6 +552,24 @@
                     </tbody>
                 </table>
             </div>
+            {% if route_total_pages > 1 %}
+            {% set start_item = ((route_page - 1) * route_page_size) + 1 if route_total > 0 else 0 %}
+            {% set end_item = route_page * route_page_size if (route_page * route_page_size) < route_total else route_total %}
+            <div class="d-flex justify-content-between align-items-center pt-2">
+                <small class="text-secondary">Menampilkan {{ start_item }}–{{ end_item }} dari {{ route_total }} data</small>
+                <div class="btn-group btn-group-sm">
+                    <a class="btn btn-outline-secondary {{ 'disabled' if route_page <= 1 else '' }}"
+                        href="{{ url_for('call_center.settings_wa', bridge_key=selected_bridge_key, route_bridge=route_bridge_filter, q=route_search or None, route_page=route_page-1) if route_page > 1 else '#' }}">
+                        &laquo; Prev
+                    </a>
+                    <span class="btn btn-outline-secondary disabled">{{ route_page }} / {{ route_total_pages }}</span>
+                    <a class="btn btn-outline-secondary {{ 'disabled' if route_page >= route_total_pages else '' }}"
+                        href="{{ url_for('call_center.settings_wa', bridge_key=selected_bridge_key, route_bridge=route_bridge_filter, q=route_search or None, route_page=route_page+1) if route_page < route_total_pages else '#' }}">
+                        Next &raquo;
+                    </a>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

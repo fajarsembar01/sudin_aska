@@ -1918,7 +1918,29 @@ def settings_wa() -> Response:
     }
     route_search = (request.args.get("q") or "").strip()
     route_bridge_filter, route_bridge_key = _normalize_bridge_filter(request.args.get("route_bridge"))
-    route_rows = list_cc_wa_routing(search=route_search, limit=500, bridge_key=route_bridge_key)
+    route_page = request.args.get("route_page", type=int) or 1
+    route_page = max(1, route_page)
+    route_page_size = 10
+    route_offset = (route_page - 1) * route_page_size
+
+    route_rows, route_total = list_cc_wa_routing(
+        search=route_search,
+        limit=route_page_size,
+        offset=route_offset,
+        bridge_key=route_bridge_key,
+    )
+    route_total_pages = max(1, ceil(route_total / route_page_size)) if route_total else 1
+
+    if route_page > route_total_pages:
+        route_page = route_total_pages
+        route_offset = (route_page - 1) * route_page_size
+        route_rows, route_total = list_cc_wa_routing(
+            search=route_search,
+            limit=route_page_size,
+            offset=route_offset,
+            bridge_key=route_bridge_key,
+        )
+
     route_summary = summarize_cc_wa_routing(bridge_key=route_bridge_key)
     return render_template(
         "cc_settings_wa.html",
@@ -1932,6 +1954,10 @@ def settings_wa() -> Response:
         route_summary=route_summary,
         route_search=route_search,
         route_bridge_filter=route_bridge_filter,
+        route_page=route_page,
+        route_total=route_total,
+        route_total_pages=route_total_pages,
+        route_page_size=route_page_size,
     )
 
 
