@@ -9,713 +9,778 @@
 
 ## Bagian Keputusan (Naskah Utama)
 ### Menimbang
-- Huruf a: bahwa untuk melaksanakan ketentuan dalam Lampiran Keputusan Gubernur Nomor 238 Tahun 2026 tentang Petunjuk Teknis Penerimaan Murid Baru Bab IX angka 4 perlu menetapkan Keputusan Kepala Dinas Pendidikan tentang Petunjuk Teknis Penerimaan Murid Baru Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan Tahun Ajaran 2026/2027
+- Bahwa untuk melaksanakan ketentuan dalam Lampiran Keputusan Gubernur Nomor 238 Tahun 2026 tentang Petunjuk Teknis Penerimaan Murid Baru Bab IX angka 4, perlu menetapkan Keputusan Kepala Dinas Pendidikan tentang Petunjuk Teknis Penerimaan Murid Baru Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan Tahun Ajaran 2026/2027.
 
 ### Mengingat
-- Poin 1: Undang-Undang Nomor 20 Tahun 2003 tentang Sistem Pendidikan Nasional (Lembaran Negara Republik Indonesia Tahun 2003 Nomor 78, Tambahan Lembaran Negara Republik Indonesia Nomor 4301);
-- Poin 2: Undang-Undang Nomor 29 Tahun 2007 tentang Pemerintahan Provinsi Daerah Khusus Ibukota Jakarta sebagai Ibukota Negara Kesatuan Republik Indonesia (Lembaran Negara Republik Indonesia Tahun 2007 Nomor 93, Tambahan Lembaran Negara Republik Indonesia Nomor 4744);
-- Poin 3: Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah beberapa kali diubah terakhir dengan Undang- Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang- Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856);
-- Poin 4: Undang-Undang Nomor 30 Tahun 2014 tentang Administrasi Pemerintahan (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 292, Tambahan Lembaran Negara Republik Indonesia Nomor 5601) sebagaimana telah beberapa kali diubah terakhir dengan Undang- Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang- Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856);
-- Poin 5: Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 3 Tahun 2025 tentang Sistem Penerimaan Murid Baru (Berita Negara Republik Indonesia Tahun 2025 Nomor 134);
-- Poin 6: Peraturan Gubernur Nomor 34 Tahun 2025 tentang Bantuan Biaya Pendidikan Pada Satuan Pendidikan Swasta (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2025, Nomor 54004);
-- Poin 7: Keputusan Gubernur Nomor 238 Tahun 2026 tentang Petunjuk Teknis Penerimaan Murid Baru;
-- Poin 8: Keputusan Gubernur Nomor 312 Tahun 2026 tentang Penerima dan Besaran Pendanaan Pendidikan Satuan Pendidikan Swasta Tahun Anggaran 2026;
+- 1. Undang-Undang Nomor 20 Tahun 2003 tentang Sistem Pendidikan Nasional (Lembaran Negara Republik Indonesia Tahun 2003 Nomor 78, Tambahan Lembaran Negara Republik Indonesia Nomor 4301).
+- 2. Undang-Undang Nomor 29 Tahun 2007 tentang Pemerintahan Provinsi Daerah Khusus Ibukota Jakarta sebagai Ibukota Negara Kesatuan Republik Indonesia (Lembaran Negara Republik Indonesia Tahun 2007 Nomor 93, Tambahan Lembaran Negara Republik Indonesia Nomor 4744).
+- 3. Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856).
+- 4. Undang-Undang Nomor 30 Tahun 2014 tentang Administrasi Pemerintahan (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 292, Tambahan Lembaran Negara Republik Indonesia Nomor 5601) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856).
+- 5. Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 3 Tahun 2025 tentang Sistem Penerimaan Murid Baru (Berita Negara Republik Indonesia Tahun 2025 Nomor 134).
+- 6. Peraturan Gubernur Nomor 34 Tahun 2025 tentang Bantuan Biaya Pendidikan Pada Satuan Pendidikan Swasta (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2025, Nomor 54004).
+- 7. Keputusan Gubernur Nomor 238 Tahun 2026 tentang Petunjuk Teknis Penerimaan Murid Baru.
+- 8. Keputusan Gubernur Nomor 312 Tahun 2026 tentang Penerima dan Besaran Pendanaan Pendidikan Satuan Pendidikan Swasta Tahun Anggaran 2026.
 
 ### Menetapkan
-- KEPUTUSAN KEPALA DINAS PENDIDIKAN TENTANG PETUNJUK TEKNIS PELAKSANAAN PENERIMAAN MURID BARU SATUAN PENDIDIKAN SWASTA PENERIMA PENDANAAN PENDIDIKAN TAHUN AJARAN 2026/2027.
+- Keputusan Kepala Dinas Pendidikan tentang Petunjuk Teknis Pelaksanaan Penerimaan Murid Baru Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan Tahun Ajaran 2026/2027.
 
-### Diktum KESATU
-- Menetapkan Petunjuk Teknis Pelaksanaan Penerimaan Murid Baru Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan Tahun Ajaran 2026/2027 sebagaimana tercantum dalam Lampiran I yang merupakan bagian tidak terpisahkan dari Keputusan Kepala Dinas Pendidikan ini.
-
-### Diktum KEDUA
-- Menetapkan Daftar Nama dan Daya Tampung Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan Tahun Ajaran 2026/2027 sebagaimana tercantum dalam Lampiran II yang merupakan bagian tidak terpisahkan dari Keputusan Kepala Dinas Pendidikan ini.
+### Diktum
+- KESATU: Menetapkan Petunjuk Teknis Pelaksanaan Penerimaan Murid Baru Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan Tahun Ajaran 2026/2027 sebagaimana tercantum dalam Lampiran I yang merupakan bagian tidak terpisahkan dari Keputusan Kepala Dinas Pendidikan ini.
+- KEDUA: Menetapkan Daftar Nama dan Daya Tampung Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan Tahun Ajaran 2026/2027 sebagaimana tercantum dalam Lampiran II yang merupakan bagian tidak terpisahkan dari Keputusan Kepala Dinas Pendidikan ini.
 
 ## Lampiran I - Petunjuk Teknis PMB Satuan Pendidikan Swasta Penerima Pendanaan
-
 - Rentang halaman sumber: 4 sampai 8
-- Format: disusun per bab/subbab (bukan per halaman)
+- Format: teks terstruktur (tanpa tabel)
 
-### Pengantar
-LAMPIRAN I KEPUTUSAN KEPALA DINAS PENDIDIKAN PROVINSI DAERAH KHUSUS IBUKOTA
-JAKARTA
-NOMOR 270 TAHUN 2026
-TENTANG PETUNJUK TEKNIS PELAKSANAAN PENERIMAAN MURID BARU SATUAN
-PENDIDIKAN SWASTA PENERIMA PENDANAAN PENDIDIKAN TAHUN AJARAN
-2026/2027
-PETUNJUK TEKNIS PELAKSANAAN PENERIMAAN MURID BARU
-SATUAN PENDIDIKAN SWASTA PENERIMA PENDANAAN PENDIDIKAN
-TAHUN AJARAN 2026/2027
+### I. Dasar Hukum
+- A. Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 3 Tahun 2025 tentang Sistem Penerimaan Murid Baru.
+- B. Peraturan Gubernur Nomor 34 Tahun 2025 tentang Bantuan Biaya Pendidikan Pada Satuan Pendidikan Swasta.
+- C. Keputusan Gubernur Daerah Khusus Ibukota Jakarta Nomor 238 Tahun 2026 tentang Petunjuk Teknis Penerimaan Murid Baru.
 
-### Bab I. Dasar Hukum
-A. Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 3 Tahun 2025 tentang Sistem Penerimaan Murid Baru.
-B. Peraturan Gubernur Nomor 34 Tahun 2025 tentang Bantuan Biaya Pendidikan Pada Satuan Pendidikan Swasta.
-C. Keputusan Gubernur Daerah Khusus Ibukota Jakarta Nomor 238 Tahun 2026 tentang Petunjuk Teknis Penerimaan Murid Baru.
+### II. Pendaftaran
+- A. Persiapan Pendaftaran:
+- 1. Dokumen pendaftaran:
+- a. Kartu Keluarga Provinsi DKI Jakarta yang dikeluarkan oleh Dinas Kependudukan dan Catatan Sipil Provinsi DKI Jakarta paling lambat 15 Juni 2025.
+- b. Dokumen lain sesuai ketentuan pendaftaran pada satuan pendidikan tujuan.
+- 2. Pendaftaran dilakukan secara luring dengan mendatangi satuan pendidikan tujuan sesuai jenjang.
+- B. Ketentuan Pendaftaran:
+- 1. Persyaratan usia tiap jenjang mengacu pada Keputusan Gubernur Nomor 238 Tahun 2026.
+- 2. CMB tidak terdaftar pada jenjang yang dituju di sekolah lain, dibuktikan dengan surat pernyataan bermaterai cukup.
+- 3. CMB yang diterima wajib mengikuti peraturan pada satuan pendidikan penerima.
+- 4. CMB yang sudah diterima dan daftar ulang pada PMB satuan pendidikan swasta penerima pendanaan tidak dapat mengikuti PMB Negeri, PMB Bersama, maupun PMB swasta penerima pendanaan pada tahun berjalan dan tahun berikutnya.
+- 5. Pelaksanaan PMB tidak dipungut biaya dan tidak menerima biaya dari orang tua/wali CMB.
 
-### Bab II. Pendaftaran
-A. Persiapan Pendaftaran
-1. Dokumen pendaftaran
-a. Kartu Keluarga Provinsi DKI Jakarta yang dikeluarkan oleh Dinas Kependudukan dan Catatan Sipil Provinsi DKI Jakarta paling lambat 15 Juni 2025.
-b. Dokumen lainnya sesuai ketentuan pendaftaran pada Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan
-2. Pendaftaran ke Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan tujuan secara luring dengan mendatangi Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan sesuai dengan jenjang yang dituju.
-B. Ketentuan Pendaftaran
-1. Persyaratan dan data dukung terkait usia pada masing-masing jenjang mengacu pada Keputusan Gubernur DKI Jakarta Nomor 238 Tahun 2026 tentang Petunjuk Teknis Penerimaan Murid Baru.
-2. Calon Murid Baru (CMB) tidak terdaftar pada jenjang yang dituju dengan melampirkan Surat Pernyataan Tidak Terdaftar Pada Jenjang yang Dituju di Sekolah Lain dengan bermaterai cukup.
-3. CMB yang diterima pada Penerimaan Murid Baru (PMB) Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan harus mengikuti peraturan pada Satuan Pendidikan yang menerima.
-4. Dalam hal CMB telah diterima dan daftar ulang melalui PMB Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan, maka yang bersangkutan tidak dapat mengikuti PMB pada Satuan Pendidikan Negeri, PMB Bersama, dan PMB Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan tahun berjalan dan tahun berikutnya.
-5. Pelaksanaan PMB Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan tidak dipungut dan tidak menerima biaya dari orang tua/wali CMB.
+### III. Jadwal Pelaksanaan PMB
+- A. Gelombang Pertama:
+- 1. Pendaftaran dan Verifikasi Berkas: 15-29 Juni 2026 (08.00-16.00 WIB) dan 30 Juni 2026 (08.00-12.00 WIB).
+- 2. Proses Seleksi: 15-29 Juni 2026 (08.00-16.00 WIB) dan 30 Juni 2026 (08.00-12.00 WIB).
+- 3. Pengumuman: 1 Juli 2026 pukul 15.00 WIB.
+- 4. Daftar Ulang: 2-3 Juli 2026 (08.00-16.00 WIB).
+- B. Gelombang Kedua:
+- 1. Pendaftaran dan Verifikasi Berkas: 8 Juli 2026 (08.00-16.00 WIB) dan 9 Juli 2026 (08.00-12.00 WIB).
+- 2. Proses Seleksi: 8 Juli 2026 (08.00-16.00 WIB) dan 9 Juli 2026 (08.00-12.00 WIB).
+- 3. Pengumuman: 9 Juli 2026 pukul 15.00 WIB.
+- 4. Daftar Ulang: 10 Juli 2026 (08.00-16.00 WIB).
 
-### Bab III. Jadwal Pelaksanaan PMB
-Penerima Pendanaan Pendidikan
-A. Gelombang Pertama
-No Kegiatan Tanggal Waktu
-15 – 29 Juni 2026 08.00-16.00 WIB Pendaftaran dan 1. Verifikasi Berkas
-30 Juni 2026 08.00-12.00 WIB
-15 – 29 Juni 2026 08.00-16.00 WIB
-2. Proses Seleksi
-30 Juni 2026 08.00-12.00 WIB
-3. Pengumuman 1 Juli 2026 15.00 WIB
-4. Daftar Ulang 2-3 Juli 2026 08.00-16.00 WIB
-B. Gelombang Kedua
-No Kegiatan Tanggal Waktu
-8 Juli 2026 08.00-16.00 WIB Pendaftaran dan 1. Verifikasi Berkas
-9 Juli 2026 08.00-12.00 WIB
-8 Juli 2026 08.00-16.00 WIB
-2. Proses Seleksi
-9 Juli 2026 08.00-12.00 WIB
-3. Pengumuman 9 Juli 2026 15.00 WIB
-4. Daftar Ulang 10 Juli 2026 08.00-16.00 WIB
+### IV. Daya Tampung
+- Daya tampung kelas awal untuk PMB Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan harus memperhatikan jumlah keseluruhan murid pada masing-masing satuan pendidikan swasta sebagaimana tercantum dalam Keputusan Gubernur Nomor 312 Tahun 2026 tentang Penerima dan Besaran Pendanaan Pendidikan Satuan Pendidikan Swasta Tahun Anggaran 2026.
 
-### Bab IV. Daya Tampung
-Penerima Pendanaan Pendidikan Daya tampung kelas awal untuk PMB Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan harus memperhatikan jumlah keseluruhan murid pada masing-masing Satuan Pendidikan Swasta sebagaimana tercantum dalam Keputusan Gubernur Nomor 312 Tahun 2026 tentang Penerima dan Besaran Pendanaan Pendidikan Satuan Pendidikan Swasta Tahun Anggaran 2026.
+### V. Ketentuan Seleksi
+- A. Seleksi dilakukan 2 (dua) gelombang, meliputi: gelombang pertama 70% dari total daya tampung kelas awal masing-masing satuan pendidikan swasta penerima pendanaan pendidikan; dan gelombang kedua 30% dari total daya tampung kelas awal masing-masing satuan pendidikan swasta penerima pendanaan pendidikan.
+- B. Dalam hal terdapat sisa daya tampung pada gelombang pertama, sisa daya tampung tersebut dialihkan pada gelombang kedua.
+- C. Dalam hal CMB tidak diterima pada PMB Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan gelombang pertama, CMB yang akan mengikuti PMB gelombang kedua melakukan pendaftaran kembali.
+- D. Seleksi jenjang SLB: dalam hal jumlah pendaftar melebihi daya tampung, seleksi dilakukan dengan urutan usia tertua ke usia termuda dan asesmen.
+- E. Seleksi jenjang SD: dalam hal jumlah pendaftar melebihi daya tampung, seleksi dilakukan dengan urutan usia tertua ke usia termuda dan waktu mendaftar.
+- F. Seleksi jenjang SMP:
+- 1. Urutan seleksi: rerata Nilai Rapor Murni (70%) + rerata nilai TKA (30%), lalu usia tertua ke termuda.
+- 2. Ketentuan rerata nilai rapor murni SMP dihitung dari 5 (lima) semester: kelas 4 semester 1 dan semester 2, kelas 5 semester 1 dan semester 2, serta kelas 6 semester 1, SD/MI/Paket A pada mata pelajaran Pendidikan Kewarganegaraan (PKn) atau Pendidikan Pancasila, Bahasa Indonesia, Matematika, dan Ilmu Pengetahuan Alam (IPA) atau Ilmu Pengetahuan Alam dan Sosial (IPAS).
+- 3. Rerata TKA SMP menggunakan rerata nilai Bahasa Indonesia dan Matematika (bobot 30%).
+- G. Seleksi jenjang SMA dan SMK:
+- 1. Urutan seleksi: rerata Nilai Rapor Murni (70%) + rerata nilai TKA (30%), lalu usia tertua ke termuda.
+- 2. Ketentuan rerata nilai rapor murni SMA/SMK dihitung dari 5 (lima) semester: kelas 7 semester 1 dan semester 2, kelas 8 semester 1 dan semester 2, serta kelas 9 semester 1, SMP/MTs/Paket B pada mata pelajaran Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam (IPA), Ilmu Pengetahuan Sosial (IPS), dan Bahasa Inggris.
+- 3. Rerata TKA SMA/SMK menggunakan rerata nilai Bahasa Indonesia dan Matematika (bobot 30%).
 
-### Bab V. Ketentuan Seleksi
-A. Seleksi dilakukan 2 (dua) gelombang meliputi:
-1. Gelombang Pertama : 70% dari total daya tampung kelas awal masing-masing Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan;dan
-2. Gelombang Kedua : 30% dari total daya tampung kelas awal masing-masing Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan.
-B. Dalam hal terdapat sisa daya tampung pada gelombang pertama, maka sisa daya tampung tersebut dialihkan pada gelombang kedua.
-C. Dalam hal CMB tidak diterima pada PMB Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan gelombang pertama, maka CMB yang akan mengikuti PMB Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan gelombang kedua melakukan pendaftaran kembali.
-D. Seleksi Jenjang SLB Dalam hal jumlah pendaftar Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan SLB melebihi daya tampung, maka dilakukan seleksi dengan urutan langkah usia tertua ke usia termuda dan asesmen.
-E. Seleksi Jenjang SD Dalam hal jumlah pendaftar Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan SD melebihi daya tampung, maka dilakukan seleksi dengan urutan langkah usia tertua ke usia termuda dan waktu mendaftar.
-F. Seleksi Jenjang SMP
-1. Dalam hal jumlah pendaftar Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan SMP melebihi daya tampung, maka dilakukan seleksi dengan urutan langkah sebagai berikut:
-a. Rerata Nilai Rapor Murni (bobot 70%) dan rerata nilai Tes Kemampuan Akademik (bobot 30%);dan
-b. Usia tertua ke usia termuda.
-2. Ketentuan rerata nilai rapor murni Nilai rerata rapor selama 5 (lima) semester, meliputi:
-a. kelas 4 semester 1 dan semester 2;
-b. kelas 5 semester 1 dan semester 2; dan
-c. kelas 6 semester 1, SD/MI/Paket A (5 semester) pada mata pelajaran Pendidikan Kewarganegaraan (PKn) atau Pendidikan Pancasila, Bahasa Indonesia, Matematika, dan Ilmu Pengetahuan Alam (IPA) atau Ilmu Pengetahuan Alam dan Sosial (IPAS).
-3. Ketentuan rerata nilai Tes Kemampuan Akademik (TKA) Rerata nilai hasil TKA terakhir yang berupa rerata nilai pada mata pelajaran Bahasa Indonesia dan Matematika dengan bobot 30%.
-G. Seleksi Jenjang SMA dan SMK
-1. Dalam hal jumlah pendaftar Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan melebihi daya tampung, maka dilakukan seleksi dengan urutan langkah sebagai berikut:
-a. Rerata Nilai Rapor Murni (bobot 70%) dan rerata nilai Tes Kemampuan Akademik (bobot 30%);dan
-b. Usia tertua ke usia termuda.
-2. Ketentuan rerata nilai rapor murni Nilai rerata rapor selama 5 (lima) semester, meliputi:
-a. kelas 7 semester 1 dan semester 2;
-b. kelas 8 semester 1 dan semester 2; dan
-c. kelas 9 semester 1, SMP/MTs/Paket B pada mata pelajaran Pendidikan Pancasila, Bahasa Indonesia, Matematika, Ilmu Pengetahuan Alam (IPA), Ilmu Pengetahuan Sosial (IPS), dan Bahasa Inggris.
-3. Ketentuan rerata nilai Tes Kemampuan Akademik (TKA) Rerata nilai hasil TKA terakhir yang berupa rerata nilai pada mata pelajaran Bahasa Indonesia dan Matematika dengan bobot 30%.
-
-### Bab VI. Pengumuman Penetapan Murid Baru
-Pengumuman Penetapan Murid Baru Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan dilakukan secara luring di Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan tujuan pada masing-masing jenjang.
+### VI. Pengumuman Penetapan Murid Baru
+- Pengumuman penetapan murid baru dilakukan secara luring di satuan pendidikan swasta penerima pendanaan tujuan pada masing-masing jenjang.
 
 ## Lampiran II - Daftar Nama dan Daya Tampung Satuan Pendidikan Swasta Penerima Pendanaan
-
 - Rentang halaman sumber: 9 sampai 29
-- Format: disusun per bab/subbab (bukan per halaman)
+- Format: teks terstruktur (tanpa tabel)
 
-### Pengantar
-LAMPIRAN II KEPUTUSAN KEPALA DINAS PENDIDIKAN PROVINSI DAERAH KHUSUS IBUKOTA
-JAKARTA
-NOMOR 270 TAHUN 2026
-TENTANG PETUNJUK TEKNIS PELAKSANAAN PENERIMAAN MURID BARU SATUAN
-PENDIDIKAN SWASTA PENERIMA PENDANAAN
-PENDIDIKAN TAHUN AJARAN 2026/2027
-DAFTAR NAMA DAN DAYA TAMPUNG SATUAN PENDIDIKAN SWASTA
-PENERIMA PENDANAAN PENDIDIKAN
-TAHUN AJARAN 2026/2027
+### A. Jenjang SLB
+#### 1. SLB B-C ALFIANY
+- NPSN: 20109532
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Barat
+- Kategori: Umum
+- SDLB: A (0/0); B (3/2); C (3/2); D (0/0); Autis (0/0)
+- SMPLB: A (0/0); B (0/0); C (5/3); D (0/0); Autis (0/0)
+- SMALB: A (0/0); B (0/0); C (5/3); D (0/0); Autis (0/0)
 
-### Bab A. Jenjang SLB
-Nama Kategori Daya Daya Suku Dinas
-No Satuan NPSN Satuan Jenjang Kekhususan Tampung Tampung
-Pendidikan
-Pendidikan Pendidikan Gelombang 1 Gelombang 2
-A 0 0
-B 3 2
-SDLB C 3 2
-D 0 0 Autis 0 0
-A 0 0
-B 0 0 Wilayah I Kota
-SLB B-C 1 Administrasi 20109532 Umum SMPLB C ALFIANY 5 3 Jakarta Barat
-D 0 0 Autis 0 0
-A 0 0
-B 0 0
-SMALB C 5 3
-D 0 0 Autis 0 0 Nama Kategori Daya Daya Suku Dinas
-No Satuan NPSN Satuan Jenjang Kekhususan Tampung Tampung
-Pendidikan
-Pendidikan Pendidikan Gelombang 1 Gelombang 2
-A 0 0
-B 2 1
-SDLB C 1 1
-D 0 0 Autis 0 0
-A 0 0
-B 1 0 Wilayah II
-SLB BC Kota
-2 ABDI Administrasi 20110336 Umum SMPLB C 1 0
-PRATAMA Jakarta
-Timur
-D 0 0 Autis 0 0
-A 0 0
-B 2 1
-SMALB C 2 1
-D 0 0 Autis 0 0
-A 0 0
-B 0 0
-SDLB C 3 2 Wilayah I D SLB C 0 0 Kota
-BINA
-3 Administrasi 69900890 Umum
-INSAN
-Jakarta Autis KAMIL 1 1 Barat
-A 0 0
-SMPLB B 0 0
-C 5 2 Nama Kategori Daya Daya Suku Dinas
-No Satuan NPSN Satuan Jenjang Kekhususan Tampung Tampung
-Pendidikan
-Pendidikan Pendidikan Gelombang 1 Gelombang 2
-D 0 0 Autis 1 1
-A 0 0
-B 0 0
-SMALB C 4 2
-D 0 0 Autis 0 0
-A 0 0
-B 2 1
-SDLB C 0 0
-D 0 0 Autis 2 0
-A 0 0
-B 0 0 Wilayah I SMPLB C 2 1 Kota
-SLB KASIH
-4 Administrasi 20109552 Katolik
-BUNDA
-Jakarta D 0 0 Barat Autis 0 0
-A 0 0
-B 3 1
-C 3 1
-SMALB
-D 0 0 Autis 0 0 Nama Kategori Daya Daya Suku Dinas
-No Satuan NPSN Satuan Jenjang Kekhususan Tampung Tampung
-Pendidikan
-Pendidikan Pendidikan Gelombang 1 Gelombang 2
-A 0 0
-B 1 0
-SDLB C 3 1
-D 0 0 Autis 0 0
-A 0 0
-B 4 1 Wilayah II
-SLB B-C Kota
-5 HARAPAN Administrasi 20109554 Umum SMPLB C 4 2 IBU Jakarta Pusat
-D 0 0 Autis 0 0
-A 0 0
-B 0 0
-SMALB C 0 0
-D 0 0 Autis 0 0
-A 0 0
-B 3 2
-SDLB C 3 2 Wilayah I D SLB B-C Kota 0 0
-6 SUMBER Administrasi 20103058 Umum
-BUDI Jakarta Autis 0 0 Selatan
-A 0 0
-SMPLB B 5 3
-C 5 3 Nama Kategori Daya Daya Suku Dinas
-No Satuan NPSN Satuan Jenjang Kekhususan Tampung Tampung
-Pendidikan
-Pendidikan Pendidikan Gelombang 1 Gelombang 2
-D 0 0 Autis 0 0
-A 0 0
-B 5 3
-SMALB C 5 3
-D 0 0 Autis 0 0
-A 0 0
-B 0 0
-SDLB C 6 4
-D 0 0 Autis 0 0
-A 0 0
-B 0 0 Wilayah I SMPLB C 5 3 SLB C Kota
-7 BHAKTI Administrasi 20106227 Katolik
-LUHUR Jakarta D 0 0 Selatan Autis 0 0
-A 0 0
-B 0 0
-C 5 3
-SMALB
-D 0 0 Autis 0 0 Nama Kategori Daya Daya Suku Dinas
-No Satuan NPSN Satuan Jenjang Kekhususan Tampung Tampung
-Pendidikan
-Pendidikan Pendidikan Gelombang 1 Gelombang 2
-A 0 0
-B 0 0
-SDLB C 3 1
-D 0 0 Autis 3 1
-A 0 0
-B 0 0 Wilayah II Kota
-SLB AUTIS
-8 Administrasi 20103041 Umum SMPLB C 3 2 MUTIARA Jakarta Selatan
-D 0 0 Autis 3 2
-A 0 0
-B 0 0
-SMALB C 0 0
-D 0 0 Autis 3 2
-A 0 0
-B 0 0
-SDLB C 7 3 Wilayah II D SLB Kota 0 0
-9 KHRISNA Administrasi 20103040 Umum
-MURTI Jakarta Autis 0 0 Selatan
-A 0 0
-SMPLB B 8 3
-C 0 0 Nama Kategori Daya Daya Suku Dinas
-No Satuan NPSN Satuan Jenjang Kekhususan Tampung Tampung
-Pendidikan
-Pendidikan Pendidikan Gelombang 1 Gelombang 2
-D 0 0 Autis 0 0
-A 0 0
-B 0 0
-SMALB C 12 5
-D 0 0 Autis 0 0
-A 0 0
-B 0 0
-SDLB C 0 0
-D 0 0 Autis 0 0
-A 5 3
-B 0 0 Wilayah I SMPLB C SLB 0 0 Kota
-A&A+(GAN
-10 Administrasi 69980380 Umum
-DA)ELSAF
-Jakarta D AN 0 0 Timur Autis 0 0
-A 7 4
-B 0 0
-C 0 0
-SMALB
-D 0 0 Autis 0 0 Nama Kategori Daya Daya Suku Dinas
-No Satuan NPSN Satuan Jenjang Kekhususan Tampung Tampung
-Pendidikan
-Pendidikan Pendidikan Gelombang 1 Gelombang 2
-A 0 0
-B 0 0
-SDLB C 4 3
-D 0 0 Autis 1 0
-A 0 0
-B 0 0 Wilayah I
-SLB C Kota
-11 SINAR Administrasi 20110274 Umum SMPLB C 3 1
-KASIH Jakarta
-Timur
-D 0 0 Autis 1 0
-A 0 0
-B 0 0
-SMALB C 2 1
-D 0 0 Autis 0 0
-A 0 0
-B 3 1
-SDLB C 9 4 Wilayah I D SLB Karya Kota 0 0
-12 Mulya (B Administrasi 20178285 Umum dan C) Jakarta Autis 0 0 Timur
-A 0 0
-SMPLB B 1 1
-C 5 1 Nama Kategori Daya Daya Suku Dinas
-No Satuan NPSN Satuan Jenjang Kekhususan Tampung Tampung
-Pendidikan
-Pendidikan Pendidikan Gelombang 1 Gelombang 2
-D 0 0 Autis 0 0
-A 0 0
-B 1 1
-SMALB C 4 1
-D 0 0 Autis 0 0
-A 0 0
-B 0 0
-SDLB C 0 0
-D 0 0 Autis 0 0
-A 0 0
-B 0 0 Wilayah I SMPLB C 3 1
-SLB B-C Kota
-13 Bina Karya Administrasi 20112504 Umum
-D Insani Jakarta 0 0 Timur Autis 0 0
-A 0 0
-B 0 0
-C 0 0
-SMALB
-D 0 0 Autis 0 Nama Kategori Daya Daya Suku Dinas
-No Satuan NPSN Satuan Jenjang Kekhususan Tampung Tampung
-Pendidikan
-Pendidikan Pendidikan Gelombang 1 Gelombang 2
-A 0 0
-B 0 0
-SDLB C 2 1
-D 0 0 Autis 0 0
-A 0 0
-B 0 0 Wilayah II
-SLB C Kota
-14 Surya Administrasi 20218361 Umum SMPLB C 2 0 Wiyata Jakarta Timur
-D 0 0 Autis 0 0
-A 0 0
-B 0 0
-SMALB C 2 0
-D 0 0 Autis 0 0
-A 0 0
-B 0 0
-SDLB C 4 1
-D 0 0 Wilayah II
-SLB C Kota
-15 Frobel Administrasi 20109004 Umum Autis 0 0 Montessori Jakarta Timur
-A 0 0
-B 0 0
-SMPLB
-C 5 2
-D 0 0 Nama Kategori Daya Daya Suku Dinas
-No Satuan NPSN Satuan Jenjang Kekhususan Tampung Tampung
-Pendidikan
-Pendidikan Pendidikan Gelombang 1 Gelombang 2 Autis 0 0
-A 0 0
-B 0 0
-SMALB C 6 2
-D 0 0 Autis 0 0
-A 0 0
-B 1 1
-SDLB C 3 1
-D 0 0 Autis 0 0
-A 0 0
-B 1 1
-SMPLB C 4 1 Wilayah II
-SLB B-C Kota
-16 As- Administrasi 20109284 Islam D 0 0 Syafiiyah Jakarta Timur Autis 0 0
-A 0 0
-B 0 0
-C 0 0
-SMALB D 0 0 Autis 0 Nama Kategori Daya Daya Suku Dinas
-No Satuan NPSN Satuan Jenjang Kekhususan Tampung Tampung
-Pendidikan
-Pendidikan Pendidikan Gelombang 1 Gelombang 2
-A 0 0
-B 0 0
-SDLB C 3 2
-D 0 0 Autis 0 0
-A 0 0
-B 2 1 Wilayah II
-SLB B-C Kota
-17 CAHAYA Administrasi 20110818 Umum SMPLB C 3 1
-JAYA Jakarta
-Utara
-D 0 0 Autis 0 0
-A 0 0
-B 3 1
-SMALB C 1 1
-D 0 0 Autis 0 0
-JUMLAH 238 113
+#### 2. SLB BC ABDI PRATAMA
+- NPSN: 20110336
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- SDLB: A (0/0); B (2/1); C (1/1); D (0/0); Autis (0/0)
+- SMPLB: A (0/0); B (1/0); C (1/0); D (0/0); Autis (0/0)
+- SMALB: A (0/0); B (2/1); C (2/1); D (0/0); Autis (0/0)
 
-### Bab B. Jenjang SD
-Daya Daya
-Nama Kategori
-Suku Dinas Tampung Tampung
-No Satuan NPSN Satuan
-Pendidikan Gelombang Gelombang Pendidikan Pendidikan
-1 (Murid) 2 (Murid) Wilayah II Kota
-SD BHAKTI
-1 Administrasi 20102744 Umum 22 10
-LUHUR
-Jakarta Selatan
-Wilayah II Kota
-SDS BINA
-2 Administrasi 20105003 Umum 45 19
-PUSAKA
-Jakarta Utara
-JUMLAH 67 29
+#### 3. SLB C BINA INSAN KAMIL
+- NPSN: 69900890
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Barat
+- Kategori: Umum
+- SDLB: A (0/0); B (0/0); C (3/2); D (0/0); Autis (1/1)
+- SMPLB: A (0/0); B (0/0); C (5/2); D (0/0); Autis (1/1)
+- SMALB: A (0/0); B (0/0); C (4/2); D (0/0); Autis (0/0)
 
-### Bab C. Jenjang SMP
-Daya Daya Nama Kategori Suku Dinas Tampung Tampung
-No Satuan NPSN Satuan Pendidikan Gelombang 1 Gelombang
-Pendidikan Pendidikan (Murid) 2 (Murid)
-SMP Wilayah I Kota
-1 MUHAMMADI Administrasi 20106842 Islam 16 7
-YAH 32 Jakarta Barat Umum Wilayah II Kota
-SMP AL Dengan 2 Administrasi 20109531 28 12 INAYAH Nuansa Jakarta Barat Islam Umum Wilayah II Kota
-SMP AL Dengan 3 Administrasi 20106723 70 30 HASANAH Nuansa Jakarta Barat Islam Wilayah I Kota
-SMP
-4 Administrasi 20106440 Umum 42 18 TRIWIBAWA Jakarta Pusat Wilayah II Kota
-SMP TRISULA
-5 Administrasi 20106439 Umum 76 32 PERWARI 2 Jakarta Pusat
-SMP TRISULA Wilayah II Kota
-6 PERWARI I Administrasi 20107016 Umum 22 10
-JAKARTA Jakarta Selatan Wilayah I Kota
-7 SMP YASPIA Administrasi 20107177 Umum 50 22 Jakarta Timur Wilayah I Kota
-SMP
-8 Administrasi 20106654 Umum 50 22 SEJAHTERA Jakarta Utara Wilayah I Kota
-SMP YAKPI I
-9 Administrasi 20106700 Umum 126 54 DKI JAYA Jakarta Utara Umum Wilayah II Kota
-SMP DARUL Dengan 10 Administrasi 20106497 120 52 MAARIF Nuansa Jakarta Utara Islam
-SMP Wilayah I Kota
-11 CINDERA Administrasi 20106764 Umum 45 19
-MATA INDAH Jakarta Barat Wilayah I Kota
-12 SMP GARUDA Administrasi 20106793 Umum 25 11 Jakarta Barat Wilayah I Kota
-SMP
-13 Administrasi 20106837 Umum 23 9 MELANIA I Jakarta Barat Umum Wilayah II Kota
-SMP Dengan 14 Administrasi 20106823 28 12 KEMBANGAN Nuansa Jakarta Barat Islam Daya Daya Nama Kategori Suku Dinas Tampung Tampung
-No Satuan NPSN Satuan Pendidikan Gelombang 1 Gelombang
-Pendidikan Pendidikan (Murid) 2 (Murid) Umum Wilayah I Kota
-SMP AL- Dengan 15 Administrasi 20100327 50 22 IHSAN Nuansa Jakarta Pusat Islam
-SMP STRADA Umum Wilayah I Kota
-PELITA Dengan 16 Administrasi 20106437 25 11 PEJOMPONG Nuansa Jakarta Pusat
-AN Katholik
-Wilayah I Kota
-SMP AT17 Administrasi 20100308 Islam 45 19 TAQWA Jakarta Pusat
-SMP Wilayah II Kota
-18 MUHAMMADI Administrasi 20106380 Islam 38 17
-YAH 16 Jakarta Pusat Wilayah II Kota
-19 SMP PSKD 1 Administrasi 20106423 Kristen 24 11 Jakarta Pusat Wilayah II Kota
-20 SMP YWPM Administrasi 20106442 Umum 42 18 Jakarta Pusat Umum Wilayah II Kota
-SMP ISLAM Dengan 21 Administrasi 20106362 22 10 MERANTI Nuansa Jakarta Pusat Islam Wilayah II Kota
-SMP
-22 Administrasi 20106426 Katholik 27 11
-PASKALIS 1
-Jakarta Pusat
-SMP
-Wilayah I Kota
-YAYASAN
-23 Administrasi 20107025 Umum 51 21
-PENDIDIKAN
-Jakarta Selatan
-MULIA
-Wilayah I Kota
-SMP
-24 Administrasi 20107010 Umum 43 18
-TELADAN
-Jakarta Selatan
-SMP PLUS
-Wilayah I Kota
-KHADIJAH
-25 Administrasi 20177845 Islam 22 10
-ISLAMIC
-Jakarta Selatan
-SCHOOL
-Wilayah I Kota
-SMP PUTRA
-26 Administrasi 20107002 Umum 151 65
-SATRIA
-Jakarta Selatan
-Umum
-Wilayah II Kota
-SMP AL Dengan 27 Administrasi 20106921 44 20
-FALAH Nuansa
-Jakarta Selatan
-Islam
-SMP Wilayah II Kota
-28 PERGURUAN Administrasi 20106995 Umum 25 11
-RAKYAT 02 Jakarta Selatan Daya Daya Nama Kategori Suku Dinas Tampung Tampung
-No Satuan NPSN Satuan Pendidikan Gelombang 1 Gelombang
-Pendidikan Pendidikan (Murid) 2 (Murid) Umum
-SMP ISLAM Wilayah II Kota Dengan 29 TERPADU Administrasi 20106930 42 18 Nuansa
-ARRAHMAN Jakarta Selatan Islam Umum Wilayah II Kota
-SMP PSKD IV Dengan 30 Administrasi 20106988 42 18
-BULUNGAN Nuansa
-Jakarta Selatan
-Kristen
-SMP Wilayah II Kota
-31 YAPIMDA Administrasi 20102424 Islam 22 10
-JAKARTA Jakarta Selatan Umum Wilayah I Kota
-SMP AL Dengan 32 Administrasi 20107044 76 32
-WASHLIYAH Nuansa
-Jakarta Timur
-Islam
-SMP Wilayah I Kota
-33 PEMBANGUN Administrasi 20107138 Umum 45 19
-AN Jakarta Timur
-SMP ERA Wilayah II Kota
-34 PEMBANGUN Administrasi 20107084 Umum 44 19
-AN UMAT Jakarta Timur Wilayah II Kota
-SMP TAMAN
-35 Administrasi 20107156 Umum 43 19
-HARAPAN
-Jakarta Timur
-Wilayah I Kota
-SMP
-36 Administrasi 20106532 Umum 48 20
-JAYAKARTA
-Jakarta Utara
-Wilayah II Kota
-SMP PLUS AL
-37 Administrasi 20122006 Islam 48 21
-FUDHOLA
-Jakarta Utara
-Wilayah II Kota
-SMP TUGU
-38 Administrasi 20109340 Kristen 25 11
-BHAKTI
-Jakarta Utara
-SMP AL- Wilayah II Kota
-39 IRSYAD AL- Administrasi 20106458 Islam 55 23
-ISLAMIYYAH Jakarta Utara Wilayah II Kota
-SMP SARI
-40 Administrasi 20106651 Umum 50 22
-PUTRA
-Jakarta Utara
-SMP Wilayah II Kota
-41 FATAHILAH Administrasi 20109369 Umum 41 18
-JAYA Jakarta Utara
-JUMLAH 1.911 824
+#### 4. SLB KASIH BUNDA
+- NPSN: 20109552
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Barat
+- Kategori: Katolik
+- SDLB: A (0/0); B (2/1); C (0/0); D (0/0); Autis (2/0)
+- SMPLB: A (0/0); B (0/0); C (2/1); D (0/0); Autis (0/0)
+- SMALB: A (0/0); B (3/1); C (3/1); D (0/0); Autis (0/0)
 
-### Bab D. Jenjang SMA
-Daya Daya Nama Kategori Suku Dinas Tampung Tampung
-No Satuan NPSN Satuan Pendidikan Gelombang 1 Gelombang
-Pendidikan Pendidikan (Murid) 2 (Murid) Wilayah I Kota
-SMA
-1 Administrasi 20101314 Katolik 34 14 LAMAHOLOT Jakarta Barat Wilayah II Kota
-SMAS BUDI
-2 Administrasi 20101334 Umum 83 36
-MURNI 2
-Jakarta
-Barat
-Wilayah I
-Kota
-SMAS AT TAQWA
-3 Administrasi 20100484 Umum 50 22 JAKARTA Jakarta Pusat Wilayah II
-SMAS TAMAN Kota
-4 MADYA I Administrasi 20100181 Umum 151 65
-JAKARTA Jakarta
-Pusat
-Wilayah I
-SMA PLUS
-Kota Islam
-KHADIJAH
-5 Administrasi 20112406 (Khusus 21 9
-ISLAMIC
-Jakarta perempuan)
-SCHOOL
-Selatan
-Wilayah I
-SMAS Kota
-6 MUHAMMADIYAH Administrasi 20103181 Umum 50 22
-12 JAKARTA Jakarta Timur Wilayah II Kota
-SMA TELADAN 1
-7 Administrasi 20103192 Umum 45 19
-JAKARTA
-Jakarta
-Timur
-Wilayah II
-Kota
-SMAS WIJAYA
-8 Administrasi 20103185 Umum 126 54
-KUSUMA
-Jakarta
-Timur
-Wilayah I
-Kota
-SMAS GITA KIRTI
-9 Administrasi 20107377 Umum 25 11 Jakarta Utara Daya Daya Nama Kategori Suku Dinas Tampung Tampung
-No Satuan NPSN Satuan Pendidikan Gelombang 1 Gelombang
-Pendidikan Pendidikan (Murid) 2 (Murid) Wilayah II
-SMAS AL Kota
-10 KHAIRIYAH Administrasi 20107368 Islam 76 32
-JAKARTA Jakarta
-Utara
-Wilayah II
-Kota
-11 SMAS YP BDN Administrasi 20101628 Umum 40 17 Jakarta Barat Wilayah I Kota
-SMA BUDI MULIA
-12 Administrasi 20103213 Umum 101 43
-UTAMA
-Jakarta
-Timur
-Wilayah I
-SMAS KATOLIK Kota
-13 DIAKONIA Administrasi 20100631 Katolik 42 18
-JAKARTA Jakarta
-Utara
-Wilayah I
-Kota
-SMAS BUNGA
-14 Administrasi 20100629 Umum 42 18
-HATI BANGSA
-Jakarta
-Utara
-JUMLAH 886 380
+#### 5. SLB B-C HARAPAN IBU
+- NPSN: 20109554
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Pusat
+- Kategori: Umum
+- SDLB: A (0/0); B (1/0); C (3/1); D (0/0); Autis (0/0)
+- SMPLB: A (0/0); B (4/1); C (4/2); D (0/0); Autis (0/0)
+- SMALB: A (0/0); B (0/0); C (0/0); D (0/0); Autis (0/0)
 
-### Bab E. Jenjang SMK
-Nama Kategori Daya Tampung Daya Tampung Suku Dinas Konsentrasi
-No Satuan NPSN Satuan Gelombang 1 Gelombang 2
-Pendidikan Keahlian
-Pendidikan Pendidikan (Murid) (Murid) Akuntansi 23 10 Wilayah I Manajemen Kota 48 20
-SMKS Citra Perkantoran 1 Administrasi 69774556 Umum Utama Jakarta Teknik Barat Komputer dan 71 31 Jaringan Wilayah II Desain Kota Komunikasi 50 22
-SMKS Maarif
-2 Administrasi 20101648 Umum Visual Jakarta Jakarta Manajemen
-76 32 Barat Perkantoran
-Wilayah I Teknik SMK YP IPPI
-3 Kota 20100288 Islam Komputer dan 50 22 Petojo Administrasi Jaringan Nama Kategori Daya Tampung Daya Tampung Suku Dinas Konsentrasi
-No Satuan NPSN Satuan Gelombang 1 Gelombang 2
-Pendidikan Keahlian
-Pendidikan Pendidikan (Murid) (Murid) Jakarta Rekayasa Pusat Perangkat 25 11 Lunak Akuntansi 25 11 Manajemen
-50 22
-Perkantoran
-Bisnis Retail 50 22 Akuntansi 25 11 Wilayah I Kota
-SMKS At
-4 Administrasi 20100131 Umum Bisnis Retail Taqwa Jakarta 25 11 Pusat Teknik Instalasi 50 22 Tenaga Listrik Teknik
-25 11
-Pemesinan
-Teknik
-Wilayah II Kendaraan 50 22
-SMKS Kota Ringan
-5 Tamansiswa Administrasi 20100296 Umum Teknik 2 Jakarta Komputer dan 50 22 Pusat Jaringan Rekayasa Perangkat 50 22 Lunak Teknik Sepeda
-50 22
-Motor
-Wilayah II Desain Kota Komunikasi 25 11
-SMK Katolik 6 Administrasi 20100110 Katolik Visual Sint Joseph Jakarta Teknik Sepeda
-25 11 Pusat Motor
-Wilayah I
-Layanan
-SMKS Kota
-Penunjang
-7 Gapura Administrasi 69774854 Umum 25 11 Keperawatan Merah Putih Jakarta dan Caregiving Selatan Akuntansi 25 11 Wilayah I Manajemen 50 22 Kota Perkantoran
-SMKS PGRI
-8 Administrasi 20101511 Umum
-15 Jakarta Bisnis Retail 50 22 Jakarta Selatan Perhotelan 50 22 Kuliner 25 11 Wilayah I Akuntansi 25 11 Kota
-SMK Manajemen
-9 Administrasi 70006225 Umum 50 22 Jagakarsa Perkantoran Jakarta Selatan Perhotelan 50 22 Nama Kategori Daya Tampung Daya Tampung Suku Dinas Konsentrasi
-No Satuan NPSN Satuan Gelombang 1 Gelombang 2
-Pendidikan Keahlian
-Pendidikan Pendidikan (Murid) (Murid) Teknik Komputer dan 25 11 Jaringan Akuntansi 25 11 Wilayah II Manajemen 25 11
-SMKS YPK Kota Perkantoran
-10 Kesatuan Administrasi 20102433 Umum Bisnis Retail 25 11 Jakarta Jakarta Selatan Desain Komunikasi 21 9 Visual Teknik Komputer dan 76 32 Jaringan Wilayah II Desain Kota Komunikasi 76 32
-SMKS Cyber11 Administrasi 20109265 Umum Visual Media Jakarta Manajemen
-76 32 Selatan Perkantoran
-Rekayasa
-Perangkat 25 11 Lunak Wilayah I
-SMKS Cipta Kota
-12 Karya Administrasi 20103709 Umum Perhotelan 76 32 Jakarta Jakarta Timur Rekayasa Perangkat 25 11 Lunak Teknik Komputer dan 25 11 Wilayah I Jaringan
-SMKS Kota
-Tata13 Laboratoriu Administrasi 20177921 Umum Kecantikan m Jakarta Jakarta 25 11 Kulit dan Timur Rambut Layanan Penunjang
-25 11
-Keperawatan dan Caregiving Desain Komunikasi 71 31 Visual Wilayah II Teknik
-SMK Bina Kota Komputer dan 48 20 14 Nusa Administrasi 69873590 Umum Jaringan Mandiri Jakarta Perhotelan 24 10 Timur Kuliner 23 10 Nama Kategori Daya Tampung Daya Tampung Suku Dinas Konsentrasi
-No Satuan NPSN Satuan Gelombang 1 Gelombang 2
-Pendidikan Keahlian
-Pendidikan Pendidikan (Murid) (Murid) Wilayah I Kota
-SMKS Fajar
-15 Administrasi 20107417 Umum Akuntansi 25 11 Indah Jakarta Utara Wilayah II Manajemen
-25 11
-Kota Perkantoran
-SMKS Sari
-16 Administrasi 20107458 Umum Putra Manajemen Jakarta 25 11 Logistik Utara Wilayah I Akuntansi 25 11 SMKS Kota Permata
-17 Administrasi 20101517 Umum Bunda I Manajemen Jakarta 25 11 Jakarta Perkantoran Barat Wilayah I Akuntansi 25 11 SMKS Kota Benteng18 Administrasi 20101597 Umum Teknik Gading Jakarta Komputer dan 25 11 Jakarta Barat Jaringan Perhotelan 50 22 Wilayah II Kota Kuliner 25 11 SMKS Prima
-19 Administrasi 20107268 Umum Wisata Usaha Jakarta Layanan 25 11 Barat Wisata Wilayah II Akuntansi 25 11 Kota
-SMKS Al
-20 Administrasi 20101600 Islam Hamidiyah Jakarta Bisnis Retail 50 22 Barat Teknik Kendaraan 10 5 Wilayah II Ringan
-SMKS Kebon Kota Teknik Audio
-10 521 Jeruk Administrasi 20101644 Umum Vidio
-Jakarta Jakarta
-Manajemen
-Barat 10 5 Perkantoran Akuntansi 10 5 Wilayah I Kota
-SMK Al- Manajemen
-22 Administrasi 20100140 Umum 50 22 Ihsan Perkantoran Jakarta Pusat Akuntansi 25 11 Desain Wilayah II Komunikasi 50 22
-SMKS Bina Kota Visual
-23 Putra Administrasi 20102530 Umum Jakarta Jakarta Selatan Manajemen
-50 22
-Perkantoran
+#### 6. SLB B-C SUMBER BUDI
+- NPSN: 20103058
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Selatan
+- Kategori: Umum
+- SDLB: A (0/0); B (3/2); C (3/2); D (0/0); Autis (0/0)
+- SMPLB: A (0/0); B (5/3); C (5/3); D (0/0); Autis (0/0)
+- SMALB: A (0/0); B (5/3); C (5/3); D (0/0); Autis (0/0)
 
-## Catatan Ekstraksi
-- Struktur disusun per bab/lampiran, bukan per halaman.
-- Lampiran II didominasi tabel sehingga baris dapat bergeser saat diekstrak otomatis.
-- Untuk kebutuhan legalisasi final, verifikasi silang dengan PDF sumber.
+#### 7. SLB C BHAKTI LUHUR
+- NPSN: 20106227
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Selatan
+- Kategori: Katolik
+- SDLB: A (0/0); B (0/0); C (6/4); D (0/0); Autis (0/0)
+- SMPLB: A (0/0); B (0/0); C (5/3); D (0/0); Autis (0/0)
+- SMALB: A (0/0); B (0/0); C (5/3); D (0/0); Autis (0/0)
+
+#### 8. SLB AUTIS MUTIARA
+- NPSN: 20103041
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Selatan
+- Kategori: Umum
+- SDLB: A (0/0); B (0/0); C (3/1); D (0/0); Autis (3/1)
+- SMPLB: A (0/0); B (0/0); C (3/2); D (0/0); Autis (3/2)
+- SMALB: A (0/0); B (0/0); C (0/0); D (0/0); Autis (3/2)
+
+#### 9. SLB KHRISNA MURTI
+- NPSN: 20103040
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Selatan
+- Kategori: Umum
+- SDLB: A (0/0); B (0/0); C (7/3); D (0/0); Autis (0/0)
+- SMPLB: A (0/0); B (8/3); C (0/0); D (0/0); Autis (0/0)
+- SMALB: A (0/0); B (0/0); C (12/5); D (0/0); Autis (0/0)
+
+#### 10. SLB A&A+(GANDA)ELSAFAN
+- NPSN: 69980380
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- SDLB: A (0/0); B (0/0); C (0/0); D (0/0); Autis (0/0)
+- SMPLB: A (5/3); B (0/0); C (0/0); D (0/0); Autis (0/0)
+- SMALB: A (7/4); B (0/0); C (0/0); D (0/0); Autis (0/0)
+
+#### 11. SLB C SINAR KASIH
+- NPSN: 20110274
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- SDLB: A (0/0); B (0/0); C (4/3); D (0/0); Autis (1/0)
+- SMPLB: A (0/0); B (0/0); C (3/1); D (0/0); Autis (1/0)
+- SMALB: A (0/0); B (0/0); C (2/1); D (0/0); Autis (0/0)
+
+#### 12. SLB Karya Mulya (B dan C)
+- NPSN: 20178285
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- SDLB: A (0/0); B (3/1); C (9/4); D (0/0); Autis (0/0)
+- SMPLB: A (0/0); B (1/1); C (5/1); D (0/0); Autis (0/0)
+- SMALB: A (0/0); B (1/1); C (4/1); D (0/0); Autis (0/0)
+
+#### 13. SLB B-C Bina Karya Insani
+- NPSN: 20112504
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- SDLB: A (0/0); B (0/0); C (0/0); D (0/0); Autis (0/0)
+- SMPLB: A (0/0); B (0/0); C (3/1); D (0/0); Autis (0/0)
+- SMALB: A (0/0); B (0/0); C (0/0); D (0/0); Autis (0/0)
+
+#### 14. SLB C Surya Wiyata
+- NPSN: 20218361
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- SDLB: A (0/0); B (0/0); C (2/1); D (0/0); Autis (0/0)
+- SMPLB: A (0/0); B (0/0); C (2/0); D (0/0); Autis (0/0)
+- SMALB: A (0/0); B (0/0); C (2/0); D (0/0); Autis (0/0)
+
+#### 15. SLB C Frobel Montessori
+- NPSN: 20109004
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- SDLB: A (0/0); B (0/0); C (4/1); D (0/0); Autis (0/0)
+- SMPLB: A (0/0); B (0/0); C (5/2); D (0/0); Autis (0/0)
+- SMALB: A (0/0); B (0/0); C (6/2); D (0/0); Autis (0/0)
+
+#### 16. SLB B-C As-Syafiiyah
+- NPSN: 20109284
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Timur
+- Kategori: Islam
+- SDLB: A (0/0); B (1/1); C (3/1); D (0/0); Autis (0/0)
+- SMPLB: A (0/0); B (1/1); C (4/1); D (0/0); Autis (0/0)
+- SMALB: A (0/0); B (0/0); C (0/0); D (0/0); Autis (0/0)
+
+#### 17. SLB B-C CAHAYA JAYA
+- NPSN: 20110818
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Utara
+- Kategori: Umum
+- SDLB: A (0/0); B (0/0); C (3/2); D (0/0); Autis (0/0)
+- SMPLB: A (0/0); B (2/1); C (3/1); D (0/0); Autis (0/0)
+- SMALB: A (0/0); B (3/1); C (1/1); D (0/0); Autis (0/0)
+
+- JUMLAH daya tampung gelombang 1 (SLB): 238
+- JUMLAH daya tampung gelombang 2 (SLB): 113
+
+### B. Jenjang SD
+#### 1. SD BHAKTI LUHUR
+- NPSN: 20102744
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Selatan
+- Kategori: Umum
+- Daya tampung gelombang 1: 22
+- Daya tampung gelombang 2: 10
+
+#### 2. SDS BINA PUSAKA
+- NPSN: 20105003
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Utara
+- Kategori: Umum
+- Daya tampung gelombang 1: 45
+- Daya tampung gelombang 2: 19
+
+- JUMLAH daya tampung gelombang 1 (SD): 67
+- JUMLAH daya tampung gelombang 2 (SD): 29
+
+### C. Jenjang SMP
+#### 1. SMP MUHAMMADIYAH 32
+- NPSN: 20106842
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Barat
+- Kategori: Islam
+- Daya tampung gelombang 1: 16
+- Daya tampung gelombang 2: 7
+
+#### 2. SMP AL INAYAH
+- NPSN: 20109531
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Barat
+- Kategori: Umum Dengan Nuansa Islam
+- Daya tampung gelombang 1: 28
+- Daya tampung gelombang 2: 12
+
+#### 3. SMP AL HASANAH
+- NPSN: 20106723
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Barat
+- Kategori: Umum Dengan Nuansa Islam
+- Daya tampung gelombang 1: 70
+- Daya tampung gelombang 2: 30
+
+#### 4. SMP TRIWIBAWA
+- NPSN: 20106440
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Pusat
+- Kategori: Umum
+- Daya tampung gelombang 1: 42
+- Daya tampung gelombang 2: 18
+
+#### 5. SMP TRISULA PERWARI 2
+- NPSN: 20106439
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Pusat
+- Kategori: Umum
+- Daya tampung gelombang 1: 76
+- Daya tampung gelombang 2: 32
+
+#### 6. SMP TRISULA PERWARI I JAKARTA
+- NPSN: 20107016
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Selatan
+- Kategori: Umum
+- Daya tampung gelombang 1: 22
+- Daya tampung gelombang 2: 10
+
+#### 7. SMP YASPIA
+- NPSN: 20107177
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- Daya tampung gelombang 1: 50
+- Daya tampung gelombang 2: 22
+
+#### 8. SMP SEJAHTERA
+- NPSN: 20106654
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Utara
+- Kategori: Umum
+- Daya tampung gelombang 1: 50
+- Daya tampung gelombang 2: 22
+
+#### 9. SMP YAKPI I DKI JAYA
+- NPSN: 20106700
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Utara
+- Kategori: Umum
+- Daya tampung gelombang 1: 126
+- Daya tampung gelombang 2: 54
+
+#### 10. SMP DARUL MAARIF
+- NPSN: 20106497
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Utara
+- Kategori: Umum Dengan Nuansa Islam
+- Daya tampung gelombang 1: 120
+- Daya tampung gelombang 2: 52
+
+#### 11. SMP CINDERA MATA INDAH
+- NPSN: 20106764
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Barat
+- Kategori: Umum
+- Daya tampung gelombang 1: 45
+- Daya tampung gelombang 2: 19
+
+#### 12. SMP GARUDA
+- NPSN: 20106793
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Barat
+- Kategori: Umum
+- Daya tampung gelombang 1: 25
+- Daya tampung gelombang 2: 11
+
+#### 13. SMP MELANIA I
+- NPSN: 20106837
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Barat
+- Kategori: Umum
+- Daya tampung gelombang 1: 23
+- Daya tampung gelombang 2: 9
+
+#### 14. SMP KEMBANGAN
+- NPSN: 20106823
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Barat
+- Kategori: Umum Dengan Nuansa Islam
+- Daya tampung gelombang 1: 28
+- Daya tampung gelombang 2: 12
+
+#### 15. SMP AL-IHSAN
+- NPSN: 20100327
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Pusat
+- Kategori: Umum Dengan Nuansa Islam
+- Daya tampung gelombang 1: 50
+- Daya tampung gelombang 2: 22
+
+#### 16. SMP STRADA PELITA PEJOMPONGAN
+- NPSN: 20106437
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Pusat
+- Kategori: Umum Dengan Nuansa Katholik
+- Daya tampung gelombang 1: 25
+- Daya tampung gelombang 2: 11
+
+#### 17. SMP AT-TAQWA
+- NPSN: 20100308
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Pusat
+- Kategori: Islam
+- Daya tampung gelombang 1: 45
+- Daya tampung gelombang 2: 19
+
+#### 18. SMP MUHAMMADIYAH 16
+- NPSN: 20106380
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Pusat
+- Kategori: Islam
+- Daya tampung gelombang 1: 38
+- Daya tampung gelombang 2: 17
+
+#### 19. SMP PSKD 1
+- NPSN: 20106423
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Pusat
+- Kategori: Kristen
+- Daya tampung gelombang 1: 24
+- Daya tampung gelombang 2: 11
+
+#### 20. SMP YWPM
+- NPSN: 20106442
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Pusat
+- Kategori: Umum
+- Daya tampung gelombang 1: 42
+- Daya tampung gelombang 2: 18
+
+#### 21. SMP ISLAM MERANTI
+- NPSN: 20106362
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Pusat
+- Kategori: Umum Dengan Nuansa Islam
+- Daya tampung gelombang 1: 22
+- Daya tampung gelombang 2: 10
+
+#### 22. SMP PASKALIS 1
+- NPSN: 20106426
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Pusat
+- Kategori: Katholik
+- Daya tampung gelombang 1: 27
+- Daya tampung gelombang 2: 11
+
+#### 23. SMP YAYASAN PENDIDIKAN MULIA
+- NPSN: 20107025
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Selatan
+- Kategori: Umum
+- Daya tampung gelombang 1: 51
+- Daya tampung gelombang 2: 21
+
+#### 24. SMP TELADAN
+- NPSN: 20107010
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Selatan
+- Kategori: Umum
+- Daya tampung gelombang 1: 43
+- Daya tampung gelombang 2: 18
+
+#### 25. SMP PLUS KHADIJAH ISLAMIC SCHOOL
+- NPSN: 20177845
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Selatan
+- Kategori: Islam
+- Daya tampung gelombang 1: 22
+- Daya tampung gelombang 2: 10
+
+#### 26. SMP PUTRA SATRIA
+- NPSN: 20107002
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Selatan
+- Kategori: Umum
+- Daya tampung gelombang 1: 151
+- Daya tampung gelombang 2: 65
+
+#### 27. SMP AL FALAH
+- NPSN: 20106921
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Selatan
+- Kategori: Umum Dengan Nuansa Islam
+- Daya tampung gelombang 1: 44
+- Daya tampung gelombang 2: 20
+
+#### 28. SMP PERGURUAN RAKYAT 02
+- NPSN: 20106995
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Selatan
+- Kategori: Umum
+- Daya tampung gelombang 1: 25
+- Daya tampung gelombang 2: 11
+
+#### 29. SMP ISLAM TERPADU ARRAHMAN
+- NPSN: 20106930
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Selatan
+- Kategori: Umum Dengan Nuansa Islam
+- Daya tampung gelombang 1: 42
+- Daya tampung gelombang 2: 18
+
+#### 30. SMP PSKD IV BULUNGAN
+- NPSN: 20106988
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Selatan
+- Kategori: Umum Dengan Nuansa Kristen
+- Daya tampung gelombang 1: 42
+- Daya tampung gelombang 2: 18
+
+#### 31. SMP YAPIMDA JAKARTA
+- NPSN: 20102424
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Selatan
+- Kategori: Islam
+- Daya tampung gelombang 1: 22
+- Daya tampung gelombang 2: 10
+
+#### 32. SMP AL WASHLIYAH
+- NPSN: 20107044
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Timur
+- Kategori: Umum Dengan Nuansa Islam
+- Daya tampung gelombang 1: 76
+- Daya tampung gelombang 2: 32
+
+#### 33. SMP PEMBANGUNAN
+- NPSN: 20107138
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- Daya tampung gelombang 1: 45
+- Daya tampung gelombang 2: 19
+
+#### 34. SMP ERA PEMBANGUNAN UMAT
+- NPSN: 20107084
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- Daya tampung gelombang 1: 44
+- Daya tampung gelombang 2: 19
+
+#### 35. SMP TAMAN HARAPAN
+- NPSN: 20107156
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- Daya tampung gelombang 1: 43
+- Daya tampung gelombang 2: 19
+
+#### 36. SMP JAYAKARTA
+- NPSN: 20106532
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Utara
+- Kategori: Umum
+- Daya tampung gelombang 1: 48
+- Daya tampung gelombang 2: 20
+
+#### 37. SMP PLUS AL FUDHOLA
+- NPSN: 20122006
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Utara
+- Kategori: Islam
+- Daya tampung gelombang 1: 48
+- Daya tampung gelombang 2: 21
+
+#### 38. SMP TUGU BHAKTI
+- NPSN: 20109340
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Utara
+- Kategori: Kristen
+- Daya tampung gelombang 1: 25
+- Daya tampung gelombang 2: 11
+
+#### 39. SMP AL-IRSYAD AL-ISLAMIYYAH
+- NPSN: 20106458
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Utara
+- Kategori: Islam
+- Daya tampung gelombang 1: 55
+- Daya tampung gelombang 2: 23
+
+#### 40. SMP SARI PUTRA
+- NPSN: 20106651
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Utara
+- Kategori: Umum
+- Daya tampung gelombang 1: 50
+- Daya tampung gelombang 2: 22
+
+#### 41. SMP FATAHILAH JAYA
+- NPSN: 20109369
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Utara
+- Kategori: Umum
+- Daya tampung gelombang 1: 41
+- Daya tampung gelombang 2: 18
+
+- JUMLAH daya tampung gelombang 1 (SMP): 1.911
+- JUMLAH daya tampung gelombang 2 (SMP): 824
+
+### D. Jenjang SMA
+#### 1. SMA LAMAHOLOT
+- NPSN: 20101314
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Barat
+- Kategori: Katolik
+- Daya tampung gelombang 1: 34
+- Daya tampung gelombang 2: 14
+
+#### 2. SMAS BUDI MURNI 2
+- NPSN: 20101334
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Barat
+- Kategori: Umum
+- Daya tampung gelombang 1: 83
+- Daya tampung gelombang 2: 36
+
+#### 3. SMAS AT TAQWA JAKARTA
+- NPSN: 20100484
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Pusat
+- Kategori: Umum
+- Daya tampung gelombang 1: 50
+- Daya tampung gelombang 2: 22
+
+#### 4. SMAS TAMAN MADYA I JAKARTA
+- NPSN: 20100181
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Pusat
+- Kategori: Umum
+- Daya tampung gelombang 1: 151
+- Daya tampung gelombang 2: 65
+
+#### 5. SMA PLUS KHADIJAH ISLAMIC SCHOOL
+- NPSN: 20112406
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Selatan
+- Kategori: Islam (Khusus perempuan)
+- Daya tampung gelombang 1: 21
+- Daya tampung gelombang 2: 9
+
+#### 6. SMAS MUHAMMADIYAH 12 JAKARTA
+- NPSN: 20103181
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- Daya tampung gelombang 1: 50
+- Daya tampung gelombang 2: 22
+
+#### 7. SMA TELADAN 1 JAKARTA
+- NPSN: 20103192
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- Daya tampung gelombang 1: 45
+- Daya tampung gelombang 2: 19
+
+#### 8. SMAS WIJAYA KUSUMA
+- NPSN: 20103185
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- Daya tampung gelombang 1: 126
+- Daya tampung gelombang 2: 54
+
+#### 9. SMAS GITA KIRTI 2
+- NPSN: 20107377
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Utara
+- Kategori: Umum
+- Daya tampung gelombang 1: 25
+- Daya tampung gelombang 2: 11
+
+#### 10. SMAS AL KHAIRIYAH JAKARTA
+- NPSN: 20107368
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Utara
+- Kategori: Islam
+- Daya tampung gelombang 1: 76
+- Daya tampung gelombang 2: 32
+
+#### 11. SMAS YP BDN
+- NPSN: 20101628
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Barat
+- Kategori: Umum
+- Daya tampung gelombang 1: 40
+- Daya tampung gelombang 2: 17
+
+#### 12. SMA BUDI MULIA UTAMA
+- NPSN: 20103213
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- Daya tampung gelombang 1: 101
+- Daya tampung gelombang 2: 43
+
+#### 13. SMAS KATOLIK DIAKONIA JAKARTA
+- NPSN: 20100631
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Utara
+- Kategori: Katolik
+- Daya tampung gelombang 1: 42
+- Daya tampung gelombang 2: 18
+
+#### 14. SMAS BUNGA HATI BANGSA
+- NPSN: 20100629
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Utara
+- Kategori: Umum
+- Daya tampung gelombang 1: 42
+- Daya tampung gelombang 2: 18
+
+- JUMLAH daya tampung gelombang 1 (SMA): 886
+- JUMLAH daya tampung gelombang 2 (SMA): 380
+
+### E. Jenjang SMK
+#### 1. SMKS Citra Utama
+- NPSN: 69774556
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Barat
+- Kategori: Umum
+- Konsentrasi keahlian: Akuntansi (Gelombang 1: 23, Gelombang 2: 10); Manajemen Perkantoran (Gelombang 1: 48, Gelombang 2: 20); Teknik Komputer dan Jaringan (Gelombang 1: 71, Gelombang 2: 31)
+
+#### 2. SMKS Maarif Jakarta
+- NPSN: 20101648
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Barat
+- Kategori: Umum
+- Konsentrasi keahlian: Desain Komunikasi Visual (Gelombang 1: 50, Gelombang 2: 22); Manajemen Perkantoran (Gelombang 1: 76, Gelombang 2: 32)
+
+#### 3. SMK YP IPPI Petojo
+- NPSN: 20100288
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Pusat
+- Kategori: Islam
+- Konsentrasi keahlian: Teknik Komputer dan Jaringan (Gelombang 1: 50, Gelombang 2: 22); Rekayasa Perangkat Lunak (Gelombang 1: 25, Gelombang 2: 11); Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Manajemen Perkantoran (Gelombang 1: 50, Gelombang 2: 22); Bisnis Retail (Gelombang 1: 50, Gelombang 2: 22)
+
+#### 4. SMKS At Taqwa
+- NPSN: 20100131
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Pusat
+- Kategori: Umum
+- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Bisnis Retail (Gelombang 1: 25, Gelombang 2: 11)
+
+#### 5. SMKS Tamansiswa 2
+- NPSN: 20100296
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Pusat
+- Kategori: Umum
+- Konsentrasi keahlian: Teknik Instalasi Tenaga Listrik (Gelombang 1: 50, Gelombang 2: 22); Teknik Pemesinan (Gelombang 1: 25, Gelombang 2: 11); Teknik Kendaraan Ringan (Gelombang 1: 50, Gelombang 2: 22); Teknik Komputer dan Jaringan (Gelombang 1: 50, Gelombang 2: 22); Rekayasa Perangkat Lunak (Gelombang 1: 50, Gelombang 2: 22); Teknik Sepeda Motor (Gelombang 1: 50, Gelombang 2: 22)
+
+#### 6. SMK Katolik Sint Joseph
+- NPSN: 20100110
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Pusat
+- Kategori: Katolik
+- Konsentrasi keahlian: Desain Komunikasi Visual (Gelombang 1: 25, Gelombang 2: 11); Teknik Sepeda Motor (Gelombang 1: 25, Gelombang 2: 11)
+
+#### 7. SMKS Gapura Merah Putih
+- NPSN: 69774854
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Selatan
+- Kategori: Umum
+- Konsentrasi keahlian: Layanan Penunjang Keperawatan dan Caregiving (Gelombang 1: 25, Gelombang 2: 11)
+
+#### 8. SMKS PGRI 15 Jakarta
+- NPSN: 20101511
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Selatan
+- Kategori: Umum
+- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Manajemen Perkantoran (Gelombang 1: 50, Gelombang 2: 22); Bisnis Retail (Gelombang 1: 50, Gelombang 2: 22); Perhotelan (Gelombang 1: 50, Gelombang 2: 22); Kuliner (Gelombang 1: 25, Gelombang 2: 11)
+
+#### 9. SMK Jagakarsa
+- NPSN: 70006225
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Selatan
+- Kategori: Umum
+- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Manajemen Perkantoran (Gelombang 1: 50, Gelombang 2: 22); Perhotelan (Gelombang 1: 50, Gelombang 2: 22); Teknik Komputer dan Jaringan (Gelombang 1: 25, Gelombang 2: 11)
+
+#### 10. SMKS YPK Kesatuan Jakarta
+- NPSN: 20102433
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Selatan
+- Kategori: Umum
+- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Manajemen Perkantoran (Gelombang 1: 25, Gelombang 2: 11); Bisnis Retail (Gelombang 1: 25, Gelombang 2: 11); Desain Komunikasi Visual (Gelombang 1: 21, Gelombang 2: 9)
+
+#### 11. SMKS Cyber Media
+- NPSN: 20109265
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Selatan
+- Kategori: Umum
+- Konsentrasi keahlian: Teknik Komputer dan Jaringan (Gelombang 1: 76, Gelombang 2: 32); Desain Komunikasi Visual (Gelombang 1: 76, Gelombang 2: 32); Manajemen Perkantoran (Gelombang 1: 76, Gelombang 2: 32); Rekayasa Perangkat Lunak (Gelombang 1: 25, Gelombang 2: 11)
+
+#### 12. SMKS Cipta Karya Jakarta
+- NPSN: 20103709
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- Konsentrasi keahlian: Perhotelan (Gelombang 1: 76, Gelombang 2: 32)
+
+#### 13. SMKS Laboratorium Jakarta
+- NPSN: 20177921
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- Konsentrasi keahlian: Rekayasa Perangkat Lunak (Gelombang 1: 25, Gelombang 2: 11); Teknik Komputer dan Jaringan (Gelombang 1: 25, Gelombang 2: 11); Tata Kecantikan Kulit dan Rambut (Gelombang 1: 25, Gelombang 2: 11); Layanan Penunjang Keperawatan dan Caregiving (Gelombang 1: 25, Gelombang 2: 11)
+
+#### 14. SMK Bina Nusa Mandiri
+- NPSN: 69873590
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Timur
+- Kategori: Umum
+- Konsentrasi keahlian: Desain Komunikasi Visual (Gelombang 1: 71, Gelombang 2: 31); Teknik Komputer dan Jaringan (Gelombang 1: 48, Gelombang 2: 20); Perhotelan (Gelombang 1: 24, Gelombang 2: 10); Kuliner (Gelombang 1: 23, Gelombang 2: 10)
+
+#### 15. SMKS Fajar Indah
+- NPSN: 20107417
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Utara
+- Kategori: Umum
+- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11)
+
+#### 16. SMKS Sari Putra
+- NPSN: 20107458
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Utara
+- Kategori: Umum
+- Konsentrasi keahlian: Manajemen Perkantoran (Gelombang 1: 25, Gelombang 2: 11); Manajemen Logistik (Gelombang 1: 25, Gelombang 2: 11)
+
+#### 17. SMKS Permata Bunda I Jakarta
+- NPSN: 20101517
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Barat
+- Kategori: Umum
+- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Manajemen Perkantoran (Gelombang 1: 25, Gelombang 2: 11)
+
+#### 18. SMKS Benteng Gading Jakarta
+- NPSN: 20101597
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Barat
+- Kategori: Umum
+- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Teknik Komputer dan Jaringan (Gelombang 1: 25, Gelombang 2: 11)
+
+#### 19. SMKS Prima Wisata
+- NPSN: 20107268
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Barat
+- Kategori: Umum
+- Konsentrasi keahlian: Perhotelan (Gelombang 1: 50, Gelombang 2: 22); Kuliner (Gelombang 1: 25, Gelombang 2: 11); Usaha Layanan Wisata (Gelombang 1: 25, Gelombang 2: 11)
+
+#### 20. SMKS Al Hamidiyah
+- NPSN: 20101600
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Barat
+- Kategori: Islam
+- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Bisnis Retail (Gelombang 1: 50, Gelombang 2: 22)
+
+#### 21. SMKS Kebon Jeruk Jakarta
+- NPSN: 20101644
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Barat
+- Kategori: Umum
+- Konsentrasi keahlian: Teknik Kendaraan Ringan (Gelombang 1: 10, Gelombang 2: 5); Teknik Audio Vidio (Gelombang 1: 10, Gelombang 2: 5); Manajemen Perkantoran (Gelombang 1: 10, Gelombang 2: 5); Akuntansi (Gelombang 1: 10, Gelombang 2: 5)
+
+#### 22. SMK Al-Ihsan
+- NPSN: 20100140
+- Suku Dinas: Wilayah I Kota Administrasi Jakarta Pusat
+- Kategori: Umum
+- Konsentrasi keahlian: Manajemen Perkantoran (Gelombang 1: 50, Gelombang 2: 22)
+
+#### 23. SMKS Bina Putra Jakarta
+- NPSN: 20102530
+- Suku Dinas: Wilayah II Kota Administrasi Jakarta Selatan
+- Kategori: Umum
+- Konsentrasi keahlian: Akuntansi (Gelombang 1: 25, Gelombang 2: 11); Desain Komunikasi Visual (Gelombang 1: 50, Gelombang 2: 22); Manajemen Perkantoran (Gelombang 1: 50, Gelombang 2: 22)
+
+- JUMLAH daya tampung gelombang 1 (SMK, akumulasi konsentrasi): 2.474
+- JUMLAH daya tampung gelombang 2 (SMK, akumulasi konsentrasi): 1.080
+
+## Catatan
+- Dokumen ini disusun ulang dari PDF sumber dengan format teks terstruktur agar mudah diproses ASKA.
+- Tabel pada lampiran diubah menjadi daftar teks tanpa mengubah angka daya tampung.
+- Khusus jenjang SMK, total dihitung dari penjumlahan seluruh konsentrasi keahlian yang tercantum.

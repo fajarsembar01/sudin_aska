@@ -15,6 +15,7 @@ from datetime import datetime
 from math import ceil
 from pathlib import Path
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 import requests
 from dotenv import dotenv_values
@@ -82,6 +83,7 @@ from .queries import (
     save_cc_wa_bridge_account,
     delete_cc_wa_bridge_account,
     get_default_cc_wa_bridge_account,
+    fetch_cc_statistics,
 )
 from . import call_center_api_bp, call_center_bp
 from .media import (
@@ -354,6 +356,13 @@ def _normalize_bridge_filter(raw_value: Optional[str]) -> tuple[str, Optional[st
         return "all", None
     key = normalize_cc_bridge_key(value)
     return key, key
+
+
+def _jakarta_now() -> datetime:
+    try:
+        return datetime.now(ZoneInfo("Asia/Jakarta"))
+    except Exception:
+        return datetime.now()
 
 
 def _send_via_bridge(
@@ -965,10 +974,89 @@ def inbox() -> Response:
     )
 
 
+@call_center_bp.route("/stats")
+@role_required("admin")
+def stats() -> Response:
+    """Call Center statistics dashboard."""
+    now_jkt = _jakarta_now()
+    period = (request.args.get("period") or "daily").strip().lower()
+    if period not in {"daily", "monthly", "yearly", "all"}:
+        period = "daily"
+
+    selected_date = (request.args.get("date") or "").strip()
+    selected_month = (request.args.get("month") or "").strip()
+    selected_year = request.args.get("year", type=int)
+
+    if period == "daily":
+        try:
+            datetime.strptime(selected_date, "%Y-%m-%d")
+        except Exception:
+            selected_date = now_jkt.strftime("%Y-%m-%d")
+        selected_month = ""
+        selected_year = None
+    elif period == "monthly":
+        try:
+            datetime.strptime(selected_month, "%Y-%m")
+        except Exception:
+            selected_month = now_jkt.strftime("%Y-%m")
+        selected_date = ""
+        selected_year = None
+    elif period == "yearly":
+        if not selected_year or selected_year < 2000 or selected_year > (now_jkt.year + 1):
+            selected_year = now_jkt.year
+        selected_date = ""
+        selected_month = ""
+    else:
+        selected_date = ""
+        selected_month = ""
+        selected_year = None
+
+    raw_bridge_filter = (request.args.get("bridge") or "").strip()
+    if not raw_bridge_filter:
+        raw_bridge_filter = "all"
+    bridge_filter, bridge_key = _normalize_bridge_filter(raw_bridge_filter)
+    bridge_accounts = _bridge_accounts()
+
+    stats_data = fetch_cc_statistics(
+        period_mode=period,
+        selected_date=selected_date or None,
+        selected_month=selected_month or None,
+        selected_year=selected_year,
+        bridge_key=bridge_key,
+    )
+
+    period_label = "Semua periode"
+    if period == "daily":
+        period_label = f"Harian ({selected_date})"
+    elif period == "monthly":
+        period_label = f"Bulanan ({selected_month})"
+    elif period == "yearly":
+        period_label = f"Tahunan ({selected_year})"
+
+    year_options = list(range(now_jkt.year, 2019, -1))
+
+    return render_template(
+        "cc_stats.html",
+        stats_data=stats_data,
+        period=period,
+        period_label=period_label,
+        selected_date=selected_date,
+        selected_month=selected_month,
+        selected_year=selected_year,
+        bridge_filter=bridge_filter,
+        bridge_accounts=bridge_accounts,
+        year_options=year_options,
+    )
+
+
 @call_center_bp.route("/thread/<int:conv_id>")
 @role_required("admin")
 def thread(conv_id: int) -> Response:
     """Conversation thread view."""
+    page = request.args.get("page", default=1, type=int) or 1
+    page = max(1, page)
+    offset = (page - 1) * PAGE_SIZE
+
     raw_bridge_filter = (request.args.get("bridge") or "").strip()
     if not raw_bridge_filter:
         raw_bridge_filter = "main"
@@ -984,7 +1072,12 @@ def thread(conv_id: int) -> Response:
     # mark_conversation_read(conv_id)  # DINONAKTIFKAN — aktifkan kembali jika diperlukan
 
     # Sidebar conversations
-    conversations, _ = fetch_cc_conversations(limit=50, bridge_key=bridge_key)
+    conversations, total = fetch_cc_conversations(
+        bridge_key=bridge_key,
+        limit=PAGE_SIZE,
+        offset=offset,
+    )
+    total_pages = max(1, ceil(total / PAGE_SIZE))
     bridge_accounts = _bridge_accounts()
 
     response = current_app.make_response(render_template(
@@ -992,6 +1085,8 @@ def thread(conv_id: int) -> Response:
         conversation=conv,
         messages=messages,
         conversations=conversations,
+        sidebar_page=page,
+        sidebar_total_pages=total_pages,
         bridge_filter=bridge_filter,
         bridge_accounts=bridge_accounts,
     ))

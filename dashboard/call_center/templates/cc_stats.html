@@ -1,0 +1,283 @@
+{% extends "base_cc.html" %}
+{% set page_title = "Statistik Call Center" %}
+
+{% block head_extra %}
+<style>
+    .cc-stats-card {
+        border: 1px solid var(--bs-border-color);
+        border-radius: .75rem;
+        padding: .9rem 1rem;
+        background: var(--bs-body-bg);
+        height: 100%;
+    }
+
+    .cc-stats-label {
+        font-size: .76rem;
+        color: var(--bs-secondary-color);
+        text-transform: uppercase;
+        letter-spacing: .03em;
+    }
+
+    .cc-stats-value {
+        font-size: 1.45rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .cc-table-card {
+        border: 1px solid var(--bs-border-color);
+        border-radius: .75rem;
+        overflow: hidden;
+        background: var(--bs-body-bg);
+    }
+
+    .cc-table-title {
+        padding: .75rem 1rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        background: var(--bs-tertiary-bg);
+        font-weight: 600;
+        font-size: .9rem;
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+{% set summary = stats_data.summary or {} %}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <div>
+        <h1 class="h5 mb-1">Statistik Call Center</h1>
+        <div class="text-secondary small">{{ period_label }}</div>
+    </div>
+    <a href="{{ url_for('call_center.inbox') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Kembali ke Inbox
+    </a>
+</div>
+
+<div class="alert alert-info py-2 small mb-3">
+    Klasifikasi <strong>jenjang</strong> dan <strong>permasalahan</strong> dihitung otomatis dari isi pesan masuk (rule-based).
+</div>
+
+<form method="get" class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-2">
+                <label class="form-label mb-1 small">Periode</label>
+                <select class="form-select form-select-sm" name="period" id="periodSelect">
+                    <option value="daily" {{ 'selected' if period == 'daily' else '' }}>Harian</option>
+                    <option value="monthly" {{ 'selected' if period == 'monthly' else '' }}>Bulanan</option>
+                    <option value="yearly" {{ 'selected' if period == 'yearly' else '' }}>Tahunan</option>
+                    <option value="all" {{ 'selected' if period == 'all' else '' }}>Semua</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2" data-period-field="daily">
+                <label class="form-label mb-1 small">Tanggal</label>
+                <input type="date" class="form-control form-control-sm" name="date" value="{{ selected_date }}">
+            </div>
+            <div class="col-12 col-md-2" data-period-field="monthly">
+                <label class="form-label mb-1 small">Bulan</label>
+                <input type="month" class="form-control form-control-sm" name="month" value="{{ selected_month }}">
+            </div>
+            <div class="col-12 col-md-2" data-period-field="yearly">
+                <label class="form-label mb-1 small">Tahun</label>
+                <select class="form-select form-select-sm" name="year">
+                    {% for yr in year_options %}
+                    <option value="{{ yr }}" {{ 'selected' if selected_year == yr else '' }}>{{ yr }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label mb-1 small">Bridge</label>
+                <select name="bridge" class="form-select form-select-sm">
+                    <option value="all" {{ 'selected' if bridge_filter == 'all' else '' }}>Semua bridge</option>
+                    {% for acc in bridge_accounts %}
+                    <option value="{{ acc.bridge_key }}" {{ 'selected' if bridge_filter == acc.bridge_key else '' }}>
+                        {{ acc.display_name or acc.bridge_key }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-1 d-grid">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-funnel"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="row g-2 mb-3">
+    <div class="col-12 col-md-3">
+        <div class="cc-stats-card">
+            <div class="cc-stats-label">Pesan Masuk</div>
+            <div class="cc-stats-value">{{ summary.total_messages or 0 }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="cc-stats-card">
+            <div class="cc-stats-label">Nomor Unik</div>
+            <div class="cc-stats-value">{{ summary.unique_numbers or 0 }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="cc-stats-card">
+            <div class="cc-stats-label">Aktif Nomor-Hari</div>
+            <div class="cc-stats-value">{{ summary.active_contact_days or 0 }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="cc-stats-card">
+            <div class="cc-stats-label">Percakapan Baru</div>
+            <div class="cc-stats-value">{{ summary.new_conversations or 0 }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-xl-6">
+        <div class="cc-table-card">
+            <div class="cc-table-title">Timeline Pesan Masuk</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th class="text-end">Pesan</th>
+                            <th class="text-end">Nomor Unik</th>
+                            <th class="text-end">Nomor-Hari</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in stats_data.message_timeline %}
+                        <tr>
+                            <td>{{ row.local_date.strftime('%d/%m/%Y') if row.local_date else '-' }}</td>
+                            <td class="text-end">{{ row.total_messages }}</td>
+                            <td class="text-end">{{ row.unique_numbers }}</td>
+                            <td class="text-end">{{ row.active_contact_days }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-secondary py-3">Belum ada data.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-xl-6">
+        <div class="cc-table-card">
+            <div class="cc-table-title">Timeline Percakapan Baru</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th class="text-end">Percakapan Baru</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in stats_data.conversation_timeline %}
+                        <tr>
+                            <td>{{ row.local_date.strftime('%d/%m/%Y') if row.local_date else '-' }}</td>
+                            <td class="text-end">{{ row.total_new_conversations }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="2" class="text-center text-secondary py-3">Belum ada data.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-6">
+        <div class="cc-table-card">
+            <div class="cc-table-title">Statistik Jenjang (Dari Isi Chat)</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Jenjang</th>
+                            <th class="text-end">Pesan</th>
+                            <th class="text-end">Nomor Unik</th>
+                            <th class="text-end">Nomor-Hari</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in stats_data.jenjang_stats %}
+                        <tr>
+                            <td>{{ row.jenjang }}</td>
+                            <td class="text-end">{{ row.total_messages }}</td>
+                            <td class="text-end">{{ row.unique_numbers }}</td>
+                            <td class="text-end">{{ row.active_contact_days }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-secondary py-3">Belum ada data.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-6">
+        <div class="cc-table-card">
+            <div class="cc-table-title">Statistik Permasalahan (Dari Isi Chat)</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Kategori</th>
+                            <th class="text-end">Pesan</th>
+                            <th class="text-end">Nomor Unik</th>
+                            <th class="text-end">Nomor-Hari</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in stats_data.issue_stats %}
+                        <tr>
+                            <td>{{ row.issue_category }}</td>
+                            <td class="text-end">{{ row.total_messages }}</td>
+                            <td class="text-end">{{ row.unique_numbers }}</td>
+                            <td class="text-end">{{ row.active_contact_days }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-secondary py-3">Belum ada data.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var periodSelect = document.getElementById('periodSelect');
+        if (!periodSelect) return;
+
+        function syncPeriodFields() {
+            var mode = periodSelect.value || 'daily';
+            document.querySelectorAll('[data-period-field]').forEach(function (el) {
+                var target = el.getAttribute('data-period-field');
+                if (target === mode) {
+                    el.classList.remove('d-none');
+                } else {
+                    el.classList.add('d-none');
+                }
+            });
+        }
+
+        periodSelect.addEventListener('change', syncPeriodFields);
+        syncPeriodFields();
+    });
+</script>
+{% endblock %}

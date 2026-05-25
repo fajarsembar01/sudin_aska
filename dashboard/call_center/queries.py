@@ -865,7 +865,7 @@ def fetch_cc_conversations(
     status_filter: Optional[str] = None,
     search: Optional[str] = None,
     bridge_key: Optional[str] = None,
-    limit: int = 100,
+    limit: Optional[int] = 100,
     offset: int = 0,
 ) -> tuple[list[dict], int]:
     """Return paginated conversations sorted by last_message_at DESC."""
@@ -912,6 +912,17 @@ def fetch_cc_conversations(
         )
         total = (cur.fetchone() or {}).get("cnt", 0)
 
+        paging_clause = ""
+        paging_params = dict(params)
+
+        if limit is not None:
+            paging_clause = "LIMIT %(limit)s OFFSET %(offset)s"
+            paging_params["limit"] = max(1, int(limit))
+            paging_params["offset"] = max(0, int(offset))
+        elif offset:
+            paging_clause = "OFFSET %(offset)s"
+            paging_params["offset"] = max(0, int(offset))
+
         cur.execute(
             f"""
             SELECT c.id, c.wa_user_id, c.display_name, c.status,
@@ -922,9 +933,9 @@ def fetch_cc_conversations(
             FROM cc_conversations c
             {where}
             ORDER BY c.last_message_at DESC NULLS LAST
-            LIMIT %(limit)s OFFSET %(offset)s
+            {paging_clause}
             """,
-            {**params, "limit": limit, "offset": offset},
+            paging_params,
         )
         rows = [enrich_cc_conversation_row(dict(r)) for r in cur.fetchall()]
 
@@ -982,6 +993,246 @@ def fetch_cc_unread_total() -> int:
         return int((row or {}).get("total", 0))
     except Exception:
         return 0
+
+
+# ---------------------------------------------------------------------------
+# Statistics
+# ---------------------------------------------------------------------------
+
+def fetch_cc_statistics(
+    *,
+    period_mode: str = "daily",
+    selected_date: Optional[str] = None,
+    selected_month: Optional[str] = None,
+    selected_year: Optional[int] = None,
+    bridge_key: Optional[str] = None,
+) -> dict:
+    """Return call center statistics (messages, conversation activity, jenjang, issues)."""
+    mode = (period_mode or "daily").strip().lower()
+    if mode not in {"daily", "monthly", "yearly", "all"}:
+        mode = "daily"
+
+    msg_conditions = ["m.direction = 'inbound'"]
+    conv_conditions: list[str] = []
+    msg_params: dict[str, Any] = {}
+    conv_params: dict[str, Any] = {}
+
+    selected_bridge_key = _normalize_cc_bridge_filter(bridge_key)
+    if selected_bridge_key:
+        if selected_bridge_key == _CC_BRIDGE_DEFAULT_KEY:
+            msg_conditions.append("POSITION('::' IN COALESCE(c.wa_user_id, '')) = 0")
+            conv_conditions.append("POSITION('::' IN COALESCE(c.wa_user_id, '')) = 0")
+        else:
+            msg_conditions.append("c.wa_user_id LIKE %(bridge_prefix)s")
+            conv_conditions.append("c.wa_user_id LIKE %(bridge_prefix)s")
+            msg_params["bridge_prefix"] = f"{selected_bridge_key}::%"
+            conv_params["bridge_prefix"] = f"{selected_bridge_key}::%"
+
+    if mode == "daily" and selected_date:
+        msg_conditions.append("timezone('Asia/Jakarta', m.created_at)::date = %(selected_date)s::date")
+        conv_conditions.append("timezone('Asia/Jakarta', c.created_at)::date = %(selected_date)s::date")
+        msg_params["selected_date"] = selected_date
+        conv_params["selected_date"] = selected_date
+    elif mode == "monthly" and selected_month:
+        msg_conditions.append("to_char(timezone('Asia/Jakarta', m.created_at), 'YYYY-MM') = %(selected_month)s")
+        conv_conditions.append("to_char(timezone('Asia/Jakarta', c.created_at), 'YYYY-MM') = %(selected_month)s")
+        msg_params["selected_month"] = selected_month
+        conv_params["selected_month"] = selected_month
+    elif mode == "yearly" and selected_year:
+        msg_conditions.append("EXTRACT(YEAR FROM timezone('Asia/Jakarta', m.created_at)) = %(selected_year)s")
+        conv_conditions.append("EXTRACT(YEAR FROM timezone('Asia/Jakarta', c.created_at)) = %(selected_year)s")
+        msg_params["selected_year"] = int(selected_year)
+        conv_params["selected_year"] = int(selected_year)
+
+    where_msg = ("WHERE " + " AND ".join(msg_conditions)) if msg_conditions else ""
+    where_conv = ("WHERE " + " AND ".join(conv_conditions)) if conv_conditions else ""
+
+    jenjang_case_sql = """
+        CASE
+            WHEN txt ~* '(^|[^a-z0-9])(smk|sekolah menengah kejuruan)([^a-z0-9]|$)' THEN 'SMK'
+            WHEN txt ~* '(^|[^a-z0-9])(sma|sekolah menengah atas|madrasah aliyah)([^a-z0-9]|$)' THEN 'SMA'
+            WHEN txt ~* '(^|[^a-z0-9])(smp|mts|sekolah menengah pertama|madrasah tsanawiyah)([^a-z0-9]|$)' THEN 'SMP'
+            WHEN txt ~* '(^|[^a-z0-9])(tk|paud|taman kanak|kelompok bermain|sekolah dasar|sd)([^a-z0-9]|$)' THEN 'TK/SD'
+            ELSE 'Tidak diketahui'
+        END
+    """
+    issue_case_sql = """
+        CASE
+            WHEN txt ~* '(nik|ktp|kk|kartu keluarga|akta lahir|akta kematian|domisili|pindah|penduduk|disdukcapil|capil)' THEN 'Kependudukan'
+            WHEN txt ~* '(error|gagal|tidak bisa|gabisa|nggak bisa|gangguan|bug|server|login|aplikasi|website|situs|otp|verifikasi|jaringan|timeout)' THEN 'Teknis'
+            WHEN txt ~* '(regulasi|aturan|peraturan|kebijakan|syarat|ketentuan|dasar hukum|payung hukum|pergub|perda|undang-undang|uu|juknis|sop)' THEN 'Regulasi'
+            ELSE 'Lainnya'
+        END
+    """
+
+    summary = {
+        "total_messages": 0,
+        "unique_numbers": 0,
+        "active_contact_days": 0,
+        "new_conversations": 0,
+    }
+    message_timeline: list[dict] = []
+    conversation_timeline: list[dict] = []
+    jenjang_stats: list[dict] = []
+    issue_stats: list[dict] = []
+
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            WITH msg_base AS (
+                SELECT
+                    c.wa_user_id,
+                    timezone('Asia/Jakarta', m.created_at)::date AS local_date
+                FROM cc_messages m
+                JOIN cc_conversations c ON c.id = m.conversation_id
+                {where_msg}
+            )
+            SELECT
+                COUNT(*)::int AS total_messages,
+                COUNT(DISTINCT wa_user_id)::int AS unique_numbers,
+                COUNT(DISTINCT (local_date, wa_user_id))::int AS active_contact_days
+            FROM msg_base
+            """,
+            msg_params,
+        )
+        row = dict(cur.fetchone() or {})
+        summary["total_messages"] = int(row.get("total_messages") or 0)
+        summary["unique_numbers"] = int(row.get("unique_numbers") or 0)
+        summary["active_contact_days"] = int(row.get("active_contact_days") or 0)
+
+        cur.execute(
+            f"""
+            SELECT COUNT(*)::int AS total
+            FROM cc_conversations c
+            {where_conv}
+            """,
+            conv_params,
+        )
+        row = dict(cur.fetchone() or {})
+        summary["new_conversations"] = int(row.get("total") or 0)
+
+        cur.execute(
+            f"""
+            WITH msg_base AS (
+                SELECT
+                    c.wa_user_id,
+                    timezone('Asia/Jakarta', m.created_at)::date AS local_date
+                FROM cc_messages m
+                JOIN cc_conversations c ON c.id = m.conversation_id
+                {where_msg}
+            )
+            SELECT
+                local_date,
+                COUNT(*)::int AS total_messages,
+                COUNT(DISTINCT wa_user_id)::int AS unique_numbers,
+                COUNT(DISTINCT (local_date, wa_user_id))::int AS active_contact_days
+            FROM msg_base
+            GROUP BY local_date
+            ORDER BY local_date ASC
+            """,
+            msg_params,
+        )
+        message_timeline = [dict(r) for r in cur.fetchall()]
+
+        cur.execute(
+            f"""
+            SELECT
+                timezone('Asia/Jakarta', c.created_at)::date AS local_date,
+                COUNT(*)::int AS total_new_conversations
+            FROM cc_conversations c
+            {where_conv}
+            GROUP BY local_date
+            ORDER BY local_date ASC
+            """,
+            conv_params,
+        )
+        conversation_timeline = [dict(r) for r in cur.fetchall()]
+
+        cur.execute(
+            f"""
+            WITH msg_base AS (
+                SELECT
+                    c.wa_user_id,
+                    timezone('Asia/Jakarta', m.created_at)::date AS local_date,
+                    LOWER(COALESCE(m.message_text, '')) AS txt
+                FROM cc_messages m
+                JOIN cc_conversations c ON c.id = m.conversation_id
+                {where_msg}
+            ),
+            classified AS (
+                SELECT
+                    wa_user_id,
+                    local_date,
+                    {jenjang_case_sql} AS jenjang
+                FROM msg_base
+            )
+            SELECT
+                jenjang,
+                COUNT(*)::int AS total_messages,
+                COUNT(DISTINCT wa_user_id)::int AS unique_numbers,
+                COUNT(DISTINCT (local_date, wa_user_id))::int AS active_contact_days
+            FROM classified
+            GROUP BY jenjang
+            ORDER BY
+                CASE jenjang
+                    WHEN 'TK/SD' THEN 1
+                    WHEN 'SMP' THEN 2
+                    WHEN 'SMA' THEN 3
+                    WHEN 'SMK' THEN 4
+                    ELSE 9
+                END,
+                jenjang ASC
+            """,
+            msg_params,
+        )
+        jenjang_stats = [dict(r) for r in cur.fetchall()]
+
+        cur.execute(
+            f"""
+            WITH msg_base AS (
+                SELECT
+                    c.wa_user_id,
+                    timezone('Asia/Jakarta', m.created_at)::date AS local_date,
+                    LOWER(COALESCE(m.message_text, '')) AS txt
+                FROM cc_messages m
+                JOIN cc_conversations c ON c.id = m.conversation_id
+                {where_msg}
+            ),
+            classified AS (
+                SELECT
+                    wa_user_id,
+                    local_date,
+                    {issue_case_sql} AS issue_category
+                FROM msg_base
+            )
+            SELECT
+                issue_category,
+                COUNT(*)::int AS total_messages,
+                COUNT(DISTINCT wa_user_id)::int AS unique_numbers,
+                COUNT(DISTINCT (local_date, wa_user_id))::int AS active_contact_days
+            FROM classified
+            GROUP BY issue_category
+            ORDER BY
+                CASE issue_category
+                    WHEN 'Kependudukan' THEN 1
+                    WHEN 'Teknis' THEN 2
+                    WHEN 'Regulasi' THEN 3
+                    ELSE 9
+                END,
+                issue_category ASC
+            """,
+            msg_params,
+        )
+        issue_stats = [dict(r) for r in cur.fetchall()]
+
+    return {
+        "mode": mode,
+        "summary": summary,
+        "message_timeline": message_timeline,
+        "conversation_timeline": conversation_timeline,
+        "jenjang_stats": jenjang_stats,
+        "issue_stats": issue_stats,
+    }
 
 
 # ---------------------------------------------------------------------------

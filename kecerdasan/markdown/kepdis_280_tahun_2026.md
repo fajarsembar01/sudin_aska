@@ -15966,7 +15966,7 @@
 ## Lampiran II - Daftar Wilayah PMB Sekolah Menengah Pertama (SMP)
 - Jumlah entri sekolah unik: 299
 
-### KOTA ADMINISTRASI TIDAK TERDETEKSI
+### SELURUH Jakarta
 
 #### 2. SMP NEGERI 2 JAKARTA
 - Alamat: JL. MARDANI RAYA, RT 001, RW 005, KEL. JOHAR BARU, KEC. JOHAR BARU, JAKARTA PUSAT
@@ -21696,7 +21696,7 @@
 ## Lampiran III - Daftar Wilayah PMB Sekolah Menengah Atas (SMA)
 - Jumlah entri sekolah unik: 116
 
-### KOTA ADMINISTRASI TIDAK TERDETEKSI
+### SELURUH JAKARTA
 
 #### 1. SMA NEGERI 1 JAKARTA
 - Alamat: JL. BUDI UTOMO NO 7, RT 004, RW 008, KEL. PASAR BARU, KEC. SAWAH BESAR, JAKARTA PUSAT

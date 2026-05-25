@@ -291,6 +291,26 @@
         height: 0.55rem;
         border-radius: 999px;
     }
+    .top-users-card {
+        height: 420px;
+        display: flex;
+        flex-direction: column;
+    }
+    .top-users-card .card-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+    .top-users-scroll {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding-right: 0.2rem;
+    }
+    .top-users-actions {
+        padding-top: 0.75rem;
+    }
     @media (max-width: 576px) {
         .page-header-actions { width: 100%; }
         .hero-panel .card-body {
@@ -307,6 +327,9 @@
         }
         .hero-actions .btn-group {
             width: 100%;
+        }
+        .top-users-card {
+            height: 380px;
         }
     }
 </style>
@@ -745,7 +768,7 @@
                 </ul>
             </div>
         </div>
-        <div class="card border-0 shadow-sm">
+        <div class="card border-0 shadow-sm top-users-card">
             <div class="card-body">
                 <div class="d-flex align-items-center gap-3 mb-3">
                     <span class="icon-badge section-icon text-warning">
@@ -753,34 +776,43 @@
                     </span>
                     <h2 class="h6 fw-bold mb-0">Top User Aktif</h2>
                 </div>
-                <ul class="list-group list-group-flush">
-                    {% for item in top_users %}
-                    <li class="list-group-item px-0 d-flex align-items-center justify-content-between gap-3">
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="icon-badge timeline-icon text-warning">
-                                <i class="bi bi-person-circle"></i>
-                            </span>
-                            <div>
-                                <div class="fw-semibold d-flex align-items-center gap-2">
-                                    {% set suffix_map = {1: 'st', 2: 'nd', 3: 'rd'} %}
-                                    {% set last_two = loop.index % 100 %}
-                                    {% if last_two in [11, 12, 13] %}
-                                        {% set suffix = 'th' %}
-                                    {% else %}
-                                        {% set suffix = suffix_map.get(loop.index % 10, 'th') %}
-                                    {% endif %}
-                                    <span class="badge rounded-pill text-bg-warning text-dark">{{ loop.index }}{{ suffix }}</span>
-                                    <span>{{ item.username }}</span>
+                <div class="top-users-scroll">
+                    <ul class="list-group list-group-flush" id="topUsersList">
+                        {% for item in top_users %}
+                        <li class="list-group-item px-0 d-flex align-items-center justify-content-between gap-3 top-user-item{% if loop.index > 10 %} d-none{% endif %}">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="icon-badge timeline-icon text-warning">
+                                    <i class="bi bi-person-circle"></i>
+                                </span>
+                                <div>
+                                    <div class="fw-semibold d-flex align-items-center gap-2">
+                                        {% set suffix_map = {1: 'st', 2: 'nd', 3: 'rd'} %}
+                                        {% set last_two = loop.index % 100 %}
+                                        {% if last_two in [11, 12, 13] %}
+                                            {% set suffix = 'th' %}
+                                        {% else %}
+                                            {% set suffix = suffix_map.get(loop.index % 10, 'th') %}
+                                        {% endif %}
+                                        <span class="badge rounded-pill text-bg-warning text-dark">{{ loop.index }}{{ suffix }}</span>
+                                        <span>{{ item.username }}</span>
+                                    </div>
+                                    <small class="text-muted">ID {{ item.user_id }}</small>
                                 </div>
-                                <small class="text-muted">ID {{ item.user_id }}</small>
                             </div>
-                        </div>
-                        <span class="badge rounded-pill text-bg-primary">{{ item.messages }}</span>
-                    </li>
-                    {% else %}
-                    <li class="list-group-item px-0 text-muted">Belum ada data.</li>
-                    {% endfor %}
-                </ul>
+                            <span class="badge rounded-pill text-bg-primary">{{ item.messages }}</span>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item px-0 text-muted">Belum ada data.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% if top_users|length > 10 %}
+                <div class="top-users-actions">
+                    <button type="button" class="btn btn-outline-primary btn-sm w-100" id="topUsersLoadMore" data-step="10">
+                        Load more (+10)
+                    </button>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -874,6 +906,32 @@
         tooltipTriggerList.forEach(function (tooltipTriggerEl) {
             new bootstrap.Tooltip(tooltipTriggerEl);
         });
+
+        const topUsersList = document.getElementById('topUsersList');
+        const topUsersLoadMore = document.getElementById('topUsersLoadMore');
+        if (topUsersList && topUsersLoadMore) {
+            const topUserItems = Array.from(topUsersList.querySelectorAll('.top-user-item'));
+            const step = Number.parseInt(topUsersLoadMore.dataset.step, 10) || 10;
+            let visibleCount = topUserItems.filter((item) => !item.classList.contains('d-none')).length;
+            const updateTopUsersButton = () => {
+                const remaining = topUserItems.length - visibleCount;
+                if (remaining <= 0) {
+                    topUsersLoadMore.classList.add('d-none');
+                    return;
+                }
+                topUsersLoadMore.classList.remove('d-none');
+                topUsersLoadMore.textContent = `Load more (+${Math.min(step, remaining)})`;
+            };
+            topUsersLoadMore.addEventListener('click', () => {
+                const nextVisible = Math.min(topUserItems.length, visibleCount + step);
+                for (let index = visibleCount; index < nextVisible; index += 1) {
+                    topUserItems[index].classList.remove('d-none');
+                }
+                visibleCount = nextVisible;
+                updateTopUsersButton();
+            });
+            updateTopUsersButton();
+        }
 
         const modalElement = document.getElementById('chatConfirmationModal');
         if (!modalElement) return;

@@ -25,6 +25,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'call_center.stats' %}active{% endif %}"
+                        href="{{ url_for('call_center.stats') }}">
+                        <i class="bi bi-bar-chart-line nav-icon"></i>Statistik
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'call_center.settings_wa' %}active{% endif %}"
                         href="{{ url_for('call_center.settings_wa') }}">
                         <i class="bi bi-whatsapp nav-icon"></i>WhatsApp
