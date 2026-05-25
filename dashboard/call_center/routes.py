@@ -1025,6 +1025,25 @@ def stats() -> Response:
         bridge_key=bridge_key,
     )
 
+    # Pastikan kategori selalu tampil, walau nilainya 0.
+    issue_defaults = ["Kependudukan", "Teknis", "Regulasi", "Lainnya"]
+    issue_map = {
+        str(item.get("issue_category") or ""): item
+        for item in (stats_data.get("issue_stats") or [])
+    }
+    stats_data["issue_stats"] = [
+        issue_map.get(
+            name,
+            {
+                "issue_category": name,
+                "total_messages": 0,
+                "unique_numbers": 0,
+                "active_contact_days": 0,
+            },
+        )
+        for name in issue_defaults
+    ]
+
     period_label = "Semua periode"
     if period == "daily":
         period_label = f"Harian ({selected_date})"
@@ -1035,7 +1054,7 @@ def stats() -> Response:
 
     year_options = list(range(now_jkt.year, 2019, -1))
 
-    return render_template(
+    response = current_app.make_response(render_template(
         "cc_stats.html",
         stats_data=stats_data,
         period=period,
@@ -1046,7 +1065,11 @@ def stats() -> Response:
         bridge_filter=bridge_filter,
         bridge_accounts=bridge_accounts,
         year_options=year_options,
-    )
+    ))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 
 @call_center_bp.route("/thread/<int:conv_id>")

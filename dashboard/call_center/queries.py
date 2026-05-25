@@ -1165,23 +1165,74 @@ def fetch_cc_statistics(
                     local_date,
                     {jenjang_case_sql} AS jenjang
                 FROM msg_base
+            ),
+            dominant_per_number AS (
+                SELECT DISTINCT ON (wa_user_id)
+                    wa_user_id,
+                    jenjang
+                FROM (
+                    SELECT
+                        wa_user_id,
+                        jenjang,
+                        COUNT(*)::int AS hit_count,
+                        COUNT(DISTINCT local_date)::int AS day_count,
+                        CASE
+                            WHEN jenjang = 'TK/SD' THEN 1
+                            WHEN jenjang = 'SMP' THEN 2
+                            WHEN jenjang = 'SMA' THEN 3
+                            WHEN jenjang = 'SMK' THEN 4
+                            ELSE 9
+                        END AS priority_rank
+                    FROM classified
+                    GROUP BY wa_user_id, jenjang
+                ) score
+                ORDER BY wa_user_id, hit_count DESC, day_count DESC, priority_rank ASC, jenjang ASC
+            ),
+            assigned_messages AS (
+                SELECT
+                    d.jenjang,
+                    COUNT(*)::int AS total_messages
+                FROM classified c
+                JOIN dominant_per_number d ON d.wa_user_id = c.wa_user_id
+                GROUP BY d.jenjang
+            ),
+            assigned_unique_numbers AS (
+                SELECT
+                    jenjang,
+                    COUNT(*)::int AS unique_numbers
+                FROM dominant_per_number
+                GROUP BY jenjang
+            ),
+            assigned_contact_days AS (
+                SELECT
+                    d.jenjang,
+                    COUNT(*)::int AS active_contact_days
+                FROM (
+                    SELECT DISTINCT wa_user_id, local_date
+                    FROM classified
+                ) ud
+                JOIN dominant_per_number d ON d.wa_user_id = ud.wa_user_id
+                GROUP BY d.jenjang
             )
             SELECT
-                jenjang,
-                COUNT(*)::int AS total_messages,
-                COUNT(DISTINCT wa_user_id)::int AS unique_numbers,
-                COUNT(DISTINCT (local_date, wa_user_id))::int AS active_contact_days
-            FROM classified
-            GROUP BY jenjang
+                k.jenjang,
+                COALESCE(m.total_messages, 0) AS total_messages,
+                COALESCE(u.unique_numbers, 0) AS unique_numbers,
+                COALESCE(a.active_contact_days, 0) AS active_contact_days
+            FROM (
+                VALUES ('TK/SD'), ('SMP'), ('SMA'), ('SMK'), ('Tidak diketahui')
+            ) AS k(jenjang)
+            LEFT JOIN assigned_messages m ON m.jenjang = k.jenjang
+            LEFT JOIN assigned_unique_numbers u ON u.jenjang = k.jenjang
+            LEFT JOIN assigned_contact_days a ON a.jenjang = k.jenjang
             ORDER BY
-                CASE jenjang
+                CASE k.jenjang
                     WHEN 'TK/SD' THEN 1
                     WHEN 'SMP' THEN 2
                     WHEN 'SMA' THEN 3
                     WHEN 'SMK' THEN 4
                     ELSE 9
-                END,
-                jenjang ASC
+                END
             """,
             msg_params,
         )
@@ -1204,22 +1255,72 @@ def fetch_cc_statistics(
                     local_date,
                     {issue_case_sql} AS issue_category
                 FROM msg_base
+            ),
+            dominant_per_number AS (
+                SELECT DISTINCT ON (wa_user_id)
+                    wa_user_id,
+                    issue_category
+                FROM (
+                    SELECT
+                        wa_user_id,
+                        issue_category,
+                        COUNT(*)::int AS hit_count,
+                        COUNT(DISTINCT local_date)::int AS day_count,
+                        CASE
+                            WHEN issue_category = 'Kependudukan' THEN 1
+                            WHEN issue_category = 'Teknis' THEN 2
+                            WHEN issue_category = 'Regulasi' THEN 3
+                            ELSE 9
+                        END AS priority_rank
+                    FROM classified
+                    GROUP BY wa_user_id, issue_category
+                ) score
+                ORDER BY wa_user_id, hit_count DESC, day_count DESC, priority_rank ASC, issue_category ASC
+            ),
+            assigned_messages AS (
+                SELECT
+                    d.issue_category,
+                    COUNT(*)::int AS total_messages
+                FROM classified c
+                JOIN dominant_per_number d ON d.wa_user_id = c.wa_user_id
+                GROUP BY d.issue_category
+            ),
+            assigned_unique_numbers AS (
+                SELECT
+                    issue_category,
+                    COUNT(*)::int AS unique_numbers
+                FROM dominant_per_number
+                GROUP BY issue_category
+            ),
+            assigned_contact_days AS (
+                SELECT
+                    d.issue_category,
+                    COUNT(*)::int AS active_contact_days
+                FROM (
+                    SELECT DISTINCT wa_user_id, local_date
+                    FROM classified
+                ) ud
+                JOIN dominant_per_number d ON d.wa_user_id = ud.wa_user_id
+                GROUP BY d.issue_category
             )
             SELECT
-                issue_category,
-                COUNT(*)::int AS total_messages,
-                COUNT(DISTINCT wa_user_id)::int AS unique_numbers,
-                COUNT(DISTINCT (local_date, wa_user_id))::int AS active_contact_days
-            FROM classified
-            GROUP BY issue_category
+                k.issue_category,
+                COALESCE(m.total_messages, 0) AS total_messages,
+                COALESCE(u.unique_numbers, 0) AS unique_numbers,
+                COALESCE(a.active_contact_days, 0) AS active_contact_days
+            FROM (
+                VALUES ('Kependudukan'), ('Teknis'), ('Regulasi'), ('Lainnya')
+            ) AS k(issue_category)
+            LEFT JOIN assigned_messages m ON m.issue_category = k.issue_category
+            LEFT JOIN assigned_unique_numbers u ON u.issue_category = k.issue_category
+            LEFT JOIN assigned_contact_days a ON a.issue_category = k.issue_category
             ORDER BY
-                CASE issue_category
+                CASE k.issue_category
                     WHEN 'Kependudukan' THEN 1
                     WHEN 'Teknis' THEN 2
                     WHEN 'Regulasi' THEN 3
                     ELSE 9
-                END,
-                issue_category ASC
+                END
             """,
             msg_params,
         )
