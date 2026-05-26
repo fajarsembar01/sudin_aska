@@ -107,6 +107,37 @@ def remove_trailing_signature(text: Optional[str]) -> str:
     return cleaned.rstrip()
 
 
+# Pola tag question yang dipaksakan model di akhir kalimat
+# Contoh: "... membantu, ya? 😊" → "... membantu. 😊"
+_TAG_QUESTION_RE = re.compile(
+    r",?\s*(?:ya|yah|oke|ok|dong|deh|kan|nih|iya)\?\s*(?P<emoji>[\U00010000-\U0010FFFF\u2600-\u27BF\u2B00-\u2BFF\uFE00-\uFE0F]*)\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
+def clean_aska_response(text: Optional[str]) -> str:
+    """Hapus tag question berulang ('ya?', 'oke?', 'dong?') di akhir setiap baris
+    yang ditambahkan model secara otomatis dan terasa memaksakan."""
+    if not isinstance(text, str):
+        text = str(text or "")
+
+    def _fix_line(line: str) -> str:
+        m = _TAG_QUESTION_RE.search(line)
+        if not m:
+            return line
+        # Ambil emoji (jika ada) dan jadikan bagian dari kalimat, bukan akhiran "?"
+        emoji_part = (m.group("emoji") or "").strip()
+        base = line[: m.start()].rstrip(",").rstrip()
+        # Pastikan kalimat diakhiri titik kalau belum
+        if base and base[-1] not in ".!?":
+            base += "."
+        return (base + " " + emoji_part).strip() if emoji_part else base
+
+    lines = text.split("\n")
+    cleaned = "\n".join(_fix_line(line) for line in lines)
+    return cleaned.strip()
+
+
 def now_str():
     return current_jakarta_time().strftime("%Y-%m-%d %H:%M:%S")
 

@@ -45,17 +45,33 @@
         display: flex;
         align-items: center;
         gap: .6rem;
-        padding: .6rem .75rem;
+        padding: .6rem .75rem .6rem .65rem;
         border-bottom: 1px solid var(--bs-border-color);
+        border-left: 3px solid transparent;
         text-decoration: none;
         color: inherit;
         transition: background .15s;
         font-size: .85rem;
     }
 
-    .cc-conv-item:hover,
+    .cc-conv-item:hover {
+        background: var(--bs-primary-bg-subtle);
+    }
+
     .cc-conv-item.active {
         background: var(--bs-primary-bg-subtle);
+        border-left-color: var(--bs-primary);
+        box-shadow: inset 0 0 0 1px rgba(var(--bs-primary-rgb), .28);
+    }
+
+    .cc-conv-item.active .cc-conv-name {
+        font-weight: 700;
+    }
+
+    .cc-conv-item.active .cc-conv-time,
+    .cc-conv-item.active .cc-conv-submeta,
+    .cc-conv-item.active .cc-conv-preview {
+        color: var(--bs-body-color);
     }
 
     .cc-conv-avatar {
@@ -451,14 +467,19 @@
 
 {% block portal_content %}
 {% set bridge_query = bridge_filter if bridge_filter != 'all' else None %}
+{% set status_query = status_filter if status_filter != 'all' else None %}
 <div class="cc-container">
     <!-- Sidebar (mini) -->
     <div class="cc-sidebar">
         <div class="cc-sidebar-header">
-            <a href="{{ url_for('call_center.inbox', bridge=bridge_query) }}" class="btn btn-outline-secondary btn-sm w-100">
+            <a href="{{ url_for('call_center.inbox', bridge=bridge_query, status=status_query) }}" class="btn btn-outline-secondary btn-sm w-100">
                 <i class="bi bi-arrow-left me-1"></i>Semua Chat
             </a>
             <form method="get" class="mt-2">
+                {% if status_filter != 'all' %}
+                <input type="hidden" name="status" value="{{ status_filter }}">
+                {% endif %}
+                <input type="hidden" name="page" value="{{ sidebar_page }}">
                 <select name="bridge" class="form-select form-select-sm" onchange="this.form.submit()">
                     <option value="all" {{ 'selected' if bridge_filter == 'all' else '' }}>Semua bridge</option>
                     {% for acc in bridge_accounts %}
@@ -468,10 +489,20 @@
                     {% endfor %}
                 </select>
             </form>
+            <div class="btn-group btn-group-sm w-100 mt-2" role="group">
+                <a href="{{ url_for('call_center.thread', conv_id=conversation.id, bridge=bridge_query, page=1) }}"
+                    class="btn btn-outline-secondary {% if status_filter == 'all' %}active{% endif %}">Semua</a>
+                <a href="{{ url_for('call_center.thread', conv_id=conversation.id, status='unread', bridge=bridge_query, page=1) }}"
+                    class="btn btn-outline-secondary {% if status_filter == 'unread' %}active{% endif %}">Unread</a>
+                <a href="{{ url_for('call_center.thread', conv_id=conversation.id, status='open', bridge=bridge_query, page=1) }}"
+                    class="btn btn-outline-secondary {% if status_filter == 'open' %}active{% endif %}">Open</a>
+                <a href="{{ url_for('call_center.thread', conv_id=conversation.id, status='closed', bridge=bridge_query, page=1) }}"
+                    class="btn btn-outline-secondary {% if status_filter == 'closed' %}active{% endif %}">Closed</a>
+            </div>
         </div>
         <div class="cc-conv-list">
             {% for c in conversations %}
-            <a href="{{ url_for('call_center.thread', conv_id=c.id, bridge=bridge_query, page=sidebar_page) }}"
+            <a href="{{ url_for('call_center.thread', conv_id=c.id, bridge=bridge_query, status=status_query, page=sidebar_page) }}"
                 class="cc-conv-item {% if c.id == conversation.id %}active{% endif %}">
                 <div class="cc-conv-avatar">{{ (c.display_name or c.wa_user_id_raw or c.wa_user_id)[:1].upper() }}</div>
                 <div class="cc-conv-info">
@@ -500,14 +531,14 @@
         {% if sidebar_total_pages > 1 %}
         <div class="cc-sidebar-footer d-flex justify-content-between align-items-center">
             {% if sidebar_page > 1 %}
-            <a href="{{ url_for('call_center.thread', conv_id=conversation.id, bridge=bridge_query, page=sidebar_page-1) }}"
+            <a href="{{ url_for('call_center.thread', conv_id=conversation.id, bridge=bridge_query, status=status_query, page=sidebar_page-1) }}"
                 class="btn btn-sm btn-outline-secondary">&laquo;</a>
             {% else %}
             <span></span>
             {% endif %}
             <small>{{ sidebar_page }} / {{ sidebar_total_pages }}</small>
             {% if sidebar_page < sidebar_total_pages %}
-            <a href="{{ url_for('call_center.thread', conv_id=conversation.id, bridge=bridge_query, page=sidebar_page+1) }}"
+            <a href="{{ url_for('call_center.thread', conv_id=conversation.id, bridge=bridge_query, status=status_query, page=sidebar_page+1) }}"
                 class="btn btn-sm btn-outline-secondary">&raquo;</a>
             {% else %}
             <span></span>
@@ -520,7 +551,7 @@
     <div class="cc-chat">
         <div class="cc-chat-header">
             <div class="cc-chat-header-info">
-                <a href="{{ url_for('call_center.inbox', bridge=bridge_query) }}" class="d-lg-none btn btn-sm btn-outline-secondary">
+                <a href="{{ url_for('call_center.inbox', bridge=bridge_query, status=status_query) }}" class="d-lg-none btn btn-sm btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i>
                 </a>
                 <div class="cc-conv-avatar">{{ (conversation.display_name or conversation.wa_user_id_raw or conversation.wa_user_id)[:1].upper() }}
@@ -584,7 +615,7 @@
                 {% endif %}
                 <div class="cc-bubble-text">{{ m.message_text }}{% if m.edited_at %}<span class="cc-bubble-edited">(diedit)</span>{% endif %}</div>
                 <div class="cc-bubble-meta">
-                    {{ m.created_at|jakarta('%H:%M') }}
+                    {{ m.created_at|jakarta('%d/%m/%Y %H:%M') }} WIB
                 </div>
                 {% if m.direction == 'outbound' and m.admin_display_name %}
                 <div class="cc-bubble-admin"><i class="bi bi-person-fill me-1"></i>{{ m.admin_display_name }}</div>
@@ -755,6 +786,8 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var chatBox = document.getElementById('chatMessages');
+        var sidebarConvList = document.querySelector('.cc-sidebar .cc-conv-list');
+        var sidebarScrollKey = 'cc-thread-sidebar-scroll:{{ (status_filter or "all") }}:{{ bridge_filter or "all" }}:{{ sidebar_page }}';
         var msgInput = document.getElementById('msgInput');
         var btnSend = document.getElementById('btnSend');
         var btnAttach = document.getElementById('btnAttach');
@@ -800,6 +833,40 @@
     }
     scrollBottom();
 
+    function restoreSidebarScroll() {
+        if (!sidebarConvList) return;
+        try {
+            var saved = sessionStorage.getItem(sidebarScrollKey);
+            if (saved !== null) {
+                var pos = parseInt(saved, 10);
+                if (!Number.isNaN(pos) && pos >= 0) {
+                    sidebarConvList.scrollTop = pos;
+                    return;
+                }
+            }
+        } catch (_) { }
+        var activeItem = sidebarConvList.querySelector('.cc-conv-item.active');
+        if (activeItem && typeof activeItem.scrollIntoView === 'function') {
+            activeItem.scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    function persistSidebarScroll() {
+        if (!sidebarConvList) return;
+        try {
+            sessionStorage.setItem(sidebarScrollKey, String(sidebarConvList.scrollTop || 0));
+        } catch (_) { }
+    }
+
+    if (sidebarConvList) {
+        restoreSidebarScroll();
+        sidebarConvList.addEventListener('scroll', persistSidebarScroll, { passive: true });
+        window.addEventListener('beforeunload', persistSidebarScroll);
+        sidebarConvList.addEventListener('click', function (event) {
+            if (event.target.closest('.cc-conv-item')) persistSidebarScroll();
+        });
+    }
+
     // Get last message ID
     var allBubbles = chatBox ? chatBox.querySelectorAll('.cc-bubble') : [];
     if (allBubbles.length) {
@@ -830,12 +897,15 @@
 
         fetch('{{ url_for("call_center.api_send") }}', {
             method: 'POST',
+            cache: 'no-store',
             headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRFToken': csrfToken
             },
             body: payload
         })
-            .then(function (r) { return r.json(); })
+            .then(parseApiResponse)
             .then(function (data) {
                 if (data.error) {
                     alert('Gagal kirim: ' + data.error);
@@ -981,6 +1051,24 @@
             + '<i class="bi bi-pencil"></i></button></div>';
     }
 
+    function formatMessageTimestamp(value) {
+        if (!value) return '';
+        try {
+            var d = new Date(value);
+            return d.toLocaleString('id-ID', {
+                timeZone: 'Asia/Jakarta',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }).replace(',', '') + ' WIB';
+        } catch (_) {
+            return '';
+        }
+    }
+
     function updateMessageBubble(message) {
         if (!message || !chatBox) return;
         var bubble = chatBox.querySelector('.cc-bubble[data-msg-id="' + message.id + '"]');
@@ -1067,23 +1155,19 @@
                 msgs.forEach(function (m) {
                     if (m.id <= lastMsgId) return;
                     lastMsgId = m.id;
-	                    var div = document.createElement('div');
-	                    div.className = 'cc-bubble ' + (m.direction === 'inbound' ? 'cc-bubble-in' : 'cc-bubble-out');
-	                    div.setAttribute('data-msg-id', m.id);
-	                    div.setAttribute('data-message-text', m.message_text || '');
-                    var time = '';
-                    try {
-                        var d = new Date(m.created_at);
-                        time = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-	                    } catch (_) { }
-	                    var html = buildMessageMediaHtml(m);
-	                    html += buildMessageTextHtml(m.message_text, m.edited_at);
-	                    html += '<div class="cc-bubble-meta">' + time + '</div>';
-	                    if (m.direction === 'outbound' && m.admin_display_name) {
-	                        html += '<div class="cc-bubble-admin"><i class="bi bi-person-fill me-1"></i>' + escapeHtml(m.admin_display_name) + '</div>';
-	                    }
-	                    html += buildMessageActionsHtml(m);
-	                    div.innerHTML = html;
+                    var div = document.createElement('div');
+                    div.className = 'cc-bubble ' + (m.direction === 'inbound' ? 'cc-bubble-in' : 'cc-bubble-out');
+                    div.setAttribute('data-msg-id', m.id);
+                    div.setAttribute('data-message-text', m.message_text || '');
+                    var time = formatMessageTimestamp(m.created_at);
+                    var html = buildMessageMediaHtml(m);
+                    html += buildMessageTextHtml(m.message_text, m.edited_at);
+                    html += '<div class="cc-bubble-meta">' + time + '</div>';
+                    if (m.direction === 'outbound' && m.admin_display_name) {
+                        html += '<div class="cc-bubble-admin"><i class="bi bi-person-fill me-1"></i>' + escapeHtml(m.admin_display_name) + '</div>';
+                    }
+                    html += buildMessageActionsHtml(m);
+                    div.innerHTML = html;
                     chatBox.appendChild(div);
                 });
                 scrollBottom();

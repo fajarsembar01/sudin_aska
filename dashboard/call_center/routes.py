@@ -375,6 +375,10 @@ def _send_via_bridge(
     """Send an outbound WA message through the CC bridge HTTP API."""
     port = _cc_bridge_http_port(bridge_key=bridge_key)
     token = (_project_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+    try:
+        timeout = float(_project_env_value("ASKA_CC_BRIDGE_SEND_TIMEOUT_SECONDS", "20") or 20)
+    except (TypeError, ValueError):
+        timeout = 20.0
     payload = {"to": to, "message": message or ""}
     if media:
         payload["media"] = media
@@ -383,9 +387,16 @@ def _send_via_bridge(
             f"http://127.0.0.1:{port}/send",
             json=payload,
             headers={"X-ASKA-CC-TOKEN": token, "Content-Type": "application/json"},
-            timeout=30,
+            timeout=max(5.0, min(timeout, 25.0)),
         )
-        return resp.json()
+        try:
+            result = resp.json()
+        except ValueError:
+            body = (resp.text or "").replace("\n", " ").strip()
+            result = {"error": body[:240] or f"HTTP {resp.status_code}"}
+        if resp.status_code >= 400 and not result.get("error"):
+            result["error"] = f"HTTP {resp.status_code}"
+        return result
     except Exception as exc:
         return {"error": str(exc)}
 
@@ -943,7 +954,13 @@ def inbox() -> Response:
     """Main inbox view listing all conversations."""
     args = request.args
     page = max(1, int(args.get("page", 1)))
-    status_filter = args.get("status") or None
+    raw_status = (args.get("status") or "").strip().lower()
+    if raw_status in {"open", "closed", "unread"}:
+        status_filter = raw_status
+    elif raw_status == "all":
+        status_filter = None
+    else:
+        status_filter = "unread"
     search = (args.get("search") or "").strip() or None
     raw_bridge_filter = (args.get("bridge") or "").strip()
     if not raw_bridge_filter:
@@ -1079,6 +1096,13 @@ def thread(conv_id: int) -> Response:
     page = request.args.get("page", default=1, type=int) or 1
     page = max(1, page)
     offset = (page - 1) * PAGE_SIZE
+    raw_status = (request.args.get("status") or "").strip().lower()
+    if raw_status in {"open", "closed", "unread"}:
+        status_filter = raw_status
+    elif raw_status == "all":
+        status_filter = None
+    else:
+        status_filter = "unread"
 
     raw_bridge_filter = (request.args.get("bridge") or "").strip()
     if not raw_bridge_filter:
@@ -1096,6 +1120,7 @@ def thread(conv_id: int) -> Response:
 
     # Sidebar conversations
     conversations, total = fetch_cc_conversations(
+        status_filter=status_filter,
         bridge_key=bridge_key,
         limit=PAGE_SIZE,
         offset=offset,
@@ -1110,6 +1135,7 @@ def thread(conv_id: int) -> Response:
         conversations=conversations,
         sidebar_page=page,
         sidebar_total_pages=total_pages,
+        status_filter=status_filter or "all",
         bridge_filter=bridge_filter,
         bridge_accounts=bridge_accounts,
     ))

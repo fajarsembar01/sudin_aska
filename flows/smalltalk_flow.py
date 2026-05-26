@@ -20,6 +20,7 @@ from responses import (
     is_status_message,
     is_thank_you_message,
 )
+from reporting_flags import smalltalk_enabled
 from utils import send_typing_once
 
 
@@ -34,6 +35,9 @@ async def handle_smalltalk(
     mark_responded,
     topic: Optional[str] = None,
 ) -> bool:
+    if not smalltalk_enabled():
+        return False
+
     # Advice for inappropriate language
     if contains_inappropriate_language(normalized_input):
         await send_typing_once(context.bot, update.effective_chat.id, delay=0.2)
