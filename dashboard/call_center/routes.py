@@ -375,6 +375,10 @@ def _send_via_bridge(
     """Send an outbound WA message through the CC bridge HTTP API."""
     port = _cc_bridge_http_port(bridge_key=bridge_key)
     token = (_project_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+    try:
+        timeout = float(_project_env_value("ASKA_CC_BRIDGE_SEND_TIMEOUT_SECONDS", "20") or 20)
+    except (TypeError, ValueError):
+        timeout = 20.0
     payload = {"to": to, "message": message or ""}
     if media:
         payload["media"] = media
@@ -383,9 +387,16 @@ def _send_via_bridge(
             f"http://127.0.0.1:{port}/send",
             json=payload,
             headers={"X-ASKA-CC-TOKEN": token, "Content-Type": "application/json"},
-            timeout=30,
+            timeout=max(5.0, min(timeout, 25.0)),
         )
-        return resp.json()
+        try:
+            result = resp.json()
+        except ValueError:
+            body = (resp.text or "").replace("\n", " ").strip()
+            result = {"error": body[:240] or f"HTTP {resp.status_code}"}
+        if resp.status_code >= 400 and not result.get("error"):
+            result["error"] = f"HTTP {resp.status_code}"
+        return result
     except Exception as exc:
         return {"error": str(exc)}
 

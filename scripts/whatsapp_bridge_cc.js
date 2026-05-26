@@ -80,6 +80,7 @@ const MAX_OUTBOUND_MEDIA_BYTES = parseInt(
     "0",
     10
 );
+const JSON_BODY_LIMIT = (process.env.ASKA_CC_JSON_BODY_LIMIT || "25mb").trim();
 const INIT_STUCK_TIMEOUT_MS = (() => {
     const parsed = parseInt(process.env.ASKA_CC_INIT_STUCK_TIMEOUT_MS || "120000", 10);
     if (!Number.isFinite(parsed)) return 120000;
@@ -548,7 +549,19 @@ client.on("message_create", (msg) => handleIncoming(msg));
 // ── Express HTTP API for outbound messages ───────────────────────────────────
 
 const app = express();
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: JSON_BODY_LIMIT }));
+app.use((err, _req, res, next) => {
+    if (!err) return next();
+    if (err.type === "entity.too.large") {
+        return res.status(413).json({
+            error: `Payload terlalu besar untuk bridge. Batas JSON saat ini ${JSON_BODY_LIMIT}.`,
+        });
+    }
+    if (err instanceof SyntaxError && "body" in err) {
+        return res.status(400).json({ error: "Invalid JSON payload" });
+    }
+    return next(err);
+});
 
 // Auth middleware
 function authCheck(req, res, next) {
