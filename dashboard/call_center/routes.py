@@ -1096,6 +1096,13 @@ def thread(conv_id: int) -> Response:
     page = request.args.get("page", default=1, type=int) or 1
     page = max(1, page)
     offset = (page - 1) * PAGE_SIZE
+    raw_status = (request.args.get("status") or "").strip().lower()
+    if raw_status in {"open", "closed", "unread"}:
+        status_filter = raw_status
+    elif raw_status == "all":
+        status_filter = None
+    else:
+        status_filter = "unread"
 
     raw_bridge_filter = (request.args.get("bridge") or "").strip()
     if not raw_bridge_filter:
@@ -1113,6 +1120,7 @@ def thread(conv_id: int) -> Response:
 
     # Sidebar conversations
     conversations, total = fetch_cc_conversations(
+        status_filter=status_filter,
         bridge_key=bridge_key,
         limit=PAGE_SIZE,
         offset=offset,
@@ -1127,6 +1135,7 @@ def thread(conv_id: int) -> Response:
         conversations=conversations,
         sidebar_page=page,
         sidebar_total_pages=total_pages,
+        status_filter=status_filter or "all",
         bridge_filter=bridge_filter,
         bridge_accounts=bridge_accounts,
     ))

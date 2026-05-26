@@ -451,14 +451,19 @@
 
 {% block portal_content %}
 {% set bridge_query = bridge_filter if bridge_filter != 'all' else None %}
+{% set status_query = status_filter if status_filter != 'all' else None %}
 <div class="cc-container">
     <!-- Sidebar (mini) -->
     <div class="cc-sidebar">
         <div class="cc-sidebar-header">
-            <a href="{{ url_for('call_center.inbox', bridge=bridge_query) }}" class="btn btn-outline-secondary btn-sm w-100">
+            <a href="{{ url_for('call_center.inbox', bridge=bridge_query, status=status_query) }}" class="btn btn-outline-secondary btn-sm w-100">
                 <i class="bi bi-arrow-left me-1"></i>Semua Chat
             </a>
             <form method="get" class="mt-2">
+                {% if status_filter != 'all' %}
+                <input type="hidden" name="status" value="{{ status_filter }}">
+                {% endif %}
+                <input type="hidden" name="page" value="{{ sidebar_page }}">
                 <select name="bridge" class="form-select form-select-sm" onchange="this.form.submit()">
                     <option value="all" {{ 'selected' if bridge_filter == 'all' else '' }}>Semua bridge</option>
                     {% for acc in bridge_accounts %}
@@ -468,10 +473,20 @@
                     {% endfor %}
                 </select>
             </form>
+            <div class="btn-group btn-group-sm w-100 mt-2" role="group">
+                <a href="{{ url_for('call_center.thread', conv_id=conversation.id, bridge=bridge_query, page=1) }}"
+                    class="btn btn-outline-secondary {% if status_filter == 'all' %}active{% endif %}">Semua</a>
+                <a href="{{ url_for('call_center.thread', conv_id=conversation.id, status='unread', bridge=bridge_query, page=1) }}"
+                    class="btn btn-outline-secondary {% if status_filter == 'unread' %}active{% endif %}">Unread</a>
+                <a href="{{ url_for('call_center.thread', conv_id=conversation.id, status='open', bridge=bridge_query, page=1) }}"
+                    class="btn btn-outline-secondary {% if status_filter == 'open' %}active{% endif %}">Open</a>
+                <a href="{{ url_for('call_center.thread', conv_id=conversation.id, status='closed', bridge=bridge_query, page=1) }}"
+                    class="btn btn-outline-secondary {% if status_filter == 'closed' %}active{% endif %}">Closed</a>
+            </div>
         </div>
         <div class="cc-conv-list">
             {% for c in conversations %}
-            <a href="{{ url_for('call_center.thread', conv_id=c.id, bridge=bridge_query, page=sidebar_page) }}"
+            <a href="{{ url_for('call_center.thread', conv_id=c.id, bridge=bridge_query, status=status_query, page=sidebar_page) }}"
                 class="cc-conv-item {% if c.id == conversation.id %}active{% endif %}">
                 <div class="cc-conv-avatar">{{ (c.display_name or c.wa_user_id_raw or c.wa_user_id)[:1].upper() }}</div>
                 <div class="cc-conv-info">
@@ -500,14 +515,14 @@
         {% if sidebar_total_pages > 1 %}
         <div class="cc-sidebar-footer d-flex justify-content-between align-items-center">
             {% if sidebar_page > 1 %}
-            <a href="{{ url_for('call_center.thread', conv_id=conversation.id, bridge=bridge_query, page=sidebar_page-1) }}"
+            <a href="{{ url_for('call_center.thread', conv_id=conversation.id, bridge=bridge_query, status=status_query, page=sidebar_page-1) }}"
                 class="btn btn-sm btn-outline-secondary">&laquo;</a>
             {% else %}
             <span></span>
             {% endif %}
             <small>{{ sidebar_page }} / {{ sidebar_total_pages }}</small>
             {% if sidebar_page < sidebar_total_pages %}
-            <a href="{{ url_for('call_center.thread', conv_id=conversation.id, bridge=bridge_query, page=sidebar_page+1) }}"
+            <a href="{{ url_for('call_center.thread', conv_id=conversation.id, bridge=bridge_query, status=status_query, page=sidebar_page+1) }}"
                 class="btn btn-sm btn-outline-secondary">&raquo;</a>
             {% else %}
             <span></span>
@@ -520,7 +535,7 @@
     <div class="cc-chat">
         <div class="cc-chat-header">
             <div class="cc-chat-header-info">
-                <a href="{{ url_for('call_center.inbox', bridge=bridge_query) }}" class="d-lg-none btn btn-sm btn-outline-secondary">
+                <a href="{{ url_for('call_center.inbox', bridge=bridge_query, status=status_query) }}" class="d-lg-none btn btn-sm btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i>
                 </a>
                 <div class="cc-conv-avatar">{{ (conversation.display_name or conversation.wa_user_id_raw or conversation.wa_user_id)[:1].upper() }}

@@ -293,7 +293,7 @@
         </div>
         <div class="cc-conv-list">
             {% for conv in conversations %}
-            <a href="{{ url_for('call_center.thread', conv_id=conv.id, bridge=bridge_query) }}" class="cc-conv-item">
+            <a href="{{ url_for('call_center.thread', conv_id=conv.id, bridge=bridge_query, status=status_query) }}" class="cc-conv-item">
                 <div class="cc-conv-avatar">
                     {{ (conv.display_name or conv.wa_user_id_raw or conv.wa_user_id)[:1].upper() }}
                 </div>
