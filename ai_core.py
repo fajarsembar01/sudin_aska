@@ -331,7 +331,7 @@ def build_qa_chain():
     qa_prompt = ChatPromptTemplate.from_messages(
         [
              ("system", "Nama aku ASKA. Jawab pertanyaan dengan gaya Gen-Z yang santai, ramah, dan pakai emoji. "
-                     "Selalu sebut nama **'ASKA'** secara alami. Gunakan info dari konteks ini:\n\n{context}"),,
+                     "Selalu sebut nama **'ASKA'** secara alami. Gunakan info dari konteks ini:\n\n{context}"),
             MessagesPlaceholder("chat_history"),
             ("human", "{input}"),
         ]
