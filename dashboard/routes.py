@@ -27,6 +27,7 @@ from flask import (
 from werkzeug.datastructures import MultiDict
 
 from .auth import current_user, role_required
+from reporting_flags import qa_only_mode_enabled
 from utils import current_jakarta_time, to_jakarta
 from .queries import (
     BULLYING_STATUSES,
@@ -99,6 +100,9 @@ def _env_flag(name: str, default: str = "false") -> bool:
 
 
 def _reporting_enabled(kind: Optional[str] = None) -> bool:
+    if qa_only_mode_enabled():
+        return False
+
     global_enabled = bool(current_app.config.get("ASKA_REPORTING_ENABLED", False))
     if not global_enabled:
         return False

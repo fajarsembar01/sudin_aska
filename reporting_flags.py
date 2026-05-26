@@ -14,8 +14,30 @@ def env_flag(name: str, default: bool) -> bool:
     return value.strip().lower() in _TRUE_VALUES
 
 
+def qa_only_mode_enabled() -> bool:
+    """Master switch: only allow QA chat, disable all special flows."""
+    return env_flag("ASKA_QA_ONLY_MODE", False)
+
+
+def teacher_mode_enabled() -> bool:
+    """Toggle teacher mode independently (unless QA-only mode is active)."""
+    if qa_only_mode_enabled():
+        return False
+    return env_flag("ASKA_TEACHER_MODE_ENABLED", True)
+
+
+def smalltalk_enabled() -> bool:
+    """Toggle smalltalk/canned responses (unless QA-only mode is active)."""
+    if qa_only_mode_enabled():
+        return False
+    return env_flag("ASKA_SMALLTALK_ENABLED", True)
+
+
 def reporting_enabled(kind: Optional[str] = None) -> bool:
     """Global/per-kind toggle for ASKA reporting flows."""
+    if qa_only_mode_enabled():
+        return False
+
     global_enabled = env_flag("ASKA_REPORTING_ENABLED", False)
     if not global_enabled:
         return False

@@ -140,6 +140,15 @@ ASKA_QA_MODEL=llama-3.1-8b-instant   # bisa ganti gpt-4o, dsb.
 ASKA_QA_TEMPERATURE=0
 ASKA_QA_MAX_TOKENS=350
 
+# Mode fitur
+ASKA_QA_ONLY_MODE=false              # true = hanya chat tanya-jawab (matikan laporan, mode guru, smalltalk)
+ASKA_TEACHER_MODE_ENABLED=true       # abaikan kalau ASKA_QA_ONLY_MODE=true
+ASKA_SMALLTALK_ENABLED=true          # abaikan kalau ASKA_QA_ONLY_MODE=true
+ASKA_REPORTING_ENABLED=false         # aktifkan jika ingin alur laporan
+ASKA_REPORTING_BULLYING_ENABLED=true
+ASKA_REPORTING_PSYCH_ENABLED=true
+ASKA_REPORTING_CORRUPTION_ENABLED=true
+
 # Embedding
 ASKA_EMBEDDING_BACKEND=auto          # auto | openai | local
 ASKA_EMBEDDING_API_KEY=              # pakai OPENAI_API_KEY jika kosong
