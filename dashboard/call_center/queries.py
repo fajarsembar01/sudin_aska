@@ -891,6 +891,7 @@ def fetch_cc_conversations(
         conditions.append("c.status = %(status)s")
         params["status"] = status_filter
     elif status_filter == "unread":
+        conditions.append("c.status = 'open'")
         conditions.append("COALESCE(c.unread_count, 0) > 0")
 
     if search:
