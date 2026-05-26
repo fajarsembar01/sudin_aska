@@ -584,7 +584,7 @@
                 {% endif %}
                 <div class="cc-bubble-text">{{ m.message_text }}{% if m.edited_at %}<span class="cc-bubble-edited">(diedit)</span>{% endif %}</div>
                 <div class="cc-bubble-meta">
-                    {{ m.created_at|jakarta('%H:%M') }}
+                    {{ m.created_at|jakarta('%d/%m/%Y %H:%M') }} WIB
                 </div>
                 {% if m.direction == 'outbound' and m.admin_display_name %}
                 <div class="cc-bubble-admin"><i class="bi bi-person-fill me-1"></i>{{ m.admin_display_name }}</div>
@@ -984,6 +984,24 @@
             + '<i class="bi bi-pencil"></i></button></div>';
     }
 
+    function formatMessageTimestamp(value) {
+        if (!value) return '';
+        try {
+            var d = new Date(value);
+            return d.toLocaleString('id-ID', {
+                timeZone: 'Asia/Jakarta',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }).replace(',', '') + ' WIB';
+        } catch (_) {
+            return '';
+        }
+    }
+
     function updateMessageBubble(message) {
         if (!message || !chatBox) return;
         var bubble = chatBox.querySelector('.cc-bubble[data-msg-id="' + message.id + '"]');
@@ -1070,23 +1088,19 @@
                 msgs.forEach(function (m) {
                     if (m.id <= lastMsgId) return;
                     lastMsgId = m.id;
-	                    var div = document.createElement('div');
-	                    div.className = 'cc-bubble ' + (m.direction === 'inbound' ? 'cc-bubble-in' : 'cc-bubble-out');
-	                    div.setAttribute('data-msg-id', m.id);
-	                    div.setAttribute('data-message-text', m.message_text || '');
-                    var time = '';
-                    try {
-                        var d = new Date(m.created_at);
-                        time = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-	                    } catch (_) { }
-	                    var html = buildMessageMediaHtml(m);
-	                    html += buildMessageTextHtml(m.message_text, m.edited_at);
-	                    html += '<div class="cc-bubble-meta">' + time + '</div>';
-	                    if (m.direction === 'outbound' && m.admin_display_name) {
-	                        html += '<div class="cc-bubble-admin"><i class="bi bi-person-fill me-1"></i>' + escapeHtml(m.admin_display_name) + '</div>';
-	                    }
-	                    html += buildMessageActionsHtml(m);
-	                    div.innerHTML = html;
+                    var div = document.createElement('div');
+                    div.className = 'cc-bubble ' + (m.direction === 'inbound' ? 'cc-bubble-in' : 'cc-bubble-out');
+                    div.setAttribute('data-msg-id', m.id);
+                    div.setAttribute('data-message-text', m.message_text || '');
+                    var time = formatMessageTimestamp(m.created_at);
+                    var html = buildMessageMediaHtml(m);
+                    html += buildMessageTextHtml(m.message_text, m.edited_at);
+                    html += '<div class="cc-bubble-meta">' + time + '</div>';
+                    if (m.direction === 'outbound' && m.admin_display_name) {
+                        html += '<div class="cc-bubble-admin"><i class="bi bi-person-fill me-1"></i>' + escapeHtml(m.admin_display_name) + '</div>';
+                    }
+                    html += buildMessageActionsHtml(m);
+                    div.innerHTML = html;
                     chatBox.appendChild(div);
                 });
                 scrollBottom();

@@ -308,18 +308,60 @@ function armInitRecoveryWatchdog() {
 
         setTimeout(() => {
             client.initialize().catch((err) => {
-                setBridgeStatus({
-                    state: "error",
-                    qrText: "",
-                    message: (err && err.message) || String(err),
-                    whatsappNumber: "",
-                });
-                console.error("[CC] Init watchdog reinit error:", (err && err.message) || err);
+                handleInitFailure("Init watchdog reinit", err);
             });
         }, INIT_RECOVERY_RETRY_DELAY_MS);
 
         armInitRecoveryWatchdog();
     }, INIT_STUCK_TIMEOUT_MS);
+}
+
+function initErrorMessage(err) {
+    return (err && err.message) || String(err || "");
+}
+
+function isRecoverableInitError(err) {
+    const message = initErrorMessage(err);
+    return message.includes("Execution context was destroyed") ||
+        message.includes("Runtime.callFunctionOn timed out") ||
+        message.includes("Protocol error");
+}
+
+function handleInitFailure(source, err, shouldExitOnFinalFailure = false) {
+    const message = initErrorMessage(err);
+    if (!isRecoverableInitError(err) || initRecoveryAttempts >= INIT_RECOVERY_RETRY_LIMIT) {
+        setBridgeStatus({
+            state: "error",
+            qrText: "",
+            message,
+            whatsappNumber: "",
+        });
+        console.error(`[CC] ${source} init error:`, message);
+        if (shouldExitOnFinalFailure) process.exit(1);
+        return;
+    }
+
+    initRecoveryAttempts += 1;
+    clientReady = false;
+    clearInitRecoveryWatchdog();
+    setBridgeStatus({
+        state: "starting",
+        qrText: "",
+        message: `Recovery init ${initRecoveryAttempts}/${INIT_RECOVERY_RETRY_LIMIT}: ${message}`,
+        whatsappNumber: "",
+    });
+    console.warn(`[CC] ${source} init recovery ${initRecoveryAttempts}/${INIT_RECOVERY_RETRY_LIMIT}: ${message}`);
+
+    setTimeout(async () => {
+        try {
+            await client.destroy();
+        } catch (_) {
+            // Ignore destroy failures while Chromium is already changing context.
+        }
+        client.initialize().catch((nextErr) => {
+            handleInitFailure(`${source} retry`, nextErr, shouldExitOnFinalFailure);
+        });
+    }, INIT_RECOVERY_RETRY_DELAY_MS);
 }
 
 // ── WhatsApp client ──────────────────────────────────────────────────────────
@@ -400,7 +442,7 @@ client.on("disconnected", (reason) => {
         });
         armInitRecoveryWatchdog();
         client.initialize().catch((e) =>
-            console.error("[CC] Reinit error:", (e && e.message) || e)
+            handleInitFailure("Disconnect reinit", e)
         );
     }, 3000);
 });
@@ -451,7 +493,7 @@ function startWatchdog() {
                 });
                 armInitRecoveryWatchdog();
                 client.initialize().catch((e) =>
-                    console.error("[CC] Watchdog reinit error:", (e && e.message) || e)
+                    handleInitFailure("Watchdog reinit", e)
                 );
             }, 3000);
         }
@@ -656,7 +698,9 @@ async function postImportBatch(messages) {
 app.get("/health", (_req, res) => {
     res.json({
         ok: true,
-        state: "running",
+        state: currentBridgeState || "starting",
+        ready: clientReady,
+        message: currentBridgeMessage,
         bridgeKey: BRIDGE_KEY,
         httpPort: HTTP_PORT,
         whatsappNumber: resolveBridgeSelfNumber(),
@@ -776,6 +820,12 @@ app.post("/sync-history", authCheck, async (req, res) => {
 });
 
 app.post("/send", authCheck, async (req, res) => {
+    if (!clientReady) {
+        return res.status(409).json({
+            error: `WhatsApp bridge belum ready (${currentBridgeState || "unknown"}). ${currentBridgeMessage || ""}`.trim(),
+        });
+    }
+
     const { to, message, media } = req.body || {};
     const hasMessage = String(message || "").trim().length > 0;
     const hasMedia = Boolean(media && media.data && media.mimetype);
@@ -827,6 +877,12 @@ app.post("/send", authCheck, async (req, res) => {
 });
 
 app.post("/edit", authCheck, async (req, res) => {
+    if (!clientReady) {
+        return res.status(409).json({
+            error: `WhatsApp bridge belum ready (${currentBridgeState || "unknown"}). ${currentBridgeMessage || ""}`.trim(),
+        });
+    }
+
     const { messageId, message } = req.body || {};
     const cleanMessageId = String(messageId || "").trim();
     const cleanMessage = String(message || "").trim();
@@ -877,12 +933,5 @@ setBridgeStatus({
 armInitRecoveryWatchdog();
 
 client.initialize().catch((err) => {
-    setBridgeStatus({
-        state: "error",
-        qrText: "",
-        message: (err && err.message) || String(err),
-        whatsappNumber: "",
-    });
-    console.error("[CC] Init error:", (err && err.message) || err);
-    process.exit(1);
+    handleInitFailure("Boot", err, true);
 });
