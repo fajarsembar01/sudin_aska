@@ -955,12 +955,12 @@ def inbox() -> Response:
     args = request.args
     page = max(1, int(args.get("page", 1)))
     raw_status = (args.get("status") or "").strip().lower()
-    if raw_status in {"open", "closed"}:
+    if raw_status in {"open", "closed", "unread"}:
         status_filter = raw_status
     elif raw_status == "all":
         status_filter = None
     else:
-        status_filter = "open"
+        status_filter = "unread"
     search = (args.get("search") or "").strip() or None
     raw_bridge_filter = (args.get("bridge") or "").strip()
     if not raw_bridge_filter:

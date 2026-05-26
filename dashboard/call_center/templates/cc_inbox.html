@@ -283,6 +283,8 @@
             <div class="btn-group btn-group-sm w-100" role="group">
                 <a href="{{ url_for('call_center.inbox', search=search_query, bridge=bridge_query) }}"
                     class="btn btn-outline-secondary {% if status_filter == 'all' %}active{% endif %}">Semua</a>
+                <a href="{{ url_for('call_center.inbox', status='unread', search=search_query, bridge=bridge_query) }}"
+                    class="btn btn-outline-secondary {% if status_filter == 'unread' %}active{% endif %}">Unread</a>
                 <a href="{{ url_for('call_center.inbox', status='open', search=search_query, bridge=bridge_query) }}"
                     class="btn btn-outline-secondary {% if status_filter == 'open' %}active{% endif %}">Open</a>
                 <a href="{{ url_for('call_center.inbox', status='closed', search=search_query, bridge=bridge_query) }}"
