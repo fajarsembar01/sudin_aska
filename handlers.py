@@ -35,6 +35,7 @@ from utils import (
     should_respond,
     resolve_target_message,
     prepare_group_query,
+    clean_aska_response,
 )
 from account_status import BLOCKING_STATUSES, build_status_notice
 from flows.safety_flow import handle_bullying
@@ -365,6 +366,7 @@ async def handle_user_query(
         )
 
         response = coerce_to_text(result)
+        response = clean_aska_response(response)  # ← hapus "ya?" yg dipaksakan model
         if not response.strip():
             response = ASKA_NO_DATA_RESPONSE
 
