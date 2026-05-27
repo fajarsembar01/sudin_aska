@@ -555,9 +555,7 @@
                 if (mediaEl.readyState === 0 && mediaEl.getAttribute('data-autoplay-load-tried') !== '1') {
                     mediaEl.setAttribute('data-autoplay-load-tried', '1');
                     if (typeof mediaEl.load === 'function') {
-                        try {
-                            mediaEl.load();
-                        } catch (err) { }
+                        try { mediaEl.load(); } catch (err) {}
                     }
                 }
                 var playPromise;
@@ -570,10 +568,12 @@
                     playPromise.catch(function () {
                         if (!allowMuteFallback) return;
                         if ((mediaEl.tagName || '').toLowerCase() !== 'video') return;
-                        primeAutoplayMedia(mediaEl);
+                        // Pastikan muted via JS property, lalu retry play()
+                        mediaEl.muted = true;
+                        mediaEl.defaultMuted = true;
                         var retryPromise = mediaEl.play();
                         if (retryPromise && typeof retryPromise.catch === 'function') {
-                            retryPromise.catch(function () { });
+                            retryPromise.catch(function () {});
                         }
                     });
                 }
@@ -587,20 +587,17 @@
                 if (mediaEl.loop) return;
                 replay(false);
             });
-            mediaEl.addEventListener('loadedmetadata', function () {
-                replay(true);
-            });
-            mediaEl.addEventListener('canplay', function () {
-                replay(true);
-            });
-            mediaEl.addEventListener('loadeddata', function () {
-                replay(true);
-            });
+            mediaEl.addEventListener('loadedmetadata', function () { replay(true); });
+            mediaEl.addEventListener('canplay', function () { replay(true); });
+            mediaEl.addEventListener('loadeddata', function () { replay(true); });
 
-            // iOS Safari sering butuh trigger play() eksplisit meski atribut autoplay sudah ada.
-            replay(isIOSLikeDevice());
-            setTimeout(function () { replay(isIOSLikeDevice()); }, 120);
-            setTimeout(function () { replay(isIOSLikeDevice()); }, 450);
+            // iOS Safari butuh trigger play() eksplisit
+            var isIOS = isIOSLikeDevice();
+            replay(isIOS);
+            setTimeout(function () { replay(isIOS); }, 100);
+            setTimeout(function () { replay(isIOS); }, 400);
+            setTimeout(function () { if (mediaEl.paused) replay(isIOS); }, 1000);
+            setTimeout(function () { if (mediaEl.paused) replay(isIOS); }, 2500);
         }
 
         function hydrateAutoplayLocks(root) {
@@ -883,26 +880,65 @@
             });
         }
 
+        // Retry autoplay saat pertama kali ada interaksi user (Safari iOS membutuhkan ini)
         var retriedByGesture = false;
         function retryAutoplayOnFirstGesture() {
             if (retriedByGesture) return;
             retriedByGesture = true;
+            // Pada iOS, gesture user membuka izin play — langsung panggil play() pada semua video autoplay
+            document.querySelectorAll('video[data-autoplay-lock="1"], audio[data-autoplay-lock="1"]').forEach(function (mediaEl) {
+                mediaEl.muted = true;
+                mediaEl.defaultMuted = true;
+                try {
+                    var p = mediaEl.play();
+                    if (p && typeof p.catch === 'function') p.catch(function () {});
+                } catch (e) {}
+            });
             hydrateAutoplayLocks(chatBox);
         }
         document.addEventListener('touchstart', retryAutoplayOnFirstGesture, { passive: true, once: true });
         document.addEventListener('click', retryAutoplayOnFirstGesture, { passive: true, once: true });
-        window.addEventListener('pageshow', function () {
-            setTimeout(function () { hydrateAutoplayLocks(chatBox); }, 40);
-            setTimeout(function () { hydrateAutoplayLocks(chatBox); }, 260);
+        document.addEventListener('touchend', function () {
+            document.querySelectorAll('video[data-autoplay-lock="1"]').forEach(function (v) {
+                if (v.paused) { v.muted = true; try { v.play(); } catch(e) {} }
+            });
+        }, { passive: true, once: true });
+        window.addEventListener('pageshow', function (e) {
+            // bfcache Safari: force reload media agar tidak stall
+            var delays = [40, 200, 500, 1000];
+            delays.forEach(function (d) {
+                setTimeout(function () { hydrateAutoplayLocks(chatBox); }, d);
+            });
+            if (e.persisted) {
+                // Halaman dari back-forward cache Safari — reload semua video
+                document.querySelectorAll('video[data-autoplay-lock="1"]').forEach(function (v) {
+                    v.muted = true;
+                    v.defaultMuted = true;
+                    try { v.load(); } catch (e) {}
+                    setTimeout(function () {
+                        try { v.play(); } catch (e) {}
+                    }, 100);
+                });
+            }
         });
         document.addEventListener('visibilitychange', function () {
             if (!document.hidden) {
                 hydrateAutoplayLocks(chatBox);
+                document.querySelectorAll('video[data-autoplay-lock="1"]').forEach(function (v) {
+                    if (v.paused) { v.muted = true; try { v.play(); } catch(e) {} }
+                });
             }
         });
         window.addEventListener('load', function () {
-            setTimeout(function () { hydrateAutoplayLocks(chatBox); }, 120);
-            setTimeout(function () { hydrateAutoplayLocks(chatBox); }, 520);
+            [120, 520, 1200, 2500].forEach(function (d) {
+                setTimeout(function () { hydrateAutoplayLocks(chatBox); }, d);
+            });
+        });
+        // Safari iOS: fokus window setelah kembali dari app lain
+        window.addEventListener('focus', function () {
+            document.querySelectorAll('video[data-autoplay-lock="1"]').forEach(function (v) {
+                if (v.paused) { v.muted = true; try { v.play(); } catch(e) {} }
+            });
         });
 
         updateRemaining();

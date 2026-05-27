@@ -1,0 +1,5 @@
+2026/05/26-17:34:45.139 927b Creating DB /Users/ainunfajar/sudin_aska-1/.wa_cc_session_aska/session-cc-aska/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb since it was missing.
+2026/05/26-17:34:45.143 927b Reusing MANIFEST /Users/ainunfajar/sudin_aska-1/.wa_cc_session_aska/session-cc-aska/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/05/26-19:04:55.583 927b Level-0 table #5: started
+2026/05/26-19:04:55.614 927b Level-0 table #5: 1093677 bytes OK
+2026/05/26-19:04:55.620 927b Delete type=0 #3
