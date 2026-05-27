@@ -79,3 +79,6 @@ twitter_posts.txt
 # Agent config (Gemini/Antigravity)
 .agent/
 .wa_cc_session_a
+
+# WhatsApp CC session aska
+.wa_cc_session_aska/
