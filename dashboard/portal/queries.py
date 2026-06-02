@@ -5307,7 +5307,7 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                     INSERT INTO portal_school_room_aspects (school_room_id, aspect_id)
                     SELECT sr.id, a.id
                     FROM portal_school_rooms sr
-                    JOIN portal_aspects a ON a.room_id = sr.room_id AND a.is_required = TRUE
+                    JOIN portal_aspects a ON a.room_id = sr.room_id AND a.active = TRUE
                     WHERE sr.school_id = %s AND sr.room_id = %s
                     ON CONFLICT DO NOTHING
                     """,
@@ -5591,13 +5591,13 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                 """,
                 (school_id, target_room_id, quantity_val, notes_val),
             )
-            # Ensure required aspects are marked enabled for this school room
+            # Classroom variants inherit every active aspect from their template.
             cur.execute(
                 """
                 INSERT INTO portal_school_room_aspects (school_room_id, aspect_id)
                 SELECT sr.id, a.id
                 FROM portal_school_rooms sr
-                JOIN portal_aspects a ON a.room_id = sr.room_id AND a.is_required = TRUE
+                JOIN portal_aspects a ON a.room_id = sr.room_id AND a.active = TRUE
                 WHERE sr.school_id = %s AND sr.room_id = %s
                 ON CONFLICT DO NOTHING
                 """,
