@@ -2756,10 +2756,6 @@ def assess(school_id: int) -> Response:
 
     # Get school rooms with aspects
     all_rooms = list_school_rooms(school_id)
-    if not all_rooms:
-        flash("Sekolah belum memiliki ruangan yang dikonfigurasi.", "warning")
-        return redirect(_assessment_list_url(user))
-
     rooms = _filter_assessment_rooms(all_rooms, school.get("jenjang"))
     
     # Periode penilaian untuk badge UI
