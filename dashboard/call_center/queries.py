@@ -1001,7 +1001,7 @@ def reopen_conversation(conv_id: int) -> None:
 
 
 def fetch_cc_unread_total() -> int:
-    """Return total unread messages across all open conversations."""
+    """Return total unread messages for open WA Main conversations."""
     try:
         with get_cursor() as cur:
             cur.execute(
@@ -1010,6 +1010,7 @@ def fetch_cc_unread_total() -> int:
                 FROM cc_conversations
                 WHERE status = 'open'
                   AND COALESCE(unread_count, 0) > 0
+                  AND POSITION('::' IN COALESCE(wa_user_id, '')) = 0
                 """
             )
             row = cur.fetchone()
