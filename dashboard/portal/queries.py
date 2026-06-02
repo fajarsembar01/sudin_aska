@@ -4463,21 +4463,77 @@ def assign_staff_to_school(
         return dict(cur.fetchone())
 
 
-def get_staff_assigned_schools(staff_id: int, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
-    """Get all schools assigned to a staff member.
+def get_staff_assigned_schools(
+    staff_id: int,
+    period_id: Optional[int] = None,
+    include_history: bool = False,
+) -> List[Dict[str, Any]]:
+    """Get schools assigned to a staff member, optionally including assessment history.
 
     If ``period_id`` is provided, draft/last assessment status is scoped to
     that period.  Additionally, ``old_draft_id`` / ``old_draft_period_name``
     return the most recent draft from a *different* period so the UI can show
     a secondary "Lanjutkan draft <bulan>" link.
     """
+    assignment_source = """
+        SELECT
+            ssa.id AS assignment_id,
+            ssa.assigned_at,
+            ssa.notes,
+            ssa.school_id,
+            ssa.assigned_by,
+            TRUE AS is_active_assignment,
+            NULL::INTEGER AS history_assessment_id,
+            NULL::TEXT AS history_assessment_status,
+            NULL::INTEGER AS history_period_id
+        FROM staff_school_assignments ssa
+        WHERE ssa.staff_id = %s
+    """
+    assignment_source_params: List[Any] = [staff_id]
+    if include_history:
+        assignment_source += """
+            UNION ALL
+            SELECT
+                NULL::INTEGER AS assignment_id,
+                NULL::TIMESTAMPTZ AS assigned_at,
+                NULL::TEXT AS notes,
+                history.school_id,
+                NULL::INTEGER AS assigned_by,
+                FALSE AS is_active_assignment,
+                history.id AS history_assessment_id,
+                history.status AS history_assessment_status,
+                history.period_id AS history_period_id
+            FROM (
+                SELECT DISTINCT ON (a.school_id)
+                    a.school_id,
+                    a.id,
+                    a.status,
+                    a.period_id
+                FROM portal_assessments a
+                WHERE a.staff_id = %s
+                ORDER BY a.school_id, a.created_at DESC, a.id DESC
+            ) history
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM staff_school_assignments active_assignment
+                WHERE active_assignment.staff_id = %s
+                  AND active_assignment.school_id = history.school_id
+            )
+        """
+        assignment_source_params.extend([staff_id, staff_id])
+
     with get_cursor() as cur:
         cur.execute(
-            """
+            f"""
             SELECT 
-                ssa.id as assignment_id,
+                ssa.assignment_id,
                 ssa.assigned_at,
                 ssa.notes,
+                ssa.is_active_assignment,
+                ssa.history_assessment_id,
+                ssa.history_assessment_status,
+                ssa.history_period_id,
+                history_period.name as history_period_name,
                 s.id as school_id,
                 s.npsn,
                 s.name as school_name,
@@ -4595,13 +4651,14 @@ def get_staff_assigned_schools(staff_id: int, period_id: Optional[int] = None) -
                         LIMIT 1
                     )
                 ) as last_period_name
-            FROM staff_school_assignments ssa
+            FROM ({assignment_source}) ssa
             JOIN portal_schools s ON ssa.school_id = s.id
             LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
             LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
             LEFT JOIN dashboard_users u ON ssa.assigned_by = u.id
-            WHERE ssa.staff_id = %s AND s.active = TRUE
-            ORDER BY k.name, s.name
+            LEFT JOIN portal_assessment_periods history_period ON history_period.id = ssa.history_period_id
+            WHERE s.active = TRUE
+            ORDER BY ssa.is_active_assignment DESC, k.name, s.name
             """,
             (
                 staff_id, period_id, period_id,
@@ -4614,7 +4671,7 @@ def get_staff_assigned_schools(staff_id: int, period_id: Optional[int] = None) -
                 staff_id, period_id, period_id,
                 staff_id,
                 staff_id, period_id, period_id,
-                staff_id,
+                *assignment_source_params,
             )
         )
         return [dict(row) for row in cur.fetchall()]
@@ -4697,6 +4754,20 @@ def delete_staff_assignments_by_ids(assignment_ids: list[int]) -> int:
             (assignment_ids,),
         )
         return len(cur.fetchall())
+
+
+def reset_staff_school_assignments(staff_id: int) -> List[Dict[str, Any]]:
+    """Delete every active school assignment for a staff member."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            DELETE FROM staff_school_assignments
+            WHERE staff_id = %s
+            RETURNING id, school_id
+            """,
+            (staff_id,),
+        )
+        return [dict(row) for row in cur.fetchall()]
 
 
 def get_schools_assigned_to_staff_ids(staff_id: int) -> List[int]:

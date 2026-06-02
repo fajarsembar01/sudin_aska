@@ -48,11 +48,16 @@
 </style>
 
 {% macro assessment_status(school) -%}
-    {% if school.draft_assessment_id %}
+    {% set is_history = not school.is_active_assignment %}
+    {% set status = school.history_assessment_status if is_history else school.last_assessment_status %}
+    {% if is_history %}
+    <span class="badge bg-dark"><i class="bi bi-clock-history"></i> Histori</span>
+    {% endif %}
+    {% if (not is_history and school.draft_assessment_id) or status == 'draft' %}
     <span class="badge bg-warning text-dark"><i class="bi bi-pencil"></i> Draft</span>
-    {% elif school.last_assessment_status == 'verified' %}
+    {% elif status == 'verified' %}
     <span class="badge bg-primary"><i class="bi bi-patch-check"></i> Terverifikasi</span>
-    {% elif school.last_assessment_status == 'submitted' %}
+    {% elif status == 'submitted' %}
     <span class="badge bg-success"><i class="bi bi-check-circle"></i> Selesai</span>
     {% else %}
     <span class="badge bg-secondary"><i class="bi bi-circle"></i> Belum Dinilai</span>
@@ -60,8 +65,14 @@
 {%- endmacro %}
 
 {% macro assessment_actions(school, mobile=false, selected_period_id=none) -%}
+    {% set is_history = not school.is_active_assignment %}
     <div class="coordinator-assignment-actions {% if mobile %}d-grid{% else %}d-flex flex-wrap{% endif %} gap-2">
-        {% if school.draft_assessment_id %}
+        {% if is_history and school.history_assessment_id %}
+        <a href="{{ url_for('portal.view_assessment', assessment_id=school.history_assessment_id) }}"
+            class="btn {% if not mobile %}btn-sm {% endif %}btn-outline-primary">
+            <i class="bi bi-eye"></i> Lihat Histori
+        </a>
+        {% elif school.draft_assessment_id %}
         <a href="{{ url_for('portal.assess', school_id=school.school_id, assessment_id=school.draft_assessment_id) }}"
             class="btn {% if not mobile %}btn-sm {% endif %}btn-warning start-assessment-btn"
             data-has-draft="true">
@@ -98,7 +109,7 @@
         </a>
         {% endif %}
     </div>
-    {% if school.old_draft_id and school.old_draft_id != school.draft_assessment_id %}
+    {% if not is_history and school.old_draft_id and school.old_draft_id != school.draft_assessment_id %}
     <a href="{{ url_for('portal.assess', school_id=school.school_id, assessment_id=school.old_draft_id) }}"
         class="btn {% if not mobile %}btn-sm {% endif %}btn-outline-warning {% if mobile %}w-100{% endif %} mt-2">
         <i class="bi bi-clock-history"></i> Lanjutkan draft {{ school.old_draft_period_name or 'bulan lalu' }}
@@ -169,8 +180,13 @@
             </div>
 
             {% if assigned_schools %}
+            {% set active_assignment_count = assigned_schools|selectattr('is_active_assignment')|list|length %}
+            {% set history_assignment_count = assigned_schools|rejectattr('is_active_assignment')|list|length %}
             <p class="text-muted mb-2">
-                Anda memiliki <strong>{{ assigned_schools|length }}</strong> sekolah yang ditugaskan.
+                Anda memiliki <strong>{{ active_assignment_count }}</strong> sekolah aktif yang ditugaskan.
+                {% if history_assignment_count %}
+                <span class="ms-1">{{ history_assignment_count }} sekolah lama tetap tampil sebagai histori baca-saja.</span>
+                {% endif %}
             </p>
 
             <div class="row g-2 align-items-center mb-3">
@@ -203,7 +219,8 @@
             <div class="d-block d-md-none">
                 <div class="row g-3">
                     {% for school in assigned_schools %}
-                    {% set period_label = school.draft_period_name or school.last_period_name or 'Periode aktif' %}
+                    {% set is_history = not school.is_active_assignment %}
+                    {% set period_label = (school.history_period_name or 'Tanpa periode') if is_history else school.draft_period_name or school.last_period_name or 'Periode aktif' %}
                     {% set search_blob = (school.school_name or '') ~ ' ' ~ (school.npsn or '') ~ ' ' ~
                         (school.jenjang or '') ~ ' ' ~ (school.kecamatan_name or '') ~ ' ' ~ (school.alamat or '') %}
                     {% set school_status = (school.school_status or 'NEGERI')|upper %}
@@ -256,7 +273,8 @@
                     </thead>
                     <tbody>
                         {% for school in assigned_schools %}
-                        {% set period_label = school.draft_period_name or school.last_period_name or 'Periode aktif' %}
+                        {% set is_history = not school.is_active_assignment %}
+                        {% set period_label = (school.history_period_name or 'Tanpa periode') if is_history else school.draft_period_name or school.last_period_name or 'Periode aktif' %}
                         {% set search_blob = (school.school_name or '') ~ ' ' ~ (school.npsn or '') ~ ' ' ~
                             (school.jenjang or '') ~ ' ' ~ (school.kecamatan_name or '') ~ ' ' ~ (school.alamat or '') %}
                         {% set school_status = (school.school_status or 'NEGERI')|upper %}

@@ -26,10 +26,13 @@
 
     <div class="card border-0 shadow-sm">
         <div class="card-body">
+            {% set active_assignment_count = assignments|selectattr('is_active_assignment')|list|length %}
+            {% set history_assignment_count = assignments|rejectattr('is_active_assignment')|list|length %}
             <div class="d-flex flex-wrap gap-3 mb-3">
                 <span class="badge bg-light text-dark">Email: {{ staff.email or '-' }}</span>
                 <span class="badge bg-light text-dark">Role: {{ staff.role or '-' }}</span>
-                <span class="badge bg-primary">Total Sekolah: {{ assignments|length }}</span>
+                <span class="badge bg-primary">Penugasan Aktif: {{ active_assignment_count }}</span>
+                <span class="badge bg-secondary">Histori: {{ history_assignment_count }}</span>
             </div>
 
             {% if assignments %}
@@ -51,6 +54,9 @@
                             <td>
                                 <div class="fw-semibold">{{ row.school_name or '-' }}</div>
                                 <div class="small text-muted">{{ row.npsn or '-' }}</div>
+                                {% if not row.is_active_assignment %}
+                                <span class="badge bg-dark mt-1">Histori baca-saja</span>
+                                {% endif %}
                             </td>
                             <td>{{ row.jenjang or '-' }}</td>
                             <td>{{ row.kecamatan_name or '-' }}</td>

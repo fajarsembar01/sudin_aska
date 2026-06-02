@@ -80,6 +80,7 @@ from .queries import (
     list_all_staff_assignments_overview,
     update_staff_assignment_notes,
     delete_staff_assignments_by_ids,
+    reset_staff_school_assignments,
     get_period_by_id,
     delete_assessment,
     fetch_school_avg_scores,
@@ -3800,7 +3801,11 @@ def staff_assignments() -> Response:
     if selected_period_id is None:
         selected_period_id = active_period_id
 
-    assigned_schools = get_staff_assigned_schools(user["id"], period_id=selected_period_id)
+    assigned_schools = get_staff_assigned_schools(
+        user["id"],
+        period_id=selected_period_id,
+        include_history=True,
+    )
 
     return render_template(
         "portal/staff/assignments.html",
@@ -7315,6 +7320,46 @@ def admin_delete_assignments_batch() -> Response:
         return jsonify({"success": False, "message": str(e)}), 500
 
 
+@portal_bp.route("/admin/staff/<int:staff_id>/assignments/reset", methods=["POST"])
+@role_required("admin")
+def admin_reset_staff_assignments(staff_id: int) -> Response:
+    """Admin removes all active school assignments from one staff member."""
+    user = current_user()
+    from .queries import log_activity
+
+    if not can_assign_staff(user):
+        return jsonify({"success": False, "message": "Tidak memiliki izin"}), 403
+
+    staff_info = _fetch_dashboard_user_summary(staff_id)
+    if not staff_info or staff_info.get("role") not in {"staff", "coordinator"}:
+        return jsonify({"success": False, "message": "Staff tidak ditemukan"}), 404
+
+    try:
+        deleted_rows = reset_staff_school_assignments(staff_id)
+        assignment_ids = [row["id"] for row in deleted_rows]
+        school_ids = [row["school_id"] for row in deleted_rows]
+        log_activity(
+            user.get("id"),
+            "DELETE",
+            "STAFF_ASSIGNMENT",
+            None,
+            staff_info.get("full_name") or f"Staff {staff_id}",
+            {
+                "staff_id": staff_id,
+                "staff_name": staff_info.get("full_name"),
+                "staff_email": staff_info.get("email"),
+                "count": len(deleted_rows),
+                "assignment_ids": assignment_ids,
+                "school_ids": school_ids,
+                "assessment_history_preserved": True,
+            },
+        )
+        return jsonify({"success": True, "deleted": len(deleted_rows)})
+    except Exception as e:
+        current_app.logger.exception("Error resetting staff assignments")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
 @portal_bp.route("/admin/assignment-requests/<int:request_id>/approve", methods=["POST"])
 @role_required("admin")
 def admin_approve_assignment_request(request_id: int) -> Response:
@@ -7566,7 +7611,7 @@ def admin_staff_assigned_schools(staff_id: int) -> Response:
         abort(404)
 
     staff = dict(row)
-    assignments = get_staff_assigned_schools(staff_id)
+    assignments = get_staff_assigned_schools(staff_id, include_history=True)
     return render_template(
         "portal/admin/staff_assigned_schools.html",
         staff=staff,
@@ -9183,7 +9228,11 @@ def coordinator_assessments() -> Response:
     if selected_period_id is None:
         selected_period_id = active_period_id
 
-    assigned_schools = get_staff_assigned_schools(user["id"], period_id=selected_period_id)
+    assigned_schools = get_staff_assigned_schools(
+        user["id"],
+        period_id=selected_period_id,
+        include_history=True,
+    )
 
     return render_template(
         "portal/coordinator/assessments.html",
