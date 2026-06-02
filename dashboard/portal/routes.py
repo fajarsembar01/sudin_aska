@@ -4275,6 +4275,7 @@ def coordinator_stats() -> Response:
                 "total": 0,
                 "drafts": 0,
                 "submitted": 0,
+                "schools_assessed": 0,
                 "avg_score": None,
             },
         }

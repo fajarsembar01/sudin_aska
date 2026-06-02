@@ -2613,6 +2613,7 @@ def fetch_portal_stats(
                 "total": 0,
                 "drafts": 0,
                 "submitted": 0,
+                "schools_assessed": 0,
                 "avg_score": None,
                 "avg_score_pct": None,
             },
@@ -2670,6 +2671,7 @@ def fetch_portal_stats(
                 COUNT(*) as total,
                 COUNT(*) FILTER (WHERE status = 'draft') as drafts,
                 COUNT(*) FILTER (WHERE status IN ('submitted', 'verified')) as submitted,
+                COUNT(DISTINCT school_id) FILTER (WHERE status IN ('submitted', 'verified')) as schools_assessed,
                 AVG(total_score) FILTER (WHERE status IN ('submitted', 'verified')) as avg_score,
                 AVG({_score_pct_sql("a.total_score", "a.score_scale_max")})
                     FILTER (WHERE status IN ('submitted', 'verified') AND total_score IS NOT NULL) as avg_score_pct

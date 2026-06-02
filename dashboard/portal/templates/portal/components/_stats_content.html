@@ -189,17 +189,17 @@
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
         <div class="d-flex align-items-center gap-2 mb-3">
-          <span class="icon-badge stat-icon text-warning">
-            <i class="bi bi-pencil"></i>
+          <span class="icon-badge stat-icon text-success">
+            <i class="bi bi-check-circle"></i>
           </span>
           <span class="text-secondary text-uppercase small fw-semibold"
-            >Draft</span
+            >Sekolah Sudah Dinilai</span
           >
         </div>
         <h2 class="display-6 fw-bold mb-1">
-          {{ stats.assessments.drafts or 0 }}
+          {{ stats.assessments.schools_assessed or 0 }}
         </h2>
-        <p class="text-muted small mb-0">Belum disubmit</p>
+        <p class="text-muted small mb-0">Penilaian sudah disubmit</p>
       </div>
     </div>
   </div>

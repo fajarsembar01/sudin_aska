@@ -1005,7 +1005,12 @@ def fetch_cc_unread_total() -> int:
     try:
         with get_cursor() as cur:
             cur.execute(
-                "SELECT COALESCE(SUM(unread_count), 0) AS total FROM cc_conversations WHERE status = 'open'"
+                """
+                SELECT COALESCE(SUM(unread_count), 0) AS total
+                FROM cc_conversations
+                WHERE status = 'open'
+                  AND COALESCE(unread_count, 0) > 0
+                """
             )
             row = cur.fetchone()
         return int((row or {}).get("total", 0))

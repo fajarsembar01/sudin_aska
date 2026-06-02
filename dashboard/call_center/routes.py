@@ -1104,6 +1104,7 @@ def thread(conv_id: int) -> Response:
     else:
         status_filter = "unread"
 
+    search = (request.args.get("search") or "").strip() or None
     raw_bridge_filter = (request.args.get("bridge") or "").strip()
     if not raw_bridge_filter:
         raw_bridge_filter = "main"
@@ -1121,6 +1122,7 @@ def thread(conv_id: int) -> Response:
     # Sidebar conversations
     conversations, total = fetch_cc_conversations(
         status_filter=status_filter,
+        search=search,
         bridge_key=bridge_key,
         limit=PAGE_SIZE,
         offset=offset,
@@ -1136,6 +1138,7 @@ def thread(conv_id: int) -> Response:
         sidebar_page=page,
         sidebar_total_pages=total_pages,
         status_filter=status_filter or "all",
+        search=search or "",
         bridge_filter=bridge_filter,
         bridge_accounts=bridge_accounts,
     ))
