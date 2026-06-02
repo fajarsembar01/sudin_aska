@@ -2,6 +2,10 @@
 untuk wilayah jakarta utara 2 posko SPMB ada di SMP 30
 Nomer call center : 081320006875
 
+# Dukcapil
+
+Jika ada masalah kependudukan baik kartu keluaga, NIK sudah terdaftar, tanggal terbit melibihi 15 juni 2025, alamat tidak sesuai, terkait status anak pada kartu keluaerga, hal tersebut bsia ditangani pada posko SPMB di SMP 30
+
 # Tentang ASKA – Agent AI Sekolah Kita 🏫🤖✨
 
 ## Apa itu ASKA?

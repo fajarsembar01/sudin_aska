@@ -40,13 +40,15 @@
             <i class="bi bi-map"></i>
             <span>Sidak Planner</span>
           </a>
-          <a
-            href="{{ url_for('portal.export_excel', period_id=current_period_id) }}"
+          <button
+            type="button"
             class="btn btn-outline-success d-inline-flex align-items-center gap-2"
+            data-bs-toggle="modal"
+            data-bs-target="#exportExcelModal"
           >
             <i class="bi bi-file-earmark-excel"></i>
             <span>Export Excel</span>
-          </a>
+          </button>
           {% endif %}
           <form method="get" class="d-inline-flex align-items-center gap-2">
             {% if is_admin %}
@@ -123,6 +125,43 @@
     </div>
   </div>
 </section>
+
+{% if is_admin %}
+<div class="modal fade" id="exportExcelModal" tabindex="-1" aria-labelledby="exportExcelModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="get" action="{{ url_for('portal.export_excel') }}" class="modal-content">
+      <input type="hidden" name="period_id" value="{{ current_period_id or '' }}" />
+      <input type="hidden" name="year" value="{{ selected_year or '' }}" />
+      <input type="hidden" name="month" value="{{ selected_month or '' }}" />
+      <input type="hidden" name="team_id" value="{{ current_team_id or '' }}" />
+      <div class="modal-header">
+        <h5 class="modal-title" id="exportExcelModalLabel">
+          <i class="bi bi-file-earmark-excel me-2 text-success"></i>Download Excel
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small">
+          Pilih ringkasan data yang ingin didownload. File menggunakan nilai final penilaian, bukan nilai per ruangan.
+        </p>
+        <div class="d-grid gap-2">
+          <button type="submit" name="group_by" value="staff" class="btn btn-outline-primary text-start p-3">
+            <span class="d-block fw-semibold"><i class="bi bi-people me-2"></i>Data per Staff</span>
+            <span class="d-block small text-muted mt-1">Jumlah sekolah, jumlah penilaian, dan rata-rata nilai final setiap staff.</span>
+          </button>
+          <button type="submit" name="group_by" value="school" class="btn btn-outline-success text-start p-3">
+            <span class="d-block fw-semibold"><i class="bi bi-building me-2"></i>Data per Sekolah</span>
+            <span class="d-block small text-muted mt-1">Jumlah staff, jumlah penilaian, dan rata-rata nilai final setiap sekolah.</span>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
 
 <section class="row g-3 mb-4">
   <div class="col-lg-3 col-md-6">

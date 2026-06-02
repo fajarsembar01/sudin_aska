@@ -4001,40 +4001,72 @@ def get_portal_schools_paginated(
         "per_page": per_page
     }
 
-def fetch_export_data(period_id: Optional[int] = None) -> List[Dict[str, Any]]:
-    """Fetch all assessment data for Excel export."""
-    where_clause = "WHERE a.status IN ('submitted', 'verified')"
-    params = []
-    
-    if period_id:
-        where_clause += " AND a.period_id = %s"
-        params.append(period_id)
-        
-    query = f"""
-        SELECT 
-            a.submitted_at::DATE as tanggal,
-            s.name as sekolah,
-            s.npsn,
-            s.jenjang,
-            k.name as kecamatan,
-            l.name as kelurahan,
-            r.name as ruangan,
-            asp.name as aspek,
-            sc.score as nilai,
-            sc.notes as catatan,
-            u.full_name as penilai
-        FROM portal_assessment_scores sc
-        JOIN portal_assessments a ON sc.assessment_id = a.id
-        JOIN portal_schools s ON a.school_id = s.id
-        LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
-        LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
-        JOIN portal_school_rooms sr ON sc.school_room_id = sr.id
-        JOIN portal_rooms r ON sr.room_id = r.id
-        JOIN portal_aspects asp ON sc.aspect_id = asp.id
-        LEFT JOIN dashboard_users u ON a.staff_id = u.id
-        {where_clause}
-        ORDER BY s.name, r.name, asp.sort_order
-    """
+def fetch_export_data(
+    group_by: str,
+    period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
+    staff_ids: Optional[List[int]] = None,
+) -> List[Dict[str, Any]]:
+    """Fetch final assessment summaries for Excel export."""
+    if group_by not in {"staff", "school"}:
+        raise ValueError("Unsupported export grouping")
+    if staff_ids is not None and len(staff_ids) == 0:
+        return []
+
+    conditions = [
+        "a.status IN ('submitted', 'verified')",
+        "a.total_score IS NOT NULL",
+    ]
+    params: List[Any] = []
+    _apply_period_filter(conditions, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+    if staff_ids:
+        placeholders = ",".join(["%s"] * len(staff_ids))
+        conditions.append(f"a.staff_id IN ({placeholders})")
+        params.extend(staff_ids)
+    where_clause = "WHERE " + " AND ".join(conditions)
+
+    score_pct_expr = _score_pct_sql("a.total_score", "a.score_scale_max")
+    if group_by == "staff":
+        query = f"""
+            SELECT
+                COALESCE(NULLIF(TRIM(u.full_name), ''), u.email, 'Staff Tidak Diketahui') AS "Staff",
+                u.email AS "Email",
+                COUNT(DISTINCT a.school_id)::INT AS "Jumlah Sekolah",
+                COUNT(*)::INT AS "Jumlah Penilaian",
+                ROUND(AVG({score_pct_expr})::NUMERIC, 2) AS "Nilai Final Rata-rata (Persen)",
+                MAX(a.submitted_at)::DATE AS "Penilaian Terakhir"
+            FROM portal_assessments a
+            LEFT JOIN dashboard_users u ON a.staff_id = u.id
+            {where_clause}
+            GROUP BY a.staff_id, u.full_name, u.email
+            ORDER BY "Staff"
+        """
+    else:
+        query = f"""
+            SELECT
+                s.name AS "Sekolah",
+                s.npsn AS "NPSN",
+                s.jenjang AS "Jenjang",
+                k.name AS "Kecamatan",
+                l.name AS "Kelurahan",
+                COUNT(DISTINCT a.staff_id)::INT AS "Jumlah Staff",
+                STRING_AGG(
+                    DISTINCT COALESCE(NULLIF(TRIM(u.full_name), ''), u.email, 'Staff Tidak Diketahui'),
+                    ', '
+                    ORDER BY COALESCE(NULLIF(TRIM(u.full_name), ''), u.email, 'Staff Tidak Diketahui')
+                ) AS "Nama Staff",
+                COUNT(*)::INT AS "Jumlah Penilaian",
+                ROUND(AVG({score_pct_expr})::NUMERIC, 2) AS "Nilai Final Rata-rata (Persen)",
+                MAX(a.submitted_at)::DATE AS "Penilaian Terakhir"
+            FROM portal_assessments a
+            JOIN portal_schools s ON a.school_id = s.id
+            LEFT JOIN dashboard_users u ON a.staff_id = u.id
+            LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            {where_clause}
+            GROUP BY s.id, s.name, s.npsn, s.jenjang, k.name, l.name
+            ORDER BY s.name
+        """
     
     with get_cursor() as cur:
         cur.execute(query, params)

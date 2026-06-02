@@ -4787,34 +4787,74 @@ def coordinator_api_rankings() -> Response:
 @role_required("admin")
 def export_excel() -> Response:
     """Export assessment data to Excel."""
-    try:
-        import pandas as pd
-        import io
-        from flask import send_file
-    except ImportError:
-        flash("Library pandas/openpyxl belum terinstall.", "danger")
-        return redirect(url_for("portal.admin_stats"))
+    periods = list_periods()
+    selected_year_arg = request.args.get("year", type=int)
+    selected_month_arg = request.args.get("month", type=int)
+    selected_period_arg = request.args.get("period_id", type=int)
+    period_id, period_ids, _year_options, selected_year, selected_month = _build_admin_stats_period_filter(
+        periods,
+        selected_year_arg,
+        selected_month_arg,
+        selected_period_arg,
+    )
+    team_id = request.args.get("team_id", type=int)
+    staff_ids = None
+    if team_id:
+        staff_ids, team = _get_team_staff_ids(team_id)
+        if team is None:
+            staff_ids = None
+    stats_url = url_for(
+        "portal.admin_stats",
+        period_id=period_id,
+        year=selected_year,
+        month=selected_month,
+        team_id=team_id,
+    )
 
-    period_id = request.args.get("period_id", type=int)
+    group_by = (request.args.get("group_by") or "").strip().lower()
+    if group_by not in {"staff", "school"}:
+        flash("Pilih jenis data Excel yang ingin didownload.", "warning")
+        return redirect(stats_url)
     
     from .queries import fetch_export_data
-    data = fetch_export_data(period_id)
+    data = fetch_export_data(
+        group_by=group_by,
+        period_id=period_id,
+        period_ids=period_ids,
+        staff_ids=staff_ids,
+    )
     
     if not data:
         flash("Tidak ada data untuk diexport.", "warning")
-        return redirect(url_for("portal.admin_stats"))
-        
-    df = pd.DataFrame(data)
-    
-    # Rename columns for nicer headers if needed (already renamed in query SQL)
-    
+        return redirect(stats_url)
+
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font
+    except ImportError:
+        flash("Library openpyxl belum terinstall.", "danger")
+        return redirect(stats_url)
+
     output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Data Penilaian')
-        
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Per Staff" if group_by == "staff" else "Per Sekolah"
+    headers = list(data[0].keys())
+    worksheet.append(headers)
+    for row in data:
+        worksheet.append([row.get(header) for header in headers])
+    for cell in worksheet[1]:
+        cell.font = Font(bold=True)
+    worksheet.freeze_panes = "A2"
+    worksheet.auto_filter.ref = worksheet.dimensions
+    for column_cells in worksheet.columns:
+        max_length = max(len(str(cell.value or "")) for cell in column_cells)
+        worksheet.column_dimensions[column_cells[0].column_letter].width = min(max_length + 2, 45)
+    workbook.save(output)
     output.seek(0)
     
-    filename = f"Laporan_Penilaian_{datetime.now(JAKARTA_TZ).strftime('%Y%m%d')}.xlsx"
+    group_label = "Staff" if group_by == "staff" else "Sekolah"
+    filename = f"Laporan_Penilaian_Per_{group_label}_{datetime.now(JAKARTA_TZ).strftime('%Y%m%d')}.xlsx"
     
     return send_file(
         output,
