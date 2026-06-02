@@ -3645,6 +3645,29 @@ def list_user_notifications(
     return rows
 
 
+def sanitize_guestbook_notification_message_for_non_admin(row: Dict[str, Any]) -> str:
+    message = str(row.get("message") or "").strip()
+    category = str(row.get("category") or "").strip()
+    if category != GUESTBOOK_NOTIFICATION_CATEGORY:
+        return message
+
+    metadata = row.get("metadata")
+    if not isinstance(metadata, dict):
+        return message
+
+    actor_label = str(metadata.get("actor_name") or "").strip()
+    if not actor_label:
+        return message
+
+    actor_role = str(metadata.get("actor_role") or "").strip().lower()
+    # Legacy notifications have no actor role, so hide their actor label conservatively.
+    if actor_role and actor_role != "admin":
+        return message
+
+    actor_segment = f"Oleh {actor_label}."
+    return " ".join(message.replace(actor_segment, "").split())
+
+
 def mark_user_notifications_read(
     *,
     user_id: int,
@@ -3702,6 +3725,7 @@ def create_guestbook_status_notifications(
     transaction_id: int,
     status: str,
     actor_name: Optional[str] = None,
+    actor_role: Optional[str] = None,
     reviewer_notes: Optional[str] = None,
     link: Optional[str] = None,
     school_link: Optional[str] = None,
@@ -3786,6 +3810,7 @@ def create_guestbook_status_notifications(
     title, status_label = _build_guestbook_status_notification_text(safe_status)
     school_name = (tx_data.get("school_name") or "Sekolah").strip()
     actor_label = (actor_name or "").strip()
+    actor_role_label = (actor_role or "").strip().lower()
     note_text = (reviewer_notes or "").strip()
     if len(note_text) > 220:
         note_text = note_text[:217].rstrip() + "..."
@@ -3804,6 +3829,7 @@ def create_guestbook_status_notifications(
         "status": safe_status,
         "status_label": status_label,
         "actor_name": actor_label,
+        "actor_role": actor_role_label,
         "school_id": tx_data.get("school_id"),
         "school_name": school_name,
         "visit_at": tx_data.get("visit_at").isoformat() if tx_data.get("visit_at") else None,

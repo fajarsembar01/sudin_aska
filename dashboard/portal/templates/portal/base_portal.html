@@ -923,7 +923,7 @@
                     {% set coordinator_menu_endpoints = [
                     'portal.coordinator_dashboard',
                     'portal.view_my_team',
-                    'coordinator_assignment_requests'
+                    'portal.coordinator_assignment_requests'
                     ] %}
                     <!-- Coordinator: Kelola Tim dropdown -->
                     <li class="nav-item">
@@ -957,7 +957,7 @@
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'portal.coordinator_assessments' %}active{% endif %}"
+                        <a class="nav-link {% if request.endpoint in ['portal.coordinator_assessments', 'portal.assess', 'portal.view_assessment'] %}active{% endif %}"
                             href="{{ url_for('portal.coordinator_assessments') }}">
                             <i class="bi bi-list-check nav-icon"></i>Penilaian Saya
                         </a>
@@ -967,7 +967,7 @@
                     {% if current_user and current_user.role == 'staff' %}
                     <!-- Staff: Tugas Monev -->
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'portal.staff_assignments' %}active{% endif %}"
+                        <a class="nav-link {% if request.endpoint in ['portal.staff_assignments', 'portal.assess', 'portal.view_assessment'] %}active{% endif %}"
                             href="{{ url_for('portal.staff_assignments') }}">
                             <i class="bi bi-list-check nav-icon"></i>Tugas Monev
                         </a>
@@ -1009,11 +1009,11 @@
                     {% endif %} -->
 
                     {% if current_user and current_user.role == 'admin' %}
-                    <!-- Admin: Sekolah menu -->
+                    <!-- Admin: PANBERSS assessment menu -->
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'portal.schools' %}active{% endif %}"
+                        <a class="nav-link {% if request.endpoint in ['portal.schools', 'portal.assess', 'portal.view_assessment'] %}active{% endif %}"
                             href="{{ url_for('portal.schools') }}">
-                            <i class="bi bi-mortarboard nav-icon"></i>Sekolah
+                            <i class="bi bi-list-check nav-icon"></i>Penilaian
                         </a>
                     </li>
                     <!-- Admin dropdown with new Kelola Staff -->

@@ -10,7 +10,7 @@
             {% set back_url = (
                 url_for('portal.staff_assignments') if current_user and current_user.role == 'staff'
                 else (
-                    url_for('portal.coordinator_stats') if current_user and current_user.role == 'coordinator'
+                    url_for('portal.coordinator_assessments') if current_user and current_user.role == 'coordinator'
                     else (
                         url_for('portal.admin_stats') if current_user and current_user.role == 'admin'
                         else url_for('portal.home')
@@ -122,7 +122,7 @@
                 approve_endpoint='portal.approve_reopen',
                 reject_endpoint='portal.reject_reopen',
                 allow_statuses=['submitted'],
-                request_roles=['staff'],
+                request_roles=['staff', 'coordinator'],
                 admin_roles=['admin'],
                 csrf_token_value=(csrf_token() if csrf_token is defined else None)
             ) }}

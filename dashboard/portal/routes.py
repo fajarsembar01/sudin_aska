@@ -208,6 +208,7 @@ from dashboard.daftar_tamu.queries import (
     fetch_user_notification_summary,
     list_user_notifications,
     mark_user_notifications_read,
+    sanitize_guestbook_notification_message_for_non_admin,
 )
 
 
@@ -843,6 +844,57 @@ def _require_profile_photo_redirect(user: dict | None) -> Response | None:
         return None
     flash("Foto profil wajib diisi untuk melanjutkan akses ke Portal.", "warning")
     return redirect(url_for("portal.user_profile_settings"))
+
+
+_PANBERS_ASSESSOR_ROLES = {"admin", "staff", "coordinator"}
+
+
+def _assessment_list_url(user: dict | None = None, **values) -> str:
+    """Return the assessment list URL appropriate for the assessor role."""
+    role = ((user or current_user() or {}).get("role") or "").strip().lower()
+    if role == "staff":
+        return url_for("portal.staff_assignments", **values)
+    if role == "coordinator":
+        return url_for("portal.coordinator_assessments", **values)
+    if role == "admin":
+        return url_for("portal.schools", **values)
+    return url_for("portal.home")
+
+
+def _can_assess_school(user: dict | None, school_id: int) -> bool:
+    """Check whether an assessor may create or edit an assessment for a school."""
+    if not user:
+        return False
+    role = (user.get("role") or "").strip().lower()
+    if role == "admin":
+        return True
+    if role not in {"staff", "coordinator"}:
+        return False
+    return school_id in get_schools_assigned_to_staff_ids(user["id"])
+
+
+def _can_edit_assessment(user: dict | None, assessment: dict | None) -> bool:
+    """Check whether an assessor may change an existing draft assessment."""
+    if not user or not assessment:
+        return False
+    if user.get("role") == "admin":
+        return True
+    return (
+        assessment.get("staff_id") == user.get("id")
+        and _can_assess_school(user, assessment.get("school_id"))
+    )
+
+
+def _can_view_assessment(user: dict | None, assessment: dict | None) -> bool:
+    """Check whether a user may view an assessment detail page."""
+    if not user or not assessment:
+        return False
+    if user.get("role") == "admin" or assessment.get("staff_id") == user.get("id"):
+        return True
+    if user.get("role") != "coordinator":
+        return False
+    _, _, team_staff_ids = _get_coordinator_team_context(user.get("id"))
+    return assessment.get("staff_id") in team_staff_ids
 
 
 def _resolve_profile_upload_redirect(default_target: str) -> str:
@@ -1814,14 +1866,28 @@ def schools() -> Response:
     if role == "sekolah":
         return redirect(url_for("portal.sekolah_home"))
     
-    # Staff can only see assigned schools - redirect to assignments page
+    # Staff and coordinators assess from their assignment lists.
     if role == "staff":
         return redirect(url_for("portal.staff_assignments"))
+    if role == "coordinator":
+        return redirect(url_for("portal.coordinator_assessments"))
+    if role != "admin":
+        flash("Anda tidak memiliki akses untuk melakukan penilaian.", "danger")
+        return redirect(url_for("portal.home"))
     
     search = request.args.get("q", "").strip()
     jenjang = request.args.get("jenjang", "").strip() or None
     page = request.args.get("page", 1, type=int)
     per_page = 20
+    periods = list_periods()
+    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (
+        periods[0]["id"] if periods else None
+    )
+    selected_period_id = request.args.get("period_id", type=int)
+    if selected_period_id is None:
+        selected_period_id = active_period_id
+    elif selected_period_id not in {p["id"] for p in periods}:
+        selected_period_id = active_period_id
     
     pagination = get_portal_schools_paginated(
         page=page, 
@@ -1837,6 +1903,9 @@ def schools() -> Response:
         pagination=pagination,
         search=search,
         jenjang=jenjang,
+        periods=periods,
+        active_period_id=active_period_id,
+        selected_period_id=selected_period_id,
     )
 
 
@@ -2611,16 +2680,13 @@ def assess(school_id: int) -> Response:
     period_id_arg = request.args.get("period_id", type=int)
     assessment_id_arg = request.args.get("assessment_id", type=int)
     
-    if role not in ("admin", "staff", "coordinator"):
-        flash("Hanya staff atau koordinator yang bisa melakukan penilaian.", "danger")
+    if role not in _PANBERS_ASSESSOR_ROLES:
+        flash("Hanya admin, staff, atau koordinator yang bisa melakukan penilaian.", "danger")
         return redirect(url_for("portal.home"))
     
-    # Staff access control - verify assignment
-    if role in ("staff", "coordinator"):
-        assigned_school_ids = get_schools_assigned_to_staff_ids(user["id"])
-        if school_id not in assigned_school_ids and role != "admin":
-            flash("Anda tidak memiliki akses ke sekolah ini. Hubungi admin untuk penugasan.", "danger")
-            return redirect(url_for("portal.staff_assignments"))
+    if not _can_assess_school(user, school_id):
+        flash("Anda tidak memiliki akses ke sekolah ini. Hubungi admin untuk penugasan.", "danger")
+        return redirect(_assessment_list_url(user))
     
     school = get_school_by_id(school_id)
     if not school:
@@ -2633,15 +2699,15 @@ def assess(school_id: int) -> Response:
         assessment = get_assessment_by_id(assessment_id_arg)
         if not assessment:
             flash("Penilaian tidak ditemukan.", "danger")
-            return redirect(url_for("portal.staff_assignments"))
+            return redirect(_assessment_list_url(user))
         if assessment.get("status") != "draft":
             return redirect(url_for("portal.view_assessment", assessment_id=assessment_id_arg))
         if assessment.get("school_id") != school_id:
             flash("Penilaian tidak sesuai sekolah.", "danger")
-            return redirect(url_for("portal.staff_assignments"))
-        if assessment.get("staff_id") != user["id"] and role != "admin":
+            return redirect(_assessment_list_url(user))
+        if not _can_edit_assessment(user, assessment):
             flash("Anda tidak memiliki akses ke penilaian ini.", "danger")
-            return redirect(url_for("portal.staff_assignments"))
+            return redirect(_assessment_list_url(user))
 
     # Get active draft for THIS user
     if assessment is None:
@@ -2676,7 +2742,7 @@ def assess(school_id: int) -> Response:
         except Exception as e:
             current_app.logger.exception("Error creating assessment")
             flash("Gagal membuat penilaian baru.", "danger")
-            return redirect(url_for("portal.schools"))
+            return redirect(_assessment_list_url(user))
             
     assessment_id = assessment["id"]
     score_scale = _build_assessment_score_config(assessment)
@@ -2692,7 +2758,7 @@ def assess(school_id: int) -> Response:
     all_rooms = list_school_rooms(school_id)
     if not all_rooms:
         flash("Sekolah belum memiliki ruangan yang dikonfigurasi.", "warning")
-        return redirect(url_for("portal.schools"))
+        return redirect(_assessment_list_url(user))
 
     rooms = _filter_assessment_rooms(all_rooms, school.get("jenjang"))
     
@@ -2761,7 +2827,7 @@ def assess(school_id: int) -> Response:
 def save_score(school_id: int) -> Response:
     """API endpoint to save a single score."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff", "coordinator"):
+    if user.get("role") not in _PANBERS_ASSESSOR_ROLES:
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     data = request.get_json(silent=True) or {}
@@ -2784,7 +2850,7 @@ def save_score(school_id: int) -> Response:
         if assessment.get("status") != "draft":
             return jsonify({"success": False, "message": "Penilaian sudah dikirim/terverifikasi."}), 400
 
-        if assessment["staff_id"] != user["id"] and user["role"] != "admin":
+        if not _can_edit_assessment(user, assessment):
             return jsonify({"success": False, "message": "Unauthorized access to this assessment"}), 403
 
         with get_cursor() as cur:
@@ -2846,7 +2912,7 @@ def save_score(school_id: int) -> Response:
 def save_note(school_id: int) -> Response:
     """API endpoint to save room note."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff", "coordinator"):
+    if user.get("role") not in _PANBERS_ASSESSOR_ROLES:
         return jsonify({"success": False, "message": "Unauthorized"}), 403
     
     data = request.get_json(silent=True) or {}
@@ -2867,7 +2933,7 @@ def save_note(school_id: int) -> Response:
     if assessment.get("status") != "draft":
         return jsonify({"success": False, "message": "Penilaian sudah dikirim/terverifikasi."}), 400
 
-    if assessment["staff_id"] != user["id"] and user["role"] != "admin":
+    if not _can_edit_assessment(user, assessment):
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     try:
@@ -2888,7 +2954,7 @@ def save_note(school_id: int) -> Response:
 def upload_photo(school_id: int) -> Response:
     """Upload a photo with GPS data."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff", "coordinator"):
+    if user.get("role") not in _PANBERS_ASSESSOR_ROLES:
         return jsonify({"success": False, "message": "Unauthorized"}), 403
     
     assessment_id = request.form.get("assessment_id", type=int)
@@ -2909,7 +2975,7 @@ def upload_photo(school_id: int) -> Response:
     if assessment.get("status") != "draft":
         return jsonify({"success": False, "message": "Penilaian sudah dikirim/terverifikasi."}), 400
 
-    if assessment["staff_id"] != user["id"] and user["role"] != "admin":
+    if not _can_edit_assessment(user, assessment):
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     try:
@@ -3003,7 +3069,7 @@ def upload_photo(school_id: int) -> Response:
 def submit(school_id: int) -> Response:
     """Submit the assessment."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff", "coordinator"):
+    if user.get("role") not in _PANBERS_ASSESSOR_ROLES:
         flash("Unauthorized", "danger")
         return redirect(url_for("portal.home"))
     
@@ -3032,14 +3098,9 @@ def submit(school_id: int) -> Response:
         flash("Penilaian tidak sesuai sekolah.", "danger")
         return redirect(url_for("portal.assess", school_id=school_id))
 
-    if assessment["staff_id"] != user["id"] and user["role"] != "admin":
+    if not _can_edit_assessment(user, assessment):
         flash("Anda tidak memiliki akses untuk submit penilaian ini.", "danger")
         return redirect(url_for("portal.assess", school_id=school_id))
-    if user["role"] == "staff":
-        assigned_school_ids = get_schools_assigned_to_staff_ids(user["id"])
-        if assessment["school_id"] not in assigned_school_ids:
-            flash("Penugasan ke sekolah ini sudah tidak aktif. Hubungi admin.", "danger")
-            return redirect(url_for("portal.staff_assignments"))
 
     try:
         all_rooms = list_school_rooms(school_id)
@@ -3138,7 +3199,9 @@ def submit(school_id: int) -> Response:
         if period_id:
             return redirect(url_for("portal.coordinator_assessments", period_id=period_id))
         return redirect(url_for("portal.coordinator_assessments"))
-    return redirect(url_for("portal.home"))
+    if period_id:
+        return redirect(_assessment_list_url(user, period_id=period_id))
+    return redirect(_assessment_list_url(user))
 
 
 @portal_bp.route("/assess/<int:school_id>/save-draft", methods=["POST"])
@@ -3146,7 +3209,7 @@ def submit(school_id: int) -> Response:
 def save_draft(school_id: int) -> Response:
     """Explicitly save assessment as draft (no submit)."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff", "coordinator"):
+    if user.get("role") not in _PANBERS_ASSESSOR_ROLES:
         flash("Unauthorized", "danger")
         return redirect(url_for("portal.home"))
 
@@ -3166,18 +3229,17 @@ def save_draft(school_id: int) -> Response:
         flash("Penilaian tidak ditemukan.", "danger")
         return redirect(url_for("portal.assess", school_id=school_id))
 
+    if assessment.get("status") != "draft":
+        flash("Penilaian sudah dikirim/terverifikasi, ajukan reopen untuk mengubahnya.", "warning")
+        return redirect(url_for("portal.view_assessment", assessment_id=assessment_id_int))
+
     if assessment["school_id"] != school_id:
         flash("Penilaian tidak sesuai sekolah.", "danger")
         return redirect(url_for("portal.assess", school_id=school_id))
 
-    if assessment["staff_id"] != user["id"] and user["role"] != "admin":
+    if not _can_edit_assessment(user, assessment):
         flash("Anda tidak memiliki akses untuk menyimpan draft ini.", "danger")
         return redirect(url_for("portal.assess", school_id=school_id))
-    if user["role"] == "staff":
-        assigned_school_ids = get_schools_assigned_to_staff_ids(user["id"])
-        if assessment["school_id"] not in assigned_school_ids:
-            flash("Penugasan ke sekolah ini sudah tidak aktif. Hubungi admin.", "danger")
-            return redirect(url_for("portal.staff_assignments"))
 
     try:
 
@@ -3204,7 +3266,7 @@ def request_reopen(assessment_id: int) -> Response:
     """Staff requests admin approval to reopen a submitted assessment."""
     user = current_user()
     from .queries import log_activity
-    if user.get("role") not in ("admin", "staff", "coordinator"):
+    if user.get("role") not in _PANBERS_ASSESSOR_ROLES:
         flash("Unauthorized", "danger")
         return redirect(url_for("portal.home"))
 
@@ -3217,16 +3279,9 @@ def request_reopen(assessment_id: int) -> Response:
         flash("Hanya penilaian yang sudah disubmit yang bisa diajukan reopen.", "warning")
         return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
 
-    if assessment["staff_id"] != user["id"] and user["role"] != "admin":
+    if not _can_edit_assessment(user, assessment):
         flash("Anda tidak memiliki akses untuk mengajukan reopen penilaian ini.", "danger")
         return redirect(url_for("portal.home"))
-
-    # Pastikan staf masih ditugaskan
-    if user["role"] == "staff":
-        assigned_school_ids = get_schools_assigned_to_staff_ids(user["id"])
-        if assessment["school_id"] not in assigned_school_ids:
-            flash("Penugasan sudah tidak aktif. Hubungi admin.", "danger")
-            return redirect(url_for("portal.staff_assignments"))
 
     latest_req = get_latest_reopen_request(assessment_id)
     if latest_req and latest_req.get("status") == "pending":
@@ -3490,8 +3545,8 @@ def view_assessment(assessment_id: int) -> Response:
         flash("Penilaian tidak ditemukan.", "danger")
         return redirect(url_for("portal.home"))
     
-    # Security check: Only owner or admin can view
-    if assessment["staff_id"] != user["id"] and user["role"] != "admin" and user["role"] != "coordinator":
+    # Security check: owner, admin, or the owner's coordinator can view.
+    if not _can_view_assessment(user, assessment):
         flash("Anda tidak memiliki akses untuk melihat penilaian ini.", "danger")
         return redirect(url_for("portal.home"))
 
@@ -3582,7 +3637,7 @@ def view_assessment(assessment_id: int) -> Response:
 def delete_photo_route(school_id: int, photo_id: int) -> Response:
     """Delete a photo belonging to an assessment."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff", "coordinator"):
+    if user.get("role") not in _PANBERS_ASSESSOR_ROLES:
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     assessment_id = request.form.get("assessment_id", type=int)
@@ -3599,7 +3654,7 @@ def delete_photo_route(school_id: int, photo_id: int) -> Response:
     if assessment.get("status") != "draft":
         return jsonify({"success": False, "message": "Penilaian sudah dikirim/terverifikasi."}), 400
 
-    if assessment["staff_id"] != user["id"] and user["role"] != "admin":
+    if not _can_edit_assessment(user, assessment):
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     try:
@@ -3631,8 +3686,10 @@ def get_room_aspects_api(room_id: int) -> Response:
 def add_room_to_school(school_id: int) -> Response:
     """Add an optional room to school during assessment."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff", "coordinator"):
+    if user.get("role") not in _PANBERS_ASSESSOR_ROLES:
         return jsonify({"success": False, "message": "Unauthorized"}), 403
+    if not _can_assess_school(user, school_id):
+        return jsonify({"success": False, "message": "Anda tidak memiliki akses ke sekolah ini"}), 403
     
     data = request.get_json()
     room_id = data.get("room_id")
@@ -3698,7 +3755,7 @@ def delete_assessment_route(assessment_id: int) -> Response:
 def delete_draft_route(assessment_id: int) -> Response:
     """Staff deletes their own draft assessment."""
     user = current_user()
-    if user.get("role") not in ("admin", "staff", "coordinator"):
+    if user.get("role") not in _PANBERS_ASSESSOR_ROLES:
         flash("Unauthorized", "danger")
         return redirect(url_for("portal.home"))
 
@@ -3713,7 +3770,7 @@ def delete_draft_route(assessment_id: int) -> Response:
         return redirect(url_for("portal.home"))
 
     # Only the owner (or admin) can delete
-    if assessment["staff_id"] != user["id"] and user["role"] != "admin":
+    if not _can_edit_assessment(user, assessment):
         flash("Anda tidak memiliki akses untuk menghapus draft ini.", "danger")
         return redirect(url_for("portal.home"))
 
@@ -3722,9 +3779,7 @@ def delete_draft_route(assessment_id: int) -> Response:
     else:
         flash("Gagal menghapus draft.", "danger")
 
-    if user.get("role") == "coordinator":
-        return redirect(url_for("portal.coordinator_assessments"))
-    return redirect(url_for("portal.home"))
+    return redirect(_assessment_list_url(user))
 
 
 # ===== Staff Assignment Routes =====
@@ -5417,7 +5472,7 @@ def _serialize_user_app_notification(row: dict, fallback_link: str) -> dict:
         "id": notification_id,
         "category": category,
         "title": (row.get("title") or "").strip() or "Notifikasi",
-        "message": (row.get("message") or "").strip(),
+        "message": sanitize_guestbook_notification_message_for_non_admin(row),
         "status": status_value,
         "is_unread": status_value == "unread",
         "link": (row.get("link") or "").strip() or fallback_link,
@@ -9121,6 +9176,9 @@ def coordinator_assignment_requests() -> Response:
 def coordinator_assessments() -> Response:
     """Coordinator can start/continue their own assessments."""
     user = current_user()
+    photo_redirect = _require_profile_photo_redirect(user)
+    if photo_redirect:
+        return photo_redirect
     periods = list_periods()
     active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
     
