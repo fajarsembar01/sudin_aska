@@ -399,6 +399,16 @@
                 </div>
             </div>
             <div class="modal-body p-0">
+                <div class="p-3 border-bottom d-none" id="cameraDeviceSelectWrap"
+                    style="background-color: var(--bg-subtle);">
+                    <label class="form-label small fw-semibold mb-1" for="cameraDeviceSelect">
+                        <i class="bi bi-camera-video me-1"></i>Sumber kamera
+                    </label>
+                    <select class="form-select form-select-sm" id="cameraDeviceSelect"
+                        aria-label="Pilih sumber kamera"></select>
+                    <div class="form-text">Di Mac, gunakan Safari lalu pilih kamera iPhone yang tersedia melalui
+                        Continuity Camera.</div>
+                </div>
                 <video id="cameraPreview" autoplay playsinline
                     style="width: 100%; max-height: 60vh; object-fit: cover;"></video>
                 <div class="p-3 small d-flex align-items-center gap-2" id="locationInfo"
@@ -757,6 +767,7 @@
     var currentAddress = null;
     var cameraStream = null;
     var useFrontCamera = false;
+    var selectedCameraDeviceId = '';
     var noteTimeout = null;
     var requiredPhotoCount = {{ photo_min_required }};
     var maxPhotoCount = {{ photo_max_allowed }};
@@ -903,6 +914,76 @@
             cameraStream.getTracks().forEach(function (track) { track.stop(); });
             cameraStream = null;
         }
+    }
+
+    function buildCameraConstraints() {
+        if (selectedCameraDeviceId) {
+            return { video: { deviceId: { exact: selectedCameraDeviceId } }, audio: false };
+        }
+        return { video: { facingMode: { ideal: useFrontCamera ? 'user' : 'environment' } }, audio: false };
+    }
+
+    function getCameraNotFoundMessage() {
+        var userAgent = navigator.userAgent || '';
+        var isMac = /Macintosh|Mac OS X/i.test(userAgent);
+        var isChromium = /Chrome|Chromium|CriOS|Edg|OPR/i.test(userAgent);
+        if (isMac && isChromium) {
+            return 'Chrome tidak menemukan kamera iPhone di Mac. Buka halaman ini di Safari, izinkan kamera, lalu pilih kamera iPhone.';
+        }
+        if (isMac) {
+            return 'Kamera tidak ditemukan. Pastikan iPhone terkunci, dekat dengan Mac, serta Wi-Fi dan Bluetooth aktif.';
+        }
+        return 'Kamera tidak ditemukan di perangkat ini.';
+    }
+
+    function refreshCameraDeviceOptions(stream) {
+        var wrapEl = document.getElementById('cameraDeviceSelectWrap');
+        var selectEl = document.getElementById('cameraDeviceSelect');
+        if (!wrapEl || !selectEl || !navigator.mediaDevices
+            || typeof navigator.mediaDevices.enumerateDevices !== 'function') {
+            return Promise.resolve([]);
+        }
+
+        var activeTrack = stream && typeof stream.getVideoTracks === 'function'
+            ? stream.getVideoTracks()[0]
+            : null;
+        var activeSettings = activeTrack && typeof activeTrack.getSettings === 'function'
+            ? activeTrack.getSettings()
+            : {};
+        var activeDeviceId = activeSettings.deviceId || '';
+
+        return navigator.mediaDevices.enumerateDevices()
+            .then(function (devices) {
+                var cameraDevices = devices.filter(function (device) {
+                    return device.kind === 'videoinput';
+                });
+                selectEl.innerHTML = '';
+                cameraDevices.forEach(function (device, index) {
+                    var option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.textContent = device.label || ('Kamera ' + (index + 1));
+                    selectEl.appendChild(option);
+                });
+
+                if (activeDeviceId) {
+                    selectedCameraDeviceId = activeDeviceId;
+                }
+                var hasSelectedCamera = cameraDevices.some(function (device) {
+                    return device.deviceId === selectedCameraDeviceId;
+                });
+                if (!hasSelectedCamera && cameraDevices.length) {
+                    selectedCameraDeviceId = cameraDevices[0].deviceId;
+                }
+                if (selectedCameraDeviceId) {
+                    selectEl.value = selectedCameraDeviceId;
+                }
+                wrapEl.classList.toggle('d-none', cameraDevices.length < 2);
+                return cameraDevices;
+            })
+            .catch(function () {
+                wrapEl.classList.add('d-none');
+                return [];
+            });
     }
 
     function formatPhotoCapturedAt(rawCapturedAt) {
@@ -1719,7 +1800,7 @@
         var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
 
-        var constraints = { video: { facingMode: { ideal: useFrontCamera ? 'user' : 'environment' } }, audio: false };
+        var constraints = buildCameraConstraints();
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             if (!window.isSecureContext) {
                 showToast('Akses kamera live wajib HTTPS. Upload dari folder dinonaktifkan.');
@@ -1733,12 +1814,13 @@
                 if (typeof videoEl.play === 'function') {
                     videoEl.play().catch(function () { });
                 }
+                refreshCameraDeviceOptions(stream);
             };
             var handleCameraError = function (err) {
                 var msg = 'Tidak bisa mengakses kamera live. Upload dari folder dinonaktifkan.';
                 if (err && err.name) {
                     if (err.name === 'NotAllowedError') msg = 'Izin kamera ditolak. Aktifkan izin kamera di browser lalu coba lagi.';
-                    else if (err.name === 'NotFoundError') msg = 'Kamera tidak ditemukan di perangkat ini.';
+                    else if (err.name === 'NotFoundError') msg = getCameraNotFoundMessage();
                     else if (err.name === 'NotReadableError') msg = 'Kamera sedang dipakai aplikasi lain.';
                     else if (err.name === 'OverconstrainedError') msg = 'Kamera tidak memenuhi kebutuhan aplikasi.';
                     else if (err.name === 'SecurityError') msg = 'Browser butuh HTTPS untuk mengakses kamera.';
@@ -1831,11 +1913,26 @@
         stopCameraStream();
     });
 
-    document.getElementById('switchCameraBtn').addEventListener('click', function () {
-        useFrontCamera = !useFrontCamera;
+    document.getElementById('cameraDeviceSelect').addEventListener('change', function () {
+        selectedCameraDeviceId = this.value || '';
         stopCameraStream();
         openCameraModal(currentRoomId || 0);
     });
+
+    document.getElementById('switchCameraBtn').addEventListener('click', function () {
+        useFrontCamera = !useFrontCamera;
+        selectedCameraDeviceId = '';
+        stopCameraStream();
+        openCameraModal(currentRoomId || 0);
+    });
+
+    if (navigator.mediaDevices && typeof navigator.mediaDevices.addEventListener === 'function') {
+        navigator.mediaDevices.addEventListener('devicechange', function () {
+            if (cameraStream) {
+                refreshCameraDeviceOptions(cameraStream);
+            }
+        });
+    }
 
     function takePhoto() {
         var video = document.getElementById('cameraPreview');
