@@ -4328,6 +4328,7 @@ def coordinator_stats() -> Response:
                 "submitted": 0,
                 "schools_assessed": 0,
                 "avg_score": None,
+                "avg_score_pct": None,
             },
         }
         return render_template(

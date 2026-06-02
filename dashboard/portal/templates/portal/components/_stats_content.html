@@ -252,13 +252,14 @@
             >Rata-rata Skor</span
           >
         </div>
+        {% set avg_score_pct = stats.assessments.get('avg_score_pct') %}
         <h2 class="display-6 fw-bold mb-1">
-          {% if stats.assessments.avg_score_pct is not none %} {{
-          "%.1f"|format(stats.assessments.avg_score_pct) }}% {% else %} - {%
+          {% if avg_score_pct is not none %} {{
+          "%.1f"|format(avg_score_pct) }}% {% else %} - {%
           endif %}
         </h2>
         <p class="text-muted small mb-0">
-          {% if stats.assessments.avg_score_pct is not none %} Basis
+          {% if avg_score_pct is not none %} Basis
           normalisasi skala dari {{ stats.assessments.submitted or 0 }}
           penilaian {% else %} dari {{ stats.assessments.submitted or 0 }}
           penilaian {% endif %}
