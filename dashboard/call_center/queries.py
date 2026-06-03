@@ -1050,7 +1050,17 @@ def fetch_cc_statistics(
         history_cutoff_date = f"{int(selected_year):04d}-12-31"
 
     msg_conditions = ["m.direction = 'inbound'"]
-    admin_reply_conditions = ["u.role = 'admin'", "m.direction = 'outbound'"]
+    admin_reply_conditions = [
+        "m.direction = 'outbound'",
+        """(
+            u.role = 'admin'
+            OR (
+                m.admin_user_id IS NULL
+                AND NULLIF(m.admin_display_name, '') IS NOT NULL
+                AND LOWER(m.admin_display_name) NOT IN ('aska', 'whatsapp import')
+            )
+        )""",
+    ]
     conv_conditions: list[str] = []
     msg_params: dict[str, Any] = {}
     reply_params: dict[str, Any] = {}
@@ -1174,9 +1184,9 @@ def fetch_cc_statistics(
             f"""
             SELECT
                 COUNT(*)::int AS total_admin_replies
-            FROM dashboard_users u
-            JOIN cc_messages m ON m.admin_user_id = u.id
+            FROM cc_messages m
             JOIN cc_conversations c ON c.id = m.conversation_id
+            LEFT JOIN dashboard_users u ON u.id = m.admin_user_id
             {where_admin_reply}
             """,
             reply_params,
@@ -1478,18 +1488,31 @@ def fetch_cc_statistics(
 
         cur.execute(
             f"""
+            WITH reply_base AS (
+                SELECT
+                    CASE
+                        WHEN u.id IS NOT NULL THEN 'user:' || u.id::text
+                        ELSE 'name:' || COALESCE(NULLIF(m.admin_display_name, ''), 'Admin')
+                    END AS admin_key,
+                    u.id AS admin_user_id,
+                    COALESCE(NULLIF(u.full_name, ''), u.email, NULLIF(m.admin_display_name, ''), 'Admin') AS admin_name,
+                    c.wa_user_id,
+                    m.conversation_id,
+                    m.created_at
+                FROM cc_messages m
+                JOIN cc_conversations c ON c.id = m.conversation_id
+                LEFT JOIN dashboard_users u ON u.id = m.admin_user_id
+                {where_admin_reply}
+            )
             SELECT
-                u.id AS admin_user_id,
-                COALESCE(NULLIF(u.full_name, ''), u.email, 'Admin') AS admin_name,
+                admin_user_id,
+                admin_name,
                 COUNT(*)::int AS total_replies,
-                COUNT(DISTINCT c.wa_user_id)::int AS unique_numbers,
-                COUNT(DISTINCT m.conversation_id)::int AS conversations_replied,
-                MAX(m.created_at) AS last_reply_at
-            FROM dashboard_users u
-            JOIN cc_messages m ON m.admin_user_id = u.id
-            JOIN cc_conversations c ON c.id = m.conversation_id
-            {where_admin_reply}
-            GROUP BY u.id, admin_name
+                COUNT(DISTINCT wa_user_id)::int AS unique_numbers,
+                COUNT(DISTINCT conversation_id)::int AS conversations_replied,
+                MAX(created_at) AS last_reply_at
+            FROM reply_base
+            GROUP BY admin_key, admin_user_id, admin_name
             HAVING COUNT(*) >= 1
             ORDER BY total_replies DESC, admin_name ASC
             """,
