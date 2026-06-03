@@ -1050,7 +1050,7 @@ def fetch_cc_statistics(
         history_cutoff_date = f"{int(selected_year):04d}-12-31"
 
     msg_conditions = ["m.direction = 'inbound'"]
-    reply_conditions = ["m.direction = 'outbound'", "m.admin_user_id IS NOT NULL"]
+    admin_reply_conditions = ["u.role = 'admin'", "m.direction = 'outbound'"]
     conv_conditions: list[str] = []
     msg_params: dict[str, Any] = {}
     reply_params: dict[str, Any] = {}
@@ -1060,11 +1060,11 @@ def fetch_cc_statistics(
     if selected_bridge_key:
         if selected_bridge_key == _CC_BRIDGE_DEFAULT_KEY:
             msg_conditions.append("POSITION('::' IN COALESCE(c.wa_user_id, '')) = 0")
-            reply_conditions.append("POSITION('::' IN COALESCE(c.wa_user_id, '')) = 0")
+            admin_reply_conditions.append("POSITION('::' IN COALESCE(c.wa_user_id, '')) = 0")
             conv_conditions.append("POSITION('::' IN COALESCE(c.wa_user_id, '')) = 0")
         else:
             msg_conditions.append("c.wa_user_id LIKE %(bridge_prefix)s")
-            reply_conditions.append("c.wa_user_id LIKE %(bridge_prefix)s")
+            admin_reply_conditions.append("c.wa_user_id LIKE %(bridge_prefix)s")
             conv_conditions.append("c.wa_user_id LIKE %(bridge_prefix)s")
             msg_params["bridge_prefix"] = f"{selected_bridge_key}::%"
             reply_params["bridge_prefix"] = f"{selected_bridge_key}::%"
@@ -1072,28 +1072,28 @@ def fetch_cc_statistics(
 
     if mode == "daily" and selected_date:
         msg_conditions.append("timezone('Asia/Jakarta', m.created_at)::date = %(selected_date)s::date")
-        reply_conditions.append("timezone('Asia/Jakarta', m.created_at)::date = %(selected_date)s::date")
+        admin_reply_conditions.append("timezone('Asia/Jakarta', m.created_at)::date = %(selected_date)s::date")
         conv_conditions.append("timezone('Asia/Jakarta', c.created_at)::date = %(selected_date)s::date")
         msg_params["selected_date"] = selected_date
         reply_params["selected_date"] = selected_date
         conv_params["selected_date"] = selected_date
     elif mode == "monthly" and selected_month:
         msg_conditions.append("to_char(timezone('Asia/Jakarta', m.created_at), 'YYYY-MM') = %(selected_month)s")
-        reply_conditions.append("to_char(timezone('Asia/Jakarta', m.created_at), 'YYYY-MM') = %(selected_month)s")
+        admin_reply_conditions.append("to_char(timezone('Asia/Jakarta', m.created_at), 'YYYY-MM') = %(selected_month)s")
         conv_conditions.append("to_char(timezone('Asia/Jakarta', c.created_at), 'YYYY-MM') = %(selected_month)s")
         msg_params["selected_month"] = selected_month
         reply_params["selected_month"] = selected_month
         conv_params["selected_month"] = selected_month
     elif mode == "yearly" and selected_year:
         msg_conditions.append("EXTRACT(YEAR FROM timezone('Asia/Jakarta', m.created_at)) = %(selected_year)s")
-        reply_conditions.append("EXTRACT(YEAR FROM timezone('Asia/Jakarta', m.created_at)) = %(selected_year)s")
+        admin_reply_conditions.append("EXTRACT(YEAR FROM timezone('Asia/Jakarta', m.created_at)) = %(selected_year)s")
         conv_conditions.append("EXTRACT(YEAR FROM timezone('Asia/Jakarta', c.created_at)) = %(selected_year)s")
         msg_params["selected_year"] = int(selected_year)
         reply_params["selected_year"] = int(selected_year)
         conv_params["selected_year"] = int(selected_year)
 
     where_msg = ("WHERE " + " AND ".join(msg_conditions)) if msg_conditions else ""
-    where_reply = ("WHERE " + " AND ".join(reply_conditions)) if reply_conditions else ""
+    where_admin_reply = ("WHERE " + " AND ".join(admin_reply_conditions)) if admin_reply_conditions else ""
     where_conv = ("WHERE " + " AND ".join(conv_conditions)) if conv_conditions else ""
 
     jenjang_case_template = """
@@ -1174,9 +1174,10 @@ def fetch_cc_statistics(
             f"""
             SELECT
                 COUNT(*)::int AS total_admin_replies
-            FROM cc_messages m
+            FROM dashboard_users u
+            JOIN cc_messages m ON m.admin_user_id = u.id
             JOIN cc_conversations c ON c.id = m.conversation_id
-            {where_reply}
+            {where_admin_reply}
             """,
             reply_params,
         )
@@ -1478,17 +1479,17 @@ def fetch_cc_statistics(
         cur.execute(
             f"""
             SELECT
-                m.admin_user_id,
-                COALESCE(NULLIF(u.full_name, ''), NULLIF(m.admin_display_name, ''), u.email, 'Admin') AS admin_name,
+                u.id AS admin_user_id,
+                COALESCE(NULLIF(u.full_name, ''), u.email, 'Admin') AS admin_name,
                 COUNT(*)::int AS total_replies,
                 COUNT(DISTINCT c.wa_user_id)::int AS unique_numbers,
                 COUNT(DISTINCT m.conversation_id)::int AS conversations_replied,
                 MAX(m.created_at) AS last_reply_at
-            FROM cc_messages m
+            FROM dashboard_users u
+            JOIN cc_messages m ON m.admin_user_id = u.id
             JOIN cc_conversations c ON c.id = m.conversation_id
-            LEFT JOIN dashboard_users u ON u.id = m.admin_user_id
-            {where_reply}
-            GROUP BY m.admin_user_id, admin_name
+            {where_admin_reply}
+            GROUP BY u.id, admin_name
             HAVING COUNT(*) >= 1
             ORDER BY total_replies DESC, admin_name ASC
             """,
