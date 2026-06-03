@@ -106,25 +106,31 @@
 </form>
 
 <div class="row g-2 mb-3">
-    <div class="col-12 col-md-3">
+    <div class="col-12 col-md-6 col-xl">
         <div class="cc-stats-card">
             <div class="cc-stats-label">Pesan Masuk</div>
             <div class="cc-stats-value">{{ summary.total_messages or 0 }}</div>
         </div>
     </div>
-    <div class="col-12 col-md-3">
+    <div class="col-12 col-md-6 col-xl">
+        <div class="cc-stats-card">
+            <div class="cc-stats-label">Balasan Admin</div>
+            <div class="cc-stats-value">{{ summary.total_admin_replies or 0 }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl">
         <div class="cc-stats-card">
             <div class="cc-stats-label">Nomor Unik</div>
             <div class="cc-stats-value">{{ summary.unique_numbers or 0 }}</div>
         </div>
     </div>
-    <div class="col-12 col-md-3">
+    <div class="col-12 col-md-6 col-xl">
         <div class="cc-stats-card">
             <div class="cc-stats-label">Aktif Nomor-Hari</div>
             <div class="cc-stats-value">{{ summary.active_contact_days or 0 }}</div>
         </div>
     </div>
-    <div class="col-12 col-md-3">
+    <div class="col-12 col-md-6 col-xl">
         <div class="cc-stats-card">
             <div class="cc-stats-label">Percakapan Baru</div>
             <div class="cc-stats-value">{{ summary.new_conversations or 0 }}</div>
@@ -133,6 +139,42 @@
 </div>
 
 <div class="row g-3">
+    <div class="col-12">
+        <div class="cc-table-card">
+            <div class="cc-table-title">Balasan Pesan Oleh Admin</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Admin</th>
+                            <th class="text-end">Balasan</th>
+                            <th class="text-end">Percakapan</th>
+                            <th class="text-end">Nomor Unik</th>
+                            <th class="text-end">Terakhir Balas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in stats_data.admin_reply_stats %}
+                        <tr>
+                            <td>{{ row.admin_name or 'Admin' }}</td>
+                            <td class="text-end">{{ row.total_replies or 0 }}</td>
+                            <td class="text-end">{{ row.conversations_replied or 0 }}</td>
+                            <td class="text-end">{{ row.unique_numbers or 0 }}</td>
+                            <td class="text-end">
+                                {{ row.last_reply_at.strftime('%d/%m/%Y %H:%M') if row.last_reply_at else '-' }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-secondary py-3">Belum ada balasan admin.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <div class="col-12 col-xl-6">
         <div class="cc-table-card">
             <div class="cc-table-title">Timeline Pesan Masuk</div>
