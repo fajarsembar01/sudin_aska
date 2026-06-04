@@ -13,6 +13,7 @@
 {% set teams = monev_teams|default([]) %}
 {% set selected_year = current_period_year|default(None) %}
 {% set selected_month = current_period_month|default(None) %}
+{% set selected_school_status = school_status_filter|default('') %}
 {% set periods_sorted = periods|default([]) | sort(attribute='start_date') %}
 {% from "portal/components/_color_macros.html" import get_score_bootstrap_class %}
 
@@ -101,6 +102,16 @@
               </option>
               {% endfor %}
             </select>
+            <select
+              name="school_status"
+              class="form-select border-primary text-primary fw-medium"
+              onchange="this.form.submit()"
+              style="min-width: 150px"
+            >
+              <option value="">Semua Sekolah</option>
+              <option value="negeri" {% if selected_school_status=='negeri' %}selected{% endif %}>Negeri</option>
+              <option value="swasta" {% if selected_school_status=='swasta' %}selected{% endif %}>Swasta</option>
+            </select>
             {% else %}
             <form method="get" class="d-inline-flex align-items-center gap-2">
               <select
@@ -134,6 +145,7 @@
       <input type="hidden" name="year" value="{{ selected_year or '' }}" />
       <input type="hidden" name="month" value="{{ selected_month or '' }}" />
       <input type="hidden" name="team_id" value="{{ current_team_id or '' }}" />
+      <input type="hidden" name="school_status" value="{{ selected_school_status }}" />
       <div class="modal-header">
         <h5 class="modal-title" id="exportExcelModalLabel">
           <i class="bi bi-file-earmark-excel me-2 text-success"></i>Download Excel
@@ -557,7 +569,7 @@
         <div class="d-flex flex-wrap align-items-center gap-2">
           {% if is_admin or stats_role == 'coordinator' %}
           <a
-            href="{{ url_for(gallery_endpoint, period_id=current_period_id, team_id=current_team_id) }}"
+            href="{{ url_for(gallery_endpoint, period_id=current_period_id, team_id=current_team_id, school_status=selected_school_status) }}"
             class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2"
             target="_blank"
             rel="noopener"
@@ -574,19 +586,19 @@
           >
             <a
               class="btn btn-outline-primary {% if photo_order=='random' %}active{% endif %}"
-              href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='random') }}#galleryTitle"
+              href="{{ url_for(stats_endpoint, period_id=current_period_id, year=selected_year, month=selected_month, team_id=current_team_id, school_status=selected_school_status, jenjang=jenjang_filter, order=order, photo_order='random') }}#galleryTitle"
             >
               Random
             </a>
             <a
               class="btn btn-outline-primary {% if photo_order=='newest' %}active{% endif %}"
-              href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='newest') }}#galleryTitle"
+              href="{{ url_for(stats_endpoint, period_id=current_period_id, year=selected_year, month=selected_month, team_id=current_team_id, school_status=selected_school_status, jenjang=jenjang_filter, order=order, photo_order='newest') }}#galleryTitle"
             >
               Terbaru
             </a>
             <a
               class="btn btn-outline-primary {% if photo_order=='lowest' %}active{% endif %}"
-              href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='lowest') }}#galleryTitle"
+              href="{{ url_for(stats_endpoint, period_id=current_period_id, year=selected_year, month=selected_month, team_id=current_team_id, school_status=selected_school_status, jenjang=jenjang_filter, order=order, photo_order='lowest') }}#galleryTitle"
             >
               Terendah
             </a>
@@ -615,6 +627,7 @@
           {% if current_team_id %}
           <input type="hidden" name="team_id" value="{{ current_team_id }}" />
           {% endif %}
+          <input type="hidden" name="school_status" value="{{ selected_school_status }}" />
           <div class="col-md-4">
             <div class="input-group">
               <span class="input-group-text">
@@ -648,7 +661,7 @@
             </button>
             <a
               class="btn btn-light"
-              href="{{ url_for(stats_endpoint, period_id=current_period_id, year=selected_year, month=selected_month, team_id=current_team_id, _anchor='recent-assessments') }}"
+              href="{{ url_for(stats_endpoint, period_id=current_period_id, year=selected_year, month=selected_month, team_id=current_team_id, school_status=selected_school_status, _anchor='recent-assessments') }}"
               >Reset</a
             >
           </div>
@@ -660,7 +673,8 @@
               <tr>
                 {% set base_period = current_period_id or '' %} {% set
                 base_jenjang = jenjang_filter or '' %} {% set base_team =
-                current_team_id %} {% set anchor = 'recent-assessments' %} {%
+                current_team_id %} {% set base_school_status =
+                selected_school_status %} {% set anchor = 'recent-assessments' %} {%
                 set name_order = 'name_desc' if order == 'name_asc' else
                 'name_asc' %} {% set staff_order = 'staff_asc' if order ==
                 'staff_desc' else 'staff_desc' %} {% set avg_order = 'score_asc'
@@ -668,7 +682,7 @@
                 = 'date_asc' if order == 'date_desc' else 'date_desc' %}
                 <th class="border-0 ps-3">
                   <a
-                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=name_order, team_id=base_team, _anchor=anchor) }}"
+                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=name_order, team_id=base_team, school_status=base_school_status, _anchor=anchor) }}"
                     class="text-decoration-none d-flex align-items-center gap-1"
                   >
                     Sekolah
@@ -679,7 +693,7 @@
                 </th>
                 <th class="border-0">
                   <a
-                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=staff_order, team_id=base_team, _anchor=anchor) }}"
+                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=staff_order, team_id=base_team, school_status=base_school_status, _anchor=anchor) }}"
                     class="text-decoration-none d-flex align-items-center gap-1"
                   >
                     Staff
@@ -690,7 +704,7 @@
                 </th>
                 <th class="border-0">
                   <a
-                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=avg_order, team_id=base_team, _anchor=anchor) }}"
+                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=avg_order, team_id=base_team, school_status=base_school_status, _anchor=anchor) }}"
                     class="text-decoration-none d-flex align-items-center gap-1"
                   >
                     Average
@@ -701,7 +715,7 @@
                 </th>
                 <th class="border-0">
                   <a
-                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=date_order, team_id=base_team, _anchor=anchor) }}"
+                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=date_order, team_id=base_team, school_status=base_school_status, _anchor=anchor) }}"
                     class="text-decoration-none d-flex align-items-center gap-1"
                   >
                     Tanggal
@@ -964,6 +978,7 @@
       const CURRENT_PERIOD_YEAR = "{{ selected_year or '' }}";
       const CURRENT_PERIOD_MONTH = "{{ selected_month or '' }}";
       const CURRENT_TEAM_ID = "{{ current_team_id if current_team_id is not none else (team.id if team else '') }}";
+      const CURRENT_SCHOOL_STATUS = "{{ selected_school_status }}";
       // Legend text is now static in the HTML, no dynamic update needed
 
       document.addEventListener('DOMContentLoaded', function () {
@@ -984,6 +999,7 @@
           if (periodYear) mapParams.set('year', periodYear);
           if (periodMonth) mapParams.set('month', periodMonth);
           if (teamId) mapParams.set('team_id', teamId);
+          if (CURRENT_SCHOOL_STATUS) mapParams.set('school_status', CURRENT_SCHOOL_STATUS);
           fetch(`{{ url_for(map_data_endpoint) }}?${mapParams.toString()}`)
               .then(response => response.json())
               .then(data => {
@@ -1205,6 +1221,7 @@
               if (CURRENT_PERIOD_YEAR) params.set('year', CURRENT_PERIOD_YEAR);
               if (CURRENT_PERIOD_MONTH) params.set('month', CURRENT_PERIOD_MONTH);
               if (CURRENT_TEAM_ID) params.set('team_id', CURRENT_TEAM_ID);
+              if (CURRENT_SCHOOL_STATUS) params.set('school_status', CURRENT_SCHOOL_STATUS);
               if (Number.isFinite(count)) params.set('count', String(count));
               const targetUrl = `${negeriDetailBaseUrl}?${params.toString()}`;
               window.open(targetUrl, '_blank', 'noopener');
@@ -1281,6 +1298,7 @@
           if (periodYear) params.set('year', periodYear);
           if (periodMonth) params.set('month', periodMonth);
           if (teamId) params.set('team_id', teamId);
+          if (CURRENT_SCHOOL_STATUS) params.set('school_status', CURRENT_SCHOOL_STATUS);
 
           fetch(`${rankingsEndpoint}?${params.toString()}`)
               .then(response => response.json())
