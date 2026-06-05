@@ -228,6 +228,7 @@ def build_qa_chain():
                 model=openai_embedding_model,
                 openai_api_key=embedding_api_key,
                 openai_api_base=embedding_api_base,
+                chunk_size=_env_int("ASKA_EMBEDDING_BATCH_SIZE", 64, minimum=1),
             )
             _embed_log_also_file("OpenAIEmbeddings berhasil diinisialisasi")
         except Exception as exc:

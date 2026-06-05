@@ -39,6 +39,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ASKA_EMBEDDING_BACKEND: openai
           ASKA_EMBEDDING_MODEL: text-embedding-3-large
+          ASKA_EMBEDDING_BATCH_SIZE: "64"
           ASKA_ALLOW_REMOTE_EMBEDDING_REINDEX: "1"
           ASKA_VECTORSTORE_PATH: .aska_vectorstore
           ASKA_VECTORSTORE_INDEX: kecerdasan
@@ -78,6 +79,7 @@ jobs:
           embedding = OpenAIEmbeddings(
               model=os.getenv("ASKA_EMBEDDING_MODEL", "text-embedding-3-large"),
               openai_api_key=os.getenv("OPENAI_API_KEY"),
+              chunk_size=int(os.getenv("ASKA_EMBEDDING_BATCH_SIZE", "64")),
           )
           vectorstore = FAISS.from_documents(docs, embedding)
           print("🧠 Embedding selesai!")
