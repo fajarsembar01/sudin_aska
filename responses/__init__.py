@@ -1,5 +1,6 @@
 # responses/__init__.py
 from .base import ASKA_NO_DATA_RESPONSE, ASKA_TECHNICAL_ISSUE_RESPONSE, ASKA_RATE_LIMIT_RESPONSE
+from .rate_limit import RATE_LIMIT_RESPONSES, get_rate_limit_response
 from .advice import contains_inappropriate_language, get_advice_response
 from .bullying import (
     CATEGORY_GENERAL,
@@ -73,6 +74,8 @@ __all__ = [
     "ASKA_NO_DATA_RESPONSE",
     "ASKA_TECHNICAL_ISSUE_RESPONSE",
     "ASKA_RATE_LIMIT_RESPONSE",
+    "RATE_LIMIT_RESPONSES",
+    "get_rate_limit_response",
     "contains_inappropriate_language",
     "get_advice_response",
     "get_acknowledgement_response",

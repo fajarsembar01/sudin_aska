@@ -24,8 +24,8 @@ FILE_ORDER_FILE = KECERDASAN_DIR / ".file_order.json"
 _PAGE_MARKER_RE = re.compile(r"^<!-- halaman:\d+(?:-\d+)? -->\n?", re.MULTILINE)
 
 # Daftar berkas dasar yang sudah terstruktur. Berkas Markdown lain yang
-# ditempatkan di folder `kecerdasan/` akan otomatis ikut dimuat sebagai lampiran
-# tambahan di akhir konten utama.
+# ditempatkan di folder `kecerdasan/markdown/` akan otomatis ikut dimuat sebagai
+# lampiran tambahan di akhir konten utama.
 _BUILT_IN_PATHS = {
     GENERAL_FILE.resolve(),
     SPECIFIC_FILE.resolve(),
@@ -178,10 +178,12 @@ def load_kecerdasan(*, ensure_output_file: bool = False) -> str:
     if detail_schools_text:
         combined = f"{combined.rstrip()}\n\n# Detail Sekolah\n{detail_schools_text}\n"
 
-    # Sertakan berkas tambahan lain (mis. hasil unggahan admin)
+    # Sertakan berkas tambahan lain (mis. hasil unggahan admin). Scope runtime
+    # sengaja dibatasi ke `kecerdasan/markdown/` agar tidak ikut memuat file
+    # build/debug seperti `.generated/` atau `kecerdasan.build.md`.
     extra_files = []
-    if KECERDASAN_DIR.exists():
-        for path in KECERDASAN_DIR.rglob("*.md"):
+    if MARKDOWN_DIR.exists():
+        for path in MARKDOWN_DIR.rglob("*.md"):
             try:
                 if path.resolve() in _BUILT_IN_PATHS:
                     continue

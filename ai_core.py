@@ -50,6 +50,26 @@ def _is_truthy(value: Optional[str]) -> bool:
     return (value or "").strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _is_falsey(value: Optional[str]) -> bool:
+    return (value or "").strip().lower() in {"0", "false", "no", "off"}
+
+
+def _env_int(name: str, default: int, *, minimum: int = 1) -> int:
+    try:
+        value = int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        value = default
+    return max(minimum, value)
+
+
+def _env_float(name: str, default: float, *, minimum: float = 0.0, maximum: float = 1.0) -> float:
+    try:
+        value = float(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        value = default
+    return min(maximum, max(minimum, value))
+
+
 def _load_cached_vectorstore(
     *,
     cache_dir: Path,
@@ -222,8 +242,8 @@ def build_qa_chain():
     content = load_kecerdasan()
     _embed_log_also_file(f"Konten kecerdasan dimuat: {len(content):,} karakter")
 
-    chunk_size = int(os.getenv("ASKA_CHUNK_SIZE", "500"))
-    chunk_overlap = int(os.getenv("ASKA_CHUNK_OVERLAP", "50"))
+    chunk_size = int(os.getenv("ASKA_CHUNK_SIZE", "2000"))
+    chunk_overlap = int(os.getenv("ASKA_CHUNK_OVERLAP", "200"))
     _embed_log_also_file(f"Chunking: chunk_size={chunk_size} chunk_overlap={chunk_overlap}")
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
@@ -254,11 +274,14 @@ def build_qa_chain():
         allow_reindex = _is_truthy(os.getenv("ASKA_ALLOW_REMOTE_EMBEDDING_REINDEX"))
         is_remote = embedding_signature.get("provider") == "openai"
 
-        # Coba pakai vectorstore LAMA dulu sebagai fallback agar bot tetap jalan
-        # tanpa harus rebuild (hemat token & waktu).
-        vectorstore = _load_cached_vectorstore_fallback(
-            cache_dir=cache_dir,
-            embedding=embedding,
+        allow_stale_fallback = not _is_falsey(os.getenv("ASKA_ALLOW_STALE_VECTORSTORE_FALLBACK", "true"))
+        vectorstore = (
+            _load_cached_vectorstore_fallback(
+                cache_dir=cache_dir,
+                embedding=embedding,
+            )
+            if allow_stale_fallback
+            else None
         )
         if vectorstore is not None:
             # Fallback berhasil — tidak perlu rebuild, bot jalan dengan kecerdasan lama
@@ -306,9 +329,15 @@ def build_qa_chain():
     else:
         _embed_log_also_file("Cache FAISS dimuat dari disk — embedding SKIP")
 
+    retrieval_max_k = _env_int("ASKA_RETRIEVAL_MAX_K", 10, minimum=1)
+    retrieval_min_score = _env_float("ASKA_RETRIEVAL_MIN_SCORE", 0.35)
     retriever = vectorstore.as_retriever(
-        search_type="mmr",
-        search_kwargs={"k": 5, "fetch_k": 25, "lambda_mult": 0.8}
+        search_type="similarity_score_threshold",
+        search_kwargs={"k": retrieval_max_k, "score_threshold": retrieval_min_score},
+    )
+    _embed_log_also_file(
+        "Retrieval: search_type=similarity_score_threshold "
+        f"k<={retrieval_max_k} score_threshold={retrieval_min_score}"
     )
     total_ms = int((time.perf_counter() - t_start) * 1000)
     _embed_log_also_file(f"=== build_qa_chain() selesai dalam {total_ms} ms ===")
@@ -330,8 +359,12 @@ def build_qa_chain():
     # Prompt ini akan menerima dokumen (context) dari retriever di atas.
     qa_prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", "Nama aku ASKA. Jawab pertanyaan dengan gaya Gen-Z yang santai, ramah, dan pakai emoji. "
-                     "Selalu sebut nama **'ASKA'** secara alami. Gunakan info dari konteks ini:\n\n{context}"),
+            ("system", "Nama aku ASKA. Jawab pertanyaan dengan gaya santai, ramah, dan ringkas. "
+                     "Selalu sebut nama **'ASKA'** secara alami. Jawab hanya berdasarkan konteks. "
+                     "Jika konteks kosong atau tidak memuat jawaban yang relevan, jawab persis: "
+                     "\"ASKA belum punya data resmi untuk pertanyaan itu.\" "
+                     "Jangan mengarang, jangan menebak, dan jangan mengaku sudah mengubah data sistem.\n\n"
+                     "Konteks:\n{context}"),
             MessagesPlaceholder("chat_history"),
             ("human", "{input}"),
         ]

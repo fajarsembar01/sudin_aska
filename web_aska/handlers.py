@@ -18,7 +18,11 @@ from knowledge_loader import (
 )
 from db import save_chat, get_chat_history
 from rag_logger import save_rag_log
-from responses import ASKA_NO_DATA_RESPONSE, ASKA_TECHNICAL_ISSUE_RESPONSE
+from responses import (
+    ASKA_NO_DATA_RESPONSE,
+    ASKA_TECHNICAL_ISSUE_RESPONSE,
+    get_rate_limit_response,
+)
 from utils import (
     normalize_input,
     now_str,
@@ -27,6 +31,7 @@ from utils import (
     rewrite_schedule_query,
     replace_bot_mentions,
     remove_trailing_signature,
+    is_llm_quota_error,
 )
 from flows.safety_flow import handle_bullying
 from flows.corruption_flow import handle_corruption
@@ -376,8 +381,9 @@ async def process_channel_request(
 
         result = await asyncio.to_thread(qa_chain.invoke, {"input": normalized_input, "chat_history": chat_history})
 
-        print(f"[{now_str()}] ?? ASKA AMBIL {len(result['context'])} KONTEN:")
-        for i, doc in enumerate(result["context"], 1):
+        retrieved_context = result.get("context", []) if isinstance(result, dict) else []
+        print(f"[{now_str()}] ?? ASKA AMBIL {len(retrieved_context)} KONTEN:")
+        for i, doc in enumerate(retrieved_context, 1):
             print(f"  {i}. {doc.page_content[:200]}...")
 
         save_rag_log(
@@ -385,12 +391,12 @@ async def process_channel_request(
             username=username,
             channel=normalized_topic,
             question=normalized_input,
-            chunks=[doc.page_content[:300] for doc in result["context"]],
+            chunks=[doc.page_content[:300] for doc in retrieved_context],
             answer=coerce_to_text(result)[:500],
             response_ms=int((time.perf_counter() - start_time) * 1000),
         )
 
-        response = coerce_to_text(result)
+        response = ASKA_NO_DATA_RESPONSE if not retrieved_context else coerce_to_text(result)
         response = remove_trailing_signature(response.strip())
 
         if not response:
@@ -411,6 +417,9 @@ async def process_channel_request(
 
     except Exception as e:
         print(f"[{now_str()}] [ERROR] {e}")
+        if is_llm_quota_error(e):
+            print(f"[{now_str()}] [WARN] Rate limit detected, returning notice to user.")
+            return get_rate_limit_response(), None
         return ASKA_TECHNICAL_ISSUE_RESPONSE, None
 
 

@@ -10,6 +10,14 @@ from langchain_core.messages import HumanMessage, AIMessage
 from thinking_messages import get_random_thinking_message
 
 try:
+    from openai import RateLimitError as OpenAIRateLimitError  # type: ignore
+except ImportError:  # pragma: no cover - compatibility layer
+    try:
+        from openai.error import RateLimitError as OpenAIRateLimitError  # type: ignore
+    except (ImportError, AttributeError):  # pragma: no cover - fallback if API changes
+        OpenAIRateLimitError = None
+
+try:
     from zoneinfo import ZoneInfo
 except (ImportError, ModuleNotFoundError):
     ZoneInfo = None
@@ -105,6 +113,43 @@ def remove_trailing_signature(text: Optional[str]) -> str:
         text = str(text or "")
     cleaned = _SIGNATURE_RE.sub("", text)
     return cleaned.rstrip()
+
+
+def _iter_exception_chain(exc: BaseException):
+    seen = set()
+    current = exc
+    while current and id(current) not in seen:
+        seen.add(id(current))
+        yield current
+        current = current.__cause__ or current.__context__
+
+
+def is_llm_quota_error(exc: Exception) -> bool:
+    if exc is None:
+        return False
+
+    keywords = (
+        "429",
+        "billing",
+        "free tier",
+        "insufficient_quota",
+        "limit reached",
+        "quota",
+        "rate limit",
+        "rate_limit_exceeded",
+        "requests per minute",
+        "tokens per minute",
+        "too many requests",
+        "exceeded your current quota",
+    )
+
+    for candidate in _iter_exception_chain(exc):
+        if OpenAIRateLimitError and isinstance(candidate, OpenAIRateLimitError):
+            return True
+        message = str(candidate).lower()
+        if any(keyword in message for keyword in keywords):
+            return True
+    return False
 
 
 # Pola tag question yang dipaksakan model di akhir kalimat

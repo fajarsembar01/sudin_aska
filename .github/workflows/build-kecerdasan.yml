@@ -42,8 +42,10 @@ jobs:
           ASKA_ALLOW_REMOTE_EMBEDDING_REINDEX: "1"
           ASKA_VECTORSTORE_PATH: .aska_vectorstore
           ASKA_VECTORSTORE_INDEX: kecerdasan
-          ASKA_CHUNK_SIZE: "500"
-          ASKA_CHUNK_OVERLAP: "50"
+          ASKA_CHUNK_SIZE: "2000"
+          ASKA_CHUNK_OVERLAP: "200"
+          ASKA_RETRIEVAL_MAX_K: "10"
+          ASKA_RETRIEVAL_MIN_SCORE: "0.35"
           # LLM key (hanya untuk inisialisasi chain, tidak dipakai embed)
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
@@ -64,8 +66,8 @@ jobs:
 
           # Split
           splitter = RecursiveCharacterTextSplitter(
-              chunk_size=int(os.getenv("ASKA_CHUNK_SIZE", "500")),
-              chunk_overlap=int(os.getenv("ASKA_CHUNK_OVERLAP", "50")),
+              chunk_size=int(os.getenv("ASKA_CHUNK_SIZE", "2000")),
+              chunk_overlap=int(os.getenv("ASKA_CHUNK_OVERLAP", "200")),
               separators=["\n|", "\n## ", "\n\n", "\n", " ", ""],
               keep_separator=True,
           )
@@ -90,8 +92,8 @@ jobs:
           doc_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
           metadata_path.write_text(json.dumps({
               "doc_hash": doc_hash,
-              "chunk_size": int(os.getenv("ASKA_CHUNK_SIZE", "500")),
-              "chunk_overlap": int(os.getenv("ASKA_CHUNK_OVERLAP", "50")),
+              "chunk_size": int(os.getenv("ASKA_CHUNK_SIZE", "2000")),
+              "chunk_overlap": int(os.getenv("ASKA_CHUNK_OVERLAP", "200")),
               "embedding_signature": {
                   "provider": "openai",
                   "model": os.getenv("ASKA_EMBEDDING_MODEL", "text-embedding-3-large"),
