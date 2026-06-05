@@ -1163,7 +1163,7 @@
                     <div class="dropdown notification-menu" id="userGuestbookNotifRoot"
                         data-list-url="{{ url_for('portal.user_app_notifications') }}"
                         data-read-url="{{ url_for('portal.user_app_notifications_mark_read') }}"
-                        data-history-url="{% if current_user.role == 'sekolah' %}{{ url_for('daftar_tamu.sekolah_riwayat') }}{% else %}{{ url_for('portal.home') }}{% endif %}">
+                        data-history-url="{% if current_user.role == 'sekolah' %}{{ url_for('daftar_tamu.sekolah_riwayat') }}{% elif current_user.role in ['staff', 'coordinator'] %}{{ url_for('daftar_tamu.user_guestbook_history') }}{% else %}{{ url_for('portal.home') }}{% endif %}">
                         <button class="notification-toggle" type="button" data-bs-toggle="dropdown"
                             id="userGuestbookNotifToggle" aria-expanded="false" aria-label="Notifikasi pengguna">
                             <i class="bi bi-bell"></i>

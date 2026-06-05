@@ -1787,9 +1787,9 @@ def home() -> Response:
             },
             {
                 "title": "Buku Tamu",
-                "description": "Pantau dashboard buku tamu sesuai lokasi unit kerja Anda.",
+                "description": "Lihat riwayat buku tamu pribadi Anda.",
                 "icon": "bi-person-vcard",
-                "href": url_for("daftar_tamu.admin_dashboard"),
+                "href": url_for("daftar_tamu.user_guestbook_history"),
                 "col_class": "col-md-6 col-12",
             },
         ]
