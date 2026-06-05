@@ -4420,6 +4420,9 @@ def admin_stats() -> Response:
         selected_period_arg,
     )
     team_id = request.args.get("team_id", type=int)
+    school_status_filter = (request.args.get("school_status") or "").strip().lower()
+    if school_status_filter not in {"negeri", "swasta"}:
+        school_status_filter = ""
     jenjang_filter = request.args.get("jenjang") or None
     order = request.args.get("order") or "recent"
     allowed_orders = {
@@ -4443,28 +4446,62 @@ def admin_stats() -> Response:
         if selected_team is None:
             staff_ids = None
     
-    stats = fetch_portal_stats(period_id=period_id, period_ids=period_ids, staff_ids=staff_ids)
+    stats = fetch_portal_stats(
+        period_id=period_id,
+        period_ids=period_ids,
+        staff_ids=staff_ids,
+        school_status=school_status_filter,
+    )
     from .queries import fetch_score_distribution
-    score_dist = fetch_score_distribution(period_id=period_id, period_ids=period_ids, staff_ids=staff_ids)
+    score_dist = fetch_score_distribution(
+        period_id=period_id,
+        period_ids=period_ids,
+        staff_ids=staff_ids,
+        school_status=school_status_filter,
+    )
     recent_assessments = list_recent_assessments(
         period_id=period_id,
         period_ids=period_ids,
         jenjang=jenjang_filter,
         order=order,
         staff_ids=staff_ids,
+        school_status=school_status_filter,
     )
     staff_latest_assessments = list_staff_latest_assessments(
         period_id=period_id,
         period_ids=period_ids,
         staff_ids=staff_ids,
+        school_status=school_status_filter,
         limit=100,
     )
     if staff_ids:
-        top_schools = fetch_team_top_schools(staff_ids, period_id=period_id, period_ids=period_ids, limit=10)
-        bottom_schools = fetch_team_bottom_schools(staff_ids, period_id=period_id, period_ids=period_ids, limit=10)
+        top_schools = fetch_team_top_schools(
+            staff_ids,
+            period_id=period_id,
+            period_ids=period_ids,
+            limit=10,
+            school_status=school_status_filter,
+        )
+        bottom_schools = fetch_team_bottom_schools(
+            staff_ids,
+            period_id=period_id,
+            period_ids=period_ids,
+            limit=10,
+            school_status=school_status_filter,
+        )
     else:
-        top_schools = fetch_top_schools(period_id=period_id, period_ids=period_ids, limit=10)
-        bottom_schools = fetch_bottom_schools(period_id=period_id, period_ids=period_ids, limit=10)
+        top_schools = fetch_top_schools(
+            period_id=period_id,
+            period_ids=period_ids,
+            limit=10,
+            school_status=school_status_filter,
+        )
+        bottom_schools = fetch_bottom_schools(
+            period_id=period_id,
+            period_ids=period_ids,
+            limit=10,
+            school_status=school_status_filter,
+        )
     photo_order = request.args.get("photo_order", "random")
     random_photos = fetch_random_photos(
         period_id=period_id,
@@ -4472,14 +4509,25 @@ def admin_stats() -> Response:
         order=photo_order,
         limit=24,
         staff_ids=staff_ids,
+        school_status=school_status_filter,
     )
-    school_avg_map = fetch_school_avg_scores(period_id=period_id, period_ids=period_ids, staff_ids=staff_ids)
+    school_avg_map = fetch_school_avg_scores(
+        period_id=period_id,
+        period_ids=period_ids,
+        staff_ids=staff_ids,
+        school_status=school_status_filter,
+    )
     all_schools = list_portal_schools()
     all_staff = list_all_staff()
     monev_teams = get_monev_teams()
     
     from .queries import fetch_kecamatan_avg_scores
-    kecamatan_stats = fetch_kecamatan_avg_scores(period_id=period_id, period_ids=period_ids, staff_ids=staff_ids)
+    kecamatan_stats = fetch_kecamatan_avg_scores(
+        period_id=period_id,
+        period_ids=period_ids,
+        staff_ids=staff_ids,
+        school_status=school_status_filter,
+    )
     negeri_assessment_frequency = fetch_negeri_assessment_frequency(
         period_id=period_id,
         period_ids=period_ids,
@@ -4503,6 +4551,7 @@ def admin_stats() -> Response:
         period_year_options=period_year_options,
         selected_team_id=team_id,
         selected_team=selected_team,
+        school_status_filter=school_status_filter,
         jenjang_filter=jenjang_filter,
         order=order,
         photo_order=photo_order,
@@ -4796,6 +4845,9 @@ def api_rankings() -> Response:
         selected_period_arg,
     )
     team_id = request.args.get("team_id", type=int)
+    school_status_filter = (request.args.get("school_status") or "").strip().lower()
+    if school_status_filter not in {"negeri", "swasta"}:
+        school_status_filter = ""
     
     staff_ids = None
     if team_id:
@@ -4805,14 +4857,40 @@ def api_rankings() -> Response:
     
     if type_ == "best":
         if staff_ids:
-            data = fetch_team_top_schools(staff_ids, period_id=period_id, period_ids=period_ids, limit=limit, offset=offset)
+            data = fetch_team_top_schools(
+                staff_ids,
+                period_id=period_id,
+                period_ids=period_ids,
+                limit=limit,
+                offset=offset,
+                school_status=school_status_filter,
+            )
         else:
-            data = fetch_top_schools(limit=limit, offset=offset, period_id=period_id, period_ids=period_ids)
+            data = fetch_top_schools(
+                limit=limit,
+                offset=offset,
+                period_id=period_id,
+                period_ids=period_ids,
+                school_status=school_status_filter,
+            )
     else:
         if staff_ids:
-            data = fetch_team_bottom_schools(staff_ids, period_id=period_id, period_ids=period_ids, limit=limit, offset=offset)
+            data = fetch_team_bottom_schools(
+                staff_ids,
+                period_id=period_id,
+                period_ids=period_ids,
+                limit=limit,
+                offset=offset,
+                school_status=school_status_filter,
+            )
         else:
-            data = fetch_bottom_schools(limit=limit, offset=offset, period_id=period_id, period_ids=period_ids)
+            data = fetch_bottom_schools(
+                limit=limit,
+                offset=offset,
+                period_id=period_id,
+                period_ids=period_ids,
+                school_status=school_status_filter,
+            )
         
     return jsonify(data)
 
@@ -4856,6 +4934,9 @@ def export_excel() -> Response:
         selected_period_arg,
     )
     team_id = request.args.get("team_id", type=int)
+    school_status_filter = (request.args.get("school_status") or "").strip().lower()
+    if school_status_filter not in {"negeri", "swasta"}:
+        school_status_filter = ""
     staff_ids = None
     if team_id:
         staff_ids, team = _get_team_staff_ids(team_id)
@@ -4867,6 +4948,7 @@ def export_excel() -> Response:
         year=selected_year,
         month=selected_month,
         team_id=team_id,
+        school_status=school_status_filter,
     )
 
     group_by = (request.args.get("group_by") or "").strip().lower()
@@ -4880,6 +4962,7 @@ def export_excel() -> Response:
         period_id=period_id,
         period_ids=period_ids,
         staff_ids=staff_ids,
+        school_status=school_status_filter,
     )
     
     if not data:
@@ -4937,6 +5020,9 @@ def admin_map_data() -> Response:
         selected_period_arg,
     )
     team_id = request.args.get("team_id", type=int)
+    school_status_filter = (request.args.get("school_status") or "").strip().lower()
+    if school_status_filter not in {"negeri", "swasta"}:
+        school_status_filter = ""
     from .queries import fetch_map_data
     
     staff_ids = None
@@ -4945,7 +5031,12 @@ def admin_map_data() -> Response:
         if team is None:
             staff_ids = None
     
-    data = fetch_map_data(period_id=period_id, period_ids=period_ids, staff_ids=staff_ids)
+    data = fetch_map_data(
+        period_id=period_id,
+        period_ids=period_ids,
+        staff_ids=staff_ids,
+        school_status=school_status_filter,
+    )
     return jsonify(data)
 
 
@@ -5069,6 +5160,9 @@ def admin_photos_partial() -> Response:
     )
     photo_order = request.args.get("photo_order", "random")
     team_id = request.args.get("team_id", type=int)
+    school_status_filter = (request.args.get("school_status") or "").strip().lower()
+    if school_status_filter not in {"negeri", "swasta"}:
+        school_status_filter = ""
     
     staff_ids = None
     if team_id:
@@ -5085,6 +5179,7 @@ def admin_photos_partial() -> Response:
         limit=24,
         staff_ids=staff_ids,
         restrict_to_staff=True,
+        school_status=school_status_filter,
     )
     return render_template("portal/shared/_gallery_grid.html", random_photos=photos)
 
