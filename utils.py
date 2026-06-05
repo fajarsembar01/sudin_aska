@@ -82,6 +82,7 @@ def normalize_input(text):
         "pendaftar tertua": "umur tertinggi",
         "usia paling muda": "umur terendah",
         "usia paling tua": "umur tertinggi",
+        "perioritas": "prioritas",
         "ranking": "urutan",
         "anbk untuk sd kapan": "anbk untuk sd jadwalnya kapan",
         "kapan anbk sd": "jadwal anbk sd",
@@ -90,6 +91,11 @@ def normalize_input(text):
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
+    text = re.sub(r"\bsman\s*(\d{1,3})\b", r"sma negeri \1 jakarta", text)
+    text = re.sub(r"\bsma\s*(\d{1,3})\b", r"sma negeri \1 jakarta", text)
+    text = re.sub(r"\bsmpn\s*(\d{1,3})\b", r"smp negeri \1 jakarta", text)
+    text = re.sub(r"\bsmp\s*(\d{1,3})\b", r"smp negeri \1 jakarta", text)
+    text = re.sub(r"\bsdn\s*([a-z ]+?)\s*(\d{1,2})\b", r"sdn \1 \2 jakarta", text)
     return text
 
 

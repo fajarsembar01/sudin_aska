@@ -2,16 +2,18 @@ import hashlib
 import json
 import logging
 import os
+import re
 import shutil
 import time
 from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
-from langchain.chains import create_history_aware_retriever, create_retrieval_chain
+from langchain.chains import create_history_aware_retriever
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
@@ -68,6 +70,156 @@ def _env_float(name: str, default: float, *, minimum: float = 0.0, maximum: floa
     except (TypeError, ValueError):
         value = default
     return min(maximum, max(minimum, value))
+
+
+_QUERY_TOKEN_RE = re.compile(r"[a-z0-9]+", re.IGNORECASE)
+_SCHOOL_NUMBER_RE = re.compile(
+    r"\b(sman|sma|smkn|smpn|smp|sdn|sd)\s*(?:negeri\s*)?(\d{1,3})\b",
+    re.IGNORECASE,
+)
+
+
+def _normalize_search_text(text: str) -> str:
+    return re.sub(r"\s+", " ", (text or "").lower()).strip()
+
+
+def _document_keyword_boost(question: str, page_content: str) -> int:
+    question_norm = _normalize_search_text(question)
+    content_norm = _normalize_search_text(page_content)
+    if not question_norm or not content_norm:
+        return 0
+
+    boost = 0
+    school_match = _SCHOOL_NUMBER_RE.search(question_norm)
+    if school_match:
+        school_kind = school_match.group(1)
+        school_no = school_match.group(2)
+        if school_kind.startswith("sma"):
+            school_variants = (
+                f"sma negeri {school_no}",
+                f"sman {school_no}",
+                f"sma {school_no}",
+                f"#### {school_no}. sma",
+                f"{school_no}. sma negeri",
+            )
+        elif school_kind.startswith("smp"):
+            school_variants = (
+                f"smp negeri {school_no}",
+                f"smpn {school_no}",
+                f"smp {school_no}",
+                f"#### {school_no}. smp",
+                f"{school_no}. smp negeri",
+            )
+        else:
+            school_variants = (
+                f"sdn {school_no}",
+                f"sd negeri {school_no}",
+                f"sd {school_no}",
+                f"{school_no}. sdn",
+            )
+        if any(variant in content_norm for variant in school_variants):
+            boost += 120
+        if school_kind[:2] in content_norm and re.search(rf"\b{re.escape(school_no)}\b", content_norm):
+            boost += 40
+
+    if "prioritas" in question_norm:
+        if "wilayah pmb prioritas" in content_norm:
+            boost += 25
+        if all(keyword in content_norm for keyword in ("prioritas pertama", "prioritas kedua", "prioritas ketiga")):
+            boost += 35
+
+    query_tokens = {
+        token
+        for token in _QUERY_TOKEN_RE.findall(question_norm)
+        if len(token) > 2 and token not in {"untuk", "yang", "dan", "atau", "dari", "sampai"}
+    }
+    boost += sum(1 for token in query_tokens if token in content_norm)
+    return boost
+
+
+def _rank_and_limit_documents(question: str, docs: list) -> list:
+    if not docs:
+        return []
+
+    max_docs = _env_int("ASKA_CONTEXT_MAX_DOCS", 4, minimum=1)
+    max_chars = _env_int("ASKA_CONTEXT_MAX_CHARS", 4500, minimum=500)
+    ranked = sorted(
+        enumerate(docs),
+        key=lambda item: (
+            -_document_keyword_boost(question, getattr(item[1], "page_content", "")),
+            item[0],
+        ),
+    )
+
+    selected = []
+    used_chars = 0
+    for _, doc in ranked:
+        text = getattr(doc, "page_content", "")
+        doc_len = len(text)
+        if selected and (len(selected) >= max_docs or used_chars + doc_len > max_chars):
+            continue
+        selected.append(doc)
+        used_chars += doc_len
+        if len(selected) >= max_docs or used_chars >= max_chars:
+            break
+    return selected
+
+
+def _iter_vectorstore_documents(vectorstore: FAISS):
+    docstore_dict = getattr(getattr(vectorstore, "docstore", None), "_dict", {})
+    if isinstance(docstore_dict, dict):
+        yield from docstore_dict.values()
+
+
+def _keyword_documents_from_vectorstore(vectorstore: FAISS, question: str, *, limit: int = 5) -> list:
+    question_norm = _normalize_search_text(question)
+    school_match = _SCHOOL_NUMBER_RE.search(question_norm)
+    if not school_match:
+        return []
+
+    school_kind = school_match.group(1)
+    school_no = school_match.group(2)
+    if school_kind.startswith("sma"):
+        variants = (
+            f"sma negeri {school_no}",
+            f"sman {school_no}",
+            f"#### {school_no}. sma",
+            f"{school_no}. sma negeri",
+        )
+    elif school_kind.startswith("smp"):
+        variants = (
+            f"smp negeri {school_no}",
+            f"smpn {school_no}",
+            f"#### {school_no}. smp",
+            f"{school_no}. smp negeri",
+        )
+    else:
+        variants = (
+            f"sdn {school_no}",
+            f"sd negeri {school_no}",
+            f"{school_no}. sdn",
+        )
+    matches = []
+    for doc in _iter_vectorstore_documents(vectorstore):
+        content = getattr(doc, "page_content", "")
+        content_norm = _normalize_search_text(content)
+        if any(variant in content_norm for variant in variants):
+            matches.append(doc)
+    matches.sort(key=lambda doc: -_document_keyword_boost(question, getattr(doc, "page_content", "")))
+    return matches[:limit]
+
+
+def _merge_documents(primary_docs: list, secondary_docs: list) -> list:
+    merged = []
+    seen = set()
+    for doc in [*primary_docs, *secondary_docs]:
+        content = getattr(doc, "page_content", "")
+        fingerprint = hashlib.sha1(content.encode("utf-8", errors="ignore")).hexdigest()
+        if fingerprint in seen:
+            continue
+        seen.add(fingerprint)
+        merged.append(doc)
+    return merged
 
 
 def _load_cached_vectorstore(
@@ -374,8 +526,24 @@ def build_qa_chain():
     # TAHAP 3: BUAT CHAIN UNTUK MENGGABUNGKAN DOKUMEN KE PROMPT
     question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
 
-    # TAHAP 4: GABUNGKAN SEMUANYA MENJADI SATU RAG CHAIN UTUH
-    # Alurnya: Input -> History-Aware Retriever -> Question-Answer Chain -> Output
-    rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+    def _retrieve_ranked_context(inputs: dict) -> list:
+        docs = history_aware_retriever.invoke(inputs)
+        question = str(inputs.get("input") or "")
+        keyword_docs = _keyword_documents_from_vectorstore(vectorstore, question)
+        combined_docs = _merge_documents(keyword_docs, docs)
+        limited_docs = _rank_and_limit_documents(question, combined_docs)
+        _embed_log_also_file(
+            f"Context limiter: semantic={len(docs)} keyword={len(keyword_docs)} "
+            f"selected={len(limited_docs)} "
+            f"chars={sum(len(getattr(doc, 'page_content', '')) for doc in limited_docs)}"
+        )
+        return limited_docs
+
+    # TAHAP 4: GABUNGKAN SEMUANYA MENJADI SATU RAG CHAIN UTUH.
+    # Retriever tetap mengambil kandidat sampai ASKA_RETRIEVAL_MAX_K, lalu konteks
+    # direrank dan dibatasi agar model gratisan tidak kelebihan token.
+    rag_chain = RunnablePassthrough.assign(
+        context=RunnableLambda(_retrieve_ranked_context)
+    ).assign(answer=question_answer_chain)
 
     return rag_chain
