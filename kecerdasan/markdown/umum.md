@@ -173,7 +173,7 @@ Untuk posko SPMB jam operasionalnya adalah senin sampai jumat kecuali hari libur
 
 # Dukcapil
 
-Jika ada masalah kependudukan baik kartu keluaga, NIK sudah terdaftar, tanggal terbit melibihi 15 juni 2025, alamat tidak sesuai, terkait status anak pada kartu keluaerga, hal tersebut bsia ditangani pada posko SPMB di SMP 30
+Jika ada masalah kependudukan baik kartu keluaga, NIK sudah terdaftar, tanggal terbit melibihi 15 juni 2025, alamat tidak sesuai, penataan, terkait status anak pada kartu keluaerga, hal tersebut bsia ditangani pada posko SPMB di SMP 30
 
 # Tentang ASKA – Agent AI Sekolah Kita 🏫🤖✨
 
