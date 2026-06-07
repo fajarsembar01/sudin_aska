@@ -7,7 +7,7 @@ venv_py39/
 .venv/
 .env
 .env.*
-
+.server
 # Cache & pyc
 __pycache__/
 *.pyc

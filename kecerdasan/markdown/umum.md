@@ -169,11 +169,11 @@ Langkah-langkah:
 untuk wilayah jakarta utara 2 posko SPMB ada di SMP 30
 Nomor call center Whatsapp (WA) khusus pesan text: 081320006875
 Nomor call center khusus telepon : 081210007568
-Untuk posko SPMB jam operasionalnya adalah senin sampai jumat kecuali hari libur di jam 08:00 - 16:00 WIB
+Untuk posko SPMB jam operasionalnya adalah senin sampai jumat kecuali hari libur di jam 08:00 - 16:00 WI
 
 # Dukcapil
 
-Jika ada masalah kependudukan baik kartu keluaga, NIK sudah terdaftar, tanggal terbit melibihi 15 juni 2025, alamat tidak sesuai, penataan, terkait status anak pada kartu keluaerga, hal tersebut bsia ditangani pada posko SPMB di SMP 30
+Jika ada masalah kependudukan baik kartu keluaga, NIK sudah terdaftar, tanggal terbit melibihi 15 juni 2025, alamat tidak sesuai, penataan, terkait status anak pada kartu keluarga, hal tersebut bsia ditangani pada posko SPMB di SMP 30
 
 # Tentang ASKA – Agent AI Sekolah Kita 🏫🤖✨
 
