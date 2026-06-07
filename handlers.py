@@ -36,6 +36,7 @@ from utils import (
     resolve_target_message,
     prepare_group_query,
     clean_aska_response,
+    ensure_aska_brand_style,
     is_llm_quota_error,
 )
 from account_status import BLOCKING_STATUSES, build_status_notice
@@ -314,7 +315,7 @@ async def handle_user_query(
             typing_task.cancel()
 
         retrieved_context = result.get("context", []) if isinstance(result, dict) else []
-        print(f"[{now_str()}] ?? ASKA AMBIL {len(retrieved_context)} KONTEN:")
+        print(f"[{now_str()}] ASKA PAKAI {len(retrieved_context)} KONTEN FINAL:")
         for i, doc in enumerate(retrieved_context, 1):
             print(f"  {i}. {doc.page_content[:200]}...")
 
@@ -330,6 +331,7 @@ async def handle_user_query(
 
         response = ASKA_NO_DATA_RESPONSE if not retrieved_context else coerce_to_text(result)
         response = clean_aska_response(response)  # ← hapus "ya?" yg dipaksakan model
+        response = ensure_aska_brand_style(response)
         if not response.strip():
             response = ASKA_NO_DATA_RESPONSE
 

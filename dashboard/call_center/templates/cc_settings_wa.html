@@ -245,6 +245,64 @@
 </div>
 
 <div class="mt-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <h6 class="mb-0"><i class="bi bi-whatsapp text-success me-2"></i>Tombol WhatsApp Login ASKA</h6>
+            {% if public_whatsapp_cta.get('updated_at') %}
+            <span class="small text-secondary">
+                Update terakhir {{ public_whatsapp_cta.get('updated_at')|jakarta }}
+                {% if public_whatsapp_cta.get('updated_by_name') %}
+                oleh {{ public_whatsapp_cta.get('updated_by_name') }}
+                {% endif %}
+            </span>
+            {% else %}
+            <span class="badge text-bg-secondary">Fallback bridge/env</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('call_center.settings_wa') }}" class="row g-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="save_public_whatsapp_cta">
+                <input type="hidden" name="selected_bridge_key" value="{{ selected_bridge_key }}">
+                <div class="col-md-4">
+                    <label for="publicWaNumber" class="form-label small mb-1">Nomor WhatsApp Publik</label>
+                    <input type="text" class="form-control form-control-sm" id="publicWaNumber"
+                        name="public_wa_number" value="{{ public_whatsapp_number or '' }}"
+                        placeholder="62812xxxx" required>
+                    <div class="form-text">Dipakai tombol WhatsApp di halaman login web_aska.</div>
+                </div>
+                <div class="col-md-8">
+                    <label for="publicOpeningMessage" class="form-label small mb-1">Tulisan Pembuka</label>
+                    <textarea class="form-control form-control-sm" id="publicOpeningMessage"
+                        name="public_opening_message" rows="3"
+                        required>{{ public_whatsapp_message or '' }}</textarea>
+                </div>
+                <div class="col-12 d-flex flex-wrap gap-2 align-items-center">
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="bi bi-save me-1"></i>Simpan Tombol Login
+                    </button>
+                    {% if public_whatsapp_preview_url %}
+                    <a href="{{ public_whatsapp_preview_url }}" class="btn btn-outline-success btn-sm"
+                        target="_blank" rel="noopener">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Preview WhatsApp
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+            <form method="post" action="{{ url_for('call_center.settings_wa') }}" class="mt-2 text-end">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="reset_public_whatsapp_cta">
+                <input type="hidden" name="selected_bridge_key" value="{{ selected_bridge_key }}">
+                <button type="submit" class="btn btn-outline-secondary btn-sm"
+                    onclick="return confirm('Reset setting tombol WhatsApp login ke fallback bridge/env?')">
+                    Reset
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-transparent d-flex justify-content-between align-items-center gap-2">
                 <h6 class="mb-0"><i class="bi bi-sliders text-primary me-2"></i>Form Akun Bridge</h6>

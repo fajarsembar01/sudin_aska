@@ -15,6 +15,7 @@ from datetime import datetime
 from math import ceil
 from pathlib import Path
 from typing import Optional
+from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
 import requests
@@ -83,6 +84,10 @@ from .queries import (
     save_cc_wa_bridge_account,
     delete_cc_wa_bridge_account,
     get_default_cc_wa_bridge_account,
+    fetch_cc_public_whatsapp_cta_settings,
+    upsert_cc_public_whatsapp_cta_settings,
+    delete_cc_public_whatsapp_cta_settings,
+    CC_PUBLIC_WHATSAPP_DEFAULT_MESSAGE,
     fetch_cc_statistics,
 )
 from . import call_center_api_bp, call_center_bp
@@ -348,6 +353,16 @@ def _to_bool_flag(raw_value) -> bool:
 def _settings_wa_redirect(bridge_key: Optional[str] = None) -> Response:
     key = normalize_cc_bridge_key(bridge_key)
     return redirect(url_for("call_center.settings_wa", bridge_key=key))
+
+
+def _format_public_whatsapp_url(number: Optional[str], message: Optional[str]) -> str:
+    digits = _normalize_wa_user_id(number or "")
+    if not digits:
+        return ""
+    if digits.startswith("0"):
+        digits = f"62{digits[1:]}"
+    text = (message or CC_PUBLIC_WHATSAPP_DEFAULT_MESSAGE).strip()
+    return f"https://wa.me/{digits}?text={quote(text, safe='')}"
 
 
 def _normalize_bridge_filter(raw_value: Optional[str]) -> tuple[str, Optional[str]]:
@@ -1932,6 +1947,35 @@ def settings_wa() -> Response:
             except Exception as exc:
                 flash(f"Aksi bridge '{bridge_key}' gagal: {exc}", "danger")
 
+        elif action == "save_public_whatsapp_cta":
+            wa_number = _normalize_wa_user_id(request.form.get("public_wa_number") or "")
+            opening_message = (request.form.get("public_opening_message") or "").strip()
+            if not wa_number:
+                flash("Nomor WhatsApp tombol login wajib diisi.", "warning")
+            else:
+                row = upsert_cc_public_whatsapp_cta_settings(
+                    wa_number=wa_number,
+                    opening_message=opening_message,
+                    updated_by=actor.get("id"),
+                )
+                try:
+                    record_admin_action(
+                        user_id=actor.get("id"),
+                        feature_key="call_center",
+                        action="UPDATE",
+                        target_type="CALL_CENTER_PUBLIC_WHATSAPP_CTA",
+                        target_name=f"WA {row.get('wa_number')}",
+                    )
+                except Exception:
+                    pass
+                flash("Tombol WhatsApp login ASKA disimpan.", "success")
+
+        elif action == "reset_public_whatsapp_cta":
+            if delete_cc_public_whatsapp_cta_settings():
+                flash("Setting tombol WhatsApp login direset ke fallback bridge/env.", "success")
+            else:
+                flash("Setting tombol WhatsApp login belum pernah disimpan.", "info")
+
         return _settings_wa_redirect(selected_bridge_key)
 
     ensure_default_cc_wa_bridge_account(updated_by=actor.get("id"))
@@ -1971,6 +2015,21 @@ def settings_wa() -> Response:
         )
 
     route_summary = summarize_cc_wa_routing(bridge_key=route_bridge_key)
+    public_whatsapp_cta = fetch_cc_public_whatsapp_cta_settings()
+    fallback_public_number = (
+        bridge_status.get("whatsappNumber")
+        or selected_bridge.get("wa_number_hint")
+        or _project_env_value("ASKA_WHATSAPP_URL", "082143646463")
+    )
+    public_whatsapp_number = public_whatsapp_cta.get("wa_number") or _normalize_wa_user_id(fallback_public_number)
+    public_whatsapp_message = (
+        public_whatsapp_cta.get("opening_message")
+        or CC_PUBLIC_WHATSAPP_DEFAULT_MESSAGE
+    )
+    public_whatsapp_preview_url = _format_public_whatsapp_url(
+        public_whatsapp_number,
+        public_whatsapp_message,
+    )
     return render_template(
         "cc_settings_wa.html",
         bridge_status=bridge_status,
@@ -1987,6 +2046,10 @@ def settings_wa() -> Response:
         route_total=route_total,
         route_total_pages=route_total_pages,
         route_page_size=route_page_size,
+        public_whatsapp_cta=public_whatsapp_cta,
+        public_whatsapp_number=public_whatsapp_number,
+        public_whatsapp_message=public_whatsapp_message,
+        public_whatsapp_preview_url=public_whatsapp_preview_url,
     )
 
 

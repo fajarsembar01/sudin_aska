@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from langchain.chains import create_history_aware_retriever
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_community.vectorstores import FAISS
+from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -77,10 +78,177 @@ _SCHOOL_NUMBER_RE = re.compile(
     r"\b(sman|sma|smkn|smpn|smp|sdn|sd)\s*(?:negeri\s*)?(\d{1,3})\b",
     re.IGNORECASE,
 )
+_SD_NAMED_RE = re.compile(
+    r"\b(?:sdn|sd\s*n|sd\s+negeri|sd)\s+([a-z]+(?:\s+[a-z]+){0,6}?)\s+(\d{1,2})(?:\s+(?:jakarta|pagi|pg))?\b",
+    re.IGNORECASE,
+)
+_SPMB_TERMS = ("spmb", "pmb", "penerimaan murid baru")
+_SCHEDULE_TERMS = ("jadwal", "kapan", "pendaftaran", "pengajuan akun", "daftar ulang")
+_PMB_LEVELS = ("spaud", "sd", "smp", "sma", "smk", "slb", "skb")
+_SCHOOL_LEVEL_PATTERNS = {
+    "sd": re.compile(r"\b(?:sdn|sd\s*n|sd\s+negeri|sd|sekolah dasar)\b", re.IGNORECASE),
+    "smp": re.compile(r"\b(?:smpn|smp\s+negeri|smp|sekolah menengah pertama)\b", re.IGNORECASE),
+    "sma": re.compile(r"\b(?:sman|sma\s+negeri|sma|sekolah menengah atas)\b", re.IGNORECASE),
+    "smk": re.compile(r"\b(?:smkn|smk\s+negeri|smk|sekolah menengah kejuruan)\b", re.IGNORECASE),
+}
+_LOCATION_QUERY_PATTERNS = (
+    re.compile(r"\b(?:rumah|tinggal|domisili|alamat)(?:\s+(?:saya|aku|kami|anak|cmb|calon murid)){0,3}\s+(?:ada\s+)?(?:di|dari)\s+([a-z]+(?:\s+[a-z]+){0,5})", re.IGNORECASE),
+    re.compile(r"\b(?:kelurahan|kel\.?)\s+([a-z]+(?:\s+[a-z]+){0,5})", re.IGNORECASE),
+)
+_LOCATION_TRAILING_STOPWORDS = {
+    "apa",
+    "atau",
+    "buat",
+    "dan",
+    "dekat",
+    "dong",
+    "jakarta",
+    "kalau",
+    "ke",
+    "kec",
+    "kecamatan",
+    "kel",
+    "kelurahan",
+    "pilih",
+    "saja",
+    "sekolah",
+    "sih",
+    "smp",
+    "sma",
+    "sd",
+    "smk",
+    "untuk",
+    "ya",
+    "yang",
+}
+_ASKA_PROFILE_MARKERS = (
+    "## apa itu aska",
+    "## manfaat aska",
+    "## tujuan pembuatan",
+    "agent ai sekolah kita",
+)
 
 
 def _normalize_search_text(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").lower()).strip()
+
+
+def _contains_phrase(text: str, phrase: str) -> bool:
+    return re.search(rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])", text) is not None
+
+
+def _has_any(text: str, terms: tuple[str, ...]) -> bool:
+    return any(term in text for term in terms)
+
+
+def _is_spmb_schedule_query(question_norm: str) -> bool:
+    return _has_any(question_norm, _SPMB_TERMS) and _has_any(question_norm, _SCHEDULE_TERMS)
+
+
+def _requested_pmb_levels(question_norm: str) -> tuple[str, ...]:
+    return tuple(level for level in _PMB_LEVELS if re.search(rf"\b{level}\b", question_norm))
+
+
+def _requested_school_levels(question_norm: str) -> tuple[str, ...]:
+    return tuple(level for level, pattern in _SCHOOL_LEVEL_PATTERNS.items() if pattern.search(question_norm))
+
+
+def _doc_matches_school_level(content_norm: str, level: str) -> bool:
+    if level == "sd":
+        return (
+            "wilayah pmb prioritas" in content_norm
+            and (
+                re.search(r"####\s*\d+\.\s+sdn\b", content_norm)
+                or re.search(r"####\s*\d+\.\s+sd\s*n\b", content_norm)
+            )
+        )
+    if level == "smp":
+        return "wilayah pmb prioritas" in content_norm and re.search(r"####\s*\d+\.\s+smp negeri\b", content_norm)
+    if level == "sma":
+        return "wilayah pmb prioritas" in content_norm and re.search(r"####\s*\d+\.\s+sma negeri\b", content_norm)
+    if level == "smk":
+        return "wilayah pmb prioritas" in content_norm and re.search(r"####\s*\d+\.\s+smk negeri\b", content_norm)
+    return False
+
+
+def _clean_location_phrase(value: str) -> str:
+    tokens = _QUERY_TOKEN_RE.findall(_normalize_search_text(value))
+    kept = []
+    for token in tokens:
+        if token in _LOCATION_TRAILING_STOPWORDS:
+            break
+        kept.append(token)
+    return " ".join(kept[:4])
+
+
+def _extract_residence_location(question_norm: str) -> str:
+    for pattern in _LOCATION_QUERY_PATTERNS:
+        match = pattern.search(question_norm)
+        if not match:
+            continue
+        location = _clean_location_phrase(match.group(1))
+        if len(location) >= 3:
+            return location
+    return ""
+
+
+def _location_priority_score(content_norm: str, location: str) -> int:
+    best = 0
+    for match in re.finditer(rf"(?<![a-z0-9]){re.escape(location)}(?![a-z0-9])", content_norm):
+        nearby_before = content_norm[max(0, match.start() - 260):match.start()]
+        if "prioritas pertama" in nearby_before:
+            best = max(best, 360)
+        elif "prioritas kedua" in nearby_before:
+            best = max(best, 220)
+        elif "prioritas ketiga" in nearby_before:
+            best = max(best, 90)
+        else:
+            best = max(best, 30)
+    return best
+
+
+def _school_block_key(block: str) -> str:
+    match = re.search(r"^####\s+\d+\.\s+(.+)$", block, flags=re.MULTILINE)
+    if match:
+        return _normalize_search_text(match.group(1))
+    return hashlib.sha1(block.encode("utf-8", errors="ignore")).hexdigest()
+
+
+def _sd_named_variants(question_norm: str) -> tuple[str, ...]:
+    match = _SD_NAMED_RE.search(question_norm)
+    if not match:
+        return ()
+    school_name = re.sub(r"\s+", " ", match.group(1)).strip()
+    school_no = (match.group(2).lstrip("0") or "0")
+    school_no_padded = school_no.zfill(2)
+    return (
+        f"sdn {school_name} {school_no_padded}",
+        f"sdn {school_name} {school_no}",
+        f"sd n {school_name} {school_no_padded}",
+        f"sd n {school_name} {school_no}",
+        f"sd negeri {school_name} {school_no_padded}",
+        f"sd negeri {school_name} {school_no}",
+    )
+
+
+def _looks_like_spmb_schedule_content(content_norm: str) -> bool:
+    has_summary_schedule = (
+        "ringkasan jadwal spmb" in content_norm
+        or "ringkasan jadwal spmb/pmb" in content_norm
+        or "ringkasan jadwal pendaftaran utama" in content_norm
+    )
+    has_schedule_rows = all(marker in content_norm for marker in ("kegiatan:", "tanggal:", "waktu:"))
+    has_account_schedule = (
+        "pengajuan akun dan verifikasi kartu keluarga" in content_norm
+        or "jadwal pengajuan akun" in content_norm
+        or "jadwal pengajuan akun/verifikasi kk" in content_norm
+    )
+    has_pmb_context = _has_any(content_norm, _SPMB_TERMS) or re.search(
+        r"\bpmb\s+(sd|smp|sma|smk|slb|skb|spaud)\b",
+        content_norm,
+    )
+    has_current_year = "2026" in content_norm or "2026/2027" in content_norm
+    return bool(has_summary_schedule or ((has_schedule_rows or has_account_schedule) and (has_pmb_context or has_current_year)))
 
 
 def _document_keyword_boost(question: str, page_content: str) -> int:
@@ -90,6 +258,23 @@ def _document_keyword_boost(question: str, page_content: str) -> int:
         return 0
 
     boost = 0
+    residence_location = _extract_residence_location(question_norm)
+    requested_school_levels = _requested_school_levels(question_norm)
+    if residence_location and _contains_phrase(content_norm, residence_location):
+        priority_score = _location_priority_score(content_norm, residence_location)
+        if priority_score:
+            boost += priority_score
+            if requested_school_levels and any(_doc_matches_school_level(content_norm, level) for level in requested_school_levels):
+                boost += 180
+            elif requested_school_levels:
+                boost -= 80
+
+    sd_named_variants = _sd_named_variants(question_norm)
+    if sd_named_variants and any(_contains_phrase(content_norm, variant) for variant in sd_named_variants):
+        boost += 160
+        if "wilayah pmb prioritas" in content_norm:
+            boost += 60
+
     school_match = _SCHOOL_NUMBER_RE.search(question_norm)
     if school_match:
         school_kind = school_match.group(1)
@@ -101,6 +286,14 @@ def _document_keyword_boost(question: str, page_content: str) -> int:
                 f"sma {school_no}",
                 f"#### {school_no}. sma",
                 f"{school_no}. sma negeri",
+            )
+        elif school_kind.startswith("smk"):
+            school_variants = (
+                f"smk negeri {school_no}",
+                f"smkn {school_no}",
+                f"smk {school_no}",
+                f"#### {school_no}. smk",
+                f"{school_no}. smk negeri",
             )
         elif school_kind.startswith("smp"):
             school_variants = (
@@ -117,7 +310,7 @@ def _document_keyword_boost(question: str, page_content: str) -> int:
                 f"sd {school_no}",
                 f"{school_no}. sdn",
             )
-        if any(variant in content_norm for variant in school_variants):
+        if any(_contains_phrase(content_norm, variant) for variant in school_variants):
             boost += 120
         if school_kind[:2] in content_norm and re.search(rf"\b{re.escape(school_no)}\b", content_norm):
             boost += 40
@@ -128,10 +321,43 @@ def _document_keyword_boost(question: str, page_content: str) -> int:
         if all(keyword in content_norm for keyword in ("prioritas pertama", "prioritas kedua", "prioritas ketiga")):
             boost += 35
 
+    if _is_spmb_schedule_query(question_norm):
+        requested_levels = _requested_pmb_levels(question_norm)
+        if _has_any(content_norm, _ASKA_PROFILE_MARKERS):
+            boost -= 120
+        if "ringkasan jadwal spmb" in content_norm or "ringkasan jadwal spmb/pmb" in content_norm:
+            boost += 260
+        if _looks_like_spmb_schedule_content(content_norm):
+            boost += 140
+        for level in requested_levels:
+            if re.search(rf"\bpmb\s+{level}\b", content_norm):
+                boost += 180
+            if re.search(rf"#+\s*\d+\)?\s*pmb\s+{level}\b", content_norm):
+                boost += 80
+            if (
+                "pengajuan akun dan verifikasi kartu keluarga" in content_norm
+                and re.search(rf"\b{level}\s*:", content_norm)
+            ):
+                boost += 40
+        if "bab iv. pendaftaran" in content_norm:
+            boost += 50
+        if "jadwal pendaftaran" in content_norm:
+            boost += 70
+        if "pengajuan akun dan verifikasi kartu keluarga" in content_norm:
+            boost += 70
+        if "spmb.jakarta.go.id" in content_norm:
+            boost += 25
+        if "2026/2027" in content_norm:
+            boost += 35
+        if "2026" in content_norm:
+            boost += 20
+        if "2025" in content_norm and "2026" not in content_norm:
+            boost -= 70
+
     query_tokens = {
         token
         for token in _QUERY_TOKEN_RE.findall(question_norm)
-        if len(token) > 2 and token not in {"untuk", "yang", "dan", "atau", "dari", "sampai"}
+        if len(token) > 2 and token not in {"untuk", "yang", "dan", "atau", "dari", "sampai", "tanya"}
     }
     boost += sum(1 for token in query_tokens if token in content_norm)
     return boost
@@ -171,11 +397,74 @@ def _iter_vectorstore_documents(vectorstore: FAISS):
         yield from docstore_dict.values()
 
 
+def _location_documents_from_vectorstore(vectorstore: FAISS, question: str, *, limit: int = 8) -> list:
+    question_norm = _normalize_search_text(question)
+    location = _extract_residence_location(question_norm)
+    requested_levels = _requested_school_levels(question_norm)
+    if not location or not requested_levels:
+        return []
+
+    matches = []
+    seen_blocks = set()
+    for doc in _iter_vectorstore_documents(vectorstore):
+        content = getattr(doc, "page_content", "")
+        content_norm = _normalize_search_text(content)
+        if not _contains_phrase(content_norm, location):
+            continue
+
+        blocks = [
+            block.strip()
+            for block in re.split(r"(?=^####\s+\d+\.\s+)", content, flags=re.MULTILINE)
+            if block.strip()
+        ]
+        for block in blocks or [content]:
+            block_norm = _normalize_search_text(block)
+            if not _contains_phrase(block_norm, location):
+                continue
+            if not any(_doc_matches_school_level(block_norm, level) for level in requested_levels):
+                continue
+            if not _location_priority_score(block_norm, location):
+                continue
+            block_key = _school_block_key(block)
+            if block_key in seen_blocks:
+                continue
+            seen_blocks.add(block_key)
+            matches.append(Document(page_content=block))
+
+    matches.sort(key=lambda doc: -_document_keyword_boost(question, getattr(doc, "page_content", "")))
+    return matches[:limit]
+
+
 def _keyword_documents_from_vectorstore(vectorstore: FAISS, question: str, *, limit: int = 5) -> list:
     question_norm = _normalize_search_text(question)
+    location_docs = _location_documents_from_vectorstore(vectorstore, question, limit=limit)
+    if location_docs:
+        return location_docs
+
     school_match = _SCHOOL_NUMBER_RE.search(question_norm)
     if not school_match:
-        return []
+        sd_named_variants = _sd_named_variants(question_norm)
+        if sd_named_variants:
+            matches = []
+            for doc in _iter_vectorstore_documents(vectorstore):
+                content = getattr(doc, "page_content", "")
+                content_norm = _normalize_search_text(content)
+                if any(_contains_phrase(content_norm, variant) for variant in sd_named_variants):
+                    matches.append(doc)
+            matches.sort(key=lambda doc: -_document_keyword_boost(question, getattr(doc, "page_content", "")))
+            return matches[:limit]
+
+        if not _is_spmb_schedule_query(question_norm):
+            return []
+
+        matches = []
+        for doc in _iter_vectorstore_documents(vectorstore):
+            content = getattr(doc, "page_content", "")
+            content_norm = _normalize_search_text(content)
+            if _looks_like_spmb_schedule_content(content_norm):
+                matches.append(doc)
+        matches.sort(key=lambda doc: -_document_keyword_boost(question, getattr(doc, "page_content", "")))
+        return matches[:limit]
 
     school_kind = school_match.group(1)
     school_no = school_match.group(2)
@@ -185,6 +474,13 @@ def _keyword_documents_from_vectorstore(vectorstore: FAISS, question: str, *, li
             f"sman {school_no}",
             f"#### {school_no}. sma",
             f"{school_no}. sma negeri",
+        )
+    elif school_kind.startswith("smk"):
+        variants = (
+            f"smk negeri {school_no}",
+            f"smkn {school_no}",
+            f"#### {school_no}. smk",
+            f"{school_no}. smk negeri",
         )
     elif school_kind.startswith("smp"):
         variants = (
@@ -203,7 +499,7 @@ def _keyword_documents_from_vectorstore(vectorstore: FAISS, question: str, *, li
     for doc in _iter_vectorstore_documents(vectorstore):
         content = getattr(doc, "page_content", "")
         content_norm = _normalize_search_text(content)
-        if any(variant in content_norm for variant in variants):
+        if any(_contains_phrase(content_norm, variant) for variant in variants):
             matches.append(doc)
     matches.sort(key=lambda doc: -_document_keyword_boost(question, getattr(doc, "page_content", "")))
     return matches[:limit]
@@ -220,6 +516,38 @@ def _merge_documents(primary_docs: list, secondary_docs: list) -> list:
         seen.add(fingerprint)
         merged.append(doc)
     return merged
+
+
+def _history_text_for_keywords(inputs: dict, *, max_messages: int = 4) -> str:
+    messages = inputs.get("chat_history") or []
+    parts = []
+    for message in list(messages)[-max_messages:]:
+        content = getattr(message, "content", "")
+        if content:
+            parts.append(str(content))
+    return " ".join(parts)
+
+
+def _needs_history_for_keywords(question: str) -> bool:
+    question_norm = _normalize_search_text(question)
+    if _SCHOOL_NUMBER_RE.search(question_norm) or _sd_named_variants(question_norm):
+        return False
+    if _extract_residence_location(question_norm):
+        return False
+    if _is_spmb_schedule_query(question_norm):
+        return False
+    tokens = _QUERY_TOKEN_RE.findall(question_norm)
+    if len(tokens) <= 4 and _has_any(question_norm, ("apa", "mana", "iya", "itu", "sekolah")):
+        return True
+    return False
+
+
+def _keyword_query_from_inputs(inputs: dict) -> str:
+    question = str(inputs.get("input") or "")
+    if not _needs_history_for_keywords(question):
+        return question
+    history_text = _history_text_for_keywords(inputs)
+    return f"{question} {history_text}".strip()
 
 
 def _load_cached_vectorstore(
@@ -512,7 +840,18 @@ def build_qa_chain():
     # Prompt ini akan menerima dokumen (context) dari retriever di atas.
     qa_prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", "Nama aku ASKA. Jawab pertanyaan dengan gaya santai, ramah, dan ringkas. "
+            ("system", "Nama aku ASKA. Jawab dengan Bahasa Indonesia santai ala Gen Z, ramah, sopan, dan ringkas. "
+                     "Untuk setiap jawaban normal, WAJIB pakai 1-3 emoji yang relevan dan boleh pakai slang ringan seperlunya seperti 'sip', 'sat-set', 'biar nggak zonk', atau 'gas'. "
+                     "Jangan terlalu kaku/formal; tetap jelas untuk informasi resmi sekolah. "
+                     "Untuk pesan terima kasih/pujian singkat, balas singkat ala Gen Z dengan 1-2 emoji, tanpa perlu mengambil konteks. "
+                     "Dalam konteks data ini, SPMB/PMB berarti Penerimaan Murid Baru, bukan mahasiswa baru. "
+                     "Jika user menanyakan jadwal SPMB/PMB secara umum tanpa jenjang atau jalur, jelaskan bahwa jadwal berbeda per jenjang/jalur, "
+                     "sebutkan ringkasan yang ada di konteks, lalu arahkan user menyebut jenjang/jalur jika ingin detail. "
+                     "Untuk jadwal, pertahankan nama jalur/tahap persis dari konteks; jangan mengubah 'afirmasi prioritas kedua' menjadi 'tahap kedua'. "
+                     "Jika user minta saran memilih sekolah berdasarkan domisili/kelurahan, sebutkan nama sekolah yang ada di konteks, "
+                     "kelompokkan berdasarkan Prioritas Pertama/Kedua/Ketiga jika tersedia, dan minta RT/RW jika diperlukan untuk memastikan pilihan paling tepat. "
+                     "Jika user bertanya lanjutan seperti 'SMP apa?' atau 'sekolah apa?', jawab nama sekolahnya dulu; jangan hanya meminta RT/RW. "
+                     "Jika RT/RW belum diketahui, jangan merinci RT/RW secara berlebihan; cukup sebutkan kandidat sekolah dan minta RT/RW untuk verifikasi. "
                      "Selalu sebut nama **'ASKA'** secara alami. Jawab hanya berdasarkan konteks. "
                      "Jika konteks kosong atau tidak memuat jawaban yang relevan, jawab persis: "
                      "\"ASKA belum punya data resmi untuk pertanyaan itu.\" "
@@ -529,9 +868,10 @@ def build_qa_chain():
     def _retrieve_ranked_context(inputs: dict) -> list:
         docs = history_aware_retriever.invoke(inputs)
         question = str(inputs.get("input") or "")
-        keyword_docs = _keyword_documents_from_vectorstore(vectorstore, question)
+        keyword_query = _keyword_query_from_inputs(inputs)
+        keyword_docs = _keyword_documents_from_vectorstore(vectorstore, keyword_query)
         combined_docs = _merge_documents(keyword_docs, docs)
-        limited_docs = _rank_and_limit_documents(question, combined_docs)
+        limited_docs = _rank_and_limit_documents(keyword_query, combined_docs)
         _embed_log_also_file(
             f"Context limiter: semantic={len(docs)} keyword={len(keyword_docs)} "
             f"selected={len(limited_docs)} "

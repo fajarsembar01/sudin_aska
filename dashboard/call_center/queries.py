@@ -16,8 +16,13 @@ _CC_MESSAGES_MEDIA_SCHEMA_READY = False
 _CC_WA_ROUTING_SCHEMA_READY = False
 _CC_WA_ROUTE_MODES = {"manual", "ai"}
 _CC_BRIDGE_ACCOUNTS_SCHEMA_READY = False
+_CC_PUBLIC_WHATSAPP_CTA_SCHEMA_READY = False
 _CC_BRIDGE_DEFAULT_KEY = "main"
 _CC_BRIDGE_KEY_RE = re.compile(r"[^a-z0-9_-]+")
+CC_PUBLIC_WHATSAPP_DEFAULT_MESSAGE = (
+    "Halo ASKA! Aku mau tanya-tanya soal info SPMB nih. "
+    "Bantu aku cari jawaban yang paling update, jelas, dan sat set ya. Thanks bestie!"
+)
 
 
 def _ensure_cc_messages_media_schema() -> None:
@@ -822,6 +827,92 @@ def get_default_cc_wa_bridge_account() -> dict:
     if accounts:
         return accounts[0]
     return ensure_default_cc_wa_bridge_account()
+
+
+def _ensure_cc_public_whatsapp_cta_schema() -> None:
+    global _CC_PUBLIC_WHATSAPP_CTA_SCHEMA_READY
+    if _CC_PUBLIC_WHATSAPP_CTA_SCHEMA_READY:
+        return
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS cc_public_whatsapp_cta_settings (
+                id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+                wa_number TEXT,
+                opening_message TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+            )
+            """
+        )
+    _CC_PUBLIC_WHATSAPP_CTA_SCHEMA_READY = True
+
+
+def fetch_cc_public_whatsapp_cta_settings() -> dict:
+    _ensure_cc_public_whatsapp_cta_schema()
+    try:
+        with get_cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    s.wa_number,
+                    s.opening_message,
+                    s.updated_at,
+                    s.updated_by,
+                    u.full_name AS updated_by_name,
+                    u.email AS updated_by_email
+                FROM cc_public_whatsapp_cta_settings s
+                LEFT JOIN dashboard_users u ON u.id = s.updated_by
+                WHERE s.id = 1
+                LIMIT 1
+                """
+            )
+            row = cur.fetchone()
+        return dict(row) if row else {}
+    except Exception:
+        return {}
+
+
+def upsert_cc_public_whatsapp_cta_settings(
+    *,
+    wa_number: Optional[str],
+    opening_message: Optional[str],
+    updated_by: Optional[int] = None,
+) -> dict:
+    _ensure_cc_public_whatsapp_cta_schema()
+    clean_number = _normalize_wa_user_id(wa_number) or None
+    clean_message = str(opening_message or "").strip() or CC_PUBLIC_WHATSAPP_DEFAULT_MESSAGE
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO cc_public_whatsapp_cta_settings (
+                id, wa_number, opening_message, updated_by, updated_at
+            )
+            VALUES (1, %(wa_number)s, %(opening_message)s, %(updated_by)s, NOW())
+            ON CONFLICT (id) DO UPDATE SET
+                wa_number = EXCLUDED.wa_number,
+                opening_message = EXCLUDED.opening_message,
+                updated_by = EXCLUDED.updated_by,
+                updated_at = NOW()
+            RETURNING wa_number, opening_message, updated_at, updated_by
+            """,
+            {
+                "wa_number": clean_number,
+                "opening_message": clean_message,
+                "updated_by": updated_by,
+            },
+        )
+        row = cur.fetchone()
+    return dict(row) if row else {}
+
+
+def delete_cc_public_whatsapp_cta_settings() -> bool:
+    _ensure_cc_public_whatsapp_cta_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM cc_public_whatsapp_cta_settings WHERE id = 1")
+        return cur.rowcount > 0
 
 
 def list_cc_bridge_keys_in_use() -> list[str]:

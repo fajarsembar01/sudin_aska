@@ -96,6 +96,7 @@ def normalize_input(text):
     text = re.sub(r"\bsmpn\s*(\d{1,3})\b", r"smp negeri \1 jakarta", text)
     text = re.sub(r"\bsmp\s*(\d{1,3})\b", r"smp negeri \1 jakarta", text)
     text = re.sub(r"\bsdn\s*([a-z ]+?)\s*(\d{1,2})\b", r"sdn \1 \2 jakarta", text)
+    text = re.sub(r"\bjakarta(?:\s+jakarta)+\b", "jakarta", text)
     return text
 
 
@@ -111,6 +112,9 @@ def strip_markdown(text):
 
 
 _SIGNATURE_RE = re.compile(r"(?:\s*\n)?[-–—]\s*ASKA\s*$", re.IGNORECASE)
+_EMOJI_RE = re.compile(r"[\U00010000-\U0010FFFF\u2600-\u27BF\u2B00-\u2BFF\uFE00-\uFE0F]")
+_NO_DATA_RE = re.compile(r"^\s*ASKA belum punya data resmi", re.IGNORECASE)
+_TECHNICAL_RE = re.compile(r"^\s*(?:⚠️|😵|🤖|Maaf).*gangguan teknis", re.IGNORECASE)
 
 
 def remove_trailing_signature(text: Optional[str]) -> str:
@@ -119,6 +123,28 @@ def remove_trailing_signature(text: Optional[str]) -> str:
         text = str(text or "")
     cleaned = _SIGNATURE_RE.sub("", text)
     return cleaned.rstrip()
+
+
+def ensure_aska_brand_style(text: Optional[str]) -> str:
+    """Make normal ASKA answers keep brand voice even when the model is stiff."""
+    if not isinstance(text, str):
+        text = str(text or "")
+    cleaned = text.strip()
+    if not cleaned:
+        return cleaned
+    if _NO_DATA_RE.search(cleaned) or _TECHNICAL_RE.search(cleaned):
+        return cleaned
+
+    has_aska = re.search(r"\bASKA\b", cleaned, re.IGNORECASE) is not None
+    has_emoji = _EMOJI_RE.search(cleaned) is not None
+
+    if has_aska and has_emoji:
+        return cleaned
+    if has_aska:
+        return f"{cleaned} ✨"
+    if has_emoji:
+        return f"ASKA cek nih 👇\n\n{cleaned}"
+    return f"ASKA cek nih 👇\n\n{cleaned}"
 
 
 def _iter_exception_chain(exc: BaseException):

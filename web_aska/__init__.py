@@ -8,6 +8,7 @@ import secrets
 import re
 from pathlib import Path
 from datetime import datetime, timezone
+from urllib.parse import parse_qs, quote, urlparse
 from flask import Flask, request, jsonify, render_template, session, redirect, url_for, flash, send_from_directory, abort, make_response
 from authlib.integrations.flask_client import OAuth
 from dotenv import dotenv_values
@@ -41,6 +42,15 @@ from responses import detect_bullying_category, is_corruption_report_intent
 from reporting_flags import reporting_enabled
 from utils import current_jakarta_time, normalize_input, replace_bot_mentions, to_jakarta
 
+try:
+    from dashboard.call_center.queries import (
+        fetch_cc_public_whatsapp_cta_settings,
+        get_cc_wa_bridge_account,
+    )
+except Exception:
+    fetch_cc_public_whatsapp_cta_settings = None
+    get_cc_wa_bridge_account = None
+
 LIMIT_BLOCK_MESSAGE = (
     f"Ups! Kuota {DEFAULT_LIMITED_QUOTA} chat untuk akses Gmail sudah habis. "
     "Tunggu hitung mundur selesai atau login pakai akun belajar.id / Telegram biar bebas limit ya! 🚀"
@@ -48,6 +58,11 @@ LIMIT_BLOCK_MESSAGE = (
 GMAIL_ALLOWED_DOMAINS = {"gmail.com", "googlemail.com"}
 WEB_BOT_USERNAME = "ASKA_WEB"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_WHATSAPP_NUMBER = "082143646463"
+WHATSAPP_LOGIN_MESSAGE = (
+    "Halo ASKA! Aku mau tanya-tanya soal info SPMB nih. "
+    "Bantu aku cari jawaban yang paling update, jelas, dan sat set ya. Thanks bestie!"
+)
 
 
 def _env_value(name: str, default: str = "") -> str:
@@ -151,6 +166,50 @@ def create_app() -> Flask:
         if raw.endswith("/portal/register"):
             return raw
         return f"{raw}/portal/register"
+
+    def _normalize_whatsapp_number(raw_value: str) -> str:
+        clean = (raw_value or "").strip()
+        digits = ""
+        if clean:
+            parse_target = clean
+            if not parse_target.startswith(("http://", "https://")):
+                parse_target = f"https://{parse_target}"
+            parsed = urlparse(parse_target)
+            host = (parsed.netloc or "").lower()
+            if "api.whatsapp.com" in host:
+                phone_values = parse_qs(parsed.query).get("phone") or []
+                digits = "".join(ch for ch in (phone_values[0] if phone_values else "") if ch.isdigit())
+            elif "wa.me" in host:
+                digits = "".join(ch for ch in parsed.path.strip("/").split("/")[0] if ch.isdigit())
+            if not digits:
+                digits = "".join(ch for ch in clean if ch.isdigit())
+        if not digits:
+            digits = "".join(ch for ch in DEFAULT_WHATSAPP_NUMBER if ch.isdigit())
+        if digits.startswith("0"):
+            digits = f"62{digits[1:]}"
+        return digits
+
+    def _whatsapp_login_url() -> str:
+        settings = {}
+        if fetch_cc_public_whatsapp_cta_settings:
+            try:
+                settings = fetch_cc_public_whatsapp_cta_settings()
+            except Exception:
+                settings = {}
+        bridge_account = {}
+        if get_cc_wa_bridge_account:
+            try:
+                bridge_account = get_cc_wa_bridge_account("main") or {}
+            except Exception:
+                bridge_account = {}
+        raw_number = (
+            settings.get("wa_number")
+            or bridge_account.get("wa_number_hint")
+            or _env_value("ASKA_WHATSAPP_URL", DEFAULT_WHATSAPP_NUMBER)
+        )
+        opening_message = settings.get("opening_message") or WHATSAPP_LOGIN_MESSAGE
+        number = _normalize_whatsapp_number(raw_number)
+        return f"https://wa.me/{number}?text={quote(opening_message, safe='')}"
 
     def _normalize_url(value: str) -> str:
         clean = (value or "").strip()
@@ -606,7 +665,13 @@ def create_app() -> Flask:
     def login_page():
         if session.get("user"):
             return redirect(url_for("index"))
-        response = make_response(render_template("login.html", portal_register_url=_portal_register_url()))
+        response = make_response(
+            render_template(
+                "login.html",
+                portal_register_url=_portal_register_url(),
+                whatsapp_login_url=_whatsapp_login_url(),
+            )
+        )
         return _add_no_cache_headers(response)
 
     @app.route('/login')

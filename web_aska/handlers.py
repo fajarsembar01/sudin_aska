@@ -31,6 +31,7 @@ from utils import (
     rewrite_schedule_query,
     replace_bot_mentions,
     remove_trailing_signature,
+    ensure_aska_brand_style,
     is_llm_quota_error,
 )
 from flows.safety_flow import handle_bullying
@@ -382,7 +383,7 @@ async def process_channel_request(
         result = await asyncio.to_thread(qa_chain.invoke, {"input": normalized_input, "chat_history": chat_history})
 
         retrieved_context = result.get("context", []) if isinstance(result, dict) else []
-        print(f"[{now_str()}] ?? ASKA AMBIL {len(retrieved_context)} KONTEN:")
+        print(f"[{now_str()}] ASKA PAKAI {len(retrieved_context)} KONTEN FINAL:")
         for i, doc in enumerate(retrieved_context, 1):
             print(f"  {i}. {doc.page_content[:200]}...")
 
@@ -398,6 +399,7 @@ async def process_channel_request(
 
         response = ASKA_NO_DATA_RESPONSE if not retrieved_context else coerce_to_text(result)
         response = remove_trailing_signature(response.strip())
+        response = ensure_aska_brand_style(response)
 
         if not response:
             response = ASKA_NO_DATA_RESPONSE

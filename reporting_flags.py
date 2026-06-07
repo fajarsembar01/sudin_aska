@@ -27,9 +27,12 @@ def teacher_mode_enabled() -> bool:
 
 
 def smalltalk_enabled() -> bool:
-    """Toggle smalltalk/canned responses (unless QA-only mode is active)."""
-    if qa_only_mode_enabled():
-        return False
+    """Toggle smalltalk/canned responses.
+
+    QA-only mode intentionally still allows smalltalk so short messages like
+    thanks/hello/oke do not waste RAG/model tokens. Teacher and reporting flows
+    remain disabled by qa_only_mode_enabled().
+    """
     return env_flag("ASKA_SMALLTALK_ENABLED", True)
 
 

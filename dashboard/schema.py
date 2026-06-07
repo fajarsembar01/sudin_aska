@@ -1196,6 +1196,17 @@ CREATE TABLE IF NOT EXISTS cc_telegram_groups (
 );
 """
 
+_CC_PUBLIC_WHATSAPP_CTA_SETTINGS_SQL = """
+CREATE TABLE IF NOT EXISTS cc_public_whatsapp_cta_settings (
+    id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    wa_number TEXT,
+    opening_message TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+"""
+
 _CC_MESSAGE_DRAFTS_SQL = """
 CREATE TABLE IF NOT EXISTS cc_message_drafts (
     id SERIAL PRIMARY KEY,
@@ -1482,6 +1493,7 @@ def ensure_dashboard_schema() -> None:
         _CC_MESSAGES_INDEX_SQL,
         _CC_TELEGRAM_SETTINGS_SQL,
         _CC_TELEGRAM_GROUPS_SQL,
+        _CC_PUBLIC_WHATSAPP_CTA_SETTINGS_SQL,
         _CC_MESSAGE_DRAFTS_SQL,
         "ALTER TABLE cc_message_drafts ADD COLUMN IF NOT EXISTS media_path TEXT",
         "ALTER TABLE cc_message_drafts ADD COLUMN IF NOT EXISTS media_mime_type TEXT",

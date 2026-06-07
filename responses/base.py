@@ -2,7 +2,7 @@
 from .rate_limit import RATE_LIMIT_RESPONSES
 
 ASKA_NO_DATA_RESPONSE = (
-    "😅 Maaf nih, *ASKA* belum nemu jawabannya di data sekolah.\n"
+    "😅 Maaf nih, *ASKA* belum nemu jawabannya di data sudin.\n"
     "☎️ Coba hubungi Posko SPMB Jakarta Utara 2 via WhatsApp 081320006875."
 )
 
