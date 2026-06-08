@@ -111,6 +111,25 @@ _CAN_ANSWER_RESPONSES = [
     "Bisa jawab, tapi *ASKA* tetap bedain: pertanyaan ringan dijawab langsung, data sekolah dicek dari kecerdasan dulu 📌",
 ]
 
+_FOOD_PATTERNS = (
+    "makan apa",
+    "enaknya makan",
+    "makan apa ya",
+    "rekomendasi makan",
+    "rekomendasi makanan",
+    "makanan apa",
+    "lapar",
+    "laper",
+)
+
+_FOOD_RESPONSES = [
+    "Kalau mau aman: nasi goreng/telur + sayur dikit. Simpel, kenyang, nggak banyak drama 🍳🍚",
+    "ASKA vote soto atau bakso dulu sih. Kuah hangat biasanya auto mood naik 🍜✨",
+    "Kalau lagi pengen ringan: roti, buah, atau bubur. Perut aman, vibes tetap jalan 🍌🥣",
+    "Kalau belum makan dari tadi, ambil yang beneran ngenyangin ya: nasi + protein. Jangan cuma jajan 😅🍱",
+    "Opsi sat-set: ayam geprek level aman, nasi padang, atau mie ayam. Pilih sesuai budget dan mood 🔥",
+]
+
 _TIME_PATTERNS = (
     "jam berapa",
     "sekarang jam",
@@ -221,27 +240,50 @@ def get_why_fallback_response() -> str:
     return random.choice(_WHY_FALLBACK_RESPONSES)
 
 
-def _normalize_math_expression(text: str) -> str | None:
+def _prepare_math_text(text: str) -> str:
     lowered = text.lower()
+    lowered = re.sub(r"(?<=\d)\s*[x×]\s*(?=\d)", "*", lowered)
     for pattern, replacement in _MATH_WORD_REPLACEMENTS:
         lowered = re.sub(pattern, replacement, lowered)
 
     for word in _FILLER_WORDS:
         lowered = re.sub(rf"\b{re.escape(word)}\b", " ", lowered)
 
-    lowered = lowered.replace(",", ".")
-    lowered = re.sub(r"[^0-9+\-*/().\s]", " ", lowered)
-    expression = re.sub(r"\s+", "", lowered)
+    return lowered.replace(",", ".")
+
+
+def _clean_math_expression(raw_text: str, *, require_operator: bool = True) -> str | None:
+    cleaned = re.sub(r"[^0-9+\-*/().\s]", " ", raw_text)
+    expression = re.sub(r"\s+", "", cleaned)
 
     if not expression:
         return None
-    if not re.search(r"[+\-*/]", expression):
+    if require_operator and not re.search(r"[+\-*/]", expression):
         return None
     if len(expression) > 80:
         return None
     if re.search(r"[+\-*/]{2,}", expression.replace("+-", "+").replace("-+", "+")):
         return None
     return expression
+
+
+def _normalize_math_expression(text: str) -> str | None:
+    return _clean_math_expression(_prepare_math_text(text))
+
+
+def _normalize_equation(text: str) -> tuple[str, str] | None:
+    prepared = _prepare_math_text(text)
+    if prepared.count("=") != 1:
+        return None
+
+    left_raw, right_raw = prepared.split("=", 1)
+    left = _clean_math_expression(left_raw, require_operator=False)
+    right = _clean_math_expression(right_raw, require_operator=False)
+    if not left or not right:
+        return None
+    if not (re.search(r"[+\-*/]", left) or re.search(r"[+\-*/]", right)):
+        return None
+    return left, right
 
 
 def _eval_math_node(node: ast.AST) -> float:
@@ -286,6 +328,26 @@ def _format_number(value: float) -> str:
 
 
 def get_simple_math_response(text: str) -> str | None:
+    equation = _normalize_equation(text)
+    if equation:
+        left, right = equation
+        try:
+            left_result = _eval_math_node(ast.parse(left, mode="eval"))
+            right_result = _eval_math_node(ast.parse(right, mode="eval"))
+        except ZeroDivisionError:
+            return "*ASKA* hitung cepat: pembagian dengan nol nggak bisa ya 😅🧮"
+        except Exception:
+            return None
+
+        readable_left = _readable_math_expression(left)
+        readable_right = _readable_math_expression(right)
+        if abs(left_result - right_result) < 1e-9:
+            return f"Betul ✅ {readable_left} = {_format_number(left_result)} 🧮✨"
+        return (
+            f"Belum pas 😅 {readable_left} hasilnya {_format_number(left_result)}, "
+            f"bukan {readable_right}."
+        )
+
     expression = _normalize_math_expression(text)
     if not expression:
         return None
@@ -300,14 +362,18 @@ def get_simple_math_response(text: str) -> str | None:
     if abs(result) > 1_000_000_000:
         return None
 
+    readable_expression = _readable_math_expression(expression)
+    return f"*ASKA* hitung cepat: {readable_expression} = {_format_number(result)} 🧮✨"
+
+
+def _readable_math_expression(expression: str) -> str:
     readable_expression = (
         expression.replace("*", " × ")
         .replace("/", " ÷ ")
         .replace("+", " + ")
         .replace("-", " - ")
     )
-    readable_expression = re.sub(r"\s+", " ", readable_expression).strip()
-    return f"*ASKA* hitung cepat: {readable_expression} = {_format_number(result)} 🧮✨"
+    return re.sub(r"\s+", " ", readable_expression).strip()
 
 
 def get_datetime_response(text: str) -> str | None:
@@ -346,6 +412,8 @@ def get_casual_light_response(text: str) -> str | None:
         return random.choice(_TEST_RESPONSES)
     if any(pattern in lowered for pattern in _CAN_ANSWER_PATTERNS):
         return random.choice(_CAN_ANSWER_RESPONSES)
+    if any(pattern in lowered for pattern in _FOOD_PATTERNS):
+        return random.choice(_FOOD_RESPONSES)
     return None
 
 

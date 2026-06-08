@@ -383,6 +383,7 @@ async def process_channel_request(
         result = await asyncio.to_thread(qa_chain.invoke, {"input": normalized_input, "chat_history": chat_history})
 
         retrieved_context = result.get("context", []) if isinstance(result, dict) else []
+        source_mode = result.get("source_mode") if isinstance(result, dict) else None
         print(f"[{now_str()}] ASKA PAKAI {len(retrieved_context)} KONTEN FINAL:")
         for i, doc in enumerate(retrieved_context, 1):
             print(f"  {i}. {doc.page_content[:200]}...")
@@ -397,7 +398,11 @@ async def process_channel_request(
             response_ms=int((time.perf_counter() - start_time) * 1000),
         )
 
-        response = ASKA_NO_DATA_RESPONSE if not retrieved_context else coerce_to_text(result)
+        response = (
+            coerce_to_text(result)
+            if retrieved_context or source_mode == "general_model"
+            else ASKA_NO_DATA_RESPONSE
+        )
         response = remove_trailing_signature(response.strip())
         response = ensure_aska_brand_style(response)
 

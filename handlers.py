@@ -315,6 +315,7 @@ async def handle_user_query(
             typing_task.cancel()
 
         retrieved_context = result.get("context", []) if isinstance(result, dict) else []
+        source_mode = result.get("source_mode") if isinstance(result, dict) else None
         print(f"[{now_str()}] ASKA PAKAI {len(retrieved_context)} KONTEN FINAL:")
         for i, doc in enumerate(retrieved_context, 1):
             print(f"  {i}. {doc.page_content[:200]}...")
@@ -329,7 +330,11 @@ async def handle_user_query(
             response_ms=int((time.perf_counter() - start_time) * 1000),
         )
 
-        response = ASKA_NO_DATA_RESPONSE if not retrieved_context else coerce_to_text(result)
+        response = (
+            coerce_to_text(result)
+            if retrieved_context or source_mode == "general_model"
+            else ASKA_NO_DATA_RESPONSE
+        )
         response = clean_aska_response(response)  # ← hapus "ya?" yg dipaksakan model
         response = ensure_aska_brand_style(response)
         if not response.strip():

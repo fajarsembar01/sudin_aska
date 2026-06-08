@@ -127,6 +127,76 @@ _ASKA_PROFILE_MARKERS = (
     "## tujuan pembuatan",
     "agent ai sekolah kita",
 )
+_OFFICIAL_TOPIC_TERMS = (
+    "spmb",
+    "pmb",
+    "ppdb",
+    "penerimaan murid baru",
+    "sudin",
+    "suku dinas",
+    "jakarta utara 2",
+    "sekolah",
+    "sdn",
+    "smpn",
+    "sman",
+    "smkn",
+    "sd negeri",
+    "smp negeri",
+    "sma negeri",
+    "smk negeri",
+    "calon murid",
+    "cmb",
+    "murid",
+    "siswa",
+    "peserta didik",
+    "prioritas",
+    "perioritas",
+    "domisili",
+    "kelurahan",
+    "kecamatan",
+    "rt",
+    "rw",
+    "zonasi",
+    "jalur",
+    "afirmasi",
+    "prestasi",
+    "mutasi",
+    "inklusi",
+    "kjp",
+    "kip",
+    "dtks",
+    "kartu keluarga",
+    "kk",
+    "akta",
+    "ijazah",
+    "daftar ulang",
+    "pendaftaran",
+    "pengajuan akun",
+    "verifikasi",
+    "lapor diri",
+    "posko",
+    "call center",
+    "kepdis",
+    "pergub",
+    "juknis",
+)
+_OFFICIAL_TOPIC_PATTERNS = (
+    _SCHOOL_NUMBER_RE,
+    _SD_NAMED_RE,
+    re.compile(r"\b(?:sd|smp|sma|smk)\s+(?:negeri|swasta)?\s*\d{1,3}\b", re.IGNORECASE),
+)
+_OFFICIAL_FOLLOWUP_TERMS = (
+    "apa",
+    "mana",
+    "kapan",
+    "itu",
+    "tadi",
+    "yang",
+    "iya",
+    "kalau",
+    "untuk",
+    "berapa",
+)
 
 
 def _normalize_search_text(text: str) -> str:
@@ -139,6 +209,32 @@ def _contains_phrase(text: str, phrase: str) -> bool:
 
 def _has_any(text: str, terms: tuple[str, ...]) -> bool:
     return any(term in text for term in terms)
+
+
+def _has_official_topic(text: str) -> bool:
+    text_norm = _normalize_search_text(text)
+    if not text_norm:
+        return False
+    if _has_any(text_norm, _OFFICIAL_TOPIC_TERMS):
+        return True
+    if any(pattern.search(text_norm) for pattern in _OFFICIAL_TOPIC_PATTERNS):
+        return True
+    if _extract_residence_location(text_norm) and _requested_school_levels(text_norm):
+        return True
+    return False
+
+
+def _requires_official_context(inputs: dict) -> bool:
+    question = str(inputs.get("input") or "")
+    question_norm = _normalize_search_text(question)
+    if _has_official_topic(question_norm):
+        return True
+
+    tokens = _QUERY_TOKEN_RE.findall(question_norm)
+    if len(tokens) <= 5 and any(token in _OFFICIAL_FOLLOWUP_TERMS for token in tokens):
+        return _has_official_topic(_history_text_for_keywords(inputs))
+
+    return False
 
 
 def _is_spmb_schedule_query(question_norm: str) -> bool:
@@ -865,6 +961,27 @@ def build_qa_chain():
     # TAHAP 3: BUAT CHAIN UNTUK MENGGABUNGKAN DOKUMEN KE PROMPT
     question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
 
+    general_prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "Nama kamu ASKA. Jawab pertanyaan umum non-SPMB/non-data sekolah dengan Bahasa Indonesia santai, "
+                "ringkas, ramah ala Gen Z, dan pakai 1-3 emoji yang relevan. "
+                "Boleh menjawab dengan pengetahuan umum model jika pertanyaannya ringan/umum. "
+                "Jika pertanyaan menyangkut SPMB/PMB/PPDB, data sekolah, layanan Sudin, jadwal sekolah, "
+                "prioritas, domisili, jalur, persyaratan, posko, call center, atau informasi resmi pendidikan, "
+                "jangan jawab dari pengetahuan umum; jawab persis: 'ASKA perlu cek data sudin dulu untuk pertanyaan itu.' "
+                "Untuk pertanyaan umum yang butuh info terbaru/real-time seperti berita, harga, kurs, cuaca, jadwal acara, "
+                "atau status layanan, jelaskan bahwa ASKA belum bisa memastikan data real-time. "
+                "Kalau tidak yakin untuk pertanyaan umum, bilang tidak yakin dan beri saran aman. "
+                "Jangan mengaku sebagai sumber resmi untuk jawaban umum.",
+            ),
+            MessagesPlaceholder("chat_history"),
+            ("human", "{input}"),
+        ]
+    )
+    general_chain = general_prompt | llm
+
     def _retrieve_ranked_context(inputs: dict) -> list:
         docs = history_aware_retriever.invoke(inputs)
         question = str(inputs.get("input") or "")
@@ -886,4 +1003,26 @@ def build_qa_chain():
         context=RunnableLambda(_retrieve_ranked_context)
     ).assign(answer=question_answer_chain)
 
-    return rag_chain
+    def _invoke_by_topic(inputs: dict) -> dict:
+        if _requires_official_context(inputs):
+            result = rag_chain.invoke(inputs)
+            if isinstance(result, dict):
+                result["source_mode"] = "official_rag"
+            return result
+
+        if _is_falsey(os.getenv("ASKA_GENERAL_MODEL_ENABLED", "true")):
+            return {
+                "context": [],
+                "answer": "ASKA belum punya data resmi untuk pertanyaan itu.",
+                "source_mode": "general_disabled",
+            }
+
+        answer_obj = general_chain.invoke(inputs)
+        answer_text = getattr(answer_obj, "content", str(answer_obj))
+        return {
+            "context": [],
+            "answer": answer_text,
+            "source_mode": "general_model",
+        }
+
+    return RunnableLambda(_invoke_by_topic)
