@@ -1036,6 +1036,12 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item {% if request.endpoint == 'portal.admin_draft_analysis' %}active{% endif %}"
+                                    href="{{ url_for('portal.admin_draft_analysis') }}">
+                                    <i class="bi bi-clipboard-data me-2"></i>Cek Draft
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item" href="{{ url_for('portal.admin_reopen_requests') }}">
                                     <i class="bi bi-arrow-counterclockwise me-2"></i>Permintaan Reopen
                                 </a>

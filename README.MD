@@ -539,3 +539,8 @@ Lalu masukkan password server Anda (*ketikan tidak akan terlihat, biarkan saja l
 - GitHub: [@sofelijo](https://github.com/sofelijo)
 
 Silakan buka _issue_ atau _pull request_ bila ada saran perbaikan. Semoga membantu sekolah Anda membangun layanan AI dengan cepat! 🙌
+
+
+## restart wa aska
+systemctl restart aska-wa-cc@aska.service
+sleep 20

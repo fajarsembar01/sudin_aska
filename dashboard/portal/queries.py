@@ -1482,18 +1482,26 @@ def get_assessment_room_score_pct(assessment_id: int, school_room_id: int) -> fl
         return float(_normalize_score_pct(avg, score_scale_max))
 
 
-def submit_assessment(assessment_id: int) -> bool:
-    """Submit an assessment and calculate total score from saved aspect scores."""
+def submit_assessment(assessment_id: int, expected_staff_id: Optional[int] = None) -> bool:
+    """Submit an assessment without changing the original staff owner."""
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
-            SELECT COALESCE(score_scale_max, %s) AS score_scale_max
+            SELECT
+                COALESCE(score_scale_max, %s) AS score_scale_max,
+                staff_id
             FROM portal_assessments
             WHERE id = %s
             """,
             (PORTAL_LEGACY_SCORE_SCALE_MAX, assessment_id),
         )
         assessment = cur.fetchone() or {}
+        if expected_staff_id is not None:
+            try:
+                if int(assessment.get("staff_id") or 0) != int(expected_staff_id):
+                    return False
+            except (TypeError, ValueError):
+                return False
         score_scale_max = _normalize_score_scale_max(assessment.get("score_scale_max"))
         default_score = PORTAL_NEW_SCORE_MIN if score_scale_max == PORTAL_NEW_SCORE_SCALE_MAX else PORTAL_LEGACY_SCORE_MIN
 
@@ -1576,10 +1584,12 @@ def submit_assessment(assessment_id: int) -> bool:
                 total_score = %s,
                 submitted_at = NOW(),
                 updated_at = NOW()
-            WHERE id = %s AND status = 'draft'
+            WHERE id = %s
+              AND status = 'draft'
+              AND (%s IS NULL OR staff_id = %s)
             RETURNING id
             """,
-            (avg_score, assessment_id),
+            (avg_score, assessment_id, expected_staff_id, expected_staff_id),
         )
         return cur.fetchone() is not None
 
@@ -3291,6 +3301,234 @@ def list_staff_latest_assessments(
     # so its bind parameters must be supplied twice.
     params = [*latest_params, *latest_params, *staff_params, limit]
 
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def list_draft_assessments(
+    period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
+    staff_ids: Optional[List[int]] = None,
+    staff_id: Optional[int] = None,
+    school_status: Optional[str] = None,
+    query_text: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """List draft assessments with staff, school, area, and period context."""
+    if staff_ids is not None and len(staff_ids) == 0:
+        return []
+
+    clauses = ["a.status = 'draft'"]
+    params: List[Any] = []
+    _apply_period_filter(clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+
+    if staff_ids:
+        placeholders = ",".join(["%s"] * len(staff_ids))
+        clauses.append(f"a.staff_id IN ({placeholders})")
+        params.extend(staff_ids)
+    if staff_id:
+        clauses.append("a.staff_id = %s")
+        params.append(staff_id)
+
+    _apply_school_status_filter(clauses, params, school_status=school_status, column="s.status")
+
+    search = (query_text or "").strip()
+    if search:
+        like = f"%{search}%"
+        clauses.append(
+            """
+            (
+                s.name ILIKE %s
+                OR s.npsn ILIKE %s
+                OR u.full_name ILIKE %s
+                OR u.email ILIKE %s
+                OR k.name ILIKE %s
+                OR l.name ILIKE %s
+                OR p.name ILIKE %s
+            )
+            """
+        )
+        params.extend([like] * 7)
+
+    where_clause = "WHERE " + " AND ".join(clauses)
+    query = f"""
+        SELECT
+            a.id,
+            a.school_id,
+            a.staff_id,
+            a.period_id,
+            a.assessment_date,
+            a.status,
+            a.total_score,
+            a.score_scale_max,
+            a.created_at,
+            a.updated_at,
+            p.name AS period_name,
+            p.start_date AS period_start_date,
+            p.end_date AS period_end_date,
+            s.name AS school_name,
+            s.npsn AS school_npsn,
+            s.jenjang AS school_jenjang,
+            s.status AS school_status,
+            l.name AS kelurahan_name,
+            k.name AS kecamatan_name,
+            u.full_name AS staff_name,
+            u.email AS staff_email,
+            u.role AS staff_role,
+            previous_done.total_submitted,
+            previous_done.latest_submitted_at
+        FROM portal_assessments a
+        JOIN portal_schools s ON s.id = a.school_id
+        LEFT JOIN portal_assessment_periods p ON p.id = a.period_id
+        LEFT JOIN portal_kelurahan l ON l.id = s.kelurahan_id
+        LEFT JOIN portal_kecamatan k ON k.id = l.kecamatan_id
+        LEFT JOIN dashboard_users u ON u.id = a.staff_id
+        LEFT JOIN LATERAL (
+            SELECT
+                COUNT(*)::INT AS total_submitted,
+                MAX(done.submitted_at) AS latest_submitted_at
+            FROM portal_assessments done
+            WHERE done.school_id = a.school_id
+              AND done.staff_id = a.staff_id
+              AND done.status IN ('submitted', 'verified')
+        ) previous_done ON TRUE
+        {where_clause}
+        ORDER BY COALESCE(a.updated_at, a.created_at) DESC NULLS LAST, a.id DESC
+    """
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_draft_assessment_inputs(assessment_ids: Sequence[int]) -> Dict[str, Dict[int, List[Dict[str, Any]]]]:
+    """Return score, photo, and room-note rows grouped by assessment id."""
+    ids = [int(assessment_id) for assessment_id in assessment_ids if assessment_id]
+    grouped: Dict[str, Dict[int, List[Dict[str, Any]]]] = {
+        "scores": {},
+        "photos": {},
+        "notes": {},
+    }
+    if not ids:
+        return grouped
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                sc.assessment_id,
+                sc.school_room_id,
+                sc.aspect_id,
+                sc.score,
+                sc.notes,
+                sc.updated_at,
+                r.name AS room_name,
+                pa.name AS aspect_name
+            FROM portal_assessment_scores sc
+            JOIN portal_school_rooms sr ON sr.id = sc.school_room_id
+            JOIN portal_rooms r ON r.id = sr.room_id
+            JOIN portal_aspects pa ON pa.id = sc.aspect_id
+            WHERE sc.assessment_id = ANY(%s)
+            ORDER BY sc.assessment_id, r.sort_order, pa.sort_order, pa.id
+            """,
+            (ids,),
+        )
+        for row in cur.fetchall():
+            item = dict(row)
+            grouped["scores"].setdefault(item["assessment_id"], []).append(item)
+
+        cur.execute(
+            """
+            SELECT
+                assessment_id,
+                school_room_id,
+                COUNT(*)::INT AS photo_count,
+                MAX(COALESCE(captured_at, created_at)) AS latest_photo_at
+            FROM portal_assessment_photos
+            WHERE assessment_id = ANY(%s)
+            GROUP BY assessment_id, school_room_id
+            ORDER BY assessment_id, school_room_id
+            """,
+            (ids,),
+        )
+        for row in cur.fetchall():
+            item = dict(row)
+            grouped["photos"].setdefault(item["assessment_id"], []).append(item)
+
+        cur.execute(
+            """
+            SELECT
+                assessment_id,
+                school_room_id,
+                notes,
+                updated_at
+            FROM portal_assessment_room_details
+            WHERE assessment_id = ANY(%s)
+              AND NULLIF(BTRIM(COALESCE(notes, '')), '') IS NOT NULL
+            ORDER BY assessment_id, updated_at DESC NULLS LAST
+            """,
+            (ids,),
+        )
+        for row in cur.fetchall():
+            item = dict(row)
+            grouped["notes"].setdefault(item["assessment_id"], []).append(item)
+
+    return grouped
+
+
+def list_draft_assessment_staff_options(
+    period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
+    staff_ids: Optional[List[int]] = None,
+    school_status: Optional[str] = None,
+    query_text: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """List staff/coordinators/admins that currently own drafts under the selected filters."""
+    if staff_ids is not None and len(staff_ids) == 0:
+        return []
+
+    clauses = ["a.status = 'draft'"]
+    params: List[Any] = []
+    _apply_period_filter(clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+    if staff_ids:
+        placeholders = ",".join(["%s"] * len(staff_ids))
+        clauses.append(f"a.staff_id IN ({placeholders})")
+        params.extend(staff_ids)
+    _apply_school_status_filter(clauses, params, school_status=school_status, column="s.status")
+
+    search = (query_text or "").strip()
+    if search:
+        like = f"%{search}%"
+        clauses.append(
+            """
+            (
+                s.name ILIKE %s
+                OR s.npsn ILIKE %s
+                OR u.full_name ILIKE %s
+                OR u.email ILIKE %s
+                OR k.name ILIKE %s
+                OR l.name ILIKE %s
+                OR p.name ILIKE %s
+            )
+            """
+        )
+        params.extend([like] * 7)
+
+    query = f"""
+        SELECT DISTINCT
+            u.id,
+            u.full_name,
+            u.email,
+            u.role
+        FROM portal_assessments a
+        JOIN portal_schools s ON s.id = a.school_id
+        LEFT JOIN portal_assessment_periods p ON p.id = a.period_id
+        LEFT JOIN portal_kelurahan l ON l.id = s.kelurahan_id
+        LEFT JOIN portal_kecamatan k ON k.id = l.kecamatan_id
+        LEFT JOIN dashboard_users u ON u.id = a.staff_id
+        WHERE {" AND ".join(clauses)}
+          AND u.id IS NOT NULL
+        ORDER BY u.full_name ASC NULLS LAST, u.email ASC
+    """
     with get_cursor() as cur:
         cur.execute(query, params)
         return [dict(row) for row in cur.fetchall()]

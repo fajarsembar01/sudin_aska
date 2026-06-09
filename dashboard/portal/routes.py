@@ -65,6 +65,9 @@ from .queries import (
     fetch_portal_stats,
     list_recent_assessments,
     list_staff_latest_assessments,
+    list_draft_assessments,
+    get_draft_assessment_inputs,
+    list_draft_assessment_staff_options,
     fetch_top_schools,
     create_room,
     create_aspect,
@@ -3132,23 +3135,6 @@ def submit(school_id: int) -> Response:
                     f"Saat ini {photo_room_count}."
                 )
 
-        scores_map = {
-            (s["school_room_id"], s["aspect_id"]): s.get("score")
-            for s in existing_scores
-        }
-        for room in rooms:
-            room_id = room.get("school_room_id")
-            aspects = room.get("aspects") or []
-            if not room_id or not aspects:
-                continue
-            for aspect in aspects:
-                score_val = scores_map.get((room_id, aspect.get("id")))
-                if score_val is None:
-                    missing_messages.append("Terdapat aspek yang masih belum dinilai.")
-                    break
-            if missing_messages:
-                break
-
         if missing_messages:
             flash(" ".join(missing_messages), "warning")
             return redirect(url_for("portal.assess", school_id=school_id))
@@ -3159,7 +3145,10 @@ def submit(school_id: int) -> Response:
     
     try:
 
-        success = submit_assessment(assessment_id_int)
+        success = submit_assessment(
+            assessment_id_int,
+            expected_staff_id=assessment.get("staff_id"),
+        )
         if success:
             try:
                 low_rooms = _get_low_score_rooms(
@@ -4248,6 +4237,193 @@ def _build_admin_stats_period_filter(
     return selected_period_id, [selected_period_id], year_options, selected_year, selected_month
 
 
+def _draft_datetime_value(value: object) -> datetime | None:
+    if not isinstance(value, datetime):
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
+
+def _draft_max_datetime(values: list[object]) -> datetime | None:
+    parsed = [item for item in (_draft_datetime_value(value) for value in values) if item is not None]
+    if not parsed:
+        return None
+    return max(parsed)
+
+
+def _draft_age_days(value: object) -> int | None:
+    dt_value = _draft_datetime_value(value)
+    if dt_value is None:
+        return None
+    return max((datetime.now(JAKARTA_TZ) - dt_value.astimezone(JAKARTA_TZ)).days, 0)
+
+
+def _build_draft_analysis_row(
+    row: dict,
+    rooms: list[dict],
+    scores: list[dict],
+    photos: list[dict],
+    notes: list[dict],
+) -> dict:
+    score_map = {
+        (score.get("school_room_id"), score.get("aspect_id")): score
+        for score in scores
+    }
+    scored_expected = 0
+    expected_aspects = 0
+    missing_aspects: list[dict[str, object]] = []
+
+    room_ids = {room.get("school_room_id") for room in rooms if room.get("school_room_id")}
+    for room in rooms:
+        school_room_id = room.get("school_room_id")
+        aspects = room.get("aspects") or []
+        if not school_room_id or not aspects:
+            continue
+        for aspect in aspects:
+            aspect_id = aspect.get("id")
+            if not aspect_id:
+                continue
+            expected_aspects += 1
+            if (school_room_id, aspect_id) in score_map:
+                scored_expected += 1
+                continue
+            if len(missing_aspects) < 5:
+                missing_aspects.append(
+                    {
+                        "room_name": room.get("room_name") or "Ruang",
+                        "aspect_name": aspect.get("name") or "Aspek",
+                    }
+                )
+
+    total_rooms = len(rooms)
+    min_photo_rooms = math.ceil(total_rooms * 0.2) if total_rooms else 0
+    photo_room_ids = {
+        photo.get("school_room_id")
+        for photo in photos
+        if photo.get("school_room_id") in room_ids and int(photo.get("photo_count") or 0) > 0
+    }
+    photo_room_count = len(photo_room_ids)
+    raw_score_count = len(scores)
+    raw_photo_count = sum(int(photo.get("photo_count") or 0) for photo in photos)
+    room_note_count = len(notes)
+    is_filled = raw_score_count > 0 or raw_photo_count > 0 or room_note_count > 0
+
+    missing_score_count = max(expected_aspects - scored_expected, 0)
+    missing_photo_room_count = max(min_photo_rooms - photo_room_count, 0)
+
+    reasons: list[str] = []
+    if missing_photo_room_count:
+        reasons.append(
+            f"foto kurang {missing_photo_room_count} ruangan "
+            f"(minimal {min_photo_rooms}, saat ini {photo_room_count})"
+        )
+
+    if not is_filled:
+        draft_state = "empty"
+        state_label = "Draft kosong"
+        state_badge = "secondary"
+        state_icon = "circle"
+        reason_text = "Belum ada skor, foto, atau catatan ruangan."
+    elif reasons:
+        draft_state = "incomplete"
+        state_label = "Foto belum cukup"
+        state_badge = "warning"
+        state_icon = "exclamation-triangle"
+        reason_text = "; ".join(reasons)
+    else:
+        draft_state = "ready"
+        state_label = "Siap submit"
+        state_badge = "success"
+        state_icon = "check-circle"
+        reason_text = "Foto minimal 20% ruangan sudah terpenuhi, tetapi status masih draft."
+
+    score_progress_pct = 100.0 if expected_aspects == 0 else round((scored_expected / expected_aspects) * 100, 1)
+    photo_progress_pct = 100.0 if min_photo_rooms == 0 else round(min((photo_room_count / min_photo_rooms) * 100, 100), 1)
+    latest_input_at = _draft_max_datetime(
+        [
+            row.get("updated_at"),
+            *[score.get("updated_at") for score in scores],
+            *[photo.get("latest_photo_at") for photo in photos],
+            *[note.get("updated_at") for note in notes],
+        ]
+    )
+
+    item = dict(row)
+    item.update(
+        {
+            "draft_state": draft_state,
+            "state_label": state_label,
+            "state_badge": state_badge,
+            "state_icon": state_icon,
+            "reason_text": reason_text,
+            "is_filled": is_filled,
+            "total_rooms": total_rooms,
+            "expected_aspect_count": expected_aspects,
+            "scored_aspect_count": scored_expected,
+            "missing_score_count": missing_score_count,
+            "score_progress_pct": score_progress_pct,
+            "min_photo_rooms": min_photo_rooms,
+            "photo_room_count": photo_room_count,
+            "photo_count": raw_photo_count,
+            "missing_photo_room_count": missing_photo_room_count,
+            "photo_progress_pct": photo_progress_pct,
+            "room_note_count": room_note_count,
+            "missing_aspects": missing_aspects,
+            "missing_aspect_more_count": max(missing_score_count - len(missing_aspects), 0),
+            "created_label": _format_follow_up_datetime(row.get("created_at")),
+            "updated_label": _format_follow_up_datetime(latest_input_at or row.get("updated_at")),
+            "latest_submitted_label": _format_follow_up_datetime(row.get("latest_submitted_at")),
+            "age_days": _draft_age_days(row.get("created_at")),
+        }
+    )
+    return item
+
+
+def _summarize_draft_analysis(rows: list[dict]) -> dict:
+    summary = {
+        "total": len(rows),
+        "empty": 0,
+        "incomplete": 0,
+        "ready": 0,
+        "filled": 0,
+    }
+    staff_map: dict[int | str, dict] = {}
+    for row in rows:
+        state = row.get("draft_state")
+        if state in {"empty", "incomplete", "ready"}:
+            summary[state] += 1
+        if row.get("is_filled"):
+            summary["filled"] += 1
+
+        staff_key = row.get("staff_id") or f"unknown-{row.get('id')}"
+        staff = staff_map.setdefault(
+            staff_key,
+            {
+                "staff_id": row.get("staff_id"),
+                "staff_name": row.get("staff_name") or row.get("staff_email") or "Tanpa nama",
+                "staff_email": row.get("staff_email"),
+                "staff_role": row.get("staff_role"),
+                "total": 0,
+                "empty": 0,
+                "incomplete": 0,
+                "ready": 0,
+                "oldest_age_days": 0,
+            },
+        )
+        staff["total"] += 1
+        if state in {"empty", "incomplete", "ready"}:
+            staff[state] += 1
+        age_days = row.get("age_days")
+        if isinstance(age_days, int):
+            staff["oldest_age_days"] = max(staff["oldest_age_days"], age_days)
+
+    staff_rows = list(staff_map.values())
+    staff_rows.sort(key=lambda item: (-int(item.get("total") or 0), item.get("staff_name") or ""))
+    summary["staff_rows"] = staff_rows
+    return summary
+
+
 def _serialize_related_photos(school_id: int | None, room_id: int | None, staff_ids: list[int] | None = None):
     """Serialize related photos response with optional staff filtering."""
     if not school_id or not room_id:
@@ -4560,6 +4736,140 @@ def admin_stats() -> Response:
         monev_teams=monev_teams,
         staff_latest_assessments=staff_latest_assessments,
         negeri_assessment_frequency=negeri_assessment_frequency,
+    )
+
+
+@portal_bp.route("/admin/drafts")
+@role_required("admin")
+def admin_draft_analysis() -> Response:
+    """Admin page to inspect draft assessments and why they have not been submitted."""
+    from dashboard.queries import get_monev_teams
+
+    periods = list_periods()
+    selected_year_arg = request.args.get("year", type=int)
+    selected_month_arg = request.args.get("month", type=int)
+    selected_period_arg = request.args.get("period_id", type=int)
+    period_id, period_ids, period_year_options, selected_year, selected_month = _build_admin_stats_period_filter(
+        periods,
+        selected_year_arg,
+        selected_month_arg,
+        selected_period_arg,
+    )
+
+    team_id = request.args.get("team_id", type=int)
+    staff_filter = request.args.get("staff_id", type=int) or None
+    school_status_filter = (request.args.get("school_status") or "").strip().lower()
+    if school_status_filter not in {"negeri", "swasta"}:
+        school_status_filter = ""
+    state_filter = (request.args.get("state") or "").strip().lower()
+    if state_filter not in {"empty", "incomplete", "ready"}:
+        state_filter = ""
+    query_text = (request.args.get("q") or "").strip()
+
+    staff_ids: list[int] | None = None
+    selected_team = None
+    if team_id:
+        staff_ids, selected_team = _get_team_staff_ids(team_id)
+        if selected_team is None:
+            staff_ids = None
+
+    staff_options = list_draft_assessment_staff_options(
+        period_id=period_id,
+        period_ids=period_ids,
+        staff_ids=staff_ids,
+        school_status=school_status_filter,
+        query_text=query_text,
+    )
+    draft_rows = list_draft_assessments(
+        period_id=period_id,
+        period_ids=period_ids,
+        staff_ids=staff_ids,
+        staff_id=staff_filter,
+        school_status=school_status_filter,
+        query_text=query_text,
+    )
+    input_rows = get_draft_assessment_inputs([row["id"] for row in draft_rows])
+
+    room_cache: dict[int, tuple[list[dict], list[dict]]] = {}
+    analyzed_drafts: list[dict] = []
+    for row in draft_rows:
+        assessment_id = row.get("id")
+        school_id = row.get("school_id")
+        if not assessment_id or not school_id:
+            continue
+
+        if school_id not in room_cache:
+            all_rooms = list_school_rooms(int(school_id))
+            filtered_rooms = _filter_assessment_rooms(list(all_rooms), row.get("school_jenjang"))
+            room_cache[int(school_id)] = (all_rooms, filtered_rooms)
+        all_rooms, filtered_rooms = room_cache[int(school_id)]
+
+        scores = input_rows["scores"].get(int(assessment_id), [])
+        photos = input_rows["photos"].get(int(assessment_id), [])
+        notes = input_rows["notes"].get(int(assessment_id), [])
+        room_note_map = {
+            int(note["school_room_id"]): note.get("notes")
+            for note in notes
+            if note.get("school_room_id")
+        }
+        rooms, _scores, _photos, _notes = _augment_rooms_with_assessment_data(
+            list(all_rooms),
+            list(filtered_rooms),
+            int(assessment_id),
+            existing_scores=scores,
+            photos_list=photos,
+            room_notes=room_note_map,
+        )
+        analyzed_drafts.append(_build_draft_analysis_row(row, rooms, scores, photos, notes))
+
+    summary = _summarize_draft_analysis(analyzed_drafts)
+    visible_drafts = [
+        draft for draft in analyzed_drafts
+        if not state_filter or draft.get("draft_state") == state_filter
+    ]
+
+    month_options = [
+        (1, "Januari"),
+        (2, "Februari"),
+        (3, "Maret"),
+        (4, "April"),
+        (5, "Mei"),
+        (6, "Juni"),
+        (7, "Juli"),
+        (8, "Agustus"),
+        (9, "September"),
+        (10, "Oktober"),
+        (11, "November"),
+        (12, "Desember"),
+    ]
+    state_options = [
+        ("", "Semua draft"),
+        ("empty", "Draft kosong"),
+        ("incomplete", "Foto belum cukup"),
+        ("ready", "Siap submit"),
+    ]
+
+    return render_template(
+        "portal/admin/draft_analysis.html",
+        drafts=visible_drafts,
+        modal_drafts=analyzed_drafts,
+        all_draft_count=len(analyzed_drafts),
+        summary=summary,
+        periods=periods,
+        current_period_id=period_id,
+        current_period_year=selected_year,
+        current_period_month=selected_month,
+        period_year_options=period_year_options,
+        selected_team_id=team_id,
+        selected_team=selected_team,
+        selected_staff_id=staff_filter,
+        school_status_filter=school_status_filter,
+        state_filter=state_filter,
+        query_text=query_text,
+        month_options=month_options,
+        state_options=state_options,
+        staff_options=staff_options,
+        monev_teams=get_monev_teams(),
     )
 
 

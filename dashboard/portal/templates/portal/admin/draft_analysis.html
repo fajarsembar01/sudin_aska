@@ -1,0 +1,521 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Cek Draft PANBERSS" %}
+
+{% macro draft_modal_source(source_id, source_state, empty_label, draft_items) %}
+<div id="{{ source_id }}" class="d-none">
+    {% set ns = namespace(count=0) %}
+    {% for draft in draft_items %}
+    {% if source_state == 'all' or draft.draft_state == source_state %}
+    {% set ns.count = ns.count + 1 %}
+    <article class="draft-modal-item">
+        <div class="draft-modal-main">
+            <div class="draft-modal-title">
+                <span class="fw-semibold">#{{ draft.id }} {{ draft.school_name }}</span>
+                <span class="badge text-bg-{{ draft.state_badge }}">{{ draft.state_label }}</span>
+            </div>
+            <div class="draft-modal-meta">
+                {{ draft.school_npsn or '-' }} &middot; {{ draft.school_jenjang or '-' }}
+                {% if draft.period_name %}&middot; {{ draft.period_name }}{% endif %}
+                &middot; {{ draft.staff_name or draft.staff_email or 'Tanpa nama' }}
+                {% if draft.kecamatan_name %}&middot; {{ draft.kecamatan_name }}{% endif %}
+            </div>
+            <div class="draft-modal-meta">
+                Foto {{ draft.photo_room_count }}/{{ draft.min_photo_rooms }}
+                &middot; Skor {{ draft.scored_aspect_count }}/{{ draft.expected_aspect_count }}
+                &middot; {{ draft.reason_text }}
+                &middot; Update {{ draft.updated_label }}
+            </div>
+        </div>
+        <a class="btn btn-outline-primary btn-sm draft-modal-detail"
+            href="{{ url_for('portal.assess', school_id=draft.school_id, assessment_id=draft.id) }}"
+            target="_blank" rel="noopener">
+            <i class="bi bi-box-arrow-up-right me-1"></i>Cek Detail
+        </a>
+    </article>
+    {% endif %}
+    {% endfor %}
+    {% if ns.count == 0 %}
+    <div class="text-center text-muted py-4">{{ empty_label }}</div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% block head_extra %}
+<style>
+    .draft-summary-card {
+        display: block;
+        width: 100%;
+        border: 1px solid var(--border-soft);
+        border-radius: 14px;
+        background: var(--bg-surface);
+        padding: 1rem;
+        height: 100%;
+        text-align: left;
+        color: inherit;
+        transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .draft-summary-card:hover,
+    .draft-summary-card:focus {
+        border-color: var(--accent);
+        box-shadow: var(--shadow-soft);
+        transform: translateY(-1px);
+        outline: none;
+    }
+
+    .draft-summary-value {
+        font-size: 1.85rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .draft-progress {
+        height: 0.45rem;
+        background: var(--bg-subtle);
+    }
+
+    .draft-reason-list {
+        margin: 0.4rem 0 0;
+        padding-left: 1rem;
+    }
+
+    .draft-reason-list li {
+        margin-bottom: 0.15rem;
+    }
+
+    .draft-mobile-card {
+        border: 1px solid var(--border-soft);
+        border-radius: 14px;
+        padding: 0.9rem;
+        background: var(--bg-surface);
+    }
+
+    .draft-mobile-card + .draft-mobile-card {
+        margin-top: 0.75rem;
+    }
+
+    .draft-modal-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        padding: 0.5rem 0.65rem;
+        background: var(--bg-surface);
+    }
+
+    .draft-modal-item + .draft-modal-item {
+        margin-top: 0.35rem;
+    }
+
+    .draft-modal-main {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .draft-modal-title {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        min-width: 0;
+        line-height: 1.15;
+    }
+
+    .draft-modal-title .fw-semibold {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .draft-modal-title .badge {
+        flex: 0 0 auto;
+    }
+
+    .draft-modal-meta {
+        color: var(--text-muted);
+        font-size: 0.76rem;
+        line-height: 1.25;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .draft-modal-detail {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.76rem;
+    }
+
+    @media (max-width: 576px) {
+        .draft-modal-item {
+            display: block;
+        }
+
+        .draft-modal-detail {
+            width: 100%;
+            margin-top: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <h1 class="h4 fw-bold mb-1">Cek Draft PANBERSS</h1>
+                <p class="text-muted mb-0">Analisis draft yang belum disubmit berdasarkan syarat foto minimal 20% ruangan.</p>
+            </div>
+            <a class="btn btn-outline-primary" href="{{ url_for('portal.admin_stats') }}">
+                <i class="bi bi-bar-chart me-1"></i> Statistik
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <button type="button" class="draft-summary-card" data-draft-list-trigger data-state="all"
+            data-title="Total Draft" data-count="{{ summary.total }}">
+            <div class="text-muted small mb-2">Total Draft</div>
+            <div class="draft-summary-value">{{ summary.total }}</div>
+            <div class="small text-muted mt-2">{{ summary.filled }} sudah ada isi</div>
+        </button>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <button type="button" class="draft-summary-card" data-draft-list-trigger data-state="empty"
+            data-title="Draft Kosong" data-count="{{ summary.empty }}">
+            <div class="text-muted small mb-2">Draft Kosong</div>
+            <div class="draft-summary-value text-secondary">{{ summary.empty }}</div>
+            <div class="small text-muted mt-2">Belum ada skor, foto, atau catatan.</div>
+        </button>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <button type="button" class="draft-summary-card" data-draft-list-trigger data-state="incomplete"
+            data-title="Foto Belum Cukup" data-count="{{ summary.incomplete }}">
+            <div class="text-muted small mb-2">Foto Belum Cukup</div>
+            <div class="draft-summary-value text-warning">{{ summary.incomplete }}</div>
+            <div class="small text-muted mt-2">Ada isi, tapi foto minimal 20% belum lengkap.</div>
+        </button>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <button type="button" class="draft-summary-card" data-draft-list-trigger data-state="ready"
+            data-title="Siap Submit" data-count="{{ summary.ready }}">
+            <div class="text-muted small mb-2">Siap Submit</div>
+            <div class="draft-summary-value text-success">{{ summary.ready }}</div>
+            <div class="small text-muted mt-2">Foto minimal 20% terpenuhi, masih draft.</div>
+        </button>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h2 class="h6 fw-bold mb-3">Filter Draft</h2>
+        <form method="get" action="{{ url_for('portal.admin_draft_analysis') }}" class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label small text-muted">Tahun</label>
+                <select name="year" class="form-select">
+                    <option value="">Semua Tahun</option>
+                    {% for y in period_year_options|default([]) %}
+                    <option value="{{ y }}" {% if current_period_year == y %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">Bulan</label>
+                <select name="month" class="form-select">
+                    <option value="">{% if current_period_year %}Semua Bulan{% else %}Pilih Tahun Dulu{% endif %}</option>
+                    {% for month_value, month_label in month_options %}
+                    <option value="{{ month_value }}" {% if current_period_month == month_value %}selected{% endif %}>
+                        {{ month_label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">Tim</label>
+                <select name="team_id" class="form-select">
+                    <option value="">Semua Tim</option>
+                    {% for team in monev_teams %}
+                    <option value="{{ team.id }}" {% if selected_team_id == team.id %}selected{% endif %}>
+                        {{ team.name or team.kecamatan_name or ('Tim ' ~ team.id) }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">Staff</label>
+                <select name="staff_id" class="form-select">
+                    <option value="">Semua Staff</option>
+                    {% for staff in staff_options %}
+                    <option value="{{ staff.id }}" {% if selected_staff_id == staff.id %}selected{% endif %}>
+                        {{ staff.full_name or staff.email }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">Status Analisis</label>
+                <select name="state" class="form-select">
+                    {% for value, label in state_options %}
+                    <option value="{{ value }}" {% if state_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">Status Sekolah</label>
+                <select name="school_status" class="form-select">
+                    <option value="">Semua</option>
+                    <option value="negeri" {% if school_status_filter == 'negeri' %}selected{% endif %}>Negeri</option>
+                    <option value="swasta" {% if school_status_filter == 'swasta' %}selected{% endif %}>Swasta</option>
+                </select>
+            </div>
+            <div class="col-lg-8">
+                <label class="form-label small text-muted">Cari</label>
+                <input type="search" name="q" class="form-control" value="{{ query_text }}"
+                    placeholder="Nama sekolah, NPSN, staff, wilayah, periode">
+            </div>
+            <div class="col-lg-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i> Terapkan
+                </button>
+                <a href="{{ url_for('portal.admin_draft_analysis') }}" class="btn btn-outline-secondary w-100">Reset</a>
+            </div>
+        </form>
+    </div>
+</section>
+
+<section class="row g-4">
+    <div class="col-xl-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+                    <h2 class="h6 fw-bold mb-0">Draft Per Staff</h2>
+                    <span class="badge text-bg-light">{{ summary.staff_rows|length }} orang</span>
+                </div>
+                {% if summary.staff_rows %}
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Staff</th>
+                                <th class="text-end">Draft</th>
+                                <th class="text-end">Masalah</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for staff in summary.staff_rows[:12] %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">{{ staff.staff_name }}</div>
+                                    <div class="small text-muted">{{ staff.staff_email or '-' }}</div>
+                                </td>
+                                <td class="text-end">
+                                    <span class="fw-bold">{{ staff.total }}</span>
+                                    <div class="small text-muted">{{ staff.ready }} siap</div>
+                                </td>
+                                <td class="text-end">
+                                    <span class="badge text-bg-warning">{{ staff.incomplete }}</span>
+                                    <span class="badge text-bg-secondary">{{ staff.empty }}</span>
+                                    <div class="small text-muted">
+                                        {% if staff.oldest_age_days %}tertua {{ staff.oldest_age_days }} hari{% else %}-{% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">Tidak ada staff dengan draft pada filter ini.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                    <div>
+                        <h2 class="h6 fw-bold mb-1">Daftar Draft</h2>
+                        <p class="text-muted small mb-0">
+                            Menampilkan {{ drafts|length }} dari {{ all_draft_count }} draft sesuai filter.
+                        </p>
+                    </div>
+                </div>
+
+                {% if drafts %}
+                <div class="d-lg-none">
+                    {% for draft in drafts %}
+                    <article class="draft-mobile-card">
+                        <div class="d-flex justify-content-between gap-2 mb-2">
+                            <div>
+                                <div class="fw-bold">{{ draft.school_name }}</div>
+                                <div class="small text-muted">{{ draft.school_npsn or '-' }} &middot; {{ draft.school_jenjang or '-' }}</div>
+                            </div>
+                            <span class="badge text-bg-{{ draft.state_badge }}">
+                                <i class="bi bi-{{ draft.state_icon }} me-1"></i>{{ draft.state_label }}
+                            </span>
+                        </div>
+                        <div class="small mb-2">{{ draft.staff_name or draft.staff_email or '-' }}</div>
+                        <div class="small text-muted mb-2">{{ draft.reason_text }}</div>
+                        <div class="d-flex gap-2">
+                            <a class="btn btn-outline-primary btn-sm w-100"
+                                href="{{ url_for('portal.assess', school_id=draft.school_id, assessment_id=draft.id) }}"
+                                target="_blank" rel="noopener">
+                                Buka Draft
+                            </a>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+
+                <div class="table-responsive d-none d-lg-block">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Draft</th>
+                                <th>Staff</th>
+                                <th>Progress</th>
+                                <th>Analisis</th>
+                                <th>Waktu</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for draft in drafts %}
+                            <tr>
+                                <td style="min-width: 220px;">
+                                    <div class="fw-semibold">
+                                        <a class="text-decoration-none"
+                                            href="{{ url_for('portal.assess', school_id=draft.school_id, assessment_id=draft.id) }}"
+                                            target="_blank" rel="noopener">
+                                            #{{ draft.id }} {{ draft.school_name }}
+                                        </a>
+                                    </div>
+                                    <div class="small text-muted">
+                                        {{ draft.school_npsn or '-' }} &middot; {{ draft.school_jenjang or '-' }}
+                                    </div>
+                                    <div class="small text-muted">
+                                        {{ draft.kecamatan_name or '-' }}{% if draft.period_name %} &middot; {{ draft.period_name }}{% endif %}
+                                    </div>
+                                </td>
+                                <td style="min-width: 170px;">
+                                    <div class="fw-semibold">{{ draft.staff_name or 'Tanpa nama' }}</div>
+                                    <div class="small text-muted">{{ draft.staff_email or '-' }}</div>
+                                    {% if draft.staff_role %}
+                                    <span class="badge text-bg-light">{{ draft.staff_role|upper }}</span>
+                                    {% endif %}
+                                </td>
+                                <td style="min-width: 190px;">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span>Skor terisi</span>
+                                        <span>{{ draft.scored_aspect_count }}/{{ draft.expected_aspect_count }}</span>
+                                    </div>
+                                    <div class="progress draft-progress mb-2">
+                                        <div class="progress-bar" style="width: {{ draft.score_progress_pct }}%"></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span>Foto</span>
+                                        <span>{{ draft.photo_room_count }}/{{ draft.min_photo_rooms }}</span>
+                                    </div>
+                                    <div class="progress draft-progress">
+                                        <div class="progress-bar bg-success" style="width: {{ draft.photo_progress_pct }}%"></div>
+                                    </div>
+                                    <div class="small text-muted mt-1">{{ draft.photo_count }} foto, {{ draft.room_note_count }} catatan</div>
+                                </td>
+                                <td style="min-width: 250px;">
+                                    <span class="badge text-bg-{{ draft.state_badge }} mb-2">
+                                        <i class="bi bi-{{ draft.state_icon }} me-1"></i>{{ draft.state_label }}
+                                    </span>
+                                    <div class="small">{{ draft.reason_text }}</div>
+                                    {% if draft.missing_score_count > 0 %}
+                                    <div class="small text-muted mt-1">
+                                        Info: {{ draft.missing_score_count }} aspek belum dinilai, tapi tidak menghambat submit.
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td style="min-width: 160px;">
+                                    <div class="small">Update {{ draft.updated_label }}</div>
+                                    <div class="small text-muted">Dibuat {{ draft.created_label }}</div>
+                                    <div class="small text-muted">
+                                        {% if draft.age_days is not none %}Umur {{ draft.age_days }} hari{% else %}-{% endif %}
+                                    </div>
+                                    {% if draft.total_submitted %}
+                                    <div class="small text-success">Pernah submit {{ draft.total_submitted }}x</div>
+                                    {% else %}
+                                    <div class="small text-muted">Belum pernah submit</div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a class="btn btn-outline-primary btn-sm"
+                                        href="{{ url_for('portal.assess', school_id=draft.school_id, assessment_id=draft.id) }}"
+                                        target="_blank" rel="noopener">
+                                        <i class="bi bi-box-arrow-up-right me-1"></i>Buka
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <h3 class="h6 fw-semibold mb-2">Tidak ada draft sesuai filter.</h3>
+                    <p class="text-muted mb-0">Coba reset filter atau pilih periode lain.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="draftListModal" tabindex="-1" aria-labelledby="draftListModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="draftListModalTitle">Daftar Draft</h5>
+                    <div class="small text-muted" id="draftListModalSubtitle"></div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body" id="draftListModalBody"></div>
+        </div>
+    </div>
+</div>
+
+{{ draft_modal_source('draftModalList-all', 'all', 'Tidak ada draft pada filter ini.', modal_drafts) }}
+{{ draft_modal_source('draftModalList-empty', 'empty', 'Tidak ada draft kosong pada filter ini.', modal_drafts) }}
+{{ draft_modal_source('draftModalList-incomplete', 'incomplete', 'Tidak ada draft yang fotonya kurang pada filter ini.', modal_drafts) }}
+{{ draft_modal_source('draftModalList-ready', 'ready', 'Tidak ada draft siap submit pada filter ini.', modal_drafts) }}
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+    (function () {
+        var modalEl = document.getElementById('draftListModal');
+        var titleEl = document.getElementById('draftListModalTitle');
+        var subtitleEl = document.getElementById('draftListModalSubtitle');
+        var bodyEl = document.getElementById('draftListModalBody');
+        if (!modalEl || !titleEl || !subtitleEl || !bodyEl || !window.bootstrap) return;
+
+        document.querySelectorAll('[data-draft-list-trigger]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var state = button.getAttribute('data-state') || 'all';
+                var source = document.getElementById('draftModalList-' + state);
+                var title = button.getAttribute('data-title') || 'Daftar Draft';
+                var count = button.getAttribute('data-count') || '0';
+                titleEl.textContent = title;
+                subtitleEl.textContent = count + ' draft sesuai filter aktif. Detail dibuka di tab baru.';
+                bodyEl.innerHTML = source ? source.innerHTML : '<div class="text-center text-muted py-4">Data tidak tersedia.</div>';
+                window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            });
+        });
+    })();
+</script>
+{% endblock %}
