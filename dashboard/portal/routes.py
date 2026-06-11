@@ -1994,6 +1994,144 @@ def delete_adiwiyata_post(post_id: int) -> bool:
         return cur.rowcount > 0
 
 
+def _build_school_logo_url(logo_url: str | None, external: bool = False) -> str | None:
+    value = (logo_url or "").strip()
+    if not value:
+        return None
+    if value.startswith(("http://", "https://")):
+        return value
+
+    normalized = value.replace("\\", "/")
+    marker = "/portal/uploads/"
+    if marker in normalized:
+        filename = normalized.split(marker, 1)[1]
+        return url_for("portal.uploaded_file", filename=filename, _external=external)
+
+    normalized = normalized.lstrip("/")
+    if normalized.startswith("portal/uploads/"):
+        normalized = normalized[len("portal/uploads/") :]
+    elif normalized.startswith("uploads/"):
+        normalized = normalized[len("uploads/") :]
+
+    rel = PurePosixPath(normalized)
+    if rel.is_absolute() or ".." in rel.parts:
+        return None
+    return url_for("portal.uploaded_file", filename=rel.as_posix(), _external=external)
+
+
+def _normalize_external_url(value: str | None, default_scheme: str = "https") -> str | None:
+    clean = (value or "").strip()
+    if not clean:
+        return None
+    if clean.startswith(("http://", "https://", "mailto:", "tel:")):
+        return clean
+    return f"{default_scheme}://{clean.lstrip('/')}"
+
+
+def _build_social_profile_url(kind: str, value: str | None) -> str | None:
+    clean = (value or "").strip()
+    if not clean:
+        return None
+    if clean.startswith(("http://", "https://")):
+        return clean
+
+    username = clean.lstrip("@").strip("/")
+    if not username:
+        return None
+
+    if kind == "instagram":
+        return f"https://instagram.com/{username}"
+    if kind == "tiktok":
+        return f"https://www.tiktok.com/@{username}"
+    if kind == "telegram":
+        return f"https://t.me/{username}"
+    return _normalize_external_url(clean)
+
+
+def _fetch_public_school_profile(school_id: int) -> dict | None:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                s.id,
+                s.npsn,
+                s.name,
+                s.jenjang,
+                s.alamat,
+                s.status,
+                s.logo_url,
+                s.metadata,
+                l.name AS kelurahan_name,
+                k.name AS kecamatan_name
+            FROM portal_schools s
+            LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            WHERE s.id = %s
+            """,
+            (school_id,),
+        )
+        row = cur.fetchone()
+    if not row:
+        return None
+
+    school = dict(row)
+    meta = _normalize_metadata(school.get("metadata"))
+    school["metadata"] = meta
+    school["logo_url"] = _build_school_logo_url(school.get("logo_url"), external=False)
+
+    stats = [
+        {"label": "Siswa", "value": meta.get("student_count")},
+        {"label": "Inklusi", "value": meta.get("inclusion_student_count")},
+        {"label": "Guru", "value": meta.get("teacher_count")},
+        {"label": "Tendik", "value": meta.get("staff_count")},
+        {"label": "Rombel", "value": meta.get("rombel_count")},
+    ]
+    school["public_stats"] = [
+        item for item in stats
+        if item["value"] is not None and str(item["value"]).strip() != ""
+    ]
+
+    contacts = []
+    if meta.get("school_phone"):
+        contacts.append({
+            "label": "Telepon",
+            "value": str(meta.get("school_phone")).strip(),
+            "href": f"tel:{str(meta.get('school_phone')).strip()}",
+            "icon": "bi-telephone",
+        })
+    if meta.get("cs_email"):
+        contacts.append({
+            "label": "Email",
+            "value": str(meta.get("cs_email")).strip(),
+            "href": f"mailto:{str(meta.get('cs_email')).strip()}",
+            "icon": "bi-envelope",
+        })
+    school["public_contacts"] = contacts
+
+    links = []
+    link_specs = [
+        ("website", "Website", "bi-globe2", _normalize_external_url(meta.get("website"))),
+        ("gmaps_url", "Maps", "bi-geo-alt", _normalize_external_url(meta.get("gmaps_url"))),
+        ("instagram", "Instagram", "bi-instagram", _build_social_profile_url("instagram", meta.get("instagram"))),
+        ("tiktok", "TikTok", "bi-tiktok", _build_social_profile_url("tiktok", meta.get("tiktok"))),
+        ("youtube", "YouTube", "bi-youtube", _build_social_profile_url("youtube", meta.get("youtube"))),
+        ("telegram", "Telegram", "bi-telegram", _build_social_profile_url("telegram", meta.get("telegram"))),
+        ("wa_channel", "WA Channel", "bi-whatsapp", _normalize_external_url(meta.get("wa_channel"))),
+    ]
+    for key, label, icon, href in link_specs:
+        raw_value = (meta.get(key) or "").strip() if isinstance(meta.get(key), str) else meta.get(key)
+        if raw_value and href:
+            links.append({"label": label, "href": href, "icon": icon})
+    school["public_links"] = links
+
+    location_parts = [
+        school.get("kelurahan_name"),
+        school.get("kecamatan_name"),
+    ]
+    school["public_location"] = ", ".join(str(part) for part in location_parts if part)
+    return school
+
+
 def list_all_adiwiyata_posts_public(limit: int = 20, offset: int = 0) -> list[dict]:
     """Ambil semua postingan adiwiyata dari semua sekolah, diurutkan terbaru."""
     with get_cursor() as cur:
@@ -2008,7 +2146,8 @@ def list_all_adiwiyata_posts_public(limit: int = 20, offset: int = 0) -> list[di
                 p.description,
                 p.created_at,
                 s.name AS school_name,
-                s.npsn AS school_npsn
+                s.npsn AS school_npsn,
+                s.logo_url AS school_logo_url
             FROM portal_adiwiyata_posts p
             LEFT JOIN portal_schools s ON p.school_id = s.id
             ORDER BY p.created_at DESC
@@ -2045,6 +2184,7 @@ def list_all_adiwiyata_posts_public(limit: int = 20, offset: int = 0) -> list[di
         # Serialize created_at
         if row.get("created_at"):
             row["created_at"] = row["created_at"].isoformat()
+        row["school_logo_url"] = _build_school_logo_url(row.get("school_logo_url"), external=True)
         rows.append(row)
     return rows
 
@@ -2061,7 +2201,16 @@ def list_random_adiwiyata_photos(limit: int = 12) -> list[dict]:
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT p.id, p.media_path, p.media_type, s.name AS school_name
+            SELECT
+                p.id,
+                p.school_id,
+                p.category,
+                p.media_path,
+                p.media_type,
+                p.description,
+                p.created_at,
+                s.name AS school_name,
+                s.logo_url AS school_logo_url
             FROM portal_adiwiyata_posts p
             LEFT JOIN portal_schools s ON p.school_id = s.id
             WHERE p.media_type = 'image'
@@ -2089,7 +2238,17 @@ def list_random_adiwiyata_photos(limit: int = 12) -> list[dict]:
         if not url and val:
             url = url_for("portal.uploaded_file", filename=val, _external=True)
         if url:
-            rows.append({"id": row["id"], "url": url, "school_name": row.get("school_name", "")})
+            created_at = row.get("created_at")
+            rows.append({
+                "id": row["id"],
+                "url": url,
+                "school_id": row.get("school_id"),
+                "school_name": row.get("school_name", ""),
+                "school_logo_url": _build_school_logo_url(row.get("school_logo_url"), external=True),
+                "category": row.get("category", ""),
+                "description": row.get("description") or "",
+                "created_at": created_at.isoformat() if created_at else None,
+            })
     return rows
 
 
@@ -2391,7 +2550,7 @@ def sekolah_adiwiyata_feed(category: str) -> Response:
 
 @portal_bp.route("/public/sekolah/<int:school_id>/adiwiyata/<category>")
 def public_sekolah_adiwiyata_feed(school_id: int, category: str) -> Response:
-    school = get_school_by_id(school_id)
+    school = _fetch_public_school_profile(school_id)
     if not school:
         flash("Sekolah tidak ditemukan.", "warning")
         return redirect("http://localhost:3000/adiwiyata")

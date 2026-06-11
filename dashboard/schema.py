@@ -743,6 +743,28 @@ CREATE INDEX IF NOT EXISTS idx_adiwiyata_posts_school_category
 ON portal_adiwiyata_posts (school_id, category);
 """
 
+_PORTAL_ADIWIYATA_POSTS_CREATED_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_adiwiyata_posts_created_at
+ON portal_adiwiyata_posts (created_at DESC);
+"""
+
+_ADIWIYATA_POST_LIKES_SQL = """
+CREATE TABLE IF NOT EXISTS adiwiyata_post_likes (
+    id SERIAL PRIMARY KEY,
+    post_id INTEGER NOT NULL REFERENCES portal_adiwiyata_posts(id) ON DELETE CASCADE,
+    fingerprint TEXT NOT NULL,
+    action TEXT NOT NULL CHECK (action IN ('like', 'dislike')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (post_id, fingerprint)
+);
+"""
+
+_ADIWIYATA_POST_LIKES_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_adiwiyata_post_likes_post_action
+ON adiwiyata_post_likes (post_id, action);
+"""
+
 _USER_KECAMATAN_SQL = """
 CREATE TABLE IF NOT EXISTS user_kecamatan (
     id SERIAL PRIMARY KEY,
@@ -1338,6 +1360,9 @@ def ensure_dashboard_schema() -> None:
         _PORTAL_ROOM_FOLLOW_UP_UPDATES_INDEX_SQL,
         _PORTAL_ADIWIYATA_POSTS_SQL,
         _PORTAL_ADIWIYATA_POSTS_INDEX_SQL,
+        _PORTAL_ADIWIYATA_POSTS_CREATED_INDEX_SQL,
+        _ADIWIYATA_POST_LIKES_SQL,
+        _ADIWIYATA_POST_LIKES_INDEX_SQL,
         # Kecamatan access control tables
         _USER_KECAMATAN_SQL,
         _USER_KECAMATAN_INDEX_SQL,

@@ -107,6 +107,146 @@
             .page-body { grid-template-columns: 1fr; padding: 14px; }
         }
 
+        /* ─── Public School Profile ─── */
+        .public-profile-wrap {
+            max-width: 900px;
+            margin: 22px auto 0;
+            padding: 0 22px;
+        }
+        .public-profile-card {
+            background: var(--bg-surface, #fff);
+            border: 1px solid var(--border-soft, #e5e7eb);
+            border-radius: 18px;
+            box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+            overflow: hidden;
+        }
+        .public-profile-main {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 16px;
+            padding: 18px;
+            align-items: center;
+        }
+        .public-school-logo {
+            width: 74px;
+            height: 74px;
+            border-radius: 18px;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--green-1), var(--green-2));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.55rem;
+            font-weight: 900;
+            box-shadow: 0 10px 24px rgba(22, 163, 74, .18);
+            flex-shrink: 0;
+        }
+        .public-school-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            background: white;
+        }
+        .public-profile-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 9px;
+            border-radius: 999px;
+            background: var(--green-light);
+            color: var(--green-2);
+            font-size: 0.68rem;
+            font-weight: 850;
+            letter-spacing: .18px;
+            margin-bottom: 7px;
+        }
+        .public-profile-name {
+            margin: 0;
+            color: var(--text-main, #111827);
+            font-size: 1.2rem;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+        .public-profile-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 12px;
+            margin-top: 7px;
+            color: var(--text-muted, #6b7280);
+            font-size: 0.78rem;
+            font-weight: 650;
+        }
+        .public-profile-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .public-profile-address {
+            margin: 10px 0 0;
+            color: var(--text-muted, #6b7280);
+            font-size: 0.82rem;
+            line-height: 1.55;
+        }
+        .public-profile-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+            border-top: 1px solid var(--border-soft, #e5e7eb);
+            background: var(--bg-page, #f9fafb);
+        }
+        .public-profile-stat {
+            padding: 12px 14px;
+            border-right: 1px solid var(--border-soft, #e5e7eb);
+        }
+        .public-profile-stat:last-child { border-right: 0; }
+        .public-profile-stat strong {
+            display: block;
+            color: var(--text-main, #111827);
+            font-size: 1rem;
+            line-height: 1;
+        }
+        .public-profile-stat span {
+            display: block;
+            color: var(--text-muted, #6b7280);
+            font-size: 0.68rem;
+            font-weight: 750;
+            margin-top: 4px;
+        }
+        .public-profile-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 14px 18px 18px;
+            border-top: 1px solid var(--border-soft, #e5e7eb);
+        }
+        .public-profile-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            min-height: 34px;
+            padding: 8px 11px;
+            border-radius: 999px;
+            border: 1px solid var(--border-soft, #e5e7eb);
+            background: var(--bg-surface, #fff);
+            color: var(--text-main, #111827);
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 800;
+            transition: all .15s;
+        }
+        .public-profile-link:hover {
+            border-color: var(--green-1);
+            color: var(--green-1);
+            background: var(--green-light);
+        }
+        @media (max-width: 560px) {
+            .public-profile-wrap { padding: 0 14px; margin-top: 14px; }
+            .public-profile-main { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+            .public-profile-meta { justify-content: center; }
+            .public-profile-actions { justify-content: center; }
+        }
+
         /* ─── Upload Panel ─── */
         .upload-panel { position: sticky; top: 66px; height: fit-content; }
         .upload-card {
@@ -175,9 +315,62 @@
             display: none; border-radius: 10px;
             overflow: hidden; border: 1px solid var(--border-soft, #e5e7eb);
             margin-top: 12px;
+            background: var(--bg-surface, #fff);
         }
         .preview-box.show { display: block; }
-        .preview-box img { width: 100%; max-height: 150px; object-fit: cover; display: block; }
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            padding: 10px;
+            background: var(--bg-page, #f9fafb);
+        }
+        .preview-thumb {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #e5e7eb;
+            border: 1px solid var(--border-soft, #e5e7eb);
+        }
+        .preview-thumb.is-cover {
+            grid-column: span 2;
+            grid-row: span 2;
+        }
+        .preview-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .preview-cover-badge {
+            position: absolute;
+            left: 6px;
+            bottom: 6px;
+            background: rgba(22, 163, 74, 0.92);
+            color: white;
+            border-radius: 999px;
+            padding: 3px 7px;
+            font-size: 0.62rem;
+            font-weight: 800;
+        }
+        .preview-remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 24px;
+            height: 24px;
+            border-radius: 999px;
+            border: 0;
+            background: rgba(0, 0, 0, 0.58);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.78rem;
+        }
+        .preview-remove:hover { background: rgba(220, 38, 38, 0.9); }
         .preview-footer {
             padding: 8px 12px; display: flex; align-items: center; gap: 8px;
             background: var(--bg-surface, #fff);
@@ -186,6 +379,20 @@
             flex: 1; font-size: 0.78rem; font-weight: 600;
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
+        .preview-add {
+            background: var(--green-light);
+            border: 1px solid rgba(22, 163, 74, .22);
+            color: var(--green-2);
+            border-radius: 999px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .preview-add:hover { background: rgba(22, 163, 74, .16); }
         .preview-clear { background: none; border: none; color: #dc2626; cursor: pointer; font-size: 1rem; }
 
         /* Video link */
@@ -273,6 +480,21 @@
             display: block; transition: transform .3s ease;
         }
         .gallery-item:hover .yt-thumb { transform: scale(1.07); }
+        .gallery-stack-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.62);
+            color: white;
+            padding: 3px 7px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
         .play-overlay {
             position: absolute; inset: 0;
             background: rgba(0,0,0,0.28);
@@ -322,10 +544,6 @@
             max-height: 90vh;
             box-shadow: 0 24px 60px rgba(0,0,0,0.5);
         }
-        @media (max-width: 720px) {
-            .lbx-inner { grid-template-columns: 1fr; max-width: 96vw; }
-            .lbx-media-side { max-height: 50vw; }
-        }
         .lbx-media-side {
             background: #000;
             min-width: 320px;
@@ -339,6 +557,79 @@
         .lbx-media-side iframe {
             width: 100%; height: 100%; min-height: 320px; border: none; display: block;
         }
+        .lbx-photo-stage {
+            position: relative;
+            width: min(55vw, 820px);
+            height: min(90vh, 760px);
+            min-width: 320px;
+            min-height: 360px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+        .lbx-photo-stage img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        .lbx-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 42px;
+            height: 42px;
+            border-radius: 999px;
+            border: 0;
+            background: rgba(0,0,0,0.48);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.15rem;
+            transition: background .15s, transform .15s;
+        }
+        .lbx-nav-btn:hover {
+            background: rgba(0,0,0,0.72);
+            transform: translateY(-50%) scale(1.04);
+        }
+        .lbx-nav-btn.prev { left: 14px; }
+        .lbx-nav-btn.next { right: 14px; }
+        .lbx-counter {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.55);
+            color: white;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.76rem;
+            font-weight: 800;
+        }
+        .lbx-dots {
+            position: absolute;
+            left: 50%;
+            bottom: 14px;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            max-width: 80%;
+            overflow: hidden;
+        }
+        .lbx-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            border: 0;
+            padding: 0;
+            background: rgba(255,255,255,0.45);
+            cursor: pointer;
+            flex: 0 0 auto;
+        }
+        .lbx-dot.active { background: white; }
         .lbx-info-side {
             padding: 24px 22px; overflow-y: auto;
             display: flex; flex-direction: column; gap: 0;
@@ -390,6 +681,30 @@
         .lbx-edit-form { display: none; }
         .lbx-edit-form.show { display: block; }
 
+        @media (max-width: 720px) {
+            .lbx-inner {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto minmax(0, 1fr);
+                max-width: 96vw;
+                max-height: 96vh;
+            }
+            .lbx-media-side {
+                max-width: 96vw;
+                max-height: none;
+                min-width: 0;
+            }
+            .lbx-photo-stage {
+                width: 96vw;
+                height: 56vh;
+                min-width: 0;
+                min-height: 280px;
+            }
+            .lbx-info-side {
+                max-height: 38vh;
+                padding: 16px;
+            }
+        }
+
         /* Empty state */
         .empty-state {
             background: var(--bg-surface, #fff);
@@ -406,6 +721,16 @@
             .topbar { padding: 0 12px; }
             .school-pill { display: none; }
             .topbar-title span:not(.cat-icon) { font-size: 0.88rem; }
+            .lbx-photo-stage {
+                width: 96vw;
+                height: 58vh;
+                min-width: 0;
+                min-height: 260px;
+            }
+            .lbx-nav-btn {
+                width: 36px;
+                height: 36px;
+            }
         }
     </style>
 </head>
@@ -454,6 +779,67 @@
 {% endif %}
 {% endwith %}
 
+{% if is_public and school %}
+<!-- ─── Public School Profile ─── -->
+<section class="public-profile-wrap">
+    <div class="public-profile-card">
+        <div class="public-profile-main">
+            <div class="public-school-logo" aria-hidden="true">
+                {% if school.logo_url %}
+                <img src="{{ school.logo_url }}" alt="Logo {{ school.name }}">
+                {% else %}
+                {{ (school.name or 'S')[:1] }}
+                {% endif %}
+            </div>
+            <div>
+                <div class="public-profile-eyebrow">
+                    <i class="bi bi-tree-fill"></i>
+                    Profil Adiwiyata Sekolah
+                </div>
+                <h2 class="public-profile-name">{{ school.name }}</h2>
+                <div class="public-profile-meta">
+                    {% if school.npsn %}<span><i class="bi bi-hash"></i>NPSN {{ school.npsn }}</span>{% endif %}
+                    {% if school.jenjang %}<span><i class="bi bi-mortarboard"></i>{{ school.jenjang }}</span>{% endif %}
+                    {% if school.status %}<span><i class="bi bi-patch-check"></i>{{ school.status }}</span>{% endif %}
+                    {% if school.public_location %}<span><i class="bi bi-geo-alt"></i>{{ school.public_location }}</span>{% endif %}
+                </div>
+                {% if school.alamat %}
+                <p class="public-profile-address">{{ school.alamat }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if school.public_stats %}
+        <div class="public-profile-stats">
+            {% for item in school.public_stats %}
+            <div class="public-profile-stat">
+                <strong>{{ item.value }}</strong>
+                <span>{{ item.label }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if school.public_contacts or school.public_links %}
+        <div class="public-profile-actions">
+            {% for contact in school.public_contacts %}
+            <a class="public-profile-link" href="{{ contact.href }}">
+                <i class="bi {{ contact.icon }}"></i>
+                {{ contact.label }}
+            </a>
+            {% endfor %}
+            {% for link in school.public_links %}
+            <a class="public-profile-link" href="{{ link.href }}" target="_blank" rel="noopener noreferrer">
+                <i class="bi {{ link.icon }}"></i>
+                {{ link.label }}
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
 <!-- ─── Page ─── -->
 <div class="page-body" {% if is_public %}style="grid-template-columns: 1fr; max-width: 900px;"{% endif %}>
 
@@ -490,10 +876,11 @@
                     </div>
 
                     <div class="preview-box" id="previewBox">
-                        <img id="previewImg" src="" alt="">
+                        <div class="preview-grid" id="previewGrid"></div>
                         <div class="preview-footer">
                             <i class="bi bi-image text-success"></i>
-                            <span class="preview-fname" id="prevFname">foto.jpg</span>
+                            <span class="preview-fname" id="prevFname">Foto pertama tampil sebagai sampul</span>
+                            <button type="button" class="preview-add" id="addMoreFiles" title="Tambah foto"><i class="bi bi-plus-lg"></i></button>
                             <button type="button" class="preview-clear" id="clearFile" title="Hapus"><i class="bi bi-x-circle-fill"></i></button>
                         </div>
                     </div>
@@ -558,22 +945,27 @@
         {% else %}
         <div class="gallery-grid" id="galleryGrid">
             {% for post in posts %}
+            {% if post.media_type == 'image' %}
+                {% set post_urls = post.get('media_urls') or [url_for('portal.uploaded_file', filename=post.media_path)] %}
+            {% else %}
+                {% set post_urls = [] %}
+            {% endif %}
             <div class="gallery-item"
                 data-id="{{ post.id }}"
                 data-type="{{ post.media_type }}"
-                data-src="{{ url_for('portal.uploaded_file', filename=post.media_path) if post.media_type == 'image' else post.media_path }}"
+                data-src="{{ post_urls[0] if post.media_type == 'image' and post_urls else post.media_path }}"
                 data-desc="{{ post.description or '' }}"
                 data-ts="{{ post.created_at.strftime('%d %B %Y • %H:%M') }} WIB"
                 data-author="{{ post.author_name or '' }}"
                 data-school="{{ school.name if school and school.name else 'Sekolah' }}"
-                {% if post.get('media_urls') %}data-urls='{{ post.get('media_urls') | tojson }}'{% endif %}
+                {% if post.media_type == 'image' %}data-urls='{{ post_urls | tojson }}'{% endif %}
                 onclick="openLightbox(this)">
 
                 {% if post.media_type == 'image' %}
-                    <img src="{{ url_for('portal.uploaded_file', filename=post.media_path) }}" alt="Foto Adiwiyata" loading="lazy">
-                    {% if post.get('media_paths') and post.get('media_paths')|length > 1 %}
-                    <div style="position: absolute; top:8px; right:8px; background: rgba(0,0,0,0.6); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; z-index: 10;">
-                        <i class="bi bi-images me-1"></i>{{ post.get('media_paths')|length }}
+                    <img src="{{ post_urls[0] }}" alt="Foto Adiwiyata" loading="lazy">
+                    {% if post_urls|length > 1 %}
+                    <div class="gallery-stack-badge" title="{{ post_urls|length }} foto dalam postingan ini">
+                        <i class="bi bi-images"></i>{{ post_urls|length }}
                     </div>
                     {% endif %}
                 {% elif post.media_type == 'video_link' %}
@@ -664,38 +1056,105 @@ function switchTab(tab) {
     const dz = document.getElementById('dropZone');
     const fi = document.getElementById('mediaFile');
     const pb = document.getElementById('previewBox');
-    const pi = document.getElementById('previewImg');
+    const pg = document.getElementById('previewGrid');
     const pn = document.getElementById('prevFname');
     const cl = document.getElementById('clearFile');
+    const addMore = document.getElementById('addMoreFiles');
     const btn = document.getElementById('btnPhoto');
     const form = document.getElementById('formPhoto');
+    let selectedFiles = [];
 
-    function showPreview(files) {
-        if (files.length === 1) {
-            pn.textContent = files[0].name;
-            const rd = new FileReader();
-            rd.onload = e => { pi.src = e.target.result; pi.style.display = 'block'; };
-            rd.readAsDataURL(files[0]);
-        } else {
-            pn.textContent = files.length + " file dipilih";
-            pi.style.display = 'none';
+    function syncInputFiles() {
+        if (!fi || typeof DataTransfer === 'undefined') return;
+        const dt = new DataTransfer();
+        selectedFiles.forEach(file => dt.items.add(file));
+        fi.files = dt.files;
+    }
+
+    function renderPreview() {
+        if (!pb || !pg || !dz) return;
+        pg.innerHTML = '';
+
+        if (!selectedFiles.length) {
+            pb.classList.remove('show');
+            dz.style.display = '';
+            if (fi) fi.value = '';
+            return;
+        }
+
+        selectedFiles.forEach((file, index) => {
+            const thumb = document.createElement('div');
+            thumb.className = 'preview-thumb' + (index === 0 ? ' is-cover' : '');
+
+            const img = document.createElement('img');
+            img.alt = file.name || 'Preview foto';
+            thumb.appendChild(img);
+
+            const reader = new FileReader();
+            reader.onload = e => { img.src = e.target.result; };
+            reader.readAsDataURL(file);
+
+            if (index === 0) {
+                const badge = document.createElement('span');
+                badge.className = 'preview-cover-badge';
+                badge.textContent = 'Sampul';
+                thumb.appendChild(badge);
+            }
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'preview-remove';
+            removeBtn.title = 'Hapus foto ini';
+            removeBtn.innerHTML = '<i class="bi bi-x-lg"></i>';
+            removeBtn.addEventListener('click', () => {
+                selectedFiles.splice(index, 1);
+                syncInputFiles();
+                renderPreview();
+            });
+            thumb.appendChild(removeBtn);
+
+            pg.appendChild(thumb);
+        });
+
+        if (pn) {
+            pn.textContent = selectedFiles.length === 1
+                ? selectedFiles[0].name
+                : `${selectedFiles.length} foto dipilih. Foto pertama menjadi sampul.`;
         }
         pb.classList.add('show');
-        dz.style.display = 'none';
-    }
-    function clearPreview() {
-        fi.value = '';
-        pb.classList.remove('show');
-        pi.src = '';
-        pi.style.display = 'block';
         dz.style.display = '';
     }
 
+    function addFiles(files) {
+        const incoming = Array.from(files || []).filter(file => {
+            const name = file.name || '';
+            return (file.type && file.type.startsWith('image/')) || /\.(png|jpe?g|webp)$/i.test(name);
+        });
+        if (!incoming.length) return;
+        selectedFiles = selectedFiles.concat(incoming);
+        syncInputFiles();
+        renderPreview();
+    }
+
+    function clearPreview() {
+        selectedFiles = [];
+        if (fi) {
+            fi.value = '';
+        }
+        renderPreview();
+    }
+
     if (fi) {
-        fi.addEventListener('change', () => { if (fi.files.length) showPreview(fi.files); });
+        fi.addEventListener('change', () => {
+            if (fi.files.length) addFiles(fi.files);
+            syncInputFiles();
+        });
     }
     if (cl) {
         cl.addEventListener('click', clearPreview);
+    }
+    if (addMore && fi) {
+        addMore.addEventListener('click', () => fi.click());
     }
 
     if (dz) {
@@ -704,14 +1163,17 @@ function switchTab(tab) {
         dz.addEventListener('drop', e => {
             e.preventDefault(); dz.classList.remove('over');
             if (e.dataTransfer.files.length) {
-                fi.files = e.dataTransfer.files;
-                showPreview(fi.files);
+                addFiles(e.dataTransfer.files);
             }
         });
     }
 
     if (form) {
         form.addEventListener('submit', () => {
+            if (!selectedFiles.length && fi && fi.files.length) {
+                selectedFiles = Array.from(fi.files);
+            }
+            syncInputFiles();
             if (btn) {
                 btn.disabled = true;
                 btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mengunggah...';
@@ -753,6 +1215,8 @@ function switchTab(tab) {
 
 // ─── Lightbox ───
 let currentPostId = null;
+let currentMediaUrls = [];
+let currentMediaIndex = 0;
 const EDIT_URLS = {
     {% for post in posts %}"{{ post.id }}": "{{ url_for('portal.sekolah_adiwiyata_edit', post_id=post.id) }}"{% if not loop.last %},{% endif %}
     {% endfor %}
@@ -761,6 +1225,102 @@ const DELETE_URLS = {
     {% for post in posts %}"{{ post.id }}": "{{ url_for('portal.sekolah_adiwiyata_delete', post_id=post.id) }}"{% if not loop.last %},{% endif %}
     {% endfor %}
 };
+
+function getImageUrls(d) {
+    if (!d.urls) return [d.src];
+    try {
+        const urls = JSON.parse(d.urls);
+        return Array.isArray(urls) && urls.length ? urls : [d.src];
+    } catch (err) {
+        return [d.src];
+    }
+}
+
+function renderPhotoStage(media) {
+    media.innerHTML = '';
+
+    const stage = document.createElement('div');
+    stage.className = 'lbx-photo-stage';
+
+    const img = document.createElement('img');
+    img.id = 'lbxPhotoImg';
+    img.alt = 'Foto Adiwiyata';
+    stage.appendChild(img);
+
+    if (currentMediaUrls.length > 1) {
+        const counter = document.createElement('div');
+        counter.className = 'lbx-counter';
+        counter.id = 'lbxCounter';
+        stage.appendChild(counter);
+
+        const prevBtn = document.createElement('button');
+        prevBtn.type = 'button';
+        prevBtn.className = 'lbx-nav-btn prev';
+        prevBtn.title = 'Foto sebelumnya';
+        prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
+        prevBtn.addEventListener('click', event => {
+            event.stopPropagation();
+            moveLightboxPhoto(-1);
+        });
+        stage.appendChild(prevBtn);
+
+        const nextBtn = document.createElement('button');
+        nextBtn.type = 'button';
+        nextBtn.className = 'lbx-nav-btn next';
+        nextBtn.title = 'Foto berikutnya';
+        nextBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
+        nextBtn.addEventListener('click', event => {
+            event.stopPropagation();
+            moveLightboxPhoto(1);
+        });
+        stage.appendChild(nextBtn);
+
+        const dots = document.createElement('div');
+        dots.className = 'lbx-dots';
+        dots.id = 'lbxDots';
+        currentMediaUrls.forEach((_, index) => {
+            const dot = document.createElement('button');
+            dot.type = 'button';
+            dot.className = 'lbx-dot';
+            dot.title = `Foto ${index + 1}`;
+            dot.addEventListener('click', event => {
+                event.stopPropagation();
+                setLightboxPhoto(index);
+            });
+            dots.appendChild(dot);
+        });
+        stage.appendChild(dots);
+    }
+
+    media.appendChild(stage);
+    updateLightboxPhoto();
+}
+
+function updateLightboxPhoto() {
+    const img = document.getElementById('lbxPhotoImg');
+    if (!img || !currentMediaUrls.length) return;
+
+    img.src = currentMediaUrls[currentMediaIndex];
+
+    const counter = document.getElementById('lbxCounter');
+    if (counter) {
+        counter.textContent = `${currentMediaIndex + 1} / ${currentMediaUrls.length}`;
+    }
+
+    document.querySelectorAll('#lbxDots .lbx-dot').forEach((dot, index) => {
+        dot.classList.toggle('active', index === currentMediaIndex);
+    });
+}
+
+function setLightboxPhoto(index) {
+    if (!currentMediaUrls.length) return;
+    currentMediaIndex = (index + currentMediaUrls.length) % currentMediaUrls.length;
+    updateLightboxPhoto();
+}
+
+function moveLightboxPhoto(delta) {
+    setLightboxPhoto(currentMediaIndex + delta);
+}
 
 function openLightbox(el) {
     const d = el.dataset;
@@ -771,36 +1331,12 @@ function openLightbox(el) {
     // Set media
     media.innerHTML = '';
     if (d.type === 'image') {
-        const urls = d.urls ? JSON.parse(d.urls) : [d.src];
-        if (urls.length > 1) {
-            media.innerHTML = `
-                <div id="carouselLbx" class="carousel slide" data-bs-ride="false" style="width:100%; height:100%;">
-                    <div class="carousel-inner" style="height:100%; display:flex; align-items:center;">
-                        ${urls.map((url, i) => `
-                            <div class="carousel-item ${i===0?'active':''}" style="height:100%; width:100%;">
-                                <div style="display:flex; align-items:center; justify-content:center; height:100%;">
-                                    <img src="${url}" style="max-width:100%;max-height:90vh;object-fit:contain;display:block;">
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselLbx" data-bs-slide="prev" style="width:10%;">
-                        <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5); border-radius: 50%; padding: 20px;"></span>
-                        <span class="visually-hidden">Previous</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#carouselLbx" data-bs-slide="next" style="width:10%;">
-                        <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5); border-radius: 50%; padding: 20px;"></span>
-                        <span class="visually-hidden">Next</span>
-                    </button>
-                </div>
-            `;
-        } else {
-            const img = document.createElement('img');
-            img.src = urls[0];
-            img.style.cssText = 'max-width:100%;max-height:90vh;object-fit:contain;display:block;margin:0 auto;';
-            media.appendChild(img);
-        }
+        currentMediaUrls = getImageUrls(d);
+        currentMediaIndex = 0;
+        renderPhotoStage(media);
     } else if (d.type === 'video_link') {
+        currentMediaUrls = [];
+        currentMediaIndex = 0;
         const iframe = document.createElement('iframe');
         iframe.src = d.src;
         iframe.allowFullscreen = true;
@@ -830,6 +1366,8 @@ function openLightbox(el) {
 function closeLightbox() {
     document.getElementById('lbxOverlay').classList.remove('open');
     document.body.style.overflow = '';
+    currentMediaUrls = [];
+    currentMediaIndex = 0;
     // Stop video
     document.getElementById('lbxMedia').innerHTML = '';
 }
@@ -852,8 +1390,19 @@ setTimeout(() => {
     });
 }, 4000);
 
-// ESC to close lightbox
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+// Keyboard controls for lightbox
+document.addEventListener('keydown', e => {
+    const overlay = document.getElementById('lbxOverlay');
+    if (!overlay || !overlay.classList.contains('open')) return;
+
+    if (e.key === 'Escape') {
+        closeLightbox();
+    } else if (e.key === 'ArrowRight') {
+        moveLightboxPhoto(1);
+    } else if (e.key === 'ArrowLeft') {
+        moveLightboxPhoto(-1);
+    }
+});
 </script>
 
 </body>
