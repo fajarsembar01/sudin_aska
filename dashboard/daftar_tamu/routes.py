@@ -568,6 +568,40 @@ def _is_coordinator_dashboard_user(user: Optional[dict]) -> bool:
     return (user.get("role") or "").strip().lower() == "coordinator"
 
 
+# ID kecamatan virtual 'SUDIN' yang mencakup seluruh wilayah (Cilincing, Koja, Kelapa Gading)
+_SUDIN_VIRTUAL_KECAMATAN_ID = 4
+# ID kecamatan nyata yang tercakup dalam wilayah sudin
+_SUDIN_REAL_KECAMATAN_IDS = [1, 2, 3]  # CILINCING, KOJA, KELAPA GADING
+
+
+def _is_sudin_coordinator(user: Optional[dict]) -> bool:
+    """Return True jika coordinator memiliki unit kerja sudin (kecamatan virtual ID=4 / nama 'SUDIN')."""
+    if not _is_coordinator_dashboard_user(user):
+        return False
+    # Cek dari session user
+    try:
+        req_kec = int((user or {}).get("requested_kecamatan") or 0)
+        if req_kec == _SUDIN_VIRTUAL_KECAMATAN_ID:
+            return True
+    except (TypeError, ValueError):
+        pass
+    # Cek dari database
+    try:
+        user_id = int((user or {}).get("id") or 0)
+        if user_id > 0:
+            db_profile = _fetch_dashboard_user(user_id) or {}
+            req_kec_db = int(db_profile.get("requested_kecamatan") or 0)
+            if req_kec_db == _SUDIN_VIRTUAL_KECAMATAN_ID:
+                return True
+            # Cek berdasarkan nama kecamatan
+            kec_name = (db_profile.get("requested_kecamatan_name") or "").strip().upper()
+            if kec_name == "SUDIN":
+                return True
+    except (TypeError, ValueError, Exception):
+        pass
+    return False
+
+
 def _resolve_dashboard_owner_user_id(user: Optional[dict]) -> Optional[int]:
     if not _is_coordinator_dashboard_user(user):
         return None
@@ -579,11 +613,15 @@ def _resolve_dashboard_owner_user_id(user: Optional[dict]) -> Optional[int]:
 
 
 def _resolve_dashboard_school_status(user: Optional[dict], raw_value: Optional[str]) -> str:
-    default_status = "negeri" if _is_coordinator_dashboard_user(user) else "all"
-    status = _parse_school_status(raw_value, default=default_status)
-    if _is_coordinator_dashboard_user(user):
-        return "negeri"
-    return status
+    """Resolve school_status filter for dashboard.
+
+    Coordinator (baik sudin maupun kecamatan) sekarang menampilkan semua sekolah
+    (negeri + swasta) agar data lebih lengkap sesuai unit kerja masing-masing.
+    """
+    if not _is_coordinator_dashboard_user(user):
+        return _parse_school_status(raw_value, default="all")
+    # Coordinator selalu melihat semua sekolah (negeri + swasta)
+    return "all"
 
 
 def _parse_gallery_photo_order(value: Optional[str], default: str = "random") -> str:
@@ -1050,10 +1088,21 @@ def _fetch_dashboard_user(user_id: int) -> Optional[dict]:
 
 
 def _resolve_dashboard_kecamatan_ids(user: Optional[dict]) -> Optional[list[int]]:
+    """Resolve kecamatan IDs filter untuk coordinator dashboard.
+
+    - Coordinator SUDIN (requested_kecamatan = 4 / 'SUDIN'): return None
+      (tidak ada filter kecamatan = tampilkan semua kecamatan: Cilincing, Koja, Kelapa Gading)
+    - Coordinator kecamatan (requested_kecamatan = 1/2/3): return [kec_id]
+      (filter ke kecamatan yang bersangkutan saja)
+    """
     if not isinstance(user, dict):
         return None
     role_value = (user.get("role") or "").strip().lower()
     if role_value != "coordinator":
+        return None
+
+    # Coordinator SUDIN: tidak ada filter kecamatan (semua kecamatan)
+    if _is_sudin_coordinator(user):
         return None
 
     user_id = int(user.get("id") or 0)
@@ -1065,7 +1114,8 @@ def _resolve_dashboard_kecamatan_ids(user: Optional[dict]) -> Optional[list[int]
             kecamatan_id = int(raw_value or 0)
         except (TypeError, ValueError):
             return
-        if kecamatan_id <= 0 or kecamatan_id in seen_ids:
+        # Lewati ID virtual SUDIN agar tidak dijadikan filter kecamatan nyata
+        if kecamatan_id <= 0 or kecamatan_id == _SUDIN_VIRTUAL_KECAMATAN_ID or kecamatan_id in seen_ids:
             return
         seen_ids.add(kecamatan_id)
         resolved_ids.append(kecamatan_id)
@@ -1095,12 +1145,12 @@ def _can_access_school_for_dashboard(
     if role_value != "coordinator":
         return True
 
-    school_status = (school.get("status") or "").strip().lower()
-    if school_status not in {"negeri", "state"}:
-        return False
+    # Coordinator sekarang bisa akses semua jenis sekolah (negeri + swasta)
+    # Tidak ada pembatasan berdasarkan school_status
 
     allowed_ids = kecamatan_ids or _resolve_dashboard_kecamatan_ids(user)
     if not allowed_ids:
+        # Coordinator SUDIN: akses ke semua kecamatan
         return True
     try:
         school_kecamatan_id = int(school.get("kecamatan_id") or 0)
