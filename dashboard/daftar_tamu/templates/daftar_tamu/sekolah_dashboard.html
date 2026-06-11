@@ -420,21 +420,10 @@
                             placeholder="Contoh: Monitoring sarpras" list="purposeKeywordList"
                             autocomplete="off" role="combobox" aria-autocomplete="list"
                             aria-expanded="false" aria-controls="purposeSuggestions">
-                        <div id="purposeSuggestions" class="position-absolute w-100 rounded-3 shadow-sm d-none"
-                            role="listbox"
-                            style="top: calc(100% + 4px); left: 0; z-index: 1050; max-height: 220px; overflow-y: auto; background-color: var(--bg-surface); border: 1px solid var(--border-soft);">
-                        </div>
+                        
                     </div>
-                    <div id="purposeQuickChips" class="purpose-chip-list" aria-label="Saran cepat tujuan kunjungan">
-                    </div>
-                    <div id="purposeError" class="invalid-feedback">Tujuan kunjungan wajib diisi.</div>
-                    <datalist id="purposeKeywordList">
-                        {% for kw in purpose_keywords|default([]) %}
-                        <option value="{{ kw }}"></option>
-                        {% endfor %}
-                    </datalist>
                     <div class="small text-muted mt-2">
-                        Saran hanya dari keyword admin, diurutkan berdasarkan frekuensi pemakaian.
+                        Tuliskan tujuan sesuai arahan tamu yang datang. Contoh : Monitoring PANBERS
                     </div>
                 </div>
                 <div class="mb-3">
