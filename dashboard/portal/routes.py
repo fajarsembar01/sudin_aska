@@ -1948,6 +1948,14 @@ def sekolah_home() -> Response:
             "href": url_for("daftar_tamu.sekolah_guestbook"),
             "col_class": "col-md-6 col-12",
         },
+        {
+            "title": "Adiwiyata",
+            "description": "Posting laporan progres atau kondisi pelestarian lingkungan sekolah.",
+            "icon": "bi-buildings",
+            "icon_secondary": "bi-tree-fill",
+            "href": "/portal/sekolah/adiwiyata",
+            "col_class": "col-md-6 col-12",
+        },
     ]
     return render_template(
         "role_selection.html",
