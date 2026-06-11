@@ -6,6 +6,7 @@ interface Post {
   id: number;
   school_id: number;
   school_name: string;
+  school_logo_url?: string | null;
   category: string;
   media_type: string;
   media_urls: string[] | null;
@@ -17,7 +18,12 @@ interface Post {
 interface Photo {
   id: number;
   url: string;
+  school_id?: number;
   school_name: string;
+  school_logo_url?: string | null;
+  category?: string;
+  description?: string;
+  created_at?: string;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -45,6 +51,41 @@ const CATEGORY_COLORS: Record<string, string> = {
   'kebersihan-sanitasi-drainase': 'from-violet-400 to-purple-500',
   'kompos': 'from-emerald-400 to-teal-500',
   'tanaman': 'from-green-400 to-emerald-600',
+}
+
+const SchoolLogoAvatar = ({
+  name,
+  logoUrl,
+  colorClass,
+  className = 'w-12 h-12 rounded-2xl text-lg',
+}: {
+  name: string;
+  logoUrl?: string | null;
+  colorClass: string;
+  className?: string;
+}) => {
+  const initial = (name || 'S').charAt(0).toUpperCase()
+
+  return (
+    <div className={`relative ${className} overflow-hidden flex-shrink-0 bg-white border border-white/70 shadow-lg`}>
+      {logoUrl && (
+        <img
+          src={logoUrl}
+          alt={`Logo ${name || 'sekolah'}`}
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={e => {
+            e.currentTarget.style.display = 'none'
+            const fallback = e.currentTarget.nextElementSibling as HTMLElement | null
+            fallback?.classList.remove('hidden')
+            fallback?.classList.add('flex')
+          }}
+        />
+      )}
+      <span className={`absolute inset-0 ${logoUrl ? 'hidden' : 'flex'} items-center justify-center bg-gradient-to-br ${colorClass} text-white font-black`}>
+        {initial}
+      </span>
+    </div>
+  )
 }
 
 // ─── LIKES & DISLIKES COMPONENT ───
@@ -210,6 +251,24 @@ export default function AdiwiyataPage() {
     document.body.style.overflow = 'hidden'
   }
 
+  const openPhotoLightbox = (photo: Photo) => {
+    const category = photo.category || 'pengelolaan-sampah'
+    const post: Post | null = photo.school_id ? {
+      id: photo.id,
+      school_id: photo.school_id,
+      school_name: photo.school_name || 'Sekolah',
+      school_logo_url: photo.school_logo_url || null,
+      category,
+      media_type: 'image',
+      media_urls: [photo.url],
+      media_path: photo.url,
+      description: photo.description || '',
+      created_at: photo.created_at || new Date().toISOString(),
+    } : null
+
+    openLightbox([photo.url], 0, post)
+  }
+
   const closeLightbox = () => {
     setLightboxIndex(-1)
     setActivePost(null)
@@ -238,8 +297,13 @@ export default function AdiwiyataPage() {
     return acc
   }, {} as Record<string, number>)
 
-  // Unique schools
-  const uniqueSchools = [...new Set(posts.map(p => p.school_name))]
+  const schoolMap = new Map<number, Post>()
+  posts.forEach(post => {
+    if (!schoolMap.has(post.school_id)) {
+      schoolMap.set(post.school_id, post)
+    }
+  })
+  const uniqueSchools = Array.from(schoolMap.values())
 
   return (
     <main className="min-h-screen bg-slate-50 relative overflow-x-hidden">
@@ -322,9 +386,11 @@ export default function AdiwiyataPage() {
             {activePost && (
               <div className="w-full lg:w-[340px] bg-white p-6 flex flex-col border-t lg:border-t-0 lg:border-l border-slate-100 overflow-y-auto">
                 <div className="flex items-center gap-3 mb-5">
-                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${CATEGORY_COLORS[activePost.category] || 'from-emerald-400 to-teal-600'} text-white font-black text-lg flex items-center justify-center shadow-lg flex-shrink-0`}>
-                    {activePost.school_name.charAt(0)}
-                  </div>
+                  <SchoolLogoAvatar
+                    name={activePost.school_name}
+                    logoUrl={activePost.school_logo_url}
+                    colorClass={CATEGORY_COLORS[activePost.category] || 'from-emerald-400 to-teal-600'}
+                  />
                   <div className="min-w-0">
                     <a
                       href={`http://127.0.0.1:5002/portal/public/sekolah/${activePost.school_id}/adiwiyata/${activePost.category}`}
@@ -355,7 +421,7 @@ export default function AdiwiyataPage() {
                   className="mt-4 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-sm hover:opacity-90 transition-all hover:scale-[1.02] shadow-lg shadow-emerald-500/25"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                  Lihat Semua Postingan Sekolah Ini
+                  Lihat Profil Adiwiyata Sekolah
                 </a>
               </div>
             )}
@@ -400,7 +466,7 @@ export default function AdiwiyataPage() {
             <h1 className="text-3xl sm:text-4xl font-black text-white leading-none">
               Galeri <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-lime-300">Adiwiyata</span>
             </h1>
-            <p className="text-white/70 text-sm mt-1.5 max-w-lg">
+            <p className="text-white/70 text-sm mt-1.5 max-w-none sm:whitespace-nowrap">
               Dokumentasi aksi nyata pelestarian lingkungan sekolah-sekolah di Jakarta Utara 2.
             </p>
           </div>
@@ -423,12 +489,15 @@ export default function AdiwiyataPage() {
               {[...photos, ...photos].map((photo, i) => (
                 <div
                   key={i}
-                  onClick={() => openLightbox([photo.url])}
+                  onClick={() => openPhotoLightbox(photo)}
                   className="relative group w-52 sm:w-64 aspect-[4/3] rounded-2xl overflow-hidden flex-shrink-0 cursor-pointer border border-white/8 bg-slate-900 shadow-lg hover:shadow-emerald-900/30 transition-shadow"
                 >
                   <img src={photo.url} alt={photo.school_name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end p-3">
-                    <p className="text-white text-xs font-bold truncate leading-tight">{photo.school_name}</p>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end p-3">
+                    <div className="min-w-0">
+                      <p className="text-white text-xs font-bold truncate leading-tight">{photo.school_name}</p>
+                      <p className="text-emerald-200 text-[10px] font-semibold mt-0.5">Klik untuk lihat profil sekolah</p>
+                    </div>
                   </div>
                   <div className="absolute inset-0 ring-0 group-hover:ring-2 group-hover:ring-emerald-400/60 rounded-2xl transition-all" />
                 </div>
@@ -443,12 +512,15 @@ export default function AdiwiyataPage() {
               {[...photos.slice().reverse(), ...photos.slice().reverse()].map((photo, i) => (
                 <div
                   key={i}
-                  onClick={() => openLightbox([photo.url])}
+                  onClick={() => openPhotoLightbox(photo)}
                   className="relative group w-44 sm:w-52 aspect-[16/9] rounded-2xl overflow-hidden flex-shrink-0 cursor-pointer border border-white/8 bg-slate-900"
                 >
                   <img src={photo.url} alt={photo.school_name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end p-3">
-                    <p className="text-white text-[10px] font-bold truncate">{photo.school_name}</p>
+                    <div className="min-w-0">
+                      <p className="text-white text-[10px] font-bold truncate">{photo.school_name}</p>
+                      <p className="text-emerald-200 text-[9px] font-semibold mt-0.5">Lihat profil</p>
+                    </div>
                   </div>
                   <div className="absolute inset-0 ring-0 group-hover:ring-2 group-hover:ring-teal-400/60 rounded-2xl transition-all" />
                 </div>
@@ -527,19 +599,21 @@ export default function AdiwiyataPage() {
                 Sekolah Aktif
               </h2>
               <div className="space-y-1 max-h-64 overflow-y-auto pr-1 custom-scroll">
-                {uniqueSchools.slice(0, 15).map((school, i) => {
-                  const schoolPost = posts.find(p => p.school_name === school)
+                {uniqueSchools.slice(0, 15).map((schoolPost, i) => {
                   return (
                     <a
                       key={i}
-                      href={schoolPost ? `http://127.0.0.1:5002/portal/public/sekolah/${schoolPost.school_id}/adiwiyata/${schoolPost.category}` : '#'}
+                      href={`http://127.0.0.1:5002/portal/public/sekolah/${schoolPost.school_id}/adiwiyata/${schoolPost.category}`}
                       target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-emerald-50 transition-colors group cursor-pointer"
                     >
-                      <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${CATEGORY_COLORS[schoolPost?.category || 'tanaman']} flex items-center justify-center text-white font-black text-xs flex-shrink-0`}>
-                        {school.charAt(0)}
-                      </div>
-                      <span className="text-xs text-slate-500 group-hover:text-slate-800 transition-colors font-medium leading-tight line-clamp-2">{school}</span>
+                      <SchoolLogoAvatar
+                        name={schoolPost.school_name}
+                        logoUrl={schoolPost.school_logo_url}
+                        colorClass={CATEGORY_COLORS[schoolPost.category] || 'from-green-400 to-emerald-600'}
+                        className="w-7 h-7 rounded-lg text-xs"
+                      />
+                      <span className="text-xs text-slate-500 group-hover:text-slate-800 transition-colors font-medium leading-tight line-clamp-2">{schoolPost.school_name}</span>
                     </a>
                   )
                 })}
@@ -576,9 +650,12 @@ export default function AdiwiyataPage() {
                   >
                     {/* Post Header */}
                     <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-slate-100">
-                      <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${catColor} flex items-center justify-center text-white font-black text-base shadow-lg flex-shrink-0`}>
-                        {post.school_name.charAt(0)}
-                      </div>
+                      <SchoolLogoAvatar
+                        name={post.school_name}
+                        logoUrl={post.school_logo_url}
+                        colorClass={catColor}
+                        className="w-12 h-12 rounded-2xl text-base"
+                      />
                       <div className="flex-1 min-w-0">
                         <a
                           href={`http://127.0.0.1:5002/portal/public/sekolah/${post.school_id}/adiwiyata/${post.category}`}
@@ -670,7 +747,7 @@ export default function AdiwiyataPage() {
                         target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
                       >
-                        Lihat Profil Sekolah
+                        Lihat Profil Adiwiyata
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                       </a>
                     </div>
@@ -733,11 +810,14 @@ export default function AdiwiyataPage() {
                 {photos.slice(0, 6).map((photo, i) => (
                   <div
                     key={i}
-                    onClick={() => openLightbox([photo.url])}
+                    onClick={() => openPhotoLightbox(photo)}
                     className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group bg-slate-100 border border-slate-200"
                   >
                     <img src={photo.url} alt={photo.school_name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-colors" />
+                    <div className="absolute inset-x-0 bottom-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-white text-[10px] font-bold leading-tight truncate">{photo.school_name}</p>
+                    </div>
                     <div className="absolute inset-0 ring-0 group-hover:ring-2 group-hover:ring-emerald-400 rounded-xl transition-all" />
                   </div>
                 ))}
