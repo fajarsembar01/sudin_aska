@@ -81,7 +81,11 @@ pm2 stop sudindikju22         # stop app
 |------|--------|
 | Server | `root@sudindikju2` |
 | IP | `202.10.37.22` |
-| Port | `3000` |
+| Port App | `3000` (Next.js via PM2) |
 | Directory | `/opt/sudin_aska/sudindikju22` |
 | PM2 Name | `sudindikju22` |
-| URL | http://202.10.37.22:3000 |
+| Nginx Config | `/etc/nginx/sites-available/sudindikju22` |
+| URL (local) | http://202.10.37.22:3000 |
+| URL (production) | https://sudindikju2.com |
+| DNS | Cloudflare (Proxied) |
+| SSL | Cloudflare (otomatis) |
