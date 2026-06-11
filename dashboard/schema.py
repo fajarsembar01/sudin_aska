@@ -724,6 +724,25 @@ CREATE INDEX IF NOT EXISTS idx_portal_follow_up_updates_ticket_created
 ON portal_room_follow_up_updates (follow_up_id, created_at DESC);
 """
 
+_PORTAL_ADIWIYATA_POSTS_SQL = """
+CREATE TABLE IF NOT EXISTS portal_adiwiyata_posts (
+    id SERIAL PRIMARY KEY,
+    school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+    category TEXT NOT NULL,
+    media_path TEXT NOT NULL,
+    media_type TEXT NOT NULL,
+    description TEXT,
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_PORTAL_ADIWIYATA_POSTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_adiwiyata_posts_school_category 
+ON portal_adiwiyata_posts (school_id, category);
+"""
+
 _USER_KECAMATAN_SQL = """
 CREATE TABLE IF NOT EXISTS user_kecamatan (
     id SERIAL PRIMARY KEY,
@@ -1317,6 +1336,8 @@ def ensure_dashboard_schema() -> None:
         _PORTAL_ROOM_FOLLOW_UP_TICKETS_INDEX_SQL,
         _PORTAL_ROOM_FOLLOW_UP_UPDATES_SQL,
         _PORTAL_ROOM_FOLLOW_UP_UPDATES_INDEX_SQL,
+        _PORTAL_ADIWIYATA_POSTS_SQL,
+        _PORTAL_ADIWIYATA_POSTS_INDEX_SQL,
         # Kecamatan access control tables
         _USER_KECAMATAN_SQL,
         _USER_KECAMATAN_INDEX_SQL,

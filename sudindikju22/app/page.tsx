@@ -44,18 +44,40 @@ export default function Page() {
             <p className="text-xs text-slate-500">Jakarta Utara — Wilayah 2</p>
           </div>
         </div>
-        <a
-          href="https://admin.sudindikju2.com/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="relative inline-flex items-center gap-2 group/btn px-5 py-2.5 overflow-hidden rounded-full bg-gradient-to-r from-sky-600 to-blue-600 text-white font-bold text-xs shadow-lg shadow-sky-500/30 hover:shadow-sky-500/50 hover:scale-115 active:scale-95 transition-all duration-300 ring-1 ring-white/20"
-        >
-          <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:animate-[shine_1.5s_infinite]" />
-          <span className="relative">Portal Kepegawaian</span>
-          <svg className="relative w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
-        </a>
+        
+        <div className="flex items-center gap-3">
+          <a
+            href="/live-spmb"
+            className="relative inline-flex items-center gap-2 group/btn px-4 py-2 overflow-hidden rounded-full bg-white text-emerald-600 font-bold text-xs shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-300 ring-1 ring-emerald-500/30"
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="relative">Live SPMB</span>
+          </a>
+
+          <a
+            href="/adiwiyata"
+            className="relative inline-flex items-center gap-2 group/btn px-4 py-2 overflow-hidden rounded-full bg-white text-sky-600 font-bold text-xs shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-300 ring-1 ring-sky-500/30"
+          >
+            <i className="bi bi-tree-fill"></i>
+            <span className="relative">Adiwiyata</span>
+          </a>
+
+          <a
+            href="http://127.0.0.1:5002/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative inline-flex items-center gap-2 group/btn px-5 py-2.5 overflow-hidden rounded-full bg-gradient-to-r from-sky-600 to-blue-600 text-white font-bold text-xs shadow-lg shadow-sky-500/30 hover:shadow-sky-500/50 hover:scale-115 active:scale-95 transition-all duration-300 ring-1 ring-white/20"
+          >
+            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:animate-[shine_1.5s_infinite]" />
+            <span className="relative">Portal Kepegawaian</span>
+            <svg className="relative w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </a>
+        </div>
       </nav>
 
       {/* Main Content - Fits in viewport */}

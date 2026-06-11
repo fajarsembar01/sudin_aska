@@ -271,6 +271,11 @@
     <div class="login-container">
         <div class="card login-card shadow-sm border-0">
             <div class="login-header">
+                {% if back_href %}
+                <a href="{{ back_href }}" style="display:inline-flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.75); text-decoration:none; margin-bottom:10px; background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:20px; transition: background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                    <i class="bi bi-arrow-left"></i> Kembali
+                </a>
+                {% endif %}
                 <h1>{{ header_title or 'Selamat Datang' }}</h1>
                 <p>{{ header_subtitle or 'Silakan n ASKA Portal' }}</p>
             </div>
@@ -279,8 +284,11 @@
                 <div class="row g-3 role-selection-row{% if enable_odd_center %} odd-center-enabled{% endif %}">
                     {% for card in cards %}
                     <div class="{{ card.col_class or default_col_class }}{% if enable_odd_center and is_odd_count and loop.last %} odd-card-center{% endif %}">
-                        <a href="{{ card.href }}" class="selection-card" data-nav-href="{{ card.href }}">
-                            <div class="icon-wrapper{% if card.icon_secondary %} icon-combo{% endif %}">
+                        <a href="{{ card.href }}" class="selection-card{% if card.badge_type == 'primary' %} border-primary{% endif %}" data-nav-href="{{ card.href }}" style="position: relative;">
+                            {% if card.badge_text %}
+                            <span class="badge position-absolute" style="top: -12px; left: -2px; padding: 6px 12px; border-radius: 12px 12px 12px 0; font-size: 0.75rem; font-weight: 600; {% if card.badge_type == 'primary' %}background-color: #0084ff; color: white;{% else %}background-color: #e4e4e4; color: #8a8a8a;{% endif %}">{{ card.badge_text }}</span>
+                            {% endif %}
+                            <div class="icon-wrapper{% if card.icon_secondary %} icon-combo{% endif %}" {% if card.badge_type == 'primary' %}style="background-color: #0084ff; color: white;"{% elif card.badge_text %}style="background-color: #d8d8d8; color: #a1a1a1;"{% endif %}>
                                 {% if card.icon_secondary %}
                                 <i class="bi {{ card.icon }} icon-primary"></i>
                                 <i class="bi {{ card.icon_secondary }} icon-secondary"></i>

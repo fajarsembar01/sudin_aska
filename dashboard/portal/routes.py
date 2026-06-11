@@ -31,6 +31,7 @@ from flask import (
     send_from_directory,
     abort,
     session,
+    make_response,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -1913,6 +1914,313 @@ def schools() -> Response:
     )
 
 
+# ===== Adiwiyata Posts Operations =====
+
+def create_adiwiyata_post(school_id: int, category: str, media_path: str, media_type: str, description: str, user_id: int) -> dict | None:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO portal_adiwiyata_posts 
+            (school_id, category, media_path, media_type, description, created_by)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING *
+            """,
+            (school_id, category, media_path, media_type, description, user_id)
+        )
+        return cur.fetchone()
+
+def list_adiwiyata_posts(school_id: int, category: str) -> list[dict]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT p.*, u.full_name as author_name 
+            FROM portal_adiwiyata_posts p
+            LEFT JOIN dashboard_users u ON p.created_by = u.id
+            WHERE p.school_id = %s AND p.category = %s
+            ORDER BY p.created_at DESC
+            """,
+            (school_id, category)
+        )
+        raw_rows = cur.fetchall()
+        import json
+        from flask import url_for
+        rows = []
+        for raw in raw_rows:
+            row = dict(raw)
+            row["media_urls"] = None
+            row["media_paths"] = None
+            if row.get("media_type") == "image":
+                val = row.get("media_path") or ""
+                is_json = False
+                if val.strip().startswith("[") and val.strip().endswith("]"):
+                    try:
+                        paths = json.loads(val)
+                        if isinstance(paths, list):
+                            row["media_urls"] = [url_for("portal.uploaded_file", filename=p) for p in paths]
+                            row["media_paths"] = paths
+                            if paths:
+                                row["media_path"] = paths[0]
+                            is_json = True
+                    except Exception:
+                        pass
+                if not is_json:
+                    if val:
+                        row["media_urls"] = [url_for("portal.uploaded_file", filename=val)]
+                    else:
+                        row["media_urls"] = []
+            rows.append(row)
+        return rows
+
+def update_adiwiyata_post(post_id: int, description: str) -> bool:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE portal_adiwiyata_posts
+            SET description = %s, updated_at = NOW()
+            WHERE id = %s
+            """,
+            (description, post_id)
+        )
+        return cur.rowcount > 0
+
+def get_adiwiyata_post(post_id: int) -> dict | None:
+    with get_cursor() as cur:
+        cur.execute("SELECT * FROM portal_adiwiyata_posts WHERE id = %s", (post_id,))
+        return cur.fetchone()
+
+def delete_adiwiyata_post(post_id: int) -> bool:
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM portal_adiwiyata_posts WHERE id = %s", (post_id,))
+        return cur.rowcount > 0
+
+
+def list_all_adiwiyata_posts_public(limit: int = 20, offset: int = 0) -> list[dict]:
+    """Ambil semua postingan adiwiyata dari semua sekolah, diurutkan terbaru."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT 
+                p.id,
+                p.school_id,
+                p.category,
+                p.media_path,
+                p.media_type,
+                p.description,
+                p.created_at,
+                s.name AS school_name,
+                s.npsn AS school_npsn
+            FROM portal_adiwiyata_posts p
+            LEFT JOIN portal_schools s ON p.school_id = s.id
+            ORDER BY p.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            (limit, offset)
+        )
+        raw_rows = cur.fetchall()
+    
+    import json
+    from flask import url_for, request as flask_request
+    base_url = ""
+    rows = []
+    for raw in raw_rows:
+        row = dict(raw)
+        row["media_urls"] = None
+        row["media_paths"] = None
+        if row.get("media_type") == "image":
+            val = row.get("media_path") or ""
+            is_json = False
+            if val.strip().startswith("[") and val.strip().endswith("]"):
+                try:
+                    paths = json.loads(val)
+                    if isinstance(paths, list):
+                        row["media_urls"] = [url_for("portal.uploaded_file", filename=p, _external=True) for p in paths]
+                        row["media_paths"] = paths
+                        if paths:
+                            row["media_path"] = paths[0]
+                        is_json = True
+                except Exception:
+                    pass
+            if not is_json and val:
+                row["media_urls"] = [url_for("portal.uploaded_file", filename=val, _external=True)]
+        # Serialize created_at
+        if row.get("created_at"):
+            row["created_at"] = row["created_at"].isoformat()
+        rows.append(row)
+    return rows
+
+
+def count_all_adiwiyata_posts() -> int:
+    with get_cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM portal_adiwiyata_posts")
+        row = cur.fetchone()
+        return int((row or {}).get("count") or 0)
+
+
+def list_random_adiwiyata_photos(limit: int = 12) -> list[dict]:
+    """Ambil foto acak (image only) dari semua sekolah untuk hero gallery."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT p.id, p.media_path, p.media_type, s.name AS school_name
+            FROM portal_adiwiyata_posts p
+            LEFT JOIN portal_schools s ON p.school_id = s.id
+            WHERE p.media_type = 'image'
+            ORDER BY RANDOM()
+            LIMIT %s
+            """,
+            (limit,)
+        )
+        raw_rows = cur.fetchall()
+
+    import json
+    from flask import url_for
+    rows = []
+    for raw in raw_rows:
+        row = dict(raw)
+        val = row.get("media_path") or ""
+        url = None
+        if val.strip().startswith("[") and val.strip().endswith("]"):
+            try:
+                paths = json.loads(val)
+                if isinstance(paths, list) and paths:
+                    url = url_for("portal.uploaded_file", filename=paths[0], _external=True)
+            except Exception:
+                pass
+        if not url and val:
+            url = url_for("portal.uploaded_file", filename=val, _external=True)
+        if url:
+            rows.append({"id": row["id"], "url": url, "school_name": row.get("school_name", "")})
+    return rows
+
+
+def make_cors_response(response_or_dict, status_code=200):
+    from flask import jsonify, make_response
+    if isinstance(response_or_dict, dict):
+        response = jsonify(response_or_dict)
+        response.status_code = status_code
+    else:
+        response = make_response(response_or_dict)
+        response.status_code = status_code
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    return response
+
+@portal_bp.route("/api/public/adiwiyata/posts", methods=["GET", "OPTIONS"])
+def api_public_adiwiyata_posts():
+    from flask import request
+    if request.method == "OPTIONS":
+        return make_cors_response({})
+
+    page = max(1, request.args.get("page", 1, type=int))
+    per_page = min(50, max(1, request.args.get("per_page", 20, type=int)))
+    offset = (page - 1) * per_page
+    posts = list_all_adiwiyata_posts_public(limit=per_page, offset=offset)
+    total = count_all_adiwiyata_posts()
+    return make_cors_response({
+        "posts": posts,
+        "page": page,
+        "per_page": per_page,
+        "total": total,
+        "has_more": offset + per_page < total,
+    })
+
+
+@portal_bp.route("/api/public/adiwiyata/random-photos", methods=["GET", "OPTIONS"])
+def api_public_adiwiyata_random_photos():
+    from flask import request
+    if request.method == "OPTIONS":
+        return make_cors_response({})
+
+    limit = min(30, max(1, request.args.get("limit", 12, type=int)))
+    photos = list_random_adiwiyata_photos(limit=limit)
+    return make_cors_response({"photos": photos})
+
+
+# ===== Likes & Comments API =====
+
+def _cors_preflight():
+    resp = make_response("", 204)
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return resp
+
+
+@portal_bp.route("/api/public/adiwiyata/posts/<int:post_id>/likes", methods=["GET", "POST", "OPTIONS"])
+def api_adiwiyata_likes(post_id: int):
+    if request.method == "OPTIONS":
+        return _cors_preflight()
+
+    if request.method == "GET":
+        fingerprint = request.args.get("fp", "")
+        with get_cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM adiwiyata_post_likes WHERE post_id = %s AND action = 'like'", (post_id,))
+            likes = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM adiwiyata_post_likes WHERE post_id = %s AND action = 'dislike'", (post_id,))
+            dislikes = cur.fetchone()[0]
+            
+            user_action = None
+            if fingerprint:
+                cur.execute(
+                    "SELECT action FROM adiwiyata_post_likes WHERE post_id = %s AND fingerprint = %s",
+                    (post_id, fingerprint[:64])
+                )
+                row = cur.fetchone()
+                if row:
+                    user_action = row["action"]
+        return make_cors_response({"likes": likes, "dislikes": dislikes, "user_action": user_action})
+
+    # POST: toggle like/dislike
+    data = request.get_json(silent=True) or {}
+    fingerprint = str(data.get("fingerprint", ""))[:64]
+    action = str(data.get("action", ""))
+    
+    if not fingerprint or action not in ("like", "dislike"):
+        return make_cors_response({"error": "fingerprint and valid action required"}, 400)
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            "SELECT action FROM adiwiyata_post_likes WHERE post_id = %s AND fingerprint = %s",
+            (post_id, fingerprint)
+        )
+        row = cur.fetchone()
+        
+        if row:
+            if row["action"] == action:
+                # If clicking the same action, remove it
+                cur.execute(
+                    "DELETE FROM adiwiyata_post_likes WHERE post_id = %s AND fingerprint = %s",
+                    (post_id, fingerprint)
+                )
+                result_action = "removed"
+            else:
+                # If clicking the opposite action, switch it
+                cur.execute(
+                    "UPDATE adiwiyata_post_likes SET action = %s WHERE post_id = %s AND fingerprint = %s",
+                    (action, post_id, fingerprint)
+                )
+                result_action = action
+        else:
+            # Insert new action
+            cur.execute(
+                "INSERT INTO adiwiyata_post_likes (post_id, fingerprint, action) VALUES (%s, %s, %s)",
+                (post_id, fingerprint, action)
+            )
+            result_action = action
+            
+        cur.execute("SELECT COUNT(*) FROM adiwiyata_post_likes WHERE post_id = %s AND action = 'like'", (post_id,))
+        likes = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM adiwiyata_post_likes WHERE post_id = %s AND action = 'dislike'", (post_id,))
+        dislikes = cur.fetchone()[0]
+
+    return make_cors_response({"action": result_action, "likes": likes, "dislikes": dislikes})
+
+
+
+
+
+
 # ===== Sekolah Landing =====
 
 @portal_bp.route("/sekolah")
@@ -1968,6 +2276,308 @@ def sekolah_home() -> Response:
         enable_odd_center=True,
         show_logout=True,
     )
+
+
+@portal_bp.route("/sekolah/adiwiyata")
+@role_required("sekolah")
+def sekolah_adiwiyata() -> Response:
+    """Menu Adiwiyata untuk sekolah."""
+    user = current_user()
+    school = _fetch_user_school(user.get("id"))
+    subtitle = ""
+    if school and school.get("name") and school.get("npsn"):
+        subtitle = f"{school.get('name')} • NPSN {school.get('npsn')}"
+        
+    cards = [
+        {
+            "title": "Konservasi Energi",
+            "description": "Laporan penggunaan hemat energi, panel surya, dan efisiensi listrik.",
+            "icon": "bi-lightning-charge",
+            "href": "#",
+            "col_class": "col-md-4 col-12",
+            "badge_text": "Segera Hadir",
+            "badge_type": "secondary"
+        },
+        {
+            "title": "Konservasi Air",
+            "description": "Penghematan air bersih, biopori, dan pemanfaatan air hujan.",
+            "icon": "bi-droplet",
+            "href": "#",
+            "col_class": "col-md-4 col-12",
+            "badge_text": "Segera Hadir",
+            "badge_type": "secondary"
+        },
+        {
+            "title": "Kebersihan, Sanitasi, Drainase",
+            "description": "Pemantauan toilet bersih, saluran air, dan lingkungan sehat.",
+            "icon": "bi-stars",
+            "href": "#",
+            "col_class": "col-md-4 col-12",
+            "badge_text": "Segera Hadir",
+            "badge_type": "secondary"
+        },
+        {
+            "title": "Kompos",
+            "description": "Pembuatan pupuk organik dari sisa daun dan limbah organik sekolah.",
+            "icon": "bi-recycle",
+            "href": "#",
+            "col_class": "col-md-4 col-12",
+            "badge_text": "Segera Hadir",
+            "badge_type": "secondary"
+        },
+        {
+            "title": "Pengelolaan Sampah",
+            "description": "Bank sampah, pemilahan organik/anorganik, dan daur ulang.",
+            "icon": "bi-trash3",
+            "href": url_for("portal.sekolah_adiwiyata_feed", category="pengelolaan-sampah"),
+            "col_class": "col-md-4 col-12",
+            "badge_text": "Siap Digunakan",
+            "badge_type": "primary"
+        },
+        {
+            "title": "Tanaman",
+            "description": "Perawatan ruang terbuka hijau, pembibitan, dan taman sekolah.",
+            "icon": "bi-tree",
+            "href": "#",
+            "col_class": "col-md-4 col-12",
+            "badge_text": "Segera Hadir",
+            "badge_type": "secondary"
+        },
+    ]
+    return render_template(
+        "role_selection.html",
+        page_title="Adiwiyata - ASKA Portal",
+        page_description="Menu program Adiwiyata sekolah",
+        header_title="Menu Adiwiyata",
+        header_subtitle=subtitle,
+        cards=cards,
+        default_col_class="col-md-4 col-12",
+        enable_odd_center=False,
+        show_logout=False,
+        back_href=url_for("portal.sekolah_home"),
+    )
+
+
+@portal_bp.route("/sekolah/adiwiyata/<category>")
+@role_required("sekolah")
+def sekolah_adiwiyata_feed(category: str) -> Response:
+    user = current_user()
+    school = _fetch_user_school(user.get("id"))
+    if not school:
+        flash("Akun belum terhubung dengan sekolah.", "warning")
+        return redirect(url_for("portal.sekolah_adiwiyata"))
+
+    posts = list_adiwiyata_posts(school["id"], category)
+    
+    category_titles = {
+        "pengelolaan-sampah": "Pengelolaan Sampah",
+        "konservasi-energi": "Konservasi Energi",
+        "konservasi-air": "Konservasi Air",
+        "kebersihan-sanitasi-drainase": "Kebersihan, Sanitasi, Drainase",
+        "kompos": "Kompos",
+        "tanaman": "Tanaman",
+    }
+    title = category_titles.get(category, category.replace("-", " ").title())
+    
+    return render_template(
+        "portal/sekolah/adiwiyata_feed.html",
+        posts=posts,
+        category=category,
+        title=title,
+        school=school,
+        is_public=False
+    )
+
+
+@portal_bp.route("/public/sekolah/<int:school_id>/adiwiyata/<category>")
+def public_sekolah_adiwiyata_feed(school_id: int, category: str) -> Response:
+    school = get_school_by_id(school_id)
+    if not school:
+        flash("Sekolah tidak ditemukan.", "warning")
+        return redirect("http://localhost:3000/adiwiyata")
+
+    posts = list_adiwiyata_posts(school_id, category)
+    
+    category_titles = {
+        "pengelolaan-sampah": "Pengelolaan Sampah",
+        "konservasi-energi": "Konservasi Energi",
+        "konservasi-air": "Konservasi Air",
+        "kebersihan-sanitasi-drainase": "Kebersihan, Sanitasi, Drainase",
+        "kompos": "Kompos",
+        "tanaman": "Tanaman",
+    }
+    title = category_titles.get(category, category.replace("-", " ").title())
+    
+    return render_template(
+        "portal/sekolah/adiwiyata_feed.html",
+        posts=posts,
+        category=category,
+        title=title,
+        school=school,
+        is_public=True
+    )
+@role_required("sekolah")
+def sekolah_adiwiyata_feed(category: str) -> Response:
+    user = current_user()
+    school = _fetch_user_school(user.get("id"))
+    if not school:
+        flash("Akun belum terhubung dengan sekolah.", "warning")
+        return redirect(url_for("portal.sekolah_adiwiyata"))
+
+    posts = list_adiwiyata_posts(school["id"], category)
+    
+    category_titles = {
+        "pengelolaan-sampah": "Pengelolaan Sampah",
+        "konservasi-energi": "Konservasi Energi",
+        "konservasi-air": "Konservasi Air",
+        "kebersihan-sanitasi-drainase": "Kebersihan, Sanitasi, Drainase",
+        "kompos": "Kompos",
+        "tanaman": "Tanaman",
+    }
+    title = category_titles.get(category, category.replace("-", " ").title())
+    
+    return render_template(
+        "portal/sekolah/adiwiyata_feed.html",
+        posts=posts,
+        category=category,
+        title=title,
+        school=school
+    )
+
+@portal_bp.route("/sekolah/adiwiyata/<category>/add", methods=["POST"])
+@role_required("sekolah")
+def sekolah_adiwiyata_add(category: str) -> Response:
+    user = current_user()
+    school = _fetch_user_school(user.get("id"))
+    if not school:
+        return redirect(url_for("portal.sekolah_adiwiyata"))
+
+    description = request.form.get("description", "").strip()
+    post_type = request.form.get("post_type", "image")  # "image" or "video_link"
+
+    if post_type == "video_link":
+        video_url = request.form.get("video_url", "").strip()
+        if not video_url:
+            flash("Link video tidak boleh kosong.", "warning")
+            return redirect(url_for("portal.sekolah_adiwiyata_feed", category=category))
+
+        # Normalize YouTube / Google Drive / generic URLs
+        import re
+        yt_match = re.search(r'(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/|youtube\.com/shorts/)([A-Za-z0-9_-]{11})', video_url)
+        if yt_match:
+            video_id = yt_match.group(1)
+            embed_url = f"https://www.youtube.com/embed/{video_id}"
+        else:
+            # Store raw URL for iframe src
+            embed_url = video_url
+
+        create_adiwiyata_post(school["id"], category, embed_url, "video_link", description, user["id"])
+        flash("Link video berhasil diposting.", "success")
+        return redirect(url_for("portal.sekolah_adiwiyata_feed", category=category))
+
+    # Default: multiple image upload
+    file_storages = request.files.getlist("media_files")
+    if not file_storages or all(not f.filename for f in file_storages):
+        flash("File foto wajib diunggah.", "warning")
+        return redirect(url_for("portal.sekolah_adiwiyata_feed", category=category))
+
+    import uuid
+    import json
+    school_id_str = str(school["id"])
+    target_dir = UPLOAD_FOLDER / "adiwiyata" / school_id_str
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    saved_paths = []
+    for file_storage in file_storages:
+        if not file_storage.filename:
+            continue
+            
+        ext = file_storage.filename.rsplit(".", 1)[-1].lower()
+        if ext not in {"png", "jpg", "jpeg", "webp"}:
+            flash(f"Format tidak didukung untuk file {file_storage.filename}. Gunakan JPG, PNG, atau WEBP.", "warning")
+            continue
+
+        # Simpan selalu sebagai JPEG/WebP agar bisa dikompres
+        save_ext = "webp" if ext == "webp" else "jpg"
+        filename = f"{uuid.uuid4().hex}.{save_ext}"
+        filepath = target_dir / filename
+
+        # Kompresi gambar dengan Pillow ke maks ~200 KB
+        try:
+            from PIL import Image
+            import io
+
+            img = Image.open(file_storage.stream)
+            img = img.convert("RGB")
+
+            # Resize jika resolusi terlalu besar (maks 1920px)
+            max_dim = 1920
+            if img.width > max_dim or img.height > max_dim:
+                img.thumbnail((max_dim, max_dim), Image.LANCZOS)
+
+            # Cari kualitas yang menghasilkan file ≤ 200 KB
+            target_bytes = 200 * 1024  # 200 KB
+            pil_fmt = "WEBP" if save_ext == "webp" else "JPEG"
+            quality = 85
+            for q in (85, 75, 65, 55, 45, 35):
+                buf = io.BytesIO()
+                img.save(buf, format=pil_fmt, quality=q, optimize=True)
+                if buf.tell() <= target_bytes:
+                    quality = q
+                    break
+
+            buf.seek(0)
+            with open(filepath, "wb") as out_f:
+                out_f.write(buf.read())
+
+        except Exception as compress_err:
+            # Fallback: simpan apa adanya jika Pillow gagal
+            file_storage.stream.seek(0)
+            file_storage.save(filepath)
+
+        media_path = f"adiwiyata/{school_id_str}/{filename}"
+        saved_paths.append(media_path)
+
+    if saved_paths:
+        create_adiwiyata_post(school["id"], category, json.dumps(saved_paths), "image", description, user["id"])
+        flash(f"{len(saved_paths)} Foto berhasil diposting.", "success")
+    else:
+        flash("Gagal mengunggah foto.", "danger")
+        
+    return redirect(url_for("portal.sekolah_adiwiyata_feed", category=category))
+
+
+@portal_bp.route("/sekolah/adiwiyata/post/<int:post_id>/edit", methods=["POST"])
+@role_required("sekolah")
+def sekolah_adiwiyata_edit(post_id: int) -> Response:
+    user = current_user()
+    school = _fetch_user_school(user.get("id"))
+    
+    post = get_adiwiyata_post(post_id)
+    if not post or post["school_id"] != school["id"]:
+        flash("Postingan tidak ditemukan atau Anda tidak memiliki akses.", "danger")
+        return redirect(url_for("portal.sekolah_adiwiyata"))
+        
+    description = request.form.get("description", "").strip()
+    update_adiwiyata_post(post_id, description)
+    
+    flash("Postingan berhasil diperbarui.", "success")
+    return redirect(url_for("portal.sekolah_adiwiyata_feed", category=post["category"]))
+
+@portal_bp.route("/sekolah/adiwiyata/post/<int:post_id>/delete", methods=["POST"])
+@role_required("sekolah")
+def sekolah_adiwiyata_delete(post_id: int) -> Response:
+    user = current_user()
+    school = _fetch_user_school(user.get("id"))
+    
+    post = get_adiwiyata_post(post_id)
+    if not post or post["school_id"] != school["id"]:
+        flash("Postingan tidak ditemukan atau Anda tidak memiliki akses.", "danger")
+        return redirect(url_for("portal.sekolah_adiwiyata"))
+        
+    delete_adiwiyata_post(post_id)
+    flash("Postingan berhasil dihapus.", "success")
+    return redirect(url_for("portal.sekolah_adiwiyata_feed", category=post["category"]))
 
 
 def _annotate_follow_up_ticket(ticket: dict) -> dict:
