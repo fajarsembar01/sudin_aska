@@ -112,6 +112,20 @@ export default function Page() {
                   <ProgressCompact label="Frontend" pct={45} isLoaded={isLoaded} delay={500} />
                   <ProgressCompact label="ASKA" pct={75} isLoaded={isLoaded} delay={600} />
                 </div>
+                
+                {/* SPMB Button */}
+                <div className="mt-4 pt-4 border-t border-slate-200/50">
+                  <a
+                    href="/live-spmb-sd"
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 overflow-hidden rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-105 active:scale-95 transition-all duration-300 group/spmb ring-1 ring-white/20"
+                  >
+                    <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/spmb:animate-[shine_1.5s_infinite]" />
+                    <svg className="relative w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span className="relative">Live SPMB SD</span>
+                  </a>
+                </div>
               </div>
             </div>
 
