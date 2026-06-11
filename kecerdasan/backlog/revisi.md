@@ -13,70 +13,7 @@ Ya. Pendaftaran akun SPMB dapat dilakukan setiap hari mulai tanggal 18 Mei, term
 
 ## Di mana lokasi Posko SPMB 2026?
 
-Posko SPMB 2026 tersedia di setiap wilayah DKI Jakarta dan Kepulauan Seribu. Masyarakat dapat menghubungi Posko SPMB sesuai wilayah domisili melalui WhatsApp atau Hotline berikut.
-
-### Jakarta Pusat 1
-
-Tempat: SMK Negeri 1 Jakarta
-Alamat: Jl. Budi Utomo No. 7, Pasar Baru, Sawah Besar, Jakarta Pusat 10710
-WhatsApp: 0877-1235-7970
-Hotline: 0851-1131-5191
-
-### Jakarta Pusat 2
-
-Tempat: SMK Negeri 14 Jakarta
-Alamat: Jl. Percetakan Negara IIA No. 2, Johar Baru, Jakarta Pusat 10560
-WhatsApp: 0852-1241-9399
-Hotline: 0877-2326-7754
-
-### Jakarta Selatan 1
-
-Tempat: SD Negeri Cipete Selatan 03
-Alamat: Jl. Anggur II No. 21, Cipete Selatan, Cilandak, Jakarta Selatan 12410
-WhatsApp: 0851-8834-3056
-Hotline: 0851-8834-3054
-
-### Jakarta Selatan 2
-
-Tempat: SMA Negeri 70 Jakarta
-Alamat: Jl. Bulungan Blok C No. 1, Kebayoran Baru, Jakarta Selatan 12130
-WhatsApp: 0819-4719-1250
-Hotline: 0813-2529-5316
-
-### Jakarta Timur 1
-
-Tempat: SMK Negeri 26 Jakarta
-Alamat: Jl. Balai Pustaka Baru I No. 2, Rawamangun, Pulo Gadung, Jakarta Timur 13220
-WhatsApp: 0819-3614-9192
-Hotline: 0852-8571-0594
-
-### Jakarta Timur 2
-
-Tempat: SMK Negeri 39 Jakarta
-Alamat: Jl. RA Fadillah, Cijantung, Pasar Rebo, Jakarta Timur 13780
-WhatsApp: 0857-1086-3213
-Hotline: 0857-1086-3215
-
-### Jakarta Barat 1
-
-Tempat: SMP Negeri 108 Jakarta
-Alamat: Jl. Flamboyan No. 53, Cengkareng Barat, Jakarta Barat 11750
-WhatsApp: 0822-4652-5541
-Hotline: 0821-1962-188
-
-### Jakarta Barat 2
-
-Tempat: SMA Negeri 78 Jakarta
-Alamat: Komplek Pajak, Jl. Bhakti IV No. 1, Kemanggisan, Palmerah, Jakarta Barat 11480
-WhatsApp: 0851-777-7682
-Hotline: 0851-1777-7684
-
-### Jakarta Utara 1
-
-Tempat: SMK Negeri 12 Jakarta
-Alamat: Jl. Kebon Bawang XV B No. 15B, Tanjung Priok, Jakarta Utara 14320
-WhatsApp: 0856-9136-1471
-Hotline: 0852-8601-1940
+Posko SPMB 2026 tersedia di setiap wilayah DKI Jakarta dan Kepulauan Seribu. Masyarakat dapat menghubungi Posko SPMB sesuai wilayah domisili melalui WhatsApp atau Hotline berikut. 
 
 ### Jakarta Utara 2
 
@@ -84,13 +21,6 @@ Tempat: SMP Negeri 30 Jakarta
 Alamat: Jl. Anggrek No. 4, Rawabadak Utara, Koja, Jakarta Utara 14230
 WhatsApp: 0813-2000-6875
 Hotline: 0812-1000-7568
-
-### Kepulauan Seribu
-
-Tempat: Suku Dinas Pendidikan Kabupaten Administrasi Kepulauan Seribu
-Alamat: Jl. Sunter Permai Raya No. 3810, Sunter Agung, Tanjung Priok, Jakarta Utara 14350
-WhatsApp: 0813-2493-8932
-Hotline: 0813-8769-819
 
 ## Bagaimana cara menghubungi Posko SPMB?
 
@@ -159,3 +89,19 @@ Langkah-langkah:
 2. Pilih jenjang pendidikan.
 3. Pilih jalur pendaftaran.
 4. Buka menu **Aturan dan Prosedur** untuk melihat persyaratan dan berkas yang diperlukan.
+
+# FAQ SPMB Jakarta
+
+## Bagaimana jika saya lupa password akun SPMB Jakarta?
+
+Jika Anda lupa password akun SPMB Jakarta, silakan datang langsung ke Posko SPMB di SMPN 30 Jakarta untuk mendapatkan bantuan reset password.
+
+### Dokumen yang perlu dibawa:
+
+* Nomor Peserta / Nomor Pendaftaran
+* NIK Calon Murid
+* Kartu Keluarga (KK)
+* Identitas Orang Tua/Wali
+
+Petugas akan melakukan verifikasi data terlebih dahulu sebelum membantu proses reset password akun.
+
