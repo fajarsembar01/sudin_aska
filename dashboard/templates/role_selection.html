@@ -117,6 +117,24 @@
             color: white;
         }
 
+        .selection-card .icon-wrapper.icon-combo {
+            position: relative;
+        }
+
+        .selection-card .icon-wrapper.icon-combo .icon-primary {
+            position: absolute;
+            left: 13px;
+            bottom: 12px;
+            font-size: 25px;
+        }
+
+        .selection-card .icon-wrapper.icon-combo .icon-secondary {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            font-size: 19px;
+        }
+
         .selection-card h3 {
             font-size: 1.1rem;
             font-weight: 600;
@@ -189,6 +207,18 @@
                 flex: 0 0 42px;
             }
 
+            .selection-card .icon-wrapper.icon-combo .icon-primary {
+                left: 8px;
+                bottom: 8px;
+                font-size: 18px;
+            }
+
+            .selection-card .icon-wrapper.icon-combo .icon-secondary {
+                right: 8px;
+                top: 8px;
+                font-size: 14px;
+            }
+
             .selection-card .selection-copy {
                 min-width: 0;
                 flex: 1;
@@ -250,8 +280,13 @@
                     {% for card in cards %}
                     <div class="{{ card.col_class or default_col_class }}{% if enable_odd_center and is_odd_count and loop.last %} odd-card-center{% endif %}">
                         <a href="{{ card.href }}" class="selection-card" data-nav-href="{{ card.href }}">
-                            <div class="icon-wrapper">
+                            <div class="icon-wrapper{% if card.icon_secondary %} icon-combo{% endif %}">
+                                {% if card.icon_secondary %}
+                                <i class="bi {{ card.icon }} icon-primary"></i>
+                                <i class="bi {{ card.icon_secondary }} icon-secondary"></i>
+                                {% else %}
                                 <i class="bi {{ card.icon }}"></i>
+                                {% endif %}
                             </div>
                             <div class="selection-copy">
                                 <h3>{{ card.title }}</h3>
